@@ -12,6 +12,7 @@ import useGameRenderer from './rendering/useGameRenderer';
 import useGameSocket from './net/useGameSocket';
 import useKeyboardControls from './input/useKeyboardControls';
 import useCanvasControls from './input/useCanvasControls';
+import { resolveTapAction } from './input/resolveTap';
 import useDebugApi from './dev/useDebugApi';
 
 import StatusPane from './ui/StatusPane';
@@ -144,6 +145,7 @@ function App() {
     panOffsetRef, zoomRef, cameraLerpRef,
     isDraggingRef, isRefocusingRef, isPinchingRef,
     targetingModeRef,
+    entitiesRef, myPlayerIdRef,
   });
 
   useGameRenderer({
@@ -268,8 +270,11 @@ function App() {
     }
 
     if (socketRef.current?.readyState === WebSocket.OPEN) {
-      isRefocusingRef.current = true;
-      socketRef.current.send(JSON.stringify({ type: 'MOVE_TO', x: tileX, y: tileY }));
+      const myPlayer = entitiesRef.current.players[myPlayerIdRef.current];
+      const playerTile = myPlayer ? (myPlayer.targetPos || myPlayer.renderPos) : null;
+      const action = resolveTapAction({ tileX, tileY, playerTile });
+      if (action.type === 'MOVE_TO') isRefocusingRef.current = true;
+      socketRef.current.send(JSON.stringify(action));
     }
   };
 

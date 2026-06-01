@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { TILE_SIZE, MIN_ZOOM, MAX_ZOOM } from '../constants';
+import { resolveTapAction } from './resolveTap';
 
 export default function useCanvasControls({
   enabled,
@@ -12,6 +13,8 @@ export default function useCanvasControls({
   isRefocusingRef,
   isPinchingRef,
   targetingModeRef,
+  entitiesRef,
+  myPlayerIdRef,
 }) {
   const dragStartRef = useRef({ x: 0, y: 0 });
   const dragStartPanRef = useRef({ x: 0, y: 0 });
@@ -112,7 +115,9 @@ export default function useCanvasControls({
       const t = e.touches[0];
       const dx = t.clientX - dragStartRef.current.x;
       const dy = t.clientY - dragStartRef.current.y;
-      if (Math.sqrt(dx * dx + dy * dy) > 4) hasDraggedRef.current = true;
+      // Touch is less precise than a mouse; a higher threshold keeps a deliberate
+      // combat tap from being swallowed as an accidental pan.
+      if (Math.sqrt(dx * dx + dy * dy) > 10) hasDraggedRef.current = true;
       const z = zoomRef.current;
       panOffsetRef.current = {
         x: dragStartPanRef.current.x - dx / z,
@@ -135,8 +140,11 @@ export default function useCanvasControls({
           const worldY = (clickY - ch / 2) / z + cameraLerpRef.current.y + ch / 2;
           const tileX = Math.floor(worldX / TILE_SIZE);
           const tileY = Math.floor(worldY / TILE_SIZE);
-          isRefocusingRef.current = true;
-          socketRef.current.send(JSON.stringify({ type: 'MOVE_TO', x: tileX, y: tileY }));
+          const myPlayer = entitiesRef?.current?.players?.[myPlayerIdRef?.current];
+          const playerTile = myPlayer ? (myPlayer.targetPos || myPlayer.renderPos) : null;
+          const action = resolveTapAction({ tileX, tileY, playerTile });
+          if (action.type === 'MOVE_TO') isRefocusingRef.current = true;
+          socketRef.current.send(JSON.stringify(action));
         }
       }
     };
@@ -158,7 +166,7 @@ export default function useCanvasControls({
       canvas.removeEventListener('touchmove', onTouchMove);
       canvas.removeEventListener('touchend', onTouchEnd);
     };
-  }, [enabled, canvasRef, socketRef, panOffsetRef, zoomRef, cameraLerpRef, isDraggingRef, isRefocusingRef, isPinchingRef, targetingModeRef]);
+  }, [enabled, canvasRef, socketRef, panOffsetRef, zoomRef, cameraLerpRef, isDraggingRef, isRefocusingRef, isPinchingRef, targetingModeRef, entitiesRef, myPlayerIdRef]);
 
   return { hasDraggedRef };
 }
