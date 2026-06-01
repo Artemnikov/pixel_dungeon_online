@@ -17,6 +17,7 @@ from app.engine.entities.base import (
     Bow,
     CharacterClass,
     Difficulty,
+    Effect,
     EntityType,
     Faction,
     HealthPotion,
@@ -333,6 +334,7 @@ class GameInstance:
                         defense=1,
                         attack_cooldown=4.0,
                         faction=Faction.DUNGEON,
+                        exp=2 + floor.floor_id,
                     )
                 elif is_scorpio_floor:
                     floor.mobs[mob_id] = MobEntity(
@@ -345,6 +347,7 @@ class GameInstance:
                         defense=1,
                         attack_cooldown=3.5,
                         faction=Faction.DUNGEON,
+                        exp=2 + floor.floor_id,
                     )
                 else:
                     floor.mobs[mob_id] = MobEntity(
@@ -357,6 +360,7 @@ class GameInstance:
                         defense=0,
                         attack_cooldown=5.0,
                         faction=Faction.DUNGEON,
+                        exp=2 + floor.floor_id,
                     )
 
         num_items = 4 + random.randint(0, 3)
@@ -447,6 +451,7 @@ class GameInstance:
             defense=3 if is_goo else 5 + floor.floor_id,
             attack_cooldown=2.5 if is_goo else 3.0,
             faction=Faction.DUNGEON,
+            exp=10 + floor.floor_id,
         )
 
     def add_player(self, player_id: str, name: str, class_type: str = CharacterClass.WARRIOR, is_admin: bool = False) -> Player:
@@ -741,6 +746,9 @@ class GameInstance:
 
                     if not target_entity.is_alive:
                         self.add_event("DEATH", {"target": target_entity.id}, floor_id=floor_id)
+                        if isinstance(entity, Player) and isinstance(target_entity, MobEntity):
+                            if entity.earn_exp(target_entity.exp):
+                                self.add_event("LEVEL_UP", {"player": entity.id}, floor_id=floor_id)
             return
 
         tile = floor.grid[new_y][new_x]
@@ -877,6 +885,9 @@ class GameInstance:
 
             if not target_entity.is_alive:
                 self.add_event("DEATH", {"target": target_entity.id}, floor_id=floor_id)
+                if isinstance(target_entity, MobEntity):
+                    if player.earn_exp(target_entity.exp):
+                        self.add_event("LEVEL_UP", {"player": player.id}, floor_id=floor_id)
 
         if is_throwable and item.consumable and item in player.inventory:
             player.inventory.remove(item)
@@ -958,6 +969,11 @@ class GameInstance:
             if not player.is_alive and not player.death_processed:
                 self._kill_player(player, self._get_or_create_floor(player.floor_id), player.floor_id)
 
+        # Keep each player's active_effects list in sync with current state so the
+        # client can render the buff indicator (mirrors SPD's BuffIndicator).
+        for player in self.players.values():
+            self._sync_effects(player)
+
         for player in self.players.values():
             if player.is_downed or not player.is_alive:
                 continue
@@ -1023,6 +1039,21 @@ class GameInstance:
                     elif random.random() < 0.05:
                         dx, dy = random.choice([(0, 1), (0, -1), (1, 0), (-1, 0)])
                         self.move_entity(mob.id, dx, dy)
+
+    def _sync_effects(self, player: Player):
+        # Derive the generic active_effects list from current state. Currently the
+        # only active effect is the regen/healing buff (icon 44 = BuffIndicator.HEALING).
+        # `duration` tracks the largest pool seen so the client can show progress.
+        existing = {e.key: e for e in player.active_effects}
+        effects = []
+        if player.heal_left > 0:
+            prev = existing.get("regen")
+            duration = max(prev.duration if prev else 0.0, player.heal_left)
+            effects.append(Effect(
+                key="regen", name="Healing", icon=44,
+                remaining=player.heal_left, duration=duration,
+            ))
+        player.active_effects = effects
 
     def _apply_heal_tick(self, player: Player):
         # Mirrors Healing.act() from the original game: heal a decaying chunk of the

@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional, List, Dict, Tuple, Union
+from typing import ClassVar, Optional, List, Dict, Tuple, Union
 
 class EntityType:
     PLAYER = "player"
@@ -141,12 +141,23 @@ class ThrowableDagger(Throwable):
     consumable: bool = True
     projectile_type: str = "dagger"
 
+class Effect(BaseModel):
+    # A generic active buff/debuff, mirroring SPD's Buff + BuffIndicator. `icon`
+    # is the index into the buffs.png icon sheet (see BuffIndicator constants).
+    key: str
+    name: str
+    icon: int
+    remaining: float = 0.0
+    duration: float = 0.0
+
 class Mob(Entity):
     type: str = EntityType.MOB
     faction: str = Faction.DUNGEON
     ai_state: str = "idle"
     target_id: Optional[str] = None
     difficulty: str = Difficulty.NORMAL
+    # Experience awarded to the killer, mirroring Mob.EXP in the original game.
+    exp: int = 1
 
 class Player(Entity):
     type: str = EntityType.PLAYER
@@ -154,6 +165,7 @@ class Player(Entity):
     class_type: str = CharacterClass.WARRIOR # Default
     experience: int = 0
     level: int = 1
+    active_effects: List[Effect] = []
     floor_id: int = 1
     strength: int = 10
     inventory: List[Union[Weapon, Wearable, Potion, Key, Item]] = []
@@ -239,3 +251,27 @@ class Player(Entity):
                     self.hp = self.get_total_max_hp()
                 return True
         return False
+
+    MAX_LEVEL: ClassVar[int] = 30
+
+    def max_exp(self) -> int:
+        # Mirrors Hero.maxExp(lvl) = 5 + lvl*5 in the original game.
+        return 5 + self.level * 5
+
+    def earn_exp(self, amount: int) -> bool:
+        # Award experience and apply any level-ups. Mirrors Hero.earnExp + updateHT:
+        # each level grants +5 max HP and heals that gain. Returns True if at
+        # least one level-up occurred (used to emit a LEVEL_UP event).
+        if amount <= 0 or self.level >= self.MAX_LEVEL:
+            return False
+        self.experience += amount
+        leveled_up = False
+        while self.experience >= self.max_exp() and self.level < self.MAX_LEVEL:
+            self.experience -= self.max_exp()
+            self.level += 1
+            self.max_hp += 5
+            self.hp += 5
+            leveled_up = True
+        if self.level >= self.MAX_LEVEL:
+            self.experience = 0
+        return leveled_up

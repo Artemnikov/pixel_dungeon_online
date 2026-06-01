@@ -146,91 +146,27 @@
 /* Top Left HUD */
 .top-left-hud {
   position: absolute;
-  top: 20px;
-  left: 20px;
+  top: 12px;
+  left: 12px;
   display: flex;
-  gap: 10px;
+  flex-direction: column;
+  gap: 6px;
   z-index: 100;
 }
 
-.player-status-card {
+.status-pane-canvas {
+  image-rendering: pixelated;
+  display: block;
+}
+
+.status-pane-footer {
   display: flex;
   align-items: center;
-  gap: 10px;
-  background: rgba(0, 0, 0, 0.7);
-  padding: 10px;
-  border-radius: 8px;
-  border: 2px solid #555;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);
+  gap: 8px;
+  padding-left: 4px;
 }
 
-.player-portrait {
-  width: 50px;
-  height: 50px;
-  background: #333;
-  border: 2px solid #777;
-  border-radius: 4px;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  overflow: hidden;
-}
-
-.portrait-inner {
-  font-size: 30px;
-}
-
-.player-details {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.player-name {
-  color: #fff;
-  font-weight: bold;
-  font-size: 16px;
-  text-shadow: 1px 1px 0 #000;
-}
-
-.health-bar-container-large {
-  width: 200px;
-  height: 20px;
-  background: #222;
-  border: 2px solid #444;
-  position: relative;
-  border-radius: 4px;
-}
-
-.health-bar-fill-large {
-  height: 100%;
-  background: linear-gradient(90deg, #c0392b, #e74c3c);
-  transition: width 0.3s ease-out;
-}
-
-.health-bar-fill-large.downed {
-  background: #7f8c8d;
-}
-
-.health-bar-fill-large.regen {
-  background: #f1c40f;
-  box-shadow: 0 0 10px #f1c40f;
-}
-
-.health-text-large {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  font-size: 12px;
-  font-weight: bold;
-  color: white;
-  text-shadow: 1px 1px 2px black;
-  width: 100%;
-  text-align: center;
-}
-
-.player-floor-label {
+.status-floor-label {
   color: #d8d8d8;
   font-size: 12px;
   font-weight: bold;

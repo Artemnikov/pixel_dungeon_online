@@ -14,7 +14,7 @@ import useKeyboardControls from './input/useKeyboardControls';
 import useCanvasControls from './input/useCanvasControls';
 import useDebugApi from './dev/useDebugApi';
 
-import HUD from './ui/HUD';
+import StatusPane from './ui/StatusPane';
 import Toolbar from './ui/Toolbar';
 import InventoryModal from './ui/InventoryModal';
 import MessageLog from './ui/MessageLog';
@@ -267,7 +267,7 @@ function App() {
     <div className="game-container">
       <LoadingOverlay visible={grid.length === 0} />
 
-      <HUD myStats={myStats} depth={depth} onSearch={triggerSearch} />
+      <StatusPane myStats={myStats} depth={depth} onSearch={triggerSearch} />
 
       <div className="canvas-wrapper">
         <canvas

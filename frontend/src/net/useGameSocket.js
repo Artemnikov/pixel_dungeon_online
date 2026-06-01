@@ -111,6 +111,12 @@ export default function useGameSocket({
             name: p.name,
             isDowned: p.is_downed,
             isRegen: (p.heal_left || 0) > 0,
+            exp: p.experience || 0,
+            level: p.level || 1,
+            maxExp: 5 + (p.level || 1) * 5,
+            effects: p.active_effects || [],
+            classType: p.class_type || 'warrior',
+            armorTier: 0,
           });
         }
 
