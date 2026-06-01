@@ -7,6 +7,7 @@ import { drawItems } from './draw/items';
 import { drawMobs } from './draw/mobs';
 import { drawPlayers } from './draw/players';
 import { advanceAndDrawProjectiles } from './draw/projectiles';
+import { advanceAndDrawParticles } from './draw/particles';
 
 export default function useGameRenderer({
   canvasRef,
@@ -20,6 +21,8 @@ export default function useGameRenderer({
   projectilesRef,
   mobAnimRef,
   dyingMobsRef,
+  playerAnimRef,
+  particlesRef,
   myPlayerIdRef,
   panOffsetRef,
   cameraLerpRef,
@@ -114,8 +117,9 @@ export default function useGameRenderer({
       drawGrid(ctx, { grid, depth, assetImages, visionRef, openDoorsRef });
       drawItems(ctx, { entitiesRef, visionRef, assetImages });
       drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef, dyingMobsRef });
-      drawPlayers(ctx, { entitiesRef, visionRef, assetImages, myPlayerId });
+      drawPlayers(ctx, { entitiesRef, visionRef, assetImages, playerAnimRef, myPlayerId });
       drawGridCaps(ctx, { grid, depth, assetImages, visionRef });
+      advanceAndDrawParticles(ctx, { particlesRef });
       advanceAndDrawProjectiles(ctx, { projectilesRef });
 
       ctx.restore();

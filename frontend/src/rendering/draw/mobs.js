@@ -34,9 +34,11 @@ export function drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef,
     }
 
     const isScorpio = mob.name === 'Scorpio';
+    const flash = !!(mobAnimRef.current[mob.id]?.flashUntil && now < mobAnimRef.current[mob.id].flashUntil);
     drawMobSprite(ctx, mob, mobSprite, sx,
       isScorpio ? SCORPIO_FW : FRAME_W,
-      isScorpio ? SCORPIO_FW : FRAME_W);
+      isScorpio ? SCORPIO_FW : FRAME_W,
+      flash);
 
     const x = mob.renderPos.x * TILE_SIZE;
     const y = mob.renderPos.y * TILE_SIZE;
