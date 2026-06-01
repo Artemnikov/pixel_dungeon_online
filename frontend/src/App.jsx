@@ -61,6 +61,8 @@ function App() {
   const wasDownedRef = useRef(false);
   const mobAnimRef = useRef({});
   const dyingMobsRef = useRef({});
+  const playerAnimRef = useRef({});
+  const particlesRef = useRef([]);
   const depthRef = useRef(1);
 
   useEffect(() => { targetingModeRef.current = targetingMode; }, [targetingMode]);
@@ -81,7 +83,7 @@ function App() {
     gameId, selectedClass, difficulty, playerName,
     socketRef, gridRef, myPlayerIdRef, entitiesRef,
     visionRef, openDoorsRef, projectilesRef,
-    mobAnimRef, dyingMobsRef, wasDownedRef,
+    mobAnimRef, dyingMobsRef, playerAnimRef, particlesRef, wasDownedRef,
     setGrid, setDepth, setMyPlayerId, setInventory,
     setEquippedItems, setMyStats, setMessages, setDifficulty,
   });
@@ -97,7 +99,7 @@ function App() {
   useGameRenderer({
     canvasRef, grid, myPlayerId, depth, assetImages,
     entitiesRef, visionRef, openDoorsRef, projectilesRef,
-    mobAnimRef, dyingMobsRef, myPlayerIdRef,
+    mobAnimRef, dyingMobsRef, playerAnimRef, particlesRef, myPlayerIdRef,
     panOffsetRef, cameraLerpRef, zoomRef,
     isRefocusingRef, isDraggingRef,
     setCamera,

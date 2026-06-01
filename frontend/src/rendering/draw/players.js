@@ -1,6 +1,7 @@
-import { TILE_SIZE, TILE_SCALE } from '../../constants';
+import { TILE_SIZE, TILE_SCALE, PLAYER_ATTACK_DURATION } from '../../constants';
+import { drawWhiteSilhouette } from './flash';
 
-export function drawPlayers(ctx, { entitiesRef, visionRef, assetImages, myPlayerId }) {
+export function drawPlayers(ctx, { entitiesRef, visionRef, assetImages, playerAnimRef, myPlayerId }) {
   Object.values(entitiesRef.current.players).forEach(player => {
     const isPlayerVisible = visionRef.current.visible.has(`${Math.round(player.renderPos.x)},${Math.round(player.renderPos.y)}`) || player.id === myPlayerId;
     if (!isPlayerVisible) return;
@@ -16,17 +17,30 @@ export function drawPlayers(ctx, { entitiesRef, visionRef, assetImages, myPlayer
     if (playerSprite) {
       ctx.save();
 
-      const RUN_FRAMES  = [2, 3, 4, 5, 6, 7];
-      const IDLE_FRAMES = [0, 0, 0, 1, 0, 0, 1, 1];
+      const RUN_FRAMES    = [2, 3, 4, 5, 6, 7];
+      const IDLE_FRAMES   = [0, 0, 0, 1, 0, 0, 1, 1];
+      const ATTACK_FRAMES = [13, 14, 15, 0]; // ~15fps swing (frames 13,14,15,idle)
 
-      const isMoving = player.targetPos && (
+      const now = performance.now();
+      const anim = (playerAnimRef && playerAnimRef.current[player.id]) || {};
+      const isAttacking = anim.attackUntil && now < anim.attackUntil;
+      const isFlashing = anim.flashUntil && now < anim.flashUntil;
+
+      const isMoving = !isAttacking && player.targetPos && (
         Math.abs(player.targetPos.x - player.renderPos.x) > 0.05 ||
         Math.abs(player.targetPos.y - player.renderPos.y) > 0.05
       );
 
-      const frameIndex = isMoving
-        ? RUN_FRAMES[Math.floor(performance.now() / 50) % RUN_FRAMES.length]
-        : IDLE_FRAMES[Math.floor(performance.now() / 1000) % IDLE_FRAMES.length];
+      let frameIndex;
+      if (isAttacking) {
+        const elapsed = now - (anim.attackUntil - PLAYER_ATTACK_DURATION);
+        const fi = Math.min(Math.floor(elapsed / (PLAYER_ATTACK_DURATION / ATTACK_FRAMES.length)), ATTACK_FRAMES.length - 1);
+        frameIndex = ATTACK_FRAMES[fi];
+      } else if (isMoving) {
+        frameIndex = RUN_FRAMES[Math.floor(now / 50) % RUN_FRAMES.length];
+      } else {
+        frameIndex = IDLE_FRAMES[Math.floor(now / 1000) % IDLE_FRAMES.length];
+      }
 
       const sx = frameIndex * 12;
       const sWidth = 12;
@@ -38,8 +52,10 @@ export function drawPlayers(ctx, { entitiesRef, visionRef, assetImages, myPlayer
         ctx.translate(x + TILE_SIZE - xOffset, y);
         ctx.scale(-1, 1);
         ctx.drawImage(playerSprite, sx, 0, sWidth, FRAME_H, 0, 0, dWidth, TILE_SIZE);
+        if (isFlashing) drawWhiteSilhouette(ctx, playerSprite, sx, 0, sWidth, FRAME_H, 0, 0, dWidth, TILE_SIZE);
       } else {
         ctx.drawImage(playerSprite, sx, 0, sWidth, FRAME_H, x + xOffset, y, dWidth, TILE_SIZE);
+        if (isFlashing) drawWhiteSilhouette(ctx, playerSprite, sx, 0, sWidth, FRAME_H, x + xOffset, y, dWidth, TILE_SIZE);
       }
       ctx.restore();
     }

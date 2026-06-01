@@ -1,7 +1,11 @@
 import { useEffect } from 'react';
-import { TILE_SIZE } from '../constants';
+import { TILE_SIZE, PLAYER_ATTACK_DURATION, HIT_CONNECT_DELAY, FLASH_DURATION } from '../constants';
 import { getWsBaseUrl } from '../config/urls';
 import AudioManager from '../audio/AudioManager';
+import { spawnBlood } from '../rendering/draw/particles';
+
+// Blood color per mob (default red; Goo bleeds green like its acidic body).
+const BLOOD_COLORS = { Goo: '#8eb300' };
 
 export default function useGameSocket({
   enabled,
@@ -18,6 +22,8 @@ export default function useGameSocket({
   projectilesRef,
   mobAnimRef,
   dyingMobsRef,
+  playerAnimRef,
+  particlesRef,
   wasDownedRef,
   setGrid,
   setDepth,
@@ -219,7 +225,7 @@ export default function useGameSocket({
         data.events.forEach(event => {
           handleEvent(event, {
             myPlayerIdRef, gridRef, setGrid, entitiesRef,
-            projectilesRef, mobAnimRef, dyingMobsRef,
+            projectilesRef, mobAnimRef, dyingMobsRef, playerAnimRef, particlesRef,
           });
         });
       }
@@ -236,7 +242,7 @@ export default function useGameSocket({
 
 function handleEvent(event, {
   myPlayerIdRef, gridRef, setGrid, entitiesRef,
-  projectilesRef, mobAnimRef, dyingMobsRef,
+  projectilesRef, mobAnimRef, dyingMobsRef, playerAnimRef, particlesRef,
 }) {
   if (event.type === 'PLAY_SOUND') {
     AudioManager.play(event.data.sound);
@@ -321,11 +327,62 @@ function handleEvent(event, {
 
   if (event.type === 'ATTACK') {
     const src = event.data.source;
-    if (entitiesRef.current.mobs[src]) {
+    const tgt = event.data.target;
+    const damage = event.data.damage || 0;
+    const now = performance.now();
+
+    const srcMob = entitiesRef.current.mobs[src];
+    const srcPlayer = entitiesRef.current.players[src];
+    const srcEntity = srcMob || srcPlayer;
+    const tgtEntity = entitiesRef.current.mobs[tgt] || entitiesRef.current.players[tgt];
+
+    // 1) Play the attacker's swing.
+    if (srcMob) {
       if (!mobAnimRef.current[src]) mobAnimRef.current[src] = {};
-      const mobName = entitiesRef.current.mobs[src]?.name;
-      const attackDuration = mobName === 'Goo' ? 300 : mobName === 'Scorpio' ? 200 : mobName === 'Rat' ? 333 : 250;
-      mobAnimRef.current[src].attackUntil = performance.now() + attackDuration;
+      const attackDuration = srcMob.name === 'Goo' ? 300 : srcMob.name === 'Scorpio' ? 200 : srcMob.name === 'Rat' ? 333 : 250;
+      mobAnimRef.current[src].attackUntil = now + attackDuration;
+    } else if (srcPlayer && playerAnimRef) {
+      if (!playerAnimRef.current[src]) playerAnimRef.current[src] = {};
+      playerAnimRef.current[src].attackUntil = now + PLAYER_ATTACK_DURATION;
+    }
+
+    // 2) Turn the attacker to face the target (mirrors CharSprite.turnTo).
+    if (srcEntity && tgtEntity) {
+      const dx = tgtEntity.renderPos.x - srcEntity.renderPos.x;
+      if (dx > 0) { srcEntity.facing = 'RIGHT'; srcEntity.flipX = false; }
+      else if (dx < 0) { srcEntity.facing = 'LEFT'; srcEntity.flipX = true; }
+    }
+
+    // 3) Hit reaction (flash + blood) when the swing connects.
+    if (damage > 0 && tgtEntity) {
+      const sc = srcEntity ? {
+        x: srcEntity.renderPos.x * TILE_SIZE + TILE_SIZE / 2,
+        y: srcEntity.renderPos.y * TILE_SIZE + TILE_SIZE / 2,
+      } : null;
+      const tc = {
+        x: tgtEntity.renderPos.x * TILE_SIZE + TILE_SIZE / 2,
+        y: tgtEntity.renderPos.y * TILE_SIZE + TILE_SIZE / 2,
+      };
+      const isMobTarget = !!entitiesRef.current.mobs[tgt];
+      const maxHp = tgtEntity.max_hp || 1;
+      const color = BLOOD_COLORS[tgtEntity.name] || '#bb0000';
+
+      setTimeout(() => {
+        const flashUntil = performance.now() + FLASH_DURATION;
+        if (isMobTarget) {
+          if (!mobAnimRef.current[tgt]) mobAnimRef.current[tgt] = {};
+          mobAnimRef.current[tgt].flashUntil = flashUntil;
+          // Blood only on mobs (heroes suppress blood, like HeroSprite.bloodBurstA).
+          if (particlesRef) {
+            const awayAngle = sc ? Math.atan2(tc.y - sc.y, tc.x - sc.x) : -Math.PI / 2;
+            const count = Math.min(Math.round(9 * Math.sqrt(damage / maxHp)), 9);
+            spawnBlood(particlesRef, tc.x, tc.y, awayAngle, count, color);
+          }
+        } else if (playerAnimRef) {
+          if (!playerAnimRef.current[tgt]) playerAnimRef.current[tgt] = {};
+          playerAnimRef.current[tgt].flashUntil = flashUntil;
+        }
+      }, HIT_CONNECT_DELAY);
     }
     return;
   }

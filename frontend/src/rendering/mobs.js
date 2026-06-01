@@ -1,4 +1,5 @@
 import { TILE_SIZE, TILE_SCALE } from '../constants';
+import { drawWhiteSilhouette } from './draw/flash';
 
 export const FRAME_W = TILE_SIZE / TILE_SCALE;
 export const FRAME_H = TILE_SIZE / TILE_SCALE;
@@ -61,7 +62,7 @@ export const getRatFrame = (mob, mobAnim, now) => {
   return [0, 0, 0, 1][Math.floor(now / 500) % 4] * FRAME_W;
 };
 
-export const drawMobSprite = (ctx, mob, sprite, sx, fw = FRAME_W, fh = FRAME_H) => {
+export const drawMobSprite = (ctx, mob, sprite, sx, fw = FRAME_W, fh = FRAME_H, flash = false) => {
   const x = mob.renderPos.x * TILE_SIZE;
   const y = mob.renderPos.y * TILE_SIZE;
   if (sprite) {
@@ -70,8 +71,10 @@ export const drawMobSprite = (ctx, mob, sprite, sx, fw = FRAME_W, fh = FRAME_H) 
       ctx.translate(x + TILE_SIZE, y);
       ctx.scale(-1, 1);
       ctx.drawImage(sprite, sx, 0, fw, fh, 0, 0, TILE_SIZE, TILE_SIZE);
+      if (flash) drawWhiteSilhouette(ctx, sprite, sx, 0, fw, fh, 0, 0, TILE_SIZE, TILE_SIZE);
     } else {
       ctx.drawImage(sprite, sx, 0, fw, fh, x, y, TILE_SIZE, TILE_SIZE);
+      if (flash) drawWhiteSilhouette(ctx, sprite, sx, 0, fw, fh, x, y, TILE_SIZE, TILE_SIZE);
     }
     ctx.restore();
   } else {
