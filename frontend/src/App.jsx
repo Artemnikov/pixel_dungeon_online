@@ -60,6 +60,9 @@ function App() {
   const entitiesRef = useRef({ players: {}, mobs: {} });
   const myPlayerIdRef = useRef(null);
   const targetingModeRef = useRef(false);
+  // Latest targeting-tap resolver, shared with the touch handler (canvas has
+  // touch-action:none, so taps don't fire onClick — see resolveTargetingTap).
+  const onTargetTapRef = useRef(null);
   const projectilesRef = useRef([]);
   const visionRef = useRef({ visible: new Set(), discovered: new Set() });
   const openDoorsRef = useRef(new Set());
@@ -144,7 +147,7 @@ function App() {
     canvasRef, socketRef,
     panOffsetRef, zoomRef, cameraLerpRef,
     isDraggingRef, isRefocusingRef, isPinchingRef,
-    targetingModeRef,
+    targetingModeRef, onTargetTapRef,
     entitiesRef, myPlayerIdRef,
   });
 
@@ -175,6 +178,24 @@ function App() {
       socketRef.current.send(JSON.stringify(msg));
     }
   };
+  // Resolve a targeting-mode tap (THROW/ZAP aim, or a kept-armed ranged weapon)
+  // against the tapped cell. Shared by the mouse onClick path and the touch path.
+  const resolveTargetingTap = (tileX, tileY) => {
+    const tm = targetingModeRef.current;
+    // New SPD-style path: an item action awaiting a target cell.
+    if (tm && typeof tm === 'object' && tm.action) {
+      send({ type: 'EXECUTE_ITEM_ACTION', item_id: tm.itemId, action: tm.action, target_x: tileX, target_y: tileY });
+      return;
+    }
+    // Legacy path: equipped ranged weapon kept armed for repeat fire.
+    const weaponId = typeof tm === 'string' ? tm : equippedItems.weapon?.id;
+    if (weaponId) {
+      send({ type: 'RANGED_ATTACK', item_id: weaponId, target_x: tileX, target_y: tileY });
+      setTargetingMode(true);
+    }
+  };
+  useEffect(() => { onTargetTapRef.current = resolveTargetingTap; });
+
   const executeItemAction = (itemId, action, tx, ty) => {
     if (TARGETED_ACTIONS.includes(action) && tx === undefined) {
       // Needs a target cell: enter targeting, resolve on the next canvas click.
@@ -243,29 +264,7 @@ function App() {
     const tileY = Math.floor(worldY / TILE_SIZE);
 
     if (targetingModeRef.current) {
-      const tm = targetingModeRef.current;
-      // New SPD-style path: an item action awaiting a target cell.
-      if (tm && typeof tm === 'object' && tm.action) {
-        send({
-          type: 'EXECUTE_ITEM_ACTION',
-          item_id: tm.itemId,
-          action: tm.action,
-          target_x: tileX,
-          target_y: tileY,
-        });
-        return;
-      }
-      // Legacy path: equipped ranged weapon kept armed for repeat fire.
-      const weaponId = typeof tm === 'string' ? tm : equippedItems.weapon?.id;
-      if (weaponId) {
-        socketRef.current.send(JSON.stringify({
-          type: 'RANGED_ATTACK',
-          item_id: weaponId,
-          target_x: tileX,
-          target_y: tileY,
-        }));
-        setTargetingMode(true);
-      }
+      resolveTargetingTap(tileX, tileY);
       return;
     }
 
@@ -334,12 +333,14 @@ function App() {
     });
 
     if (nearestMob) {
-      socketRef.current.send(JSON.stringify({
-        type: 'RANGED_ATTACK',
-        item_id: item.id,
-        target_x: Math.round(nearestMob.renderPos.x),
-        target_y: Math.round(nearestMob.renderPos.y),
-      }));
+      const tx = Math.round(nearestMob.renderPos.x);
+      const ty = Math.round(nearestMob.renderPos.y);
+      // Throwables fire via the generic THROW action; equipped ranged weapons use RANGED_ATTACK.
+      if (isThrowable) {
+        send({ type: 'EXECUTE_ITEM_ACTION', item_id: item.id, action: 'THROW', target_x: tx, target_y: ty });
+      } else {
+        send({ type: 'RANGED_ATTACK', item_id: item.id, target_x: tx, target_y: ty });
+      }
     }
   };
 
