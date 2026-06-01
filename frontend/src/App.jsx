@@ -33,7 +33,7 @@ function App() {
   const [grid, setGrid] = useState([]);
   const [messages, setMessages] = useState([]);
   const [myPlayerId, setMyPlayerId] = useState(null);
-  const [viewport] = useState({ width: 800, height: 600 });
+  const [viewport, setViewport] = useState({ width: window.innerWidth, height: window.innerHeight });
   const [showInventory, setShowInventory] = useState(false);
   const [inventory, setInventory] = useState([]);
   const [equippedItems, setEquippedItems] = useState({ weapon: null, wearable: null });
@@ -69,6 +69,37 @@ function App() {
 
   useEffect(() => { targetingModeRef.current = targetingMode; }, [targetingMode]);
   useEffect(() => { depthRef.current = depth; }, [depth]);
+
+  const wrapperRef = useRef(null);
+
+  useEffect(() => {
+    const wrapper = wrapperRef.current;
+    if (!wrapper) return;
+    const observer = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const { width, height } = entry.contentRect;
+        setViewport({ width: Math.round(width), height: Math.round(height) });
+      }
+    });
+    observer.observe(wrapper);
+    return () => observer.disconnect();
+  }, []);
+
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(() => {});
+    } else {
+      document.exitFullscreen().catch(() => {});
+    }
+  };
+
+  useEffect(() => {
+    const handler = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener('fullscreenchange', handler);
+    return () => document.removeEventListener('fullscreenchange', handler);
+  }, []);
 
   useDebugApi({
     gridRef, entitiesRef, visionRef, openDoorsRef,
@@ -269,7 +300,7 @@ function App() {
 
       <StatusPane myStats={myStats} depth={depth} onSearch={triggerSearch} />
 
-      <div className="canvas-wrapper">
+      <div className="canvas-wrapper" ref={wrapperRef}>
         <canvas
           ref={canvasRef}
           width={viewport.width}
@@ -299,6 +330,16 @@ function App() {
         />
         <MessageLog messages={messages} />
       </div>
+
+      <button className="fullscreen-btn" onClick={toggleFullscreen} title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}>
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          {isFullscreen ? (
+            <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3" />
+          ) : (
+            <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
+          )}
+        </svg>
+      </button>
 
       {!!myStats.isDowned && (
         <GameOverScreen
