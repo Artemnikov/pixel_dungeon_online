@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import AudioManager from '../audio/AudioManager';
 import ItemIcon from './ItemIcon';
+import ItemGlyph from './ItemGlyph';
 import { HOLDER_SPRITES } from '../rendering/sprites';
 
 // SPD-style persistent inventory pane (port of InventoryPane.java). Shows the
@@ -44,8 +45,9 @@ function strBadge(item, strength) {
   if (item.type !== 'weapon' && item.type !== 'wearable') return null;
   const req = item.strength_requirement;
   if (req == null) return null;
-  // Unidentified gear shows its STR req in warning orange (SPD ItemSlot).
-  if (!item.level_known) return { text: `:${req}`, cls: 'str-warn' };
+  // SPD ItemSlot: unidentified gear shows the typical STR as "N?" in warning
+  // orange; identified gear shows ":N", red when the hero lacks the strength.
+  if (!item.level_known) return { text: `${req}?`, cls: 'str-warn' };
   return { text: `:${req}`, cls: strength != null && strength < req ? 'str-bad' : 'str-ok' };
 }
 
@@ -93,6 +95,7 @@ function ItemSlot({ item, holderKey, equipped, strength, empty, onOpen, onContex
       onPointerLeave={() => { clearTimeout(timerRef.current); }}
     >
       <ItemIcon item={item} size={32} />
+      <ItemGlyph item={item} />
       {item.quantity > 1 && <span className="inv-qty">{item.quantity}</span>}
       {badge && <span className={`inv-str ${badge.cls}`}>{badge.text}</span>}
       {levelText(item) && (

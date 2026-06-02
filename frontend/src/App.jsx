@@ -185,16 +185,21 @@ function App() {
   // against the tapped cell. Shared by the mouse onClick path and the touch path.
   const resolveTargetingTap = (tileX, tileY) => {
     const tm = targetingModeRef.current;
+    console.log('resolveTargetingTap', { tm, tileX, tileY });
     // New SPD-style path: an item action awaiting a target cell.
     if (tm && typeof tm === 'object' && tm.action) {
+      console.log('Sending EXECUTE_ITEM_ACTION', { item_id: tm.itemId, action: tm.action, target_x: tileX, target_y: tileY });
       send({ type: 'EXECUTE_ITEM_ACTION', item_id: tm.itemId, action: tm.action, target_x: tileX, target_y: tileY });
+      setTargetingMode(false);
       return;
     }
     // Legacy path: equipped ranged weapon kept armed for repeat fire.
     const weaponId = typeof tm === 'string' ? tm : equippedItems.weapon?.id;
     if (weaponId) {
       send({ type: 'RANGED_ATTACK', item_id: weaponId, target_x: tileX, target_y: tileY });
-      setTargetingMode(true);
+      // Keep armed for repeat fire only when already in "always armed" mode (tm===true),
+      // not when a single action was selected from toolbar (tm is a string item ID).
+      setTargetingMode(typeof tm === 'string' ? false : true);
     }
   };
   useEffect(() => { onTargetTapRef.current = resolveTargetingTap; });

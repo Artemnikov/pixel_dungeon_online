@@ -546,6 +546,14 @@ class GameInstance:
                 attack_cooldown=3.5,
             )
 
+        # SPD identifies a hero's starting gear (HeroClass.java's .identify()), so
+        # its STR requirement renders in white (":N") instead of the orange,
+        # unidentified "N?" form, and the slot carries no unknown-item tint.
+        for slot in belongings.equipped_slots():
+            if slot is not None:
+                slot.level_known = True
+                slot.cursed_known = True
+
         player = Player(
             id=player_id,
             name=name,
@@ -819,25 +827,32 @@ class GameInstance:
 
     def perform_ranged_attack(self, player_id: str, item_id: str, target_x: int, target_y: int) -> Optional[int]:
         player = self.players.get(player_id)
+        print(f"[perform_ranged_attack] player={player_id}, item={item_id}, target=({target_x},{target_y})")
         if not player or player.is_downed:
+            print(f"[perform_ranged_attack] BAIL: player invalid")
             return None
 
         floor_id = player.floor_id
         floor = self._get_or_create_floor(floor_id)
 
         item = player.belongings.get_item(item_id)
+        print(f"[perform_ranged_attack] item lookup: {item}")
 
         if not item:
+            print(f"[perform_ranged_attack] BAIL: item not found")
             return None
 
         is_throwable = isinstance(item, Throwable)
         is_weapon = isinstance(item, Weapon)
         is_wand = isinstance(item, Wand)
+        print(f"[perform_ranged_attack] is_throwable={is_throwable} is_weapon={is_weapon} is_wand={is_wand}")
 
         if not (is_throwable or is_wand or (is_weapon and getattr(item, "projectile_type", None))):
+            print(f"[perform_ranged_attack] BAIL: not a ranged weapon")
             return None
 
         if is_wand and item.charges <= 0:
+            print(f"[perform_ranged_attack] BAIL: wand out of charges")
             return None
 
         current_time = time.time()
@@ -846,14 +861,18 @@ class GameInstance:
             cooldown = item.attack_cooldown
 
         if (current_time - player.last_attack_time) < cooldown:
+            print(f"[perform_ranged_attack] BAIL: cooldown ({current_time - player.last_attack_time} < {cooldown})")
             return None
 
         dist = abs(player.pos.x - target_x) + abs(player.pos.y - target_y)
         max_range = item.range if hasattr(item, "range") else 1
+        print(f"[perform_ranged_attack] dist={dist}, max_range={max_range}")
         if dist > max_range:
+            print(f"[perform_ranged_attack] BAIL: out of range")
             return None
 
         if not self._is_in_los(player.pos, Position(x=target_x, y=target_y), floor_id=floor_id):
+            print(f"[perform_ranged_attack] BAIL: not in LOS")
             return None
 
         player.last_attack_time = current_time
@@ -956,14 +975,20 @@ class GameInstance:
     def execute_item_action(self, player_id: str, item_id: str, action: str,
                             target_x: Optional[int] = None, target_y: Optional[int] = None):
         player = self.players.get(player_id)
+        print(f"[execute_item_action] player={player_id}, item={item_id}, action={action}, tx={target_x}, ty={target_y}")
         if not player or not player.is_alive or player.is_downed:
+            print(f"[execute_item_action] BAIL: player invalid (alive={player.is_alive if player else 'N/A'}, downed={player.is_downed if player else 'N/A'})")
             return
         item = player.belongings.get_item(item_id)
         if item is None:
+            print(f"[execute_item_action] BAIL: item not found (id={item_id})")
             return
+        print(f"[execute_item_action] found item: {item.name} ({type(item).__name__}), actions={item.actions(player)}")
         if action not in item.actions(player):
-            return  # server-authoritative: reject actions the item doesn't offer
+            print(f"[execute_item_action] BAIL: action {action} not in item actions {item.actions(player)}")
+            return
         handler = item_actions.ITEM_ACTION_DISPATCH.get(action)
+        print(f"[execute_item_action] dispatching to handler={handler}")
         if handler is not None:
             handler(self, player, item, target_x, target_y)
 

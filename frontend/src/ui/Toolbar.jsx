@@ -3,6 +3,7 @@ import AudioManager from '../audio/AudioManager';
 import itemsSpriteSrc from '../assets/pixel-dungeon/sprites/items.png';
 import toolbarSpriteSrc from '../assets/pixel-dungeon/interfaces/toolbar.png';
 import { coordsForItem } from '../rendering/sprites';
+import { itemRects } from '../rendering/spriteRects';
 
 const S = 3;
 
@@ -137,14 +138,20 @@ export default function Toolbar({
         if (!item || !ii.complete) return;
         const coords = coordsForItem(item);
         if (!coords) return;
-        const is = 16 * S;
+        // Crop to the art's measured rect (top-left anchored in its cell, like
+        // SPD) and centre that, so sprites aren't skewed toward the top-left.
+        const rect = itemRects.get(coords[0], coords[1]);
+        const rx = rect ? rect.rx : 0;
+        const ry = rect ? rect.ry : 0;
+        const sw = rect ? rect.w : 16;
+        const sh = rect ? rect.h : 16;
         const padL = borderL * S;
         const padR = borderR * S;
         const availW = slotW - padL - padR;
         const availH = slotH;
-        const ix = dx + padL + (availW - is) / 2;
-        const iy = dy + (availH - is) / 2;
-        ctx.drawImage(ii, coords[0] * 16, coords[1] * 16, 16, 16, ix, iy, is, is);
+        const ix = dx + padL + (availW - sw * S) / 2;
+        const iy = dy + (availH - sh * S) / 2;
+        ctx.drawImage(ii, coords[0] * 16 + rx, coords[1] * 16 + ry, sw, sh, ix, iy, sw * S, sh * S);
       }
 
       const sc = S;

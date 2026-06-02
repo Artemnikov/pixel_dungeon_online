@@ -110,6 +110,28 @@ export const coordsForItem = (item) => {
   return getItemSpriteCoords(item.name, item.type);
 };
 
+// Type-glyph overlay sprites — the small 8x8 icons SPD draws on an *identified*
+// ring/scroll/potion/wand slot (ItemSpriteSheet.Icons). [col, row] in the 16x8
+// grid of item_icons.png. Sections: RINGS row 0, SCROLLS row 2, POTIONS row 5.
+// Matched by name substring like ITEM_SPRITES. The remake's consumable taxonomy
+// is currently thin, so only the items that have a concrete identity map here;
+// add entries as more real subtypes land.
+export const ITEM_GLYPHS = {
+  "Health Potion": [1, 5],  // POTION_HEALING
+};
+
+// Glyph cell for an item, or null when it has no type-glyph or isn't identified.
+// SPD only shows the glyph once the item's type is known; the backend masks the
+// real name of unidentified potions/scrolls, so a name match here implies known.
+export const getItemGlyphCoords = (item) => {
+  if (!item || !item.name) return null;
+  if (!item.level_known) return null;
+  for (const key in ITEM_GLYPHS) {
+    if (item.name.includes(key)) return ITEM_GLYPHS[key];
+  }
+  return null;
+};
+
 export const fallbackTileMap = {
   1: { x: 0, y: 3 }, // Wall
   2: { x: 0, y: 0 }, // Floor
