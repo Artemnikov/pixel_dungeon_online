@@ -798,6 +798,12 @@ class Mob(Entity):
     # than landing several hits between player swings. Faster movers (e.g. Crab,
     # speed=2.0) still chase quicker but attack at this normal rate.
     attack_cooldown: float = 3.0
+    # Delay before a mob's FIRST strike after reaching its target, so the player
+    # gets a beat to react on contact rather than being hit instantly. `engaged`
+    # is runtime state tracking whether the mob is currently in attack range (used
+    # to arm the windup once per engagement); see GameInstance.update_tick.
+    aggro_windup: float = 1.0
+    engaged: bool = False
 
 class Player(Entity):
     type: str = EntityType.PLAYER

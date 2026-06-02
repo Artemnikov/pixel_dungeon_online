@@ -1158,6 +1158,23 @@ class GameInstance:
                         self.move_entity(mob.id, dx, dy)
                     continue
 
+                # First-strike windup: the moment a mob first reaches its target it
+                # must wait `aggro_windup` seconds before swinging, giving the player
+                # a beat to react instead of being hit on contact. We arm it by back-
+                # dating last_attack_time so the existing cooldown gate in
+                # move_entity blocks the strike for exactly the windup, then resumes
+                # the normal attack_cooldown cadence. Re-arms each time the mob loses
+                # and regains attack range.
+                in_attack_range = target_player is not None and dist <= atk_range
+                if in_attack_range:
+                    if not mob.engaged:
+                        mob.engaged = True
+                        mob.last_attack_time = time.time() - max(
+                            0.0, mob.attack_cooldown - mob.aggro_windup
+                        )
+                else:
+                    mob.engaged = False
+
                 if self.difficulty == Difficulty.EASY:
                     if target_player and dist <= atk_range:
                         dx, dy = target_player.pos.x - mob.pos.x, target_player.pos.y - mob.pos.y
