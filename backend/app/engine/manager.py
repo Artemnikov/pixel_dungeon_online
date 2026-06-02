@@ -702,16 +702,15 @@ class GameInstance:
         if not (0 <= new_x < self.width and 0 <= new_y < self.height):
             return
 
-        attack_range = getattr(entity, "attack_range", 1)
         target_entity = None
         for p in self._players_on_floor(floor_id):
-            if p.id != entity_id and abs(p.pos.x - entity.pos.x) <= attack_range and abs(p.pos.y - entity.pos.y) <= attack_range:
+            if p.id != entity_id and p.pos.x == new_x and p.pos.y == new_y:
                 target_entity = p
                 break
 
         if not target_entity:
             for m in floor.mobs.values():
-                if m.id != entity_id and m.is_alive and abs(m.pos.x - entity.pos.x) <= attack_range and abs(m.pos.y - entity.pos.y) <= attack_range:
+                if m.id != entity_id and m.is_alive and m.pos.x == new_x and m.pos.y == new_y:
                     target_entity = m
                     break
 
