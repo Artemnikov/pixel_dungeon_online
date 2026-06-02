@@ -221,15 +221,6 @@ function App() {
     if (idx < 0) idx = 0;
     send({ type: 'SET_QUICKSLOT', index: idx, item_id: itemId });
   };
-  const useQuickslotSlot = (index, item) => {
-    const action = item?.default_action;
-    if (action && TARGETED_ACTIONS.includes(action)) {
-      setTargetingMode({ itemId: item.id, action });
-      return;
-    }
-    send({ type: 'USE_QUICKSLOT', index });
-  };
-
   // Flatten belongings into an id->item map for quickslot resolution.
   const itemsById = {};
   if (belongings) {
@@ -312,10 +303,10 @@ function App() {
     } else if (item.type === 'wearable') {
       equipItem(item.id);
     } else if (item.type === 'throwable') {
-      if (targetingMode === item.id) {
+      if (targetingMode && typeof targetingMode === 'object' && targetingMode.itemId === item.id) {
         setTargetingMode(false);
       } else {
-        setTargetingMode(item.id);
+        setTargetingMode({ itemId: item.id, action: 'THROW' });
       }
     }
   };
@@ -359,6 +350,7 @@ function App() {
     handleToolbarClick, handleToolbarDoubleClick,
     triggerSearch, triggerWait,
     isRefocusingRef, isDraggingRef,
+    quickslot, itemsById,
   });
 
   // Reset transient game state on death so a fresh run starts clean (no stale

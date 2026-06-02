@@ -172,7 +172,7 @@ class GameInstance:
     def _players_on_floor(self, floor_id: int) -> List[Player]:
         return [p for p in self.players.values() if p.floor_id == floor_id]
 
-    def add_event(self, event_type: str, data: dict = None, floor_id: Optional[int] = None, player_id: Optional[str] = None):
+    def add_event(self, event_type: str, data: dict = None, floor_id: Optional[int] = None, player_id: Optional[str] = None, source_player_id: Optional[str] = None):
         event = {
             "type": event_type,
             "data": data or {},
@@ -181,6 +181,8 @@ class GameInstance:
             event["_floor_id"] = floor_id
         if player_id is not None:
             event["_player_id"] = player_id
+        if source_player_id is not None:
+            event["_source_player_id"] = source_player_id
         self.events.append(event)
 
     def filter_events_for_player(self, events: List[dict], player_id: str) -> List[dict]:
@@ -192,12 +194,21 @@ class GameInstance:
         for event in events:
             event_player = event.get("_player_id")
             event_floor = event.get("_floor_id")
+            source_player_id = event.get("_source_player_id")
 
             if event_player is not None and event_player != player_id:
                 continue
 
             if event_floor is not None and event_floor != player.floor_id:
                 continue
+
+            # LOS check: events tagged with source_player_id are only audible/visible
+            # to players who can see that source player
+            if source_player_id is not None and source_player_id != player_id:
+                source_player = self.players.get(source_player_id)
+                if source_player and source_player.floor_id == player.floor_id:
+                    if not self._is_in_los(player.pos, source_player.pos, floor_id=player.floor_id):
+                        continue
 
             filtered.append({k: v for k, v in event.items() if not k.startswith("_")})
 
@@ -689,9 +700,9 @@ class GameInstance:
         )
         if dealt > 0:
             self.add_event("DAMAGE", {"target": player.id, "amount": dealt}, floor_id=floor_id)
-            self.add_event("PLAY_SOUND", {"sound": "HIT_BODY"}, floor_id=floor_id)
+            self.add_event("PLAY_SOUND", {"sound": "HIT_BODY"}, floor_id=floor_id, source_player_id=player.id)
             if player.hp / max(1, player.get_total_max_hp()) <= 0.3:
-                self.add_event("PLAY_SOUND", {"sound": "HEALTH_WARN"}, floor_id=floor_id)
+                self.add_event("PLAY_SOUND", {"sound": "HEALTH_WARN"}, player_id=player.id)
 
     def move_entity(self, entity_id: str, dx: int, dy: int):
         floor_id, entity = self._get_floor_for_entity(entity_id)
@@ -765,13 +776,13 @@ class GameInstance:
                 dmg = result["damage"]
                 self.add_event("ATTACK", {"source": entity.id, "target": target_entity.id, "damage": dmg, "surprise": result["surprise"]}, floor_id=floor_id)
                 if isinstance(entity, Player):
-                    self.add_event("PLAY_SOUND", {"sound": "HIT_SLASH"}, floor_id=floor_id)
+                    self.add_event("PLAY_SOUND", {"sound": "HIT_SLASH"}, floor_id=floor_id, source_player_id=entity.id)
                 if dmg > 0:
                     self.add_event("DAMAGE", {"target": target_entity.id, "amount": dmg}, floor_id=floor_id)
                     if isinstance(target_entity, Player):
-                        self.add_event("PLAY_SOUND", {"sound": "HIT_BODY"}, floor_id=floor_id)
+                        self.add_event("PLAY_SOUND", {"sound": "HIT_BODY"}, floor_id=floor_id, source_player_id=target_entity.id)
                         if target_entity.hp / target_entity.get_total_max_hp() <= 0.3:
-                            self.add_event("PLAY_SOUND", {"sound": "HEALTH_WARN"}, floor_id=floor_id)
+                            self.add_event("PLAY_SOUND", {"sound": "HEALTH_WARN"}, player_id=target_entity.id)
 
                 if not target_entity.is_alive:
                     self.add_event("DEATH", {"target": target_entity.id}, floor_id=floor_id)
@@ -943,14 +954,14 @@ class GameInstance:
             if damage_dealt > 0:
                 self.add_event("DAMAGE", {"target": target_entity.id, "amount": damage_dealt}, floor_id=floor_id)
                 if projectile_type == "magic_bolt":
-                    self.add_event("PLAY_SOUND", {"sound": "HIT_MAGIC"}, floor_id=floor_id)
+                    self.add_event("PLAY_SOUND", {"sound": "HIT_MAGIC"}, floor_id=floor_id, source_player_id=player.id)
                 else:
-                    self.add_event("PLAY_SOUND", {"sound": "HIT_ARROW"}, floor_id=floor_id)
+                    self.add_event("PLAY_SOUND", {"sound": "HIT_ARROW"}, floor_id=floor_id, source_player_id=player.id)
 
                 if isinstance(target_entity, Player):
-                    self.add_event("PLAY_SOUND", {"sound": "HIT_BODY"}, floor_id=floor_id)
+                    self.add_event("PLAY_SOUND", {"sound": "HIT_BODY"}, floor_id=floor_id, source_player_id=target_entity.id)
                     if target_entity.hp / target_entity.get_total_max_hp() <= 0.3:
-                        self.add_event("PLAY_SOUND", {"sound": "HEALTH_WARN"}, floor_id=floor_id)
+                        self.add_event("PLAY_SOUND", {"sound": "HEALTH_WARN"}, player_id=target_entity.id)
 
             if not target_entity.is_alive:
                 self.add_event("DEATH", {"target": target_entity.id}, floor_id=floor_id)
@@ -967,6 +978,8 @@ class GameInstance:
             removed = player.belongings.backpack.detach(item.id)
             if removed is not None and player.belongings.get_item(item.id) is None:
                 player.quickslot.convert_to_placeholder(removed)
+                removed.pos = Position(x=target_x, y=target_y)
+                floor.items[removed.id] = removed
 
         return damage_dealt
 

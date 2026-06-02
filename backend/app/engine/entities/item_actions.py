@@ -57,7 +57,7 @@ def action_drink(game, player, item, tx=None, ty=None) -> None:
         removed = player.belongings.backpack.detach(item.id)
         if removed is not None and player.belongings.get_item(item.id) is None:
             player.quickslot.convert_to_placeholder(removed)
-        game.add_event("DRINK", {"player": player.id, "type": "regen"}, floor_id=player.floor_id)
+        game.add_event("DRINK", {"player": player.id, "type": "regen"}, floor_id=player.floor_id, source_player_id=player.id)
 
 
 def action_read(game, player, item, tx=None, ty=None) -> None:

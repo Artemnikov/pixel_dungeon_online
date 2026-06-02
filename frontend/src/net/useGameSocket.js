@@ -159,7 +159,11 @@ export default function useGameSocket({
           // Start the death animation (and death sound) the instant a player dies.
           if (p.is_downed && !existing.is_downed) {
             existing.deathStart = performance.now();
-            AudioManager.play('DEATH');
+            const localPlayer = p.id === myPlayerIdRef.current;
+            const visible = visionRef.current?.visible;
+            if (localPlayer || visible?.has(`${p.pos.x},${p.pos.y}`)) {
+              AudioManager.play('DEATH');
+            }
           }
           existing.is_downed = p.is_downed;
           existing.heal_left = p.heal_left;
@@ -248,7 +252,7 @@ export default function useGameSocket({
       if (data.events) {
         data.events.forEach(event => {
           handleEvent(event, {
-            myPlayerIdRef, gridRef, setGrid, entitiesRef,
+            myPlayerIdRef, gridRef, setGrid, entitiesRef, visionRef,
             projectilesRef, mobAnimRef, dyingMobsRef, playerAnimRef, particlesRef,
             floatingTextRef,
           });
@@ -266,7 +270,7 @@ export default function useGameSocket({
 }
 
 function handleEvent(event, {
-  myPlayerIdRef, gridRef, setGrid, entitiesRef,
+  myPlayerIdRef, gridRef, setGrid, entitiesRef, visionRef,
   projectilesRef, mobAnimRef, dyingMobsRef, playerAnimRef, particlesRef,
   floatingTextRef,
 }) {
@@ -276,10 +280,15 @@ function handleEvent(event, {
   }
 
   if (event.type === 'DRINK') {
-    AudioManager.play('DRINK');
+    const pid = event.data.player;
+    const isLocal = pid === myPlayerIdRef.current;
+    const drinker = entitiesRef.current.players[pid];
+    const visible = visionRef?.current?.visible;
+    if (isLocal || (drinker && visible?.has(`${drinker.pos.x},${drinker.pos.y}`))) {
+      AudioManager.play('DRINK');
+    }
     // Play the "operate" gesture (raise item) on the drinker, mirroring
     // Potion.drink() -> hero.sprite.operate() in the original game.
-    const pid = event.data.player;
     if (playerAnimRef && entitiesRef.current.players[pid]) {
       if (!playerAnimRef.current[pid]) playerAnimRef.current[pid] = {};
       playerAnimRef.current[pid].operateUntil = performance.now() + PLAYER_OPERATE_DURATION;
@@ -332,10 +341,13 @@ function handleEvent(event, {
         AudioManager.play('MOVE');
       }
     } else {
-      if (isDoor) {
-        AudioManager.play('DOOR_OPEN');
-      } else {
-        AudioManager.play(event.type);
+      const visible = visionRef?.current?.visible;
+      if (visible?.has(`${tileX},${tileY}`)) {
+        if (isDoor) {
+          AudioManager.play('DOOR_OPEN');
+        } else {
+          AudioManager.play(event.type);
+        }
       }
     }
     return;
@@ -359,10 +371,15 @@ function handleEvent(event, {
       finished: false,
     });
 
-    if (event.data.projectile === 'magic_bolt') {
-      AudioManager.play('ATTACK_MAGIC');
-    } else {
-      AudioManager.play('ATTACK_BOW');
+    const src = event.data.source;
+    const isLocal = src === myPlayerIdRef.current;
+    const visible = visionRef?.current?.visible;
+    if (isLocal || visible?.has(`${event.data.x},${event.data.y}`)) {
+      if (event.data.projectile === 'magic_bolt') {
+        AudioManager.play('ATTACK_MAGIC');
+      } else {
+        AudioManager.play('ATTACK_BOW');
+      }
     }
     return;
   }

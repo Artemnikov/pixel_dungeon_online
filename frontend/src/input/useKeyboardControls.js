@@ -10,6 +10,8 @@ export default function useKeyboardControls({
   triggerWait,
   isRefocusingRef,
   isDraggingRef,
+  quickslot,
+  itemsById,
 }) {
   const lastKeyRef = useRef({ key: null, time: 0 });
   const holdSkipRef = useRef(false);
@@ -38,7 +40,8 @@ export default function useKeyboardControls({
 
       if (['1', '2', '3', '4', '5', '6'].includes(e.key)) {
         const index = parseInt(e.key) - 1;
-        const item = inventory[index];
+        const slot = quickslot?.slots?.[index];
+        const item = slot?.item_id ? (itemsById?.[slot.item_id] || null) : null;
         if (item) {
           const now = Date.now();
           const isDoubleTap = lastKeyRef.current.key === e.key && (now - lastKeyRef.current.time) < 300;
@@ -68,5 +71,5 @@ export default function useKeyboardControls({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [inventory, handleToolbarClick, handleToolbarDoubleClick, socketRef, setShowInventory, triggerSearch, triggerWait, isRefocusingRef, isDraggingRef]);
+  }, [inventory, handleToolbarClick, handleToolbarDoubleClick, socketRef, setShowInventory, triggerSearch, triggerWait, isRefocusingRef, isDraggingRef, quickslot, itemsById]);
 }

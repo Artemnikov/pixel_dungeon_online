@@ -50,7 +50,7 @@ export default function useCanvasControls({
       };
     };
 
-    const onMouseUp = () => { isDraggingRef.current = false; };
+    const onMouseUp = () => { isDraggingRef.current = false; hasDraggedRef.current = false; };
 
     const onWheel = (e) => {
       e.preventDefault();
