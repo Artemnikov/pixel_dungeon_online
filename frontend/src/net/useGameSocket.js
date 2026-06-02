@@ -33,7 +33,6 @@ export default function useGameSocket({
   setInventory,
   setEquippedItems,
   setMyStats,
-  setMessages,
   setDifficulty,
   setGold,
   setEnergy,
@@ -52,23 +51,14 @@ export default function useGameSocket({
     socketRef.current = ws;
     let hasConnected = false;
 
-    const addConnectionFailedMessage = () => {
-      setMessages(prev => (
-        prev[prev.length - 1] === "Failed to connect to channel"
-          ? prev
-          : [...prev, "Failed to connect to channel"]
-      ));
-    };
-
     ws.onopen = () => {
       hasConnected = true;
-      setMessages(prev => [...prev, "Connected to server"]);
     };
     ws.onerror = () => {
-      if (!hasConnected) addConnectionFailedMessage();
+      if (!hasConnected) console.warn('Failed to connect to channel');
     };
     ws.onclose = () => {
-      if (!hasConnected) addConnectionFailedMessage();
+      if (!hasConnected) console.warn('Failed to connect to channel');
     };
 
     ws.onmessage = (event) => {
@@ -124,6 +114,7 @@ export default function useGameSocket({
             effects: p.active_effects || [],
             classType: p.class_type || 'warrior',
             armorTier: 0,
+            strength: p.strength ?? 10,
           });
         }
 

@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import AudioManager from '../audio/AudioManager';
 import itemsSpriteSrc from '../assets/pixel-dungeon/sprites/items.png';
 import toolbarSpriteSrc from '../assets/pixel-dungeon/interfaces/toolbar.png';
-import { getItemSpriteCoords } from '../rendering/sprites';
+import { coordsForItem } from '../rendering/sprites';
 
 const S = 3;
 
@@ -135,7 +135,7 @@ export default function Toolbar({
 
       function drawItemSprite(item, dx, dy, slotW, slotH, borderL, borderR) {
         if (!item || !ii.complete) return;
-        const coords = getItemSpriteCoords(item.name, item.type);
+        const coords = coordsForItem(item);
         if (!coords) return;
         const is = 16 * S;
         const padL = borderL * S;

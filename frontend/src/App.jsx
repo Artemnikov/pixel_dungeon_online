@@ -17,8 +17,9 @@ import useDebugApi from './dev/useDebugApi';
 
 import StatusPane from './ui/StatusPane';
 import Toolbar from './ui/Toolbar';
-import WndBag from './ui/WndBag';
-import MessageLog from './ui/MessageLog';
+import InventoryPane from './ui/InventoryPane';
+import WndUseItem from './ui/WndUseItem';
+import RightClickMenu from './ui/RightClickMenu';
 import LoadingOverlay from './ui/LoadingOverlay';
 import GameOverScreen from './ui/GameOverScreen';
 
@@ -32,10 +33,12 @@ function App() {
 
   // --- game state ---
   const [grid, setGrid] = useState([]);
-  const [messages, setMessages] = useState([]);
   const [myPlayerId, setMyPlayerId] = useState(null);
   const [viewport, setViewport] = useState({ width: window.innerWidth, height: window.innerHeight });
   const [showInventory, setShowInventory] = useState(false);
+  // Open info+actions popup (item) and right-click context menu ({item,x,y}).
+  const [useItemTarget, setUseItemTarget] = useState(null);
+  const [ctxMenu, setCtxMenu] = useState(null);
   const [inventory, setInventory] = useState([]);
   const [equippedItems, setEquippedItems] = useState({ weapon: null, wearable: null });
   const [belongings, setBelongings] = useState(null);
@@ -138,7 +141,7 @@ function App() {
     visionRef, openDoorsRef, projectilesRef,
     mobAnimRef, dyingMobsRef, playerAnimRef, particlesRef, floatingTextRef, wasDownedRef,
     setGrid, setDepth, setMyPlayerId, setInventory,
-    setEquippedItems, setMyStats, setMessages, setDifficulty,
+    setEquippedItems, setMyStats, setDifficulty,
     setGold, setEnergy, setBelongings, setQuickslot,
   });
 
@@ -404,10 +407,9 @@ function App() {
         />
       </div>
 
-      {/* Bottom-centered HUD: message log, then toolbar, then the inventory
-          pane below it (toggled open/closed with 'f' or the bag button). */}
+      {/* Bottom-right HUD: toolbar, then the inventory pane below it
+          (toggled open/closed with 'f' or the bag button). */}
       <div className="hud-bottom">
-        <MessageLog messages={messages} />
         <Toolbar
           mode={interfaceSize > 0 ? 'group' : 'split'}
           interfaceSize={interfaceSize}
@@ -424,10 +426,14 @@ function App() {
           onSlotDoubleClick={handleToolbarDoubleClick}
         />
         {showInventory && (
-          <WndBag
+          <InventoryPane
             belongings={belongings}
-            onAction={executeItemAction}
-            onAssignQuickslot={assignQuickslot}
+            gold={gold}
+            energy={energy}
+            strength={myStats.strength}
+            onOpenItem={setUseItemTarget}
+            onContextMenu={(item, x, y) => setCtxMenu({ item, x, y })}
+            onDefaultAction={(item) => executeItemAction(item.id, item.default_action)}
           />
         )}
       </div>
@@ -441,6 +447,26 @@ function App() {
           )}
         </svg>
       </button>
+
+      {useItemTarget && (
+        <WndUseItem
+          item={itemsById[useItemTarget.id] || useItemTarget}
+          onAction={executeItemAction}
+          onAssignQuickslot={assignQuickslot}
+          onClose={() => setUseItemTarget(null)}
+        />
+      )}
+
+      {ctxMenu && (
+        <RightClickMenu
+          item={itemsById[ctxMenu.item.id] || ctxMenu.item}
+          x={ctxMenu.x}
+          y={ctxMenu.y}
+          onAction={executeItemAction}
+          onAssignQuickslot={assignQuickslot}
+          onClose={() => setCtxMenu(null)}
+        />
+      )}
 
       {!!myStats.isDowned && (
         <GameOverScreen
