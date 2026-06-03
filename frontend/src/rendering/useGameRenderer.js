@@ -92,8 +92,9 @@ export default function useGameRenderer({
         const gridCols = grid[0]?.length ?? 0;
         const gridRows = grid.length;
         const z = zoomRef.current;
-        const halfW = (canvas.width / 2 - TILE_SIZE / 2) / z;
-        const halfH = (canvas.height / 2 - TILE_SIZE / 2) / z;
+        const PAN_BORDER = 3;
+        const halfW = (PAN_BORDER * (canvas.width / 2 - TILE_SIZE / 2)) / z;
+        const halfH = (PAN_BORDER * (canvas.height / 2 - TILE_SIZE / 2)) / z;
         cameraX = Math.max(-halfW, Math.min(cameraX, gridCols * TILE_SIZE - canvas.width / z + halfW));
         cameraY = Math.max(-halfH, Math.min(cameraY, gridRows * TILE_SIZE - canvas.height / z + halfH));
 
