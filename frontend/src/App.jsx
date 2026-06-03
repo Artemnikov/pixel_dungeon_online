@@ -517,16 +517,28 @@ function App() {
 
   // --- screen flow ---
   if (gameState === 'WELCOME') {
-    return <MainMenu onStart={() => setGameState('SELECT')} />;
+    return (
+      <>
+        <title>SPD Online — Play Shattered Pixel Dungeon in your browser</title>
+        <meta name="description" content="Play the roguelike dungeon crawler Shattered Pixel Dungeon online, for free in your browser. Multiplayer real-time, no download required." />
+        <MainMenu onStart={() => setGameState('SELECT')} />
+      </>
+    );
   }
 
   if (gameState === 'SELECT') {
-    return <CharacterSelection onSelect={(c, d, n) => {
-      setSelectedClass(c);
-      setDifficulty(d);
-      setPlayerName(n);
-      setGameState('PLAYING');
-    }} />;
+    return (
+      <>
+        <title>SPD Online — Choose your class</title>
+        <meta name="description" content="Select your hero class — Warrior, Mage, Rogue, or Archer — and descend into the dungeon." />
+        <CharacterSelection onSelect={(c, d, n) => {
+          setSelectedClass(c);
+          setDifficulty(d);
+          setPlayerName(n);
+          setGameState('PLAYING');
+        }} />
+      </>
+    );
   }
 
   const isDesktop = interfaceSize > 0;
@@ -546,8 +558,11 @@ function App() {
   });
 
   return (
-    <div className={`game-container ${isDesktop ? 'desktop-mode' : ''}`}
-         style={isDesktop ? { '--cursor-mouse': `url(${cursorMouseUrl}) 1 1, pointer` } : {}}>
+    <>
+      <title>SPD Online — Floor {depth}</title>
+      <meta name="description" content={`Playing SPD Online — exploring floor ${depth} of the dungeon.`} />
+      <div className={`game-container ${isDesktop ? 'desktop-mode' : ''}`}
+           style={isDesktop ? { '--cursor-mouse': `url(${cursorMouseUrl}) 1 1, pointer` } : {}}>
       <LoadingOverlay visible={grid.length === 0} />
 
       <StatusPane myStats={myStats} depth={depth} onSearch={handleExamineOrReveal} />
@@ -661,6 +676,7 @@ function App() {
         />
       )}
     </div>
+    </>
   );
 }
 
