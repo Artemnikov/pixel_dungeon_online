@@ -316,6 +316,8 @@ export default function Toolbar({
       return;
     }
     if (hit(areas.search)) {
+      // Single click drives the stateful examine→reveal flow (1st click arms examine
+      // mode, 2nd performs the reveal) — handled by onSearch in App.jsx.
       AudioManager.play('CLICK');
       if (onSearch) onSearch();
       return;

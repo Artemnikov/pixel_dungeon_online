@@ -6,7 +6,8 @@ export default function useKeyboardControls({
   setShowInventory,
   handleToolbarClick,
   handleToolbarDoubleClick,
-  triggerSearch,
+  onExamineOrReveal,
+  onCancelModes,
   triggerWait,
   isRefocusingRef,
   isDraggingRef,
@@ -23,17 +24,13 @@ export default function useKeyboardControls({
         return;
       }
       if (e.key === 'e') {
-        // Mirror the original: search is the second of a double-press (1st E enters
-        // examine mode, 2nd searches). The remake has no examine mode, so a single
-        // press is inert and only a double-tap within 300ms triggers the search.
-        const now = Date.now();
-        const isDoubleTap = lastKeyRef.current.key === 'e' && (now - lastKeyRef.current.time) < 300;
-        if (isDoubleTap) {
-          triggerSearch();
-          lastKeyRef.current = { key: null, time: 0 };
-        } else {
-          lastKeyRef.current = { key: 'e', time: now };
-        }
+        // Stateful examine→reveal, mirroring the original's btnSearch: 1st press arms
+        // examine mode (click a cell to inspect), 2nd press performs the reveal.
+        if (onExamineOrReveal) onExamineOrReveal();
+        return;
+      }
+      if (e.key === 'Escape') {
+        if (onCancelModes) onCancelModes();
         return;
       }
       if (e.key === ' ' || e.key === 'Spacebar') {
@@ -81,5 +78,5 @@ export default function useKeyboardControls({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [inventory, handleToolbarClick, handleToolbarDoubleClick, socketRef, setShowInventory, triggerSearch, triggerWait, isRefocusingRef, isDraggingRef, quickslot, itemsById]);
+  }, [inventory, handleToolbarClick, handleToolbarDoubleClick, socketRef, setShowInventory, onExamineOrReveal, onCancelModes, triggerWait, isRefocusingRef, isDraggingRef, quickslot, itemsById]);
 }

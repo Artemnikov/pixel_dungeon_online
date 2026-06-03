@@ -15,6 +15,7 @@ import useGameSocket from './net/useGameSocket';
 import useKeyboardControls from './input/useKeyboardControls';
 import useCanvasControls from './input/useCanvasControls';
 import { resolveTapAction } from './input/resolveTap';
+import { describeCell } from './input/describeCell';
 import useDebugApi from './dev/useDebugApi';
 
 import StatusPane from './ui/StatusPane';
@@ -46,6 +47,11 @@ function App() {
   const [belongings, setBelongings] = useState(null);
   const [quickslot, setQuickslot] = useState(null);
   const [targetingMode, setTargetingMode] = useState(false);
+  // Examine mode: 1st search trigger arms it (click a cell to inspect), 2nd trigger
+  // performs the reveal. Mirrors the original's btnSearch examine→search two-step.
+  const [examineMode, setExamineMode] = useState(false);
+  // Inspect popup: { name, sub, left, top, below } positioned over the inspected cell.
+  const [inspectInfo, setInspectInfo] = useState(null);
   const [myStats, setMyStats] = useState({ hp: 0, maxHp: 10, name: '' });
   const [depth, setDepth] = useState(1);
   const [, setCamera] = useState({ x: 0, y: 0 });
@@ -68,6 +74,11 @@ function App() {
   // Latest targeting-tap resolver, shared with the touch handler (canvas has
   // touch-action:none, so taps don't fire onClick — see resolveTargetingTap).
   const onTargetTapRef = useRef(null);
+  // Examine-mode state + tap resolver, shared with the touch handler (same pattern
+  // as targeting, since the canvas has touch-action:none so taps don't fire onClick).
+  const examineModeRef = useRef(false);
+  const onExamineTapRef = useRef(null);
+  const inspectTimerRef = useRef(null);
   const projectilesRef = useRef([]);
   const visionRef = useRef({ visible: new Set(), discovered: new Set() });
   const openDoorsRef = useRef(new Set());
@@ -88,6 +99,7 @@ function App() {
   const depthRef = useRef(1);
 
   useEffect(() => { targetingModeRef.current = targetingMode; }, [targetingMode]);
+  useEffect(() => { examineModeRef.current = examineMode; }, [examineMode]);
   useEffect(() => { depthRef.current = depth; }, [depth]);
 
   const wrapperRef = useRef(null);
@@ -154,6 +166,7 @@ function App() {
     panOffsetRef, zoomRef, cameraLerpRef,
     isDraggingRef, isRefocusingRef, isPinchingRef,
     targetingModeRef, onTargetTapRef,
+    examineModeRef, onExamineTapRef,
     entitiesRef, myPlayerIdRef,
   });
 
@@ -242,6 +255,59 @@ function App() {
     }
   };
 
+  // Magnifying-glass / E / Search button: 1st trigger arms examine mode, 2nd performs
+  // the reveal. (In examine mode, tapping a cell inspects it and exits — see
+  // resolveExamineTap.) Mirrors the original Toolbar.btnSearch examine→search two-step.
+  const clearInspect = () => {
+    if (inspectTimerRef.current) { clearTimeout(inspectTimerRef.current); inspectTimerRef.current = null; }
+    setInspectInfo(null);
+  };
+
+  const handleExamineOrReveal = () => {
+    clearInspect();
+    if (examineModeRef.current) {
+      setExamineMode(false);
+      triggerSearch();
+    } else {
+      setTargetingMode(false);
+      setExamineMode(true);
+    }
+  };
+
+  const cancelModes = () => {
+    setExamineMode(false);
+    setTargetingMode(false);
+    clearInspect();
+  };
+
+  // Examine-mode tap: open a small popup over the cell naming whatever is there, then
+  // leave examine mode (one inspect per arming, like the original's examineCell).
+  const resolveExamineTap = (tileX, tileY) => {
+    const info = describeCell({
+      tileX, tileY, gridRef, entitiesRef, visionRef,
+      myPlayerId: myPlayerIdRef.current,
+    });
+    setExamineMode(false);
+    if (!info || !canvasRef.current) { clearInspect(); return; }
+
+    // Project the cell to viewport coords (inverse of handleCanvasClick's mapping)
+    // so the popup sits over the element; flip below the cell if it's near the top.
+    const canvas = canvasRef.current;
+    const rect = canvas.getBoundingClientRect();
+    const z = zoomRef.current;
+    const cam = cameraLerpRef.current;
+    const cw = canvas.width, ch = canvas.height;
+    const left = rect.left + ((tileX + 0.5) * TILE_SIZE - cam.x - cw / 2) * z + cw / 2;
+    const topY = rect.top + (tileY * TILE_SIZE - cam.y - ch / 2) * z + ch / 2;
+    const bottomY = rect.top + ((tileY + 1) * TILE_SIZE - cam.y - ch / 2) * z + ch / 2;
+    const below = topY < 70;
+
+    if (inspectTimerRef.current) clearTimeout(inspectTimerRef.current);
+    setInspectInfo({ name: info.name, sub: info.sub, left, top: below ? bottomY + 6 : topY - 6, below });
+    inspectTimerRef.current = setTimeout(() => setInspectInfo(null), 3000);
+  };
+  useEffect(() => { onExamineTapRef.current = resolveExamineTap; });
+
   const triggerWait = () => {
     if (socketRef.current?.readyState === WebSocket.OPEN) {
       socketRef.current.send(JSON.stringify({ type: 'WAIT' }));
@@ -264,6 +330,14 @@ function App() {
 
     const tileX = Math.floor(worldX / TILE_SIZE);
     const tileY = Math.floor(worldY / TILE_SIZE);
+
+    if (examineModeRef.current) {
+      resolveExamineTap(tileX, tileY);
+      return;
+    }
+
+    // Any non-examine tap dismisses a lingering inspect popup.
+    clearInspect();
 
     if (targetingModeRef.current) {
       resolveTargetingTap(tileX, tileY);
@@ -349,7 +423,8 @@ function App() {
   useKeyboardControls({
     socketRef, inventory, setShowInventory,
     handleToolbarClick, handleToolbarDoubleClick,
-    triggerSearch, triggerWait,
+    onExamineOrReveal: handleExamineOrReveal, onCancelModes: cancelModes,
+    triggerWait,
     isRefocusingRef, isDraggingRef,
     quickslot, itemsById,
   });
@@ -385,7 +460,7 @@ function App() {
   }
 
   const isDesktop = interfaceSize > 0;
-  const cursorStyle = targetingMode
+  const cursorStyle = (targetingMode || examineMode)
     ? isDesktop
       ? `url(${cursorControllerUrl}) 8 8, crosshair`
       : 'crosshair'
@@ -405,18 +480,44 @@ function App() {
          style={isDesktop ? { '--cursor-mouse': `url(${cursorMouseUrl}) 1 1, pointer` } : {}}>
       <LoadingOverlay visible={grid.length === 0} />
 
-      <StatusPane myStats={myStats} depth={depth} onSearch={triggerSearch} />
+      <StatusPane myStats={myStats} depth={depth} onSearch={handleExamineOrReveal} />
 
       <div className="canvas-wrapper" ref={wrapperRef}>
         <canvas
           ref={canvasRef}
           width={viewport.width}
           height={viewport.height}
-          className={`game-canvas ${targetingMode ? 'cursor-crosshair' : ''}`}
+          className={`game-canvas ${(targetingMode || examineMode) ? 'cursor-crosshair' : ''}`}
           style={{ cursor: cursorStyle }}
           onClick={handleCanvasClick}
         />
       </div>
+
+      {inspectInfo && (
+        <div
+          className="inspect-popup"
+          style={{
+            position: 'fixed',
+            left: inspectInfo.left,
+            top: inspectInfo.top,
+            transform: inspectInfo.below ? 'translate(-50%, 0)' : 'translate(-50%, -100%)',
+            background: 'rgba(0, 0, 0, 0.85)',
+            border: '1px solid #6a6a6a',
+            borderRadius: 3,
+            padding: '3px 7px',
+            color: '#ffffff',
+            font: '11px monospace',
+            lineHeight: 1.25,
+            whiteSpace: 'nowrap',
+            textAlign: 'center',
+            pointerEvents: 'none',
+            zIndex: 60,
+          }}
+        >
+          <div style={{ fontWeight: 'bold' }}>{inspectInfo.name}</div>
+          {inspectInfo.sub && <div style={{ color: '#bdbdbd' }}>{inspectInfo.sub}</div>}
+        </div>
+      )}
 
       {/* Bottom-right HUD: toolbar, then the inventory pane below it
           (toggled open/closed with 'f' or the bag button). */}
@@ -431,7 +532,7 @@ function App() {
           equippedItems={equippedItems}
           targetingMode={targetingMode}
           onWait={triggerWait}
-          onSearch={triggerSearch}
+          onSearch={handleExamineOrReveal}
           onInventory={() => setShowInventory(v => !v)}
           onSlotClick={handleToolbarClick}
           onSlotDoubleClick={handleToolbarDoubleClick}

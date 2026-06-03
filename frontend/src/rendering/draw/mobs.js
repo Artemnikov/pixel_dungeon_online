@@ -8,6 +8,7 @@ import {
   getGnollFrame,
   getGooFrame,
   getRatFrame,
+  getSnakeFrame,
   getScorpioFrame,
 } from '../mobs';
 
@@ -26,6 +27,9 @@ export function drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef,
     if (mob.name === 'Rat') {
       mobSprite = assetImages.rat;
       sx = getRatFrame(mob, mobAnimRef.current, now);
+    } else if (mob.name === 'Snake') {
+      mobSprite = assetImages.snake;
+      sx = getSnakeFrame(mob, mobAnimRef.current, now);
     } else if (mob.name === 'Bat') {
       mobSprite = assetImages.bat;
     } else if (mob.name === 'Gnoll') {
@@ -66,8 +70,9 @@ export function drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef,
     const isScorpioDeath = mob.name === 'Scorpio';
     const isGooDeath = mob.name === 'Goo';
     const isRatDeath = mob.name === 'Rat';
+    const isSnakeDeath = mob.name === 'Snake';
     // Gnoll: die frames [8,9,10] over 250ms, then a 3s alpha fade (SPD AlphaTweener).
-    const deathDuration = isScorpioDeath ? 417 : isGooDeath ? 300 : isRatDeath ? 400 : 3250;
+    const deathDuration = isScorpioDeath ? 417 : isGooDeath ? 300 : isRatDeath ? 400 : isSnakeDeath ? 400 : 3250;
     if (elapsed > deathDuration) { delete dyingMobsRef.current[id]; return; }
     if (!visionRef.current.visible.has(`${Math.round(mob.renderPos.x)},${Math.round(mob.renderPos.y)}`)) return;
     if (isScorpioDeath) {
@@ -79,6 +84,10 @@ export function drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef,
     } else if (isRatDeath) {
       const fi = Math.min(Math.floor(elapsed / 100), 3);
       drawMobSprite(ctx, mob, assetImages.rat, [11, 12, 13, 14][fi] * FRAME_W);
+    } else if (isSnakeDeath) {
+      // snake.png has no dedicated die frames; fade the idle frame out over ~400ms.
+      const alpha = Math.max(0, 1 - elapsed / 400);
+      drawMobSprite(ctx, mob, assetImages.snake, 0, FRAME_W, FRAME_W, false, null, alpha);
     } else {
       // Gnoll death: [8,9,10] @ 83ms, then hold frame 10 and fade alpha 1->0 over 3s.
       const fi = Math.min(Math.floor(elapsed / 83), 2);

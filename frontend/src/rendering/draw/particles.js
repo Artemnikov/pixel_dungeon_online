@@ -54,6 +54,27 @@ export function spawnHeal(particlesRef, cx, cy, count, color = '#2ecc71') {
   }
 }
 
+// Dust puff, matching Trap's visual poof in the original game (WornDartTrap).
+// Neutral gray-brown specks spreading outward with gravity, no directional bias.
+export function spawnDust(particlesRef, cx, cy, count = 6, color = '#997a4d') {
+  for (let i = 0; i < count; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = 16 + Math.random() * 40;
+    const life = 0.3 + Math.random() * 0.3;
+    particlesRef.current.push({
+      x: cx + (Math.random() - 0.5) * 8,
+      y: cy + (Math.random() - 0.5) * 8,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed - 20,
+      life,
+      maxLife: life,
+      size: 2 + Math.floor(Math.random() * 2),
+      color,
+      gravity: true,
+    });
+  }
+}
+
 export function advanceAndDrawParticles(ctx, { particlesRef }) {
   const now = performance.now();
   if (lastNow == null) lastNow = now;

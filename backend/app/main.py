@@ -184,7 +184,12 @@ async def game_websocket(websocket: WebSocket, game_id: str, class_type: str = "
                 game.search(player_id)
 
             elif message["type"] == "WAIT":
-                game.search(player_id)
+                # WAIT no longer triggers a reveal. The reveal/search action is now
+                # exclusively the examine-mode flow on the magnifying-glass button, so
+                # tapping your own character (which sends WAIT) must not search. There
+                # is no turn-based wait mechanic in this real-time engine yet, so this
+                # is intentionally a no-op.
+                pass
 
     except WebSocketDisconnect:
         manager.disconnect(game_id, websocket)

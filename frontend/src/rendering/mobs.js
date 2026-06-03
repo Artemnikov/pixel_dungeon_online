@@ -71,6 +71,23 @@ export const getRatFrame = (mob, mobAnim, now) => {
   return [0, 0, 0, 1][Math.floor(now / 500) % 4] * FRAME_W;
 };
 
+// Snake: snake.png is a single row of 16x16 frames. Mirrors SnakeSprite's
+// idle (frame 0), run (0,1,2) and attack poses. The snake attack lasts 250ms
+// (see the ATTACK handler default in useGameSocket).
+export const getSnakeFrame = (mob, mobAnim, now) => {
+  const anim = mobAnim[mob.id] || {};
+  const isAttacking = anim.attackUntil && now < anim.attackUntil;
+  if (isAttacking) {
+    const elapsed = now - (anim.attackUntil - 250);
+    const fi = Math.min(Math.floor(elapsed / 63), 3);
+    return [3, 4, 5, 0][fi] * FRAME_W;
+  }
+  if (isEntityMoving(mob)) {
+    return [0, 1, 2, 1][Math.floor(now / 100) % 4] * FRAME_W;
+  }
+  return [0, 0, 0, 1][Math.floor(now / 500) % 4] * FRAME_W;
+};
+
 // dest (optional): in-tile placement {dx,dy,dw,dh} for sprites whose native frame is not a
 // full 32x32 tile (e.g. gnoll's 12x15 -> 24x30 @ +4,+2). Omitted = legacy full-tile draw.
 // alpha (optional): 0..1 used for the death fade-out.

@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { TILE_SIZE, PLAYER_ATTACK_DURATION, PLAYER_OPERATE_DURATION, HIT_CONNECT_DELAY, FLASH_DURATION } from '../constants';
 import { getWsBaseUrl } from '../config/urls';
 import AudioManager from '../audio/AudioManager';
-import { spawnBlood, spawnHeal } from '../rendering/draw/particles';
+import { spawnBlood, spawnDust, spawnHeal } from '../rendering/draw/particles';
 import { spawnCheckedCells } from '../rendering/draw/searchEffects';
 import { spawnFloatingText } from '../rendering/draw/floatingText';
 
@@ -323,6 +323,25 @@ function handleEvent(event, {
     }
     if (particlesRef) {
       spawnHeal(particlesRef, cx, cy + TILE_SIZE / 2, 4);
+    }
+    return;
+  }
+
+  if (event.type === 'TRAP_TRIGGERED') {
+    const player = entitiesRef.current.players[event.data.player];
+    if (player) {
+      const cx = player.renderPos.x * TILE_SIZE + TILE_SIZE / 2;
+      const cy = player.renderPos.y * TILE_SIZE;
+
+      AudioManager.play('TRAP');
+
+      if (event.data.damage > 0 && floatingTextRef) {
+        spawnFloatingText(floatingTextRef, cx, cy, `-${event.data.damage}`, '#e74c3c');
+      }
+
+      if (particlesRef) {
+        spawnDust(particlesRef, cx, cy + TILE_SIZE / 2, 8);
+      }
     }
     return;
   }

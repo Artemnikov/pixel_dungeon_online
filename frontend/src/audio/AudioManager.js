@@ -15,6 +15,7 @@ import grassStepSound from '../assets/sounds/grass.mp3';
 import descendSound from '../assets/pixel-dungeon/audio/descend.mp3';
 import drinkSound from '../assets/sounds/drink.mp3';
 import levelUpSound from '../assets/sounds/levelup.mp3';
+import trapSound from '../assets/sounds/trap.mp3';
 import { effectiveSfxVolume } from '../menu/menuSettings';
 
 class AudioManager {
@@ -46,6 +47,7 @@ class AudioManager {
         this.loadSound('STAIRS_DOWN', descendSound);
         this.loadSound('DRINK', drinkSound);
         this.loadSound('LEVELUP', levelUpSound);
+        this.loadSound('TRAP', trapSound);
 
         const doorSounds = import.meta.glob('../assets/sounds/door_open.mp3', { eager: true, query: '?url' });
         const doorUrl = doorSounds['../assets/sounds/door_open.mp3']?.default;
