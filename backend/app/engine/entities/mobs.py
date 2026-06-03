@@ -50,6 +50,7 @@ class Snake(MobEntity):
 
 class Gnoll(MobEntity):
     name: str = "Gnoll"
+    defense_verb: str = "blocked"
     hp: int = 12
     max_hp: int = 12
     attack_skill: int = 10
@@ -106,6 +107,7 @@ class Swarm(MobEntity):
 
 class Crab(MobEntity):
     name: str = "Crab"
+    defense_verb: str = "blocked"
     hp: int = 15
     max_hp: int = 15
     attack_skill: int = 12
@@ -124,6 +126,7 @@ class Crab(MobEntity):
 
 class Slime(MobEntity):
     name: str = "Slime"
+    defense_verb: str = "blocked"
     hp: int = 20
     max_hp: int = 20
     attack_skill: int = 12
@@ -172,6 +175,7 @@ class AlbinoRat(MobEntity):
 
 class GnollExile(MobEntity):
     name: str = "Gnoll Exile"
+    defense_verb: str = "blocked"
     hp: int = 24
     max_hp: int = 24
     attack_skill: int = 15
@@ -194,6 +198,7 @@ class GnollExile(MobEntity):
 
 class HermitCrab(MobEntity):
     name: str = "Hermit Crab"
+    defense_verb: str = "blocked"
     hp: int = 25
     max_hp: int = 25
     attack_skill: int = 12
@@ -213,6 +218,7 @@ class HermitCrab(MobEntity):
 
 class CausticSlime(MobEntity):
     name: str = "Caustic Slime"
+    defense_verb: str = "blocked"
     hp: int = 20
     max_hp: int = 20
     attack_skill: int = 12
@@ -236,6 +242,7 @@ class CausticSlime(MobEntity):
 class Goo(MobEntity):
     type: str = "boss"
     name: str = "Goo"
+    defense_verb: str = "blocked"
     hp: int = 300
     max_hp: int = 300
     attack_skill: int = 14

@@ -502,6 +502,28 @@ function handleEvent(event, {
     return;
   }
 
+  if (event.type === 'MISS') {
+    const tgt = event.data.target;
+    const verb = event.data.defense_verb || 'dodged';
+    const target = entitiesRef.current.mobs[tgt] || entitiesRef.current.players[tgt];
+    if (target) {
+      const visible = visionRef?.current?.visible;
+      const tx = Math.round(target.renderPos.x);
+      const ty = Math.round(target.renderPos.y);
+      const isVisible = visible?.has(`${tx},${ty}`);
+      const isLocal = tgt === myPlayerIdRef.current;
+      if (isLocal || isVisible) {
+        const cx = target.renderPos.x * TILE_SIZE + TILE_SIZE / 2;
+        const cy = target.renderPos.y * TILE_SIZE;
+        if (floatingTextRef) {
+          spawnFloatingText(floatingTextRef, cx, cy, verb, '#ffffff');
+        }
+        AudioManager.play('MISS');
+      }
+    }
+    return;
+  }
+
   if (event.type === 'DEATH') {
     const id = event.data.target;
     const mob = entitiesRef.current.mobs[id];

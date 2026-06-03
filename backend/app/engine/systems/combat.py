@@ -34,6 +34,7 @@ def resolve_melee_attack(
         def_roll = random.random() * defender.get_effective_defense_skill()
         if acu_roll < def_roll:
             result["missed"] = True
+            result["defense_verb"] = defender.defense_verb
             return result
         result["hit"] = True
 
@@ -94,6 +95,7 @@ def resolve_ranged_attack(
         def_roll = random.random() * defender.get_effective_defense_skill()
         if acu_roll < def_roll:
             result["missed"] = True
+            result["defense_verb"] = defender.defense_verb
             return result
         result["hit"] = True
 

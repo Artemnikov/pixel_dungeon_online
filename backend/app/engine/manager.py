@@ -797,7 +797,8 @@ class GameInstance:
                     is_in_los=lambda a, b: self._is_in_los(a, b, floor_id=floor_id),
                 )
                 if result["missed"]:
-                    self.add_event("MISS", {"source": entity.id, "target": target_entity.id}, floor_id=floor_id)
+                    self.add_event("MISS", {"source": entity.id, "target": target_entity.id, "defense_verb": result.get("defense_verb", "dodged")}, floor_id=floor_id)
+                    self.add_event("ATTACK", {"source": entity.id, "target": target_entity.id, "damage": 0, "surprise": False}, floor_id=floor_id)
                     return
                 dmg = result["damage"]
                 self.add_event("ATTACK", {"source": entity.id, "target": target_entity.id, "damage": dmg, "surprise": result["surprise"]}, floor_id=floor_id)
@@ -953,7 +954,7 @@ class GameInstance:
                     is_in_los=lambda a, b: self._is_in_los(a, b, floor_id=floor_id),
                 )
                 if result["missed"]:
-                    self.add_event("MISS", {"source": player.id, "target": target_entity.id}, floor_id=floor_id)
+                    self.add_event("MISS", {"source": player.id, "target": target_entity.id, "defense_verb": result.get("defense_verb", "dodged")}, floor_id=floor_id)
                 damage_dealt = result["damage"]
                 if result["surprise"]:
                     pass
@@ -979,7 +980,7 @@ class GameInstance:
                 )
                 player.damage_min, player.damage_max = old_min, old_max
                 if result["missed"]:
-                    self.add_event("MISS", {"source": player.id, "target": target_entity.id}, floor_id=floor_id)
+                    self.add_event("MISS", {"source": player.id, "target": target_entity.id, "defense_verb": result.get("defense_verb", "dodged")}, floor_id=floor_id)
                 damage_dealt = result["damage"]
 
             if damage_dealt > 0:

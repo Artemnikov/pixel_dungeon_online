@@ -55,6 +55,8 @@ class Entity(BaseModel):
     dr_max: int = 0
     max_lvl: int = 5
 
+    defense_verb: str = "dodged"
+
     # Status effect fields (mutated by attack_proc/defense_proc)
     bleed_amount: int = 0
     bleed_turns: int = 0

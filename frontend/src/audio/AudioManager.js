@@ -33,6 +33,7 @@ class AudioManager {
 
         this.loadSound('ATTACK_BOW', atkBowSound);
         this.loadSound('THROW', throwSound);
+        this.loadSound('MISS', throwSound);
         this.loadSound('ATTACK_MAGIC', zapSound);
         this.loadSound('HIT_MAGIC', hitMagicSound);
         this.loadSound('STEP', stepSound);
