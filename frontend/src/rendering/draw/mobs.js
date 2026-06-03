@@ -4,6 +4,9 @@ import {
   SCORPIO_FW,
   GNOLL_FW,
   GNOLL_FH,
+  SNAKE_FW,
+  SNAKE_FH,
+  SNAKE_DEST,
   drawMobSprite,
   getGnollFrame,
   getGooFrame,
@@ -45,9 +48,12 @@ export function drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef,
 
     const isScorpio = mob.name === 'Scorpio';
     const isGnoll = mob.name === 'Gnoll';
+    const isSnake = mob.name === 'Snake';
     const flash = !!(mobAnimRef.current[mob.id]?.flashUntil && now < mobAnimRef.current[mob.id].flashUntil);
     if (isGnoll) {
       drawMobSprite(ctx, mob, mobSprite, sx, GNOLL_FW, GNOLL_FH, flash, GNOLL_DEST);
+    } else if (isSnake) {
+      drawMobSprite(ctx, mob, mobSprite, sx, SNAKE_FW, SNAKE_FH, flash, SNAKE_DEST);
     } else {
       drawMobSprite(ctx, mob, mobSprite, sx,
         isScorpio ? SCORPIO_FW : FRAME_W,
@@ -72,7 +78,8 @@ export function drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef,
     const isRatDeath = mob.name === 'Rat';
     const isSnakeDeath = mob.name === 'Snake';
     // Gnoll: die frames [8,9,10] over 250ms, then a 3s alpha fade (SPD AlphaTweener).
-    const deathDuration = isScorpioDeath ? 417 : isGooDeath ? 300 : isRatDeath ? 400 : isSnakeDeath ? 400 : 3250;
+    // Snake: die frames [11,12,13] over 300ms, then a 3s alpha fade.
+    const deathDuration = isScorpioDeath ? 417 : isGooDeath ? 300 : isRatDeath ? 400 : isSnakeDeath ? 3300 : 3250;
     if (elapsed > deathDuration) { delete dyingMobsRef.current[id]; return; }
     if (!visionRef.current.visible.has(`${Math.round(mob.renderPos.x)},${Math.round(mob.renderPos.y)}`)) return;
     if (isScorpioDeath) {
@@ -85,9 +92,10 @@ export function drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef,
       const fi = Math.min(Math.floor(elapsed / 100), 3);
       drawMobSprite(ctx, mob, assetImages.rat, [11, 12, 13, 14][fi] * FRAME_W);
     } else if (isSnakeDeath) {
-      // snake.png has no dedicated die frames; fade the idle frame out over ~400ms.
-      const alpha = Math.max(0, 1 - elapsed / 400);
-      drawMobSprite(ctx, mob, assetImages.snake, 0, FRAME_W, FRAME_W, false, null, alpha);
+      const fi = Math.min(Math.floor(elapsed / 100), 2);
+      const sx = [11, 12, 13][fi] * SNAKE_FW;
+      const alpha = elapsed <= 300 ? 1 : Math.max(0, 1 - (elapsed - 300) / 3000);
+      drawMobSprite(ctx, mob, assetImages.snake, sx, SNAKE_FW, SNAKE_FH, false, SNAKE_DEST, alpha);
     } else {
       // Gnoll death: [8,9,10] @ 83ms, then hold frame 10 and fade alpha 1->0 over 3s.
       const fi = Math.min(Math.floor(elapsed / 83), 2);

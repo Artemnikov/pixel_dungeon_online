@@ -26,6 +26,37 @@ import RightClickMenu from './ui/RightClickMenu';
 import LoadingOverlay from './ui/LoadingOverlay';
 import GameOverScreen from './ui/GameOverScreen';
 
+// Live viewport position of an inspect-popup anchor (a world tile, or a mob we follow
+// by its renderPos). Returns { left, top, below } or null when the popup should hide
+// (mob gone/out of view, or the anchor panned off the visible canvas). Pure so it can
+// be called from the per-frame rAF loop without reading refs during render.
+function inspectScreenPos(canvas, cam, zoom, anchor, mobs, visible) {
+  if (!canvas || !anchor) return null;
+  let wx, wyTop, wyBottom;
+  if (anchor.type === 'mob') {
+    const mob = mobs[anchor.id];
+    if (!mob) return null;
+    const mx = Math.round(mob.renderPos.x), my = Math.round(mob.renderPos.y);
+    if (!visible.has(`${mx},${my}`)) return null;
+    wx = (mob.renderPos.x + 0.5) * TILE_SIZE;
+    wyTop = mob.renderPos.y * TILE_SIZE;
+    wyBottom = (mob.renderPos.y + 1) * TILE_SIZE;
+  } else {
+    wx = (anchor.x + 0.5) * TILE_SIZE;
+    wyTop = anchor.y * TILE_SIZE;
+    wyBottom = (anchor.y + 1) * TILE_SIZE;
+  }
+  const rect = canvas.getBoundingClientRect();
+  const cw = canvas.width, ch = canvas.height;
+  const left = rect.left + (wx - cam.x - cw / 2) * zoom + cw / 2;
+  const topY = rect.top + (wyTop - cam.y - ch / 2) * zoom + ch / 2;
+  const bottomY = rect.top + (wyBottom - cam.y - ch / 2) * zoom + ch / 2;
+  // Hide once the anchor is panned off the visible canvas.
+  if (left < rect.left || left > rect.right || bottomY < rect.top || topY > rect.bottom) return null;
+  const below = topY < rect.top + 70;
+  return { left, top: below ? bottomY + 6 : topY - 6, below };
+}
+
 function App() {
   // --- screen flow / session state ---
   const [gameState, setGameState] = useState('WELCOME');
@@ -78,7 +109,8 @@ function App() {
   // as targeting, since the canvas has touch-action:none so taps don't fire onClick).
   const examineModeRef = useRef(false);
   const onExamineTapRef = useRef(null);
-  const inspectTimerRef = useRef(null);
+  const inspectPopupRef = useRef(null);
+  const inspectSubRef = useRef(null);
   const projectilesRef = useRef([]);
   const visionRef = useRef({ visible: new Set(), discovered: new Set() });
   const openDoorsRef = useRef(new Set());
@@ -259,7 +291,6 @@ function App() {
   // the reveal. (In examine mode, tapping a cell inspects it and exits — see
   // resolveExamineTap.) Mirrors the original Toolbar.btnSearch examine→search two-step.
   const clearInspect = () => {
-    if (inspectTimerRef.current) { clearTimeout(inspectTimerRef.current); inspectTimerRef.current = null; }
     setInspectInfo(null);
   };
 
@@ -280,33 +311,72 @@ function App() {
     clearInspect();
   };
 
-  // Examine-mode tap: open a small popup over the cell naming whatever is there, then
-  // leave examine mode (one inspect per arming, like the original's examineCell).
+  // Examine-mode tap: open a small popup naming whatever is in the cell, anchored to it
+  // (the live screen position is recomputed each frame by computeInspectPos so it sticks
+  // to the tile/mob as the camera or that mob moves), then leave examine mode.
   const resolveExamineTap = (tileX, tileY) => {
     const info = describeCell({
       tileX, tileY, gridRef, entitiesRef, visionRef,
       myPlayerId: myPlayerIdRef.current,
     });
     setExamineMode(false);
-    if (!info || !canvasRef.current) { clearInspect(); return; }
-
-    // Project the cell to viewport coords (inverse of handleCanvasClick's mapping)
-    // so the popup sits over the element; flip below the cell if it's near the top.
-    const canvas = canvasRef.current;
-    const rect = canvas.getBoundingClientRect();
-    const z = zoomRef.current;
-    const cam = cameraLerpRef.current;
-    const cw = canvas.width, ch = canvas.height;
-    const left = rect.left + ((tileX + 0.5) * TILE_SIZE - cam.x - cw / 2) * z + cw / 2;
-    const topY = rect.top + (tileY * TILE_SIZE - cam.y - ch / 2) * z + ch / 2;
-    const bottomY = rect.top + ((tileY + 1) * TILE_SIZE - cam.y - ch / 2) * z + ch / 2;
-    const below = topY < 70;
-
-    if (inspectTimerRef.current) clearTimeout(inspectTimerRef.current);
-    setInspectInfo({ name: info.name, sub: info.sub, left, top: below ? bottomY + 6 : topY - 6, below });
-    inspectTimerRef.current = setTimeout(() => setInspectInfo(null), 3000);
+    if (!info) { clearInspect(); return; }
+    setInspectInfo({ name: info.name, sub: info.sub, anchor: info.anchor });
   };
   useEffect(() => { onExamineTapRef.current = resolveExamineTap; });
+
+  // While a popup is open, drive it every frame: reposition from the live camera + anchor
+  // (so it sticks to its tile/mob), refresh a mob's HP, and handle auto-dismiss. Done in a
+  // rAF (not render) so we don't read refs during render. Dismissal is timestamp-based:
+  // the popup stays alive for DISMISS_MS after the last "activity" — for a mob that's its
+  // last HP change, so you can watch a fight and it fades 3s after the final hit; for a
+  // tile it's the inspect itself (fixed 3s). A vanished mob dismisses immediately.
+  useEffect(() => {
+    if (!inspectInfo) return;
+    const anchor = inspectInfo.anchor;
+    const DISMISS_MS = 3000;
+    let raf;
+    let lastSub;
+    let lastActive = performance.now();
+    const tick = () => {
+      const now = performance.now();
+
+      // Resolve the live secondary line (a mob's current HP), and bump the activity
+      // timestamp whenever it changes so active combat keeps the popup on screen.
+      let sub = inspectInfo.sub;
+      if (anchor.type === 'mob') {
+        const mob = entitiesRef.current.mobs[anchor.id];
+        if (!mob) { setInspectInfo(null); return; } // mob gone (killed/despawned)
+        sub = mob.hp != null && mob.max_hp != null ? `HP ${mob.hp}/${mob.max_hp}` : null;
+      }
+      if (sub !== lastSub) { lastSub = sub; lastActive = now; }
+      if (now - lastActive > DISMISS_MS) { setInspectInfo(null); return; }
+
+      const el = inspectPopupRef.current;
+      if (el) {
+        const pos = inspectScreenPos(
+          canvasRef.current, cameraLerpRef.current, zoomRef.current,
+          anchor, entitiesRef.current.mobs, visionRef.current.visible,
+        );
+        if (pos) {
+          el.style.display = '';
+          el.style.left = `${pos.left}px`;
+          el.style.top = `${pos.top}px`;
+          el.style.transform = pos.below ? 'translate(-50%, 0)' : 'translate(-50%, -100%)';
+          const subEl = inspectSubRef.current;
+          if (subEl) {
+            subEl.textContent = sub || '';
+            subEl.style.display = sub ? '' : 'none';
+          }
+        } else {
+          el.style.display = 'none';
+        }
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [inspectInfo]);
 
   const triggerWait = () => {
     if (socketRef.current?.readyState === WebSocket.OPEN) {
@@ -495,12 +565,14 @@ function App() {
 
       {inspectInfo && (
         <div
+          ref={inspectPopupRef}
           className="inspect-popup"
           style={{
             position: 'fixed',
-            left: inspectInfo.left,
-            top: inspectInfo.top,
-            transform: inspectInfo.below ? 'translate(-50%, 0)' : 'translate(-50%, -100%)',
+            left: 0,
+            top: 0,
+            display: 'none',
+            transform: 'translate(-50%, -100%)',
             background: 'rgba(0, 0, 0, 0.85)',
             border: '1px solid #6a6a6a',
             borderRadius: 3,
@@ -515,7 +587,9 @@ function App() {
           }}
         >
           <div style={{ fontWeight: 'bold' }}>{inspectInfo.name}</div>
-          {inspectInfo.sub && <div style={{ color: '#bdbdbd' }}>{inspectInfo.sub}</div>}
+          {/* Uncontrolled (no React child) so the rAF loop can update the live HP text
+              without React clobbering it on the next per-frame re-render. */}
+          <div ref={inspectSubRef} style={{ color: '#bdbdbd', display: 'none' }} />
         </div>
       )}
 

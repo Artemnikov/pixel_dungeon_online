@@ -9,6 +9,11 @@ export const SCORPIO_FW = 17;
 export const GNOLL_FW = 12;
 export const GNOLL_FH = 15;
 
+// Snake uses 12x11 frames. In-tile placement: 24x22 @ +4,+5 (centered in 32x32).
+export const SNAKE_FW = 12;
+export const SNAKE_FH = 11;
+export const SNAKE_DEST = { dx: 4, dy: 5, dw: 24, dh: 22 };
+
 const isEntityMoving = (mob) =>
   mob.targetPos &&
   (Math.abs(mob.targetPos.x - mob.renderPos.x) > 0.05 ||
@@ -71,21 +76,23 @@ export const getRatFrame = (mob, mobAnim, now) => {
   return [0, 0, 0, 1][Math.floor(now / 500) % 4] * FRAME_W;
 };
 
-// Snake: snake.png is a single row of 16x16 frames. Mirrors SnakeSprite's
-// idle (frame 0), run (0,1,2) and attack poses. The snake attack lasts 250ms
-// (see the ATTACK handler default in useGameSocket).
+// Faithful to original SPD SnakeSprite (12x11 frames, row 0):
+//   idle   10fps loop  0(x15), 1(x10), 2, 3, 2, 1(x2) = 30 frames, 3s loop
+//   run     8fps loop  [4,5,6,7] = 4 frames, 0.5s loop
+//   attack 15fps once  [8,9,10,9,0] = 5 frames, ~333ms
+//   die    10fps once  [11,12,13] = 3 frames, 300ms (death handled in draw/mobs.js)
 export const getSnakeFrame = (mob, mobAnim, now) => {
   const anim = mobAnim[mob.id] || {};
   const isAttacking = anim.attackUntil && now < anim.attackUntil;
   if (isAttacking) {
-    const elapsed = now - (anim.attackUntil - 250);
-    const fi = Math.min(Math.floor(elapsed / 63), 3);
-    return [3, 4, 5, 0][fi] * FRAME_W;
+    const elapsed = now - (anim.attackUntil - 333);
+    const fi = Math.min(Math.floor(elapsed / 67), 4);
+    return [8, 9, 10, 9, 0][fi] * SNAKE_FW;
   }
   if (isEntityMoving(mob)) {
-    return [0, 1, 2, 1][Math.floor(now / 100) % 4] * FRAME_W;
+    return [4, 5, 6, 7][Math.floor(now / 125) % 4] * SNAKE_FW;
   }
-  return [0, 0, 0, 1][Math.floor(now / 500) % 4] * FRAME_W;
+  return [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1,1,1, 2,3,2,1,1][Math.floor(now / 100) % 30] * SNAKE_FW;
 };
 
 // dest (optional): in-tile placement {dx,dy,dw,dh} for sprites whose native frame is not a

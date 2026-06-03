@@ -38,9 +38,13 @@ export function describeCell({ tileX, tileY, gridRef, entitiesRef, visionRef, my
     return null;
   }
 
+  // Default anchor is the inspected world cell; mobs override it with their id so the
+  // popup can follow the moving sprite (see computeInspectPos in App.jsx).
+  const tileAnchor = { type: 'tile', x: tileX, y: tileY };
+
   const visible = visionRef.current.visible.has(`${tileX},${tileY}`);
   const discovered = visible || visionRef.current.discovered.has(`${tileX},${tileY}`);
-  if (!discovered) return { name: 'Darkness', sub: null };
+  if (!discovered) return { name: 'Darkness', sub: null, anchor: tileAnchor };
 
   const ents = entitiesRef.current;
 
@@ -50,21 +54,21 @@ export function describeCell({ tileX, tileY, gridRef, entitiesRef, visionRef, my
       const t = entityTile(mob);
       if (t && t.x === tileX && t.y === tileY) {
         const hp = mob.hp != null && mob.max_hp != null ? `HP ${mob.hp}/${mob.max_hp}` : null;
-        return { name: mob.name || 'Creature', sub: hp };
+        return { name: mob.name || 'Creature', sub: hp, anchor: { type: 'mob', id: mob.id } };
       }
     }
     for (const pl of Object.values(ents.players || {})) {
       const t = entityTile(pl);
       if (t && t.x === tileX && t.y === tileY) {
-        return { name: pl.id === myPlayerId ? 'You' : (pl.name || 'Adventurer'), sub: null };
+        return { name: pl.id === myPlayerId ? 'You' : (pl.name || 'Adventurer'), sub: null, anchor: tileAnchor };
       }
     }
     for (const item of ents.items || []) {
       if (item.pos && item.pos.x === tileX && item.pos.y === tileY) {
-        return { name: item.name || 'Item', sub: null };
+        return { name: item.name || 'Item', sub: null, anchor: tileAnchor };
       }
     }
   }
 
-  return { name: TILE_NAMES[grid[tileY][tileX]] || 'Floor', sub: null };
+  return { name: TILE_NAMES[grid[tileY][tileX]] || 'Floor', sub: null, anchor: tileAnchor };
 }

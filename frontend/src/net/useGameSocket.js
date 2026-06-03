@@ -404,6 +404,7 @@ function handleEvent(event, {
       targetY,
       type: event.data.projectile || 'arrow',
       progress: 0,
+      rotation: 0,
       finished: false,
     });
 
@@ -444,7 +445,7 @@ function handleEvent(event, {
     // 1) Play the attacker's swing.
     if (srcMob) {
       if (!mobAnimRef.current[src]) mobAnimRef.current[src] = {};
-      const attackDuration = srcMob.name === 'Goo' ? 300 : srcMob.name === 'Scorpio' ? 200 : srcMob.name === 'Rat' ? 333 : 250;
+      const attackDuration = srcMob.name === 'Goo' ? 300 : srcMob.name === 'Scorpio' ? 200 : srcMob.name === 'Rat' ? 333 : srcMob.name === 'Snake' ? 333 : 250;
       mobAnimRef.current[src].attackUntil = now + attackDuration;
     } else if (srcPlayer && playerAnimRef) {
       if (!playerAnimRef.current[src]) playerAnimRef.current[src] = {};

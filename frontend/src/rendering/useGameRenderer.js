@@ -127,7 +127,7 @@ export default function useGameRenderer({
       advanceAndDrawCheckedCells(ctx, { ref: searchEffectsRef });
       advanceAndDrawParticles(ctx, { particlesRef });
       advanceAndDrawFloatingText(ctx, { floatingTextRef });
-      advanceAndDrawProjectiles(ctx, { projectilesRef });
+      advanceAndDrawProjectiles(ctx, { projectilesRef, assetImages });
 
       ctx.restore();
 
