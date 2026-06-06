@@ -28,6 +28,7 @@ import WndUseItem from './ui/WndUseItem';
 import RightClickMenu from './ui/RightClickMenu';
 import LoadingOverlay from './ui/LoadingOverlay';
 import GameOverScreen from './ui/GameOverScreen';
+import GameMenu from './ui/GameMenu';
 
 // Live viewport position of an inspect-popup anchor (a world tile, or a mob we follow
 // by its renderPos). Returns { left, top, below } or null when the popup should hide
@@ -108,6 +109,7 @@ function App() {
   const [showQuickBag, setShowQuickBag] = useState(false);
   const [radialOpen, setRadialOpen] = useState(false);
   const [swappedQuickslots, setSwappedQuickslots] = useState(false);
+  const [gameMenuOpen, setGameMenuOpen] = useState(false);
 
   // --- shared refs ---
   const canvasRef = useRef(null);
@@ -144,10 +146,12 @@ function App() {
   const floatingTextRef = useRef([]);
   const trapsRef = useRef([]);
   const depthRef = useRef(1);
+  const gameMenuOpenRef = useRef(false);
 
   useEffect(() => { targetingModeRef.current = targetingMode; }, [targetingMode]);
   useEffect(() => { examineModeRef.current = examineMode; }, [examineMode]);
   useEffect(() => { depthRef.current = depth; }, [depth]);
+  useEffect(() => { gameMenuOpenRef.current = gameMenuOpen; }, [gameMenuOpen]);
 
   const wrapperRef = useRef(null);
 
@@ -327,10 +331,14 @@ function App() {
     }
   };
 
-  const cancelModes = () => {
-    setExamineMode(false);
-    setTargetingMode(false);
-    clearInspect();
+  const handleEscape = () => {
+    if (examineModeRef.current || targetingModeRef.current) {
+      setExamineMode(false);
+      setTargetingMode(false);
+      clearInspect();
+    } else if (!gameMenuOpenRef.current) {
+      setGameMenuOpen(true);
+    }
   };
 
   // Examine-mode tap: open a small popup naming whatever is in the cell, anchored to it
@@ -515,11 +523,12 @@ function App() {
   useKeyboardControls({
     socketRef, inventory, setShowInventory,
     handleToolbarClick, handleToolbarDoubleClick,
-    onExamineOrReveal: handleExamineOrReveal, onCancelModes: cancelModes,
+    onExamineOrReveal: handleExamineOrReveal, onCancelModes: handleEscape,
     triggerWait,
     isRefocusingRef, isDraggingRef,
     quickslot, itemsById,
     onRadialSelect: handleRadialSelect,
+    gameMenuOpenRef,
   });
 
   // Reset transient game state on death so a fresh run starts clean (no stale
@@ -537,6 +546,12 @@ function App() {
     setMyStats({ hp: 0, maxHp: 10, name: '' });
     setInventory([]);
     setConnectionStatus(null);
+  };
+
+  const handleLeaveGame = () => {
+    resetForRestart();
+    setGameMenuOpen(false);
+    setGameState('WELCOME');
   };
 
   const isDesktop = interfaceSize > 0;
@@ -738,6 +753,13 @@ function App() {
           size={isDesktop ? 200 : 140}
           onSelect={(idx) => { handleToolbarClick(toolbarItems[idx], idx); }}
           onClose={() => setRadialOpen(false)}
+        />
+      )}
+
+      {gameMenuOpen && (
+        <GameMenu
+          onClose={() => setGameMenuOpen(false)}
+          onLeaveGame={handleLeaveGame}
         />
       )}
 
