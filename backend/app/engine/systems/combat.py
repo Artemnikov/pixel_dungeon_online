@@ -5,7 +5,50 @@ if TYPE_CHECKING:
     from app.engine.entities.base import Entity, Position
 
 
-def _roll_damage(attacker: "Entity", result: dict) -> int:
+def _preparation(attacker: "Entity", defender: "Entity") -> Optional[dict]:
+    """Assassin Preparation effect for a surprise melee strike, or None.
+
+    Returns {ko, dmg_mult, rolls} where `ko` flags an instant kill of a
+    sufficiently-wounded foe. Requires the attacker to be an invisible Assassin
+    with at least one Preparation tier accrued.
+    """
+    info = getattr(attacker, "subclass_info", None)
+    if info is None or info.subclass != "assassin":
+        return None
+    if getattr(attacker, "invisible", 0) <= 0:
+        return None
+    from app.engine.game.rogue import (
+        prep_tier, prep_damage_bonus, prep_damage_rolls, prep_ko_threshold,
+    )
+    secs = getattr(attacker, "prep_seconds", 0.0)
+    if prep_tier(secs) < 0:
+        return None
+    enhanced_lethality = attacker.talent_info.level("enhanced_lethality")
+    threshold = prep_ko_threshold(secs, enhanced_lethality)
+    if getattr(defender, "is_boss", False) or getattr(defender, "is_miniboss", False):
+        threshold /= 5.0
+    hp_ratio = defender.hp / max(defender.max_hp, 1)
+    return {
+        "ko": hp_ratio < threshold,
+        "dmg_mult": 1.0 + prep_damage_bonus(secs),
+        "rolls": prep_damage_rolls(secs),
+    }
+
+
+def _dispel_stealth(attacker: "Entity") -> None:
+    """Attacking breaks stealth: clear invisibility, the cloak's sustained
+    stealth flag, and Preparation."""
+    if getattr(attacker, "invisible", 0) > 0:
+        attacker.invisible = 0
+    attacker.remove_buff("invisibility")
+    attacker.remove_buff("shadows")
+    if getattr(attacker, "cloak_stealth_active", False):
+        attacker.cloak_stealth_active = False
+    if hasattr(attacker, "prep_seconds"):
+        attacker.prep_seconds = 0.0
+
+
+def _roll_damage(attacker: "Entity", result: dict, prep: Optional[dict] = None) -> int:
     """Roll base damage, applying surprise damage floor if applicable."""
     dmg_min = attacker.get_damage_min()
     dmg_max = attacker.get_damage_max()
@@ -17,6 +60,18 @@ def _roll_damage(attacker: "Entity", result: dict) -> int:
             dmg_min = dmg_min + int(diff * floor)
 
     dmg_roll = random.randint(dmg_min, dmg_max)
+    # Preparation: keep the highest of N rolls.
+    if prep is not None:
+        for _ in range(prep["rolls"] - 1):
+            r = random.randint(dmg_min, dmg_max)
+            if r > dmg_roll:
+                dmg_roll = r
+
+    # Sucker Punch (rogue T1): bonus damage on a surprise attack.
+    if result.get("surprise"):
+        sp = getattr(attacker, "talent_info", None)
+        if sp is not None and sp.level("sucker_punch") > 0:
+            dmg_roll += random.randint(sp.level("sucker_punch"), 2)
 
     # Kinetic conserved damage
     if attacker.conserved_damage > 0:
@@ -44,6 +99,10 @@ def _apply_post_dr_multipliers(raw_damage: int, attacker: "Entity", defender: "E
     vuln = getattr(defender, "vulnerable", 0)
     if vuln > 0:
         effective = int(effective * 1.33)
+
+    # Rogue Death Mark: marked foes take 25% more damage.
+    if defender.has_buff("death_mark"):
+        effective = int(effective * 1.25)
 
     return effective
 
@@ -116,15 +175,22 @@ def resolve_melee_attack(
     result["rolled"] = True
     result["crit"] = result["surprise"]
 
-    dmg_roll = _roll_damage(attacker, result)
+    # Assassin Preparation: instant-KO a wounded foe, else amplify the strike.
+    prep = _preparation(attacker, defender) if result["surprise"] else None
+    if prep is not None and prep["ko"]:
+        hp_before = defender.hp
+        defender.take_damage(max(1, defender.hp))
+        result["damage"] = hp_before
+        result["ko"] = True
+        _dispel_stealth(attacker)
+        return result
+
+    dmg_roll = _roll_damage(attacker, result, prep)
     dr_roll = random.randint(defender.get_dr_min(), defender.get_dr_max())
     raw_damage = max(0, dmg_roll - dr_roll)
 
     # Invisibility dispel on attack
-    if getattr(attacker, "invisible", 0) > 0:
-        attacker.invisible = 0
-        attacker.remove_buff("invisibility")
-        attacker.remove_buff("preparation")
+    _dispel_stealth(attacker)
 
     # Pre-DR defense proc (glyphs, abilities)
     if hasattr(defender, "defense_proc") and raw_damage > 0:
@@ -134,6 +200,8 @@ def resolve_melee_attack(
 
     # Post-DR multipliers
     effective_damage = _apply_post_dr_multipliers(raw_damage, attacker, defender, result)
+    if prep is not None:
+        effective_damage = int(effective_damage * prep["dmg_mult"])
 
     hp_before = defender.hp
     actual_damage = defender.take_damage(max(0, effective_damage))
@@ -197,10 +265,7 @@ def resolve_ranged_attack(
     raw_damage = max(0, dmg_roll - dr_roll)
 
     # Invisibility dispel on attack
-    if getattr(attacker, "invisible", 0) > 0:
-        attacker.invisible = 0
-        attacker.remove_buff("invisibility")
-        attacker.remove_buff("preparation")
+    _dispel_stealth(attacker)
 
     # Pre-DR defense proc
     if hasattr(defender, "defense_proc") and raw_damage > 0:

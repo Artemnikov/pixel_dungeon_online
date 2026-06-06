@@ -81,6 +81,10 @@ export interface Player {
   armor_charge?: number;
   armor_ability?: string;
   seal_affixed?: boolean;
+  cloak_stealth_active?: boolean;
+  prep_seconds?: number;
+  momentum_stacks?: number;
+  freerun_seconds?: number;
   inventory: (
     | MeleeWeapon
     | Dagger
@@ -92,6 +96,7 @@ export interface Player {
     | Ring
     | Artifact
     | BrokenSeal
+    | CloakOfShadows
     | Wand
     | HealthPotion
     | RevivingPotion
@@ -128,6 +133,7 @@ export interface Player {
         | Ring
         | Artifact
         | BrokenSeal
+        | CloakOfShadows
         | Wand
         | HealthPotion
         | RevivingPotion
@@ -165,6 +171,7 @@ export interface Player {
         | Ring
         | Artifact
         | BrokenSeal
+        | CloakOfShadows
         | Wand
         | HealthPotion
         | RevivingPotion
@@ -231,6 +238,7 @@ export interface Belongings {
         | Ring
         | Artifact
         | BrokenSeal
+        | CloakOfShadows
         | Wand
         | HealthPotion
         | RevivingPotion
@@ -268,6 +276,7 @@ export interface Belongings {
         | Ring
         | Artifact
         | BrokenSeal
+        | CloakOfShadows
         | Wand
         | HealthPotion
         | RevivingPotion
@@ -305,6 +314,7 @@ export interface Belongings {
         | Ring
         | Artifact
         | BrokenSeal
+        | CloakOfShadows
         | Wand
         | HealthPotion
         | RevivingPotion
@@ -342,6 +352,7 @@ export interface Belongings {
         | Ring
         | Artifact
         | BrokenSeal
+        | CloakOfShadows
         | Wand
         | HealthPotion
         | RevivingPotion
@@ -379,6 +390,7 @@ export interface Belongings {
         | Ring
         | Artifact
         | BrokenSeal
+        | CloakOfShadows
         | Wand
         | HealthPotion
         | RevivingPotion
@@ -407,7 +419,7 @@ export interface Belongings {
 }
 export interface Bag {
   kind?: "bag";
-  id: string;
+  id?: string;
   name: string;
   type?: string;
   pos?: Position | null;
@@ -430,6 +442,7 @@ export interface Bag {
     | Ring
     | Artifact
     | BrokenSeal
+    | CloakOfShadows
     | Wand
     | HealthPotion
     | RevivingPotion
@@ -457,7 +470,7 @@ export interface Bag {
 }
 export interface MeleeWeapon {
   kind?: "melee_weapon";
-  id: string;
+  id?: string;
   name: string;
   type?: string;
   pos?: Position | null;
@@ -478,7 +491,7 @@ export interface MeleeWeapon {
 }
 export interface Dagger {
   kind?: "dagger";
-  id: string;
+  id?: string;
   name?: string;
   type?: string;
   pos?: Position | null;
@@ -499,7 +512,7 @@ export interface Dagger {
 }
 export interface WornShortsword {
   kind?: "worn_shortsword";
-  id: string;
+  id?: string;
   name?: string;
   type?: string;
   pos?: Position | null;
@@ -520,7 +533,7 @@ export interface WornShortsword {
 }
 export interface Bow {
   kind?: "bow";
-  id: string;
+  id?: string;
   name?: string;
   type?: string;
   pos?: Position | null;
@@ -541,7 +554,7 @@ export interface Bow {
 }
 export interface Staff {
   kind?: "staff";
-  id: string;
+  id?: string;
   name?: string;
   type?: string;
   pos?: Position | null;
@@ -564,7 +577,7 @@ export interface Staff {
 }
 export interface MissileWeapon {
   kind?: "missile_weapon";
-  id: string;
+  id?: string;
   name: string;
   type?: string;
   pos?: Position | null;
@@ -585,7 +598,7 @@ export interface MissileWeapon {
 }
 export interface Armor {
   kind?: "armor";
-  id: string;
+  id?: string;
   name: string;
   type?: string;
   pos?: Position | null;
@@ -606,7 +619,7 @@ export interface ArmorEnchantment {
 }
 export interface Ring {
   kind?: "ring";
-  id: string;
+  id?: string;
   name: string;
   type?: string;
   pos?: Position | null;
@@ -621,7 +634,7 @@ export interface Ring {
 }
 export interface Artifact {
   kind?: "artifact";
-  id: string;
+  id?: string;
   name: string;
   type?: string;
   pos?: Position | null;
@@ -638,7 +651,7 @@ export interface Artifact {
 }
 export interface BrokenSeal {
   kind?: "broken_seal";
-  id: string;
+  id?: string;
   name?: string;
   type?: string;
   pos?: Position | null;
@@ -653,9 +666,27 @@ export interface BrokenSeal {
   charge?: number;
   charge_cap?: number;
 }
+export interface CloakOfShadows {
+  kind?: "cloak_of_shadows";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  strength_requirement?: number;
+  charge?: number;
+  charge_cap?: number;
+  exp?: number;
+}
 export interface Wand {
   kind?: "wand";
-  id: string;
+  id?: string;
   name: string;
   type?: string;
   pos?: Position | null;
@@ -674,7 +705,7 @@ export interface Wand {
 }
 export interface HealthPotion {
   kind?: "health_potion";
-  id: string;
+  id?: string;
   name?: string;
   type?: string;
   pos?: Position | null;
@@ -689,7 +720,7 @@ export interface HealthPotion {
 }
 export interface RevivingPotion {
   kind?: "reviving_potion";
-  id: string;
+  id?: string;
   name?: string;
   type?: string;
   pos?: Position | null;
@@ -704,7 +735,7 @@ export interface RevivingPotion {
 }
 export interface FuryPotion {
   kind?: "fury_potion";
-  id: string;
+  id?: string;
   name?: string;
   type?: string;
   pos?: Position | null;
@@ -719,7 +750,7 @@ export interface FuryPotion {
 }
 export interface Potion {
   kind?: "potion";
-  id: string;
+  id?: string;
   name: string;
   type?: string;
   pos?: Position | null;
@@ -734,7 +765,7 @@ export interface Potion {
 }
 export interface Scroll {
   kind?: "scroll";
-  id: string;
+  id?: string;
   name: string;
   type?: string;
   pos?: Position | null;
@@ -748,7 +779,7 @@ export interface Scroll {
 }
 export interface ScrollOfRage {
   kind?: "scroll_of_rage";
-  id: string;
+  id?: string;
   name?: string;
   type?: string;
   pos?: Position | null;
@@ -762,7 +793,7 @@ export interface ScrollOfRage {
 }
 export interface Gold {
   kind?: "gold";
-  id: string;
+  id?: string;
   name: string;
   type?: string;
   pos?: Position | null;
@@ -776,7 +807,7 @@ export interface Gold {
 }
 export interface Food {
   kind?: "food";
-  id: string;
+  id?: string;
   name: string;
   type?: string;
   pos?: Position | null;
@@ -790,7 +821,7 @@ export interface Food {
 }
 export interface MysteryMeat {
   kind?: "mystery_meat";
-  id: string;
+  id?: string;
   name?: string;
   type?: string;
   pos?: Position | null;
@@ -804,7 +835,7 @@ export interface MysteryMeat {
 }
 export interface Berry {
   kind?: "berry";
-  id: string;
+  id?: string;
   name?: string;
   type?: string;
   pos?: Position | null;
@@ -818,7 +849,7 @@ export interface Berry {
 }
 export interface Key {
   kind?: "key";
-  id: string;
+  id?: string;
   name: string;
   type?: string;
   pos?: Position | null;
@@ -833,7 +864,7 @@ export interface Key {
 }
 export interface Seed {
   kind?: "seed";
-  id: string;
+  id?: string;
   name: string;
   type?: string;
   pos?: Position | null;
@@ -848,7 +879,7 @@ export interface Seed {
 }
 export interface Dewdrop {
   kind?: "dewdrop";
-  id: string;
+  id?: string;
   name?: string;
   type?: string;
   pos?: Position | null;
@@ -862,7 +893,7 @@ export interface Dewdrop {
 }
 export interface Stone {
   kind?: "stone";
-  id: string;
+  id?: string;
   name?: string;
   type?: string;
   pos?: Position | null;
@@ -880,7 +911,7 @@ export interface Stone {
 }
 export interface Boomerang {
   kind?: "boomerang";
-  id: string;
+  id?: string;
   name?: string;
   type?: string;
   pos?: Position | null;
@@ -898,7 +929,7 @@ export interface Boomerang {
 }
 export interface ThrowableDagger {
   kind?: "throwable_dagger";
-  id: string;
+  id?: string;
   name?: string;
   type?: string;
   pos?: Position | null;
@@ -916,7 +947,7 @@ export interface ThrowableDagger {
 }
 export interface Throwable {
   kind?: "throwable";
-  id: string;
+  id?: string;
   name: string;
   type?: string;
   pos?: Position | null;
@@ -934,7 +965,7 @@ export interface Throwable {
 }
 export interface VelvetPouch {
   kind?: "velvet_pouch";
-  id: string;
+  id?: string;
   name?: string;
   type?: string;
   pos?: Position | null;
@@ -957,6 +988,7 @@ export interface VelvetPouch {
     | Ring
     | Artifact
     | BrokenSeal
+    | CloakOfShadows
     | Wand
     | HealthPotion
     | RevivingPotion
@@ -984,7 +1016,7 @@ export interface VelvetPouch {
 }
 export interface ScrollHolder {
   kind?: "scroll_holder";
-  id: string;
+  id?: string;
   name?: string;
   type?: string;
   pos?: Position | null;
@@ -1007,6 +1039,7 @@ export interface ScrollHolder {
     | Ring
     | Artifact
     | BrokenSeal
+    | CloakOfShadows
     | Wand
     | HealthPotion
     | RevivingPotion
@@ -1034,7 +1067,7 @@ export interface ScrollHolder {
 }
 export interface MagicalHolster {
   kind?: "magical_holster";
-  id: string;
+  id?: string;
   name?: string;
   type?: string;
   pos?: Position | null;
@@ -1057,6 +1090,7 @@ export interface MagicalHolster {
     | Ring
     | Artifact
     | BrokenSeal
+    | CloakOfShadows
     | Wand
     | HealthPotion
     | RevivingPotion
@@ -1084,7 +1118,7 @@ export interface MagicalHolster {
 }
 export interface PotionBandolier {
   kind?: "potion_bandolier";
-  id: string;
+  id?: string;
   name?: string;
   type?: string;
   pos?: Position | null;
@@ -1107,6 +1141,7 @@ export interface PotionBandolier {
     | Ring
     | Artifact
     | BrokenSeal
+    | CloakOfShadows
     | Wand
     | HealthPotion
     | RevivingPotion
@@ -1193,6 +1228,8 @@ export interface Mob {
   attack_range?: number;
   aggro_windup?: number;
   engaged?: boolean;
+  owner_id?: string | null;
+  summon_lifespan?: number;
 }
 export interface DropEntry {
   item_kind: string;

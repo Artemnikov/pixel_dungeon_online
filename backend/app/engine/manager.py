@@ -41,6 +41,7 @@ from app.engine.game.generation import GenerationMixin
 from app.engine.game.items import ItemsMixin
 from app.engine.game.movement import MovementCombatMixin
 from app.engine.game.players import PlayersMixin
+from app.engine.game.rogue import RogueMixin
 from app.engine.game.serialization import SerializationMixin
 from app.engine.game.talents import TalentsMixin
 from app.engine.game.tick import TickMixin
@@ -59,6 +60,7 @@ class GameInstance(
     TickMixin,
     ArmorAbilitiesMixin,
     TalentsMixin,
+    RogueMixin,
     VisionMixin,
     SerializationMixin,
 ):

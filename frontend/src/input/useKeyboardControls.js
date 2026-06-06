@@ -34,6 +34,7 @@ export default function useKeyboardControls({
   quickslot,
   itemsById,
   onRadialSelect,
+  gameMenuOpenRef,
 }) {
   const lastKeyRef = useRef({ key: null, time: 0 });
   const pressedKeysRef = useRef(new Set());
@@ -69,6 +70,7 @@ export default function useKeyboardControls({
         return;
       }
       if (e.key === 'Escape') {
+        if (gameMenuOpenRef?.current) return;
         if (onCancelModes) onCancelModes();
         return;
       }
@@ -127,5 +129,5 @@ export default function useKeyboardControls({
       window.removeEventListener('keyup', handleKeyUp);
       window.removeEventListener('blur', handleBlur);
     };
-  }, [inventory, handleToolbarClick, handleToolbarDoubleClick, socketRef, setShowInventory, onExamineOrReveal, onCancelModes, triggerWait, isRefocusingRef, isDraggingRef, quickslot, itemsById, onRadialSelect]);
+  }, [inventory, handleToolbarClick, handleToolbarDoubleClick, socketRef, setShowInventory, onExamineOrReveal, onCancelModes, triggerWait, isRefocusingRef, isDraggingRef, quickslot, itemsById, onRadialSelect, gameMenuOpenRef]);
 }

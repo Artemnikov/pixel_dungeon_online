@@ -9,7 +9,7 @@ import time
 from typing import List
 
 from app.engine.dungeon.generator import TileType
-from app.engine.entities.base import Difficulty, Effect, Player
+from app.engine.entities.base import Difficulty, Effect, Faction, Player
 from app.engine.entities.buffs import process_buffs
 from app.engine.game.blobs import tick_foliage_blobs
 from app.engine.entities.mobs import Rat
@@ -103,6 +103,11 @@ class TickMixin:
             if player.armor_charge < 100:
                 player.armor_charge = min(100, player.armor_charge + 2)
 
+            # Rogue: cloak stealth drain/recharge, Preparation accrual, Momentum
+            # decay. `moved` is whether the player stepped this tick.
+            moved = bool(player.move_intent or player.path_queue)
+            self.tick_rogue(player, dt, moved=moved)
+
             # Berserk decay
             if player.berserk_active:
                 hp_ratio = player.hp / max(player.get_total_max_hp(), 1)
@@ -139,6 +144,12 @@ class TickMixin:
 
             for mob in list(floor.mobs.values()):
                 if not mob.is_alive:
+                    continue
+
+                # Player-faction summons (Rogue's Shadow Clone) fight FOR the
+                # party; they use a separate ally AI, not the hunt-the-player loop.
+                if mob.faction == Faction.PLAYER:
+                    self._update_shadow_ally(mob, floor, floor_id)
                     continue
 
                 target_player = self._find_nearest_player(mob.pos, floor_id)
@@ -232,6 +243,48 @@ class TickMixin:
                     elif random.random() < 0.1 * max(1.0, mob.speed):
                         dx, dy = random.choice([(0, 1), (0, -1), (1, 0), (-1, 0), (1, 1), (1, -1), (-1, 1), (-1, -1)])
                         self.move_entity(mob.id, dx, dy)
+
+    def _update_shadow_ally(self, ally, floor: FloorState, floor_id: int):
+        # Shadow Clone AI: attack the nearest enemy mob in sight, else regroup
+        # on its owner. Paced at the player step cadence so it doesn't zoom.
+        move_times = getattr(self, "_ally_move_times", None)
+        if move_times is None:
+            move_times = self._ally_move_times = {}
+        now = time.time()
+        if now - move_times.get(ally.id, 0.0) < AUTO_MOVE_INTERVAL:
+            return
+
+        enemies = [m for m in floor.mobs.values()
+                   if m.is_alive and m.faction != Faction.PLAYER]
+        target = None
+        best = 999
+        for m in enemies:
+            d = self._get_distance(ally.pos, m.pos)
+            if d < best and self._is_in_los(ally.pos, m.pos, floor_id=floor_id):
+                best, target = d, m
+
+        if target is not None:
+            move_times[ally.id] = now
+            if best <= 1:
+                # Adjacent: bump-attack (move_entity resolves the ally->enemy hit).
+                ally.last_attack_time = now - ally.attack_cooldown
+                adx = (target.pos.x > ally.pos.x) - (target.pos.x < ally.pos.x)
+                ady = (target.pos.y > ally.pos.y) - (target.pos.y < ally.pos.y)
+                self.move_entity(ally.id, adx, ady)
+            else:
+                step = self._get_next_step_to(ally.pos, target.pos, floor_id=floor_id)
+                if step:
+                    self.move_entity(ally.id, step[0], step[1])
+            return
+
+        # No enemy: follow the owner.
+        owner = self.players.get(getattr(ally, "owner_id", None) or "")
+        if owner is not None and owner.floor_id == floor_id:
+            if self._get_distance(ally.pos, owner.pos) > 1:
+                move_times[ally.id] = now
+                step = self._get_next_step_to(ally.pos, owner.pos, floor_id=floor_id)
+                if step:
+                    self.move_entity(ally.id, step[0], step[1])
 
     def _process_bleed_ooze(self, floor_id: int, active_players: List[Player]):
         for player in active_players:

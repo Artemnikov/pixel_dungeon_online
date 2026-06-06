@@ -304,6 +304,9 @@ async def game_websocket(websocket: WebSocket, game_id: str, class_type: str = "
             elif isinstance(message, msg.TriggerBerserk):
                 game.trigger_berserk(player_id)
 
+            elif isinstance(message, msg.PreparationStrike):
+                game.preparation_strike(player_id, message.target_x, message.target_y)
+
     except WebSocketDisconnect:
         # Keep the hero alive for the reconnect grace window (see reaper); the
         # player is only removed once the deadline elapses without a reconnect.

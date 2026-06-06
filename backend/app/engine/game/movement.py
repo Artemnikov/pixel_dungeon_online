@@ -152,6 +152,8 @@ class MovementCombatMixin:
                         self.add_event("RAGE_CHANGED", {"player": entity.id, "power": entity.berserk_power}, floor_id=floor_id, source_player_id=entity.id)
 
                 if not target_entity.is_alive:
+                    if isinstance(target_entity, MobEntity):
+                        self.process_death_mark_kill(entity, target_entity, floor, floor_id)
                     self.add_event("DEATH", {"target": target_entity.id}, floor_id=floor_id)
                     if isinstance(entity, Player) and isinstance(target_entity, MobEntity):
                         if entity.earn_exp(target_entity.exp):
@@ -190,6 +192,8 @@ class MovementCombatMixin:
 
         if isinstance(entity, Player):
             self.add_event("MOVE", {"entity": entity_id, "x": entity.pos.x, "y": entity.pos.y}, floor_id=floor_id)
+            # Freerunner builds Momentum on each step.
+            self.gain_momentum(entity)
 
         if isinstance(entity, Player):
             items_to_pickup = [
@@ -356,6 +360,8 @@ class MovementCombatMixin:
                         self.add_event("PLAY_SOUND", {"sound": "HEALTH_WARN"}, player_id=target_entity.id)
 
             if not target_entity.is_alive:
+                if isinstance(target_entity, MobEntity):
+                    self.process_death_mark_kill(player, target_entity, floor, floor_id)
                 self.add_event("DEATH", {"target": target_entity.id}, floor_id=floor_id)
                 if isinstance(target_entity, MobEntity):
                     if player.earn_exp(target_entity.exp):

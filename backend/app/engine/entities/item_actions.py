@@ -150,6 +150,11 @@ def action_zap(game, player, item, tx=None, ty=None) -> None:
     game.perform_ranged_attack(player.id, item.id, tx, ty)
 
 
+def action_stealth(game, player, item, tx=None, ty=None) -> None:
+    # Cloak of Shadows: toggle the Rogue's sustained stealth.
+    game.toggle_cloak_stealth(player.id)
+
+
 def action_noop(game, player, item, tx=None, ty=None) -> None:
     # OPEN (bag) / EAT (no food effects yet) are handled client-side or are no-ops.
     return
@@ -164,6 +169,7 @@ ITEM_ACTION_DISPATCH = {
     Action.THROW: action_throw,
     Action.ZAP: action_zap,
     Action.AFFIX: action_affix,
+    Action.STEALTH: action_stealth,
     Action.EAT: action_noop,
     Action.OPEN: action_noop,
     Action.INFO: action_noop,

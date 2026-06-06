@@ -15,6 +15,7 @@ from app.engine.entities.base import (
     Bow,
     BrokenSeal,
     CharacterClass,
+    CloakOfShadows,
     Dagger,
     Faction,
     Item,
@@ -24,6 +25,7 @@ from app.engine.entities.base import (
     ScrollOfRage,
     Staff,
     Stone,
+    ThrowableDagger,
     Weapon,
     WornShortsword,
 )
@@ -75,15 +77,27 @@ class PlayersMixin:
             )
 
         elif class_type == CharacterClass.ROGUE:
+            # SPD: Dagger + Cloth Armor base + Cloak of Shadows artifact +
+            # Throwing Knives (quickslot). The cloak — not the armor — is the
+            # signature item.
             belongings.weapon = Dagger(
                 id=str(uuid.uuid4()),
             )
             belongings.armor = Armor(
                 id=str(uuid.uuid4()),
-                name="Rogue's Cloak",
+                name="Cloth Armor",
                 tier=1,
-                strength_requirement=9,
+                strength_requirement=10,
             )
+            belongings.artifact = CloakOfShadows(
+                id=str(uuid.uuid4()),
+            )
+            knives = ThrowableDagger(
+                id=str(uuid.uuid4()),
+                name="Throwing Knife",
+                quantity=3,
+            )
+            belongings.backpack.collect(knives)
 
         elif class_type == CharacterClass.HUNTRESS:
             belongings.weapon = Bow(

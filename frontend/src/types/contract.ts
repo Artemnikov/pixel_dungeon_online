@@ -300,6 +300,30 @@ export interface AffixSealEvent {
   data: { player: string; armor: string };
 }
 
+/** Rogue: Cloak of Shadows stealth toggled on/off. */
+export interface StealthEvent {
+  type: 'STEALTH';
+  data: { player: string; active: boolean };
+}
+
+/** Rogue: an enemy was Death-Marked. */
+export interface DeathMarkEvent {
+  type: 'DEATH_MARK';
+  data: { player: string; target: string };
+}
+
+/** Rogue: a Shadow Clone ally was summoned. */
+export interface ShadowCloneEvent {
+  type: 'SHADOW_CLONE';
+  data: { player: string; clone: string; x: number; y: number };
+}
+
+/** A shielding/barrier amount was granted to a player. */
+export interface ShieldEvent {
+  type: 'SHIELD';
+  data: { player: string; amount: number };
+}
+
 /** Every event the server can place in `STATE_UPDATE.events`. */
 export type GameEvent =
   | AttackEvent
@@ -328,7 +352,11 @@ export type GameEvent =
   | ComboMoveUnlockedEvent
   | BerserkActivatedEvent
   | RageChangedEvent
-  | AffixSealEvent;
+  | AffixSealEvent
+  | StealthEvent
+  | DeathMarkEvent
+  | ShadowCloneEvent
+  | ShieldEvent;
 
 export type GameEventType = GameEvent['type'];
 
@@ -401,4 +429,5 @@ export type ClientMessage =
   | { type: 'CHOOSE_SUBCLASS'; subclass: string }
   | { type: 'UPGRADE_TALENT'; talent: string }
   | { type: 'USE_ARMOR_ABILITY'; ability: string; target_x?: number; target_y?: number }
-  | { type: 'TRIGGER_BERSERK' };
+  | { type: 'TRIGGER_BERSERK' }
+  | { type: 'PREPARATION_STRIKE'; target_x: number; target_y: number };
