@@ -7,12 +7,26 @@ class Subclass:
     WARDEN = "warden"
     BERSERKER = "berserker"
     GLADIATOR = "gladiator"
+    # Rogue
+    ASSASSIN = "assassin"
+    FREERUNNER = "freerunner"
+
+
+# Which subclasses each hero class may choose at level 6.
+CLASS_SUBCLASSES: Dict[str, tuple[str, ...]] = {
+    "warrior": (Subclass.BERSERKER, Subclass.GLADIATOR),
+    "rogue": (Subclass.ASSASSIN, Subclass.FREERUNNER),
+}
 
 
 class ArmorAbilityType:
     HEROIC_LEAP = "heroic_leap"
     SHOCKWAVE = "shockwave"
     ENDURE = "endure"
+    # Rogue
+    SMOKE_BOMB = "smoke_bomb"
+    DEATH_MARK = "death_mark"
+    SHADOW_CLONE = "shadow_clone"
 
 
 class Talent:
@@ -57,6 +71,49 @@ class Talent:
     SHOCKWAVE = "shockwave_talent"
     ENDURE_ABILITY = "endure_ability_talent"
 
+    # ===================== ROGUE =====================
+    # Tier 1 (level 2)
+    CACHED_RATIONS = "cached_rations"
+    THIEFS_INTUITION = "thiefs_intuition"
+    SUCKER_PUNCH = "sucker_punch"
+    PROTECTIVE_SHADOWS = "protective_shadows"
+
+    # Tier 2 (level 7)
+    MYSTICAL_MEAL = "mystical_meal"
+    INSCRIBED_STEALTH = "inscribed_stealth"
+    WIDE_SEARCH = "wide_search"
+    SILENT_STEPS = "silent_steps"
+    ROGUES_FORESIGHT = "rogues_foresight"
+
+    # Tier 3 (level 13) — class
+    ENHANCED_RINGS = "enhanced_rings"
+    LIGHT_CLOAK = "light_cloak"
+    # Tier 3 — Assassin
+    ENHANCED_LETHALITY = "enhanced_lethality"
+    ASSASSINS_REACH = "assassins_reach"
+    BOUNTY_HUNTER = "bounty_hunter"
+    # Tier 3 — Freerunner
+    EVASIVE_ARMOR = "evasive_armor"
+    PROJECTILE_MOMENTUM = "projectile_momentum"
+    SPEEDY_STEALTH = "speedy_stealth"
+    # Tier 3 — armor ability selection
+    SMOKE_BOMB = "smoke_bomb_talent"
+    DEATH_MARK = "death_mark_talent"
+    SHADOW_CLONE = "shadow_clone_talent"
+
+    # Tier 4 (level 21) — Smoke Bomb
+    HASTY_RETREAT = "hasty_retreat"
+    BODY_REPLACEMENT = "body_replacement"
+    SHADOW_STEP = "shadow_step"
+    # Tier 4 — Death Mark
+    FEAR_THE_REAPER = "fear_the_reaper"
+    DEATHLY_DURABILITY = "deathly_durability"
+    DOUBLE_MARK = "double_mark"
+    # Tier 4 — Shadow Clone
+    SHADOW_BLADE = "shadow_blade"
+    CLONED_ARMOR = "cloned_armor"
+    PERFECT_COPY = "perfect_copy"
+
 
 # Maps talent name → (max_points, tier, subclass_required_or_None)
 TALENT_DEFS: Dict[str, tuple[int, int, Optional[str]]] = {
@@ -94,6 +151,78 @@ TALENT_DEFS: Dict[str, tuple[int, int, Optional[str]]] = {
     Talent.COMBO_AURA: (4, 4, Subclass.GLADIATOR),
     Talent.SAVAGE_CAPACITY: (4, 4, Subclass.GLADIATOR),
     Talent.DEADLY_FOLLOWUP: (4, 4, Subclass.GLADIATOR),
+
+    # ===================== ROGUE =====================
+    # Tier 1
+    Talent.CACHED_RATIONS: (2, 1, None),
+    Talent.THIEFS_INTUITION: (2, 1, None),
+    Talent.SUCKER_PUNCH: (2, 1, None),
+    Talent.PROTECTIVE_SHADOWS: (2, 1, None),
+    # Tier 2
+    Talent.MYSTICAL_MEAL: (2, 2, None),
+    Talent.INSCRIBED_STEALTH: (2, 2, None),
+    Talent.WIDE_SEARCH: (2, 2, None),
+    Talent.SILENT_STEPS: (2, 2, None),
+    Talent.ROGUES_FORESIGHT: (2, 2, None),
+    # Tier 3 — class
+    Talent.ENHANCED_RINGS: (3, 3, None),
+    Talent.LIGHT_CLOAK: (3, 3, None),
+    # Tier 3 — Assassin
+    Talent.ENHANCED_LETHALITY: (3, 3, Subclass.ASSASSIN),
+    Talent.ASSASSINS_REACH: (3, 3, Subclass.ASSASSIN),
+    Talent.BOUNTY_HUNTER: (3, 3, Subclass.ASSASSIN),
+    # Tier 3 — Freerunner
+    Talent.EVASIVE_ARMOR: (3, 3, Subclass.FREERUNNER),
+    Talent.PROJECTILE_MOMENTUM: (3, 3, Subclass.FREERUNNER),
+    Talent.SPEEDY_STEALTH: (3, 3, Subclass.FREERUNNER),
+    # Tier 3 — armor ability selection (exclusive — pick one of three)
+    Talent.SMOKE_BOMB: (1, 3, None),
+    Talent.DEATH_MARK: (1, 3, None),
+    Talent.SHADOW_CLONE: (1, 3, None),
+    # Tier 4 — Smoke Bomb
+    Talent.HASTY_RETREAT: (4, 4, None),
+    Talent.BODY_REPLACEMENT: (4, 4, None),
+    Talent.SHADOW_STEP: (4, 4, None),
+    # Tier 4 — Death Mark
+    Talent.FEAR_THE_REAPER: (4, 4, None),
+    Talent.DEATHLY_DURABILITY: (4, 4, None),
+    Talent.DOUBLE_MARK: (4, 4, None),
+    # Tier 4 — Shadow Clone
+    Talent.SHADOW_BLADE: (4, 4, None),
+    Talent.CLONED_ARMOR: (4, 4, None),
+    Talent.PERFECT_COPY: (4, 4, None),
+}
+
+
+# Talents restricted to a hero class (the engine otherwise gates only by
+# subclass). Talents absent from this map are available to any class.
+TALENT_CLASS_REQ: Dict[str, str] = {
+    # Warrior
+    Talent.IRON_WILL: "warrior", Talent.IRON_STOMACH: "warrior",
+    Talent.RESTORED_STRENGTH: "warrior", Talent.LIGHT_ARMOR: "warrior",
+    Talent.HEROIC_LEAP: "warrior", Talent.SHOCKWAVE: "warrior",
+    Talent.ENDURE_ABILITY: "warrior", Talent.SUB_ATK: "warrior", Talent.SUB_DEF: "warrior",
+    # Rogue
+    Talent.CACHED_RATIONS: "rogue", Talent.THIEFS_INTUITION: "rogue",
+    Talent.SUCKER_PUNCH: "rogue", Talent.PROTECTIVE_SHADOWS: "rogue",
+    Talent.MYSTICAL_MEAL: "rogue", Talent.INSCRIBED_STEALTH: "rogue",
+    Talent.WIDE_SEARCH: "rogue", Talent.SILENT_STEPS: "rogue", Talent.ROGUES_FORESIGHT: "rogue",
+    Talent.ENHANCED_RINGS: "rogue", Talent.LIGHT_CLOAK: "rogue",
+    Talent.SMOKE_BOMB: "rogue", Talent.DEATH_MARK: "rogue", Talent.SHADOW_CLONE: "rogue",
+    Talent.HASTY_RETREAT: "rogue", Talent.BODY_REPLACEMENT: "rogue", Talent.SHADOW_STEP: "rogue",
+    Talent.FEAR_THE_REAPER: "rogue", Talent.DEATHLY_DURABILITY: "rogue", Talent.DOUBLE_MARK: "rogue",
+    Talent.SHADOW_BLADE: "rogue", Talent.CLONED_ARMOR: "rogue", Talent.PERFECT_COPY: "rogue",
+}
+
+
+# Armor-ability talents → the ability they unlock (first point locks the choice).
+ABILITY_TALENTS: Dict[str, str] = {
+    Talent.HEROIC_LEAP: ArmorAbilityType.HEROIC_LEAP,
+    Talent.SHOCKWAVE: ArmorAbilityType.SHOCKWAVE,
+    Talent.ENDURE_ABILITY: ArmorAbilityType.ENDURE,
+    Talent.SMOKE_BOMB: ArmorAbilityType.SMOKE_BOMB,
+    Talent.DEATH_MARK: ArmorAbilityType.DEATH_MARK,
+    Talent.SHADOW_CLONE: ArmorAbilityType.SHADOW_CLONE,
 }
 
 

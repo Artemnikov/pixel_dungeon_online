@@ -241,6 +241,7 @@ class Action:
     OPEN = "OPEN"
     AFFIX = "AFFIX"
     INFO = "INFO"
+    STEALTH = "STEALTH"  # Cloak of Shadows: toggle invisibility
 
 # Actions that require the player to pick a target cell before resolving.
 TARGETED_ACTIONS = {Action.THROW, Action.ZAP}
@@ -567,6 +568,49 @@ class BrokenSeal(Artifact):
         return [Action.UNEQUIP] + base
 
 
+class CloakOfShadows(Artifact):
+    # The Rogue's signature artifact. Toggling STEALTH turns the hero invisible,
+    # draining one charge every few seconds (see tick.py's cloak drain). It self-
+    # levels with use (charge_cap grows 3 -> 10). Charge regenerates while not
+    # stealthed. Mirrors SPD's CloakOfShadows; turn-based timers are recast as
+    # real seconds for this engine.
+    kind: Literal["cloak_of_shadows"] = "cloak_of_shadows"
+    name: str = "Cloak of Shadows"
+    type: str = "artifact"
+    unique: bool = True
+    charge: int = 3
+    charge_cap: int = 3
+    level_cap: ClassVar[int] = 10
+    exp: int = 0
+    DESC: ClassVar[str] = (
+        "This cloak is an heirloom, passed down from generation to generation. "
+        "Activate it to vanish into the shadows; striking from stealth lands a "
+        "guaranteed, more powerful surprise attack."
+    )
+
+    def actions(self, player: Optional["Player"] = None) -> List[str]:
+        base = super().actions(player)
+        if player is None:
+            return base
+        light_cloak = player.talent_info.has("light_cloak")
+        usable = (player.belongings.is_equipped(self.id) or light_cloak) and not self.cursed
+        has_charge = self.charge > 0 or player.cloak_stealth_active
+        if usable and has_charge:
+            return [Action.STEALTH] + base
+        return base
+
+    def default_action(self) -> Optional[str]:
+        return Action.STEALTH
+
+    def _info_lines(self, player: Optional["Player"] = None) -> List[str]:
+        lines = super()._info_lines(player)
+        lines.append(f"The cloak holds {self.charge} of {self.charge_cap} charges.")
+        return lines
+
+    def on_upgrade(self) -> None:
+        self.charge_cap = min(self.charge_cap + 1, self.level_cap)
+
+
 class ScrollOfRage(Scroll):
     kind: Literal["scroll_of_rage"] = "scroll_of_rage"
     name: str = "Scroll of Rage"
@@ -799,7 +843,7 @@ class PotionBandolier(Bag):
 AnyItem = Annotated[
     Union[
         MeleeWeapon, Dagger, WornShortsword, Bow, Staff, MissileWeapon,
-        Armor, Ring, Artifact, BrokenSeal, Wand,
+        Armor, Ring, Artifact, BrokenSeal, CloakOfShadows, Wand,
         HealthPotion, RevivingPotion, FuryPotion, Potion, Scroll, ScrollOfRage, Gold, Food, MysteryMeat, Berry, Key,
         Seed, Dewdrop, Stone, Boomerang, ThrowableDagger, Throwable,
         VelvetPouch, ScrollHolder, MagicalHolster, PotionBandolier, Bag,
@@ -957,6 +1001,10 @@ class Mob(Entity):
     # to arm the windup once per engagement); see GameInstance.update_tick.
     aggro_windup: float = 1.0
     engaged: bool = False
+    # Summoned ally (e.g. Rogue's Shadow Clone): the owning player's id and the
+    # remaining real-time lifespan in seconds (0 = permanent until killed).
+    owner_id: Optional[str] = None
+    summon_lifespan: float = 0.0
 
 class Player(Entity):
     type: str = EntityType.PLAYER
@@ -1009,6 +1057,23 @@ class Player(Entity):
 
     # Broken Seal was affixed to armor (permanently consumed)
     seal_affixed: bool = False
+
+    # --- Rogue ----------------------------------------------------------------
+    # Cloak of Shadows sustained stealth: while active the hero is invisible and
+    # the cloak bleeds charge (see tick.py). `_cloak_drain_accum` accumulates
+    # real seconds toward the next charge drain; `_cloak_recharge_accum` toward
+    # the next regenerated charge while not stealthed.
+    cloak_stealth_active: bool = False
+    _cloak_drain_accum: float = 0.0
+    _cloak_recharge_accum: float = 0.0
+    # Assassin Preparation: real seconds spent invisible this stealth window.
+    # Drives the surprise damage tier / KO threshold / blink range (see combat).
+    prep_seconds: float = 0.0
+    # Freerunner Momentum: stacks build per move and decay while standing still;
+    # spending them grants a short freerun (speed + evasion).
+    momentum_stacks: int = 0
+    _momentum_decay_accum: float = 0.0
+    freerun_seconds: float = 0.0
 
     @property
     def talent_info(self):

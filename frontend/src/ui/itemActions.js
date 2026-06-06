@@ -3,6 +3,7 @@
 export const ACTION_LABELS = {
   EQUIP: 'Equip', UNEQUIP: 'Unequip', DROP: 'Drop', THROW: 'Throw',
   DRINK: 'Drink', READ: 'Read', ZAP: 'Zap', EAT: 'Eat', OPEN: 'Open',
+  AFFIX: 'Affix', STEALTH: 'Stealth',
 };
 
 export const actionLabel = (a) => ACTION_LABELS[a] || a;

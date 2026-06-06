@@ -8,6 +8,7 @@
           "type": "string"
         },
         "id": {
+          "default": "",
           "type": "string"
         },
         "name": {
@@ -69,7 +70,6 @@
         }
       },
       "required": [
-        "id",
         "name"
       ],
       "type": "object"
@@ -95,6 +95,7 @@
           "type": "string"
         },
         "id": {
+          "default": "",
           "type": "string"
         },
         "name": {
@@ -157,7 +158,6 @@
         }
       },
       "required": [
-        "id",
         "name"
       ],
       "type": "object"
@@ -170,6 +170,7 @@
           "type": "string"
         },
         "id": {
+          "default": "",
           "type": "string"
         },
         "name": {
@@ -233,6 +234,7 @@
                 "boomerang": "#/$defs/Boomerang",
                 "bow": "#/$defs/Bow",
                 "broken_seal": "#/$defs/BrokenSeal",
+                "cloak_of_shadows": "#/$defs/CloakOfShadows",
                 "dagger": "#/$defs/Dagger",
                 "dewdrop": "#/$defs/Dewdrop",
                 "food": "#/$defs/Food",
@@ -292,6 +294,9 @@
               },
               {
                 "$ref": "#/$defs/BrokenSeal"
+              },
+              {
+                "$ref": "#/$defs/CloakOfShadows"
               },
               {
                 "$ref": "#/$defs/Wand"
@@ -368,7 +373,6 @@
         }
       },
       "required": [
-        "id",
         "name"
       ],
       "type": "object"
@@ -390,6 +394,7 @@
                   "boomerang": "#/$defs/Boomerang",
                   "bow": "#/$defs/Bow",
                   "broken_seal": "#/$defs/BrokenSeal",
+                  "cloak_of_shadows": "#/$defs/CloakOfShadows",
                   "dagger": "#/$defs/Dagger",
                   "dewdrop": "#/$defs/Dewdrop",
                   "food": "#/$defs/Food",
@@ -449,6 +454,9 @@
                 },
                 {
                   "$ref": "#/$defs/BrokenSeal"
+                },
+                {
+                  "$ref": "#/$defs/CloakOfShadows"
                 },
                 {
                   "$ref": "#/$defs/Wand"
@@ -539,6 +547,7 @@
                   "boomerang": "#/$defs/Boomerang",
                   "bow": "#/$defs/Bow",
                   "broken_seal": "#/$defs/BrokenSeal",
+                  "cloak_of_shadows": "#/$defs/CloakOfShadows",
                   "dagger": "#/$defs/Dagger",
                   "dewdrop": "#/$defs/Dewdrop",
                   "food": "#/$defs/Food",
@@ -598,6 +607,9 @@
                 },
                 {
                   "$ref": "#/$defs/BrokenSeal"
+                },
+                {
+                  "$ref": "#/$defs/CloakOfShadows"
                 },
                 {
                   "$ref": "#/$defs/Wand"
@@ -688,6 +700,7 @@
                   "boomerang": "#/$defs/Boomerang",
                   "bow": "#/$defs/Bow",
                   "broken_seal": "#/$defs/BrokenSeal",
+                  "cloak_of_shadows": "#/$defs/CloakOfShadows",
                   "dagger": "#/$defs/Dagger",
                   "dewdrop": "#/$defs/Dewdrop",
                   "food": "#/$defs/Food",
@@ -747,6 +760,9 @@
                 },
                 {
                   "$ref": "#/$defs/BrokenSeal"
+                },
+                {
+                  "$ref": "#/$defs/CloakOfShadows"
                 },
                 {
                   "$ref": "#/$defs/Wand"
@@ -837,6 +853,7 @@
                   "boomerang": "#/$defs/Boomerang",
                   "bow": "#/$defs/Bow",
                   "broken_seal": "#/$defs/BrokenSeal",
+                  "cloak_of_shadows": "#/$defs/CloakOfShadows",
                   "dagger": "#/$defs/Dagger",
                   "dewdrop": "#/$defs/Dewdrop",
                   "food": "#/$defs/Food",
@@ -896,6 +913,9 @@
                 },
                 {
                   "$ref": "#/$defs/BrokenSeal"
+                },
+                {
+                  "$ref": "#/$defs/CloakOfShadows"
                 },
                 {
                   "$ref": "#/$defs/Wand"
@@ -986,6 +1006,7 @@
                   "boomerang": "#/$defs/Boomerang",
                   "bow": "#/$defs/Bow",
                   "broken_seal": "#/$defs/BrokenSeal",
+                  "cloak_of_shadows": "#/$defs/CloakOfShadows",
                   "dagger": "#/$defs/Dagger",
                   "dewdrop": "#/$defs/Dewdrop",
                   "food": "#/$defs/Food",
@@ -1045,6 +1066,9 @@
                 },
                 {
                   "$ref": "#/$defs/BrokenSeal"
+                },
+                {
+                  "$ref": "#/$defs/CloakOfShadows"
                 },
                 {
                   "$ref": "#/$defs/Wand"
@@ -1134,6 +1158,7 @@
           "type": "string"
         },
         "id": {
+          "default": "",
           "type": "string"
         },
         "name": {
@@ -1184,9 +1209,6 @@
           "type": "boolean"
         }
       },
-      "required": [
-        "id"
-      ],
       "type": "object"
     },
     "Boomerang": {
@@ -1197,6 +1219,7 @@
           "type": "string"
         },
         "id": {
+          "default": "",
           "type": "string"
         },
         "name": {
@@ -1263,9 +1286,6 @@
           "type": "string"
         }
       },
-      "required": [
-        "id"
-      ],
       "type": "object"
     },
     "Bow": {
@@ -1276,6 +1296,7 @@
           "type": "string"
         },
         "id": {
+          "default": "",
           "type": "string"
         },
         "name": {
@@ -1361,9 +1382,6 @@
           "type": "number"
         }
       },
-      "required": [
-        "id"
-      ],
       "type": "object"
     },
     "BrokenSeal": {
@@ -1374,6 +1392,7 @@
           "type": "string"
         },
         "id": {
+          "default": "",
           "type": "string"
         },
         "name": {
@@ -1436,9 +1455,6 @@
           "type": "integer"
         }
       },
-      "required": [
-        "id"
-      ],
       "type": "object"
     },
     "Buff": {
@@ -1483,6 +1499,83 @@
       ],
       "type": "object"
     },
+    "CloakOfShadows": {
+      "properties": {
+        "kind": {
+          "const": "cloak_of_shadows",
+          "default": "cloak_of_shadows",
+          "type": "string"
+        },
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "name": {
+          "default": "Cloak of Shadows",
+          "type": "string"
+        },
+        "type": {
+          "default": "artifact",
+          "type": "string"
+        },
+        "pos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Position"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "quantity": {
+          "default": 1,
+          "type": "integer"
+        },
+        "level": {
+          "default": 0,
+          "type": "integer"
+        },
+        "level_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "unique": {
+          "default": true,
+          "type": "boolean"
+        },
+        "kept_though_lost": {
+          "default": false,
+          "type": "boolean"
+        },
+        "strength_requirement": {
+          "default": 10,
+          "type": "integer"
+        },
+        "charge": {
+          "default": 3,
+          "type": "integer"
+        },
+        "charge_cap": {
+          "default": 3,
+          "type": "integer"
+        },
+        "exp": {
+          "default": 0,
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    },
     "Dagger": {
       "properties": {
         "kind": {
@@ -1491,6 +1584,7 @@
           "type": "string"
         },
         "id": {
+          "default": "",
           "type": "string"
         },
         "name": {
@@ -1583,9 +1677,6 @@
           "type": "number"
         }
       },
-      "required": [
-        "id"
-      ],
       "type": "object"
     },
     "Dewdrop": {
@@ -1596,6 +1687,7 @@
           "type": "string"
         },
         "id": {
+          "default": "",
           "type": "string"
         },
         "name": {
@@ -1646,9 +1738,6 @@
           "type": "boolean"
         }
       },
-      "required": [
-        "id"
-      ],
       "type": "object"
     },
     "DropEntry": {
@@ -1705,6 +1794,7 @@
           "type": "string"
         },
         "id": {
+          "default": "",
           "type": "string"
         },
         "name": {
@@ -1755,7 +1845,6 @@
         }
       },
       "required": [
-        "id",
         "name"
       ],
       "type": "object"
@@ -1768,6 +1857,7 @@
           "type": "string"
         },
         "id": {
+          "default": "",
           "type": "string"
         },
         "name": {
@@ -1822,9 +1912,6 @@
           "type": "string"
         }
       },
-      "required": [
-        "id"
-      ],
       "type": "object"
     },
     "Gold": {
@@ -1835,6 +1922,7 @@
           "type": "string"
         },
         "id": {
+          "default": "",
           "type": "string"
         },
         "name": {
@@ -1885,7 +1973,6 @@
         }
       },
       "required": [
-        "id",
         "name"
       ],
       "type": "object"
@@ -1898,6 +1985,7 @@
           "type": "string"
         },
         "id": {
+          "default": "",
           "type": "string"
         },
         "name": {
@@ -1952,9 +2040,6 @@
           "type": "string"
         }
       },
-      "required": [
-        "id"
-      ],
       "type": "object"
     },
     "Key": {
@@ -1965,6 +2050,7 @@
           "type": "string"
         },
         "id": {
+          "default": "",
           "type": "string"
         },
         "name": {
@@ -2019,7 +2105,6 @@
         }
       },
       "required": [
-        "id",
         "name"
       ],
       "type": "object"
@@ -2032,6 +2117,7 @@
           "type": "string"
         },
         "id": {
+          "default": "",
           "type": "string"
         },
         "name": {
@@ -2096,6 +2182,7 @@
                 "boomerang": "#/$defs/Boomerang",
                 "bow": "#/$defs/Bow",
                 "broken_seal": "#/$defs/BrokenSeal",
+                "cloak_of_shadows": "#/$defs/CloakOfShadows",
                 "dagger": "#/$defs/Dagger",
                 "dewdrop": "#/$defs/Dewdrop",
                 "food": "#/$defs/Food",
@@ -2155,6 +2242,9 @@
               },
               {
                 "$ref": "#/$defs/BrokenSeal"
+              },
+              {
+                "$ref": "#/$defs/CloakOfShadows"
               },
               {
                 "$ref": "#/$defs/Wand"
@@ -2230,9 +2320,6 @@
           "type": "array"
         }
       },
-      "required": [
-        "id"
-      ],
       "type": "object"
     },
     "MeleeWeapon": {
@@ -2243,6 +2330,7 @@
           "type": "string"
         },
         "id": {
+          "default": "",
           "type": "string"
         },
         "name": {
@@ -2335,7 +2423,6 @@
         }
       },
       "required": [
-        "id",
         "name"
       ],
       "type": "object"
@@ -2348,6 +2435,7 @@
           "type": "string"
         },
         "id": {
+          "default": "",
           "type": "string"
         },
         "name": {
@@ -2440,7 +2528,6 @@
         }
       },
       "required": [
-        "id",
         "name"
       ],
       "type": "object"
@@ -2628,6 +2715,21 @@
         "engaged": {
           "default": false,
           "type": "boolean"
+        },
+        "owner_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "summon_lifespan": {
+          "default": 0.0,
+          "type": "number"
         }
       },
       "required": [
@@ -2647,6 +2749,7 @@
           "type": "string"
         },
         "id": {
+          "default": "",
           "type": "string"
         },
         "name": {
@@ -2697,9 +2800,6 @@
           "type": "boolean"
         }
       },
-      "required": [
-        "id"
-      ],
       "type": "object"
     },
     "Player": {
@@ -2996,6 +3096,22 @@
           "default": false,
           "type": "boolean"
         },
+        "cloak_stealth_active": {
+          "default": false,
+          "type": "boolean"
+        },
+        "prep_seconds": {
+          "default": 0.0,
+          "type": "number"
+        },
+        "momentum_stacks": {
+          "default": 0,
+          "type": "integer"
+        },
+        "freerun_seconds": {
+          "default": 0.0,
+          "type": "number"
+        },
         "inventory": {
           "items": {
             "discriminator": {
@@ -3007,6 +3123,7 @@
                 "boomerang": "#/$defs/Boomerang",
                 "bow": "#/$defs/Bow",
                 "broken_seal": "#/$defs/BrokenSeal",
+                "cloak_of_shadows": "#/$defs/CloakOfShadows",
                 "dagger": "#/$defs/Dagger",
                 "dewdrop": "#/$defs/Dewdrop",
                 "food": "#/$defs/Food",
@@ -3066,6 +3183,9 @@
               },
               {
                 "$ref": "#/$defs/BrokenSeal"
+              },
+              {
+                "$ref": "#/$defs/CloakOfShadows"
               },
               {
                 "$ref": "#/$defs/Wand"
@@ -3153,6 +3273,7 @@
                   "boomerang": "#/$defs/Boomerang",
                   "bow": "#/$defs/Bow",
                   "broken_seal": "#/$defs/BrokenSeal",
+                  "cloak_of_shadows": "#/$defs/CloakOfShadows",
                   "dagger": "#/$defs/Dagger",
                   "dewdrop": "#/$defs/Dewdrop",
                   "food": "#/$defs/Food",
@@ -3212,6 +3333,9 @@
                 },
                 {
                   "$ref": "#/$defs/BrokenSeal"
+                },
+                {
+                  "$ref": "#/$defs/CloakOfShadows"
                 },
                 {
                   "$ref": "#/$defs/Wand"
@@ -3302,6 +3426,7 @@
                   "boomerang": "#/$defs/Boomerang",
                   "bow": "#/$defs/Bow",
                   "broken_seal": "#/$defs/BrokenSeal",
+                  "cloak_of_shadows": "#/$defs/CloakOfShadows",
                   "dagger": "#/$defs/Dagger",
                   "dewdrop": "#/$defs/Dewdrop",
                   "food": "#/$defs/Food",
@@ -3361,6 +3486,9 @@
                 },
                 {
                   "$ref": "#/$defs/BrokenSeal"
+                },
+                {
+                  "$ref": "#/$defs/CloakOfShadows"
                 },
                 {
                   "$ref": "#/$defs/Wand"
@@ -3475,6 +3603,7 @@
           "type": "string"
         },
         "id": {
+          "default": "",
           "type": "string"
         },
         "name": {
@@ -3529,7 +3658,6 @@
         }
       },
       "required": [
-        "id",
         "name"
       ],
       "type": "object"
@@ -3542,6 +3670,7 @@
           "type": "string"
         },
         "id": {
+          "default": "",
           "type": "string"
         },
         "name": {
@@ -3606,6 +3735,7 @@
                 "boomerang": "#/$defs/Boomerang",
                 "bow": "#/$defs/Bow",
                 "broken_seal": "#/$defs/BrokenSeal",
+                "cloak_of_shadows": "#/$defs/CloakOfShadows",
                 "dagger": "#/$defs/Dagger",
                 "dewdrop": "#/$defs/Dewdrop",
                 "food": "#/$defs/Food",
@@ -3665,6 +3795,9 @@
               },
               {
                 "$ref": "#/$defs/BrokenSeal"
+              },
+              {
+                "$ref": "#/$defs/CloakOfShadows"
               },
               {
                 "$ref": "#/$defs/Wand"
@@ -3740,9 +3873,6 @@
           "type": "array"
         }
       },
-      "required": [
-        "id"
-      ],
       "type": "object"
     },
     "QuickSlot": {
@@ -3795,6 +3925,7 @@
           "type": "string"
         },
         "id": {
+          "default": "",
           "type": "string"
         },
         "name": {
@@ -3849,9 +3980,6 @@
           "type": "string"
         }
       },
-      "required": [
-        "id"
-      ],
       "type": "object"
     },
     "Ring": {
@@ -3862,6 +3990,7 @@
           "type": "string"
         },
         "id": {
+          "default": "",
           "type": "string"
         },
         "name": {
@@ -3916,7 +4045,6 @@
         }
       },
       "required": [
-        "id",
         "name"
       ],
       "type": "object"
@@ -3929,6 +4057,7 @@
           "type": "string"
         },
         "id": {
+          "default": "",
           "type": "string"
         },
         "name": {
@@ -3979,7 +4108,6 @@
         }
       },
       "required": [
-        "id",
         "name"
       ],
       "type": "object"
@@ -3992,6 +4120,7 @@
           "type": "string"
         },
         "id": {
+          "default": "",
           "type": "string"
         },
         "name": {
@@ -4056,6 +4185,7 @@
                 "boomerang": "#/$defs/Boomerang",
                 "bow": "#/$defs/Bow",
                 "broken_seal": "#/$defs/BrokenSeal",
+                "cloak_of_shadows": "#/$defs/CloakOfShadows",
                 "dagger": "#/$defs/Dagger",
                 "dewdrop": "#/$defs/Dewdrop",
                 "food": "#/$defs/Food",
@@ -4115,6 +4245,9 @@
               },
               {
                 "$ref": "#/$defs/BrokenSeal"
+              },
+              {
+                "$ref": "#/$defs/CloakOfShadows"
               },
               {
                 "$ref": "#/$defs/Wand"
@@ -4190,9 +4323,6 @@
           "type": "array"
         }
       },
-      "required": [
-        "id"
-      ],
       "type": "object"
     },
     "ScrollOfRage": {
@@ -4203,6 +4333,7 @@
           "type": "string"
         },
         "id": {
+          "default": "",
           "type": "string"
         },
         "name": {
@@ -4253,9 +4384,6 @@
           "type": "boolean"
         }
       },
-      "required": [
-        "id"
-      ],
       "type": "object"
     },
     "Seed": {
@@ -4266,6 +4394,7 @@
           "type": "string"
         },
         "id": {
+          "default": "",
           "type": "string"
         },
         "name": {
@@ -4320,7 +4449,6 @@
         }
       },
       "required": [
-        "id",
         "name"
       ],
       "type": "object"
@@ -4354,6 +4482,7 @@
           "type": "string"
         },
         "id": {
+          "default": "",
           "type": "string"
         },
         "name": {
@@ -4447,9 +4576,6 @@
           "type": "integer"
         }
       },
-      "required": [
-        "id"
-      ],
       "type": "object"
     },
     "Stone": {
@@ -4460,6 +4586,7 @@
           "type": "string"
         },
         "id": {
+          "default": "",
           "type": "string"
         },
         "name": {
@@ -4526,9 +4653,6 @@
           "type": "string"
         }
       },
-      "required": [
-        "id"
-      ],
       "type": "object"
     },
     "SubclassInfo": {
@@ -4569,6 +4693,7 @@
           "type": "string"
         },
         "id": {
+          "default": "",
           "type": "string"
         },
         "name": {
@@ -4635,7 +4760,6 @@
         }
       },
       "required": [
-        "id",
         "name"
       ],
       "type": "object"
@@ -4648,6 +4772,7 @@
           "type": "string"
         },
         "id": {
+          "default": "",
           "type": "string"
         },
         "name": {
@@ -4714,9 +4839,6 @@
           "type": "string"
         }
       },
-      "required": [
-        "id"
-      ],
       "type": "object"
     },
     "VelvetPouch": {
@@ -4727,6 +4849,7 @@
           "type": "string"
         },
         "id": {
+          "default": "",
           "type": "string"
         },
         "name": {
@@ -4791,6 +4914,7 @@
                 "boomerang": "#/$defs/Boomerang",
                 "bow": "#/$defs/Bow",
                 "broken_seal": "#/$defs/BrokenSeal",
+                "cloak_of_shadows": "#/$defs/CloakOfShadows",
                 "dagger": "#/$defs/Dagger",
                 "dewdrop": "#/$defs/Dewdrop",
                 "food": "#/$defs/Food",
@@ -4850,6 +4974,9 @@
               },
               {
                 "$ref": "#/$defs/BrokenSeal"
+              },
+              {
+                "$ref": "#/$defs/CloakOfShadows"
               },
               {
                 "$ref": "#/$defs/Wand"
@@ -4925,9 +5052,6 @@
           "type": "array"
         }
       },
-      "required": [
-        "id"
-      ],
       "type": "object"
     },
     "Wand": {
@@ -4938,6 +5062,7 @@
           "type": "string"
         },
         "id": {
+          "default": "",
           "type": "string"
         },
         "name": {
@@ -5008,7 +5133,6 @@
         }
       },
       "required": [
-        "id",
         "name"
       ],
       "type": "object"
@@ -5021,6 +5145,7 @@
           "type": "string"
         },
         "id": {
+          "default": "",
           "type": "string"
         },
         "name": {
@@ -5113,9 +5238,6 @@
           "type": "number"
         }
       },
-      "required": [
-        "id"
-      ],
       "type": "object"
     }
   },

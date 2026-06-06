@@ -17,6 +17,12 @@ export function drawPlayers(ctx, { entitiesRef, visionRef, assetImages, playerAn
     if (playerSprite) {
       ctx.save();
 
+      // Rogue stealth: render an invisible hero translucently (fully see-through
+      // for others, ghosted for yourself so you can still track your position).
+      if (player.invisible > 0) {
+        ctx.globalAlpha = player.id === myPlayerId ? 0.45 : 0.0;
+      }
+
       const RUN_FRAMES    = [2, 3, 4, 5, 6, 7];
       const IDLE_FRAMES   = [0, 0, 0, 1, 0, 0, 1, 1];
       const ATTACK_FRAMES = [13, 14, 15, 0]; // ~15fps swing (frames 13,14,15,idle)

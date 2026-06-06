@@ -122,6 +122,12 @@ class TriggerBerserk(_ClientMessageBase):
     type: Literal["TRIGGER_BERSERK"]
 
 
+class PreparationStrike(_ClientMessageBase):
+    type: Literal["PREPARATION_STRIKE"]
+    target_x: int
+    target_y: int
+
+
 ClientMessage = Annotated[
     Union[
         Ping,
@@ -143,6 +149,7 @@ ClientMessage = Annotated[
         UpgradeTalent,
         UseArmorAbility,
         TriggerBerserk,
+        PreparationStrike,
     ],
     Field(discriminator="type"),
 ]

@@ -6,9 +6,12 @@ from app.engine.entities.subclasses import (
     Subclass,
     Talent,
     TALENT_DEFS,
+    TALENT_CLASS_REQ,
     TIER_UNLOCK_LEVELS,
     TIER_MAX_POINTS,
     ArmorAbilityType,
+    ABILITY_TALENTS,
+    CLASS_SUBCLASSES,
     COMBO_MOVES,
 )
 
@@ -22,7 +25,7 @@ class TalentsMixin:
             return False
         if player.subclass_info.subclass is not None:
             return False
-        if subclass not in (Subclass.BERSERKER, Subclass.GLADIATOR):
+        if subclass not in CLASS_SUBCLASSES.get(player.class_type, ()):
             return False
         player.subclass_info.subclass = subclass
         if subclass == Subclass.BERSERKER:
@@ -50,6 +53,11 @@ class TalentsMixin:
         if player.level < unlock_lvl:
             return False
 
+        # Class check (talents not in the map are class-agnostic)
+        class_req = TALENT_CLASS_REQ.get(talent_name)
+        if class_req is not None and player.class_type != class_req:
+            return False
+
         # Subclass check
         if subclass_req is not None and info.subclass != subclass_req:
             return False
@@ -67,13 +75,9 @@ class TalentsMixin:
 
         info.talent_info.talents[talent_name] = current + 1
 
-        # Armor ability selection (first point in any of the three locks the choice)
-        if talent_name == Talent.HEROIC_LEAP:
-            player.armor_ability = ArmorAbilityType.HEROIC_LEAP
-        elif talent_name == Talent.SHOCKWAVE:
-            player.armor_ability = ArmorAbilityType.SHOCKWAVE
-        elif talent_name == Talent.ENDURE_ABILITY:
-            player.armor_ability = ArmorAbilityType.ENDURE
+        # Armor ability selection (first point in any selector locks the choice)
+        if talent_name in ABILITY_TALENTS:
+            player.armor_ability = ABILITY_TALENTS[talent_name]
 
         self.add_event("TALENT_UPGRADED", {"player": player.id, "talent": talent_name, "level": current + 1}, floor_id=player.floor_id, source_player_id=player.id)
         return True

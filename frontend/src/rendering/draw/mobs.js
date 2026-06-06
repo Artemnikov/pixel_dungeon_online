@@ -25,6 +25,31 @@ export function drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef,
   Object.values(entitiesRef.current.mobs).forEach(mob => {
     if (!visionRef.current.visible.has(`${Math.round(mob.renderPos.x)},${Math.round(mob.renderPos.y)}`)) return;
 
+    // Rogue's Shadow Clone: a translucent dark copy of the rogue hero sprite.
+    if (mob.type === 'shadow_clone' && assetImages.rogue) {
+      const cx = mob.renderPos.x * TILE_SIZE;
+      const cy = mob.renderPos.y * TILE_SIZE;
+      const fw = 12;
+      const dw = fw * (TILE_SIZE / 16);
+      const off = (TILE_SIZE - dw) / 2;
+      ctx.save();
+      ctx.globalAlpha = 0.7;
+      ctx.drawImage(assetImages.rogue, 0, 0, fw, 16, cx + off, cy, dw, TILE_SIZE);
+      // Darken toward shadow.
+      ctx.globalCompositeOperation = 'source-atop';
+      ctx.globalAlpha = 0.5;
+      ctx.fillStyle = '#000';
+      ctx.fillRect(cx + off, cy, dw, TILE_SIZE);
+      ctx.restore();
+      const w = TILE_SIZE - 8;
+      const pct = (mob.hp || 0) / (mob.max_hp || 1);
+      ctx.fillStyle = '#111';
+      ctx.fillRect(cx + 4, cy - 4, w, 3);
+      ctx.fillStyle = '#9b59b6';
+      ctx.fillRect(cx + 4, cy - 4, w * pct, 3);
+      return;
+    }
+
     let mobSprite = assetImages.rat;
     let sx = 0;
     if (mob.name === 'Rat') {
