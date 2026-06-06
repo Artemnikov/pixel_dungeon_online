@@ -368,7 +368,7 @@ class Dagger(MeleeWeapon):
     kind: Literal["dagger"] = "dagger"
     name: str = "Dagger"
     damage: int = 2
-    attack_cooldown: float = 1.5
+    attack_cooldown: float = 0.84
     strength_requirement: int = 9
     surprise_damage_floor: float = 0.75
     DESC: ClassVar[str] = "A quick dagger. Surprise attacks deal more consistent damage."
