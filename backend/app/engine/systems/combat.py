@@ -212,6 +212,8 @@ def resolve_melee_attack(
     elif is_in_los and not is_in_los(defender.pos, attacker.pos):
         result["surprise"] = True
         result["hit"] = True
+    elif getattr(attacker, "is_admin", False):
+        result["hit"] = True
     else:
         acu_roll = random.random() * attacker.attack_skill
         def_roll = random.random() * defender.get_effective_defense_skill()
@@ -251,6 +253,8 @@ def resolve_melee_attack(
     effective_damage = _apply_post_dr_multipliers(raw_damage, attacker, defender, result, is_ranged=False)
     if prep is not None:
         effective_damage = int(effective_damage * prep["dmg_mult"])
+    if getattr(attacker, "is_admin", False):
+        effective_damage *= 2
 
     hp_before = defender.hp
     actual_damage = defender.take_damage(max(0, effective_damage))
@@ -297,6 +301,8 @@ def resolve_ranged_attack(
     elif is_in_los and not is_in_los(defender.pos, attacker.pos):
         result["surprise"] = True
         result["hit"] = True
+    elif getattr(attacker, "is_admin", False):
+        result["hit"] = True
     else:
         acu_roll = random.random() * attacker.attack_skill
         def_roll = random.random() * defender.get_effective_defense_skill()
@@ -324,6 +330,8 @@ def resolve_ranged_attack(
 
     # Post-DR multipliers (ranged)
     effective_damage = _apply_post_dr_multipliers(raw_damage, attacker, defender, result, is_ranged=True)
+    if getattr(attacker, "is_admin", False):
+        effective_damage *= 2
 
     hp_before = defender.hp
     actual_damage = defender.take_damage(max(0, effective_damage))
