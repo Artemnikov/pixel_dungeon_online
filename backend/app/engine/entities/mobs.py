@@ -846,3 +846,456 @@ class Bandit(Thief):
 class SpectralNecromancer(Necromancer):
     name: str = "Spectral Necromancer"
     properties: List[str] = ["UNDEAD", "DEMONIC"]
+
+
+# ---------------------------------------------------------------------------
+# Universal / Environmental Enemies
+# ---------------------------------------------------------------------------
+
+class Wraith(MobEntity):
+    """HP=1, stats scale with floor_level. spawningWeight=0 (never regular spawn).
+    adjustStats(level) must be called after creation."""
+    name: str = "Wraith"
+    hp: int = 1
+    max_hp: int = 1
+    attack_skill: int = 10     # 10 + level (set via floor_level)
+    defense_skill: int = 50    # attackSkill * 5 (set via floor_level)
+    damage_min: int = 1
+    damage_max: int = 2        # 1 + level/2 .. 2 + level (set via floor_level)
+    dr_min: int = 0
+    dr_max: int = 0
+    exp: int = 0
+    max_lvl: int = -2
+    flying: bool = True
+    properties: List[str] = ["UNDEAD", "INORGANIC"]
+    # Runtime: floor depth used to scale attack/damage
+    floor_level: int = 1
+
+
+class TormentedSpirit(Wraith):
+    """Exotic wraith variant (1/100 chance). 50% more damage/accuracy scaling."""
+    name: str = "Tormented Spirit"
+
+
+class Piranha(MobEntity):
+    """HP and defense scale with depth: HP=10+depth*5, defense=10+depth*2.
+    Dies on land (out of water). EXP=0. Always drops mystery_meat."""
+    name: str = "Piranha"
+    hp: int = 30        # default depth=4: 10+4*5=30
+    max_hp: int = 30
+    attack_skill: int = 20
+    defense_skill: int = 18    # 10 + depth*2 (depth=4)
+    damage_min: int = 3
+    damage_max: int = 8
+    dr_min: int = 0
+    dr_max: int = 0
+    speed: float = 2.0
+    exp: int = 0
+    max_lvl: int = -2
+    loot_table: List[DropEntry] = [
+        DropEntry(item_kind="mystery_meat", chance=1.0, max_global=0),
+    ]
+    # Runtime: set to current depth so stats can be recalculated
+    floor_level: int = 4
+
+
+class PhantomPiranha(Piranha):
+    """Exotic piranha variant. Drops phantom_meat instead of mystery_meat."""
+    name: str = "Phantom Piranha"
+    loot_table: List[DropEntry] = [
+        DropEntry(item_kind="phantom_meat", chance=1.0, max_global=0),
+    ]
+
+
+class Mimic(MobEntity):
+    """Disguised as a chest until attacked. HP=(1+level)*6, stats scale with level.
+    EXP=0. DEMONIC property. setLevel() must be called after creation."""
+    name: str = "Mimic"
+    hp: int = 12       # level=1: (1+1)*6=12
+    max_hp: int = 12
+    attack_skill: int = 7      # 6 + level
+    defense_skill: int = 2     # 2 + level/2
+    damage_min: int = 2        # 1+level .. 2+2*level (attacking state)
+    damage_max: int = 4
+    dr_min: int = 0
+    dr_max: int = 1            # 0 .. 1+level/2
+    exp: int = 0
+    max_lvl: int = -2
+    properties: List[str] = ["DEMONIC"]
+    # Runtime
+    floor_level: int = 1
+    disguised: bool = True
+    stealthy: bool = False
+
+
+class GoldenMimic(Mimic):
+    """Golden variant — better loot, same base stats as Mimic at level."""
+    name: str = "Golden Mimic"
+
+
+class EbonyMimic(Mimic):
+    """Ebony variant — deals double damage on surprise attack."""
+    name: str = "Ebony Mimic"
+
+
+class Statue(MobEntity):
+    """Passive until attacked (activated=False). HP=15+depth*5.
+    attackSkill scales with depth. Drops its weapon on death. EXP=0. INORGANIC."""
+    name: str = "Statue"
+    hp: int = 35       # depth=4: 15+4*5=35
+    max_hp: int = 35
+    attack_skill: int = 15     # scales with depth (approx 10+depth)
+    defense_skill: int = 8     # 4+depth
+    damage_min: int = 3
+    damage_max: int = 10
+    dr_min: int = 0
+    dr_max: int = 0
+    exp: int = 0
+    max_lvl: int = -2
+    properties: List[str] = ["INORGANIC"]
+    loot_table: List[DropEntry] = [
+        DropEntry(item_kind="weapon", chance=1.0, max_global=0),
+    ]
+    # Runtime
+    floor_level: int = 4
+    activated: bool = False
+
+
+class ArmoredStatue(Statue):
+    """Armored variant — HP=30+depth*10, has armor glyph DR bonus."""
+    name: str = "Armored Statue"
+    hp: int = 70       # depth=4: 30+4*10=70
+    max_hp: int = 70
+    dr_min: int = 2
+    dr_max: int = 10
+    loot_table: List[DropEntry] = [
+        DropEntry(item_kind="armor", chance=1.0, max_global=0),
+    ]
+
+
+class Bee(MobEntity):
+    """Flying. Neutral faction initially; turns ENEMY if honey pot is destroyed.
+    HP=(2+level)*4, defense=9+level. EXP=0. spawn(level) sets stats."""
+    name: str = "Bee"
+    hp: int = 12       # level=1: (2+1)*4=12
+    max_hp: int = 12
+    attack_skill: int = 10     # = defenseSkill
+    defense_skill: int = 10    # 9+level
+    damage_min: int = 1        # HT/10
+    damage_max: int = 3        # HT/4
+    dr_min: int = 0
+    dr_max: int = 0
+    exp: int = 0
+    max_lvl: int = -2
+    flying: bool = True
+    # Runtime
+    floor_level: int = 1
+    honey_pot_id: str = ""
+
+
+# ---------------------------------------------------------------------------
+# Boss: DwarfKing (floor 20)
+# ---------------------------------------------------------------------------
+
+class DwarfKing(MobEntity):
+    type: str = "boss"
+    name: str = "Dwarf King"
+    hp: int = 300
+    max_hp: int = 300
+    attack_skill: int = 26
+    defense_skill: int = 22
+    damage_min: int = 15
+    damage_max: int = 25
+    dr_min: int = 0
+    dr_max: int = 10
+    exp: int = 40
+    max_lvl: int = -2
+    properties: List[str] = ["UNDEAD"]
+    attack_cooldown: float = 1.0
+    loot_table: List[DropEntry] = [
+        DropEntry(item_kind="kings_crown", chance=1.0, max_global=0),
+    ]
+
+    # Boss runtime state
+    phase: int = 1
+    summons_made: int = 0
+    summon_cooldown: float = 0.0
+    ability_cooldown: float = 0.0
+    fight_started: bool = False
+    enrage_announced: bool = False
+
+
+class DKGhoul(Ghoul):
+    """DwarfKing minion — enhanced Ghoul, always starts hunting."""
+    name: str = "DK Ghoul"
+    properties: List[str] = ["UNDEAD", "BOSS_MINION"]
+    max_lvl: int = -2
+    # Runtime: life-link pairing
+    linked_ghoul_id: str = ""
+
+
+class DKMonk(Monk):
+    """DwarfKing minion — enhanced Monk, always starts hunting."""
+    name: str = "DK Monk"
+    properties: List[str] = ["BOSS_MINION"]
+    max_lvl: int = -2
+
+
+class DKWarlock(Warlock):
+    """DwarfKing minion — enhanced Warlock, always starts hunting."""
+    name: str = "DK Warlock"
+    properties: List[str] = ["UNDEAD", "BOSS_MINION"]
+    max_lvl: int = -2
+
+
+class DKGolem(Golem):
+    """DwarfKing minion — enhanced Golem, always starts hunting."""
+    name: str = "DK Golem"
+    properties: List[str] = ["INORGANIC", "BOSS_MINION"]
+    max_lvl: int = -2
+
+
+# ---------------------------------------------------------------------------
+# Boss: YogDzewa (floor 25)
+# ---------------------------------------------------------------------------
+
+class YogDzewa(MobEntity):
+    """Final boss. IMMOVABLE+DEMONIC. Invulnerable while fists are alive.
+    Phases 0-5: phase 0=pre-fight, 1-4=fist phases, 5=finale."""
+    type: str = "boss"
+    name: str = "Yog-Dzewa"
+    hp: int = 1000
+    max_hp: int = 1000
+    attack_skill: int = 999    # INFINITE_ACCURACY for beam attacks
+    defense_skill: int = 0
+    damage_min: int = 20
+    damage_max: int = 30
+    dr_min: int = 0
+    dr_max: int = 0
+    exp: int = 50
+    max_lvl: int = -2
+    flying: bool = True
+    properties: List[str] = ["DEMONIC", "IMMOVABLE"]
+    loot_table: List[DropEntry] = []
+
+    # Boss runtime state
+    phase: int = 0
+    fist_ids: List[str] = []
+    ability_cooldown: float = 10.0
+    summon_cooldown: float = 10.0
+    fight_started: bool = False
+
+
+class BurningFist(MobEntity):
+    """YogDzewa fist. HP=300. FIERY+DEMONIC. Ranged fire attack."""
+    type: str = "boss"
+    name: str = "Burning Fist"
+    hp: int = 300
+    max_hp: int = 300
+    attack_skill: int = 36
+    defense_skill: int = 20
+    damage_min: int = 18
+    damage_max: int = 36
+    dr_min: int = 0
+    dr_max: int = 15
+    exp: int = 25
+    max_lvl: int = -2
+    properties: List[str] = ["DEMONIC", "FIERY"]
+    attack_range: int = 8
+    loot_table: List[DropEntry] = []
+
+    # Boss runtime state
+    paired_fist_id: str = ""
+    yog_id: str = ""
+    ranged_cooldown: float = 0.0
+
+
+class SoiledFist(MobEntity):
+    """YogDzewa fist. HP=300. DEMONIC. Roots enemies, spreads grass."""
+    type: str = "boss"
+    name: str = "Soiled Fist"
+    hp: int = 300
+    max_hp: int = 300
+    attack_skill: int = 36
+    defense_skill: int = 20
+    damage_min: int = 18
+    damage_max: int = 36
+    dr_min: int = 0
+    dr_max: int = 15
+    exp: int = 25
+    max_lvl: int = -2
+    properties: List[str] = ["DEMONIC"]
+    attack_range: int = 8
+    loot_table: List[DropEntry] = []
+
+    paired_fist_id: str = ""
+    yog_id: str = ""
+    ranged_cooldown: float = 0.0
+
+
+class RottingFist(MobEntity):
+    """YogDzewa fist. HP=300. ACIDIC+DEMONIC. Converts damage to bleeding; zap=toxic gas."""
+    type: str = "boss"
+    name: str = "Rotting Fist"
+    hp: int = 300
+    max_hp: int = 300
+    attack_skill: int = 36
+    defense_skill: int = 20
+    damage_min: int = 18
+    damage_max: int = 36
+    dr_min: int = 0
+    dr_max: int = 15
+    exp: int = 25
+    max_lvl: int = -2
+    properties: List[str] = ["DEMONIC", "ACIDIC"]
+    attack_range: int = 8
+    loot_table: List[DropEntry] = []
+
+    paired_fist_id: str = ""
+    yog_id: str = ""
+    ranged_cooldown: float = 0.0
+
+
+class RustedFist(MobEntity):
+    """YogDzewa fist. HP=300. INORGANIC+DEMONIC. Defers all damage as viscosity. Higher damage (22-44)."""
+    type: str = "boss"
+    name: str = "Rusted Fist"
+    hp: int = 300
+    max_hp: int = 300
+    attack_skill: int = 36
+    defense_skill: int = 20
+    damage_min: int = 22
+    damage_max: int = 44
+    dr_min: int = 0
+    dr_max: int = 15
+    exp: int = 25
+    max_lvl: int = -2
+    properties: List[str] = ["DEMONIC", "INORGANIC"]
+    attack_range: int = 8
+    loot_table: List[DropEntry] = []
+
+    paired_fist_id: str = ""
+    yog_id: str = ""
+    ranged_cooldown: float = 0.0
+    viscosity_stacks: int = 0
+
+
+class BrightFist(MobEntity):
+    """YogDzewa fist. HP=300. ELECTRIC+DEMONIC. Light beam blinds; teleports at half HP."""
+    type: str = "boss"
+    name: str = "Bright Fist"
+    hp: int = 300
+    max_hp: int = 300
+    attack_skill: int = 36
+    defense_skill: int = 20
+    damage_min: int = 18
+    damage_max: int = 36
+    dr_min: int = 0
+    dr_max: int = 15
+    exp: int = 25
+    max_lvl: int = -2
+    properties: List[str] = ["DEMONIC", "ELECTRIC"]
+    attack_range: int = 8
+    loot_table: List[DropEntry] = []
+
+    paired_fist_id: str = ""
+    yog_id: str = ""
+    ranged_cooldown: float = 0.0
+    teleport_used: bool = False
+
+
+class DarkFist(MobEntity):
+    """YogDzewa fist. HP=300. DEMONIC. Dark bolt extinguishes light; teleports at half HP."""
+    type: str = "boss"
+    name: str = "Dark Fist"
+    hp: int = 300
+    max_hp: int = 300
+    attack_skill: int = 36
+    defense_skill: int = 20
+    damage_min: int = 18
+    damage_max: int = 36
+    dr_min: int = 0
+    dr_max: int = 15
+    exp: int = 25
+    max_lvl: int = -2
+    properties: List[str] = ["DEMONIC"]
+    attack_range: int = 8
+    loot_table: List[DropEntry] = []
+
+    paired_fist_id: str = ""
+    yog_id: str = ""
+    ranged_cooldown: float = 0.0
+    teleport_used: bool = False
+
+
+class YogEye(Eye):
+    """YogDzewa summon — Eye minion variant. BOSS_MINION."""
+    name: str = "Yog Eye"
+    properties: List[str] = ["DEMONIC", "BOSS_MINION"]
+    max_lvl: int = -2
+
+
+class YogScorpio(Scorpio):
+    """YogDzewa summon — Scorpio minion variant. BOSS_MINION."""
+    name: str = "Yog Scorpio"
+    properties: List[str] = ["DEMONIC", "BOSS_MINION"]
+    max_lvl: int = -2
+
+
+class YogRipper(RipperDemon):
+    """YogDzewa summon — RipperDemon minion variant. BOSS_MINION."""
+    name: str = "Yog Ripper"
+    properties: List[str] = ["DEMONIC", "BOSS_MINION"]
+    max_lvl: int = -2
+
+
+# ---------------------------------------------------------------------------
+# Static Spawners
+# ---------------------------------------------------------------------------
+
+class DemonSpawner(MobEntity):
+    """Immovable. Spawns RipperDemons periodically. DEMONIC+IMMOVABLE.
+    HP=120, DR 0-12. loot=health_potion 100%. Passive until damaged."""
+    name: str = "Demon Spawner"
+    hp: int = 120
+    max_hp: int = 120
+    attack_skill: int = 0
+    defense_skill: int = 0
+    damage_min: int = 0
+    damage_max: int = 0
+    dr_min: int = 0
+    dr_max: int = 12
+    exp: int = 15
+    max_lvl: int = 29
+    properties: List[str] = ["DEMONIC", "INORGANIC", "IMMOVABLE"]
+    loot_table: List[DropEntry] = [
+        DropEntry(item_kind="health_potion", chance=1.0, max_global=0),
+    ]
+
+    # Runtime
+    spawn_cooldown: float = 0.0
+    spawn_recorded: bool = False
+
+
+class Pylon(MobEntity):
+    """Immovable. Fires lightning bolts when activated. ELECTRIC+INORGANIC+IMMOVABLE.
+    HP=50 (normal) / 80 (challenge). Inactive until DM-300 fight begins."""
+    name: str = "Pylon"
+    hp: int = 50
+    max_hp: int = 50
+    attack_skill: int = 0
+    defense_skill: int = 0
+    damage_min: int = 10
+    damage_max: int = 20
+    dr_min: int = 0
+    dr_max: int = 0
+    exp: int = 0
+    max_lvl: int = -2
+    properties: List[str] = ["ELECTRIC", "INORGANIC", "IMMOVABLE"]
+    loot_table: List[DropEntry] = []
+
+    # Runtime
+    bolt_cooldown: int = 5
+    linked_pylon_id: str = ""
+    activated: bool = False
+    target_neighbor: int = 0
