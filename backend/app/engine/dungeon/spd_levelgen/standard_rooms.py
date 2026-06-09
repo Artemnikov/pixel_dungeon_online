@@ -1110,6 +1110,252 @@ class MinefieldRoom(StandardRoom):
     paint = _stub_paint
 
 
+# -- Prison standard rooms (region-table indices 5-9) ----------------------
+
+class RegionDecoLineRoom(StandardRoom):
+    paint = _stub_paint
+
+
+class SegmentedRoom(StandardRoom):
+    paint = _stub_paint
+
+
+class PillarsRoom(StandardRoom):
+    paint = _stub_paint
+
+
+class ChasmBridgeRoom(StandardBridgeRoom):
+    paint = _stub_paint
+
+
+class CellBlockRoom(StandardRoom):
+    paint = _stub_paint
+
+
+# -- Caves standard rooms (region-table indices 10-14) ---------------------
+
+class CaveRoom(StandardRoom):
+    paint = _stub_paint
+
+
+class RegionDecoBridgeRoom(StandardBridgeRoom):
+    paint = _stub_paint
+
+
+class CavesFissureRoom(FissureRoom):
+    pass  # inherits FissureRoom's paint
+
+
+class CirclePitRoom(StandardRoom):
+    paint = _stub_paint
+
+
+class CircleWallRoom(StandardRoom):
+    paint = _stub_paint
+
+
+# -- City standard rooms (region-table indices 15-19) ----------------------
+
+class HallwayRoom(StandardRoom):
+    paint = _stub_paint
+
+
+class LibraryHallRoom(StandardRoom):
+    paint = _stub_paint
+
+
+class LibraryRingRoom(StandardRoom):
+    paint = _stub_paint
+
+
+class StatuesRoom(StandardRoom):
+    paint = _stub_paint
+
+
+class SegmentedLibraryRoom(StandardRoom):
+    paint = _stub_paint
+
+
+# -- Halls standard rooms (region-table indices 20-24) ---------------------
+
+class RuinsRoom(StandardRoom):
+    paint = _stub_paint
+
+
+# index 21 reuses RegionDecoPatchRoom (Java does rooms.add(RegionDecoPatchRoom.class) again)
+
+class ChasmRoom(StandardRoom):
+    paint = _stub_paint
+
+
+class SkullsRoom(StandardRoom):
+    paint = _stub_paint
+
+
+class RitualRoom(StandardRoom):
+    paint = _stub_paint
+
+
+# -- Prison entrance/exit variants (entrance indices 4-7, exit indices 4-7) -
+
+class RegionDecoLineEntranceRoom(RegionDecoLineRoom):
+    def is_entrance(self) -> bool:
+        return True
+
+
+class RegionDecoLineExitRoom(RegionDecoLineRoom):
+    def is_exit(self) -> bool:
+        return True
+
+
+class ChasmBridgeEntranceRoom(ChasmBridgeRoom):
+    def is_entrance(self) -> bool:
+        return True
+
+
+class ChasmBridgeExitRoom(ChasmBridgeRoom):
+    def is_exit(self) -> bool:
+        return True
+
+
+class PillarsEntranceRoom(PillarsRoom):
+    def is_entrance(self) -> bool:
+        return True
+
+
+class PillarsExitRoom(PillarsRoom):
+    def is_exit(self) -> bool:
+        return True
+
+
+class CellBlockEntranceRoom(CellBlockRoom):
+    def is_entrance(self) -> bool:
+        return True
+
+
+class CellBlockExitRoom(CellBlockRoom):
+    def is_exit(self) -> bool:
+        return True
+
+
+# -- Caves entrance/exit variants (entrance indices 8-11, exit indices 8-11) -
+
+class CaveEntranceRoom(CaveRoom):
+    def is_entrance(self) -> bool:
+        return True
+
+
+class CaveExitRoom(CaveRoom):
+    def is_exit(self) -> bool:
+        return True
+
+
+class RegionDecoBridgeEntranceRoom(RegionDecoBridgeRoom):
+    def is_entrance(self) -> bool:
+        return True
+
+
+class RegionDecoBridgeExitRoom(RegionDecoBridgeRoom):
+    def is_exit(self) -> bool:
+        return True
+
+
+class CavesFissureEntranceRoom(CavesFissureRoom):
+    def is_entrance(self) -> bool:
+        return True
+
+
+class CavesFissureExitRoom(CavesFissureRoom):
+    def is_exit(self) -> bool:
+        return True
+
+
+class CircleWallEntranceRoom(CircleWallRoom):
+    def is_entrance(self) -> bool:
+        return True
+
+
+class CircleWallExitRoom(CircleWallRoom):
+    def is_exit(self) -> bool:
+        return True
+
+
+# -- City entrance/exit variants (entrance indices 12-15, exit indices 12-15) -
+
+class HallwayEntranceRoom(HallwayRoom):
+    def is_entrance(self) -> bool:
+        return True
+
+
+class HallwayExitRoom(HallwayRoom):
+    def is_exit(self) -> bool:
+        return True
+
+
+class StatuesEntranceRoom(StatuesRoom):
+    def is_entrance(self) -> bool:
+        return True
+
+
+class StatuesExitRoom(StatuesRoom):
+    def is_exit(self) -> bool:
+        return True
+
+
+class LibraryHallEntranceRoom(LibraryHallRoom):
+    def is_entrance(self) -> bool:
+        return True
+
+
+class LibraryHallExitRoom(LibraryHallRoom):
+    def is_exit(self) -> bool:
+        return True
+
+
+class LibraryRingEntranceRoom(LibraryRingRoom):
+    def is_entrance(self) -> bool:
+        return True
+
+
+class LibraryRingExitRoom(LibraryRingRoom):
+    def is_exit(self) -> bool:
+        return True
+
+
+# -- Halls entrance/exit variants (entrance indices 16-19, exit indices 16-19) -
+
+# index 16 reuses RegionDecoPatchEntranceRoom/RegionDecoPatchExitRoom (already defined)
+
+class RuinsEntranceRoom(RuinsRoom):
+    def is_entrance(self) -> bool:
+        return True
+
+
+class RuinsExitRoom(RuinsRoom):
+    def is_exit(self) -> bool:
+        return True
+
+
+class ChasmEntranceRoom(ChasmRoom):
+    def is_entrance(self) -> bool:
+        return True
+
+
+class ChasmExitRoom(ChasmRoom):
+    def is_exit(self) -> bool:
+        return True
+
+
+class RitualEntranceRoom(RitualRoom):
+    def is_entrance(self) -> bool:
+        return True
+
+
+class RitualExitRoom(RitualRoom):
+    def is_exit(self) -> bool:
+        return True
+
+
 # -- registration-order tables + factories (EntranceRoom/ExitRoom/StandardRoom.java) --
 
 # EntranceRoom.rooms / ExitRoom.rooms: only the first 4 entries have nonzero
@@ -1117,61 +1363,149 @@ class MinefieldRoom(StandardRoom):
 # variants) -- ported in full per the original 20-entry static list, with
 # unreachable-on-sewers-floors slots as `None` placeholders preserving index.
 _ENTRANCE_ROOM_TYPES: tuple = (
+    # Sewers [0-3]
     WaterBridgeEntranceRoom, RegionDecoPatchEntranceRoom, RingEntranceRoom, CircleBasinEntranceRoom,
-    None, None, None, None,
-    None, None, None, None,
-    None, None, None, None,
-    None, None, None, None,
+    # Prison [4-7]
+    RegionDecoLineEntranceRoom, ChasmBridgeEntranceRoom, PillarsEntranceRoom, CellBlockEntranceRoom,
+    # Caves [8-11]
+    CaveEntranceRoom, RegionDecoBridgeEntranceRoom, CavesFissureEntranceRoom, CircleWallEntranceRoom,
+    # City [12-15]
+    HallwayEntranceRoom, StatuesEntranceRoom, LibraryHallEntranceRoom, LibraryRingEntranceRoom,
+    # Halls [16-19] — index 16 reuses RegionDecoPatchEntranceRoom (Java reuses it)
+    RegionDecoPatchEntranceRoom, RuinsEntranceRoom, ChasmEntranceRoom, RitualEntranceRoom,
 )
 
 _EXIT_ROOM_TYPES: tuple = (
+    # Sewers [0-3]
     WaterBridgeExitRoom, RegionDecoPatchExitRoom, RingExitRoom, CircleBasinExitRoom,
-    None, None, None, None,
-    None, None, None, None,
-    None, None, None, None,
-    None, None, None, None,
+    # Prison [4-7]
+    RegionDecoLineExitRoom, ChasmBridgeExitRoom, PillarsExitRoom, CellBlockExitRoom,
+    # Caves [8-11]
+    CaveExitRoom, RegionDecoBridgeExitRoom, CavesFissureExitRoom, CircleWallExitRoom,
+    # City [12-15]
+    HallwayExitRoom, StatuesExitRoom, LibraryHallExitRoom, LibraryRingExitRoom,
+    # Halls [16-19] — index 16 reuses RegionDecoPatchExitRoom (Java reuses it)
+    RegionDecoPatchExitRoom, RuinsExitRoom, ChasmExitRoom, RitualExitRoom,
 )
 
-# EntranceRoom.chances[depth] (sewers depths 1-5 only; trailing zero-weight
-# region-table entries collapsed to a single tail since `chances()` only
-# needs the correct running-sum/length, never resolves to a `None` slot).
+# EntranceRoom.chances[depth]
 _ENTRANCE_CHANCES = {
-    1: (4.0, 3.0, 0.0, 0.0) + (0.0,) * 16,
-    2: (4.0, 3.0, 0.0, 0.0) + (0.0,) * 16,
-    3: (4.0, 3.0, 2.0, 1.0) + (0.0,) * 16,
-    4: (4.0, 3.0, 2.0, 1.0) + (0.0,) * 16,
-    5: (4.0, 3.0, 2.0, 1.0) + (0.0,) * 16,
+    1:  (4.0, 3.0, 0.0, 0.0) + (0.0,) * 16,
+    2:  (4.0, 3.0, 0.0, 0.0) + (0.0,) * 16,
+    3:  (4.0, 3.0, 2.0, 1.0) + (0.0,) * 16,
+    4:  (4.0, 3.0, 2.0, 1.0) + (0.0,) * 16,
+    5:  (4.0, 3.0, 2.0, 1.0) + (0.0,) * 16,
+    # Prison
+    6:  (0.0,) * 4 + (4.0, 3.0, 2.0, 1.0) + (0.0,) * 12,
+    7:  (0.0,) * 4 + (4.0, 3.0, 2.0, 1.0) + (0.0,) * 12,
+    8:  (0.0,) * 4 + (4.0, 3.0, 2.0, 1.0) + (0.0,) * 12,
+    9:  (0.0,) * 4 + (4.0, 3.0, 2.0, 1.0) + (0.0,) * 12,
+    10: (0.0,) * 4 + (4.0, 3.0, 2.0, 1.0) + (0.0,) * 12,
+    # Caves
+    11: (0.0,) * 8 + (4.0, 3.0, 2.0, 1.0) + (0.0,) * 8,
+    12: (0.0,) * 8 + (4.0, 3.0, 2.0, 1.0) + (0.0,) * 8,
+    13: (0.0,) * 8 + (4.0, 3.0, 2.0, 1.0) + (0.0,) * 8,
+    14: (0.0,) * 8 + (4.0, 3.0, 2.0, 1.0) + (0.0,) * 8,
+    15: (0.0,) * 8 + (4.0, 3.0, 2.0, 1.0) + (0.0,) * 8,
+    # City
+    16: (0.0,) * 12 + (4.0, 3.0, 2.0, 1.0) + (0.0,) * 4,
+    17: (0.0,) * 12 + (4.0, 3.0, 2.0, 1.0) + (0.0,) * 4,
+    18: (0.0,) * 12 + (4.0, 3.0, 2.0, 1.0) + (0.0,) * 4,
+    19: (0.0,) * 12 + (4.0, 3.0, 2.0, 1.0) + (0.0,) * 4,
+    20: (0.0,) * 12 + (4.0, 3.0, 2.0, 1.0) + (0.0,) * 4,
+    # Halls
+    21: (0.0,) * 16 + (4.0, 3.0, 2.0, 1.0),
+    22: (0.0,) * 16 + (4.0, 3.0, 2.0, 1.0),
+    23: (0.0,) * 16 + (4.0, 3.0, 2.0, 1.0),
+    24: (0.0,) * 16 + (4.0, 3.0, 2.0, 1.0),
+    25: (0.0,) * 16 + (4.0, 3.0, 2.0, 1.0),
+    26: (0.0,) * 16 + (4.0, 3.0, 2.0, 1.0),
 }
 
 # ExitRoom.chances[depth]
 _EXIT_CHANCES = {
-    1: (4.0, 3.0, 0.0, 0.0) + (0.0,) * 16,
-    2: (4.0, 3.0, 2.0, 1.0) + (0.0,) * 16,
-    3: (4.0, 3.0, 2.0, 1.0) + (0.0,) * 16,
-    4: (4.0, 3.0, 2.0, 1.0) + (0.0,) * 16,
-    5: (4.0, 3.0, 2.0, 1.0) + (0.0,) * 16,
+    1:  (4.0, 3.0, 0.0, 0.0) + (0.0,) * 16,
+    2:  (4.0, 3.0, 2.0, 1.0) + (0.0,) * 16,
+    3:  (4.0, 3.0, 2.0, 1.0) + (0.0,) * 16,
+    4:  (4.0, 3.0, 2.0, 1.0) + (0.0,) * 16,
+    5:  (4.0, 3.0, 2.0, 1.0) + (0.0,) * 16,
+    # Prison
+    6:  (0.0,) * 4 + (4.0, 3.0, 2.0, 1.0) + (0.0,) * 12,
+    7:  (0.0,) * 4 + (4.0, 3.0, 2.0, 1.0) + (0.0,) * 12,
+    8:  (0.0,) * 4 + (4.0, 3.0, 2.0, 1.0) + (0.0,) * 12,
+    9:  (0.0,) * 4 + (4.0, 3.0, 2.0, 1.0) + (0.0,) * 12,
+    10: (0.0,) * 4 + (4.0, 3.0, 2.0, 1.0) + (0.0,) * 12,
+    # Caves
+    11: (0.0,) * 8 + (4.0, 3.0, 2.0, 1.0) + (0.0,) * 8,
+    12: (0.0,) * 8 + (4.0, 3.0, 2.0, 1.0) + (0.0,) * 8,
+    13: (0.0,) * 8 + (4.0, 3.0, 2.0, 1.0) + (0.0,) * 8,
+    14: (0.0,) * 8 + (4.0, 3.0, 2.0, 1.0) + (0.0,) * 8,
+    15: (0.0,) * 8 + (4.0, 3.0, 2.0, 1.0) + (0.0,) * 8,
+    # City
+    16: (0.0,) * 12 + (4.0, 3.0, 2.0, 1.0) + (0.0,) * 4,
+    17: (0.0,) * 12 + (4.0, 3.0, 2.0, 1.0) + (0.0,) * 4,
+    18: (0.0,) * 12 + (4.0, 3.0, 2.0, 1.0) + (0.0,) * 4,
+    19: (0.0,) * 12 + (4.0, 3.0, 2.0, 1.0) + (0.0,) * 4,
+    20: (0.0,) * 12 + (4.0, 3.0, 2.0, 1.0) + (0.0,) * 4,
+    # Halls
+    21: (0.0,) * 16 + (4.0, 3.0, 2.0, 1.0),
+    22: (0.0,) * 16 + (4.0, 3.0, 2.0, 1.0),
+    23: (0.0,) * 16 + (4.0, 3.0, 2.0, 1.0),
+    24: (0.0,) * 16 + (4.0, 3.0, 2.0, 1.0),
+    25: (0.0,) * 16 + (4.0, 3.0, 2.0, 1.0),
+    26: (0.0,) * 16 + (4.0, 3.0, 2.0, 1.0),
 }
 
 # StandardRoom.rooms registration order (35 entries: 5 region-table groups of
-# 5 + 10 filler rooms). Only the sewers-region group (indices 0-4) and the
-# filler group (indices 25-34) are reachable for depths 1-5.
+# 5 + 10 filler rooms).
 _STANDARD_ROOM_TYPES: tuple = (
+    # Sewers [0-4]
     SewerPipeRoom, RingRoom, WaterBridgeRoom, RegionDecoPatchRoom, CircleBasinRoom,
-    None, None, None, None, None,
-    None, None, None, None, None,
-    None, None, None, None, None,
-    None, None, None, None, None,
+    # Prison [5-9]
+    RegionDecoLineRoom, SegmentedRoom, PillarsRoom, ChasmBridgeRoom, CellBlockRoom,
+    # Caves [10-14]
+    CaveRoom, RegionDecoBridgeRoom, CavesFissureRoom, CirclePitRoom, CircleWallRoom,
+    # City [15-19]
+    HallwayRoom, LibraryHallRoom, LibraryRingRoom, StatuesRoom, SegmentedLibraryRoom,
+    # Halls [20-24] — index 21 is RegionDecoPatchRoom again (Java reuses it)
+    RuinsRoom, RegionDecoPatchRoom, ChasmRoom, SkullsRoom, RitualRoom,
+    # Filler [25-34]
     PlantsRoom, AquariumRoom, PlatformRoom, BurnedRoom, FissureRoom,
     GrassyGraveRoom, StripedRoom, StudyRoom, SuspiciousChestRoom, MinefieldRoom,
 )
 
-# StandardRoom.chances[depth] (sewers depths 1-5 only)
+# StandardRoom.chances[depth]
 _STANDARD_CHANCES = {
-    1: (16.0, 8.0, 8.0, 4.0, 4.0) + (0.0,) * 20 + (1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 0.0),
-    2: (16.0, 8.0, 8.0, 4.0, 4.0) + (0.0,) * 20 + (1.0,) * 10,
-    3: (16.0, 8.0, 8.0, 4.0, 4.0) + (0.0,) * 20 + (1.0,) * 10,
-    4: (16.0, 8.0, 8.0, 4.0, 4.0) + (0.0,) * 20 + (1.0,) * 10,
-    5: (16.0, 8.0, 8.0, 4.0, 0.0) + (0.0,) * 30,
+    1:  (16.0, 8.0, 8.0, 4.0, 4.0) + (0.0,) * 20 + (1.0, 0.0, 1.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 0.0),
+    2:  (16.0, 8.0, 8.0, 4.0, 4.0) + (0.0,) * 20 + (1.0,) * 10,
+    3:  (16.0, 8.0, 8.0, 4.0, 4.0) + (0.0,) * 20 + (1.0,) * 10,
+    4:  (16.0, 8.0, 8.0, 4.0, 4.0) + (0.0,) * 20 + (1.0,) * 10,
+    5:  (16.0, 8.0, 8.0, 4.0, 0.0) + (0.0,) * 30,
+    # Prison
+    6:  (0.0,) * 5 + (10.0, 10.0, 10.0, 5.0, 5.0) + (0.0,) * 15 + (1.0,) * 10,
+    7:  (0.0,) * 5 + (10.0, 10.0, 10.0, 5.0, 5.0) + (0.0,) * 15 + (1.0,) * 10,
+    8:  (0.0,) * 5 + (10.0, 10.0, 10.0, 5.0, 5.0) + (0.0,) * 15 + (1.0,) * 10,
+    9:  (0.0,) * 5 + (10.0, 10.0, 10.0, 5.0, 5.0) + (0.0,) * 15 + (1.0,) * 10,
+    10: (0.0,) * 5 + (10.0, 10.0, 10.0, 5.0, 5.0) + (0.0,) * 15 + (1.0,) * 10,
+    # Caves
+    11: (0.0,) * 10 + (16.0, 8.0, 8.0, 4.0, 4.0) + (0.0,) * 10 + (1.0,) * 10,
+    12: (0.0,) * 10 + (16.0, 8.0, 8.0, 4.0, 4.0) + (0.0,) * 10 + (1.0,) * 10,
+    13: (0.0,) * 10 + (16.0, 8.0, 8.0, 4.0, 4.0) + (0.0,) * 10 + (1.0,) * 10,
+    14: (0.0,) * 10 + (16.0, 8.0, 8.0, 4.0, 4.0) + (0.0,) * 10 + (1.0,) * 10,
+    15: (0.0,) * 10 + (16.0, 8.0, 8.0, 4.0, 4.0) + (0.0,) * 10 + (1.0,) * 10,
+    # City
+    16: (0.0,) * 15 + (10.0, 10.0, 10.0, 5.0, 5.0) + (0.0,) * 5 + (1.0,) * 10,
+    17: (0.0,) * 15 + (10.0, 10.0, 10.0, 5.0, 5.0) + (0.0,) * 5 + (1.0,) * 10,
+    18: (0.0,) * 15 + (10.0, 10.0, 10.0, 5.0, 5.0) + (0.0,) * 5 + (1.0,) * 10,
+    19: (0.0,) * 15 + (10.0, 10.0, 10.0, 5.0, 5.0) + (0.0,) * 5 + (1.0,) * 10,
+    20: (0.0,) * 15 + (10.0, 10.0, 10.0, 5.0, 5.0) + (0.0,) * 5 + (1.0,) * 10,
+    # Halls
+    21: (0.0,) * 20 + (10.0, 10.0, 10.0, 5.0, 5.0) + (1.0,) * 10,
+    22: (0.0,) * 20 + (10.0, 10.0, 10.0, 5.0, 5.0) + (1.0,) * 10,
+    23: (0.0,) * 20 + (10.0, 10.0, 10.0, 5.0, 5.0) + (1.0,) * 10,
+    24: (0.0,) * 20 + (10.0, 10.0, 10.0, 5.0, 5.0) + (1.0,) * 10,
+    25: (0.0,) * 20 + (10.0, 10.0, 10.0, 5.0, 5.0) + (1.0,) * 10,
+    26: (0.0,) * 20 + (10.0, 10.0, 10.0, 5.0, 5.0) + (1.0,) * 10,
 }
 
 
