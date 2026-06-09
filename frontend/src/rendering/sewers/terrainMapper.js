@@ -82,19 +82,21 @@ export const getSewerTerrainInstructions = (grid, x, y, tile, openDoors = new Se
     ];
   }
 
-  if (tile === BACKEND_TILE.DOOR.id || tile === BACKEND_TILE.LOCKED_DOOR.id) {
+  if (tile === BACKEND_TILE.DOOR.id || tile === BACKEND_TILE.OPEN_DOOR.id || tile === BACKEND_TILE.LOCKED_DOOR.id) {
     // Side door: when the cell above is a wall, the door is set into a
     // vertical wall and uses the dedicated side-door body sprite. Mirrors
     // SPD DungeonTileSheet.getRaisedDoorTile.
     if (isWallStitcheable(getTile(grid, x, y - 1))) {
       return [{ srcIndex: WALL_INDEX.RAISED_DOOR_SIDEWAYS, quadrant: QUADRANT.FULL }];
     }
-    // Top-facing door: regular door sprite. Adjacent-wall stitching is
-    // handled by wallMapper.getSewerCap (DOOR_OVERHANG family).
-    const base = tile === BACKEND_TILE.LOCKED_DOOR.id
-      ? BACKEND_TILE.LOCKED_DOOR
-      : (openDoors.has(`${x},${y}`) ? BACKEND_TILE.OPEN_DOOR : BACKEND_TILE.DOOR);
-    return [tileInstr(base)];
+    // Top-facing door: raised 3D door sprite (SPD's RAISED_DOOR family).
+    // Adjacent-wall stitching is handled by wallMapper.getSewerCap
+    // (DOOR_OVERHANG family).
+    const srcIndex = tile === BACKEND_TILE.LOCKED_DOOR.id
+      ? WALL_INDEX.RAISED_DOOR_LOCKED
+      : (tile === BACKEND_TILE.OPEN_DOOR.id ? WALL_INDEX.RAISED_DOOR_OPEN
+        : (openDoors.has(`${x},${y}`) ? WALL_INDEX.RAISED_DOOR_OPEN : WALL_INDEX.RAISED_DOOR));
+    return [{ srcIndex, quadrant: QUADRANT.FULL }];
   }
 
   if (tile === BACKEND_TILE.FLOOR_WATER.id) {

@@ -1,3 +1,17 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 ArtemNikov
+//
+// Adapted from Shattered Pixel Dungeon (C) 2014-2024 Evan Debenham
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU General Public License for more details.
+//
 /*
  * SPD-style wall rendering.
  *
@@ -138,7 +152,7 @@ export const getDoorSidewaysOverhang = (grid, x, y, tile, openDoors) => {
   let base;
   if (tile === BACKEND_TILE.LOCKED_DOOR.id) {
     base = WALL_INDEX.DOOR_SIDEWAYS_OVERHANG_LOCKED;
-  } else if (openDoors?.has(`${x},${y}`)) {
+  } else if (tile === BACKEND_TILE.OPEN_DOOR.id || openDoors?.has(`${x},${y}`)) {
     base = WALL_INDEX.DOOR_SIDEWAYS_OVERHANG;
   } else {
     base = WALL_INDEX.DOOR_SIDEWAYS_OVERHANG_CLOSED;
@@ -188,7 +202,7 @@ export const getSewerDoorCap = (grid, x, y, tile, openDoors) => {
         : WALL_INDEX.DOOR_SIDEWAYS;
     }
     // Floor above a top-facing door — the door-top cap sprite.
-    const isOpen = openDoors?.has(`${x},${y + 1}`);
+    const isOpen = below === BACKEND_TILE.OPEN_DOOR.id || openDoors?.has(`${x},${y + 1}`);
     return isOpen ? WALL_INDEX.DOOR_OVERHANG_OPEN : WALL_INDEX.DOOR_OVERHANG;
   }
 

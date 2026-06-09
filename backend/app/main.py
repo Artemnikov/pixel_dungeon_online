@@ -51,7 +51,7 @@ class ConnectionManager:
         # game_id -> {player_id: monotonic deadline} — players awaiting reconnect.
         self.disconnect_deadline: Dict[str, Dict[str, float]] = {}
 
-    async def connect(self, game_id: str, websocket: WebSocket, session_id: str) -> Tuple[str, bool]:
+    async def connect(self, game_id: str, websocket: WebSocket, session_id: str, seed: str = "") -> Tuple[str, bool]:
         """Accept a connection and resolve its player identity.
 
         Returns (player_id, is_new). When the session already maps to a player
@@ -61,7 +61,7 @@ class ConnectionManager:
         await websocket.accept()
         if game_id not in self.active_connections:
             self.active_connections[game_id] = {}
-            self.game_instances[game_id] = GameInstance(game_id)
+            self.game_instances[game_id] = GameInstance(game_id, seed=seed or None)
             self.last_sent_floor[game_id] = {}
             self.sessions[game_id] = {}
             self.disconnect_deadline[game_id] = {}
@@ -291,9 +291,9 @@ async def get_talents(class_type: str):
     }
 
 @app.websocket("/ws/game/{game_id}")
-async def game_websocket(websocket: WebSocket, game_id: str, class_type: str = "warrior", difficulty: str = "normal", name: str = None, admin_secret: str = "", session: str = None):
+async def game_websocket(websocket: WebSocket, game_id: str, class_type: str = "warrior", difficulty: str = "normal", name: str = None, admin_secret: str = "", session: str = None, seed: str = ""):
     session_id = session or str(uuid.uuid4())
-    player_id, is_new = await manager.connect(game_id, websocket, session_id)
+    player_id, is_new = await manager.connect(game_id, websocket, session_id, seed=seed)
 
     game = manager.game_instances[game_id]
     if is_new:

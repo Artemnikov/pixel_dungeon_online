@@ -1,3 +1,17 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 ArtemNikov
+//
+// Adapted from Shattered Pixel Dungeon (C) 2014-2024 Evan Debenham
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU General Public License for more details.
+//
 export const SOURCE_TILE_SIZE = 16;
 export const DEST_TILE_SIZE = 32;
 export const ATLAS_COLUMNS = 16;
@@ -17,7 +31,7 @@ export const BACKEND_TILE = {
   WALL: { id: 1, atlasIndex: atlasIndex(0, 5), seethrough: false },
   FLOOR: { id: 2, atlasIndex: null, seethrough: true },
   DOOR: { id: 3, atlasIndex: atlasIndex(8, 3), seethrough: false },
-  OPEN_DOOR: { id: 3, atlasIndex: atlasIndex(9, 3), seethrough: true },
+  OPEN_DOOR: { id: 22, atlasIndex: atlasIndex(9, 3), seethrough: true },
   STAIRS_UP: { id: 4, atlasIndex: atlasIndex(0, 1), seethrough: true },
   STAIRS_DOWN: { id: 5, atlasIndex: atlasIndex(1, 1), seethrough: true },
   FLOOR_WOOD: { id: 6, atlasIndex: atlasIndex(4, 0), seethrough: true },
@@ -135,6 +149,10 @@ export const WALL_INDEX = {
   DOOR_SIDEWAYS: atlasIndex(3, 14),
   DOOR_SIDEWAYS_LOCKED: atlasIndex(4, 14),
 
+  RAISED_DOOR: atlasIndex(0, 7),
+  RAISED_DOOR_OPEN: atlasIndex(1, 7),
+  RAISED_DOOR_LOCKED: atlasIndex(2, 7),
+  RAISED_DOOR_CRYSTAL: atlasIndex(3, 7),
   RAISED_DOOR_SIDEWAYS: atlasIndex(4, 7),
 };
 
@@ -187,7 +205,9 @@ export const isWallStitcheable = (tile) =>
   tile === BACKEND_TILE.SECRET_DOOR.id;
 
 export const isDoorTile = (tile) =>
-  tile === BACKEND_TILE.DOOR.id || tile === BACKEND_TILE.LOCKED_DOOR.id;
+  tile === BACKEND_TILE.DOOR.id ||
+  tile === BACKEND_TILE.OPEN_DOOR.id ||
+  tile === BACKEND_TILE.LOCKED_DOOR.id;
 
 export const isWaterTile = (tile) => tile === BACKEND_TILE.FLOOR_WATER.id;
 export const isGrassTile = (tile) =>

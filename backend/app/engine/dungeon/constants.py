@@ -18,6 +18,7 @@ class TileType:
     HIGH_GRASS = 19
     SECRET_DOOR = 20
     FURROWED_GRASS = 21
+    OPEN_DOOR = 22
 
 
 class RoomKind:

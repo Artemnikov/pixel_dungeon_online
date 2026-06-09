@@ -1,3 +1,17 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 ArtemNikov
+#
+# Adapted from Shattered Pixel Dungeon (C) 2014-2024 Evan Debenham
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+# See the GNU General Public License for more details.
+#
 """Movement and combat for GameInstance.
 
 Handles held-direction intent, stepping (with bump-attacks, pickups, door
@@ -191,9 +205,33 @@ class MovementCombatMixin:
         if not isinstance(entity, Player) and self._is_in_safe_room(floor, new_x, new_y):
             return
 
+        old_x, old_y = entity.pos.x, entity.pos.y
         entity.move(dx, dy)
-        # Position changed: source cells and occupancy-based open doors moved,
-        # so any cached shadowcasting is stale.
+
+        # Door enter/leave tile mutation: stepping onto a closed DOOR opens it;
+        # leaving an open door closes it (if no other entity is on it).
+        door_changed = False
+        if floor.grid[entity.pos.y][entity.pos.x] == TileType.DOOR:
+            floor.grid[entity.pos.y][entity.pos.x] = TileType.OPEN_DOOR
+            door_changed = True
+        if floor.grid[old_y][old_x] == TileType.OPEN_DOOR:
+            has_entity = any(
+                p.pos.x == old_x and p.pos.y == old_y
+                for p in self._players_on_floor(floor_id)
+            )
+            if not has_entity:
+                has_entity = any(
+                    m.is_alive and m.pos.x == old_x and m.pos.y == old_y
+                    for m in floor.mobs.values()
+                )
+            if not has_entity:
+                floor.grid[old_y][old_x] = TileType.DOOR
+                door_changed = True
+
+        if door_changed:
+            floor.rebuild_flags()
+
+        # Position changed: door mutation may have changed flags and FOV.
         self._invalidate_fov_cache()
 
         # Terrain interaction (trample grass, trigger plants, etc.)
