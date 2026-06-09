@@ -16,6 +16,8 @@ import math
 import random
 from typing import Optional, List, TYPE_CHECKING
 
+from pydantic import Field
+
 from app.engine.entities.base import (
     Mob as MobEntity,
     DropEntry,
@@ -858,8 +860,8 @@ class Wraith(MobEntity):
     name: str = "Wraith"
     hp: int = 1
     max_hp: int = 1
-    attack_skill: int = 10     # 10 + level (set via floor_level)
-    defense_skill: int = 50    # attackSkill * 5 (set via floor_level)
+    attack_skill: int = 10     # 10 + level (scaled by GameInstance on spawn)
+    defense_skill: int = 50    # base default, scaled by GameInstance on spawn
     damage_min: int = 1
     damage_max: int = 2        # 1 + level/2 .. 2 + level (set via floor_level)
     dr_min: int = 0
@@ -1081,7 +1083,7 @@ class YogDzewa(MobEntity):
 
     # Boss runtime state
     phase: int = 0
-    fist_ids: List[str] = []
+    fist_ids: List[str] = Field(default_factory=list)
     ability_cooldown: float = 10.0
     summon_cooldown: float = 10.0
     fight_started: bool = False
@@ -1275,7 +1277,7 @@ class DemonSpawner(MobEntity):
 
     # Runtime
     spawn_cooldown: int = 20
-    spawn_recorded: bool = False
+    first_spawn_done: bool = False
 
 
 class Pylon(MobEntity):
@@ -1299,4 +1301,4 @@ class Pylon(MobEntity):
     bolt_cooldown: int = 5
     linked_pylon_id: str = ""
     activated: bool = False
-    target_neighbor: int = 0
+    fire_target_idx: int = 0
