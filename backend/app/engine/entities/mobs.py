@@ -875,6 +875,7 @@ class Wraith(MobEntity):
 class TormentedSpirit(Wraith):
     """Exotic wraith variant (1/100 chance). 50% more damage/accuracy scaling."""
     name: str = "Tormented Spirit"
+    pacified: bool = False
 
 
 class Piranha(MobEntity):
@@ -1273,7 +1274,7 @@ class DemonSpawner(MobEntity):
     ]
 
     # Runtime
-    spawn_cooldown: float = 0.0
+    spawn_cooldown: int = 20
     spawn_recorded: bool = False
 
 
