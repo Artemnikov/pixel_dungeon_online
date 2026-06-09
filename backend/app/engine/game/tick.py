@@ -26,7 +26,7 @@ from app.engine.dungeon.generator import TileType
 from app.engine.entities.base import Difficulty, Effect, Faction, Player
 from app.engine.entities.buffs import process_buffs
 from app.engine.game.blobs import tick_foliage_blobs
-from app.engine.entities.mobs import Rat, Goo
+from app.engine.entities.mobs import Rat, Goo, DwarfKing, DKGhoul, DKMonk, DKWarlock, DKGolem
 from app.engine.game.constants import (
     AUTO_MOVE_INTERVAL,
     GOO_WATER_HEAL_INTERVAL,
@@ -185,6 +185,13 @@ class TickMixin:
                 # generic AI; otherwise fall through so it still chases / melees.
                 if isinstance(mob, Goo):
                     if self._update_goo(mob, floor, floor_id):
+                        continue
+
+                # DwarfKing boss: phase transitions and summon logic.
+                # IMMOVABLE phases skip normal movement/chase entirely.
+                if isinstance(mob, DwarfKing):
+                    self._update_dwarf_king(mob, floor, floor_id)
+                    if "IMMOVABLE" in getattr(mob, "properties", []):
                         continue
 
                 target_player = self._find_nearest_player(mob.pos, floor_id)
@@ -432,6 +439,78 @@ class TickMixin:
             goo.attack_proc(target)  # ooze can still apply on the pumped hit
         # Player death (grave drop + DEATH event) is finalised by the tick's
         # _kill_player pass next tick, so we don't emit a DEATH event here.
+
+    # ------------------------------------------------------------------
+    # DwarfKing boss AI (mirrors DwarfKing.java phases / summon logic)
+    # ------------------------------------------------------------------
+    def _update_dwarf_king(self, dk: DwarfKing, floor: FloorState, floor_id: int):
+        """Drive DwarfKing's phase transitions and minion summons."""
+        # Fight start detection
+        if not dk.fight_started:
+            target = self._find_nearest_player(dk.pos, floor_id)
+            if target is not None:
+                dk.fight_started = True
+                self.add_event("DWARF_KING_FIGHT_STARTED", {"mob": dk.id}, floor_id=floor_id)
+            return
+
+        # Phase 2: become IMMOVABLE at 200 HP (and 4+ summons made)
+        if dk.phase == 1 and dk.hp <= 200 and dk.summons_made >= 4:
+            dk.phase = 2
+            if "IMMOVABLE" not in dk.properties:
+                dk.properties.append("IMMOVABLE")
+            self.add_event("DWARF_KING_PHASE2", {"mob": dk.id}, floor_id=floor_id)
+
+        # Phase 3: continuous summons at 100 HP (and 8+ summons made)
+        if dk.phase == 2 and dk.hp <= 100 and dk.summons_made >= 8:
+            dk.phase = 3
+            self.add_event("DWARF_KING_PHASE3", {"mob": dk.id}, floor_id=floor_id)
+
+        # Summon cooldown
+        if dk.summon_cooldown > 0:
+            dk.summon_cooldown -= 1
+            return
+
+        # Determine minion type: every 4th is monk or warlock, rest are ghouls
+        if dk.summons_made % 4 == 3:
+            cls = DKMonk if random.randint(0, 1) == 0 else DKWarlock
+        else:
+            cls = DKGhoul
+
+        # Find a free summon spot
+        summon_spots = floor.dk_summon_spots
+        first_mob = None
+        for spot in summon_spots:
+            sx, sy = spot
+            occupied = any(m.is_alive and m.pos.x == sx and m.pos.y == sy
+                           for m in floor.mobs.values())
+            if not occupied:
+                new_mob = self._spawn_mob_at(cls, sx, sy)
+                floor.mobs[new_mob.id] = new_mob
+                dk.summons_made += 1
+                first_mob = new_mob
+                break
+
+        if first_mob is None:
+            return  # all spots blocked, try again next tick
+
+        # DKGhoul pair mechanic: spawn a second ghoul and life-link them
+        if cls == DKGhoul:
+            for spot in summon_spots:
+                sx, sy = spot
+                occupied = any(m.is_alive and m.pos.x == sx and m.pos.y == sy
+                               for m in floor.mobs.values())
+                if not occupied:
+                    second_mob = self._spawn_mob_at(DKGhoul, sx, sy)
+                    floor.mobs[second_mob.id] = second_mob
+                    first_mob.linked_ghoul_id = second_mob.id
+                    second_mob.linked_ghoul_id = first_mob.id
+                    break
+
+        # Cooldown: phase 3 is rapid (3-5 ticks), otherwise normal (10-14)
+        if dk.phase == 3:
+            dk.summon_cooldown = random.randint(3, 5)
+        else:
+            dk.summon_cooldown = random.randint(10, 14)
 
     def _update_shadow_ally(self, ally, floor: FloorState, floor_id: int):
         # Shadow Clone AI: attack the nearest enemy mob in sight, else regroup

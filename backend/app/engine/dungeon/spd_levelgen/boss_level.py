@@ -50,6 +50,8 @@ def build_boss_floor(rng: SPDRandom, depth: int, run_state: RunState) -> Tuple[G
         return _build_prison_boss_floor(rng, depth, run_state)
     if depth == 15:
         return _build_caves_boss_floor(rng, depth, run_state)
+    if depth == 20:
+        return _build_city_boss_floor(rng, depth, run_state)
     return _build_sewer_boss_floor(rng, depth, run_state)
 
 
@@ -705,3 +707,126 @@ class DM300BossRoom(StandardRoom):
         c = self.center(rng)
         dm300_pos = level.point_to_cell(c)
         level.mobs.append(GenMob(cls_name="DM300", pos=dm300_pos))
+
+
+# ===========================================================================
+# City Boss (DwarfKing, depth 20) room types
+# ===========================================================================
+
+def _build_city_boss_floor(rng: SPDRandom, depth: int, run_state: RunState) -> Tuple[GenLevel, List[Room]]:
+    """Simplified city boss level (DwarfKing, depth 20). Throne room arena."""
+    from app.engine.dungeon.spd_levelgen.city_painter import CityPainter
+
+    level = GenLevel(depth, Feeling.NONE)
+    level.run_state = run_state
+
+    while True:
+        builder = _boss_builder(rng)
+        init_rooms = _city_boss_init_rooms(rng, depth)
+        rng.shuffle(init_rooms)
+        for r in init_rooms:
+            r.neighbours.clear()
+            r.connected.clear()
+        rooms = builder.build(list(init_rooms), rng, depth)
+        if rooms is not None:
+            break
+
+    painter = (CityPainter()
+               .set_water(0.10, 4)
+               .set_grass(0.05, 3)
+               .set_traps(0, (), ()))
+    painter.paint(rng, level, rooms)
+
+    level.rooms = rooms
+    level.room_entrance = next(r for r in rooms if r.is_entrance())
+    level.room_exit = next(r for r in rooms if r.is_exit())
+    level.build_flag_maps()
+
+    _boss_create_items(rng, level)
+    return level, rooms
+
+
+def _city_boss_init_rooms(rng: SPDRandom, depth: int) -> List[Room]:
+    rooms: List[Room] = []
+    entrance = CityBossEntranceRoom()
+    entrance.init_size_cat(rng)
+    rooms.append(entrance)
+    exit_ = CityBossExitRoom()
+    exit_.init_size_cat(rng)
+    rooms.append(exit_)
+    for _ in range(3):
+        s = create_standard_room(rng, depth)
+        s.set_size_cat(rng, 0, 0)
+        rooms.append(s)
+    boss_room = DwarfKingBossRoom()
+    boss_room.init_size_cat(rng)
+    rooms.append(boss_room)
+    return rooms
+
+
+class CityBossEntranceRoom(StandardRoom):
+    def min_width(self) -> int:
+        return max(super().min_width(), 7)
+
+    def min_height(self) -> int:
+        return max(super().min_height(), 7)
+
+    def is_entrance(self) -> bool:
+        return True
+
+    def paint(self, level, rng) -> None:
+        Painter.fill(level, self, terrain.WALL)
+        Painter.fill(level, self, 1, terrain.EMPTY)
+        entrance = level.point_to_cell(self.random(rng, 2))
+        Painter.set(level, entrance, terrain.ENTRANCE)
+        for door in self.connected.values():
+            door.set(DoorType.REGULAR)
+
+
+class CityBossExitRoom(StandardRoom):
+    def min_width(self) -> int:
+        return max(super().min_width(), 7)
+
+    def min_height(self) -> int:
+        return max(super().min_height(), 7)
+
+    def is_exit(self) -> bool:
+        return True
+
+    def paint(self, level, rng) -> None:
+        Painter.fill(level, self, terrain.WALL)
+        Painter.fill(level, self, 1, terrain.EMPTY)
+        c = self.center(rng)
+        Painter.set(level, c, terrain.LOCKED_EXIT)
+        for door in self.connected.values():
+            door.set(DoorType.REGULAR)
+
+
+class DwarfKingBossRoom(StandardRoom):
+    def size_cat_probs(self):
+        return [0.0, 1.0, 0.0]
+
+    def min_width(self) -> int:
+        return max(super().min_width(), 12)
+
+    def min_height(self) -> int:
+        return max(super().min_height(), 12)
+
+    def paint(self, level, rng) -> None:
+        Painter.fill(level, self, terrain.WALL)
+        Painter.fill(level, self, 1, terrain.EMPTY)
+
+        for door in self.connected.values():
+            door.set(DoorType.REGULAR)
+
+        c = self.center(rng)
+        dk_pos = level.point_to_cell(c)
+        level.mobs.append(GenMob(cls_name="DwarfKing", pos=dk_pos))
+
+        # 4 summon pedestals at room corners (inset 2 from wall)
+        level.dk_summon_spots = [
+            (self.left + 2, self.top + 2),
+            (self.right - 2, self.top + 2),
+            (self.right - 2, self.bottom - 2),
+            (self.left + 2, self.bottom - 2),
+        ]

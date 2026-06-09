@@ -131,6 +131,8 @@ class GenLevel:
         self.rooms: List[Room] = []
         self.room_entrance: Optional[Room] = None
         self.room_exit: Optional[Room] = None
+        # City boss (DwarfKing) summon pedestal positions; set by DwarfKingBossRoom.paint()
+        self.dk_summon_spots: list = []
 
     def width(self) -> int:
         return self._width

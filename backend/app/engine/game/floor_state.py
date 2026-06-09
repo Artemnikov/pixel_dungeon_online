@@ -30,6 +30,7 @@ class FloorState:
     mob_limit: int = 0
     plants: Dict[Tuple[int, int], Any] = field(default_factory=dict)
     blob_areas: Dict[str, Any] = field(default_factory=dict)
+    dk_summon_spots: List[Tuple[int, int]] = field(default_factory=list)
 
     def rebuild_flags(self) -> None:
         self.flags = build_flag_maps(self.grid)
