@@ -445,3 +445,337 @@ class Necromancer(MobEntity):
     loot_table: List[DropEntry] = [
         DropEntry(item_kind="health_potion", chance=0.2, max_global=0),
     ]
+
+
+# ---------------------------------------------------------------------------
+# Caves Enemies (depths 11-14)
+# ---------------------------------------------------------------------------
+
+class Bat(MobEntity):
+    name: str = "Bat"
+    hp: int = 30
+    max_hp: int = 30
+    attack_skill: int = 16
+    defense_skill: int = 15
+    damage_min: int = 5
+    damage_max: int = 18
+    dr_min: int = 0
+    dr_max: int = 4
+    speed: float = 2.0
+    exp: int = 7
+    max_lvl: int = 15
+    flying: bool = True
+    loot_table: List[DropEntry] = [
+        DropEntry(item_kind="health_potion", chance=0.167, max_global=0),
+    ]
+
+    def attack_proc(self, target: "Entity") -> None:
+        # SPD Bat.attackProc: heals self for damage dealt (handled in combat)
+        heal = random.randint(1, 3)
+        self.hp = min(self.max_hp, self.hp + heal)
+
+
+class Brute(MobEntity):
+    name: str = "Brute"
+    hp: int = 40
+    max_hp: int = 40
+    attack_skill: int = 20
+    defense_skill: int = 15
+    damage_min: int = 5
+    damage_max: int = 25
+    dr_min: int = 0
+    dr_max: int = 8
+    exp: int = 8
+    max_lvl: int = 16
+    loot_table: List[DropEntry] = [
+        DropEntry(item_kind="gold", chance=0.5, max_global=0),
+    ]
+
+    def get_damage_max(self) -> int:
+        return 40 if self.hp * 2 <= self.max_hp else 25
+
+
+class ArmoredBrute(Brute):
+    name: str = "Armored Brute"
+    dr_min: int = 4
+    dr_max: int = 12
+
+
+class Shaman(MobEntity):
+    name: str = "Shaman"
+    hp: int = 35
+    max_hp: int = 35
+    attack_skill: int = 18
+    defense_skill: int = 15
+    damage_min: int = 5
+    damage_max: int = 10
+    dr_min: int = 0
+    dr_max: int = 6
+    attack_range: int = 4
+    exp: int = 8
+    max_lvl: int = 16
+
+
+class RedShaman(Shaman):
+    name: str = "Red Shaman"
+
+
+class BlueShaman(Shaman):
+    name: str = "Blue Shaman"
+
+
+class PurpleShaman(Shaman):
+    name: str = "Purple Shaman"
+
+
+class Spinner(MobEntity):
+    name: str = "Spinner"
+    hp: int = 50
+    max_hp: int = 50
+    attack_skill: int = 22
+    defense_skill: int = 17
+    damage_min: int = 10
+    damage_max: int = 20
+    dr_min: int = 0
+    dr_max: int = 6
+    exp: int = 9
+    max_lvl: int = 17
+    loot_table: List[DropEntry] = [
+        DropEntry(item_kind="mystery_meat", chance=0.125, max_global=0),
+    ]
+
+
+class DM200(MobEntity):
+    name: str = "DM-200"
+    hp: int = 80
+    max_hp: int = 80
+    attack_skill: int = 20
+    defense_skill: int = 12
+    damage_min: int = 10
+    damage_max: int = 25
+    dr_min: int = 0
+    dr_max: int = 8
+    exp: int = 9
+    max_lvl: int = 17
+    properties: List[str] = ["INORGANIC"]
+    loot_table: List[DropEntry] = [
+        DropEntry(item_kind="weapon", chance=0.2, max_global=0),
+    ]
+
+
+class DM201(DM200):
+    name: str = "DM-201"
+    properties: List[str] = ["INORGANIC", "ELECTRIC"]
+
+
+# ---------------------------------------------------------------------------
+# City Enemies (depths 16-19)
+# ---------------------------------------------------------------------------
+
+class Ghoul(MobEntity):
+    name: str = "Ghoul"
+    hp: int = 45
+    max_hp: int = 45
+    attack_skill: int = 24
+    defense_skill: int = 20
+    damage_min: int = 16
+    damage_max: int = 22
+    dr_min: int = 0
+    dr_max: int = 4
+    exp: int = 5
+    max_lvl: int = 20
+    properties: List[str] = ["UNDEAD"]
+    loot_table: List[DropEntry] = [
+        DropEntry(item_kind="gold", chance=0.2, max_global=0),
+    ]
+
+
+class FireElemental(MobEntity):
+    name: str = "Fire Elemental"
+    hp: int = 60
+    max_hp: int = 60
+    attack_skill: int = 25
+    defense_skill: int = 20
+    damage_min: int = 20
+    damage_max: int = 25
+    dr_min: int = 0
+    dr_max: int = 5
+    exp: int = 10
+    max_lvl: int = 20
+    properties: List[str] = ["FIERY", "INORGANIC"]
+
+
+class FrostElemental(FireElemental):
+    name: str = "Frost Elemental"
+    properties: List[str] = ["ICY", "INORGANIC"]
+
+
+class ShockElemental(FireElemental):
+    name: str = "Shock Elemental"
+    properties: List[str] = ["ELECTRIC", "INORGANIC"]
+
+
+class ChaosElemental(FireElemental):
+    name: str = "Chaos Elemental"
+    properties: List[str] = ["INORGANIC"]
+
+
+class Warlock(MobEntity):
+    name: str = "Warlock"
+    hp: int = 70
+    max_hp: int = 70
+    attack_skill: int = 25
+    defense_skill: int = 18
+    damage_min: int = 12
+    damage_max: int = 18
+    dr_min: int = 0
+    dr_max: int = 8
+    attack_range: int = 5
+    exp: int = 11
+    max_lvl: int = 21
+    properties: List[str] = ["UNDEAD"]
+    loot_table: List[DropEntry] = [
+        DropEntry(item_kind="potion", chance=0.5, max_global=0),
+    ]
+
+
+class Monk(MobEntity):
+    name: str = "Monk"
+    hp: int = 70
+    max_hp: int = 70
+    attack_skill: int = 30
+    defense_skill: int = 30
+    damage_min: int = 12
+    damage_max: int = 25
+    dr_min: int = 0
+    dr_max: int = 2
+    exp: int = 11
+    max_lvl: int = 21
+    loot_table: List[DropEntry] = [
+        DropEntry(item_kind="food", chance=0.083, max_global=0),
+    ]
+
+
+class Senior(Monk):
+    name: str = "Senior"
+    damage_min: int = 16
+    damage_max: int = 25
+    loot_table: List[DropEntry] = [
+        DropEntry(item_kind="food", chance=1.0, max_global=0),
+    ]
+
+
+class Golem(MobEntity):
+    name: str = "Golem"
+    hp: int = 120
+    max_hp: int = 120
+    attack_skill: int = 28
+    defense_skill: int = 15
+    damage_min: int = 25
+    damage_max: int = 30
+    dr_min: int = 0
+    dr_max: int = 12
+    exp: int = 12
+    max_lvl: int = 22
+    properties: List[str] = ["INORGANIC"]
+    loot_table: List[DropEntry] = [
+        DropEntry(item_kind="weapon", chance=0.2, max_global=0),
+        DropEntry(item_kind="armor", chance=0.2, max_global=0),
+    ]
+
+
+# ---------------------------------------------------------------------------
+# Halls Enemies (depths 21-24)
+# ---------------------------------------------------------------------------
+
+class Succubus(MobEntity):
+    name: str = "Succubus"
+    hp: int = 80
+    max_hp: int = 80
+    attack_skill: int = 25
+    defense_skill: int = 25
+    damage_min: int = 25
+    damage_max: int = 30
+    dr_min: int = 0
+    dr_max: int = 10
+    exp: int = 12
+    max_lvl: int = 25
+    flying: bool = True
+    properties: List[str] = ["DEMONIC"]
+    loot_table: List[DropEntry] = [
+        DropEntry(item_kind="scroll", chance=0.33, max_global=0),
+    ]
+
+
+class Eye(MobEntity):
+    name: str = "Evil Eye"
+    hp: int = 100
+    max_hp: int = 100
+    attack_skill: int = 30
+    defense_skill: int = 20
+    damage_min: int = 20
+    damage_max: int = 30
+    dr_min: int = 0
+    dr_max: int = 10
+    attack_range: int = 8
+    exp: int = 13
+    max_lvl: int = 26
+    flying: bool = True
+    loot_table: List[DropEntry] = [
+        DropEntry(item_kind="health_potion", chance=1.0, max_global=0),
+    ]
+
+
+class Scorpio(MobEntity):
+    name: str = "Scorpio"
+    hp: int = 110
+    max_hp: int = 110
+    attack_skill: int = 36
+    defense_skill: int = 24
+    damage_min: int = 30
+    damage_max: int = 40
+    dr_min: int = 0
+    dr_max: int = 16
+    attack_range: int = 5
+    exp: int = 14
+    max_lvl: int = 27
+    loot_table: List[DropEntry] = [
+        DropEntry(item_kind="potion", chance=0.5, max_global=0),
+    ]
+
+
+class AcidicScorpio(Scorpio):
+    name: str = "Acidic Scorpio"
+    properties: List[str] = ["ACIDIC"]
+
+
+class RipperDemon(MobEntity):
+    name: str = "Ripper Demon"
+    hp: int = 60
+    max_hp: int = 60
+    attack_skill: int = 22
+    defense_skill: int = 22
+    damage_min: int = 15
+    damage_max: int = 25
+    dr_min: int = 0
+    dr_max: int = 4
+    exp: int = 9
+    max_lvl: int = -2
+    flying: bool = True
+    properties: List[str] = ["DEMONIC"]
+
+
+# ---------------------------------------------------------------------------
+# Prison Rare Alt Enemies
+# ---------------------------------------------------------------------------
+
+class Bandit(Thief):
+    name: str = "Bandit"
+    loot_table: List[DropEntry] = [
+        DropEntry(item_kind="ring", chance=1.0, max_global=0),
+    ]
+
+
+class SpectralNecromancer(Necromancer):
+    name: str = "Spectral Necromancer"
+    properties: List[str] = ["UNDEAD", "DEMONIC"]
