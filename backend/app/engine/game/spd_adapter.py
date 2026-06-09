@@ -449,6 +449,7 @@ def gen_level_to_floor_state(gen_level: GenLevel, depth: int) -> FloorState:
             "spd_generated": True,
         },
         dk_summon_spots=list(getattr(gen_level, 'dk_summon_spots', [])),
+        yog_pos=getattr(gen_level, 'yog_pos', None),
     )
     floor.rebuild_flags()
     return floor

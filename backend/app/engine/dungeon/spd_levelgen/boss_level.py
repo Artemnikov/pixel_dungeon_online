@@ -52,6 +52,8 @@ def build_boss_floor(rng: SPDRandom, depth: int, run_state: RunState) -> Tuple[G
         return _build_caves_boss_floor(rng, depth, run_state)
     if depth == 20:
         return _build_city_boss_floor(rng, depth, run_state)
+    if depth == 25:
+        return _build_halls_boss_floor(rng, depth, run_state)
     return _build_sewer_boss_floor(rng, depth, run_state)
 
 
@@ -830,3 +832,121 @@ class DwarfKingBossRoom(StandardRoom):
             (self.right - 2, self.bottom - 2),
             (self.left + 2, self.bottom - 2),
         ]
+
+
+# ===========================================================================
+# Halls Boss (YogDzewa, depth 25) room types
+# ===========================================================================
+
+def _build_halls_boss_floor(rng: SPDRandom, depth: int, run_state: RunState) -> Tuple[GenLevel, List[Room]]:
+    """Halls boss level (YogDzewa, depth 25). Demonic arena."""
+    from app.engine.dungeon.spd_levelgen.halls_painter import HallsPainter
+
+    level = GenLevel(depth, Feeling.NONE)
+    level.run_state = run_state
+
+    while True:
+        builder = _boss_builder(rng)
+        init_rooms = _halls_boss_init_rooms(rng, depth)
+        rng.shuffle(init_rooms)
+        for r in init_rooms:
+            r.neighbours.clear()
+            r.connected.clear()
+        rooms = builder.build(list(init_rooms), rng, depth)
+        if rooms is not None:
+            break
+
+    painter = (HallsPainter()
+               .set_water(0.10, 4)
+               .set_grass(0.05, 3)
+               .set_traps(0, (), ()))
+    painter.paint(rng, level, rooms)
+
+    level.rooms = rooms
+    level.room_entrance = next(r for r in rooms if r.is_entrance())
+    level.room_exit = next(r for r in rooms if r.is_exit())
+    level.build_flag_maps()
+
+    _boss_create_items(rng, level)
+    return level, rooms
+
+
+def _halls_boss_init_rooms(rng: SPDRandom, depth: int) -> List[Room]:
+    rooms: List[Room] = []
+    entrance = HallsBossEntranceRoom()
+    entrance.init_size_cat(rng)
+    rooms.append(entrance)
+    exit_ = HallsBossExitRoom()
+    exit_.init_size_cat(rng)
+    rooms.append(exit_)
+    for _ in range(3):
+        s = create_standard_room(rng, depth)
+        s.set_size_cat(rng, 0, 0)
+        rooms.append(s)
+    boss_room = YogDzewaBossRoom()
+    boss_room.init_size_cat(rng)
+    rooms.append(boss_room)
+    return rooms
+
+
+class HallsBossEntranceRoom(StandardRoom):
+    def min_width(self) -> int:
+        return max(super().min_width(), 7)
+
+    def min_height(self) -> int:
+        return max(super().min_height(), 7)
+
+    def is_entrance(self) -> bool:
+        return True
+
+    def paint(self, level, rng) -> None:
+        Painter.fill(level, self, terrain.WALL)
+        Painter.fill(level, self, 1, terrain.EMPTY)
+        entrance = level.point_to_cell(self.random(rng, 2))
+        Painter.set(level, entrance, terrain.ENTRANCE)
+        for door in self.connected.values():
+            door.set(DoorType.REGULAR)
+
+
+class HallsBossExitRoom(StandardRoom):
+    def min_width(self) -> int:
+        return max(super().min_width(), 7)
+
+    def min_height(self) -> int:
+        return max(super().min_height(), 7)
+
+    def is_exit(self) -> bool:
+        return True
+
+    def paint(self, level, rng) -> None:
+        Painter.fill(level, self, terrain.WALL)
+        Painter.fill(level, self, 1, terrain.EMPTY)
+        c = self.center(rng)
+        Painter.set(level, c, terrain.LOCKED_EXIT)
+        for door in self.connected.values():
+            door.set(DoorType.REGULAR)
+
+
+class YogDzewaBossRoom(StandardRoom):
+    def size_cat_probs(self):
+        return [0.0, 1.0, 0.0]
+
+    def min_width(self) -> int:
+        return max(super().min_width(), 14)
+
+    def min_height(self) -> int:
+        return max(super().min_height(), 14)
+
+    def paint(self, level, rng) -> None:
+        Painter.fill(level, self, terrain.WALL)
+        Painter.fill(level, self, 1, terrain.EMPTY)
+
+        for door in self.connected.values():
+            door.set(DoorType.REGULAR)
+
+        # Yog-Dzewa sits at center-top (upper third of room)
+        cx = (self.left + self.right) // 2
+        cy = self.top + (self.height() // 3)
+        yog_pos = level.point_to_cell(Point(cx, cy))
+        level.mobs.append(GenMob(cls_name="YogDzewa", pos=yog_pos))
+        level.yog_pos = (cx, cy)

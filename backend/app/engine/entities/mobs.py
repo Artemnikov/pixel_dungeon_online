@@ -1084,9 +1084,29 @@ class YogDzewa(MobEntity):
     # Boss runtime state
     phase: int = 0
     fist_ids: List[str] = Field(default_factory=list)
+    fist_order: List[str] = Field(default_factory=list)
     ability_cooldown: float = 10.0
     summon_cooldown: float = 10.0
     fight_started: bool = False
+
+    def defense_proc(self, damage: int, attacker, floor_mobs: dict, tile_x: int, tile_y: int) -> int:
+        # Invincible while any fist is alive (phases 0-4).
+        if self.phase < 5:
+            alive_fists = [m for m in floor_mobs.values()
+                           if m.id in self.fist_ids and getattr(m, 'is_alive', False)]
+            if alive_fists:
+                return 0
+        return damage
+
+
+def _fist_near_yog(self, floor_mobs: dict) -> bool:
+    """Return True when this fist is within 4 tiles of its Yog (Manhattan)."""
+    if not self.yog_id:
+        return False
+    yog = floor_mobs.get(self.yog_id)
+    if yog is None or not yog.is_alive:
+        return False
+    return abs(self.pos.x - yog.pos.x) + abs(self.pos.y - yog.pos.y) <= 4
 
 
 class BurningFist(MobEntity):
@@ -1112,6 +1132,11 @@ class BurningFist(MobEntity):
     yog_id: str = ""
     ranged_cooldown: float = 0.0
 
+    def defense_proc(self, damage: int, attacker, floor_mobs: dict, tile_x: int, tile_y: int) -> int:
+        if _fist_near_yog(self, floor_mobs):
+            return 0
+        return damage
+
 
 class SoiledFist(MobEntity):
     """YogDzewa fist. HP=300. DEMONIC. Roots enemies, spreads grass."""
@@ -1135,6 +1160,11 @@ class SoiledFist(MobEntity):
     yog_id: str = ""
     ranged_cooldown: float = 0.0
 
+    def defense_proc(self, damage: int, attacker, floor_mobs: dict, tile_x: int, tile_y: int) -> int:
+        if _fist_near_yog(self, floor_mobs):
+            return 0
+        return damage
+
 
 class RottingFist(MobEntity):
     """YogDzewa fist. HP=300. ACIDIC+DEMONIC. Converts damage to bleeding; zap=toxic gas."""
@@ -1157,6 +1187,11 @@ class RottingFist(MobEntity):
     paired_fist_id: str = ""
     yog_id: str = ""
     ranged_cooldown: float = 0.0
+
+    def defense_proc(self, damage: int, attacker, floor_mobs: dict, tile_x: int, tile_y: int) -> int:
+        if _fist_near_yog(self, floor_mobs):
+            return 0
+        return damage
 
 
 class RustedFist(MobEntity):
@@ -1182,6 +1217,11 @@ class RustedFist(MobEntity):
     ranged_cooldown: float = 0.0
     viscosity_stacks: int = 0
 
+    def defense_proc(self, damage: int, attacker, floor_mobs: dict, tile_x: int, tile_y: int) -> int:
+        if _fist_near_yog(self, floor_mobs):
+            return 0
+        return damage
+
 
 class BrightFist(MobEntity):
     """YogDzewa fist. HP=300. ELECTRIC+DEMONIC. Light beam blinds; teleports at half HP."""
@@ -1206,6 +1246,11 @@ class BrightFist(MobEntity):
     ranged_cooldown: float = 0.0
     teleport_used: bool = False
 
+    def defense_proc(self, damage: int, attacker, floor_mobs: dict, tile_x: int, tile_y: int) -> int:
+        if _fist_near_yog(self, floor_mobs):
+            return 0
+        return damage
+
 
 class DarkFist(MobEntity):
     """YogDzewa fist. HP=300. DEMONIC. Dark bolt extinguishes light; teleports at half HP."""
@@ -1229,6 +1274,11 @@ class DarkFist(MobEntity):
     yog_id: str = ""
     ranged_cooldown: float = 0.0
     teleport_used: bool = False
+
+    def defense_proc(self, damage: int, attacker, floor_mobs: dict, tile_x: int, tile_y: int) -> int:
+        if _fist_near_yog(self, floor_mobs):
+            return 0
+        return damage
 
 
 class YogEye(Eye):

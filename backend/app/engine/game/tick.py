@@ -26,7 +26,11 @@ from app.engine.dungeon.generator import TileType
 from app.engine.entities.base import Difficulty, Effect, Faction, Player
 from app.engine.entities.buffs import process_buffs
 from app.engine.game.blobs import tick_foliage_blobs
-from app.engine.entities.mobs import Rat, Goo, DwarfKing, DKGhoul, DKMonk, DKWarlock, DKGolem
+from app.engine.entities.mobs import (
+    Rat, Goo, DwarfKing, DKGhoul, DKMonk, DKWarlock, DKGolem,
+    YogDzewa, BurningFist, SoiledFist, RottingFist, RustedFist, BrightFist, DarkFist,
+    YogRipper,
+)
 from app.engine.game.constants import (
     AUTO_MOVE_INTERVAL,
     GOO_WATER_HEAL_INTERVAL,
@@ -193,6 +197,12 @@ class TickMixin:
                     self._update_dwarf_king(mob, floor, floor_id)
                     if "IMMOVABLE" in getattr(mob, "properties", []):
                         continue
+
+                # YogDzewa boss: phase transitions, fist spawns, death ray, summons.
+                # Always IMMOVABLE — skip generic AI entirely.
+                if isinstance(mob, YogDzewa):
+                    self._update_yog_dzewa(mob, floor, floor_id)
+                    continue
 
                 target_player = self._find_nearest_player(mob.pos, floor_id)
                 # Fleeing mob: run away from nearest player, don't attack
@@ -513,6 +523,133 @@ class TickMixin:
             dk.summon_cooldown = random.randint(3, 5)
         else:
             dk.summon_cooldown = random.randint(10, 14)
+
+    # ------------------------------------------------------------------
+    # YogDzewa boss AI (mirrors YogDzewa.java phases / fist/summon logic)
+    # ------------------------------------------------------------------
+    def _update_yog_dzewa(self, yog: YogDzewa, floor: FloorState, floor_id: int):
+        """Drive YogDzewa's phase transitions, fist spawns, death ray and summons."""
+
+        # Fight start: triggered when any player comes within 12 tiles.
+        if not yog.fight_started:
+            target = self._find_nearest_player(yog.pos, floor_id)
+            if target is not None and self._get_distance(yog.pos, target.pos) <= 12:
+                yog.fight_started = True
+                yog.phase = 1
+                # Build random fist order: one from each pair, then shuffle.
+                pair_a = random.choice(["BurningFist", "SoiledFist"])
+                pair_b = random.choice(["RottingFist", "RustedFist"])
+                pair_c = random.choice(["BrightFist", "DarkFist"])
+                fist_order = [pair_a, pair_b, pair_c]
+                random.shuffle(fist_order)
+                yog.fist_order = fist_order
+                self.add_event("YOG_FIGHT_STARTED", {"mob": yog.id}, floor_id=floor_id)
+            return
+
+        # Collect alive fists registered to this Yog.
+        alive_fists = [m for m in floor.mobs.values()
+                       if m.id in yog.fist_ids and m.is_alive]
+
+        # Phase transitions at HP thresholds — each spawns the next fist.
+        HP_THRESHOLDS = {1: 700, 2: 400, 3: 100}
+        if yog.phase in HP_THRESHOLDS and yog.hp <= HP_THRESHOLDS[yog.phase]:
+            # Enforce HP floor so Yog can't drop below threshold while fist lives.
+            yog.hp = HP_THRESHOLDS[yog.phase]
+            # Spawn next fist from the pre-shuffled order.
+            if yog.fist_order:
+                next_cls_name = yog.fist_order[0]
+                yog.fist_order = yog.fist_order[1:]
+                _FIST_CLASSES = {
+                    "BurningFist": BurningFist,
+                    "SoiledFist": SoiledFist,
+                    "RottingFist": RottingFist,
+                    "RustedFist": RustedFist,
+                    "BrightFist": BrightFist,
+                    "DarkFist": DarkFist,
+                }
+                fist_cls = _FIST_CLASSES.get(next_cls_name, BurningFist)
+                new_fist = self._spawn_mob_at(fist_cls, yog.pos.x, yog.pos.y)
+                new_fist.yog_id = yog.id
+                floor.mobs[new_fist.id] = new_fist
+                yog.fist_ids.append(new_fist.id)
+                alive_fists.append(new_fist)
+                self.add_event("YOG_FIST_SPAWN",
+                               {"mob": yog.id, "fist": new_fist.id, "cls": next_cls_name},
+                               floor_id=floor_id)
+            yog.phase += 1
+            self.add_event("YOG_PHASE_CHANGE", {"mob": yog.id, "phase": yog.phase},
+                           floor_id=floor_id)
+
+        # Phase 4 → 5: all fists dead — Yog is now fully vulnerable.
+        if yog.phase == 4 and len(alive_fists) == 0:
+            yog.phase = 5
+            self.add_event("YOG_FINAL_PHASE", {"mob": yog.id}, floor_id=floor_id)
+
+        # Phase 4 HP floor: Yog can't die while the last fist still lives.
+        if yog.phase == 4 and yog.hp < 100:
+            yog.hp = 100
+
+        # No target → do nothing else.
+        target = self._find_nearest_player(yog.pos, floor_id)
+        if target is None:
+            return
+
+        # ------------------------------------------------------------------
+        # Death ray (ability)
+        # ------------------------------------------------------------------
+        if yog.ability_cooldown > 0:
+            yog.ability_cooldown -= 1
+        else:
+            beams = max(1, 1 + (yog.max_hp - yog.hp) // 400)
+            for _ in range(beams):
+                # Infinite accuracy vs player defense (mirrors Java INFINITE_ACCURACY)
+                acu = random.random() * 999
+                df = random.random() * target.get_effective_defense_skill()
+                if acu > df:
+                    dmg = random.randint(20, 30)
+                    taken = target.take_damage(dmg)
+                    self.add_event("ATTACK", {"source": yog.id, "target": target.id,
+                                              "damage": taken, "surprise": False},
+                                   floor_id=floor_id)
+            self.add_event("YOG_DEATH_RAY",
+                           {"mob": yog.id, "target": target.id, "beams": beams},
+                           floor_id=floor_id)
+            cooldown = random.randint(10, 15) - (yog.phase - 1)
+            yog.ability_cooldown = max(2, cooldown)
+            if yog.phase == 5:
+                yog.ability_cooldown = min(yog.ability_cooldown, 2)
+
+        # ------------------------------------------------------------------
+        # Minion summons
+        # ------------------------------------------------------------------
+        if yog.summon_cooldown > 0:
+            yog.summon_cooldown -= 1
+        else:
+            # Find free neighbor tile nearest to the target player.
+            neighbors = [
+                (yog.pos.x + dx, yog.pos.y + dy)
+                for dx, dy in [(-1, -1), (0, -1), (1, -1), (-1, 0),
+                                (1, 0), (-1, 1), (0, 1), (1, 1)]
+            ]
+            neighbors.sort(key=lambda p: abs(p[0] - target.pos.x) + abs(p[1] - target.pos.y))
+            for sx, sy in neighbors:
+                if not (0 <= sx < floor.width and 0 <= sy < floor.height):
+                    continue
+                occupied = any(
+                    m.is_alive and m.pos.x == sx and m.pos.y == sy
+                    for m in floor.mobs.values()
+                )
+                if not occupied:
+                    minion = self._spawn_mob_at(YogRipper, sx, sy)
+                    floor.mobs[minion.id] = minion
+                    break
+
+            cooldown = random.randint(10, 15) - (yog.phase - 1)
+            if alive_fists:
+                cooldown += 10
+            yog.summon_cooldown = max(1, cooldown)
+            if yog.phase == 5:
+                yog.summon_cooldown = min(yog.summon_cooldown, 3)
 
     def _update_shadow_ally(self, ally, floor: FloorState, floor_id: int):
         # Shadow Clone AI: attack the nearest enemy mob in sight, else regroup
