@@ -35,7 +35,17 @@ class WorldInteractionMixin:
         key is dropped here because it needs the floor-specific lock id, and it
         must drop no matter how Goo died (melee or bleed) so progression can't
         soft-lock."""
-        from app.engine.entities.mobs import Goo
+        from app.engine.entities.mobs import Goo, Pylon
+
+        # CavesBossLevel.eliminatePylon: when an activated Pylon dies, activate
+        # the next remaining inactive Pylon on the floor (if any).
+        if isinstance(mob, Pylon):
+            for other in floor.mobs.values():
+                if isinstance(other, Pylon) and other.is_alive and not other.activated:
+                    other.activated = True
+                    self.add_event("PYLON_ACTIVATED", {"mob": other.id}, floor_id=floor_id)
+                    break
+
         if not isinstance(mob, Goo):
             return
         key_id = next(iter(floor.locked_doors.values()), "goo_door")

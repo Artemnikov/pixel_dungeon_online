@@ -23,13 +23,14 @@ import time
 from typing import List
 
 from app.engine.dungeon.generator import TileType
+from app.engine.dungeon.spd_levelgen.level import _CIRCLE8_OFFSETS
 from app.engine.entities.base import Difficulty, Effect, Faction, Player
 from app.engine.entities.buffs import process_buffs
 from app.engine.game.blobs import tick_foliage_blobs
 from app.engine.entities.mobs import (
     Rat, Goo, DwarfKing, DKGhoul, DKMonk, DKWarlock, DKGolem,
     YogDzewa, BurningFist, SoiledFist, RottingFist, RustedFist, BrightFist, DarkFist,
-    YogRipper,
+    YogRipper, DemonSpawner, Pylon, RipperDemon, DM300,
 )
 from app.engine.game.constants import (
     AUTO_MOVE_INTERVAL,
@@ -202,6 +203,30 @@ class TickMixin:
                 # Always IMMOVABLE — skip generic AI entirely.
                 if isinstance(mob, YogDzewa):
                     self._update_yog_dzewa(mob, floor, floor_id)
+                    continue
+
+                # DM-300 boss: on fight start, activate one Pylon (CavesBossLevel.activatePylon).
+                if isinstance(mob, DM300):
+                    if not mob.fight_started:
+                        target = self._find_nearest_player(mob.pos, floor_id)
+                        if target is not None:
+                            mob.fight_started = True
+                            for other in floor.mobs.values():
+                                if isinstance(other, Pylon) and not other.activated:
+                                    other.activated = True
+                                    self.add_event("PYLON_ACTIVATED", {"mob": other.id}, floor_id=floor_id)
+                                    break
+
+                # DemonSpawner: immovable, periodically spawns RipperDemons in
+                # adjacent free cells (DemonSpawner.act).
+                if isinstance(mob, DemonSpawner):
+                    self._update_demon_spawner(mob, floor, floor_id)
+                    continue
+
+                # Pylon: immovable, passive+invulnerable until DM-300 activates it,
+                # then fires lightning bolts at opposite shock cells each tick.
+                if isinstance(mob, Pylon):
+                    self._update_pylon(mob, floor, floor_id)
                     continue
 
                 target_player = self._find_nearest_player(mob.pos, floor_id)
@@ -654,6 +679,86 @@ class TickMixin:
             yog.summon_cooldown = max(1, cooldown)
             if yog.phase == 5:
                 yog.summon_cooldown = min(yog.summon_cooldown, 3)
+
+    # ------------------------------------------------------------------
+    # DemonSpawner (mirrors DemonSpawner.act -- immovable miniboss that
+    # periodically spawns RipperDemons in adjacent free cells).
+    # ------------------------------------------------------------------
+    def _update_demon_spawner(self, spawner: DemonSpawner, floor: FloorState, floor_id: int):
+        spawner.spawn_cooldown -= 1
+        if spawner.spawn_cooldown > 0:
+            return
+
+        # Java: clamp BEFORE searching for candidates so a spawner with no
+        # free neighbours doesn't endlessly accumulate negative cooldown.
+        if spawner.spawn_cooldown < -20:
+            spawner.spawn_cooldown = -20
+
+        candidates = []
+        for dx, dy in _CIRCLE8_OFFSETS:
+            nx, ny = spawner.pos.x + dx, spawner.pos.y + dy
+            if not (0 <= nx < floor.width and 0 <= ny < floor.height):
+                continue
+            if not floor.flags or not floor.flags.passable[ny][nx]:
+                continue
+            occupied = any(m.is_alive and m.pos.x == nx and m.pos.y == ny for m in floor.mobs.values())
+            occupied = occupied or any(p.is_alive and p.pos.x == nx and p.pos.y == ny for p in self._players_on_floor(floor_id))
+            if not occupied:
+                candidates.append((nx, ny))
+
+        if candidates:
+            sx, sy = random.choice(candidates)
+            new_mob = self._spawn_mob_at(RipperDemon, sx, sy)
+            new_mob.ai_state = "hunting"
+            floor.mobs[new_mob.id] = new_mob
+            self.add_event("MOB_SPAWN", {"mob": new_mob.id, "cls": "RipperDemon"}, floor_id=floor_id)
+
+            spawner.spawn_cooldown += 60
+            if floor.floor_id > 21:
+                spawner.spawn_cooldown -= min(20, int((floor.floor_id - 21) * 6.67))
+
+    # ------------------------------------------------------------------
+    # Pylon (mirrors Pylon.act -- inactive/passive/invulnerable until
+    # activated by DM-300; then fires lightning at opposite shock cells
+    # every tick).
+    # ------------------------------------------------------------------
+    def _update_pylon(self, pylon: Pylon, floor: FloorState, floor_id: int):
+        if not pylon.activated:
+            return
+
+        pylon.bolt_cooldown -= 1
+        if pylon.bolt_cooldown > 0:
+            return
+
+        idx_a = pylon.fire_target_idx
+        idx_b = (pylon.fire_target_idx + 4) % 8
+        shock_cells = []
+        for idx in (idx_a, idx_b):
+            ox, oy = _CIRCLE8_OFFSETS[idx]
+            shock_cells.append((pylon.pos.x + ox, pylon.pos.y + oy))
+
+        for cx, cy in shock_cells:
+            for p in self._players_on_floor(floor_id):
+                if p.is_alive and p.pos.x == cx and p.pos.y == cy:
+                    dmg = random.randint(10, 20)
+                    taken = p.take_damage(dmg)
+                    self.add_event("ATTACK", {"source": pylon.id, "target": p.id,
+                                              "damage": taken, "surprise": False},
+                                   floor_id=floor_id)
+                    if taken > 0:
+                        self.add_event("DAMAGE", {"target": p.id, "amount": taken}, floor_id=floor_id)
+            for m in floor.mobs.values():
+                if m.is_alive and m.id != pylon.id and m.pos.x == cx and m.pos.y == cy:
+                    dmg = random.randint(10, 20)
+                    taken = m.take_damage(dmg)
+                    self.add_event("ATTACK", {"source": pylon.id, "target": m.id,
+                                              "damage": taken, "surprise": False},
+                                   floor_id=floor_id)
+                    if taken > 0:
+                        self.add_event("DAMAGE", {"target": m.id, "amount": taken}, floor_id=floor_id)
+
+        pylon.fire_target_idx = (pylon.fire_target_idx + 1) % 8
+        pylon.bolt_cooldown = 1
 
     def _update_shadow_ally(self, ally, floor: FloorState, floor_id: int):
         # Shadow Clone AI: attack the nearest enemy mob in sight, else regroup

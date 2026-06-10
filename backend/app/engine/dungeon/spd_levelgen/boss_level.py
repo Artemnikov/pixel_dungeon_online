@@ -710,6 +710,16 @@ class DM300BossRoom(StandardRoom):
         dm300_pos = level.point_to_cell(c)
         level.mobs.append(GenMob(cls_name="DM300", pos=dm300_pos))
 
+        # Pylons at the four corners of the arena interior (CavesBossLevel.pylonPositions),
+        # inset 2 tiles from the walls so they don't sit directly on the inset-1 floor edge.
+        for px, py in [
+            (self.left + 2, self.top + 2),
+            (self.right - 2, self.top + 2),
+            (self.left + 2, self.bottom - 2),
+            (self.right - 2, self.bottom - 2),
+        ]:
+            level.mobs.append(GenMob(cls_name="Pylon", pos=level.point_to_cell(Point(px, py))))
+
 
 # ===========================================================================
 # City Boss (DwarfKing, depth 20) room types

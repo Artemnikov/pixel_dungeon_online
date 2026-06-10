@@ -1431,6 +1431,40 @@ class PitRoom(SpecialRoom):
         return False
 
 
+class DemonSpawnerRoom(SpecialRoom):
+    """Port of DemonSpawnerRoom.java -- not part of the special-room rotation
+    (SpecialRoom.java's static lists); HallsLevel.initRooms() adds exactly one
+    of these directly to the init-room list for floors 21-24."""
+
+    def paint(self, level, rng: SPDRandom) -> None:
+        from app.engine.dungeon.spd_levelgen.mob_spawner import GenMob
+
+        Painter.fill(level, self, terrain.WALL)
+        Painter.fill(level, self, 1, terrain.EMPTY)
+
+        door = self.entrance()
+        if door is not None:
+            door.set(DoorType.UNLOCKED)  # cannot be hidden randomly under any circumstance
+
+        c = self.center(rng)
+        level.mobs.append(GenMob(cls_name="DemonSpawner", pos=level.point_to_cell(c)))
+
+    def connect(self, room: "Room") -> bool:
+        # Cannot connect to the exit room, otherwise works normally.
+        if room.is_exit():
+            return False
+        return super().connect(room)
+
+    def can_place_trap(self, p: Point) -> bool:
+        return False
+
+    def can_place_water(self, p: Point) -> bool:
+        return False
+
+    def can_place_grass(self, p: Point) -> bool:
+        return False
+
+
 # Order matters: matches SpecialRoom.java's static list registration order
 # (Random.shuffle consumes them in this order during initForRun).
 EQUIP_SPECIALS = (

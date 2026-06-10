@@ -1327,3 +1327,11 @@ class Pylon(MobEntity):
     linked_pylon_id: str = ""
     activated: bool = False
     fire_target_idx: int = 0
+
+    def take_damage(self, amount: int):
+        # Immune to all damage while inactive (Pylon.isInvulnerable: alignment == NEUTRAL).
+        if not self.activated:
+            return 0
+        if amount >= 15:
+            amount = 14 + int((math.sqrt(8 * (amount - 14) + 1) - 1) / 2)
+        return super().take_damage(amount)

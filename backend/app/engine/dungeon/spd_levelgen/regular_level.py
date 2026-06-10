@@ -163,6 +163,10 @@ def _init_rooms(rng: SPDRandom, depth: int, feeling: Feeling, run_state: RunStat
         from app.engine.dungeon.spd_levelgen.room_types import ShopRoom
         init_rooms.append(ShopRoom())
 
+    # HallsLevel.initRooms(): adds one DemonSpawnerRoom on every Halls floor.
+    if region_for_depth(depth) == "halls":
+        init_rooms.append(sr.DemonSpawnerRoom())
+
     # Dungeon.shopOnLevel() is only true for depths 6/11/16 -- never on sewers floors.
 
     specials = _special_rooms(rng, depth, feeling == Feeling.LARGE)
