@@ -190,27 +190,27 @@ export function drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef,
     } else if (mob.name === 'Bee') {
       mobSprite = assetImages.bee;
       sx = getBeeFrame(mob, mobAnimRef.current, now);
-    } else if (mob.name === 'DwarfKing') {
+    } else if (mob.name === 'Dwarf King') {
       mobSprite = assetImages.king;
       sx = getDwarfKingFrame(mob, mobAnimRef.current, now);
-    } else if (mob.name === 'DKGhoul') {
+    } else if (mob.name === 'DK Ghoul') {
       mobSprite = assetImages.ghoul;
       sx = getGhoulFrame(mob, mobAnimRef.current, now);
-    } else if (mob.name === 'DKMonk') {
+    } else if (mob.name === 'DK Monk') {
       mobSprite = assetImages.monk;
       sx = getMonkFrame(mob, mobAnimRef.current, now);
-    } else if (mob.name === 'DKWarlock') {
+    } else if (mob.name === 'DK Warlock') {
       mobSprite = assetImages.warlock;
       sx = getWarlockFrame(mob, mobAnimRef.current, now);
-    } else if (mob.name === 'DKGolem') {
+    } else if (mob.name === 'DK Golem') {
       mobSprite = assetImages.golem;
       sx = getGolemFrame(mob, mobAnimRef.current, now);
     } else if (mob.name === 'Yog-Dzewa') {
       mobSprite = assetImages.yog;
       sx = getYogFrame(mob, mobAnimRef.current, now);
     } else if (
-      mob.name === 'BurningFist' || mob.name === 'SoiledFist' || mob.name === 'RottingFist' ||
-      mob.name === 'RustedFist' || mob.name === 'BrightFist' || mob.name === 'DarkFist'
+      mob.name === 'Burning Fist' || mob.name === 'Soiled Fist' || mob.name === 'Rotting Fist' ||
+      mob.name === 'Rusted Fist' || mob.name === 'Bright Fist' || mob.name === 'Dark Fist'
     ) {
       mobSprite = assetImages.fists;
       sx = getFistFrame(mob, mobAnimRef.current, now);
@@ -231,7 +231,7 @@ export function drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef,
       sx = getPylonFrame(mob, mobAnimRef.current, now);
     }
 
-    const isScorpio = mob.name === 'Scorpio';
+    const isScorpio = mob.name === 'Scorpio' || mob.name === 'Yog Scorpio';
     const isCrab = mob.name === 'Crab';
     const isHermitCrab = mob.name === 'Hermit Crab';
     const isSlime = mob.name === 'Slime';
@@ -251,12 +251,12 @@ export function drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef,
     const isEbonyMimic = mob.name === 'Ebony Mimic';
     const isStatue = mob.name === 'Statue';
     const isArmoredStatue = mob.name === 'Armored Statue';
-    const isGhoul = mob.name === 'DKGhoul';
-    const isMonk = mob.name === 'DKMonk';
-    const isWarlock = mob.name === 'DKWarlock';
-    const isGolem = mob.name === 'DKGolem';
+    const isGhoul = mob.name === 'DK Ghoul';
+    const isMonk = mob.name === 'DK Monk';
+    const isWarlock = mob.name === 'DK Warlock';
+    const isGolem = mob.name === 'DK Golem';
     const isYog = mob.name === 'Yog-Dzewa';
-    const fistRow = { BurningFist: 0, SoiledFist: 1, RottingFist: 2, RustedFist: 3, BrightFist: 4, DarkFist: 5 }[mob.name];
+    const fistRow = { 'Burning Fist': 0, 'Soiled Fist': 1, 'Rotting Fist': 2, 'Rusted Fist': 3, 'Bright Fist': 4, 'Dark Fist': 5 }[mob.name];
     const isFist = fistRow !== undefined;
     const isEye = mob.name === 'Yog Eye';
     const isRipper = mob.name === 'Yog Ripper';
