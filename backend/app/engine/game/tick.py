@@ -20,7 +20,7 @@ status effects (bleed/ooze), mob respawns, and difficulty-scaled mob AI.
 
 import random
 import time
-from typing import List, Optional
+from typing import List, Optional, Type
 
 from app.engine.dungeon.generator import TileType
 from app.engine.dungeon.spd_levelgen.level import _CIRCLE8_OFFSETS
@@ -31,6 +31,7 @@ from app.engine.entities.mobs import (
     Rat, Goo, DwarfKing, DKGhoul, DKMonk, DKWarlock, DKGolem,
     YogDzewa, BurningFist, SoiledFist, RottingFist, RustedFist, BrightFist, DarkFist,
     YogRipper, DemonSpawner, Pylon, RipperDemon, DM300,
+    Wraith, TormentedSpirit, Bee, EbonyMimic, MobEntity,
 )
 from app.engine.game.constants import (
     AUTO_MOVE_INTERVAL,
@@ -46,6 +47,64 @@ from app.engine.game.constants import (
 )
 from app.engine.game.floor_state import FloorState
 from app.engine.systems.loot import roll_drops
+
+
+def _apply_floor_scaling(mob: MobEntity, floor_id: int) -> None:
+    """Apply SPD's adjustStats/spawn level-scaling formulas for the
+    "universal extra" respawn pool (Wraith/TormentedSpirit, Bee, EbonyMimic).
+
+    These mobs normally have their stats set when constructed via their
+    item-gated spawn paths (Wraith.spawnAt, Bee.spawn, Mimic.spawnAt); since
+    this ad-hoc respawn path bypasses those, we recompute the same formulas
+    here using floor_id as the SPD "level"/"depth" value.
+    """
+    level = floor_id
+    if isinstance(mob, TormentedSpirit):
+        # TormentedSpirit.adjustStats: ~50% more accuracy/damage than Wraith.
+        attack = 10 + round(1.5 * level)
+        mob.floor_level = level
+        mob.attack_skill = attack
+        mob.defense_skill = attack * 5
+        mob.damage_min = 1 + (round(1.5 * level) // 2)
+        mob.damage_max = 2 + round(1.5 * level)
+    elif isinstance(mob, Wraith):
+        attack = 10 + level
+        mob.floor_level = level
+        mob.attack_skill = attack
+        mob.defense_skill = attack * 5
+        mob.damage_min = 1 + level // 2
+        mob.damage_max = 2 + level
+    elif isinstance(mob, Bee):
+        max_hp = (2 + level) * 4
+        mob.floor_level = level
+        mob.max_hp = max_hp
+        mob.hp = max_hp
+        mob.defense_skill = 9 + level
+        mob.attack_skill = mob.defense_skill
+        mob.damage_min = max(1, max_hp // 10)
+        mob.damage_max = max(1, max_hp // 4)
+    elif isinstance(mob, EbonyMimic):
+        max_hp = (1 + level) * 6
+        mob.floor_level = level
+        mob.max_hp = max_hp
+        mob.hp = max_hp
+        mob.defense_skill = 2 + level // 2
+        mob.attack_skill = 6 + level
+        # Ad-hoc combat spawn: not disguised over a guarded item heap.
+        mob.disguised = False
+
+
+def _universal_extra_pool(floor_id: int) -> List[Type[MobEntity]]:
+    """Build the "universal extra" mob pool for the ~1% ad-hoc respawn
+    branch (see `_process_respawns`). EbonyMimic mirrors SPD's
+    `Dungeon.depth > 1` guard on `MimicTooth.ebonyMimicChance`."""
+    extras: List[Type[MobEntity]] = [
+        TormentedSpirit if random.random() < 0.01 else Wraith,
+        Bee,
+    ]
+    if floor_id > 1:
+        extras.append(EbonyMimic)
+    return extras
 
 
 class TickMixin:
@@ -911,13 +970,26 @@ class TickMixin:
         if floor.respawn_counter < RESPAWN_TURNS:
             return
         floor.respawn_counter = 0
-        if floor_id <= SEWERS_MAX_FLOOR:
+        # --- Intentional fidelity divergence ---------------------------------
+        # Wraith/TormentedSpirit, Bee, and EbonyMimic are normally only spawned
+        # via systems this port doesn't implement (haunted cursed-item heaps,
+        # MagicalHoneyPot, MimicTooth trinket respectively), so they would
+        # otherwise never appear in-game. To make them reachable, give the
+        # regular respawn roll a small (~1%) chance to produce one of these
+        # "universal extra" mobs instead of picking from the region rotation.
+        # This is a deliberate product decision, not a faithful SPD mechanic.
+        universal_extra = random.random() < 0.01
+        if universal_extra:
+            cls = random.choice(_universal_extra_pool(floor_id))
+        elif floor_id <= SEWERS_MAX_FLOOR:
             rotation = self._get_sewers_rotation(floor_id)
+            cls = random.choice(rotation) if rotation else Rat
         elif floor_id <= PRISON_MAX_FLOOR:
             rotation = self._get_prison_rotation(floor_id)
+            cls = random.choice(rotation) if rotation else Rat
         else:
             rotation = self._get_sewers_rotation(floor_id)
-        cls = random.choice(rotation) if rotation else Rat
+            cls = random.choice(rotation) if rotation else Rat
         floor_tiles = [
             (x, y) for y in range(floor.height) for x in range(floor.width)
             if floor.grid[y][x] in [TileType.FLOOR, TileType.FLOOR_WOOD, TileType.FLOOR_WATER, TileType.FLOOR_COBBLE, TileType.FLOOR_GRASS]
@@ -928,6 +1000,8 @@ class TickMixin:
             return
         x, y = random.choice(floor_tiles)
         mob = self._spawn_mob_at(cls, x, y)
+        if universal_extra:
+            _apply_floor_scaling(mob, floor_id)
         floor.mobs[mob.id] = mob
 
     def _sync_effects(self, player: Player):
