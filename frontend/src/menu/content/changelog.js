@@ -1,7 +1,18 @@
 // Brief, remake-specific changelog shown in the Changes panel.
-export const APP_VERSION = '0.3.0';
+export const APP_VERSION = '0.3.1';
 
 const CHANGELOG = [
+  {
+    version: 'v0.3.1',
+    title: 'Shops & Economy Update',
+    changes: [
+      'Shop rooms: buy and sell items with gold.',
+      'Gold pickup and item value/identification data for the full item set.',
+      'Imp quest and waterskin item.',
+      'Quickslot bag UI improvements and wall-fog rendering fixes.',
+      'Vision/shadowcasting parity fixes.',
+    ],
+  },
   {
     version: 'v0.3.0',
     title: 'Bosses & Dungeon Regions Update',
