@@ -4,7 +4,7 @@ A real-time multiplayer roguelike dungeon crawler based on **Shattered Pixel Dun
 
 50 floors, bosses every 5, full real-time multiplayer — no turns, no waiting.
 
-**🎮 Play now:** [web-352716452401.europe-west1.run.app](https://web-352716452401.europe-west1.run.app)
+**🎮 Play now:** [frontend-toqfublnha-ew.a.run.app](https://frontend-toqfublnha-ew.a.run.app)
 
 ## Stack
 
