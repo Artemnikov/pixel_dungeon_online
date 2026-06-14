@@ -1,7 +1,18 @@
 // Brief, remake-specific changelog shown in the Changes panel.
-export const APP_VERSION = '0.3.1';
+export const APP_VERSION = '0.4.0';
 
 const CHANGELOG = [
+  {
+    version: 'v0.4.0',
+    title: 'Warrior Update',
+    changes: [
+      'Full Warrior talent tree: T1-T3 talents, Berserk and Combo mechanics, Gladiator finisher moves.',
+      'New armor abilities including Endure.',
+      'Expanded melee weapon roster and weapon enchantments/curses.',
+      'Admin item browser (press U) to spawn any item for testing.',
+      'Combat rework: damage multipliers/bonuses, guaranteed hits, and enchant-driven procs.',
+    ],
+  },
   {
     version: 'v0.3.1',
     title: 'Shops & Economy Update',
