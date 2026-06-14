@@ -14,6 +14,9 @@
 //
 import { useEffect, useRef, useState } from 'react';
 import AudioManager from '../audio/AudioManager';
+import { MAX_DPR } from '../constants';
+
+const DPR = Math.min(window.devicePixelRatio || 1, MAX_DPR);
 
 import statusPaneImg from '../assets/pixel-dungeon/interfaces/status_pane.png';
 import buffsImg from '../assets/pixel-dungeon/interfaces/buffs.png';
@@ -123,11 +126,12 @@ export default function StatusPane({ myStats, depth, isAdmin, onSearch, hasTalen
     avatarCanvas.height = FRAME_H;
 
     const draw = (now) => {
+      let ctx;
       try {
         const dt = (now - last) / 1000;
         last = now;
         const canvas = canvasRef.current;
-        const ctx = canvas?.getContext('2d');
+        ctx = canvas?.getContext('2d');
         const imgs = imagesRef.current;
         if (!ctx) { raf = requestAnimationFrame(draw); return; }
 
@@ -163,6 +167,8 @@ export default function StatusPane({ myStats, depth, isAdmin, onSearch, hasTalen
 
         ctx.imageSmoothingEnabled = false;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.save();
+        ctx.scale(DPR, DPR);
 
         // Fallback background: always visible even before pixel-art images load.
         ctx.fillStyle = '#161616';
@@ -254,7 +260,9 @@ export default function StatusPane({ myStats, depth, isAdmin, onSearch, hasTalen
           ctx.fillRect(st.x, st.y, 2 * SCALE, 2 * SCALE);
           ctx.globalAlpha = 1;
         }
+        ctx.restore();
       } catch (err) {
+        ctx?.restore();
         console.error('[StatusPane] render error:', err);
       }
       raf = requestAnimationFrame(draw);
@@ -271,8 +279,9 @@ export default function StatusPane({ myStats, depth, isAdmin, onSearch, hasTalen
     <div className="top-left-hud" onClick={() => onOpenTalents?.()}>
       <canvas
         ref={canvasRef}
-        width={PANE_W * SCALE}
-        height={PANE_H * SCALE}
+        width={PANE_W * SCALE * DPR}
+        height={PANE_H * SCALE * DPR}
+        style={{ width: PANE_W * SCALE, height: PANE_H * SCALE }}
         className="status-pane-canvas"
       />
       <div className="status-pane-footer">

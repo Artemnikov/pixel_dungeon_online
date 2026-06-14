@@ -335,6 +335,8 @@ export default function useGameSocket({
 
       if (data.type !== 'STATE_UPDATE') return;
 
+      console.log('[WS] STATE_UPDATE', data.players.length, 'players, my level:', data.players.find(p => p.id === myPlayerIdRef.current)?.level);
+
       if (typeof data.depth === 'number') setDepth(data.depth);
       if (data.difficulty) setDifficulty(data.difficulty);
       if (typeof data.gold === 'number' && setGold) setGold(data.gold);

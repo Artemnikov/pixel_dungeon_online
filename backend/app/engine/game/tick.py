@@ -40,6 +40,7 @@ from app.engine.game.constants import (
     NO_RESPAWN_FLOORS,
     OOZE_TICK_INTERVAL,
     PASSIVE_REGEN_INTERVAL,
+    PATH_BLOCKED_GIVE_UP_TICKS,
     RESPAWN_TURNS,
     ROOM_HEAL_AMOUNT,
     SEWERS_MAX_FLOOR,
@@ -103,6 +104,8 @@ class TickMixin:
             removed = process_buffs(player.buffs, dt)
             if "invisibility" in removed or "shadows" in removed:
                 player.invisible = max(0, player.invisible - 1)
+            if "endure_tracker" in removed:
+                self._finalize_endure(player)
         for floor in self.floors.values():
             for mob in floor.mobs.values():
                 if mob.is_alive:
@@ -126,21 +129,33 @@ class TickMixin:
             if player.is_downed or not player.is_alive:
                 continue
 
+            move_interval = AUTO_MOVE_INTERVAL
+            if player.invisible > 0 and player.subclass_info.talent_info.level("speedy_stealth") >= 3:
+                move_interval /= 2
+
             if player.move_intent:
                 now = time.time()
-                if now - player.last_auto_move_time >= AUTO_MOVE_INTERVAL:
+                if now - player.last_auto_move_time >= move_interval:
                     dx, dy = player.move_intent
                     player.last_auto_move_time = now
                     self.move_entity(player.id, dx, dy)
             elif player.path_queue:
                 now = time.time()
-                if now - player.last_auto_move_time >= AUTO_MOVE_INTERVAL:
-                    dx, dy = player.path_queue.pop(0)
+                if now - player.last_auto_move_time >= move_interval:
+                    dx, dy = player.path_queue[0]
                     floor = self._get_or_create_floor(player.floor_id)
                     nx, ny = player.pos.x + dx, player.pos.y + dy
                     if any(m.is_alive and m.pos.x == nx and m.pos.y == ny for m in floor.mobs.values()):
-                        player.path_queue = []
+                        # Next tile is briefly occupied (e.g. a wandering mob).
+                        # Keep the queued path and retry next tick instead of
+                        # abandoning the route; give up if it stays blocked.
+                        player.path_blocked_ticks += 1
+                        if player.path_blocked_ticks > PATH_BLOCKED_GIVE_UP_TICKS:
+                            player.path_queue = []
+                            player.path_blocked_ticks = 0
                     else:
+                        player.path_queue.pop(0)
+                        player.path_blocked_ticks = 0
                         player.last_auto_move_time = now
                         self.move_entity(player.id, dx, dy)
 
@@ -149,48 +164,66 @@ class TickMixin:
             self._apply_room_heal_tick(player)
             self._apply_passive_regen(player)
 
-            seal = player.belongings.artifact
-            has_seal = seal is not None and getattr(seal, "kind", "") == "broken_seal"
-            if player.belongings.armor is not None and has_seal:
-                existing = player.get_shield("warrior_shield")
-                if existing:
-                    existing.amount = min(6, existing.amount + 1)
-                else:
-                    player.add_shield("warrior_shield", 2, priority=2, decay=600)
-
             if player.armor_charge < 100:
                 player.armor_charge = min(100, player.armor_charge + 2)
 
             moved = bool(player.move_intent or player.path_queue)
             self.tick_rogue(player, dt, moved=moved)
 
+            if moved:
+                player.stationary_ticks = 0
+            else:
+                player.stationary_ticks += 1
+
+            # Hold Fast (warrior T3): while stationary, slows combo/shield
+            # decay and the Broken Seal cooldown (0% decay at +3).
+            hf_factor = player.get_hold_fast_decay_factor()
+            hf_tick = hf_factor >= 1.0 or random.random() < hf_factor
+
+            # Broken Seal (all Warriors): once triggered (see Player.take_damage),
+            # the shield holds until no enemies are nearby for a couple of
+            # turns; unused shield then reduces the remaining cooldown by up
+            # to 50%. The cooldown itself ticks down toward 0 regardless.
+            if player.seal_affixed:
+                seal_shield = player.get_shield("broken_seal")
+                if seal_shield is not None:
+                    floor = self._get_or_create_floor(player.floor_id)
+                    nearby = any(
+                        m.is_alive and m.faction != Faction.PLAYER
+                        and max(abs(m.pos.x - player.pos.x), abs(m.pos.y - player.pos.y)) <= player.get_view_distance()
+                        for m in floor.mobs.values()
+                    )
+                    if nearby:
+                        player.seal_no_enemy_ticks = 0
+                    else:
+                        player.seal_no_enemy_ticks += 1
+                        if player.seal_no_enemy_ticks >= 2:
+                            max_shield = max(1, player.get_broken_seal_max_shield())
+                            unused_frac = seal_shield.amount / max_shield
+                            player.seal_cooldown -= round(150 * unused_frac * 0.5)
+                            player.shields = [s for s in player.shields if s.name != "broken_seal"]
+                            player.seal_no_enemy_ticks = 0
+                if player.seal_cooldown > 0 and hf_tick:
+                    player.seal_cooldown -= 1
+
             if player.berserk_active:
-                hp_ratio = player.hp / max(player.get_total_max_hp(), 1)
-                decay = 0.05 * (hp_ratio ** 2)
-                bd = player.subclass_info.talent_info.level("berserk_duration")
-                if bd > 0:
-                    decay *= 1.0 - bd * 0.15
-                player.berserk_power = max(0.0, player.berserk_power - decay)
-                if player.berserk_power <= 0:
-                    player.berserk_active = False
-                    player.berserk_cooldown = 200
+                self.update_berserk(player)
 
             if player.combo_count > 0:
-                combo_dt = dt
-                sc = player.subclass_info.talent_info.level("slow_combo")
-                if sc > 0:
-                    combo_dt *= 1.0 - sc * 0.15
-                player.combo_timer -= combo_dt
+                player.combo_timer -= dt * hf_factor
                 if player.combo_timer <= 0:
                     player.combo_count = 0
                     player.combo_timer = 0.0
+                    player.clobber_used = False
+                    player.parry_used = False
 
             if player.berserk_cooldown > 0:
                 player.berserk_cooldown -= 1
 
             self._apply_hunger_tick(player)
 
-            player.decay_shields()
+            if hf_tick:
+                player.decay_shields()
             if player.has_fury:
                 player.fury_turns_remaining -= 1
                 if player.fury_turns_remaining <= 0:
@@ -211,7 +244,8 @@ class TickMixin:
                     continue
 
                 if mob.faction == Faction.PLAYER:
-                    self._update_shadow_ally(mob, floor, floor_id)
+                    if mob.type != "ninja_log":
+                        self._update_shadow_ally(mob, floor, floor_id)
                     continue
 
                 if isinstance(mob, Goo):
@@ -452,7 +486,7 @@ class TickMixin:
                         )
                         self.add_event("DEATH", {"target": mob.id}, floor_id=floor_id)
                         self.handle_mob_death(mob, floor, floor_id)
-                        for item in roll_drops(mob, self.drop_counters, mob.pos.x, mob.pos.y):
+                        for item in roll_drops(mob, self.drop_counters, mob.pos.x, mob.pos.y, players=list(self._players_on_floor(floor_id))):
                             floor.items[item.id] = item
                     if mob.bleed_turns <= 0:
                         mob.bleed_amount = 0
@@ -495,7 +529,7 @@ class TickMixin:
         floor.mobs[mob.id] = mob
 
     def _sync_effects(self, player: Player):
-        from app.engine.entities.buffs import has_buff
+        from app.engine.entities.buffs import has_buff, get_buff
         existing = {e.key: e for e in player.active_effects}
         effects = []
         if player.heal_left > 0:
@@ -515,10 +549,11 @@ class TickMixin:
                 key="berserk", name="Berserk", icon=13,
                 remaining=player.berserk_power, duration=1.0,
             ))
-        if has_buff(player.buffs, "endure"):
+        endure_buff = get_buff(player.buffs, "endure_tracker")
+        if endure_buff is not None:
             effects.append(Effect(
                 key="endure", name="Endure", icon=6,
-                remaining=1.0, duration=1.0,
+                remaining=endure_buff.remaining, duration=12.0,
             ))
         if player.has_fury:
             effects.append(Effect(

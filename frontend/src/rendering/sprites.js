@@ -26,21 +26,47 @@ import { TILE_SIZE, TILE_SCALE } from '../constants';
 // Matching below is substring-based (itemName.includes(key)), so more-specific keys must
 // be listed before the generic ones they contain (e.g. "Scroll Holder" before "Scroll").
 export const ITEM_SPRITES = {
-  // Weapons (WEP_TIER1 = xy(1,7) = idx 96 -> row 6; WEP_TIER2 = xy(9,7) = idx 104)
+  // Weapons — [col,row] per docs/spd_items/07-item-sprites.md §1.
+  // More-specific multi-word keys must precede shorter keys they contain
+  // (e.g. "Worn Shortsword" before "Shortsword"/"Sword", "Battle Axe" before "Axe").
   "Throwable Dagger": [2, 9],   // THROWING_KNIFE (MISSILE_WEP+2)
   "Throwing":         [2, 9],
   "Worn Key":         [10, 3],  // WORN_KEY (MISC_CONSUMABLE+10 = idx 58) — before "Worn"
-  "Worn":             [0, 6],   // WORN_SHORTSWORD
-  "Rusty Sword":      [1, 6],   // SHORT_SWORD (WEP_TIER1+1)
-  "Shortsword":       [8, 6],   // SHORTSWORD (WEP_TIER2+0)
-  "Dagger":           [4, 6],   // DAGGER (WEP_TIER1+4)
-  "Wooden Club":      [2, 6],   // GLOVES/club-ish (WEP_TIER1+2)
-  "Club":             [2, 6],
-  "Mace":             [10, 6],  // MACE (WEP_TIER3+0)
-  "Sword":            [9, 6],   // SWORD (WEP_TIER2+1)
-  "Mage's Staff":     [5, 6],   // MAGES_STAFF (WEP_TIER1+5)
+  "Worn Shortsword":  [0, 6],   // WornShortsword (tier 1)
+  "Worn":             [0, 6],
+  "Mage's Staff":     [5, 6],   // MagesStaff (tier 1)
   "Magic Staff":      [5, 6],
   "Staff":            [5, 6],
+  "Dagger":           [4, 6],   // Dagger (tier 1)
+  "Gloves":           [2, 6],   // Gloves (tier 1)
+  "Rapier":           [3, 6],   // Rapier (tier 1)
+  "Cudgel":           [1, 6],   // Cudgel (tier 1)
+  "Hand Axe":         [9, 6],   // HandAxe (tier 2)
+  "Spear":            [10, 6],  // Spear (tier 2)
+  "Quarterstaff":     [11, 6],  // Quarterstaff (tier 2)
+  "Dirk":             [12, 6],  // Dirk (tier 2)
+  "Sickle":           [13, 6],  // Sickle (tier 2)
+  "Shortsword":       [8, 6],   // Shortsword (tier 2)
+  "Mace":             [1, 7],   // Mace (tier 3)
+  "Scimitar":         [2, 7],   // Scimitar (tier 3)
+  "Round Shield":     [3, 7],   // RoundShield (tier 3)
+  "Sai":              [4, 7],   // Sai (tier 3)
+  "Whip":             [5, 7],   // Whip (tier 3)
+  "Battle Axe":       [9, 7],   // BattleAxe (tier 4)
+  "Flail":            [10, 7],  // Flail (tier 4)
+  "Runic Blade":      [11, 7],  // RunicBlade (tier 4)
+  "Assassin's Blade": [12, 7],  // AssassinsBlade (tier 4)
+  "Crossbow":         [13, 7],  // Crossbow (tier 4)
+  "Katana":           [14, 7],  // Katana (tier 4)
+  "Longsword":        [8, 7],   // Longsword (tier 4)
+  "Greatsword":       [0, 8],   // Greatsword (tier 5)
+  "War Hammer":       [1, 8],   // WarHammer (tier 5)
+  "Glaive":           [2, 8],   // Glaive (tier 5)
+  "Greataxe":         [3, 8],   // Greataxe (tier 5)
+  "Greatshield":      [4, 8],   // Greatshield (tier 5)
+  "Gauntlet":         [5, 8],   // Gauntlet (tier 5)
+  "War Scythe":       [6, 8],   // WarScythe (tier 5)
+  "Sword":            [0, 7],   // Sword (tier 3)
 
   // Bows / ranged (MISSILE_WEP = xy(1,10) = idx 144 -> row 9)
   "Spirit Bow":       [0, 9],   // SPIRIT_BOW

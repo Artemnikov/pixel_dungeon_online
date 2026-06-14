@@ -20,7 +20,8 @@ from typing import Annotated, ClassVar, Literal, Optional, List, Dict, Tuple, Un
 from pydantic import BaseModel, Field, computed_field
 
 from app.engine.entities.buffs import Buff, add_buff, remove_buff, has_buff, get_buff
-from app.engine.entities.subclasses import SubclassInfo, TalentInfo
+from app.engine.entities.subclasses import SubclassInfo, TalentInfo, Talent
+from app.engine.entities.weapon_defs import WEAPON_DEFS
 
 
 class EntityType:
@@ -193,6 +194,11 @@ class Entity(BaseModel):
     def decay_shields(self):
         active = []
         for s in self.shields:
+            if s.name == "broken_seal":
+                # Doesn't decay over time; removed explicitly when no enemies
+                # are nearby (see TickMixin).
+                active.append(s)
+                continue
             s.amount -= max(1, s.amount // max(1, s.decay))
             if s.amount > 0:
                 active.append(s)
@@ -415,6 +421,21 @@ class KindOfWeapon(EquipableItem):
     projectile_type: Optional[str] = None
     # On surprise attacks, damage floor is raised by this fraction of the range
     surprise_damage_floor: float = 0.0
+    # Accuracy multiplier (e.g. Cudgel 1.40, Sickle 0.68)
+    acc_factor: float = 1.0
+    # Flat DR bonus while wielded: dr_bonus_base + dr_bonus_per_lvl * level
+    dr_bonus_base: int = 0
+    dr_bonus_per_lvl: int = 0
+
+    def buffed_lvl(self) -> int:
+        # SPD's weapon.buffedLvl(): proc formulas never see a negative
+        # (cursed/degraded) level.
+        return max(0, self.level)
+
+    def get_reach(self) -> int:
+        # Projecting enchant: +1 to missile throw range / melee reach.
+        bonus = 1 if self.enchantment == "projecting" else 0
+        return self.range + bonus
 
     def _info_lines(self, player: Optional["Player"] = None) -> List[str]:
         lines: List[str] = []
@@ -423,6 +444,12 @@ class KindOfWeapon(EquipableItem):
             lines.append(f"Deals {self.dmg_min(lvl)}-{self.dmg_max(lvl)} damage per hit.")
         else:
             lines.append(f"Deals {self.damage} damage per hit.")
+        if self.cursed_known and self.enchantment:
+            label = self.enchantment.replace("_", " ").title()
+            if self.cursed:
+                lines.append(f"It is cursed with {label}.")
+            else:
+                lines.append(f"It is enchanted with {label}.")
         lines += super()._info_lines(player)
         return lines
 
@@ -436,6 +463,9 @@ class MeleeWeapon(KindOfWeapon):
         return self.tier + lvl
 
     def dmg_max(self, lvl: int = 0) -> int:
+        defn = WEAPON_DEFS.get(self.name)
+        if defn is not None:
+            return defn.max0 + defn.max_per_lvl * lvl
         return 5 * (self.tier + 1) + lvl * (self.tier + 1)
 
     def value(self, identified: bool = False) -> int:
@@ -460,6 +490,23 @@ class WornShortsword(MeleeWeapon):
     attack_cooldown: float = 1.2
     strength_requirement: int = 10
     DESC: ClassVar[str] = "A basic shortsword, somewhat the worse for wear. All warriors start with one."
+
+
+def make_named_melee_weapon(name: str, level: int = 0, **kwargs) -> MeleeWeapon:
+    """Builds a concrete melee weapon by its SPD name (one of WEP_TIER_ORDER's
+    entries, excluding Mage's Staff/Pickaxe), using WEAPON_DEFS for stats."""
+    if name == "Worn Shortsword":
+        return WornShortsword(level=level, **kwargs)
+    if name == "Dagger":
+        return Dagger(level=level, **kwargs)
+    defn = WEAPON_DEFS[name]
+    return MeleeWeapon(
+        name=name, tier=defn.tier, level=level,
+        strength_requirement=defn.str_req, attack_cooldown=defn.dly_factor,
+        range=defn.reach, acc_factor=defn.acc_factor,
+        dr_bonus_base=defn.dr_bonus_base, dr_bonus_per_lvl=defn.dr_bonus_per_lvl,
+        **kwargs,
+    )
 
 
 class Bow(KindOfWeapon):
@@ -756,6 +803,21 @@ class TenguMask(ItemBase):
     category: ClassVar[str] = ItemCategory.MISC
     unique: bool = True
     DESC: ClassVar[str] = "The mask of the infamous Tengu assassin. Wearing it grants the power to choose a subclass path."
+
+    def actions(self, player: Optional["Player"] = None) -> List[str]:
+        return [Action.WEAR, Action.THROW, Action.DROP]
+
+    def default_action(self) -> Optional[str]:
+        return Action.WEAR
+
+
+class KingsCrown(ItemBase):
+    kind: Literal["kings_crown"] = "kings_crown"
+    name: str = "King's Crown"
+    type: str = "misc"
+    category: ClassVar[str] = ItemCategory.MISC
+    unique: bool = True
+    DESC: ClassVar[str] = "A crown taken from a fallen king. Wearing it while armor is equipped grants the power to imbue that armor with a special ability."
 
     def actions(self, player: Optional["Player"] = None) -> List[str]:
         return [Action.WEAR, Action.THROW, Action.DROP]
@@ -1475,8 +1537,11 @@ class Player(Entity):
     # max(1, maxHP/50) per turn while standing in water, until exhausted.
     aqua_heal_left: float = 0.0
     path_queue: List[Tuple[int, int]] = []
+    path_blocked_ticks: int = 0
     move_intent: Optional[Tuple[int, int]] = None
     last_auto_move_time: float = 0.0
+    # Hold Fast (warrior T3): ticks since the player last moved.
+    stationary_ticks: int = 0
     is_admin: bool = False
 
     # Subclass and talents
@@ -1486,15 +1551,33 @@ class Player(Entity):
     berserk_power: float = 0.0
     berserk_active: bool = False
     berserk_cooldown: int = 0
-    # Rampage (warrior T4 berserker): kill-stack damage bonus
-    rampage_stacks: int = 0
+    # Rage % at the moment Berserk last triggered (for Endless Rage's
+    # cooldown-reduction effect when power > 1.0).
+    berserk_trigger_power: float = 0.0
     # Last action type (for followup strike tracking)
     _last_action: str = ""
 
-    # Gladiator combo
+    # Gladiator combo (uncapped hit-counter, SPD actors/buffs/Combo.java)
     combo_count: int = 0
     combo_timer: float = 0.0
-    combo_max: int = 10  # enhanced by talents
+    # Once-per-buff-lifetime combo move flags
+    clobber_used: bool = False
+    parry_used: bool = False
+
+    # Broken Seal (all Warriors): cooldown (in ticks) before the seal can
+    # trigger its shield again. 150 on trigger, can go negative via Lethal
+    # Defense (instant re-trigger once <= 0).
+    seal_cooldown: int = 0
+    # Ticks since a hostile mob was last nearby, while the seal shield is up.
+    seal_no_enemy_ticks: int = 0
+
+    # Endure (warrior armor ability): banked outgoing-damage bonus
+    endure_damage_bonus: float = 0.0
+    endure_hits_left: int = 0
+    endure_banked: float = 0.0
+
+    # Heroic Leap "Double Jump" (warrior T4): one free re-leap charge ready
+    double_jump_ready: bool = False
 
     # Armor ability charge (0–100, shared resource for Leap/Shockwave/Endure)
     armor_charge: int = 0
@@ -1554,15 +1637,49 @@ class Player(Entity):
         if self.is_downed:
             return 0
 
-        # Enraged Catalyst (warrior T2 berserker): gain berserk power on damage taken
-        if self.subclass_info.subclass == "berserker":
-            ec = self.subclass_info.talent_info.level("enraged_catalyst")
-            if ec > 0:
-                from app.engine.entities.buffs import add_buff as _add_buff
-                endless_level = self.subclass_info.talent_info.level("endless_rage")
-                max_power = 1.0 + 0.1667 * endless_level
-                power_gain = (amount / max(self.get_total_max_hp() * 4, 1)) * (1 + ec * 0.5)
-                self.berserk_power = min(max_power, self.berserk_power + power_gain)
+        # Deathless Fury (warrior T3 berserker): a fatal blow while raging with
+        # power>=1 triggers Berserk instead of killing (cheat death, SPD
+        # Berserk.berserking()).
+        if (
+            self.hp - amount <= 0
+            and self.subclass_info.subclass == "berserker"
+            and self.berserk_power >= 1.0
+            and not self.berserk_active
+        ):
+            df = self.subclass_info.talent_info.level("deathless_fury")
+            if df > 0:
+                self.hp = 1
+                self.berserk_active = True
+                self.berserk_trigger_power = self.berserk_power
+                from app.engine.entities.buffs import add_buff as _add_buff, remove_buff as _remove_buff
+                _add_buff(self.buffs, "berserk", duration=10.0, level=1)
+                _remove_buff(self.buffs, "berserk_ready")
+                self.add_shield("berserk", self.get_berserk_shield_amount(), priority=2, decay=40)
+                cooldown = 200 - 50 * df
+                if self.berserk_power > 1.0:
+                    cooldown = round(cooldown * (2.0 - self.berserk_power))
+                self.berserk_cooldown = cooldown
+                return 0
+
+        # Provoked Anger (warrior T1): being hit primes a damage bonus on the
+        # hero's next attack.
+        pa = self.subclass_info.talent_info.level("provoked_anger")
+        if pa > 0 and amount > 0:
+            add_buff(self.buffs, "provoked_anger_tracker", duration=3.0, level=1)
+
+        # Broken Seal (all Warriors): a hit that drops HP to <=50% (from
+        # above 50%) grants instant shielding, then starts a 150-turn
+        # cooldown (BrokenSeal.java / WarriorShield).
+        if (
+            self.seal_affixed
+            and self.seal_cooldown <= 0
+            and amount > 0
+            and self.hp > self.get_total_max_hp() * 0.5
+            and self.hp - amount <= self.get_total_max_hp() * 0.5
+        ):
+            self.add_shield("broken_seal", self.get_broken_seal_max_shield(), priority=2, decay=0)
+            self.seal_cooldown = 150
+            self.seal_no_enemy_ticks = 0
 
         self.hp -= amount
         if self.hp <= 0:
@@ -1579,26 +1696,18 @@ class Player(Entity):
     def get_damage_min(self) -> int:
         w = self.belongings.weapon
         if isinstance(w, MeleeWeapon):
-            base = w.dmg_min(w.level)
+            return w.dmg_min(w.level)
         elif isinstance(w, KindOfWeapon):
-            base = w.damage
-        else:
-            base = self.damage_min
-        if self.subclass_info.subclass is not None:
-            base += self.subclass_info.talent_info.level("sub_atk")
-        return base
+            return w.damage
+        return self.damage_min
 
     def get_damage_max(self) -> int:
         w = self.belongings.weapon
         if isinstance(w, MeleeWeapon):
-            base = w.dmg_max(w.level)
+            return w.dmg_max(w.level)
         elif isinstance(w, KindOfWeapon):
-            base = w.damage
-        else:
-            base = self.damage_max
-        if self.subclass_info.subclass is not None:
-            base += self.subclass_info.talent_info.level("sub_atk")
-        return base
+            return w.damage
+        return self.damage_max
 
     def get_surprise_damage_floor(self) -> float:
         w = self.belongings.weapon
@@ -1606,43 +1715,87 @@ class Player(Entity):
             return w.surprise_damage_floor
         return 0.0
 
+    def get_effective_strength(self) -> int:
+        """Strongman (warrior T3): effective STR = STR * (1 + 0.03 + 0.05*pts)."""
+        base = self.strength
+        sm = self.subclass_info.talent_info.level(Talent.STRONGMAN)
+        if sm > 0:
+            base += int(base * (0.03 + 0.05 * sm))
+        return base
+
+    def get_berserk_shield_amount(self) -> int:
+        """Berserk shield on trigger (Berserk.currentShieldBoost):
+        base 8 + 2*armor level, multiplier 1..3x by missing HP (cubic), and
+        scaled further by rage% above 100% (Endless Rage)."""
+        hp_ratio = self.hp / max(self.get_total_max_hp(), 1)
+        shield_mult = 1.0 + 2 * (1.0 - hp_ratio) ** 3
+        if self.berserk_power > 1.0:
+            shield_mult *= self.berserk_power
+        armor = self.belongings.armor
+        base_shield = 8 + (2 * armor.level if isinstance(armor, Armor) else 0)
+        return round(base_shield * shield_mult)
+
+    def get_broken_seal_max_shield(self) -> int:
+        """Broken Seal (all Warriors): maxShield = 3 + 2*armorTier + IRON_WILL pts."""
+        armor = self.belongings.armor
+        armor_tier = armor.tier if isinstance(armor, Armor) else 0
+        iw = self.subclass_info.talent_info.level(Talent.IRON_WILL)
+        return 3 + 2 * armor_tier + iw
+
+    def get_hold_fast_dr_range(self) -> Tuple[int, int]:
+        """Hold Fast (warrior T3): bonus armor DR range while stationary, (pts, 2*pts)."""
+        hf = self.subclass_info.talent_info.level(Talent.HOLD_FAST)
+        if hf <= 0 or self.stationary_ticks <= 0:
+            return (0, 0)
+        return (hf, 2 * hf)
+
+    def get_hold_fast_decay_factor(self) -> float:
+        """Hold Fast (warrior T3): while stationary, combo/shield decay and
+        the Broken Seal cooldown tick at 50%/25%/0% of normal speed for +1/+2/+3."""
+        hf = self.subclass_info.talent_info.level(Talent.HOLD_FAST)
+        if hf <= 0 or self.stationary_ticks <= 0:
+            return 1.0
+        return (1.0, 0.5, 0.25, 0.0)[min(hf, 3)]
+
+    def _weapon_dr_bonus(self) -> int:
+        w = self.belongings.weapon
+        if isinstance(w, KindOfWeapon):
+            return w.dr_bonus_base + w.dr_bonus_per_lvl * w.level
+        return 0
+
     def get_dr_min(self) -> int:
+        bonus_min, _ = self.get_hold_fast_dr_range()
+        bonus_min += self._weapon_dr_bonus()
         a = self.belongings.armor
         if a is not None and isinstance(a, Armor):
             base = a.dr_min(a.level)
-            deficit = max(0, a.strength_requirement - self.strength)
-            # Light Armor (warrior T1): reduce STR penalty
-            la = self.subclass_info.talent_info.level("light_armor")
-            if la > 0:
-                deficit = max(0, deficit - la)
-            return max(0, base - 2 * deficit)
-        return 0
+            deficit = max(0, a.strength_requirement - self.get_effective_strength())
+            return max(0, base - 2 * deficit) + bonus_min
+        return bonus_min
 
     def get_dr_max(self) -> int:
+        _, bonus_max = self.get_hold_fast_dr_range()
+        bonus_max += self._weapon_dr_bonus()
         a = self.belongings.armor
         if a is not None and isinstance(a, Armor):
             base = a.dr_max(a.level)
-            deficit = max(0, a.strength_requirement - self.strength)
-            la = self.subclass_info.talent_info.level("light_armor")
-            if la > 0:
-                deficit = max(0, deficit - la)
-            return max(0, base - 2 * deficit)
-        return 0
+            deficit = max(0, a.strength_requirement - self.get_effective_strength())
+            return max(0, base - 2 * deficit) + bonus_max
+        return bonus_max
 
     def get_effective_defense_skill(self) -> int:
         base = self.defense_skill
         a = self.belongings.armor
+        excess_str = 0
         if a is not None:
-            deficit = max(0, a.strength_requirement - self.strength)
-            # Light Armor (warrior T1): reduce STR penalty
-            la = self.subclass_info.talent_info.level("light_armor")
-            if la > 0:
-                deficit = max(0, deficit - la)
+            deficit = max(0, a.strength_requirement - self.get_effective_strength())
             if deficit > 0:
                 base = int(base / (1.5 ** deficit))
-        # Sub-Def (warrior T3): flat +2 per point if subclass chosen
-        if self.subclass_info.subclass is not None:
-            base += 2 * self.subclass_info.talent_info.level("sub_def")
+            excess_str = max(0, self.get_effective_strength() - a.strength_requirement)
+
+        ea = self.subclass_info.talent_info.level(Talent.EVASIVE_ARMOR)
+        if ea > 0 and self.freerun_seconds > 0:
+            base += self.level // 2 + excess_str * ea
         return base
 
     def set_heal(self, amount: float, percent_per_tick: float, flat_per_tick: float):
@@ -1698,53 +1851,32 @@ class Player(Entity):
 
     def get_talent_damage_bonus(self) -> float:
         """Return a flat damage bonus from talents (added to damage roll)."""
-        bonus = 0
-
-        # Rampage (warrior T4 berserker): +1 damage per stack
-        if self.subclass_info.subclass == "berserker":
-            bonus += self.rampage_stacks
-
-        return bonus
+        if has_buff(self.buffs, "provoked_anger_tracker"):
+            pa = self.subclass_info.talent_info.level("provoked_anger")
+            if pa > 0:
+                remove_buff(self.buffs, "provoked_anger_tracker")
+                return 1 + 2 * pa
+        return 0.0
 
     def attack_proc(self, target) -> None:
-        if self.subclass_info.subclass == "berserker":
-            from app.engine.entities.buffs import add_buff
+        if self.subclass_info.subclass == "berserker" and self.berserk_cooldown <= 0:
             endless_level = self.subclass_info.talent_info.level("endless_rage")
             max_power = 1.0 + 0.1667 * endless_level
-            power_gain = 0.05
-            self.berserk_power = min(max_power, self.berserk_power + power_gain)
-            # Rampage: decaying stack gain
-            if self.rampage_stacks > 0:
-                self.rampage_stacks = max(0, self.rampage_stacks - 1)
+            self.berserk_power = min(max_power, self.berserk_power + 0.05)
         if self.subclass_info.subclass == "gladiator":
-            # Combo cap from talents
-            self.combo_max = 10
-            ec = self.subclass_info.talent_info.level("enhanced_combo")
-            if ec > 0:
-                self.combo_max += 2 * ec
-            sc = self.subclass_info.talent_info.level("savage_capacity")
-            if sc > 0:
-                self.combo_max += 2 * sc
-            self.combo_count = min(self.combo_count + 1, self.combo_max)
-            self.combo_timer = 5.0
-            # Combo Shield (gladiator T2): shield per combo
-            cs = self.subclass_info.talent_info.level("combo_shield")
-            if cs > 0 and self.combo_count >= 3:
-                shield_amt = cs * (self.combo_count // 3)
-                if shield_amt > 0:
-                    self.add_shield("combo_shield", shield_amt, priority=1, decay=600)
+            self.combo_count += 1
+            self.combo_timer = max(self.combo_timer, 5.0)
 
     def defense_proc(self, raw_damage: int, attacker, floor_mobs: dict, tile_x: int, tile_y: int) -> int:
         from app.engine.entities.buffs import has_buff
-        if has_buff(self.buffs, "endure"):
-            raw_damage = max(0, raw_damage - int(raw_damage * 0.3))
 
-        # Iron Will (warrior T1): DR based on missing HP%
-        iw = self.subclass_info.talent_info.level("iron_will")
-        if iw > 0:
-            hp_ratio = self.hp / max(self.get_total_max_hp(), 1)
-            dr_pct = iw * 0.05 * (1 - hp_ratio)
-            raw_damage = max(0, raw_damage - int(raw_damage * dr_pct))
+        # Endure (warrior armor ability): bank half of incoming damage and
+        # reduce the rest by damageMulti (lowered further by Shrug It Off).
+        if has_buff(self.buffs, "endure_tracker"):
+            self.endure_banked += raw_damage * 0.5
+            shrug = self.subclass_info.talent_info.level("shrug_it_off")
+            damage_multi = 0.5 * (0.8 ** shrug)
+            raw_damage = int(raw_damage * damage_multi)
 
         # Protective Shadows (rogue T1): DR while invisible
         ps = self.subclass_info.talent_info.level("protective_shadows")

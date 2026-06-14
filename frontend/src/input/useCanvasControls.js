@@ -59,7 +59,7 @@ export default function useCanvasControls({
       const rect = canvas.getBoundingClientRect();
       const cursorX = e.clientX - rect.left;
       const cursorY = e.clientY - rect.top;
-      const cw = canvas.width, ch = canvas.height;
+      const cw = rect.width, ch = rect.height;
       const oldZoom = zoomRef.current;
       const factor = e.deltaY < 0 ? 1.1 : 0.9;
       const newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, oldZoom * factor));
@@ -103,7 +103,7 @@ export default function useCanvasControls({
           pinchStartZoomRef.current * (dist / pinchStartDistRef.current)));
         const midX = (t1.clientX + t2.clientX) / 2 - rect.left;
         const midY = (t1.clientY + t2.clientY) / 2 - rect.top;
-        const cw = canvas.width, ch = canvas.height;
+        const cw = rect.width, ch = rect.height;
         const z0 = pinchStartZoomRef.current;
         const mx0 = pinchMidStartRef.current.x, my0 = pinchMidStartRef.current.y;
         panOffsetRef.current = {
@@ -138,7 +138,7 @@ export default function useCanvasControls({
       const rect = canvas.getBoundingClientRect();
       const clickX = t.clientX - rect.left;
       const clickY = t.clientY - rect.top;
-      const cw = canvas.width, ch = canvas.height;
+      const cw = rect.width, ch = rect.height;
       const z = zoomRef.current;
       const worldX = (clickX - cw / 2) / z + cameraLerpRef.current.x + cw / 2;
       const worldY = (clickY - ch / 2) / z + cameraLerpRef.current.y + ch / 2;
@@ -159,7 +159,7 @@ export default function useCanvasControls({
       const myPlayer = entitiesRef?.current?.players?.[myPlayerIdRef?.current];
       const playerTile = myPlayer ? (myPlayer.targetPos || myPlayer.renderPos) : null;
       const action = resolveTapAction({ tileX, tileY, playerTile, mobs: entitiesRef?.current?.mobs });
-      if (action.type === 'MOVE_TO') isRefocusingRef.current = true;
+      if (action.type === 'MOVE_TO' || action.type === 'MOVE') isRefocusingRef.current = true;
       socketRef.current.send(JSON.stringify(action));
     };
 

@@ -1154,6 +1154,19 @@
   padding: 2px 6px;
   border-radius: 4px;
 }
+.admin-level-btn {
+  font-size: 11px;
+  font-family: inherit;
+  padding: 3px 10px;
+  border: 1px solid #ffd700;
+  border-radius: 4px;
+  background: #3a2a1a;
+  color: #ffd700;
+  cursor: pointer;
+}
+.admin-level-btn:hover {
+  background: #4a3a2a;
+}
 .talent-close {
   background: none;
   border: none;
@@ -1179,6 +1192,54 @@
 .talent-body::-webkit-scrollbar-thumb {
   background: rgba(123, 128, 115, 0.5);
   border-radius: 3px;
+}
+
+/* Admin item browser */
+.item-browser-pane {
+  width: 360px;
+}
+.item-browser-search {
+  padding: 10px 14px 0;
+}
+.item-browser-search input {
+  width: 100%;
+  box-sizing: border-box;
+  font-family: inherit;
+  font-size: 13px;
+  padding: 6px 10px;
+  border: 1px solid #7b8073;
+  border-radius: 4px;
+  background: #2c2e29;
+  color: #eee;
+}
+.item-browser-list {
+  max-height: 60vh;
+}
+.item-browser-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.item-browser-row:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+.item-browser-name {
+  flex: 1;
+  color: #eee;
+  font-size: 13px;
+}
+.item-browser-category {
+  color: #888;
+  font-size: 11px;
+  text-transform: uppercase;
+}
+.item-browser-empty {
+  padding: 20px;
+  text-align: center;
+  color: #888;
 }
 
 /* SPD-style tier pane */

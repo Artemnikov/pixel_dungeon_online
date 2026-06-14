@@ -44,6 +44,7 @@ from app.engine.entities.base import (
     Weapon,
     WornShortsword,
 )
+from app.engine.entities.item_catalog import make_catalog_item
 from app.engine.game.constants import MAX_FLOOR_ID
 from app.engine.game.floor_state import FloorState
 
@@ -204,6 +205,32 @@ class PlayersMixin:
             return
         target_floor = max(1, min(MAX_FLOOR_ID, target_floor))
         self._move_player_to_floor(player, target_floor, TileType.STAIRS_UP)
+
+    def admin_give_item(self, player_id: str, item_kind: str):
+        """Admin-only: spawn one of `item_kind` into the player's backpack, or
+        drop it at their feet if the backpack is full. No-op if not admin."""
+        player = self.players.get(player_id)
+        if not player or not player.is_admin:
+            return
+        item = make_catalog_item(item_kind)
+        if item is None:
+            return
+        item.id = str(uuid.uuid4())
+        if not player.belongings.backpack.collect(item):
+            item.pos = Position(x=player.pos.x, y=player.pos.y)
+            floor = self._get_or_create_floor(player.floor_id)
+            floor.items[item.id] = item
+
+    def admin_level_up(self, player_id: str):
+        """Admin-only: grant exactly enough XP for one level. No-op if not admin or at max level."""
+        player = self.players.get(player_id)
+        if not player or not player.is_admin:
+            return
+        if player.level >= Player.MAX_LEVEL:
+            return
+        xp_needed = player.max_exp() - player.experience
+        if player.earn_exp(xp_needed):
+            self.on_talent_level_up(player)
 
     def _kill_player(self, player: Player, floor: FloorState, floor_id: int):
         # Run the death sequence once: scatter the backpack and mark the spot

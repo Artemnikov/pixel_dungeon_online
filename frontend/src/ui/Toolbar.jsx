@@ -19,8 +19,10 @@ import toolbarSpriteSrc from '../assets/pixel-dungeon/interfaces/toolbar.png';
 import iconsSpriteSrc from '../assets/pixel-dungeon/interfaces/icons.png';
 import { coordsForItem } from '../rendering/sprites';
 import { itemRects } from '../rendering/spriteRects';
+import { MAX_DPR } from '../constants';
 
 const S = 3;
+const DPR = Math.min(window.devicePixelRatio || 1, MAX_DPR);
 
 const BTN_INVENTORY = { x: 0, y: 0, w: 24, h: 26, iconX: 160, iconY: 0, iconW: 16, iconH: 16 };
 const BTN_WAIT      = { x: 24, y: 0, w: 20, h: 26, iconX: 176, iconY: 0, iconW: 16, iconH: 16 };
@@ -118,8 +120,10 @@ export default function Toolbar({
     if (showSwap) totalW += SWAP_BTN.w + TOOL_PAD;
 
     const height = (BTN_INVENTORY.h + TOOL_PAD) * S;
-    canvas.width = Math.ceil(totalW) * S;
-    canvas.height = height;
+    canvas.width = Math.ceil(totalW) * S * DPR;
+    canvas.height = height * DPR;
+    canvas.style.width = `${Math.ceil(totalW) * S}px`;
+    canvas.style.height = `${height}px`;
 
     animFrame.current = requestAnimationFrame(render);
     return () => cancelAnimationFrame(animFrame.current);
@@ -137,8 +141,9 @@ export default function Toolbar({
       ctx.imageSmoothingEnabled = false;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+      const sc = S * DPR;
       const areas = makeButtonAreas();
-      const yOff = TOOL_PAD * S;
+      const yOff = TOOL_PAD * sc;
 
       function drawTool(spec, dx, dy, dw, dh) {
         if (!ti.complete) return;
@@ -147,10 +152,10 @@ export default function Toolbar({
 
       function drawIcon(spec, dx, dy) {
         if (!ti.complete) return;
-        const iw = spec.iconW * S;
-        const ih = spec.iconH * S;
-        const cx = dx + (spec.w * S - iw) / 2;
-        const cy = dy + (spec.h * S - ih) / 2;
+        const iw = spec.iconW * sc;
+        const ih = spec.iconH * sc;
+        const cx = dx + (spec.w * sc - iw) / 2;
+        const cy = dy + (spec.h * sc - ih) / 2;
         ctx.drawImage(ti, spec.iconX, spec.iconY, spec.iconW, spec.iconH, cx, cy, iw, ih);
       }
 
@@ -213,14 +218,14 @@ export default function Toolbar({
         const ry = rect ? rect.ry : 0;
         const sw = rect ? rect.w : 16;
         const sh = rect ? rect.h : 16;
-        const padL = borderL * S;
-        const padR = borderR * S;
+        const padL = borderL * sc;
+        const padR = borderR * sc;
         const availW = slotW - padL - padR;
         const availH = slotH;
-        const ix = dx + padL + (availW - sw * S) / 2;
-        const iy = dy + (availH - sh * S) / 2;
+        const ix = dx + padL + (availW - sw * sc) / 2;
+        const iy = dy + (availH - sh * sc) / 2;
         if (item.is_placeholder) ctx.globalAlpha = 0.35;
-        ctx.drawImage(ii, coords[0] * 16 + rx, coords[1] * 16 + ry, sw, sh, ix, iy, sw * S, sh * S);
+        ctx.drawImage(ii, coords[0] * 16 + rx, coords[1] * 16 + ry, sw, sh, ix, iy, sw * sc, sh * sc);
         if (item.is_placeholder) ctx.globalAlpha = 1.0;
       }
 
@@ -238,8 +243,6 @@ export default function Toolbar({
         ctx.strokeRect(dx + 1, dy + 1, dw - 2, dh - 2);
         ctx.restore();
       }
-
-      const sc = S;
 
       if (interfaceSize > 0) {
         let right = canvas.width / sc;

@@ -2,33 +2,42 @@
 // Per-class blocks: Warrior=0-31, Mage=32-63, Rogue=64-95, Huntress=96-127, Duelist=128-159, Cleric=160-191
 export const TALENT_ICONS = {
   // ===== WARRIOR =====
-  iron_will: 3,              // IRON_WILL
-  iron_stomach: 4,           // IRON_STOMACH
-  restored_strength: 10,     // STRONGMAN
-  light_armor: 9,            // HOLD_FAST (thematic: defensive posture)
-  berserk_restoration: 11,   // ENDLESS_RAGE
-  deathless_fury: 12,        // DEATHLESS_FURY
-  enraged_catalyst: 13,      // ENRAGED_CATALYST
-  berserk_rush: 7,           // LETHAL_MOMENTUM
-  combo_shield: 15,          // LETHAL_DEFENSE
-  combo_restoration: 14,     // CLEAVE
-  slow_combo: 8,             // IMPROVISED_PROJECTILES (nearby unused)
-  lethal_hit: 16,            // ENHANCED_COMBO
-  endless_rage: 11,          // ENDLESS_RAGE
-  imposing_presence: 10,     // STRONGMAN
-  enhanced_combo: 16,        // ENHANCED_COMBO
-  combo_surge: 14,           // CLEAVE
-  sub_atk: 0,                // HEARTY_MEAL (unused in our system)
-  sub_def: 5,                // LIQUID_WILLPOWER (unused)
-  heroic_leap_talent: 17,    // BODY_SLAM
-  shockwave_talent: 20,      // EXPANDING_WAVE
-  endure_ability_talent: 23, // SUSTAINED_RETRIBUTION
-  risk_reward: 25,           // EVEN_THE_ODDS
-  berserk_duration: 24,      // SHRUG_IT_OFF
-  rampage: 22,               // SHOCK_FORCE
-  combo_aura: 19,            // DOUBLE_JUMP
-  savage_capacity: 18,       // IMPACT_WAVE
-  deadly_followup: 21,       // STRIKING_WAVE
+  // Tier 1 (lvl2, universal)
+  hearty_meal: 0,
+  veterans_intuition: 1,
+  provoked_anger: 2,
+  iron_will: 3,
+  // Tier 2 (lvl7, universal)
+  iron_stomach: 4,
+  liquid_willpower: 5,
+  runic_transference: 6,
+  lethal_momentum: 7,
+  improvised_projectiles: 8,
+  // Tier 3 universal
+  hold_fast: 9,
+  strongman: 10,
+  // Tier 3 — Berserker
+  endless_rage: 11,
+  deathless_fury: 12,
+  enraged_catalyst: 13,
+  // Tier 3 — Gladiator
+  cleave: 14,
+  lethal_defense: 15,
+  enhanced_combo: 16,
+  // Tier 4 — Heroic Leap
+  body_slam: 17,
+  impact_wave: 18,
+  double_jump: 19,
+  // Tier 4 — Shockwave
+  expanding_wave: 20,
+  striking_wave: 21,
+  shock_force: 22,
+  // Tier 4 — Endure
+  sustained_retribution: 23,
+  shrug_it_off: 24,
+  even_the_odds: 25,
+  // Tier 4 — universal
+  heroic_energy: 26,
 
   // ===== MAGE =====
   empowering_meal: 32,       // EMPOWERING_MEAL
@@ -79,9 +88,6 @@ export const TALENT_ICONS = {
   evasive_armor: 78,         // EVASIVE_ARMOR
   projectile_momentum: 79,   // PROJECTILE_MOMENTUM
   speedy_stealth: 80,        // SPEEDY_STEALTH
-  smoke_bomb_talent: 22,     // SMOKE_BOMB (hero_icons index, but also in talent_icons at offset)
-  death_mark_talent: 23,     // DEATH_MARK
-  shadow_clone_talent: 24,   // SHADOW_CLONE
   hasty_retreat: 81,         // HASTY_RETREAT
   body_replacement: 82,      // BODY_REPLACEMENT
   shadow_step: 83,           // SHADOW_STEP

@@ -61,6 +61,10 @@
           "default": false,
           "type": "boolean"
         },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        },
         "strength_requirement": {
           "default": 10,
           "type": "integer"
@@ -152,6 +156,10 @@
           "default": false,
           "type": "boolean"
         },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        },
         "strength_requirement": {
           "default": 10,
           "type": "integer"
@@ -228,6 +236,10 @@
           "type": "boolean"
         },
         "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
           "default": false,
           "type": "boolean"
         },
@@ -1968,6 +1980,10 @@
           "default": false,
           "type": "boolean"
         },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        },
         "energy": {
           "default": 100,
           "type": "integer"
@@ -2034,6 +2050,10 @@
           "type": "boolean"
         },
         "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
           "default": false,
           "type": "boolean"
         },
@@ -2118,6 +2138,10 @@
           "default": false,
           "type": "boolean"
         },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        },
         "strength_requirement": {
           "default": 10,
           "type": "integer"
@@ -2152,6 +2176,18 @@
         "surprise_damage_floor": {
           "default": 0.0,
           "type": "number"
+        },
+        "acc_factor": {
+          "default": 1.0,
+          "type": "number"
+        },
+        "dr_bonus_base": {
+          "default": 0,
+          "type": "integer"
+        },
+        "dr_bonus_per_lvl": {
+          "default": 0,
+          "type": "integer"
         }
       },
       "type": "object"
@@ -2215,6 +2251,10 @@
           "type": "boolean"
         },
         "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
           "default": false,
           "type": "boolean"
         },
@@ -2337,6 +2377,10 @@
           "default": false,
           "type": "boolean"
         },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        },
         "energy": {
           "default": 300,
           "type": "integer"
@@ -2403,6 +2447,10 @@
           "type": "boolean"
         },
         "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
           "default": false,
           "type": "boolean"
         },
@@ -2487,6 +2535,10 @@
           "default": false,
           "type": "boolean"
         },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        },
         "strength_requirement": {
           "default": 9,
           "type": "integer"
@@ -2528,6 +2580,18 @@
         "surprise_damage_floor": {
           "default": 0.75,
           "type": "number"
+        },
+        "acc_factor": {
+          "default": 1.0,
+          "type": "number"
+        },
+        "dr_bonus_base": {
+          "default": 0,
+          "type": "integer"
+        },
+        "dr_bonus_per_lvl": {
+          "default": 0,
+          "type": "integer"
         },
         "tier": {
           "default": 1,
@@ -2595,6 +2659,10 @@
           "type": "boolean"
         },
         "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
           "default": false,
           "type": "boolean"
         }
@@ -2679,6 +2747,10 @@
           "type": "boolean"
         },
         "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
           "default": false,
           "type": "boolean"
         }
@@ -2774,6 +2846,10 @@
           "default": false,
           "type": "boolean"
         },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        },
         "effect": {
           "default": "aqua_rejuv",
           "type": "string"
@@ -2839,6 +2915,10 @@
           "type": "boolean"
         },
         "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
           "default": false,
           "type": "boolean"
         },
@@ -2914,6 +2994,10 @@
           "default": false,
           "type": "boolean"
         },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        },
         "effect": {
           "default": "fury",
           "type": "string"
@@ -2979,6 +3063,10 @@
           "type": "boolean"
         },
         "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
           "default": false,
           "type": "boolean"
         }
@@ -3049,6 +3137,10 @@
         "for_sale": {
           "default": false,
           "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
         }
       },
       "type": "object"
@@ -3112,6 +3204,10 @@
           "type": "boolean"
         },
         "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
           "default": false,
           "type": "boolean"
         },
@@ -3180,6 +3276,10 @@
           "type": "boolean"
         },
         "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
           "default": false,
           "type": "boolean"
         },
@@ -3252,6 +3352,10 @@
           "type": "boolean"
         },
         "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
           "default": false,
           "type": "boolean"
         },
@@ -3595,6 +3699,10 @@
           "default": false,
           "type": "boolean"
         },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        },
         "strength_requirement": {
           "default": 10,
           "type": "integer"
@@ -3636,6 +3744,18 @@
         "surprise_damage_floor": {
           "default": 0.0,
           "type": "number"
+        },
+        "acc_factor": {
+          "default": 1.0,
+          "type": "number"
+        },
+        "dr_bonus_base": {
+          "default": 0,
+          "type": "integer"
+        },
+        "dr_bonus_per_lvl": {
+          "default": 0,
+          "type": "integer"
         },
         "tier": {
           "default": 1,
@@ -3708,6 +3828,10 @@
           "default": false,
           "type": "boolean"
         },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        },
         "strength_requirement": {
           "default": 10,
           "type": "integer"
@@ -3749,6 +3873,18 @@
         "surprise_damage_floor": {
           "default": 0.0,
           "type": "number"
+        },
+        "acc_factor": {
+          "default": 1.0,
+          "type": "number"
+        },
+        "dr_bonus_base": {
+          "default": 0,
+          "type": "integer"
+        },
+        "dr_bonus_per_lvl": {
+          "default": 0,
+          "type": "integer"
         },
         "tier": {
           "default": 1,
@@ -4041,6 +4177,10 @@
           "default": false,
           "type": "boolean"
         },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        },
         "energy": {
           "default": 0,
           "type": "integer"
@@ -4107,6 +4247,10 @@
           "type": "boolean"
         },
         "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
           "default": false,
           "type": "boolean"
         },
@@ -4355,6 +4499,10 @@
           },
           "type": "array"
         },
+        "path_blocked_ticks": {
+          "default": 0,
+          "type": "integer"
+        },
         "move_intent": {
           "anyOf": [
             {
@@ -4380,6 +4528,10 @@
           "default": 0.0,
           "type": "number"
         },
+        "stationary_ticks": {
+          "default": 0,
+          "type": "integer"
+        },
         "is_admin": {
           "default": false,
           "type": "boolean"
@@ -4399,9 +4551,9 @@
           "default": 0,
           "type": "integer"
         },
-        "rampage_stacks": {
-          "default": 0,
-          "type": "integer"
+        "berserk_trigger_power": {
+          "default": 0.0,
+          "type": "number"
         },
         "combo_count": {
           "default": 0,
@@ -4411,9 +4563,37 @@
           "default": 0.0,
           "type": "number"
         },
-        "combo_max": {
-          "default": 10,
+        "clobber_used": {
+          "default": false,
+          "type": "boolean"
+        },
+        "parry_used": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seal_cooldown": {
+          "default": 0,
           "type": "integer"
+        },
+        "seal_no_enemy_ticks": {
+          "default": 0,
+          "type": "integer"
+        },
+        "endure_damage_bonus": {
+          "default": 0.0,
+          "type": "number"
+        },
+        "endure_hits_left": {
+          "default": 0,
+          "type": "integer"
+        },
+        "endure_banked": {
+          "default": 0.0,
+          "type": "number"
+        },
+        "double_jump_ready": {
+          "default": false,
+          "type": "boolean"
         },
         "armor_charge": {
           "default": 0,
@@ -5363,6 +5543,10 @@
           "default": false,
           "type": "boolean"
         },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        },
         "effect": {
           "default": "",
           "type": "string"
@@ -5432,6 +5616,10 @@
           "type": "boolean"
         },
         "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
           "default": false,
           "type": "boolean"
         },
@@ -5776,6 +5964,10 @@
           "default": false,
           "type": "boolean"
         },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        },
         "effect": {
           "default": "experience",
           "type": "string"
@@ -5842,6 +6034,10 @@
           "type": "boolean"
         },
         "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
           "default": false,
           "type": "boolean"
         },
@@ -5914,6 +6110,10 @@
           "default": false,
           "type": "boolean"
         },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        },
         "effect": {
           "default": "haste",
           "type": "string"
@@ -5980,6 +6180,10 @@
           "type": "boolean"
         },
         "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
           "default": false,
           "type": "boolean"
         },
@@ -6052,6 +6256,10 @@
           "default": false,
           "type": "boolean"
         },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        },
         "effect": {
           "default": "levitation",
           "type": "string"
@@ -6118,6 +6326,10 @@
           "type": "boolean"
         },
         "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
           "default": false,
           "type": "boolean"
         },
@@ -6190,6 +6402,10 @@
           "default": false,
           "type": "boolean"
         },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        },
         "effect": {
           "default": "mind_vision",
           "type": "string"
@@ -6256,6 +6472,10 @@
           "type": "boolean"
         },
         "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
           "default": false,
           "type": "boolean"
         },
@@ -6328,6 +6548,10 @@
           "default": false,
           "type": "boolean"
         },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        },
         "effect": {
           "default": "purity",
           "type": "string"
@@ -6397,6 +6621,10 @@
           "default": false,
           "type": "boolean"
         },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        },
         "effect": {
           "default": "strength",
           "type": "string"
@@ -6463,6 +6691,10 @@
           "type": "boolean"
         },
         "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
           "default": false,
           "type": "boolean"
         },
@@ -6577,6 +6809,10 @@
           "default": false,
           "type": "boolean"
         },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        },
         "energy": {
           "default": 300,
           "type": "integer"
@@ -6646,6 +6882,10 @@
           "default": false,
           "type": "boolean"
         },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        },
         "effect": {
           "default": "revive",
           "type": "string"
@@ -6711,6 +6951,10 @@
           "type": "boolean"
         },
         "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
           "default": false,
           "type": "boolean"
         },
@@ -6784,6 +7028,10 @@
         "for_sale": {
           "default": false,
           "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
         }
       },
       "required": [
@@ -6850,6 +7098,10 @@
           "type": "boolean"
         },
         "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
           "default": false,
           "type": "boolean"
         },
@@ -7193,6 +7445,10 @@
         "for_sale": {
           "default": false,
           "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
         }
       },
       "type": "object"
@@ -7256,6 +7512,10 @@
           "type": "boolean"
         },
         "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
           "default": false,
           "type": "boolean"
         }
@@ -7323,6 +7583,10 @@
         "for_sale": {
           "default": false,
           "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
         }
       },
       "type": "object"
@@ -7386,6 +7650,10 @@
           "type": "boolean"
         },
         "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
           "default": false,
           "type": "boolean"
         }
@@ -7453,6 +7721,10 @@
         "for_sale": {
           "default": false,
           "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
         }
       },
       "type": "object"
@@ -7516,6 +7788,10 @@
           "type": "boolean"
         },
         "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
           "default": false,
           "type": "boolean"
         }
@@ -7583,6 +7859,10 @@
         "for_sale": {
           "default": false,
           "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
         }
       },
       "type": "object"
@@ -7646,6 +7926,10 @@
           "type": "boolean"
         },
         "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
           "default": false,
           "type": "boolean"
         }
@@ -7713,6 +7997,10 @@
         "for_sale": {
           "default": false,
           "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
         }
       },
       "type": "object"
@@ -7776,6 +8064,10 @@
           "type": "boolean"
         },
         "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
           "default": false,
           "type": "boolean"
         }
@@ -7843,6 +8135,10 @@
         "for_sale": {
           "default": false,
           "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
         }
       },
       "type": "object"
@@ -7906,6 +8202,10 @@
           "type": "boolean"
         },
         "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
           "default": false,
           "type": "boolean"
         }
@@ -7973,6 +8273,10 @@
         "for_sale": {
           "default": false,
           "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
         }
       },
       "type": "object"
@@ -8035,6 +8339,10 @@
           "type": "boolean"
         },
         "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
           "default": false,
           "type": "boolean"
         },
@@ -8131,6 +8439,10 @@
           "default": false,
           "type": "boolean"
         },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        },
         "energy": {
           "default": 150,
           "type": "integer"
@@ -8200,6 +8512,10 @@
           "default": false,
           "type": "boolean"
         },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        },
         "strength_requirement": {
           "default": 10,
           "type": "integer"
@@ -8234,6 +8550,18 @@
         "surprise_damage_floor": {
           "default": 0.0,
           "type": "number"
+        },
+        "acc_factor": {
+          "default": 1.0,
+          "type": "number"
+        },
+        "dr_bonus_base": {
+          "default": 0,
+          "type": "integer"
+        },
+        "dr_bonus_per_lvl": {
+          "default": 0,
+          "type": "integer"
         },
         "magic_damage": {
           "default": 0,
@@ -8305,6 +8633,10 @@
           "type": "boolean"
         },
         "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
           "default": false,
           "type": "boolean"
         },
@@ -8436,6 +8768,10 @@
           "default": false,
           "type": "boolean"
         },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        },
         "damage": {
           "default": 1,
           "type": "integer"
@@ -8520,6 +8856,10 @@
           "default": false,
           "type": "boolean"
         },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        },
         "damage": {
           "default": 4,
           "type": "integer"
@@ -8598,6 +8938,10 @@
           "type": "boolean"
         },
         "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
           "default": false,
           "type": "boolean"
         },
@@ -8941,6 +9285,10 @@
           "default": false,
           "type": "boolean"
         },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        },
         "damage": {
           "default": 0,
           "type": "integer"
@@ -9026,6 +9374,10 @@
           "type": "boolean"
         },
         "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
           "default": false,
           "type": "boolean"
         },
@@ -9124,6 +9476,10 @@
           "default": false,
           "type": "boolean"
         },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        },
         "strength_requirement": {
           "default": 10,
           "type": "integer"
@@ -9165,6 +9521,18 @@
         "surprise_damage_floor": {
           "default": 0.0,
           "type": "number"
+        },
+        "acc_factor": {
+          "default": 1.0,
+          "type": "number"
+        },
+        "dr_bonus_base": {
+          "default": 0,
+          "type": "integer"
+        },
+        "dr_bonus_per_lvl": {
+          "default": 0,
+          "type": "integer"
         },
         "tier": {
           "default": 1,

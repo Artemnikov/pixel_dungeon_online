@@ -6,7 +6,7 @@ import MainMenu from './menu/MainMenu';
 import cursorMouseUrl from './assets/cursors/cursor_mouse.png';
 import cursorControllerUrl from './assets/cursors/cursor_controller.png';
 
-import { TILE_SIZE } from './constants';
+import { TILE_SIZE, MAX_DPR } from './constants';
 import useAudioUnlock from './audio/useAudioUnlock';
 import useMusicByDepth from './audio/useMusicByDepth';
 import useAssetImages from './rendering/useAssetImages';
@@ -34,6 +34,7 @@ import LoadingOverlay from './ui/LoadingOverlay';
 import GameOverScreen from './ui/GameOverScreen';
 import GameMenu from './ui/GameMenu';
 import TalentPane from './ui/TalentPane';
+import AdminItemBrowser from './ui/AdminItemBrowser';
 import SubclassChoice from './ui/SubclassChoice';
 import ArmorAbilityChoice from './ui/ArmorAbilityChoice';
 import AbilityButton from './ui/AbilityButton';
@@ -64,7 +65,7 @@ function inspectScreenPos(canvas, cam, zoom, anchor, mobs, visible) {
     wyBottom = (anchor.y + 1) * TILE_SIZE;
   }
   const rect = canvas.getBoundingClientRect();
-  const cw = canvas.width, ch = canvas.height;
+  const cw = rect.width, ch = rect.height;
   const left = rect.left + (wx - cam.x - cw / 2) * zoom + cw / 2;
   const topY = rect.top + (wyTop - cam.y - ch / 2) * zoom + ch / 2;
   const bottomY = rect.top + (wyBottom - cam.y - ch / 2) * zoom + ch / 2;
@@ -94,7 +95,11 @@ function App() {
   // --- game state ---
   const [grid, setGrid] = useState([]);
   const [myPlayerId, setMyPlayerId] = useState(null);
-  const [viewport, setViewport] = useState({ width: window.innerWidth, height: window.innerHeight });
+  const [viewport, setViewport] = useState({
+    width: window.innerWidth,
+    height: window.innerHeight,
+    dpr: Math.min(window.devicePixelRatio || 1, MAX_DPR),
+  });
   const [showInventory, setShowInventory] = useState(false);
   // Open info+actions popup (item) and right-click context menu ({item,x,y}).
   const [useItemTarget, setUseItemTarget] = useState(null);
@@ -138,6 +143,8 @@ function App() {
   const [metamorphOptions, setMetamorphOptions] = useState(null);
   const [shopWindow, setShopWindow] = useState(null);
   const [impWindow, setImpWindow] = useState(null);
+  const [showItemBrowser, setShowItemBrowser] = useState(false);
+  const [itemCatalog, setItemCatalog] = useState([]);
 
   // --- shared refs ---
   const canvasRef = useRef(null);
@@ -195,7 +202,11 @@ function App() {
     const observer = new ResizeObserver((entries) => {
       for (const entry of entries) {
         const { width, height } = entry.contentRect;
-        setViewport({ width: Math.round(width), height: Math.round(height) });
+        setViewport({
+          width: Math.round(width),
+          height: Math.round(height),
+          dpr: Math.min(window.devicePixelRatio || 1, MAX_DPR),
+        });
       }
     });
     observer.observe(wrapper);
@@ -250,6 +261,15 @@ function App() {
       });
   }, [gameState, selectedClass, myStats.classType]);
 
+  // Fetch the admin item catalog once, when the item browser is first opened.
+  useEffect(() => {
+    if (!showItemBrowser || itemCatalog.length > 0) return;
+    fetch(`${getApiBaseUrl()}/api/items/catalog`)
+      .then(r => r.json())
+      .then(setItemCatalog)
+      .catch(() => {});
+  }, [showItemBrowser, itemCatalog.length]);
+
   useDebugApi({
     gridRef, entitiesRef, visionRef, openDoorsRef,
     myPlayerIdRef, panOffsetRef, cameraLerpRef, zoomRef, depthRef,
@@ -300,19 +320,9 @@ function App() {
       setImpWindow({ npc, text, canClaim: can_claim, tokens });
     },
     onTalentUpgraded: ({ talent }) => {
-      if (!talentDefs) return;
-      for (const [tierKey, tierData] of Object.entries(talentDefs.tiers)) {
-        if (tierData.talents.some(tt => tt.id === talent)) {
-          setTalentPoints(prev => ({
-            ...prev,
-            [tierKey]: Math.max(0, (prev[tierKey] || 0) - 1),
-          }));
-          // TalentButton's burst effect plays the LEVELUP sound when
-          // upgradedTalentId matches it — don't double it here.
-          setUpgradedTalentId(talent);
-          return;
-        }
-      }
+      // STATE_UPDATE already carries the correct server-recomputed
+      // talent_points — no need to decrement locally.
+      setUpgradedTalentId(talent);
     },
   });
 
@@ -364,6 +374,12 @@ function App() {
       setTargetingMode(false);
       return;
     }
+    // Gladiator combo finisher targeting
+    if (tm && typeof tm === 'object' && tm.comboMove) {
+      send({ type: 'USE_COMBO_MOVE', move: tm.comboMove, target_x: tileX, target_y: tileY });
+      setTargetingMode(false);
+      return;
+    }
     // Preparation strike targeting
     if (tm && typeof tm === 'object' && tm.prepStrike) {
       send({ type: 'PREPARATION_STRIKE', target_x: tileX, target_y: tileY });
@@ -406,6 +422,14 @@ function App() {
       return;
     }
     send({ type: 'USE_ARMOR_ABILITY', ability });
+  };
+
+  const sendUseComboMove = (move) => {
+    if (move === 'parry') {
+      send({ type: 'USE_COMBO_MOVE', move });
+      return;
+    }
+    setTargetingMode({ comboMove: move });
   };
 
   const sendTriggerBerserk = () => {
@@ -469,10 +493,12 @@ function App() {
   const handleChooseSubclass = (subclass) => {
     send({ type: 'CHOOSE_SUBCLASS', subclass });
     setShowTalentPane(false);
+    setUpgradedTalentId(null);
   };
-  const handleChooseArmorAbility = (abilityTalentId) => {
-    sendUpgradeTalent(abilityTalentId);
+  const handleChooseArmorAbility = (ability) => {
+    send({ type: 'CHOOSE_ARMOR_ABILITY', ability });
     setShowTalentPane(false);
+    setUpgradedTalentId(null);
   };
 
   const handleEscape = () => {
@@ -486,6 +512,7 @@ function App() {
       setShowArmorAbilityChoice(false);
     } else if (showTalentPane) {
       setShowTalentPane(false);
+      setUpgradedTalentId(null);
     } else if (!gameMenuOpenRef.current) {
       setGameMenuOpen(true);
     }
@@ -686,6 +713,10 @@ function App() {
     onRadialSelect: handleRadialSelect,
     gameMenuOpenRef,
     onOpenTalents: () => setShowTalentPane(v => !v),
+    onOpenItemBrowser: () => {
+      if (!myStats.isAdmin) return;
+      setShowItemBrowser(v => !v);
+    },
   });
 
   // Reset transient game state on death so a fresh run starts clean (no stale
@@ -806,8 +837,8 @@ function App() {
       <div className="canvas-wrapper" ref={wrapperRef}>
         <canvas
           ref={canvasRef}
-          width={viewport.width}
-          height={viewport.height}
+          width={Math.round(viewport.width * viewport.dpr)}
+          height={Math.round(viewport.height * viewport.dpr)}
           className="game-canvas"
           style={{ cursor: cursorStyle }}
           onClick={handleCanvasClick}
@@ -891,6 +922,7 @@ function App() {
         <ComboDisplay
           subclass={myStats.subclass}
           comboCount={myStats.comboCount || 0}
+          onUseComboMove={sendUseComboMove}
         />
         {showInventory && (isDesktop ? (
           <InventoryPane
@@ -1057,14 +1089,20 @@ function App() {
           armorAbility={myStats.armorAbility || null}
           abilityTier4={talentDefs?.ability_tier4 || {}}
           upgradedTalentId={upgradedTalentId}
+          isAdmin={myStats.isAdmin}
+          onAdminLevelUp={() => sendMessage({ type: 'ADMIN_LEVEL_UP' })}
           onAnimationDone={() => setUpgradedTalentId(null)}
           onUpgradeTalent={sendUpgradeTalent}
           onChooseSubclass={handleChooseSubclass}
-          onChooseArmorAbility={handleChooseArmorAbility}
+          onChooseArmorAbility={() => {
+            setArmorAbilityOptions(talentDefs?.armor_abilities || []);
+            setShowArmorAbilityChoice(true);
+          }}
           onClose={() => {
             setShowSubclassChoice(false);
             setShowArmorAbilityChoice(false);
             setShowTalentPane(false);
+            setUpgradedTalentId(null);
             setShowMetamorphMode(false);
             setMetamorphOptions(null);
             setMetamorphOldTalent(null);
@@ -1073,6 +1111,14 @@ function App() {
           error={talentDefsError}
           metamorphMode={showMetamorphMode}
           onMetamorphChoose={sendMetamorphChoose}
+        />
+      )}
+
+      {showItemBrowser && myStats.isAdmin && (
+        <AdminItemBrowser
+          catalog={itemCatalog}
+          onClose={() => setShowItemBrowser(false)}
+          onGiveItem={(itemKind) => sendMessage({ type: 'ADMIN_GIVE_ITEM', item_kind: itemKind })}
         />
       )}
 

@@ -28,6 +28,7 @@ from app.engine.entities.base import (
     Faction,
     Gold,
     Mob as MobEntity,
+    MissileWeapon,
     Player,
     Position,
     RevivingPotion,
@@ -36,7 +37,9 @@ from app.engine.entities.base import (
     Waterskin,
     Weapon,
 )
+from app.engine.entities.buffs import add_buff, remove_buff
 from app.engine.entities.mobs import DM300
+from app.engine.entities.subclasses import Talent
 from app.engine.systems.combat import resolve_melee_attack, resolve_ranged_attack
 from app.engine.systems.loot import roll_drops
 from app.engine.game.constants import MAX_FLOOR_ID
@@ -126,12 +129,18 @@ class MovementCombatMixin:
 
                 entity.last_attack_time = current_time
 
+                # Parry (warrior combo move): a riposte-primed defender
+                # counter-strikes the attacker before damage resolves.
+                if isinstance(target_entity, Player) and target_entity.has_buff("riposte_tracker"):
+                    self._riposte_counter(target_entity, entity, floor, floor_id)
+
                 if isinstance(entity, Player):
                     entity._last_action = ""
                 result = resolve_melee_attack(
                     entity, target_entity,
                     floor.mobs, entity.pos.x, entity.pos.y,
                     is_in_los=lambda a, b: self._is_in_los(a, b, floor_id=floor_id),
+                    floor=floor,
                 )
                 if result["missed"]:
                     self.add_event("MISS", {"source": entity.id, "target": target_entity.id, "defense_verb": result.get("defense_verb", "dodged")}, floor_id=floor_id)
@@ -180,6 +189,11 @@ class MovementCombatMixin:
                         self.handle_mob_death(target_entity, floor, floor_id)
                     if isinstance(entity, Player):
                         self.on_kill(entity, target_entity, floor.mobs, floor_id)
+                        # Lethal Momentum (warrior T2): a killing blow that
+                        # procced the free follow-up doesn't consume the
+                        # attack's cooldown, allowing an immediate re-attack.
+                        if remove_buff(entity.buffs, "lethal_momentum_tracker"):
+                            entity.last_attack_time = 0.0
                     self.add_event("DEATH", {"target": target_entity.id}, floor_id=floor_id)
                     if isinstance(target_entity, MobEntity):
                         target_entity.die(
@@ -192,7 +206,7 @@ class MovementCombatMixin:
                     if isinstance(entity, Player) and isinstance(target_entity, MobEntity):
                         if entity.earn_exp(target_entity.exp):
                             self.on_talent_level_up(entity)
-                        drops = roll_drops(target_entity, self.drop_counters, target_entity.pos.x, target_entity.pos.y)
+                        drops = roll_drops(target_entity, self.drop_counters, target_entity.pos.x, target_entity.pos.y, players=list(self._players_on_floor(floor_id)))
                         for item in drops:
                             floor.items[item.id] = item
             return
@@ -342,7 +356,7 @@ class MovementCombatMixin:
             return None
 
         dist = abs(player.pos.x - target_x) + abs(player.pos.y - target_y)
-        max_range = item.range if hasattr(item, "range") else 5
+        max_range = item.get_reach() if hasattr(item, "get_reach") else getattr(item, "range", 5)
         print(f"[perform_ranged_attack] dist={dist}, max_range={max_range}")
         if dist > max_range:
             print(f"[perform_ranged_attack] BAIL: out of range")
@@ -447,6 +461,17 @@ class MovementCombatMixin:
                     if target_entity.hp / target_entity.get_total_max_hp() <= 0.3:
                         self.add_event("PLAY_SOUND", {"sound": "HEALTH_WARN"}, player_id=target_entity.id)
 
+                # Improvised Projectiles (warrior T2): non-launcher thrown
+                # items blind the target on hit (50-turn cooldown).
+                ip = player.subclass_info.talent_info.level(Talent.IMPROVISED_PROJECTILES)
+                if (
+                    ip > 0 and is_throwable and not isinstance(item, MissileWeapon)
+                    and target_entity.is_alive
+                    and not player.has_buff("improvised_projectile_cooldown")
+                ):
+                    add_buff(target_entity.buffs, "blindness", duration=1.0 + ip, level=1)
+                    add_buff(player.buffs, "improvised_projectile_cooldown", duration=50.0, level=1)
+
             self._maybe_trigger_dm300_supercharge(target_entity, floor, floor_id, player.pos)
 
             if not target_entity.is_alive:
@@ -457,7 +482,7 @@ class MovementCombatMixin:
                 if isinstance(target_entity, MobEntity):
                     if player.earn_exp(target_entity.exp):
                         self.on_talent_level_up(player)
-                    drops = roll_drops(target_entity, self.drop_counters, target_entity.pos.x, target_entity.pos.y)
+                    drops = roll_drops(target_entity, self.drop_counters, target_entity.pos.x, target_entity.pos.y, players=list(self._players_on_floor(floor_id)))
                     for d in drops:
                         floor.items[d.id] = d
 

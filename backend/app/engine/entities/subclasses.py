@@ -45,46 +45,50 @@ class ArmorAbilityType:
 
 
 class Talent:
-    # Tier 1 (level 2, 2pts)
+    # Tier 1 (level 2, universal, 2pts)
+    HEARTY_MEAL = "hearty_meal"
+    VETERANS_INTUITION = "veterans_intuition"
+    PROVOKED_ANGER = "provoked_anger"
     IRON_WILL = "iron_will"
-    IRON_STOMACH = "iron_stomach"
-    RESTORED_STRENGTH = "restored_strength"
-    LIGHT_ARMOR = "light_armor"
 
-    # Tier 2 (level 7, 2pts) — Berserker
-    BERSERK_RESTORATION = "berserk_restoration"
+    # Tier 2 (level 7, universal, 2pts)
+    IRON_STOMACH = "iron_stomach"
+    LIQUID_WILLPOWER = "liquid_willpower"
+    RUNIC_TRANSFERENCE = "runic_transference"
+    LETHAL_MOMENTUM = "lethal_momentum"
+    IMPROVISED_PROJECTILES = "improvised_projectiles"
+
+    # Tier 3 (level 13, 3pts) — universal (requires subclass)
+    HOLD_FAST = "hold_fast"
+    STRONGMAN = "strongman"
+
+    # Tier 3 — Berserker (3pts)
+    ENDLESS_RAGE = "endless_rage"
     DEATHLESS_FURY = "deathless_fury"
     ENRAGED_CATALYST = "enraged_catalyst"
-    BERSERK_RUSH = "berserk_rush"
 
-    # Tier 2 (level 7, 2pts) — Gladiator
-    COMBO_SHIELD = "combo_shield"
-    COMBO_RESTORATION = "combo_restoration"
-    SLOW_COMBO = "slow_combo"
-    LETHAL_HIT = "lethal_hit"
-
-    # Tier 3 (level 13, 3pts)
-    ENDLESS_RAGE = "endless_rage"
-    IMPOSING_PRESENCE = "imposing_presence"
-    SUB_ATK = "sub_atk"
-    SUB_DEF = "sub_def"
+    # Tier 3 — Gladiator (3pts)
+    CLEAVE = "cleave"
+    LETHAL_DEFENSE = "lethal_defense"
     ENHANCED_COMBO = "enhanced_combo"
-    COMBO_SURGE = "combo_surge"
 
-    # Tier 4 (level 21, 4pts) — Berserker
-    RISK_REWARD = "risk_reward"
-    BERSERK_DURATION = "berserk_duration"
-    RAMPAGE = "rampage"
+    # Tier 4 (level 21, 4pts) — Heroic Leap
+    BODY_SLAM = "body_slam"
+    IMPACT_WAVE = "impact_wave"
+    DOUBLE_JUMP = "double_jump"
 
-    # Tier 4 (level 21, 4pts) — Gladiator
-    COMBO_AURA = "combo_aura"
-    SAVAGE_CAPACITY = "savage_capacity"
-    DEADLY_FOLLOWUP = "deadly_followup"
+    # Tier 4 — Shockwave
+    EXPANDING_WAVE = "expanding_wave"
+    STRIKING_WAVE = "striking_wave"
+    SHOCK_FORCE = "shock_force"
 
-    # Armor abilities (Tier 3 talents that choose the ability)
-    HEROIC_LEAP = "heroic_leap_talent"
-    SHOCKWAVE = "shockwave_talent"
-    ENDURE_ABILITY = "endure_ability_talent"
+    # Tier 4 — Endure
+    SUSTAINED_RETRIBUTION = "sustained_retribution"
+    SHRUG_IT_OFF = "shrug_it_off"
+    EVEN_THE_ODDS = "even_the_odds"
+
+    # Tier 4 — universal (charge cost reduction)
+    HEROIC_ENERGY = "heroic_energy"
 
     # ===================== ROGUE =====================
     # Tier 1 (level 2)
@@ -111,11 +115,6 @@ class Talent:
     EVASIVE_ARMOR = "evasive_armor"
     PROJECTILE_MOMENTUM = "projectile_momentum"
     SPEEDY_STEALTH = "speedy_stealth"
-    # Tier 3 — armor ability selection
-    SMOKE_BOMB = "smoke_bomb_talent"
-    DEATH_MARK = "death_mark_talent"
-    SHADOW_CLONE = "shadow_clone_talent"
-
     # Tier 4 (level 21) — Smoke Bomb
     HASTY_RETREAT = "hasty_retreat"
     BODY_REPLACEMENT = "body_replacement"
@@ -213,39 +212,41 @@ class Talent:
 # Maps talent name → (max_points, tier, subclass_required_or_None)
 TALENT_DEFS: Dict[str, tuple[int, int, Optional[str]]] = {
     # Tier 1 — universal
+    Talent.HEARTY_MEAL: (2, 1, None),
+    Talent.VETERANS_INTUITION: (2, 1, None),
+    Talent.PROVOKED_ANGER: (2, 1, None),
     Talent.IRON_WILL: (2, 1, None),
-    Talent.IRON_STOMACH: (2, 1, None),
-    Talent.RESTORED_STRENGTH: (2, 1, None),
-    Talent.LIGHT_ARMOR: (2, 1, None),
-    # Tier 2 — Berserker
-    Talent.BERSERK_RESTORATION: (2, 2, Subclass.BERSERKER),
-    Talent.DEATHLESS_FURY: (2, 2, Subclass.BERSERKER),
-    Talent.ENRAGED_CATALYST: (2, 2, Subclass.BERSERKER),
-    Talent.BERSERK_RUSH: (2, 2, Subclass.BERSERKER),
-    # Tier 2 — Gladiator
-    Talent.COMBO_SHIELD: (2, 2, Subclass.GLADIATOR),
-    Talent.COMBO_RESTORATION: (2, 2, Subclass.GLADIATOR),
-    Talent.SLOW_COMBO: (2, 2, Subclass.GLADIATOR),
-    Talent.LETHAL_HIT: (2, 2, Subclass.GLADIATOR),
-    # Tier 3 — universal (but some are subclass-specific)
+    # Tier 2 — universal
+    Talent.IRON_STOMACH: (2, 2, None),
+    Talent.LIQUID_WILLPOWER: (2, 2, None),
+    Talent.RUNIC_TRANSFERENCE: (2, 2, None),
+    Talent.LETHAL_MOMENTUM: (2, 2, None),
+    Talent.IMPROVISED_PROJECTILES: (2, 2, None),
+    # Tier 3 — universal (requires subclass)
+    Talent.HOLD_FAST: (3, 3, None),
+    Talent.STRONGMAN: (3, 3, None),
+    # Tier 3 — Berserker
     Talent.ENDLESS_RAGE: (3, 3, Subclass.BERSERKER),
-    Talent.IMPOSING_PRESENCE: (3, 3, Subclass.BERSERKER),
+    Talent.DEATHLESS_FURY: (3, 3, Subclass.BERSERKER),
+    Talent.ENRAGED_CATALYST: (3, 3, Subclass.BERSERKER),
+    # Tier 3 — Gladiator
+    Talent.CLEAVE: (3, 3, Subclass.GLADIATOR),
+    Talent.LETHAL_DEFENSE: (3, 3, Subclass.GLADIATOR),
     Talent.ENHANCED_COMBO: (3, 3, Subclass.GLADIATOR),
-    Talent.COMBO_SURGE: (3, 3, Subclass.GLADIATOR),
-    Talent.SUB_ATK: (3, 3, None),
-    Talent.SUB_DEF: (3, 3, None),
-    # Armor ability talents (Tier 3, exclusive — pick one of three)
-    Talent.HEROIC_LEAP: (1, 3, None),
-    Talent.SHOCKWAVE: (1, 3, None),
-    Talent.ENDURE_ABILITY: (1, 3, None),
-    # Tier 4 — Berserker
-    Talent.RISK_REWARD: (4, 4, Subclass.BERSERKER),
-    Talent.BERSERK_DURATION: (4, 4, Subclass.BERSERKER),
-    Talent.RAMPAGE: (4, 4, Subclass.BERSERKER),
-    # Tier 4 — Gladiator
-    Talent.COMBO_AURA: (4, 4, Subclass.GLADIATOR),
-    Talent.SAVAGE_CAPACITY: (4, 4, Subclass.GLADIATOR),
-    Talent.DEADLY_FOLLOWUP: (4, 4, Subclass.GLADIATOR),
+    # Tier 4 — Heroic Leap
+    Talent.BODY_SLAM: (4, 4, None),
+    Talent.IMPACT_WAVE: (4, 4, None),
+    Talent.DOUBLE_JUMP: (4, 4, None),
+    # Tier 4 — Shockwave
+    Talent.EXPANDING_WAVE: (4, 4, None),
+    Talent.STRIKING_WAVE: (4, 4, None),
+    Talent.SHOCK_FORCE: (4, 4, None),
+    # Tier 4 — Endure
+    Talent.SUSTAINED_RETRIBUTION: (4, 4, None),
+    Talent.SHRUG_IT_OFF: (4, 4, None),
+    Talent.EVEN_THE_ODDS: (4, 4, None),
+    # Tier 4 — universal
+    Talent.HEROIC_ENERGY: (4, 4, None),
 
     # ===================== ROGUE =====================
     # Tier 1
@@ -270,10 +271,6 @@ TALENT_DEFS: Dict[str, tuple[int, int, Optional[str]]] = {
     Talent.EVASIVE_ARMOR: (3, 3, Subclass.FREERUNNER),
     Talent.PROJECTILE_MOMENTUM: (3, 3, Subclass.FREERUNNER),
     Talent.SPEEDY_STEALTH: (3, 3, Subclass.FREERUNNER),
-    # Tier 3 — armor ability selection (exclusive — pick one of three)
-    Talent.SMOKE_BOMB: (1, 3, None),
-    Talent.DEATH_MARK: (1, 3, None),
-    Talent.SHADOW_CLONE: (1, 3, None),
     # Tier 4 — Smoke Bomb
     Talent.HASTY_RETREAT: (4, 4, None),
     Talent.BODY_REPLACEMENT: (4, 4, None),
@@ -373,17 +370,26 @@ TALENT_DEFS: Dict[str, tuple[int, int, Optional[str]]] = {
 # subclass). Talents absent from this map are available to any class.
 TALENT_CLASS_REQ: Dict[str, str] = {
     # Warrior
-    Talent.IRON_WILL: "warrior", Talent.IRON_STOMACH: "warrior",
-    Talent.RESTORED_STRENGTH: "warrior", Talent.LIGHT_ARMOR: "warrior",
-    Talent.HEROIC_LEAP: "warrior", Talent.SHOCKWAVE: "warrior",
-    Talent.ENDURE_ABILITY: "warrior", Talent.SUB_ATK: "warrior", Talent.SUB_DEF: "warrior",
+    Talent.HEARTY_MEAL: "warrior", Talent.VETERANS_INTUITION: "warrior",
+    Talent.PROVOKED_ANGER: "warrior", Talent.IRON_WILL: "warrior",
+    Talent.IRON_STOMACH: "warrior", Talent.LIQUID_WILLPOWER: "warrior",
+    Talent.RUNIC_TRANSFERENCE: "warrior", Talent.LETHAL_MOMENTUM: "warrior",
+    Talent.IMPROVISED_PROJECTILES: "warrior",
+    Talent.HOLD_FAST: "warrior", Talent.STRONGMAN: "warrior",
+    Talent.ENDLESS_RAGE: "warrior", Talent.DEATHLESS_FURY: "warrior", Talent.ENRAGED_CATALYST: "warrior",
+    Talent.CLEAVE: "warrior", Talent.LETHAL_DEFENSE: "warrior", Talent.ENHANCED_COMBO: "warrior",
+    Talent.BODY_SLAM: "warrior", Talent.IMPACT_WAVE: "warrior", Talent.DOUBLE_JUMP: "warrior",
+    Talent.EXPANDING_WAVE: "warrior", Talent.STRIKING_WAVE: "warrior", Talent.SHOCK_FORCE: "warrior",
+    Talent.SUSTAINED_RETRIBUTION: "warrior", Talent.SHRUG_IT_OFF: "warrior", Talent.EVEN_THE_ODDS: "warrior",
+    # NOTE: HEROIC_ENERGY is intentionally absent — it's a shared T4 universal
+    # talent available to any class once T4 is unlocked (see _belongs_to_class
+    # in main.py for the per-class talent-list special case).
     # Rogue
     Talent.CACHED_RATIONS: "rogue", Talent.THIEFS_INTUITION: "rogue",
     Talent.SUCKER_PUNCH: "rogue", Talent.PROTECTIVE_SHADOWS: "rogue",
     Talent.MYSTICAL_MEAL: "rogue", Talent.INSCRIBED_STEALTH: "rogue",
     Talent.WIDE_SEARCH: "rogue", Talent.SILENT_STEPS: "rogue", Talent.ROGUES_FORESIGHT: "rogue",
     Talent.ENHANCED_RINGS: "rogue", Talent.LIGHT_CLOAK: "rogue",
-    Talent.SMOKE_BOMB: "rogue", Talent.DEATH_MARK: "rogue", Talent.SHADOW_CLONE: "rogue",
     Talent.HASTY_RETREAT: "rogue", Talent.BODY_REPLACEMENT: "rogue", Talent.SHADOW_STEP: "rogue",
     Talent.FEAR_THE_REAPER: "rogue", Talent.DEATHLY_DURABILITY: "rogue", Talent.DOUBLE_MARK: "rogue",
     Talent.SHADOW_BLADE: "rogue", Talent.CLONED_ARMOR: "rogue", Talent.PERFECT_COPY: "rogue",
@@ -412,12 +418,6 @@ TALENT_CLASS_REQ: Dict[str, str] = {
 
 # Armor-ability talents → the ability they unlock (first point locks the choice).
 ABILITY_TALENTS: Dict[str, str] = {
-    Talent.HEROIC_LEAP: ArmorAbilityType.HEROIC_LEAP,
-    Talent.SHOCKWAVE: ArmorAbilityType.SHOCKWAVE,
-    Talent.ENDURE_ABILITY: ArmorAbilityType.ENDURE,
-    Talent.SMOKE_BOMB: ArmorAbilityType.SMOKE_BOMB,
-    Talent.DEATH_MARK: ArmorAbilityType.DEATH_MARK,
-    Talent.SHADOW_CLONE: ArmorAbilityType.SHADOW_CLONE,
     # Mage
     Talent.ELEMENTAL_BLAST_ABILITY: ArmorAbilityType.ELEMENTAL_BLAST,
     Talent.WILD_MAGIC_ABILITY: ArmorAbilityType.WILD_MAGIC,
@@ -426,6 +426,38 @@ ABILITY_TALENTS: Dict[str, str] = {
     Talent.SPECTRAL_BLADES_ABILITY: ArmorAbilityType.SPECTRAL_BLADES,
     Talent.NATURES_POWER_ABILITY: ArmorAbilityType.NATURES_POWER,
     Talent.SPIRIT_HAWK_ABILITY: ArmorAbilityType.SPIRIT_HAWK,
+}
+
+
+# Tier 4 talent → the armor ability it belongs to. Talents absent from this
+# map (e.g. HEROIC_ENERGY-equivalents) are available regardless of which
+# ability was chosen.
+T4_ABILITY_TALENTS: Dict[str, str] = {
+    Talent.BODY_SLAM: ArmorAbilityType.HEROIC_LEAP,
+    Talent.IMPACT_WAVE: ArmorAbilityType.HEROIC_LEAP,
+    Talent.DOUBLE_JUMP: ArmorAbilityType.HEROIC_LEAP,
+    Talent.EXPANDING_WAVE: ArmorAbilityType.SHOCKWAVE,
+    Talent.STRIKING_WAVE: ArmorAbilityType.SHOCKWAVE,
+    Talent.SHOCK_FORCE: ArmorAbilityType.SHOCKWAVE,
+    Talent.SUSTAINED_RETRIBUTION: ArmorAbilityType.ENDURE,
+    Talent.SHRUG_IT_OFF: ArmorAbilityType.ENDURE,
+    Talent.EVEN_THE_ODDS: ArmorAbilityType.ENDURE,
+    # Rogue
+    Talent.HASTY_RETREAT: ArmorAbilityType.SMOKE_BOMB,
+    Talent.BODY_REPLACEMENT: ArmorAbilityType.SMOKE_BOMB,
+    Talent.SHADOW_STEP: ArmorAbilityType.SMOKE_BOMB,
+    Talent.FEAR_THE_REAPER: ArmorAbilityType.DEATH_MARK,
+    Talent.DEATHLY_DURABILITY: ArmorAbilityType.DEATH_MARK,
+    Talent.DOUBLE_MARK: ArmorAbilityType.DEATH_MARK,
+    Talent.SHADOW_BLADE: ArmorAbilityType.SHADOW_CLONE,
+    Talent.CLONED_ARMOR: ArmorAbilityType.SHADOW_CLONE,
+    Talent.PERFECT_COPY: ArmorAbilityType.SHADOW_CLONE,
+}
+
+# Armor abilities a class may choose from, by class_type.
+CLASS_ARMOR_ABILITIES: Dict[str, tuple[str, ...]] = {
+    "warrior": (ArmorAbilityType.HEROIC_LEAP, ArmorAbilityType.SHOCKWAVE, ArmorAbilityType.ENDURE),
+    "rogue": (ArmorAbilityType.SMOKE_BOMB, ArmorAbilityType.DEATH_MARK, ArmorAbilityType.SHADOW_CLONE),
 }
 
 
@@ -445,13 +477,13 @@ TIER_MAX_POINTS: Dict[int, int] = {
     4: 4,
 }
 
-# Combo moves unlocked by combo count threshold
-COMBO_MOVES: Dict[int, str] = {
-    2: "clobber",
-    4: "slam",
-    6: "parry",
-    8: "crush",
-    10: "fury",
+# Combo moves (Gladiator) unlocked by combo count threshold, with UI tint.
+COMBO_MOVES: Dict[str, dict] = {
+    "clobber": {"count": 2, "tint": 0x00FF00},
+    "slam": {"count": 4, "tint": 0xCCFF00},
+    "parry": {"count": 6, "tint": 0xFFFF00},
+    "crush": {"count": 8, "tint": 0xFFCC00},
+    "fury": {"count": 10, "tint": 0xFF0000},
 }
 
 COST_ARMOR_ABILITY = 35  # Leap/Shockwave charge cost
@@ -460,35 +492,41 @@ COST_ENDURE = 50  # Endure charge cost (slightly higher)
 # Human-readable titles and descriptions served via /api/talents/{class}
 TALENT_TITLES: Dict[str, str] = {
     # Warrior T1
+    Talent.HEARTY_MEAL: "Hearty Meal",
+    Talent.VETERANS_INTUITION: "Veteran's Intuition",
+    Talent.PROVOKED_ANGER: "Provoked Anger",
     Talent.IRON_WILL: "Iron Will",
+    # Warrior T2
     Talent.IRON_STOMACH: "Iron Stomach",
-    Talent.RESTORED_STRENGTH: "Restored Strength",
-    Talent.LIGHT_ARMOR: "Light Armor",
-    # Berserker T2
-    Talent.BERSERK_RESTORATION: "Berserk Restoration",
+    Talent.LIQUID_WILLPOWER: "Liquid Willpower",
+    Talent.RUNIC_TRANSFERENCE: "Runic Transference",
+    Talent.LETHAL_MOMENTUM: "Lethal Momentum",
+    Talent.IMPROVISED_PROJECTILES: "Improvised Projectiles",
+    # Warrior T3 universal
+    Talent.HOLD_FAST: "Hold Fast",
+    Talent.STRONGMAN: "Strongman",
+    # Warrior T3 Berserker
+    Talent.ENDLESS_RAGE: "Endless Rage",
     Talent.DEATHLESS_FURY: "Deathless Fury",
     Talent.ENRAGED_CATALYST: "Enraged Catalyst",
-    Talent.BERSERK_RUSH: "Berserk Rush",
-    # Gladiator T2
-    Talent.COMBO_SHIELD: "Combo Shield",
-    Talent.COMBO_RESTORATION: "Combo Restoration",
-    Talent.SLOW_COMBO: "Slow Combo",
-    Talent.LETHAL_HIT: "Lethal Hit",
-    # Warrior T3
-    Talent.ENDLESS_RAGE: "Endless Rage",
-    Talent.IMPOSING_PRESENCE: "Imposing Presence",
+    # Warrior T3 Gladiator
+    Talent.CLEAVE: "Cleave",
+    Talent.LETHAL_DEFENSE: "Lethal Defense",
     Talent.ENHANCED_COMBO: "Enhanced Combo",
-    Talent.COMBO_SURGE: "Combo Surge",
-    Talent.SUB_ATK: "Sub-Atk",
-    Talent.SUB_DEF: "Sub-Def",
-    # Warrior T4 Berserker
-    Talent.RISK_REWARD: "Risk Reward",
-    Talent.BERSERK_DURATION: "Berserk Duration",
-    Talent.RAMPAGE: "Rampage",
-    # Warrior T4 Gladiator
-    Talent.COMBO_AURA: "Combo Aura",
-    Talent.SAVAGE_CAPACITY: "Savage Capacity",
-    Talent.DEADLY_FOLLOWUP: "Deadly Followup",
+    # Warrior T4 Heroic Leap
+    Talent.BODY_SLAM: "Body Slam",
+    Talent.IMPACT_WAVE: "Impact Wave",
+    Talent.DOUBLE_JUMP: "Double Jump",
+    # Warrior T4 Shockwave
+    Talent.EXPANDING_WAVE: "Expanding Wave",
+    Talent.STRIKING_WAVE: "Striking Wave",
+    Talent.SHOCK_FORCE: "Shock Force",
+    # Warrior T4 Endure
+    Talent.SUSTAINED_RETRIBUTION: "Sustained Retribution",
+    Talent.SHRUG_IT_OFF: "Shrug It Off",
+    Talent.EVEN_THE_ODDS: "Even the Odds",
+    # Warrior T4 universal
+    Talent.HEROIC_ENERGY: "Heroic Energy",
     # Rogue T1
     Talent.CACHED_RATIONS: "Cached Rations",
     Talent.THIEFS_INTUITION: "Thief's Intuition",
@@ -568,12 +606,6 @@ TALENT_TITLES: Dict[str, str] = {
     Talent.BARKSKIN: "Barkskin",
     Talent.SHIELDING_DEW: "Shielding Dew",
     # Armor ability selectors
-    Talent.HEROIC_LEAP: "Heroic Leap",
-    Talent.SHOCKWAVE: "Shockwave",
-    Talent.ENDURE_ABILITY: "Endure",
-    Talent.SMOKE_BOMB: "Smoke Bomb",
-    Talent.DEATH_MARK: "Death Mark",
-    Talent.SHADOW_CLONE: "Shadow Clone",
     Talent.ELEMENTAL_BLAST_ABILITY: "Elemental Blast",
     Talent.WILD_MAGIC_ABILITY: "Wild Magic",
     Talent.WARP_BEACON_ABILITY: "Warp Beacon",
@@ -618,35 +650,41 @@ TALENT_TITLES: Dict[str, str] = {
 
 TALENT_DESCRIPTIONS: Dict[str, str] = {
     # Warrior T1
-    Talent.IRON_WILL: "Armor damage reduction +2 per point.",
-    Talent.IRON_STOMACH: "Food heals for an additional 33% per point.",
-    Talent.RESTORED_STRENGTH: "Gain +1 max HP per upgrade spent on an item.",
-    Talent.LIGHT_ARMOR: "Reduces the speed and evasion penalties of armor.",
-    # Berserker T2
-    Talent.BERSERK_RESTORATION: "Killing an enemy during Berserk heals you.",
-    Talent.DEATHLESS_FURY: "Berserk can save you from fatal damage.",
-    Talent.ENRAGED_CATALYST: "Taking damage builds extra Berserk power.",
-    Talent.BERSERK_RUSH: "Berserk grants a burst of movement speed.",
-    # Gladiator T2
-    Talent.COMBO_SHIELD: "Each combo hit grants shielding.",
-    Talent.COMBO_RESTORATION: "Using a finisher move heals you.",
-    Talent.SLOW_COMBO: "Combo timer decays 25% slower per point.",
-    Talent.LETHAL_HIT: "Finisher moves have increased critical chance.",
-    # Warrior T3
-    Talent.ENDLESS_RAGE: "Berserk lasts longer. +17% max power per point.",
-    Talent.IMPOSING_PRESENCE: "Nearby enemies deal less damage.",
-    Talent.ENHANCED_COMBO: "Max combo count +2 per point.",
-    Talent.COMBO_SURGE: "Enter a fury state at max combo, empowering attacks.",
-    Talent.SUB_ATK: "+1 attack per point.",
-    Talent.SUB_DEF: "+1 defense per point.",
-    # Warrior T4 Berserker
-    Talent.RISK_REWARD: "Deal more damage when at low HP.",
-    Talent.BERSERK_DURATION: "Berserk lasts significantly longer.",
-    Talent.RAMPAGE: "Kills stack a damage buff, up to 5 stacks per point.",
-    # Warrior T4 Gladiator
-    Talent.COMBO_AURA: "At 6+ combo, kills deal AOE damage to nearby enemies.",
-    Talent.SAVAGE_CAPACITY: "Max combo count +2 per point.",
-    Talent.DEADLY_FOLLOWUP: "Attacking a new target after damaging one deals bonus damage.",
+    Talent.HEARTY_MEAL: "Eating food while below 1/3 HP heals an extra 2+2 per point.",
+    Talent.VETERANS_INTUITION: "Identify melee weapons and armor faster; at 2pts, new armor is identified instantly.",
+    Talent.PROVOKED_ANGER: "Your next attack after being provoked deals 1+2 per point bonus damage.",
+    Talent.IRON_WILL: "Grants a shield (3 + armor tier + points) that recharges over time.",
+    # Warrior T2
+    Talent.IRON_STOMACH: "Eating while on a cooldown grants temporary immunity to food-related debuffs.",
+    Talent.LIQUID_WILLPOWER: "Drinking a potion grants a shield equal to 3.0%/6.5%/10% of max HP per point.",
+    Talent.RUNIC_TRANSFERENCE: "Allows transferring glyphs between your seal and armor.",
+    Talent.LETHAL_MOMENTUM: "Killing blows have a 34%/67%/100% chance to not consume a turn.",
+    Talent.IMPROVISED_PROJECTILES: "Thrown non-weapon items blind enemies for 1+points turns (50-turn cooldown).",
+    # Warrior T3 universal
+    Talent.HOLD_FAST: "While stationary, gain bonus armor DR and your buffs/debuffs decay slower.",
+    Talent.STRONGMAN: "Effective Strength increases by 3%-18% per point.",
+    # Warrior T3 Berserker
+    Talent.ENDLESS_RAGE: "Berserk's power cap increases by 16.67% per point, boosting shield and recovery.",
+    Talent.DEATHLESS_FURY: "If a fatal blow would kill you while raging, Berserk saves you at 1 HP instead.",
+    Talent.ENRAGED_CATALYST: "While raging, weapon enchantment proc chance increases by up to 15% per point.",
+    # Warrior T3 Gladiator
+    Talent.CLEAVE: "Killing blows extend your combo timer to 15+15 per point seconds.",
+    Talent.LETHAL_DEFENSE: "Combo kills reduce your Iron Will shield's cooldown by up to 33% per point.",
+    Talent.ENHANCED_COMBO: "Empowers your Combo finishing moves at higher combo counts.",
+    # Warrior T4 Heroic Leap
+    Talent.BODY_SLAM: "Landing from Heroic Leap damages adjacent enemies.",
+    Talent.IMPACT_WAVE: "Enemies not hit by Body Slam are knocked back and may be left Vulnerable.",
+    Talent.DOUBLE_JUMP: "Heroic Leap grants a cheaper follow-up leap.",
+    # Warrior T4 Shockwave
+    Talent.EXPANDING_WAVE: "Shockwave's cone reaches further and wider per point.",
+    Talent.STRIKING_WAVE: "Shockwave has a chance to trigger an extra attack on each target hit.",
+    Talent.SHOCK_FORCE: "Shockwave deals more damage and may Paralyze instead of Cripple.",
+    # Warrior T4 Endure
+    Talent.SUSTAINED_RETRIBUTION: "Damage banked by Endure is increased by 15% per point when it ends.",
+    Talent.SHRUG_IT_OFF: "Endure reduces incoming damage further, by 20% per point.",
+    Talent.EVEN_THE_ODDS: "Banked Endure damage increases for each nearby enemy.",
+    # Warrior T4 universal
+    Talent.HEROIC_ENERGY: "Reduces your armor ability's charge cost by 12%/23%/32%/40%.",
     # Rogue T1
     Talent.CACHED_RATIONS: "Eating food grants a shield. +4 shield per point.",
     Talent.THIEFS_INTUITION: "Better at detecting secrets and traps.",
@@ -726,12 +764,6 @@ TALENT_DESCRIPTIONS: Dict[str, str] = {
     Talent.BARKSKIN: "Grass provides an armor buff while standing on it.",
     Talent.SHIELDING_DEW: "Dew drops grant a shield.",
     # Armor ability selectors (no separate desc needed — handled by ability tooltip)
-    Talent.HEROIC_LEAP: "Leap at enemies, damaging and stunning them.",
-    Talent.SHOCKWAVE: "Unleash a shockwave that pushes and damages enemies.",
-    Talent.ENDURE_ABILITY: "Enter a defensive stance, greatly reducing damage taken.",
-    Talent.SMOKE_BOMB: "Throw a smoke bomb to escape and stealth.",
-    Talent.DEATH_MARK: "Mark an enemy, causing them to take extra damage.",
-    Talent.SHADOW_CLONE: "Create a shadow clone to fight alongside you.",
     Talent.ELEMENTAL_BLAST_ABILITY: "Unleash a blast of elemental energy.",
     Talent.WILD_MAGIC_ABILITY: "Trigger random wand effects.",
     Talent.WARP_BEACON_ABILITY: "Place a beacon to teleport back to.",

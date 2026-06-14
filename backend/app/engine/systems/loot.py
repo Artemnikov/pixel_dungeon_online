@@ -11,27 +11,29 @@ from app.engine.entities.base import (
     Gold,
     HealthPotion,
     MysteryMeat,
-    MeleeWeapon,
+    make_named_melee_weapon,
     Armor,
     Potion,
     Key,
     TenguMask,
+    KingsCrown,
     GooBlob,
 )
+from app.engine.entities.weapon_enchants import roll_weapon_level, roll_weapon_enchant
 
 TIER2_WEAPONS = [
-    ("Sword", 4, 10),
-    ("War Hammer", 5, 12),
-    ("Battle Axe", 6, 13),
+    "Sword",
+    "War Hammer",
+    "Battle Axe",
 ]
 
 RANDOM_WEAPONS = [
-    ("Rusty Sword", 2, 10),
-    ("Wooden Club", 3, 10),
-    ("Dagger", 2, 8),
-    ("Mace", 4, 11),
-    ("Spear", 3, 10),
-    ("Shortsword", 3, 10),
+    "Worn Shortsword",
+    "Dagger",
+    "Gloves",
+    "Rapier",
+    "Cudgel",
+    "Shortsword",
 ]
 
 RANDOM_ARMORS = [
@@ -53,6 +55,7 @@ def roll_drops(
     drop_counters: Dict[str, int],
     death_x: int,
     death_y: int,
+    players: Optional[List] = None,
 ) -> List[ItemBase]:
     items: List[ItemBase] = []
     for entry in mob.loot_table:
@@ -60,6 +63,9 @@ def roll_drops(
             continue
         if random.random() >= entry.chance:
             continue
+        if entry.item_kind == "tengu_mask" and players:
+            if not any(p.subclass_info.subclass is None for p in players):
+                continue
         item = _make_item(entry.item_kind)
         if item is None:
             continue
@@ -109,11 +115,9 @@ def _make_item(item_kind: str) -> Optional[ItemBase]:
     elif item_kind == "mystery_meat":
         return MysteryMeat()
     elif item_kind == "tier2_weapon":
-        name, dmg, str_req = random.choice(TIER2_WEAPONS)
-        return MeleeWeapon(name=name, damage=dmg, strength_requirement=str_req)
+        return _random_dungeon_weapon(random.choice(TIER2_WEAPONS))
     elif item_kind == "weapon":
-        name, dmg, str_req = random.choice(RANDOM_WEAPONS)
-        return MeleeWeapon(name=name, damage=dmg, strength_requirement=str_req)
+        return _random_dungeon_weapon(random.choice(RANDOM_WEAPONS))
     elif item_kind == "armor":
         name, tier, str_req = random.choice(RANDOM_ARMORS)
         return Armor(name=name, tier=tier, strength_requirement=str_req)
@@ -124,4 +128,15 @@ def _make_item(item_kind: str) -> Optional[ItemBase]:
         return GooBlob()
     elif item_kind == "tengu_mask":
         return TenguMask(name="Tengu's Mask")
+    elif item_kind == "kings_crown":
+        return KingsCrown(name="King's Crown")
     return None
+
+
+def _random_dungeon_weapon(name: str) -> ItemBase:
+    weapon = make_named_melee_weapon(name)
+    weapon.level = roll_weapon_level()
+    enchant, cursed = roll_weapon_enchant()
+    weapon.enchantment = enchant
+    weapon.cursed = cursed
+    return weapon

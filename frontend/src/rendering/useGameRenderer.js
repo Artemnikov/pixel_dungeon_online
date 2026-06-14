@@ -76,7 +76,11 @@ export default function useGameRenderer({
     const render = () => {
       if (grid.length === 0) return;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.imageSmoothingEnabled = false;
       updateAnimations();
+
+      const rect = canvas.getBoundingClientRect();
+      const lw = rect.width, lh = rect.height;
 
       if (isRefocusingRef.current) {
         panOffsetRef.current.x += (0 - panOffsetRef.current.x) * CAMERA_LERP;
@@ -92,20 +96,20 @@ export default function useGameRenderer({
       const myPlayer = entitiesRef.current.players[myPlayerIdRef.current];
 
       if (myPlayer) {
-        cameraX = myPlayer.renderPos.x * TILE_SIZE - canvas.width / 2 + TILE_SIZE / 2 + panOffsetRef.current.x;
-        cameraY = myPlayer.renderPos.y * TILE_SIZE - canvas.height / 2 + TILE_SIZE / 2 + panOffsetRef.current.y;
+        cameraX = myPlayer.renderPos.x * TILE_SIZE - lw / 2 + TILE_SIZE / 2 + panOffsetRef.current.x;
+        cameraY = myPlayer.renderPos.y * TILE_SIZE - lh / 2 + TILE_SIZE / 2 + panOffsetRef.current.y;
 
         const gridCols = grid[0]?.length ?? 0;
         const gridRows = grid.length;
         const z = zoomRef.current;
         const PAN_BORDER = 3;
-        const halfW = (PAN_BORDER * (canvas.width / 2 - TILE_SIZE / 2)) / z;
-        const halfH = (PAN_BORDER * (canvas.height / 2 - TILE_SIZE / 2)) / z;
-        cameraX = Math.max(-halfW, Math.min(cameraX, gridCols * TILE_SIZE - canvas.width / z + halfW));
-        cameraY = Math.max(-halfH, Math.min(cameraY, gridRows * TILE_SIZE - canvas.height / z + halfH));
+        const halfW = (PAN_BORDER * (lw / 2 - TILE_SIZE / 2)) / z;
+        const halfH = (PAN_BORDER * (lh / 2 - TILE_SIZE / 2)) / z;
+        cameraX = Math.max(-halfW, Math.min(cameraX, gridCols * TILE_SIZE - lw / z + halfW));
+        cameraY = Math.max(-halfH, Math.min(cameraY, gridRows * TILE_SIZE - lh / z + halfH));
 
-        panOffsetRef.current.x = cameraX - (myPlayer.renderPos.x * TILE_SIZE - canvas.width / 2 + TILE_SIZE / 2);
-        panOffsetRef.current.y = cameraY - (myPlayer.renderPos.y * TILE_SIZE - canvas.height / 2 + TILE_SIZE / 2);
+        panOffsetRef.current.x = cameraX - (myPlayer.renderPos.x * TILE_SIZE - lw / 2 + TILE_SIZE / 2);
+        panOffsetRef.current.y = cameraY - (myPlayer.renderPos.y * TILE_SIZE - lh / 2 + TILE_SIZE / 2);
 
         if (isDraggingRef.current) {
           cameraLerpRef.current.x = cameraX;
@@ -119,10 +123,11 @@ export default function useGameRenderer({
       setCamera({ x: cameraLerpRef.current.x, y: cameraLerpRef.current.y });
 
       ctx.save();
+      ctx.scale(canvas.width / lw, canvas.height / lh);
       const z = zoomRef.current;
-      ctx.translate(canvas.width / 2, canvas.height / 2);
+      ctx.translate(lw / 2, lh / 2);
       ctx.scale(z, z);
-      ctx.translate(-canvas.width / 2, -canvas.height / 2);
+      ctx.translate(-lw / 2, -lh / 2);
       ctx.translate(-cameraLerpRef.current.x, -cameraLerpRef.current.y);
 
       drawWaterBackground(ctx, waterTex, waterClipPath, gridBounds, performance.now());

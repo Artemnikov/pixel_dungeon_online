@@ -206,6 +206,25 @@ def action_read(game, player, item, tx=None, ty=None) -> None:
             player.quickslot.convert_to_placeholder(removed)
         game.add_event("METAMORPH_OPEN", {"player": player.id}, floor_id=player.floor_id)
         return
+    elif effect == "scroll_of_upgrade":
+        target = player.belongings.weapon or player.belongings.armor
+        if target is not None:
+            target.level += 1
+            target.level_known = True
+            if target.cursed:
+                target.cursed = False
+                target.cursed_known = True
+        removed = player.belongings.backpack.detach(item.id)
+        if removed is not None and player.belongings.get_item(item.id) is None:
+            player.quickslot.convert_to_placeholder(removed)
+        game.add_event("READ", {"player": player.id, "item": item.id}, floor_id=player.floor_id)
+        return
+
+    inscribed_stealth = player.subclass_info.talent_info.level("inscribed_stealth")
+    if inscribed_stealth > 0:
+        player.add_buff("invisibility", duration=1.0 * (1 + 2 * inscribed_stealth), level=1)
+        game.add_event("PLAY_SOUND", {"sound": "MELD"}, floor_id=player.floor_id, source_player_id=player.id)
+
     game.add_event("READ", {"player": player.id, "item": item.id}, floor_id=player.floor_id)
 
 
@@ -278,10 +297,18 @@ def action_eat_handler(game, player, item, tx=None, ty=None) -> None:
     game.add_event("EAT", {"player": player.id, "item": item.id}, floor_id=player.floor_id)
 
 
-def action_wear_mask(game, player, item, tx=None, ty=None) -> None:
+def action_wear(game, player, item, tx=None, ty=None) -> None:
+    """Dispatch for WEAR action by item kind: TengusMask (subclass choice)
+    or KingsCrown (armor ability choice)."""
+    if item.kind == "tengu_mask":
+        _wear_tengu_mask(game, player, item)
+    elif item.kind == "kings_crown":
+        _wear_kings_crown(game, player, item)
+
+
+def _wear_tengu_mask(game, player, item) -> None:
     """TengusMask: consume the item and open subclass selection (SPD:
-    WndChooseSubclass). Triggers the same SUBCLASS_CHOICE_AVAILABLE
-    flow as level 6 milestone."""
+    WndChooseSubclass)."""
     from app.engine.entities.subclasses import CLASS_SUBCLASSES
     if player.subclass_info.subclass is not None:
         return  # already chosen
@@ -293,6 +320,26 @@ def action_wear_mask(game, player, item, tx=None, ty=None) -> None:
         if player.belongings.get_item(item.id) is None:
             player.quickslot.convert_to_placeholder(removed)
     game.add_event("SUBCLASS_CHOICE_AVAILABLE", {
+        "player": player.id, "options": options,
+    }, floor_id=player.floor_id, source_player_id=player.id)
+
+
+def _wear_kings_crown(game, player, item) -> None:
+    """KingsCrown: consume the item and open armor ability selection (SPD:
+    WndChooseAbility), but only if armor is equipped."""
+    from app.engine.entities.subclasses import CLASS_ARMOR_ABILITIES
+    if player.armor_ability:
+        return  # already chosen
+    if player.belongings.armor is None:
+        return  # SPD: "naked" - need armor equipped
+    options = list(CLASS_ARMOR_ABILITIES.get(player.class_type, ()))
+    if not options:
+        return
+    removed = player.belongings.backpack.detach(item.id)
+    if removed is not None:
+        if player.belongings.get_item(item.id) is None:
+            player.quickslot.convert_to_placeholder(removed)
+    game.add_event("ARMOR_ABILITY_CHOICE_AVAILABLE", {
         "player": player.id, "options": options,
     }, floor_id=player.floor_id, source_player_id=player.id)
 
@@ -313,7 +360,7 @@ ITEM_ACTION_DISPATCH = {
     Action.AFFIX: action_affix,
     Action.STEALTH: action_stealth,
     Action.EAT: action_eat_handler,
-    Action.WEAR: action_wear_mask,
+    Action.WEAR: action_wear,
     Action.ALCHEMIZE: action_alchemize,
     Action.OPEN: action_noop,
     Action.INFO: action_noop,
