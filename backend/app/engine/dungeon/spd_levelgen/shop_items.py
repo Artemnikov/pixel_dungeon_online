@@ -34,6 +34,7 @@ from __future__ import annotations
 
 from typing import List
 
+from app.engine.dungeon.spd_levelgen.generator import _WEP_T1, _WEP_T2, _WEP_T3, _WEP_T4, _WEP_T5
 from app.engine.dungeon.spd_random import SPDRandom
 from app.engine.entities.base import (
     Armor,
@@ -41,7 +42,7 @@ from app.engine.entities.base import (
     Food,
     HealthPotion,
     Item,
-    MeleeWeapon,
+    make_named_melee_weapon,
     MissileWeapon,
     Ring,
     Scroll,
@@ -51,6 +52,29 @@ from app.engine.entities.base import (
     Stone,
     Wand,
 )
+from app.engine.entities.weapon_defs import WEP_TIER_ORDER
+from app.engine.entities.weapon_enchants import ENCHANT_RARITY
+
+_WEP_TIER_PROBS = {1: _WEP_T1, 2: _WEP_T2, 3: _WEP_T3, 4: _WEP_T4, 5: _WEP_T5}
+
+_ENCHANT_NAMES = list(ENCHANT_RARITY)
+_ENCHANT_WEIGHTS = list(ENCHANT_RARITY.values())
+
+
+def _random_melee_weapon(rng: SPDRandom, tier: int) -> Item:
+    cat = f"WEP_T{tier}"
+    idx = rng.chances(list(_WEP_TIER_PROBS[tier]))
+    name = WEP_TIER_ORDER[cat][idx]
+    weapon = make_named_melee_weapon(name)
+
+    # Shops don't sell cursed gear; roll level/enchant and reveal both.
+    level_roll = rng.chances([75, 20, 5])
+    weapon.level = level_roll
+    weapon.level_known = True
+    if rng.Float() < 0.10:
+        weapon.enchantment = _ENCHANT_NAMES[rng.chances(_ENCHANT_WEIGHTS)]
+        weapon.cursed_known = True
+    return weapon
 
 # depth -> (weapon/missile tier, armor tier) -- ShopRoom.generateItems()'s
 # `case 6/11/16` use wepTiers[1]/[2]/[3] (1-indexed tiers 2/3/4) with
@@ -70,7 +94,7 @@ def generate_shop_items(rng: SPDRandom, depth: int) -> List[Item]:
     weapon_tier, armor_tier = _SHOP_TIERS.get(depth, (2, 1))
 
     items: List[Item] = [
-        MeleeWeapon(name="Weapon", tier=weapon_tier),
+        _random_melee_weapon(rng, weapon_tier),
         MissileWeapon(name="Missile Weapon", tier=weapon_tier),
         Armor(name="Armor", tier=armor_tier),
         # TippedDart.randomTipped(2) -> 2x Stone

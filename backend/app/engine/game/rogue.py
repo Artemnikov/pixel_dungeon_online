@@ -208,8 +208,17 @@ class RogueMixin:
         from app.engine.entities.subclasses import Subclass
         if player.subclass_info.subclass != Subclass.FREERUNNER:
             return
-        if player.freerun_seconds > 0:
+        speedy_stealth = player.talent_info.level("speedy_stealth")
+
+        # Speedy Stealth: gain 2 momentum/tick passively while invisible.
+        if speedy_stealth >= 1 and player.invisible > 0:
+            player.momentum_stacks = min(player.momentum_stacks + 2, MOMENTUM_MAX)
+            player._momentum_decay_accum = 0.0
+
+        # Speedy Stealth (2+): active dash duration doesn't tick down while stealthed.
+        if player.freerun_seconds > 0 and not (speedy_stealth >= 2 and player.invisible > 0):
             player.freerun_seconds = max(0.0, player.freerun_seconds - dt)
+
         if moved or player.momentum_stacks <= 0:
             return
         player._momentum_decay_accum += dt

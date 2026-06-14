@@ -3,6 +3,7 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Dict, Tuple, Optional
 import asyncio
@@ -190,6 +191,10 @@ class ConnectionManager:
                     gold = player_obj.gold if player_obj else 0
                     energy = player_obj.energy if player_obj else 0
 
+                    # DEBUG: log player level in broadcast
+                    pl = game.players.get(player_id)
+                    print(f"[BROADCAST] {player_id}: level={pl.level if pl else 'NO_PLAYER'}, talents={pl.subclass_info.talent_info.talents if pl else {}}")
+
                     update = StateUpdateMessage(
                         depth=player_floor,
                         difficulty=game.difficulty,
@@ -214,12 +219,20 @@ async def root():
     return {"message": "Online Pixel Dungeon Server is running"}
 
 
+@app.get("/api/items/catalog")
+async def get_items_catalog():
+    from app.engine.entities.item_catalog import get_item_catalog
+
+    return get_item_catalog()
+
+
 @app.get("/api/talents/{class_type}")
 async def get_talents(class_type: str):
     from app.engine.entities.subclasses import (
         TALENT_DEFS, TALENT_TITLES, TALENT_DESCRIPTIONS,
         TALENT_CLASS_REQ, ABILITY_TALENTS, TIER_UNLOCK_LEVELS,
         TIER_MAX_POINTS, CLASS_SUBCLASSES,
+        T4_ABILITY_TALENTS, CLASS_ARMOR_ABILITIES, Talent,
     )
     from app.engine.entities.base import CharacterClass
 
@@ -232,6 +245,10 @@ async def get_talents(class_type: str):
     own_subclasses = set(CLASS_SUBCLASSES.get(class_type, ()))
 
     def _belongs_to_class(tid: str, sreq: Optional[str]) -> bool:
+        # HEROIC_ENERGY is a shared T4 universal talent, available to any class
+        # once T4 is unlocked (see TALENT_CLASS_REQ comment).
+        if tid == Talent.HEROIC_ENERGY:
+            return True
         if TALENT_CLASS_REQ.get(tid) == class_type:
             return True
         if sreq is not None and sreq in own_subclasses:
@@ -270,15 +287,32 @@ async def get_talents(class_type: str):
     # those with subclass_req=None). Subclass-gated T4 talents appear in the
     # tier list with their subclass field and are NOT duplicated here.
     ability_to_talents: dict = {}
+    universal_t4: list = []
+    has_t4_mapping = False
     for tid, (_, t, sreq) in TALENT_DEFS.items():
         if t != 4 or sreq is not None or not _belongs_to_class(tid, sreq):
             continue
-        for ability_tid, ability in ABILITY_TALENTS.items():
-            _, _, asr = TALENT_DEFS.get(ability_tid, (0, 0, None))
-            a_req = TALENT_CLASS_REQ.get(ability_tid)
-            if a_req == class_type or (asr and asr in own_subclasses):
+        ability = T4_ABILITY_TALENTS.get(tid)
+        if ability is not None:
+            has_t4_mapping = True
+            ability_to_talents.setdefault(ability, []).append(tid)
+        else:
+            universal_t4.append(tid)
+
+    if has_t4_mapping:
+        # Append the class's universal T4 talent(s) (e.g. Heroic Energy) to
+        # every armor ability's talent list, per SPD's ArmorAbility.talents().
+        for ability in CLASS_ARMOR_ABILITIES.get(class_type, ()):
+            for tid in universal_t4:
                 ability_to_talents.setdefault(ability, []).append(tid)
-                break
+    else:
+        for tid in universal_t4:
+            for ability_tid, ability in ABILITY_TALENTS.items():
+                _, _, asr = TALENT_DEFS.get(ability_tid, (0, 0, None))
+                a_req = TALENT_CLASS_REQ.get(ability_tid)
+                if a_req == class_type or (asr and asr in own_subclasses):
+                    ability_to_talents.setdefault(ability, []).append(tid)
+                    break
 
     ability_selectors: dict = {}
     for tid, ability in ABILITY_TALENTS.items():
@@ -289,9 +323,34 @@ async def get_talents(class_type: str):
     return {
         "class": class_type,
         "subclasses": list(own_subclasses),
+        "armor_abilities": list(CLASS_ARMOR_ABILITIES.get(class_type, ())),
         "tiers": {k: tiers[k] for k in sorted(tiers.keys(), key=int)},
         "ability_selectors": ability_selectors,
         "ability_tier4": ability_to_talents,
+    }
+
+@app.post("/dev/xp/{game_id}/{player_id}/{amount}")
+async def dev_grant_xp(game_id: str, player_id: str, amount: int):
+    game = manager.game_instances.get(game_id)
+    if not game:
+        return {"error": "game not found"}
+    player = game.players.get(player_id)
+    if not player:
+        return {"error": "player not found"}
+    leveled = player.earn_exp(amount)
+    if leveled:
+        game.on_talent_level_up(player)
+    # Debug: check serialized state
+    state = game.get_state(player_id)
+    serialized_player = next((p for p in state.get("players", []) if p.get("id") == player_id), None)
+    return {
+        "leveled": leveled,
+        "level": player.level,
+        "xp": player.experience,
+        "talent_points": player.subclass_info.talent_points,
+        "serialized_level": serialized_player.get("level") if serialized_player else None,
+        "serialized_talents": serialized_player.get("subclass_info", {}).get("talent_info", {}).get("talents") if serialized_player else None,
+        "serialized_talent_points": serialized_player.get("subclass_info", {}).get("talent_points") if serialized_player else None,
     }
 
 @app.websocket("/ws/game/{game_id}")
@@ -393,7 +452,14 @@ async def game_websocket(websocket: WebSocket, game_id: str, class_type: str = "
                 game.choose_subclass(player_id, message.subclass)
 
             elif isinstance(message, msg.UpgradeTalent):
-                game.upgrade_talent(player_id, message.talent)
+                if not game.upgrade_talent(player_id, message.talent):
+                    print(f"Upgrade talent failed for {player_id}: {message.talent}")
+
+            elif isinstance(message, msg.ChooseArmorAbility):
+                game.choose_armor_ability(player_id, message.ability)
+
+            elif isinstance(message, msg.UseComboMove):
+                game.use_combo_move(player_id, message.move, message.target_x, message.target_y)
 
             elif isinstance(message, msg.UseArmorAbility):
                 game.use_armor_ability(player_id, message.ability, message.target_x, message.target_y)
@@ -412,6 +478,12 @@ async def game_websocket(websocket: WebSocket, game_id: str, class_type: str = "
 
             elif isinstance(message, msg.AdminTeleport):
                 game.admin_teleport(player_id, message.target_floor)
+
+            elif isinstance(message, msg.AdminLevelUp):
+                game.admin_level_up(player_id)
+
+            elif isinstance(message, msg.AdminGiveItem):
+                game.admin_give_item(player_id, message.item_kind)
 
             elif isinstance(message, msg.NpcInteract):
                 game.npc_interact(player_id, message.npc_id)

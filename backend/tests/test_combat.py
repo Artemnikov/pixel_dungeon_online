@@ -261,7 +261,8 @@ def test_kinetic_conserve():
                     attack_skill=100, defense_skill=0,
                     damage_min=1, damage_max=5)
     player.belongings.weapon = KindOfWeapon(id="sw", name="Sword", damage=5,
-                                       strength_requirement=10, attack_cooldown=0)
+                                       strength_requirement=10, attack_cooldown=0,
+                                       enchantment="kinetic")
 
     mob = MobEntity(
         id="mob", name="Rat",

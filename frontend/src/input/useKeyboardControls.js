@@ -36,6 +36,7 @@ export default function useKeyboardControls({
   onRadialSelect,
   gameMenuOpenRef,
   onOpenTalents,
+  onOpenItemBrowser,
 }) {
   const lastKeyRef = useRef({ key: null, time: 0 });
   const pressedKeysRef = useRef(new Set());
@@ -88,6 +89,10 @@ export default function useKeyboardControls({
         if (onOpenTalents) onOpenTalents();
         return;
       }
+      if (e.key === 'u') {
+        if (onOpenItemBrowser) onOpenItemBrowser();
+        return;
+      }
 
       if (['1', '2', '3', '4', '5', '6'].includes(e.key)) {
         const index = parseInt(e.key) - 1;
@@ -134,5 +139,5 @@ export default function useKeyboardControls({
       window.removeEventListener('keyup', handleKeyUp);
       window.removeEventListener('blur', handleBlur);
     };
-  }, [inventory, handleToolbarClick, handleToolbarDoubleClick, socketRef, setShowInventory, onExamineOrReveal, onCancelModes, triggerWait, isRefocusingRef, isDraggingRef, quickslot, itemsById, onRadialSelect, gameMenuOpenRef, onOpenTalents]);
+  }, [inventory, handleToolbarClick, handleToolbarDoubleClick, socketRef, setShowInventory, onExamineOrReveal, onCancelModes, triggerWait, isRefocusingRef, isDraggingRef, quickslot, itemsById, onRadialSelect, gameMenuOpenRef, onOpenTalents, onOpenItemBrowser]);
 }

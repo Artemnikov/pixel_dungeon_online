@@ -91,28 +91,6 @@ def _apply_talent_multipliers(effective: int, attacker: "Entity", defender: "Ent
     if ti is None:
         return effective
 
-    # Risk Reward (warrior T4 berserker): +dmg based on missing HP
-    rr = ti.level("risk_reward")
-    if rr > 0:
-        hp_ratio = attacker.hp / max(attacker.get_total_max_hp(), 1)
-        mult = 1.0 + rr * 0.1 * (1 - hp_ratio)
-        effective = int(effective * mult)
-
-    # Deadly Followup (warrior T4 gladiator): +dmg based on combo count
-    df = ti.level("deadly_followup")
-    if df > 0:
-        combo = getattr(attacker, "combo_count", 0)
-        if combo > 0:
-            mult = 1.0 + df * 0.04 * combo
-            effective = int(effective * mult)
-
-    # Lethal Hit (warrior T2 gladiator): bonus at high combo
-    lh = ti.level("lethal_hit")
-    if lh > 0:
-        combo = getattr(attacker, "combo_count", 0)
-        if combo >= 4:
-            effective = int(effective * (1.0 + lh * 0.1))
-
     # Followup Strike (huntress T1): +dmg on melee after ranged hit
     if not is_ranged:
         fs = ti.level("followup_strike")
@@ -145,6 +123,18 @@ def _apply_post_dr_multipliers(raw_damage: int, attacker: "Entity", defender: "E
 
     effective = _apply_talent_multipliers(effective, attacker, defender, result, is_ranged)
 
+    # Endure (warrior armor ability): release banked damage over the next
+    # few outgoing hits.
+    endure_hits = getattr(attacker, "endure_hits_left", 0)
+    endure_bonus = getattr(attacker, "endure_damage_bonus", 0.0)
+    if endure_hits > 0 and endure_bonus > 0:
+        per_hit = endure_bonus / endure_hits
+        effective += int(per_hit)
+        attacker.endure_damage_bonus -= per_hit
+        attacker.endure_hits_left -= 1
+        if attacker.endure_hits_left <= 0:
+            attacker.endure_damage_bonus = 0.0
+
     vuln = getattr(defender, "vulnerable", 0)
     if vuln > 0:
         effective = int(effective * 1.33)
@@ -158,7 +148,12 @@ def _apply_post_dr_multipliers(raw_damage: int, attacker: "Entity", defender: "E
 
 def _check_grim(attacker: "Entity", defender: "Entity", result: dict):
     """Grim enchantment: % max-HP execute scaling with missing HP."""
-    grim_chance = attacker.grim_max_chance
+    from app.engine.entities.weapon_enchants import enraged_catalyst_bonus
+
+    # Enraged Catalyst (warrior T3 berserker): while raging, boost any
+    # enchantment proc chance (here: Grim) scaled by current Berserk power.
+    grim_chance = attacker.grim_max_chance + enraged_catalyst_bonus(attacker)
+
     if grim_chance <= 0 or not defender.is_alive:
         return 0
     hp_ratio = defender.hp / max(defender.max_hp, 1)
@@ -190,6 +185,10 @@ def resolve_melee_attack(
     tile_x: int,
     tile_y: int,
     is_in_los: Optional[Callable[["Position", "Position"], bool]] = None,
+    dmg_multi: float = 1.0,
+    dmg_bonus: int = 0,
+    guaranteed_hit: bool = False,
+    floor=None,
 ) -> dict:
     result = {
         "hit": False,
@@ -205,7 +204,9 @@ def resolve_melee_attack(
         return result
 
     # Invisible attacker: always surprise attack (auto-hit)
-    if getattr(attacker, "invisible", 0) > 0:
+    if guaranteed_hit:
+        result["hit"] = True
+    elif getattr(attacker, "invisible", 0) > 0:
         result["surprise"] = True
         result["hit"] = True
     # Surprise attack: if defender can't see attacker, auto-hit
@@ -237,6 +238,7 @@ def resolve_melee_attack(
         return result
 
     dmg_roll = _roll_damage(attacker, result, prep)
+    dmg_roll = int((dmg_roll + dmg_bonus) * dmg_multi)
     dr_roll = random.randint(defender.get_dr_min(), defender.get_dr_max())
     raw_damage = max(0, dmg_roll - dr_roll)
 
@@ -249,6 +251,13 @@ def resolve_melee_attack(
         if raw_damage <= 0:
             return result
 
+    weapon = getattr(getattr(attacker, "belongings", None), "weapon", None)
+
+    # Polarized curse: replaces the hit with either 1.5x or 0x damage.
+    if weapon is not None and weapon.cursed and weapon.enchantment == "polarized" and raw_damage > 0:
+        from app.engine.entities.weapon_enchants import polarized_roll
+        raw_damage = int(raw_damage * polarized_roll())
+
     # Post-DR multipliers (melee = not ranged)
     effective_damage = _apply_post_dr_multipliers(raw_damage, attacker, defender, result, is_ranged=False)
     if prep is not None:
@@ -260,15 +269,29 @@ def resolve_melee_attack(
     actual_damage = defender.take_damage(max(0, effective_damage))
     result["damage"] = actual_damage
 
-    # Grim execute check (inverse: grim is on the ATTACKER's weapon)
-    if attacker.grim_max_chance > 0 and actual_damage > 0:
+    # Grim enchant: % max-HP execute scaling with missing HP.
+    if weapon is not None and weapon.enchantment == "grim" and actual_damage > 0:
+        from app.engine.entities.weapon_enchants import grim_chance
+        attacker.grim_max_chance = grim_chance(weapon.buffed_lvl())
         _check_grim(attacker, defender, result)
+        attacker.grim_max_chance = 0.0
 
-    # Kinetic overflow
-    _check_kinetic(attacker, raw_damage, defender, hp_before)
+    # Kinetic enchant: overflow damage beyond fatality is conserved.
+    if weapon is not None and weapon.enchantment == "kinetic":
+        _check_kinetic(attacker, raw_damage, defender, hp_before)
 
     if hasattr(attacker, "attack_proc") and actual_damage > 0:
         attacker.attack_proc(defender)
+
+    # Other weapon enchants/curses (vampiric, blocking, elastic, shocking,
+    # sacrificial, displacing, annoying, unstable).
+    if weapon is not None and weapon.enchantment and actual_damage > 0:
+        from app.engine.entities.weapon_enchants import apply_enchant_proc
+        apply_enchant_proc(
+            weapon.enchantment, attacker, defender, weapon,
+            raw_damage, actual_damage, hp_before, result,
+            floor_mobs, tile_x, tile_y, floor,
+        )
 
     return result
 
@@ -304,7 +327,11 @@ def resolve_ranged_attack(
     elif getattr(attacker, "is_admin", False):
         result["hit"] = True
     else:
-        acu_roll = random.random() * attacker.attack_skill
+        attack_skill = attacker.attack_skill
+        proj_momentum = getattr(attacker, "subclass_info", None) and attacker.subclass_info.talent_info.level("projectile_momentum")
+        if proj_momentum and getattr(attacker, "freerun_seconds", 0) > 0:
+            attack_skill *= 1 + proj_momentum / 2
+        acu_roll = random.random() * attack_skill
         def_roll = random.random() * defender.get_effective_defense_skill()
         if acu_roll < def_roll:
             result["missed"] = True
@@ -316,6 +343,9 @@ def resolve_ranged_attack(
     result["crit"] = result["surprise"]
 
     dmg_roll = _roll_damage(attacker, result)
+    proj_momentum = getattr(attacker, "subclass_info", None) and attacker.subclass_info.talent_info.level("projectile_momentum")
+    if proj_momentum and getattr(attacker, "freerun_seconds", 0) > 0:
+        dmg_roll = round(dmg_roll * (1 + 0.15 * proj_momentum))
     dr_roll = random.randint(defender.get_dr_min(), defender.get_dr_max())
     raw_damage = max(0, dmg_roll - dr_roll)
 

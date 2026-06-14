@@ -76,7 +76,7 @@ export default function SubclassChoice({ options, onChoose, onSkip }) {
           <span className="choice-header-icon">⚔</span>
           <span className="choice-header-title">Choose a Subclass</span>
         </div>
-        <p className="choice-subtitle">You have reached level 6. Choose your path.</p>
+        <p className="choice-subtitle">You found Tengu's Mask. Choose your path.</p>
         <div className="choice-list">
           {options.map(sc => (
             <div key={sc} className="choice-list-item">

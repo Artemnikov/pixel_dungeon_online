@@ -22,7 +22,7 @@ import uuid
 from typing import List
 
 from app.engine.dungeon.generator import TileType
-from app.engine.entities.base import Key, Player, Position
+from app.engine.entities.base import CharacterClass, Key, Player, Position
 from app.engine.entities.base import DwarfToken
 from app.engine.entities.mobs import Imp, Shopkeeper
 from app.engine.game.floor_state import FloorState
@@ -101,9 +101,18 @@ class WorldInteractionMixin:
         checked: List[List[int]] = []
         found_secret = False
 
-        for dy in (-1, 0, 1):
-            for dx in (-1, 0, 1):
+        wide_search = player.subclass_info.talent_info.level("wide_search")
+        distance = 2 if player.class_type == CharacterClass.ROGUE else 1
+        circular = False
+        if wide_search > 0:
+            distance += 1
+            circular = wide_search == 1
+
+        for dy in range(-distance, distance + 1):
+            for dx in range(-distance, distance + 1):
                 if dx == 0 and dy == 0:
+                    continue
+                if circular and dx * dx + dy * dy > distance * distance:
                     continue
                 tx = player.pos.x + dx
                 ty = player.pos.y + dy

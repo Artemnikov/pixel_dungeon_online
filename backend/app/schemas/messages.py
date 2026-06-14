@@ -111,6 +111,18 @@ class UpgradeTalent(_ClientMessageBase):
     talent: str
 
 
+class ChooseArmorAbility(_ClientMessageBase):
+    type: Literal["CHOOSE_ARMOR_ABILITY"]
+    ability: str
+
+
+class UseComboMove(_ClientMessageBase):
+    type: Literal["USE_COMBO_MOVE"]
+    move: str
+    target_x: Optional[int] = None
+    target_y: Optional[int] = None
+
+
 class UseArmorAbility(_ClientMessageBase):
     type: Literal["USE_ARMOR_ABILITY"]
     ability: str
@@ -142,6 +154,15 @@ class MetamorphReplace(_ClientMessageBase):
 class AdminTeleport(_ClientMessageBase):
     type: Literal["ADMIN_TELEPORT"]
     target_floor: int
+
+
+class AdminLevelUp(_ClientMessageBase):
+    type: Literal["ADMIN_LEVEL_UP"]
+
+
+class AdminGiveItem(_ClientMessageBase):
+    type: Literal["ADMIN_GIVE_ITEM"]
+    item_kind: str
 
 
 class NpcInteract(_ClientMessageBase):
@@ -184,12 +205,16 @@ ClientMessage = Annotated[
         Wait,
         ChooseSubclass,
         UpgradeTalent,
+        ChooseArmorAbility,
+        UseComboMove,
         UseArmorAbility,
         TriggerBerserk,
         PreparationStrike,
         MetamorphChoose,
         MetamorphReplace,
         AdminTeleport,
+        AdminLevelUp,
+        AdminGiveItem,
         NpcInteract,
         ShopBuy,
         ShopSell,

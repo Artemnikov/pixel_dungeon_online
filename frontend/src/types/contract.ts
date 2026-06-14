@@ -619,6 +619,8 @@ export type ClientMessage =
   | { type: 'METAMORPH_CHOOSE'; talent: string }
   | { type: 'METAMORPH_REPLACE'; old_talent: string; new_talent: string }
   | { type: 'ADMIN_TELEPORT'; target_floor: number }
+  | { type: 'ADMIN_LEVEL_UP' }
+  | { type: 'ADMIN_GIVE_ITEM'; item_kind: string }
   | { type: 'NPC_INTERACT'; npc_id: string }
   | { type: 'SHOP_BUY'; npc_id: string; item_id: string }
   | { type: 'SHOP_SELL'; item_id: string }

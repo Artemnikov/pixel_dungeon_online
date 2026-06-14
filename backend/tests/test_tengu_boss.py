@@ -6,6 +6,8 @@ from app.engine.entities.mobs import Tengu
 from app.engine.dungeon.generator import TileType
 from app.engine.game.floor_state import FloorState
 from app.engine.manager import GameInstance
+from app.engine.systems.loot import roll_drops
+from app.engine.entities.subclasses import Subclass
 
 
 def make_floor(floor_id=10, w=10, h=10):
@@ -118,3 +120,23 @@ def test_tengu_throws_bomb_when_enraged_and_detonates():
     events = game.flush_events()
     assert any(e["type"] == "TENGU_BLAST" for e in events)
     assert player.hp < hp_before
+
+
+def test_tengu_mask_drops_for_player_without_subclass():
+    game = make_game(make_floor())
+    tengu = Tengu(id="t1", pos=Position(x=5, y=5), faction=Faction.DUNGEON)
+    player = game.add_player("p1", "Hero")
+    assert player.subclass_info.subclass is None
+
+    drops = roll_drops(tengu, {}, 5, 5, players=[player])
+    assert any(item.kind == "tengu_mask" for item in drops)
+
+
+def test_tengu_mask_does_not_drop_once_all_players_have_subclass():
+    game = make_game(make_floor())
+    tengu = Tengu(id="t1", pos=Position(x=5, y=5), faction=Faction.DUNGEON)
+    player = game.add_player("p1", "Hero")
+    player.subclass_info.subclass = Subclass.BERSERKER
+
+    drops = roll_drops(tengu, {}, 5, 5, players=[player])
+    assert not any(item.kind == "tengu_mask" for item in drops)

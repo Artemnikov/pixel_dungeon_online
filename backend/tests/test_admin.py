@@ -1,7 +1,7 @@
 import sys, os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-from app.engine.entities.base import Player, Position
+from app.engine.entities.base import Armor, Player, Position
 from app.engine.manager import GameInstance
 import uuid
 
@@ -63,3 +63,82 @@ def test_admin_get_state_visible_tiles_is_full_grid():
     state = game.get_state(player_id)
     expected_count = game.width * game.height
     assert len(state["visible_tiles"]) == expected_count
+
+
+def test_admin_level_up_grants_one_level():
+    game = GameInstance("test-admin-lvl")
+    pid = str(uuid.uuid4())
+    p = game.add_player(pid, "Admin", is_admin=True)
+    old_level = p.level
+    old_max_hp = p.max_hp
+    game.admin_level_up(pid)
+    assert p.level == old_level + 1
+    assert p.max_hp == old_max_hp + 5
+    assert p.hp == old_max_hp + 5  # healed by the level-up
+    assert p.experience == 0
+
+
+def test_admin_level_up_non_admin_noop():
+    game = GameInstance("test-admin-lvl-na")
+    pid = str(uuid.uuid4())
+    p = game.add_player(pid, "Normal", is_admin=False)
+    old = p.level
+    game.admin_level_up(pid)
+    assert p.level == old
+
+
+def test_admin_level_up_max_level_noop():
+    game = GameInstance("test-admin-lvl-max")
+    pid = str(uuid.uuid4())
+    p = game.add_player(pid, "Admin", is_admin=True)
+    p.level = 30
+    p.experience = 0
+    game.admin_level_up(pid)
+    assert p.level == 30
+
+
+def test_admin_give_item_non_admin_noop():
+    game = GameInstance("test-admin-give-na")
+    pid = str(uuid.uuid4())
+    p = game.add_player(pid, "Normal", is_admin=False)
+    before = len(p.belongings.backpack.items)
+    game.admin_give_item(pid, "health_potion")
+    assert len(p.belongings.backpack.items) == before
+
+
+def test_admin_give_item_unknown_kind_noop():
+    game = GameInstance("test-admin-give-unknown")
+    pid = str(uuid.uuid4())
+    p = game.add_player(pid, "Admin", is_admin=True)
+    before = len(p.belongings.backpack.items)
+    game.admin_give_item(pid, "not_a_real_item")
+    assert len(p.belongings.backpack.items) == before
+
+
+def test_admin_give_item_adds_to_backpack():
+    game = GameInstance("test-admin-give")
+    pid = str(uuid.uuid4())
+    p = game.add_player(pid, "Admin", is_admin=True)
+    game.admin_give_item(pid, "health_potion")
+    kinds = [item.kind for item in p.belongings.backpack.items]
+    assert "health_potion" in kinds
+
+
+def test_admin_give_item_drops_on_floor_when_backpack_full():
+    game = GameInstance("test-admin-give-full")
+    pid = str(uuid.uuid4())
+    p = game.add_player(pid, "Admin", is_admin=True)
+    p.pos = Position(x=5, y=5)
+    p.belongings.backpack.items = [
+        Armor(id=str(uuid.uuid4()), name=f"Armor {i}", tier=1) for i in range(p.belongings.backpack.capacity)
+    ]
+    before = len(p.belongings.backpack.items)
+    floor = game._get_or_create_floor(p.floor_id)
+    before_dropped = {item.id for item in floor.items.values() if item.kind == "health_potion"}
+
+    game.admin_give_item(pid, "health_potion")
+
+    assert len(p.belongings.backpack.items) == before
+    dropped = [item for item in floor.items.values() if item.kind == "health_potion" and item.id not in before_dropped]
+    assert len(dropped) == 1
+    assert dropped[0].pos == Position(x=5, y=5)

@@ -1,37 +1,37 @@
-const COMBO_MOVE_NAMES = {
-  2: 'Clobber',
-  4: 'Slam',
-  6: 'Parry',
-  8: 'Crush',
-  10: 'Fury',
+const COMBO_MOVES = {
+  clobber: { count: 2, tint: '#00ff00', label: 'Clobber' },
+  slam: { count: 4, tint: '#ccff00', label: 'Slam' },
+  parry: { count: 6, tint: '#ffff00', label: 'Parry' },
+  crush: { count: 8, tint: '#ffcc00', label: 'Crush' },
+  fury: { count: 10, tint: '#ff0000', label: 'Fury' },
 };
 
 export default function ComboDisplay({
   subclass,
   comboCount,
-  comboMax = 10,
+  onUseComboMove,
 }) {
   if (subclass !== 'gladiator' || !comboCount) return null;
 
-  const unlockedMoves = Object.entries(COMBO_MOVE_NAMES)
-    .filter(([threshold]) => comboCount >= Number(threshold))
-    .map(([, name]) => name);
+  const unlockedMoves = Object.entries(COMBO_MOVES)
+    .filter(([, move]) => comboCount >= move.count);
 
   return (
     <div className="combo-container">
       <div className="combo-label">
         Combo <span className="combo-count">{comboCount}</span>
-        <span className="combo-max">/{comboMax}</span>
-      </div>
-      <div className="combo-bar-track">
-        <div className="combo-bar-fill" style={{
-          width: `${(comboCount / comboMax) * 100}%`
-        }} />
       </div>
       {unlockedMoves.length > 0 && (
         <div className="combo-moves">
-          {unlockedMoves.map(m => (
-            <span key={m} className="combo-move">{m}</span>
+          {unlockedMoves.map(([id, move]) => (
+            <button
+              key={id}
+              className="combo-move-btn"
+              style={{ color: move.tint, borderColor: move.tint }}
+              onClick={() => onUseComboMove?.(id)}
+            >
+              {move.label}
+            </button>
           ))}
         </div>
       )}

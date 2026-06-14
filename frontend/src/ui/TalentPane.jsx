@@ -40,6 +40,8 @@ export default function TalentPane({
   error,
   metamorphMode,
   onMetamorphChoose,
+  isAdmin,
+  onAdminLevelUp,
 }) {
   const [info, setInfo] = useState(null);
 
@@ -108,6 +110,9 @@ export default function TalentPane({
         <div className="talent-header">
           <h2 className="talent-title">{metamorphMode ? 'Replace a talent' : 'Talents'}</h2>
           {!metamorphMode && <span className="talent-level-badge">Lv.{level}</span>}
+          {!metamorphMode && isAdmin && (
+            <button className="admin-level-btn" onClick={onAdminLevelUp}>Level Up</button>
+          )}
           {!metamorphMode && subclass && (
             <span className="talent-badge subclass-badge" title="Tap to view subclass info">
               {subclass}

@@ -27,7 +27,7 @@ import { itemRects, useRectsReady } from '../rendering/spriteRects';
 export default function ItemIcon({ item, size = 32, coords: override }) {
   const ready = useRectsReady(itemRects);
   if (!override && !item) return null;
-  const coords = override || coordsForItem(item) || [8, 13];
+  const coords = override || coordsForItem(item) || [0, 0];
   const [col, row] = coords;
   const scale = size / 16;
 
@@ -38,10 +38,13 @@ export default function ItemIcon({ item, size = 32, coords: override }) {
   const w = rect ? rect.w : 16;
   const h = rect ? rect.h : 16;
 
+  const showLevel = item && item.level_known && item.level > 0;
+
   return (
     <div
       className="item-icon"
       style={{
+        position: 'relative',
         width: w * scale,
         height: h * scale,
         backgroundImage: `url(${itemsSrc})`,
@@ -49,6 +52,23 @@ export default function ItemIcon({ item, size = 32, coords: override }) {
         backgroundSize: `${256 * scale}px ${512 * scale}px`,
         imageRendering: 'pixelated',
       }}
-    />
+    >
+      {showLevel && (
+        <span
+          style={{
+            position: 'absolute',
+            right: 0,
+            bottom: 0,
+            fontSize: 10,
+            lineHeight: 1,
+            color: '#fff',
+            textShadow: '1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000',
+            pointerEvents: 'none',
+          }}
+        >
+          +{item.level}
+        </span>
+      )}
+    </div>
   );
 }

@@ -25,6 +25,10 @@ PRISON_MAX_FLOOR = 9
 
 AUTO_MOVE_INTERVAL = 0.15
 
+# How many consecutive blocked steps a queued MOVE_TO path tolerates (a mob
+# briefly standing on the next tile) before giving up on the route.
+PATH_BLOCKED_GIVE_UP_TICKS = 6
+
 HEAL_TICK_INTERVAL = 20
 ROOM_HEAL_AMOUNT = 10
 PASSIVE_REGEN_INTERVAL = 10

@@ -35,9 +35,16 @@ export default function TalentButton({
   const btnRef = useRef(null);
   const [pressed, setPressed] = useState(false);
   const [burstKey, setBurstKey] = useState(0);
+  const mountedRef = useRef(false);
 
-  // Trigger burst when upgradedTalentId matches this talent (SPD-style particle effect)
+  // Trigger burst when upgradedTalentId matches this talent (SPD-style particle effect).
+  // Only plays sound when upgradedTalentId CHANGES to match (real upgrade), not on initial
+  // mount with a stale value (e.g. pane reopened after an incomplete animation).
   useEffect(() => {
+    if (!mountedRef.current) {
+      mountedRef.current = true;
+      return;
+    }
     if (upgradedTalentId === talentId && !locked) {
       AudioManager.play('LEVELUP', 1.2);
       // eslint-disable-next-line react-hooks/set-state-in-effect
@@ -99,11 +106,11 @@ export default function TalentButton({
         className="talent-fill"
         style={{
           position: 'absolute',
-          bottom: 14,
+          bottom: 4,
           left: 4,
           width: `${fillRatio * 32}px`,
           height: 10,
-          background: locked ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.27)',
+          background: '#ffff44',
           borderRadius: 0,
         }}
       />

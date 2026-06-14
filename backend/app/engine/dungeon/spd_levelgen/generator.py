@@ -72,6 +72,9 @@ class RolledItem:
     is_artifact: bool
     is_upgradable: bool
     level: int
+    # Deck index picked for WAM categories (e.g. WEP_T1.._WEP_T5/MIS_T1.._MIS_T5)
+    # -- selects a concrete item name from WEP_TIER_ORDER. 0 for non-WAM kinds.
+    item_index: int = 0
 
 
 # Generator.Category enum order + (firstProb, secondProb, kind, defaultProbs,
@@ -262,10 +265,10 @@ def _roll_gold_item(rng: SPDRandom, depth: int) -> None:
     rng.IntRange(30 + depth * 10, 60 + depth * 20)
 
 
-def _finish_roll(rng: SPDRandom, cat: str, kind: str) -> RolledItem:
+def _finish_roll(rng: SPDRandom, cat: str, kind: str, item_index: int = 0) -> RolledItem:
     if kind == WAM:
         n = _roll_wam(rng)
-        return RolledItem(category=cat, is_artifact=False, is_upgradable=True, level=n)
+        return RolledItem(category=cat, is_artifact=False, is_upgradable=True, level=n, item_index=item_index)
     if kind == WANDRING:
         n = _roll_wandring(rng)
         return RolledItem(category=cat, is_artifact=False, is_upgradable=True, level=n)
@@ -297,7 +300,7 @@ def _random_deck_category(state: GeneratorState, rng: SPDRandom, cat: str) -> Ro
     if exotic:
         rng.Float()  # always fires for POTION/SCROLL (every class in regToExo); never substitutes (baseline chance == 0)
 
-    return _finish_roll(rng, cat, kind)
+    return _finish_roll(rng, cat, kind, item_index=i)
 
 
 def _random_armor(rng: SPDRandom, depth: int) -> RolledItem:

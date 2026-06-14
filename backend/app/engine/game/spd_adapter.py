@@ -26,6 +26,7 @@ from app.engine.entities.base import (
     HealthPotion,
     Item,
     Key,
+    make_named_melee_weapon,
     Mob as MobEntity,
     Position,
     Scroll,
@@ -34,6 +35,7 @@ from app.engine.entities.base import (
     Wand,
     Weapon,
 )
+from app.engine.entities.weapon_defs import WEP_TIER_ORDER
 from app.engine.entities.mobs import (
     AcidicScorpio,
     AlbinoRat,
@@ -303,6 +305,14 @@ def _spawn_item(heap_items: list, cell_x: int, cell_y: int) -> Item:
     return Gold(id=str(uuid.uuid4()), pos=Position(x=cell_x, y=cell_y))
 
 
+def _make_melee_weapon(tier_category: str, item_index: int, level: int, iid: str, pos: Position) -> Item:
+    """Builds a concrete melee weapon for a WEP_T1..WEP_T5 roll, picking the
+    weapon name via `item_index` (the deck index already consumed by
+    generator.py)."""
+    name = WEP_TIER_ORDER[tier_category][item_index]
+    return make_named_melee_weapon(name, level=level, id=iid, pos=pos)
+
+
 def _rolled_item_to_item(ri: RolledItem, cx: int, cy: int) -> Item:
     iid = str(uuid.uuid4())
     pos = Position(x=cx, y=cy)
@@ -320,7 +330,9 @@ def _rolled_item_to_item(ri: RolledItem, cx: int, cy: int) -> Item:
         return Stone(id=iid, pos=pos, damage=1, range=5)
     if ri.category in ("WAND",):
         return Wand(id=iid, pos=pos, name="Wand")
-    if ri.category in ("WEAPON", "WEP_T1", "WEP_T2", "WEP_T3", "WEP_T4", "WEP_T5"):
+    if ri.category in WEP_TIER_ORDER:
+        return _make_melee_weapon(ri.category, ri.item_index, ri.level, iid, pos)
+    if ri.category == "WEAPON":
         return Weapon(id=iid, pos=pos, name="Weapon", damage=2 + ri.level, range=1,
                       strength_requirement=10, attack_cooldown=2.0)
     if ri.category == "ARMOR":

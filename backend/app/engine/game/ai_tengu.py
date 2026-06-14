@@ -361,7 +361,7 @@ class TenguAIMixin:
                           players=list(self._players_on_floor(floor_id)))
                     self.add_event("DEATH", {"target": m.id}, floor_id=floor_id)
                     self.handle_mob_death(m, floor, floor_id)
-                    for item in roll_drops(m, self.drop_counters, m.pos.x, m.pos.y):
+                    for item in roll_drops(m, self.drop_counters, m.pos.x, m.pos.y, players=list(self._players_on_floor(floor_id))):
                         floor.items[item.id] = item
 
         self.add_event("TENGU_BLAST", {"mob": tengu.id, "x": x, "y": y}, floor_id=floor_id)

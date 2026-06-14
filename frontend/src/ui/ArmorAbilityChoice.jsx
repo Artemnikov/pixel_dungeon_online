@@ -91,7 +91,7 @@ export default function ArmorAbilityChoice({ options, onChoose, onSkip, abilityS
           <span className="choice-header-icon">🛡</span>
           <span className="choice-header-title">Choose an Armor Ability</span>
         </div>
-        <p className="choice-subtitle">You have reached level 13. Imbue your armor with a powerful ability.</p>
+        <p className="choice-subtitle">You found the King's Crown. Imbue your armor with a powerful ability.</p>
         <div className="choice-list">
           {options.map(tid => {
             const ability = abilitySelectors?.[tid] || talentIdToAbility(tid);
