@@ -75,6 +75,12 @@ function inspectScreenPos(canvas, cam, zoom, anchor, mobs, visible) {
   return { left, top: below ? bottomY + 6 : topY - 6, below };
 }
 
+// Prompt shown atop the item picker for scroll item-selector flows
+// (SCROLL_SELECT_TARGET), keyed by scroll kind.
+const SCROLL_PICKER_TITLES = {
+  scroll_of_upgrade: 'Choose an item to upgrade',
+};
+
 function App() {
   // --- screen flow / session state ---
   const [gameState, setGameState] = useState('WELCOME');
@@ -143,6 +149,7 @@ function App() {
   const [metamorphOptions, setMetamorphOptions] = useState(null);
   const [shopWindow, setShopWindow] = useState(null);
   const [impWindow, setImpWindow] = useState(null);
+  const [scrollPickerData, setScrollPickerData] = useState(null);
   const [showItemBrowser, setShowItemBrowser] = useState(false);
   const [itemCatalog, setItemCatalog] = useState([]);
 
@@ -280,7 +287,7 @@ function App() {
   const assetImages = useAssetImages();
   useMusicByDepth({ enabled: gameState === 'PLAYING', depth, bossFightActive: bossFightActive && !!bossInfo, musicRef });
 
-  useGameSocket({
+  const { sendSelectScrollTarget } = useGameSocket({
     enabled: gameState === 'PLAYING',
     gameId, sessionId, selectedClass, difficulty, challenges, playerName,
     setConnectionStatus,
@@ -319,6 +326,7 @@ function App() {
     onImpDialogue: ({ npc, text, can_claim, tokens }) => {
       setImpWindow({ npc, text, canClaim: can_claim, tokens });
     },
+    onScrollSelectTarget: (data) => setScrollPickerData(data),
     onTalentUpgraded: ({ talent }) => {
       // STATE_UPDATE already carries the correct server-recomputed
       // talent_points — no need to decrement locally.
@@ -1037,6 +1045,23 @@ function App() {
             setQuickslotPicker(null);
           }}
           onClose={() => setQuickslotPicker(null)}
+        />
+      )}
+
+      {scrollPickerData && (
+        <WndBag
+          belongings={belongings}
+          gold={gold}
+          energy={energy}
+          strength={myStats.strength}
+          selectMode
+          itemFilter={(item) => scrollPickerData.candidates.includes(item.id)}
+          title={SCROLL_PICKER_TITLES[scrollPickerData.scroll_kind] ?? 'Choose an item'}
+          onSelectItem={(item) => {
+            sendSelectScrollTarget(scrollPickerData.scroll_id, item.id);
+            setScrollPickerData(null);
+          }}
+          onClose={() => setScrollPickerData(null)}
         />
       )}
 

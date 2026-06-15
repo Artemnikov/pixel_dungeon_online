@@ -401,6 +401,13 @@ export interface TalentMetamorphedEvent {
   data: { player: string; old_talent: string; new_talent: string };
 }
 
+/** Scroll item-selector flow: server asks the player to pick a target item
+ * for a scroll (e.g. Scroll of Upgrade). `candidates` lists valid item ids. */
+export interface ScrollSelectTargetEvent {
+  type: 'SCROLL_SELECT_TARGET';
+  data: { player: string; scroll_id: string; scroll_kind: string; candidates: string[] };
+}
+
 /** Goo boss: pumped-up charge telegraph. `tiles` lists the threatened cells
  * (cleared with an empty array when the charge is released or cancelled). */
 export interface GooChargeEvent {
@@ -518,6 +525,7 @@ export type GameEvent =
   | MetamorphOpenEvent
   | MetamorphOptionsEvent
   | TalentMetamorphedEvent
+  | ScrollSelectTargetEvent
   | GooChargeEvent
   | GooEnrageEvent
   | GooFightStartedEvent
@@ -624,4 +632,5 @@ export type ClientMessage =
   | { type: 'NPC_INTERACT'; npc_id: string }
   | { type: 'SHOP_BUY'; npc_id: string; item_id: string }
   | { type: 'SHOP_SELL'; item_id: string }
-  | { type: 'IMP_CLAIM_REWARD'; npc_id: string };
+  | { type: 'IMP_CLAIM_REWARD'; npc_id: string }
+  | { type: 'SELECT_SCROLL_TARGET'; scroll_id: string; item_id: string };

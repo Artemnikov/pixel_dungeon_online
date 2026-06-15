@@ -171,6 +171,7 @@ interface HookProps {
   onTenguFightStarted?: (data: { mob: string }) => void;
   onShopOpen?: (data: { npc: string; stock: SerializedItem[]; gold: number }) => void;
   onImpDialogue?: (data: { npc: string; text: string; can_claim: boolean; tokens?: number | null }) => void;
+  onScrollSelectTarget?: (data: { player: string; scroll_id: string; scroll_kind: string; candidates: string[] }) => void;
 }
 
 type HandlerCtx = Pick<
@@ -199,6 +200,7 @@ type HandlerCtx = Pick<
   onTenguFightStarted?: HookProps['onTenguFightStarted'];
   onShopOpen?: HookProps['onShopOpen'];
   onImpDialogue?: HookProps['onImpDialogue'];
+  onScrollSelectTarget?: HookProps['onScrollSelectTarget'];
 };
 
 export default function useGameSocket({
@@ -249,6 +251,7 @@ export default function useGameSocket({
   onTenguFightStarted,
   onShopOpen,
   onImpDialogue,
+  onScrollSelectTarget,
 }: HookProps) {
   useEffect(() => {
     if (!enabled) return;
@@ -535,7 +538,7 @@ export default function useGameSocket({
             searchEffectsRef, floatingTextRef, warnedTilesRef,
             onLevelUp, onSubclassChoiceAvailable, onArmorAbilityChoiceAvailable, onTalentUpgraded,
             onMetamorphOpen, onMetamorphOptions, onGooFightStarted, onTenguFightStarted,
-            onShopOpen, onImpDialogue,
+            onShopOpen, onImpDialogue, onScrollSelectTarget,
           });
         });
       }
@@ -557,6 +560,15 @@ export default function useGameSocket({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enabled, gameId, sessionId]);
+
+  const sendSelectScrollTarget = (scrollId: string, itemId: string) => {
+    const ws = socketRef.current;
+    if (ws?.readyState === WebSocket.OPEN) {
+      sendMessage(ws, { type: 'SELECT_SCROLL_TARGET', scroll_id: scrollId, item_id: itemId });
+    }
+  };
+
+  return { sendSelectScrollTarget };
 }
 
 function handleEvent(event: GameEvent, {
@@ -565,7 +577,7 @@ function handleEvent(event: GameEvent, {
   searchEffectsRef, floatingTextRef, warnedTilesRef,
   onLevelUp, onSubclassChoiceAvailable, onArmorAbilityChoiceAvailable, onTalentUpgraded,
   onMetamorphOpen, onMetamorphOptions, onGooFightStarted, onTenguFightStarted,
-  onShopOpen, onImpDialogue,
+  onShopOpen, onImpDialogue, onScrollSelectTarget,
 }: HandlerCtx) {
   if (event.type === 'PLAY_SOUND') {
     AudioManager.play(event.data.sound);
@@ -1108,6 +1120,13 @@ function handleEvent(event: GameEvent, {
   if (event.type === 'COLLECT_DEW') {
     if (event.data.player === myPlayerIdRef.current) {
       AudioManager.play('DEWDROP');
+    }
+    return;
+  }
+
+  if (event.type === 'SCROLL_SELECT_TARGET') {
+    if (event.data.player === myPlayerIdRef.current) {
+      onScrollSelectTarget?.(event.data);
     }
     return;
   }
