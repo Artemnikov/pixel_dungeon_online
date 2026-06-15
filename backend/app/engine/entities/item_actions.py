@@ -192,11 +192,20 @@ def action_affix(game, player, item, tx=None, ty=None) -> None:
     game.add_event("AFFIX_SEAL", {"player": player.id, "armor": armor.id}, floor_id=player.floor_id, source_player_id=player.id)
 
 
+def _maybe_proc_inscribed_stealth(game, player) -> None:
+    """Inscribed Stealth talent: reading any scroll grants brief invisibility."""
+    inscribed_stealth = player.subclass_info.talent_info.level("inscribed_stealth")
+    if inscribed_stealth > 0:
+        player.add_buff("invisibility", duration=1.0 * (1 + 2 * inscribed_stealth), level=1)
+        game.add_event("PLAY_SOUND", {"sound": "MELD"}, floor_id=player.floor_id, source_player_id=player.id)
+
+
 def action_read(game, player, item, tx=None, ty=None) -> None:
     game.identify_kind(item)
     effect = getattr(item, "kind", "")
 
     if effect in PREDICATE:
+        _maybe_proc_inscribed_stealth(game, player)
         candidates = [it.id for it in player_inventory_items(player) if PREDICATE[effect](it, game)]
         if not candidates:
             game.add_event("READ", {"player": player.id, "item": item.id}, floor_id=player.floor_id)
@@ -220,10 +229,7 @@ def action_read(game, player, item, tx=None, ty=None) -> None:
             player.quickslot.convert_to_placeholder(removed)
         game.add_event("METAMORPH_OPEN", {"player": player.id}, floor_id=player.floor_id)
         return
-    inscribed_stealth = player.subclass_info.talent_info.level("inscribed_stealth")
-    if inscribed_stealth > 0:
-        player.add_buff("invisibility", duration=1.0 * (1 + 2 * inscribed_stealth), level=1)
-        game.add_event("PLAY_SOUND", {"sound": "MELD"}, floor_id=player.floor_id, source_player_id=player.id)
+    _maybe_proc_inscribed_stealth(game, player)
 
     game.add_event("READ", {"player": player.id, "item": item.id}, floor_id=player.floor_id)
 
@@ -231,8 +237,7 @@ def action_read(game, player, item, tx=None, ty=None) -> None:
 def _apply_upgrade_target(game, player, target_item) -> None:
     target_item.level += 1
     target_item.level_known = True
-    if target_item.cursed:
-        target_item.cursed = False
+    target_item.cursed = False
     target_item.cursed_known = True
 
 
@@ -254,11 +259,6 @@ def apply_scroll_target(game, player, scroll_item, target_item) -> None:
     removed = player.belongings.backpack.detach(scroll_item.id)
     if removed is not None and player.belongings.get_item(scroll_item.id) is None:
         player.quickslot.convert_to_placeholder(removed)
-
-    inscribed_stealth = player.subclass_info.talent_info.level("inscribed_stealth")
-    if inscribed_stealth > 0:
-        player.add_buff("invisibility", duration=1.0 * (1 + 2 * inscribed_stealth), level=1)
-        game.add_event("PLAY_SOUND", {"sound": "MELD"}, floor_id=player.floor_id, source_player_id=player.id)
 
     game.add_event("READ", {"player": player.id, "item": scroll_item.id}, floor_id=player.floor_id)
 

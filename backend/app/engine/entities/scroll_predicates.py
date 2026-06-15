@@ -34,14 +34,10 @@ def player_inventory_items(player: "Player") -> List["ItemBase"]:
 
 
 def is_upgradable(item, game) -> bool:
-    """True if `item` is a weapon/armor/wand/ring/artifact and not already at
-    its level cap (if one exists)."""
+    """True if `item` is a weapon/armor/wand/ring/artifact with a `level`."""
     if item.category not in UPGRADABLE_CATEGORIES:
         return False
     if not hasattr(item, "level"):
-        return False
-    level_cap = getattr(item, "LEVEL_CAP", None)
-    if level_cap is not None and item.level >= level_cap:
         return False
     return True
 
