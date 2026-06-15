@@ -1,7 +1,8 @@
-from app.engine.entities.base import ScrollOfTeleportation, ScrollOfRecharging, ScrollOfLullaby, ScrollOfTerror, ScrollOfRage, ScrollOfRetribution, ScrollOfIdentify, ScrollOfRemoveCurse, ScrollOfTransmutation, ScrollOfMirrorImage, ScrollOfMagicMapping, Wand, Position, Mob, Faction, HealthPotion, Seed, Dagger, Gold, is_immune
+from app.engine.entities.base import ScrollOfTeleportation, ScrollOfRecharging, ScrollOfLullaby, ScrollOfTerror, ScrollOfRage, ScrollOfRetribution, ScrollOfIdentify, ScrollOfRemoveCurse, ScrollOfTransmutation, ScrollOfMirrorImage, ScrollOfMagicMapping, ScrollOfMetamorphosis, Wand, Position, Mob, Faction, HealthPotion, Seed, Dagger, Gold, is_immune
 from app.engine.entities.mobs import Tengu, MirrorImage
 from app.engine.entities.item_actions import action_read
 from app.engine.entities.scroll_predicates import player_inventory_items
+from app.engine.entities.subclasses import Talent
 from app.engine.dungeon.constants import TileType
 from app.engine.manager import GameInstance
 
@@ -863,3 +864,37 @@ def test_scroll_of_magic_mapping_populates_mapped_tiles_in_state():
 
     state = g.get_state(p.id)
     assert len(state["mapped_tiles"]) == floor.width * floor.height
+
+
+def test_scroll_of_metamorphosis_opens_then_replaces_talent():
+    g = GameInstance("t")
+    p = _player(g)
+    p.subclass_info.talent_info.talents[Talent.HEARTY_MEAL] = 1
+
+    scroll = ScrollOfMetamorphosis(id="scroll1")
+    p.belongings.backpack.items.append(scroll)
+
+    action_read(g, p, scroll)
+
+    open_events = [e for e in g.events if e["type"] == "METAMORPH_OPEN"]
+    assert len(open_events) == 1
+    assert open_events[0]["data"]["player"] == p.id
+    assert p.belongings.get_item("scroll1") is None
+
+    assert g.metamorph_choose(p.id, Talent.HEARTY_MEAL) is True
+    options_events = [e for e in g.events if e["type"] == "METAMORPH_OPTIONS"]
+    assert len(options_events) == 1
+    options = options_events[0]["data"]["options"]
+    assert options
+    assert Talent.HEARTY_MEAL not in options
+
+    new_talent = options[0]
+    assert g.metamorph_replace(p.id, Talent.HEARTY_MEAL, new_talent) is True
+    assert Talent.HEARTY_MEAL not in p.subclass_info.talent_info.talents
+    assert p.subclass_info.talent_info.talents[new_talent] == 1
+    assert p.subclass_info.metamorphed_talents[Talent.HEARTY_MEAL] == new_talent
+
+    replaced_events = [e for e in g.events if e["type"] == "TALENT_METAMORPHED"]
+    assert len(replaced_events) == 1
+    assert replaced_events[0]["data"]["old_talent"] == Talent.HEARTY_MEAL
+    assert replaced_events[0]["data"]["new_talent"] == new_talent
