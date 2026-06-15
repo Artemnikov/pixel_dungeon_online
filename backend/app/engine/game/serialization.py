@@ -216,7 +216,7 @@ class SerializationMixin:
                          and ((m.pos.x, m.pos.y) in visible_set or (m.pos.x, m.pos.y) in mind_vision_set)],
                 "items": [self._serialize_floor_item(i) for i in floor.items.values() if i.pos and (i.pos.x, i.pos.y) in visible_set],
                 "visible_tiles": visible_tiles,
-                "mapped_tiles": [(x, y) for y in range(floor.height) for x in range(floor.width)] if floor.mapped else [],
+                "mapped_tiles": floor.mapped_tiles if floor.mapped else [],
                 "open_doors": self._get_open_doors(floor),
                 "grid": floor.grid,
                 "width": floor.width,

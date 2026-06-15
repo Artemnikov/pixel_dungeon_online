@@ -28,6 +28,7 @@ class FloorState:
     flags: Optional[FloorFlagMaps] = None
     respawn_counter: int = 0
     mapped: bool = False
+    mapped_tiles: List[Tuple[int, int]] = field(default_factory=list)
     mob_limit: int = 0
     plants: Dict[Tuple[int, int], Any] = field(default_factory=dict)
     blob_areas: Dict[str, Any] = field(default_factory=dict)

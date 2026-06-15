@@ -332,6 +332,7 @@ def action_read(game, player, item, tx=None, ty=None) -> None:
     elif effect == "scroll_of_magic_mapping":
         floor = game._get_or_create_floor(player.floor_id)
         floor.mapped = True
+        floor.mapped_tiles = [(x, y) for y in range(floor.height) for x in range(floor.width)]
         patches = []
         found_secret = False
         for (tx, ty), actual_tile in list(floor.hidden_doors.items()):
