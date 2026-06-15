@@ -27,6 +27,7 @@ class FloorState:
     generation_meta: Dict[str, object] = field(default_factory=dict)
     flags: Optional[FloorFlagMaps] = None
     respawn_counter: int = 0
+    mapped: bool = False
     mob_limit: int = 0
     plants: Dict[Tuple[int, int], Any] = field(default_factory=dict)
     blob_areas: Dict[str, Any] = field(default_factory=dict)

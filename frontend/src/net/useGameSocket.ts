@@ -514,6 +514,10 @@ export default function useGameSocket({
         newVisible.forEach(t => visionRef.current.discovered.add(t));
       }
 
+      if (data.mapped_tiles && data.mapped_tiles.length > 0) {
+        data.mapped_tiles.forEach(t => visionRef.current.discovered.add(`${t[0]},${t[1]}`));
+      }
+
       const myPlayer = data.players.find(p => p.id === myPlayerIdRef.current);
       if (myPlayer?.is_admin && gridRef.current.length > 0) {
         const allTiles = new Set<string>();

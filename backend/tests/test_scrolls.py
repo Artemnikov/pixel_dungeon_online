@@ -1,7 +1,8 @@
-from app.engine.entities.base import ScrollOfTeleportation, ScrollOfRecharging, ScrollOfLullaby, ScrollOfTerror, ScrollOfRage, ScrollOfRetribution, ScrollOfIdentify, ScrollOfRemoveCurse, ScrollOfTransmutation, ScrollOfMirrorImage, Wand, Position, Mob, Faction, HealthPotion, Seed, Dagger, Gold, is_immune
+from app.engine.entities.base import ScrollOfTeleportation, ScrollOfRecharging, ScrollOfLullaby, ScrollOfTerror, ScrollOfRage, ScrollOfRetribution, ScrollOfIdentify, ScrollOfRemoveCurse, ScrollOfTransmutation, ScrollOfMirrorImage, ScrollOfMagicMapping, Wand, Position, Mob, Faction, HealthPotion, Seed, Dagger, Gold, is_immune
 from app.engine.entities.mobs import Tengu, MirrorImage
 from app.engine.entities.item_actions import action_read
 from app.engine.entities.scroll_predicates import player_inventory_items
+from app.engine.dungeon.constants import TileType
 from app.engine.manager import GameInstance
 
 
@@ -807,3 +808,58 @@ def test_refresh_mirror_image_stats_removes_clone_when_owner_left_floor():
 
     death_events = [e for e in g.events if e["type"] == "DEATH" and e["data"]["target"] == clone.id]
     assert len(death_events) == 1
+
+
+def test_scroll_of_magic_mapping_marks_floor_mapped_and_consumes_scroll():
+    g = GameInstance("t")
+    p = _player(g)
+    floor = g._get_or_create_floor(p.floor_id)
+
+    scroll = ScrollOfMagicMapping(id="scroll_mm1")
+    p.belongings.backpack.collect(scroll)
+
+    action_read(g, p, scroll)
+
+    assert floor.mapped is True
+    assert p.belongings.get_item(scroll.id) is None
+
+
+def test_scroll_of_magic_mapping_reveals_hidden_door_and_emits_map_patch():
+    g = GameInstance("t")
+    p = _player(g)
+    floor = g._get_or_create_floor(p.floor_id)
+
+    # Pick a cell far from the player and stash a hidden door there.
+    tx, ty = 1, 1
+    if (tx, ty) == (p.pos.x, p.pos.y):
+        tx, ty = 2, 2
+    actual_tile = floor.grid[ty][tx]
+    floor.grid[ty][tx] = TileType.SECRET_DOOR
+    floor.hidden_doors[(tx, ty)] = actual_tile
+
+    scroll = ScrollOfMagicMapping(id="scroll_mm2")
+    p.belongings.backpack.collect(scroll)
+
+    action_read(g, p, scroll)
+
+    assert (tx, ty) not in floor.hidden_doors
+    assert floor.grid[ty][tx] == actual_tile
+
+    patch_events = [e for e in g.events if e["type"] == "MAP_PATCH"]
+    assert len(patch_events) == 1
+    patched = patch_events[0]["data"]["tiles"]
+    assert any(t["x"] == tx and t["y"] == ty and t["tile"] == actual_tile for t in patched)
+
+
+def test_scroll_of_magic_mapping_populates_mapped_tiles_in_state():
+    g = GameInstance("t")
+    p = _player(g)
+    floor = g._get_or_create_floor(p.floor_id)
+
+    scroll = ScrollOfMagicMapping(id="scroll_mm3")
+    p.belongings.backpack.collect(scroll)
+
+    action_read(g, p, scroll)
+
+    state = g.get_state(p.id)
+    assert len(state["mapped_tiles"]) == floor.width * floor.height

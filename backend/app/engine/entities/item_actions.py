@@ -329,6 +329,31 @@ def action_read(game, player, item, tx=None, ty=None) -> None:
         removed = player.belongings.backpack.detach(item.id)
         if removed is not None and player.belongings.get_item(item.id) is None:
             player.quickslot.convert_to_placeholder(removed)
+    elif effect == "scroll_of_magic_mapping":
+        floor = game._get_or_create_floor(player.floor_id)
+        floor.mapped = True
+        patches = []
+        found_secret = False
+        for (tx, ty), actual_tile in list(floor.hidden_doors.items()):
+            floor.hidden_doors.pop((tx, ty))
+            floor.grid[ty][tx] = actual_tile
+            patches.append({"x": tx, "y": ty, "tile": actual_tile})
+            found_secret = True
+        for (tx, ty), trap in floor.traps.items():
+            if trap.hidden:
+                trap.hidden = False
+                found_secret = True
+                if floor.grid[ty][tx] == TileType.SECRET_TRAP:
+                    floor.grid[ty][tx] = TileType.TRAP
+                    patches.append({"x": tx, "y": ty, "tile": TileType.TRAP})
+        if patches:
+            floor.rebuild_flags()
+            game.add_event("MAP_PATCH", {"tiles": patches}, floor_id=player.floor_id)
+        if found_secret:
+            game.add_event("PLAY_SOUND", {"sound": "SECRET"}, player_id=player.id)
+        removed = player.belongings.backpack.detach(item.id)
+        if removed is not None and player.belongings.get_item(item.id) is None:
+            player.quickslot.convert_to_placeholder(removed)
     elif effect == "scroll_of_mirror_image":
         floor = game._get_or_create_floor(player.floor_id)
         clone_ids = game._spawn_mirror_images(player, floor, player.floor_id)

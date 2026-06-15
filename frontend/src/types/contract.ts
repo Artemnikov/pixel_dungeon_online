@@ -576,6 +576,7 @@ export interface StateUpdateMessage {
   mobs: Mob[];
   items: SerializedItem[];
   visible_tiles: Vec2[];
+  mapped_tiles?: Vec2[];
   traps: TrapInfo[];
   gold: number;
   energy: number;
