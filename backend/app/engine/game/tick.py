@@ -292,9 +292,16 @@ class TickMixin:
                     if self._update_tengu(mob, floor, floor_id):
                         continue
 
+                move_times = getattr(self, "_mob_move_times", None)
+                if move_times is None:
+                    move_times = self._mob_move_times = {}
+                now = time.time()
+                move_interval = 2 * AUTO_MOVE_INTERVAL / max(0.1, mob.speed)
+                can_move = now - move_times.get(mob.id, 0.0) >= move_interval
+
                 target_player = self._find_nearest_player(mob.pos, floor_id)
                 if mob.ai_state == "fleeing":
-                    if target_player:
+                    if can_move and target_player:
                         dx = mob.pos.x - target_player.pos.x
                         dy = mob.pos.y - target_player.pos.y
                         if abs(dx) >= abs(dy):
@@ -305,6 +312,7 @@ class TickMixin:
                         if 0 <= nx < floor.width and 0 <= ny < floor.height:
                             occupied = any(m.is_alive and m.pos.x == nx and m.pos.y == ny for m in floor.mobs.values() if m.id != mob.id)
                             if not occupied:
+                                move_times[mob.id] = now
                                 self.move_entity(mob.id, step[0], step[1])
                     continue
 
@@ -362,6 +370,13 @@ class TickMixin:
                         self.move_entity(mob.id, dx, dy)
                     continue
 
+                # SPD's sleeping mobs stay completely motionless until they
+                # notice a player - they don't amble around while "asleep".
+                # "idle" is our default spawn state and maps to SPD's default
+                # SLEEPING state (almost every mob starts asleep).
+                if target_player is None and mob.ai_state in ("idle", "sleeping"):
+                    continue
+
                 in_attack_range = target_player is not None and dist <= atk_range
                 if in_attack_range:
                     if not mob.engaged:
@@ -376,36 +391,95 @@ class TickMixin:
                     if target_player and dist <= atk_range:
                         dx, dy = target_player.pos.x - mob.pos.x, target_player.pos.y - mob.pos.y
                         self.move_entity(mob.id, dx, dy)
-                    elif random.random() < 0.1 * max(1.0, mob.speed):
-                        dx, dy = random.choice([(0, 1), (0, -1), (1, 0), (-1, 0), (1, 1), (1, -1), (-1, 1), (-1, -1)])
-                        self.move_entity(mob.id, dx, dy)
+                    elif can_move:
+                        step = self._pick_wander_step(mob, floor, floor_id, now)
+                        if step:
+                            move_times[mob.id] = now
+                            self.move_entity(mob.id, *step)
 
                 elif self.difficulty == Difficulty.NORMAL:
                     if target_player and dist <= atk_range:
                         dx, dy = target_player.pos.x - mob.pos.x, target_player.pos.y - mob.pos.y
                         self.move_entity(mob.id, dx, dy)
                     elif target_player and self._is_in_los(mob.pos, target_player.pos, floor_id=floor_id):
-                        step = self._get_next_step_to(mob.pos, target_player.pos, floor_id=floor_id)
-                        if step and (dist > atk_range or not any(
-                            m.is_alive and m.pos.x == mob.pos.x + step[0] and m.pos.y == mob.pos.y + step[1]
-                            for m in floor.mobs.values() if m.id != mob.id
-                        )):
-                            self.move_entity(mob.id, step[0], step[1])
-                    elif random.random() < 0.1 * max(1.0, mob.speed):
-                        dx, dy = random.choice([(0, 1), (0, -1), (1, 0), (-1, 0), (1, 1), (1, -1), (-1, 1), (-1, -1)])
-                        self.move_entity(mob.id, dx, dy)
+                        if can_move:
+                            step = self._get_next_step_to(mob.pos, target_player.pos, floor_id=floor_id)
+                            if step and (dist > atk_range or not any(
+                                m.is_alive and m.pos.x == mob.pos.x + step[0] and m.pos.y == mob.pos.y + step[1]
+                                for m in floor.mobs.values() if m.id != mob.id
+                            )):
+                                move_times[mob.id] = now
+                                self.move_entity(mob.id, step[0], step[1])
+                    elif can_move:
+                        step = self._pick_wander_step(mob, floor, floor_id, now)
+                        if step:
+                            move_times[mob.id] = now
+                            self.move_entity(mob.id, *step)
 
                 elif self.difficulty == Difficulty.HARD:
                     if target_player and dist <= atk_range:
                         dx, dy = target_player.pos.x - mob.pos.x, target_player.pos.y - mob.pos.y
                         self.move_entity(mob.id, dx, dy)
                     elif target_player and dist < 20:
-                        step = self._get_next_step_to(mob.pos, target_player.pos, floor_id=floor_id)
+                        if can_move:
+                            step = self._get_next_step_to(mob.pos, target_player.pos, floor_id=floor_id)
+                            if step:
+                                move_times[mob.id] = now
+                                self.move_entity(mob.id, step[0], step[1])
+                    elif can_move:
+                        step = self._pick_wander_step(mob, floor, floor_id, now)
                         if step:
-                            self.move_entity(mob.id, step[0], step[1])
-                    elif random.random() < 0.1 * max(1.0, mob.speed):
-                        dx, dy = random.choice([(0, 1), (0, -1), (1, 0), (-1, 0), (1, 1), (1, -1), (-1, 1), (-1, -1)])
-                        self.move_entity(mob.id, dx, dy)
+                            move_times[mob.id] = now
+                            self.move_entity(mob.id, *step)
+
+    def _pick_wander_step(self, mob, floor: FloorState, floor_id: int, now: float):
+        """Step toward a wander waypoint, pausing briefly between waypoints.
+
+        Mirrors SPD's WANDERING state: a mob picks a nearby destination and
+        walks straight toward it, then pauses for a beat before picking a new
+        one - rather than re-rolling a random direction every step.
+        """
+        targets = getattr(self, "_mob_wander_targets", None)
+        if targets is None:
+            targets = self._mob_wander_targets = {}
+        pauses = getattr(self, "_mob_wander_pause_until", None)
+        if pauses is None:
+            pauses = self._mob_wander_pause_until = {}
+
+        if now < pauses.get(mob.id, 0.0):
+            return None
+
+        def passable(x, y):
+            if not (0 <= x < floor.width and 0 <= y < floor.height):
+                return False
+            return bool(floor.flags and floor.flags.passable[y][x])
+
+        dest = targets.get(mob.id)
+        if dest is not None and (mob.pos.x, mob.pos.y) == dest:
+            # Reached the waypoint - pause for a beat before picking a new one.
+            targets.pop(mob.id, None)
+            pauses[mob.id] = now + random.uniform(0.5, 2.0)
+            return None
+
+        if dest is None:
+            for _ in range(8):
+                angle = random.random() * 2 * math.pi
+                radius = random.uniform(3, 6)
+                nx = int(round(mob.pos.x + math.cos(angle) * radius))
+                ny = int(round(mob.pos.y + math.sin(angle) * radius))
+                if passable(nx, ny):
+                    dest = (nx, ny)
+                    targets[mob.id] = dest
+                    break
+            if dest is None:
+                return None
+
+        step = self._get_next_step_to(mob.pos, Position(x=dest[0], y=dest[1]), floor_id=floor_id)
+        if step is None:
+            targets.pop(mob.id, None)
+            pauses[mob.id] = now + random.uniform(0.5, 1.0)
+            return None
+        return step
 
     def _update_shadow_ally(self, ally, floor: FloorState, floor_id: int):
         move_times = getattr(self, "_ally_move_times", None)

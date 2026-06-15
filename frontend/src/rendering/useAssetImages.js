@@ -53,6 +53,7 @@ import tenguSprite from '../assets/pixel-dungeon/sprites/tengu.png';
 import dm300Sprite from '../assets/pixel-dungeon/sprites/dm300.png';
 import bruteSprite from '../assets/pixel-dungeon/sprites/brute.png';
 import swarmSprite from '../assets/pixel-dungeon/sprites/swarm.png';
+import iconsSprite from '../assets/pixel-dungeon/interfaces/icons.png';
 
 export default function useAssetImages() {
   const [assetImages, setAssetImages] = useState({
@@ -108,6 +109,7 @@ export default function useAssetImages() {
     dm300: null,
     brute: null,
     swarm: null,
+    icons: null,
   });
 
   useEffect(() => {
@@ -203,6 +205,7 @@ export default function useAssetImages() {
     loadImage(dm300Sprite, 'dm300');
     loadImage(bruteSprite, 'brute');
     loadImage(swarmSprite, 'swarm');
+    loadImage(iconsSprite, 'icons');
   }, []);
 
   return assetImages;

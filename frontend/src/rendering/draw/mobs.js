@@ -130,6 +130,12 @@ const GNOLL_DEST = { dx: 4, dy: 2, dw: 24, dh: 30 };
 // Track previous ai_state per mob to detect sleeping→hunting transitions.
 const prevAiState = {};
 
+// Icons.SLEEP in icons.png (Icons.java): uvRectBySize(7, 88, 9, 8).
+const SLEEP_ICON_X = 7;
+const SLEEP_ICON_Y = 88;
+const SLEEP_ICON_W = 9;
+const SLEEP_ICON_H = 8;
+
 export function drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef, dyingMobsRef }) {
   const now = performance.now();
 
@@ -408,17 +414,17 @@ export function drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef,
     ctx.fillStyle = '#e74c3c';
     ctx.fillRect(x + 4, y - 4, mobHpBarWidth * mobHpPercent, 3);
 
-    // Sleeping indicator: "Zzz" float above sleeping mobs
-    if (mob.ai_state === 'sleeping') {
-      ctx.font = `${TILE_SIZE * 0.4}px sans-serif`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'bottom';
-      ctx.strokeStyle = 'rgba(0,0,0,0.6)';
-      ctx.lineWidth = 2;
-      const zzz = '💤 Zzz';
-      ctx.strokeText(zzz, x + TILE_SIZE / 2, y - 6);
-      ctx.fillStyle = '#aac';
-      ctx.fillText(zzz, x + TILE_SIZE / 2, y - 6);
+    // Sleeping indicator: SPD's EmoIcon.Sleep (Icons.SLEEP, icons.png 7,88 9x8)
+    // floats above sleeping mobs, gently pulsing between scale 1 and 1.2
+    // ('idle' is the default spawn state and maps to SPD's default SLEEPING
+    // state). Shopkeeper/Imp are friendly NPCs that default to "sleeping" but
+    // are awake (never_wakes just means their AI never transitions) - skip them.
+    if ((mob.ai_state === 'sleeping' || mob.ai_state === 'idle') && !isShopkeeper && !isImp && assetImages.icons) {
+      const pulse = 1 + 0.1 * (Math.sin(now * 0.008) + 1);
+      const dw = SLEEP_ICON_W * 2 * pulse;
+      const dh = SLEEP_ICON_H * 2 * pulse;
+      ctx.drawImage(assetImages.icons, SLEEP_ICON_X, SLEEP_ICON_Y, SLEEP_ICON_W, SLEEP_ICON_H,
+        x + TILE_SIZE / 2 - dw / 2, y - dh, dw, dh);
     }
 
     // Alert indicator: "!" when mob transitions to hunting
