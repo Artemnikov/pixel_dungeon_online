@@ -15,6 +15,7 @@ Curse, Transmutation).
 from typing import List
 
 from app.engine.entities.base import ItemCategory, ItemBase, Player
+from app.engine.entities.weapon_enchants import CURSES
 
 
 # Categories with a `level` field that Scroll of Upgrade can affect.
@@ -62,8 +63,20 @@ def is_unidentified_target(item, game) -> bool:
 
 
 def is_cursed_or_suspect(item, game) -> bool:
-    """Placeholder for Scroll of Remove Curse (Task 8)."""
-    raise NotImplementedError
+    """True if `item` is a weapon/armor/wand/ring/artifact that is known to be
+    cursed, has a curse enchant/glyph, or whose curse status is unknown."""
+    if item.category not in UPGRADABLE_CATEGORIES:
+        return False
+    if item.cursed:
+        return True
+    if not item.cursed_known:
+        return True
+    enchantment = getattr(item, "enchantment", None)
+    if isinstance(enchantment, str) and enchantment in CURSES:
+        return True
+    if hasattr(enchantment, "type") and enchantment.type in CURSES:
+        return True
+    return False
 
 
 def is_transmutable(item, game) -> bool:
@@ -75,4 +88,5 @@ def is_transmutable(item, game) -> bool:
 PREDICATE = {
     "scroll_of_upgrade": is_upgradable,
     "scroll_of_identify": is_unidentified_target,
+    "scroll_of_remove_curse": is_cursed_or_suspect,
 }

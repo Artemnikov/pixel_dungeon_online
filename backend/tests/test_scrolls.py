@@ -1,6 +1,7 @@
-from app.engine.entities.base import ScrollOfTeleportation, ScrollOfRecharging, ScrollOfLullaby, ScrollOfTerror, ScrollOfRage, ScrollOfRetribution, ScrollOfIdentify, Wand, Position, Mob, Faction, HealthPotion, Seed
+from app.engine.entities.base import ScrollOfTeleportation, ScrollOfRecharging, ScrollOfLullaby, ScrollOfTerror, ScrollOfRage, ScrollOfRetribution, ScrollOfIdentify, ScrollOfRemoveCurse, Wand, Position, Mob, Faction, HealthPotion, Seed, Dagger
 from app.engine.entities.mobs import Tengu
 from app.engine.entities.item_actions import action_read
+from app.engine.entities.scroll_predicates import player_inventory_items
 from app.engine.manager import GameInstance
 
 
@@ -333,6 +334,150 @@ def test_scroll_of_identify_no_candidates_does_not_consume_scroll():
     p.belongings.backpack.collect(seed)
 
     scroll = ScrollOfIdentify(id="scroll1")
+    p.belongings.backpack.collect(scroll)
+
+    action_read(g, p, scroll)
+
+    select_events = [e for e in g.events if e["type"] == "SCROLL_SELECT_TARGET"]
+    assert len(select_events) == 0
+    read_events = [e for e in g.events if e["type"] == "READ"]
+    assert len(read_events) == 1
+
+    assert p.belongings.get_item(scroll.id) is not None
+
+
+# --- Scroll of Remove Curse -------------------------------------------------------
+
+def test_scroll_of_remove_curse_lists_cursed_item_as_candidate():
+    g = GameInstance("t")
+    p = _player(g)
+
+    weapon = Dagger(id="weapon1")
+    weapon.cursed = True
+    weapon.cursed_known = True
+    p.belongings.backpack.collect(weapon)
+
+    scroll = ScrollOfRemoveCurse(id="scroll1")
+    p.belongings.backpack.collect(scroll)
+
+    action_read(g, p, scroll)
+
+    select_events = [e for e in g.events if e["type"] == "SCROLL_SELECT_TARGET"]
+    assert len(select_events) == 1
+    data = select_events[0]["data"]
+    assert data["scroll_kind"] == "scroll_of_remove_curse"
+    assert weapon.id in data["candidates"]
+
+    g.select_scroll_target(p.id, scroll.id, weapon.id)
+
+    assert weapon.cursed is False
+    assert weapon.cursed_known is True
+
+
+def test_scroll_of_remove_curse_lists_suspect_item_as_candidate():
+    g = GameInstance("t")
+    p = _player(g)
+
+    weapon = Dagger(id="weapon1")
+    weapon.cursed = False
+    weapon.cursed_known = False
+    p.belongings.backpack.collect(weapon)
+
+    scroll = ScrollOfRemoveCurse(id="scroll1")
+    p.belongings.backpack.collect(scroll)
+
+    action_read(g, p, scroll)
+
+    select_events = [e for e in g.events if e["type"] == "SCROLL_SELECT_TARGET"]
+    assert len(select_events) == 1
+    assert weapon.id in select_events[0]["data"]["candidates"]
+
+
+def test_scroll_of_remove_curse_strips_weapon_curse_enchant():
+    g = GameInstance("t")
+    p = _player(g)
+
+    weapon = Dagger(id="weapon1")
+    weapon.cursed = True
+    weapon.cursed_known = True
+    weapon.enchantment = "annoying"
+    p.belongings.backpack.collect(weapon)
+
+    scroll = ScrollOfRemoveCurse(id="scroll1")
+    p.belongings.backpack.collect(scroll)
+
+    action_read(g, p, scroll)
+
+    select_events = [e for e in g.events if e["type"] == "SCROLL_SELECT_TARGET"]
+    assert weapon.id in select_events[0]["data"]["candidates"]
+
+    g.select_scroll_target(p.id, scroll.id, weapon.id)
+
+    assert weapon.cursed is False
+    assert weapon.enchantment is None
+
+
+def test_scroll_of_remove_curse_on_wand_sets_level_known():
+    g = GameInstance("t")
+    p = _player(g)
+
+    wand = Wand(id="wand1", name="Wand of Test")
+    wand.cursed = True
+    wand.cursed_known = True
+    wand.level_known = False
+    p.belongings.backpack.collect(wand)
+
+    scroll = ScrollOfRemoveCurse(id="scroll1")
+    p.belongings.backpack.collect(scroll)
+
+    action_read(g, p, scroll)
+
+    select_events = [e for e in g.events if e["type"] == "SCROLL_SELECT_TARGET"]
+    assert wand.id in select_events[0]["data"]["candidates"]
+
+    g.select_scroll_target(p.id, scroll.id, wand.id)
+
+    assert wand.cursed is False
+    assert wand.level_known is True
+
+
+def test_scroll_of_remove_curse_ignores_non_equipable_categories():
+    g = GameInstance("t")
+    p = _player(g)
+
+    potion = HealthPotion(id="potion1")
+    potion.cursed = True  # not meaningful for potions, but set anyway
+    p.belongings.backpack.collect(potion)
+
+    scroll = ScrollOfRemoveCurse(id="scroll1")
+    p.belongings.backpack.collect(scroll)
+
+    action_read(g, p, scroll)
+
+    select_events = [e for e in g.events if e["type"] == "SCROLL_SELECT_TARGET"]
+    if select_events:
+        assert potion.id not in select_events[0]["data"]["candidates"]
+
+
+def test_scroll_of_remove_curse_no_candidates_does_not_consume_scroll():
+    from app.engine.entities.scroll_predicates import UPGRADABLE_CATEGORIES
+
+    g = GameInstance("t")
+    p = _player(g)
+
+    # Mark every equipable item the player owns as known-uncursed with no
+    # curse enchants, so none qualify as a Remove Curse candidate.
+    for it in player_inventory_items(p):
+        if it.category in UPGRADABLE_CATEGORIES:
+            it.cursed = False
+            it.cursed_known = True
+            enchantment = getattr(it, "enchantment", None)
+            if isinstance(enchantment, str):
+                it.enchantment = None
+            elif hasattr(enchantment, "type"):
+                it.enchantment.type = "none"
+
+    scroll = ScrollOfRemoveCurse(id="scroll1")
     p.belongings.backpack.collect(scroll)
 
     action_read(g, p, scroll)

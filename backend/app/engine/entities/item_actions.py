@@ -30,10 +30,11 @@ import math
 import random
 
 from app.engine.entities.base import (
-    Action, Position, Player, Seed, Wand,
+    Action, Position, Player, Seed, Wand, ArmorEnchantment,
     GooBlob, HealthPotion, ElixirOfAquaticRejuvenation, Waterskin,
 )
 from app.engine.entities.scroll_predicates import PREDICATE, player_inventory_items
+from app.engine.entities.weapon_enchants import CURSES
 
 
 def _floor_drop(game, player, item) -> None:
@@ -349,11 +350,24 @@ def _apply_identify(game, player, target_item) -> None:
     game.identify_kind(target_item)
 
 
+def _apply_remove_curse(game, player, target_item) -> None:
+    target_item.cursed = False
+    target_item.cursed_known = True
+    enchantment = getattr(target_item, "enchantment", None)
+    if isinstance(enchantment, str) and enchantment in CURSES:
+        target_item.enchantment = None
+    elif hasattr(enchantment, "type") and enchantment.type in CURSES:
+        target_item.enchantment = ArmorEnchantment()
+    if isinstance(target_item, Wand):
+        target_item.level_known = True
+
+
 # scroll `kind` -> apply function, called once a target has been chosen.
-# Extended by later selector scrolls (Remove Curse, Transmutation).
+# Extended by later selector scrolls (Transmutation).
 _APPLY_SCROLL_TARGET = {
     "scroll_of_upgrade": _apply_upgrade_target,
     "scroll_of_identify": _apply_identify,
+    "scroll_of_remove_curse": _apply_remove_curse,
 }
 
 
