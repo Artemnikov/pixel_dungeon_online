@@ -1,5 +1,5 @@
-from app.engine.entities.base import ScrollOfTeleportation, ScrollOfRecharging, ScrollOfLullaby, ScrollOfTerror, ScrollOfRage, ScrollOfRetribution, ScrollOfIdentify, ScrollOfRemoveCurse, ScrollOfTransmutation, Wand, Position, Mob, Faction, HealthPotion, Seed, Dagger, Gold
-from app.engine.entities.mobs import Tengu
+from app.engine.entities.base import ScrollOfTeleportation, ScrollOfRecharging, ScrollOfLullaby, ScrollOfTerror, ScrollOfRage, ScrollOfRetribution, ScrollOfIdentify, ScrollOfRemoveCurse, ScrollOfTransmutation, ScrollOfMirrorImage, Wand, Position, Mob, Faction, HealthPotion, Seed, Dagger, Gold, is_immune
+from app.engine.entities.mobs import Tengu, MirrorImage
 from app.engine.entities.item_actions import action_read
 from app.engine.entities.scroll_predicates import player_inventory_items
 from app.engine.manager import GameInstance
@@ -707,3 +707,103 @@ def test_scroll_of_transmutation_no_candidates_does_not_consume_scroll():
     assert len(read_events) == 1
 
     assert p.belongings.get_item(scroll.id) is not None
+
+
+def test_scroll_of_mirror_image_spawns_two_invisible_player_allies():
+    g = GameInstance("t")
+    p = _player(g)
+    floor = g._get_or_create_floor(p.floor_id)
+
+    scroll = ScrollOfMirrorImage(id="scroll_mi1")
+    p.belongings.backpack.collect(scroll)
+
+    action_read(g, p, scroll)
+
+    mirror_events = [e for e in g.events if e["type"] == "MIRROR_IMAGE"]
+    assert len(mirror_events) == 1
+    clone_ids = mirror_events[0]["data"]["clones"]
+    assert mirror_events[0]["data"]["player"] == p.id
+    assert len(clone_ids) == 2
+
+    clones = [floor.mobs[cid] for cid in clone_ids]
+    for clone in clones:
+        assert isinstance(clone, MirrorImage)
+        assert clone.faction == Faction.PLAYER
+        assert clone.invisible >= 1
+        assert clone.hp == 1
+        assert clone.max_hp == 1
+        assert clone.damage_min == max(1, (p.get_damage_min() + 1) // 2)
+        assert clone.damage_max == max(1, (p.get_damage_max() + 1) // 2)
+        assert clone.attack_skill == p.attack_skill
+        assert clone.defense_skill == round(p.get_effective_defense_skill() / 2)
+        dist = max(abs(clone.pos.x - p.pos.x), abs(clone.pos.y - p.pos.y))
+        assert dist == 1
+
+    # Scroll consumed.
+    assert p.belongings.get_item(scroll.id) is None
+
+    read_events = [e for e in g.events if e["type"] == "READ"]
+    assert len(read_events) == 1
+
+
+def test_mirror_image_clone_dies_from_single_point_of_damage():
+    g = GameInstance("t")
+    p = _player(g)
+    floor = g._get_or_create_floor(p.floor_id)
+
+    scroll = ScrollOfMirrorImage(id="scroll_mi2")
+    p.belongings.backpack.collect(scroll)
+
+    action_read(g, p, scroll)
+
+    mirror_events = [e for e in g.events if e["type"] == "MIRROR_IMAGE"]
+    clone = floor.mobs[mirror_events[0]["data"]["clones"][0]]
+
+    clone.take_damage(1)
+    assert clone.is_alive is False
+    assert clone.hp == 0
+
+
+def test_is_immune_helper():
+    g = GameInstance("t")
+    p = _player(g)
+    floor = g._get_or_create_floor(p.floor_id)
+
+    scroll = ScrollOfMirrorImage(id="scroll_mi3")
+    p.belongings.backpack.collect(scroll)
+
+    action_read(g, p, scroll)
+    mirror_events = [e for e in g.events if e["type"] == "MIRROR_IMAGE"]
+    clone = floor.mobs[mirror_events[0]["data"]["clones"][0]]
+
+    assert is_immune(clone, "burning") is True
+
+    other_mob = Mob(
+        id="m_other", name="Rat", pos=Position(x=p.pos.x + 5, y=p.pos.y),
+        hp=10, max_hp=10, attack=1, defense=0, faction="dungeon")
+    assert is_immune(other_mob, "burning") is False
+
+
+def test_refresh_mirror_image_stats_removes_clone_when_owner_left_floor():
+    g = GameInstance("t")
+    p = _player(g)
+    floor = g._get_or_create_floor(p.floor_id)
+
+    scroll = ScrollOfMirrorImage(id="scroll_mi4")
+    p.belongings.backpack.collect(scroll)
+
+    action_read(g, p, scroll)
+    mirror_events = [e for e in g.events if e["type"] == "MIRROR_IMAGE"]
+    clone = floor.mobs[mirror_events[0]["data"]["clones"][0]]
+
+    # Owner leaves the floor.
+    p.floor_id = p.floor_id + 1
+
+    g._refresh_mirror_image_stats(clone, p, floor, floor.floor_id)
+
+    assert clone.is_alive is False
+    assert clone.hp == 0
+    assert clone.id not in floor.mobs
+
+    death_events = [e for e in g.events if e["type"] == "DEATH" and e["data"]["target"] == clone.id]
+    assert len(death_events) == 1

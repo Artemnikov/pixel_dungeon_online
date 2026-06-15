@@ -167,6 +167,34 @@ export function drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef,
       return;
     }
 
+    // Scroll of Mirror Image: a translucent copy of the owner's hero sprite.
+    if (mob.type === 'mirror_image') {
+      const ownerPlayer = entitiesRef.current.players?.[mob.owner_id];
+      let cloneSprite = assetImages.warrior;
+      if (ownerPlayer?.class_type === 'mage' && assetImages.mage) cloneSprite = assetImages.mage;
+      else if (ownerPlayer?.class_type === 'rogue' && assetImages.rogue) cloneSprite = assetImages.rogue;
+      else if (ownerPlayer?.class_type === 'huntress' && assetImages.huntress) cloneSprite = assetImages.huntress;
+
+      if (cloneSprite) {
+        const cx = mob.renderPos.x * TILE_SIZE;
+        const cy = mob.renderPos.y * TILE_SIZE;
+        const fw = 12;
+        const dw = fw * (TILE_SIZE / 16);
+        const off = (TILE_SIZE - dw) / 2;
+        ctx.save();
+        ctx.globalAlpha = 0.5;
+        ctx.drawImage(cloneSprite, 0, 0, fw, 16, cx + off, cy, dw, TILE_SIZE);
+        ctx.restore();
+        const w = TILE_SIZE - 8;
+        const pct = (mob.hp || 0) / (mob.max_hp || 1);
+        ctx.fillStyle = '#111';
+        ctx.fillRect(cx + 4, cy - 4, w, 3);
+        ctx.fillStyle = '#9b59b6';
+        ctx.fillRect(cx + 4, cy - 4, w * pct, 3);
+      }
+      return;
+    }
+
     let mobSprite = assetImages.rat;
     let sx = 0;
     if (mob.name === 'Rat') {

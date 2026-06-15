@@ -33,7 +33,7 @@ from app.engine.entities.mobs import (
     YogDzewa, BurningFist, SoiledFist, RottingFist, RustedFist, BrightFist, DarkFist,
     DemonSpawner, Pylon, DM300,
     Wraith, TormentedSpirit, Bee, EbonyMimic, MobEntity,
-    Necromancer, Tengu,
+    Necromancer, Tengu, MirrorImage,
 )
 from app.engine.game.constants import (
     AUTO_MOVE_INTERVAL,
@@ -251,6 +251,11 @@ class TickMixin:
                     continue
 
                 if mob.faction == Faction.PLAYER:
+                    if isinstance(mob, MirrorImage):
+                        owner = self.players.get(mob.owner_id)
+                        self._refresh_mirror_image_stats(mob, owner, floor, floor_id)
+                        if not mob.is_alive:
+                            continue
                     if mob.type != "ninja_log":
                         self._update_shadow_ally(mob, floor, floor_id)
                     continue

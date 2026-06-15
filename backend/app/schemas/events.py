@@ -264,6 +264,11 @@ class TeleportData(_EventData):
     y: int
 
 
+class MirrorImageData(_EventData):
+    player: str
+    clones: List[str]
+
+
 class ScrollSelectTargetData(_EventData):
     player: str
     scroll_id: str
@@ -315,4 +320,5 @@ EVENT_MODELS = {
     "IMP_REWARD": ImpRewardData,
     "SCROLL_SELECT_TARGET": ScrollSelectTargetData,
     "TELEPORT": TeleportData,
+    "MIRROR_IMAGE": MirrorImageData,
 }

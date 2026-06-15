@@ -329,6 +329,13 @@ def action_read(game, player, item, tx=None, ty=None) -> None:
         removed = player.belongings.backpack.detach(item.id)
         if removed is not None and player.belongings.get_item(item.id) is None:
             player.quickslot.convert_to_placeholder(removed)
+    elif effect == "scroll_of_mirror_image":
+        floor = game._get_or_create_floor(player.floor_id)
+        clone_ids = game._spawn_mirror_images(player, floor, player.floor_id)
+        game.add_event("MIRROR_IMAGE", {"player": player.id, "clones": clone_ids}, floor_id=player.floor_id)
+        removed = player.belongings.backpack.detach(item.id)
+        if removed is not None and player.belongings.get_item(item.id) is None:
+            player.quickslot.convert_to_placeholder(removed)
     elif effect == "scroll_of_metamorphosis":
         removed = player.belongings.backpack.detach(item.id)
         if removed is not None and player.belongings.get_item(item.id) is None:

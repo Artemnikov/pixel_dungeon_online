@@ -17,7 +17,7 @@ import random
 
 from app.engine.dungeon.generator import TileType
 from app.engine.dungeon.spd_levelgen.level import _CIRCLE8_OFFSETS
-from app.engine.entities.base import Position
+from app.engine.entities.base import Position, is_immune
 from app.engine.entities.buffs import add_buff
 from app.engine.entities.mobs import (
     BrightFist, BurningFist, DarkFist, RottingFist, RustedFist,
@@ -228,7 +228,8 @@ class YogDzewaAIMixin:
                                     "defense_verb": target.defense_verb}, floor_id=floor_id)
             return
         dmg = target.take_damage(random.randint(8, 16))
-        add_buff(target.buffs, "burning", duration=3.0, level=1, stack_mode="extend")
+        if not is_immune(target, "burning"):
+            add_buff(target.buffs, "burning", duration=3.0, level=1, stack_mode="extend")
         self.add_event("ATTACK", {"source": fist.id, "target": target.id,
                                   "damage": dmg, "surprise": False, "fire": True}, floor_id=floor_id)
         if dmg > 0:

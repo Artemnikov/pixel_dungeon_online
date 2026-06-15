@@ -46,6 +46,10 @@ class Shield(BaseModel):
     name: str = ""  # logical id for identifying a specific shield
 
 
+def is_immune(entity, effect: str) -> bool:
+    return effect in getattr(entity, "immunities", [])
+
+
 class Entity(BaseModel):
     id: str
     type: str
