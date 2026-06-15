@@ -345,10 +345,15 @@ def _apply_upgrade_target(game, player, target_item) -> None:
     target_item.cursed_known = True
 
 
+def _apply_identify(game, player, target_item) -> None:
+    game.identify_kind(target_item)
+
+
 # scroll `kind` -> apply function, called once a target has been chosen.
-# Extended by later selector scrolls (Identify, Remove Curse, Transmutation).
+# Extended by later selector scrolls (Remove Curse, Transmutation).
 _APPLY_SCROLL_TARGET = {
     "scroll_of_upgrade": _apply_upgrade_target,
+    "scroll_of_identify": _apply_identify,
 }
 
 

@@ -26,6 +26,17 @@ UPGRADABLE_CATEGORIES = {
     ItemCategory.ARTIFACT,
 }
 
+# Categories Scroll of Identify can reveal (excludes seeds).
+IDENTIFIABLE_CATEGORIES = {
+    ItemCategory.WEAPON,
+    ItemCategory.ARMOR,
+    ItemCategory.WAND,
+    ItemCategory.RING,
+    ItemCategory.ARTIFACT,
+    ItemCategory.POTION,
+    ItemCategory.SCROLL,
+}
+
 
 def player_inventory_items(player: "Player") -> List["ItemBase"]:
     """Flatten everything a player owns: equipped items + backpack contents
@@ -43,8 +54,11 @@ def is_upgradable(item, game) -> bool:
 
 
 def is_unidentified_target(item, game) -> bool:
-    """Placeholder for Scroll of Identify (Task 7)."""
-    raise NotImplementedError
+    """True if `item`'s kind is not yet identified and its category is one
+    Scroll of Identify can reveal (weapon/armor/wand/ring/artifact/potion/scroll)."""
+    if item.category not in IDENTIFIABLE_CATEGORIES:
+        return False
+    return item.kind not in game.identified_kinds
 
 
 def is_cursed_or_suspect(item, game) -> bool:
@@ -60,4 +74,5 @@ def is_transmutable(item, game) -> bool:
 # scroll `kind` -> predicate. Extended by later tasks.
 PREDICATE = {
     "scroll_of_upgrade": is_upgradable,
+    "scroll_of_identify": is_unidentified_target,
 }

@@ -1,4 +1,4 @@
-from app.engine.entities.base import ScrollOfTeleportation, ScrollOfRecharging, ScrollOfLullaby, ScrollOfTerror, ScrollOfRage, ScrollOfRetribution, Wand, Position, Mob, Faction
+from app.engine.entities.base import ScrollOfTeleportation, ScrollOfRecharging, ScrollOfLullaby, ScrollOfTerror, ScrollOfRage, ScrollOfRetribution, ScrollOfIdentify, Wand, Position, Mob, Faction, HealthPotion, Seed
 from app.engine.entities.mobs import Tengu
 from app.engine.entities.item_actions import action_read
 from app.engine.manager import GameInstance
@@ -249,3 +249,97 @@ def test_find_nearest_entity_returns_nearest_of_mixed_players_and_mobs_excluding
     nearest = g._find_nearest_entity(self_mob.pos, p.floor_id, exclude_id="self")
 
     assert nearest is near_mob
+
+
+# --- Scroll of Identify -----------------------------------------------------------
+
+def test_scroll_of_identify_lists_unidentified_identifiable_items():
+    g = GameInstance("t")
+    p = _player(g)
+
+    potion = HealthPotion(id="potion1")
+    p.belongings.backpack.collect(potion)
+    seed = Seed(id="seed1", name="Seed")
+    p.belongings.backpack.collect(seed)
+
+    scroll = ScrollOfIdentify(id="scroll1")
+    p.belongings.backpack.collect(scroll)
+
+    action_read(g, p, scroll)
+
+    select_events = [e for e in g.events if e["type"] == "SCROLL_SELECT_TARGET"]
+    assert len(select_events) == 1
+    data = select_events[0]["data"]
+    assert data["scroll_kind"] == "scroll_of_identify"
+    assert potion.id in data["candidates"]
+    assert seed.id not in data["candidates"]
+
+
+def test_scroll_of_identify_excludes_already_identified_kind():
+    g = GameInstance("t")
+    p = _player(g)
+
+    potion = HealthPotion(id="potion1")
+    p.belongings.backpack.collect(potion)
+    g.identified_kinds.add(potion.kind)
+
+    scroll = ScrollOfIdentify(id="scroll1")
+    p.belongings.backpack.collect(scroll)
+
+    action_read(g, p, scroll)
+
+    select_events = [e for e in g.events if e["type"] == "SCROLL_SELECT_TARGET"]
+    assert len(select_events) == 1
+    assert potion.id not in select_events[0]["data"]["candidates"]
+
+
+def test_scroll_of_identify_select_target_reveals_kind():
+    g = GameInstance("t")
+    p = _player(g)
+
+    potion = HealthPotion(id="potion1")
+    potion.level_known = False
+    potion.cursed_known = False
+    p.belongings.backpack.collect(potion)
+
+    scroll = ScrollOfIdentify(id="scroll1")
+    p.belongings.backpack.collect(scroll)
+
+    action_read(g, p, scroll)
+
+    select_events = [e for e in g.events if e["type"] == "SCROLL_SELECT_TARGET"]
+    assert len(select_events) == 1
+    assert potion.id in select_events[0]["data"]["candidates"]
+
+    g.select_scroll_target(p.id, scroll.id, potion.id)
+
+    assert potion.kind in g.identified_kinds
+    assert potion.level_known is True
+    assert potion.cursed_known is True
+
+
+def test_scroll_of_identify_no_candidates_does_not_consume_scroll():
+    from app.engine.entities.item_actions import player_inventory_items
+
+    g = GameInstance("t")
+    p = _player(g)
+
+    # Mark every starting item's kind as already identified so none qualify.
+    for it in player_inventory_items(p):
+        g.identified_kinds.add(it.kind)
+
+    # Only other item present besides the scroll itself is a seed (not identifiable).
+    seed = Seed(id="seed1", name="Seed")
+    p.belongings.backpack.collect(seed)
+
+    scroll = ScrollOfIdentify(id="scroll1")
+    p.belongings.backpack.collect(scroll)
+
+    action_read(g, p, scroll)
+
+    select_events = [e for e in g.events if e["type"] == "SCROLL_SELECT_TARGET"]
+    assert len(select_events) == 0
+    read_events = [e for e in g.events if e["type"] == "READ"]
+    assert len(read_events) == 1
+
+    assert p.belongings.get_item(scroll.id) is not None
