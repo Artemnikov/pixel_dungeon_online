@@ -79,6 +79,9 @@ function inspectScreenPos(canvas, cam, zoom, anchor, mobs, visible) {
 // (SCROLL_SELECT_TARGET), keyed by scroll kind.
 const SCROLL_PICKER_TITLES = {
   scroll_of_upgrade: 'Choose an item to upgrade',
+  scroll_of_identify: 'Choose an item to identify',
+  scroll_of_remove_curse: 'Choose an item to uncurse',
+  scroll_of_transmutation: 'Choose an item to transmute',
 };
 
 function App() {
