@@ -273,6 +273,23 @@ def action_read(game, player, item, tx=None, ty=None) -> None:
         removed = player.belongings.backpack.detach(item.id)
         if removed is not None and player.belongings.get_item(item.id) is None:
             player.quickslot.convert_to_placeholder(removed)
+    elif effect == "scroll_of_lullaby":
+        floor = game._get_or_create_floor(player.floor_id)
+        for mob in game._mobs_in_fov(player, floor, player.floor_id):
+            mob.add_buff("drowsy", duration=5)
+        removed = player.belongings.backpack.detach(item.id)
+        if removed is not None and player.belongings.get_item(item.id) is None:
+            player.quickslot.convert_to_placeholder(removed)
+    elif effect == "scroll_of_terror":
+        floor = game._get_or_create_floor(player.floor_id)
+        for mob in game._mobs_in_fov(player, floor, player.floor_id):
+            if "terror" in getattr(mob, "immunities", []):
+                continue
+            mob.add_buff("terror", duration=20, source_id=player.id)
+            mob.ai_state = "fleeing"
+        removed = player.belongings.backpack.detach(item.id)
+        if removed is not None and player.belongings.get_item(item.id) is None:
+            player.quickslot.convert_to_placeholder(removed)
     elif effect == "scroll_of_metamorphosis":
         removed = player.belongings.backpack.detach(item.id)
         if removed is not None and player.belongings.get_item(item.id) is None:

@@ -111,7 +111,11 @@ class TickMixin:
         for floor in self.floors.values():
             for mob in floor.mobs.values():
                 if mob.is_alive:
-                    process_buffs(mob.buffs, dt)
+                    removed = process_buffs(mob.buffs, dt)
+                    if "drowsy" in removed and mob.ai_state in ("idle", "wandering"):
+                        mob.ai_state = "sleeping"
+                    if "terror" in removed and mob.ai_state == "fleeing":
+                        mob.ai_state = "hunting"
 
         blob_events = tick_foliage_blobs(self.floors, self.players)
         for ev in blob_events:
