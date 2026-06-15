@@ -222,7 +222,13 @@ class MovementCombatMixin:
         if not floor.flags or not floor.flags.passable[new_y][new_x]:
             return
 
-        if not isinstance(entity, Player) and self._is_in_safe_room(floor, new_x, new_y):
+        # Boss mobs (e.g. Goo) live and fight inside their arena, which can
+        # overlap the level's entrance/secret rooms (e.g. the boss floor's
+        # Rat King room) - the safe-room movement restriction is meant to
+        # keep regular wandering mobs out of entrance/exit rooms, not to trap
+        # a boss inside its own spawn room.
+        if (not isinstance(entity, Player) and getattr(entity, "type", None) != "boss"
+                and self._is_in_safe_room(floor, new_x, new_y)):
             return
 
         old_x, old_y = entity.pos.x, entity.pos.y
