@@ -494,6 +494,7 @@ export default function useGameSocket({
             existing.targetPos = m.pos;
           }
           existing.hp = m.hp;
+          existing.ai_state = m.ai_state;
         }
       });
 
