@@ -23,14 +23,18 @@ import random
 import uuid
 from typing import List, Optional
 
+from app.engine.dungeon.spd_levelgen.level import _CIRCLE8_OFFSETS
 from app.engine.entities.mobs import MirrorImage
 from app.engine.entities.base import Position
 from app.engine.game.floor_state import FloorState
 
+# SPD's Scroll of Mirror Image always spawns 2 clones (no per-level scaling).
+MIRROR_IMAGE_CLONE_COUNT = 2
+
 
 class MirrorImageMixin:
     def _spawn_mirror_images(self, player, floor: FloorState, floor_id: int) -> List[str]:
-        neighbors = [(0, 1), (0, -1), (1, 0), (-1, 0), (1, 1), (1, -1), (-1, 1), (-1, -1)]
+        neighbors = list(_CIRCLE8_OFFSETS)
         random.shuffle(neighbors)
 
         occupied = {(m.pos.x, m.pos.y) for m in floor.mobs.values() if m.is_alive}
@@ -45,11 +49,11 @@ class MirrorImageMixin:
                 continue
             candidates.append((cx, cy))
             occupied.add((cx, cy))
-            if len(candidates) >= 2:
+            if len(candidates) >= MIRROR_IMAGE_CLONE_COUNT:
                 break
 
         clone_ids: List[str] = []
-        for (cx, cy) in candidates[:2]:
+        for (cx, cy) in candidates:
             clone = MirrorImage(
                 id=f"mirror_image_{uuid.uuid4().hex[:8]}",
                 pos=Position(x=cx, y=cy),
@@ -73,6 +77,9 @@ class MirrorImageMixin:
         clone.damage_min = max(1, (owner.get_damage_min() + 1) // 2)
         clone.damage_max = max(1, (owner.get_damage_max() + 1) // 2)
         clone.attack_skill = owner.attack_skill
+        # SPD scales clone evasion by clone-level + hero evasion; there's no
+        # "clone level" concept here, so this is a flat half of the hero's
+        # effective defense skill as a simpler stand-in.
         clone.defense_skill = round(owner.get_effective_defense_skill() / 2)
         clone.dr_min = 0
         clone.dr_max = 2
