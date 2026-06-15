@@ -7,14 +7,16 @@ used by ``action_read``/``apply_scroll_target`` (item_actions.py) and
 ``ItemsMixin.select_scroll_target`` (game/items.py) to build/validate
 candidate lists.
 
-``is_transmutable`` (Scroll of Transmutation) is still a placeholder for a
-later task; the other predicates (Upgrade, Identify, Remove Curse) are
-implemented.
+``is_transmutable`` (Scroll of Transmutation) classifies items into "transmute
+groups" via ``transmute_group``; the other predicates (Upgrade, Identify,
+Remove Curse) are also implemented.
 """
 
-from typing import List
+from typing import List, Optional
 
-from app.engine.entities.base import ItemCategory, ItemBase, Player
+from app.engine.entities.base import (
+    Bow, ItemCategory, ItemBase, MeleeWeapon, MissileWeapon, Player, Staff,
+)
 from app.engine.entities.weapon_enchants import CURSES
 
 
@@ -81,9 +83,33 @@ def is_cursed_or_suspect(item, game) -> bool:
     return False
 
 
+def transmute_group(item) -> Optional[str]:
+    """Classifies `item` into one of Scroll of Transmutation's broad groups,
+    or None if it isn't transmutable. See TRANSMUTE_GROUPS in item_catalog.py
+    for the catalog kinds belonging to each group."""
+    if isinstance(item, (MeleeWeapon, Staff)):
+        return "weapon_melee"
+    if isinstance(item, (Bow, MissileWeapon)):
+        return "weapon_missile"
+    if item.category == ItemCategory.ARMOR:
+        return "armor"
+    if item.category == ItemCategory.WAND:
+        return "wand"
+    if item.category == ItemCategory.RING:
+        return "ring"
+    if item.category == ItemCategory.POTION:
+        return "potion"
+    if item.category == ItemCategory.SCROLL:
+        return "scroll"
+    return None
+
+
 def is_transmutable(item, game) -> bool:
-    """Placeholder for Scroll of Transmutation (Task 9)."""
-    raise NotImplementedError
+    """True if `item` can be transmuted by Scroll of Transmutation: not the
+    transmutation scroll itself, and belongs to a known transmute group."""
+    if item.kind == "scroll_of_transmutation":
+        return False
+    return transmute_group(item) is not None
 
 
 # scroll `kind` -> predicate. Extended by later tasks.
@@ -91,4 +117,5 @@ PREDICATE = {
     "scroll_of_upgrade": is_upgradable,
     "scroll_of_identify": is_unidentified_target,
     "scroll_of_remove_curse": is_cursed_or_suspect,
+    "scroll_of_transmutation": is_transmutable,
 }

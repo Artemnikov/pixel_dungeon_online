@@ -30,10 +30,11 @@ import math
 import random
 
 from app.engine.entities.base import (
-    Action, Position, Player, Seed, Wand, ArmorEnchantment,
+    Action, Bag, Position, Player, Seed, Wand, ArmorEnchantment,
     GooBlob, HealthPotion, ElixirOfAquaticRejuvenation, Waterskin,
 )
-from app.engine.entities.scroll_predicates import PREDICATE, player_inventory_items
+from app.engine.entities.item_catalog import TRANSMUTE_GROUPS, make_catalog_item
+from app.engine.entities.scroll_predicates import PREDICATE, player_inventory_items, transmute_group
 from app.engine.entities.weapon_enchants import CURSES
 
 
@@ -350,6 +351,51 @@ def _apply_identify(game, player, target_item) -> None:
     game.identify_kind(target_item)
 
 
+def _replace_in_bag(bag, old_id, new_item) -> bool:
+    """Recursively replaces the item with id `old_id` inside `bag` (or one of
+    its sub-bags) with `new_item`, in place. Returns True if found/replaced."""
+    for idx, it in enumerate(bag.items):
+        if it.id == old_id:
+            bag.items[idx] = new_item
+            return True
+        if isinstance(it, Bag) and _replace_in_bag(it, old_id, new_item):
+            return True
+    return False
+
+
+def _apply_transmutation(game, player, target_item) -> None:
+    group = transmute_group(target_item)
+    candidate_kinds = [k for k in TRANSMUTE_GROUPS[group] if k != target_item.kind]
+    if not candidate_kinds:
+        candidate_kinds = TRANSMUTE_GROUPS[group]
+
+    new_kind = random.choice(candidate_kinds)
+    new_item = make_catalog_item(new_kind)
+
+    if target_item.quantity > 1:
+        source = target_item.split(1)
+        new_item.level, new_item.level_known = source.level, source.level_known
+        new_item.cursed, new_item.cursed_known = source.cursed, source.cursed_known
+        new_item.id = source.id
+        new_item.quantity = 1
+        player.belongings.backpack.collect(new_item)
+        return
+
+    new_item.level, new_item.level_known = target_item.level, target_item.level_known
+    new_item.cursed, new_item.cursed_known = target_item.cursed, target_item.cursed_known
+    new_item.id = target_item.id
+    new_item.quantity = target_item.quantity
+
+    if player.belongings.is_equipped(target_item.id):
+        for slot in ("weapon", "armor", "artifact", "misc", "ring"):
+            cur = getattr(player.belongings, slot)
+            if cur is not None and cur.id == target_item.id:
+                setattr(player.belongings, slot, new_item)
+                break
+    else:
+        _replace_in_bag(player.belongings.backpack, target_item.id, new_item)
+
+
 def _apply_remove_curse(game, player, target_item) -> None:
     target_item.cursed = False
     target_item.cursed_known = True
@@ -368,6 +414,7 @@ _APPLY_SCROLL_TARGET = {
     "scroll_of_upgrade": _apply_upgrade_target,
     "scroll_of_identify": _apply_identify,
     "scroll_of_remove_curse": _apply_remove_curse,
+    "scroll_of_transmutation": _apply_transmutation,
 }
 
 
