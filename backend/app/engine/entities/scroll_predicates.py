@@ -7,9 +7,9 @@ used by ``action_read``/``apply_scroll_target`` (item_actions.py) and
 ``ItemsMixin.select_scroll_target`` (game/items.py) to build/validate
 candidate lists.
 
-Only ``is_upgradable`` (Scroll of Upgrade) is implemented so far. The other
-three predicates below are placeholders for later tasks (Identify, Remove
-Curse, Transmutation).
+``is_transmutable`` (Scroll of Transmutation) is still a placeholder for a
+later task; the other predicates (Upgrade, Identify, Remove Curse) are
+implemented.
 """
 
 from typing import List
@@ -74,6 +74,8 @@ def is_cursed_or_suspect(item, game) -> bool:
     enchantment = getattr(item, "enchantment", None)
     if isinstance(enchantment, str) and enchantment in CURSES:
         return True
+    # Armor curse-enchant generation isn't implemented yet (enchantment.type
+    # is always "none"), but this stays forward-compatible once it lands.
     if hasattr(enchantment, "type") and enchantment.type in CURSES:
         return True
     return False
