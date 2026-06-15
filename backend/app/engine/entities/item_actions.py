@@ -31,6 +31,7 @@ from app.engine.entities.base import (
     Action, Position, Player, Seed,
     GooBlob, HealthPotion, ElixirOfAquaticRejuvenation, Waterskin,
 )
+from app.engine.entities.scroll_predicates import PREDICATE, player_inventory_items
 
 
 def _floor_drop(game, player, item) -> None:
@@ -194,6 +195,19 @@ def action_affix(game, player, item, tx=None, ty=None) -> None:
 def action_read(game, player, item, tx=None, ty=None) -> None:
     game.identify_kind(item)
     effect = getattr(item, "kind", "")
+
+    if effect in PREDICATE:
+        candidates = [it.id for it in player_inventory_items(player) if PREDICATE[effect](it, game)]
+        if not candidates:
+            game.add_event("READ", {"player": player.id, "item": item.id}, floor_id=player.floor_id)
+            return
+        game.add_event(
+            "SCROLL_SELECT_TARGET",
+            {"player": player.id, "scroll_id": item.id, "scroll_kind": effect, "candidates": candidates},
+            floor_id=player.floor_id, player_id=player.id,
+        )
+        return
+
     if effect == "scroll_of_rage":
         player.has_fury = True
         player.fury_turns_remaining = 15
@@ -206,26 +220,47 @@ def action_read(game, player, item, tx=None, ty=None) -> None:
             player.quickslot.convert_to_placeholder(removed)
         game.add_event("METAMORPH_OPEN", {"player": player.id}, floor_id=player.floor_id)
         return
-    elif effect == "scroll_of_upgrade":
-        target = player.belongings.weapon or player.belongings.armor
-        if target is not None:
-            target.level += 1
-            target.level_known = True
-            if target.cursed:
-                target.cursed = False
-                target.cursed_known = True
-        removed = player.belongings.backpack.detach(item.id)
-        if removed is not None and player.belongings.get_item(item.id) is None:
-            player.quickslot.convert_to_placeholder(removed)
-        game.add_event("READ", {"player": player.id, "item": item.id}, floor_id=player.floor_id)
-        return
-
     inscribed_stealth = player.subclass_info.talent_info.level("inscribed_stealth")
     if inscribed_stealth > 0:
         player.add_buff("invisibility", duration=1.0 * (1 + 2 * inscribed_stealth), level=1)
         game.add_event("PLAY_SOUND", {"sound": "MELD"}, floor_id=player.floor_id, source_player_id=player.id)
 
     game.add_event("READ", {"player": player.id, "item": item.id}, floor_id=player.floor_id)
+
+
+def _apply_upgrade_target(game, player, target_item) -> None:
+    target_item.level += 1
+    target_item.level_known = True
+    if target_item.cursed:
+        target_item.cursed = False
+    target_item.cursed_known = True
+
+
+# scroll `kind` -> apply function, called once a target has been chosen.
+# Extended by later selector scrolls (Identify, Remove Curse, Transmutation).
+_APPLY_SCROLL_TARGET = {
+    "scroll_of_upgrade": _apply_upgrade_target,
+}
+
+
+def apply_scroll_target(game, player, scroll_item, target_item) -> None:
+    """Finishes a selector-based scroll read once the player has chosen a
+    target item (via SELECT_SCROLL_TARGET / ItemsMixin.select_scroll_target)."""
+    apply_fn = _APPLY_SCROLL_TARGET.get(scroll_item.kind)
+    if apply_fn is None:
+        return
+    apply_fn(game, player, target_item)
+
+    removed = player.belongings.backpack.detach(scroll_item.id)
+    if removed is not None and player.belongings.get_item(scroll_item.id) is None:
+        player.quickslot.convert_to_placeholder(removed)
+
+    inscribed_stealth = player.subclass_info.talent_info.level("inscribed_stealth")
+    if inscribed_stealth > 0:
+        player.add_buff("invisibility", duration=1.0 * (1 + 2 * inscribed_stealth), level=1)
+        game.add_event("PLAY_SOUND", {"sound": "MELD"}, floor_id=player.floor_id, source_player_id=player.id)
+
+    game.add_event("READ", {"player": player.id, "item": scroll_item.id}, floor_id=player.floor_id)
 
 
 def action_plant(game, player, item, tx=None, ty=None) -> None:

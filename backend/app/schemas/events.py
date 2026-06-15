@@ -258,6 +258,13 @@ class ImpRewardData(_EventData):
     item: str
 
 
+class ScrollSelectTargetData(_EventData):
+    player: str
+    scroll_id: str
+    scroll_kind: str
+    candidates: List[str]
+
+
 # event "type" -> payload model. Used by the opt-in dev validation hook.
 EVENT_MODELS = {
     "ATTACK": AttackData,
@@ -300,4 +307,5 @@ EVENT_MODELS = {
     "TENGU_BADGE_QUALIFIED": TenguBadgeQualifiedData,
     "IMP_DIALOGUE": ImpDialogueData,
     "IMP_REWARD": ImpRewardData,
+    "SCROLL_SELECT_TARGET": ScrollSelectTargetData,
 }
