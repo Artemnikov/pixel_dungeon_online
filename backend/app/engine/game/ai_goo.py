@@ -33,6 +33,14 @@ class GooAIMixin:
             self._goo_cancel_charge(goo, floor_id)
             return False
 
+        # SPD: canAttack/doAttack (the pumped-up charge) only run during the
+        # HUNTING act, after notice(). Before that, let the generic idle/
+        # sleeping/wandering state machine run so Goo can notice the player,
+        # set ai_state="hunting" and fire GOO_FIGHT_STARTED.
+        if goo.ai_state != "hunting":
+            self._goo_cancel_charge(goo, floor_id)
+            return False
+
         dist = self._get_distance(goo.pos, target.pos)
         charge_ok = dist <= 2 and self._is_in_los(goo.pos, target.pos, floor_id=floor_id)
         now = time.time()

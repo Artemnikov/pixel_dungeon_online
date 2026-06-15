@@ -4,6 +4,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 from app.engine.entities.base import Position, Faction, Player, Key
 from app.engine.entities.mobs import Goo
 from app.engine.dungeon.generator import DungeonGenerator, TileType
+from app.engine.dungeon.models import Room
 from app.engine.game.constants import MAP_WIDTH, MAP_HEIGHT, OOZE_DURATION
 from app.engine.game.floor_state import FloorState
 from app.engine.manager import GameInstance
@@ -81,6 +82,70 @@ def test_goo_fight_started_fires_once_on_notice():
     assert len(fired) == 1, "GOO_FIGHT_STARTED must fire exactly once"
     assert fired[0]["data"] == {"mob": goo.id}
     assert goo.fight_started is True
+
+
+def test_goo_does_not_freeze_when_player_starts_diagonally_adjacent():
+    # A player spawning diagonally adjacent (Manhattan dist 2) to a still-idle
+    # Goo is within charge range. Before notice() (ai_state -> hunting), the
+    # pumped-up charge must not engage and short-circuit the AI - otherwise
+    # Goo gets stuck on its spawn tile forever, never starting the fight.
+    game = GameInstance("test-goo-diagonal")
+    game.players = {}
+    game.grid = [[TileType.FLOOR for _ in range(10)] for _ in range(10)]
+    game._get_or_create_floor(game.depth).rebuild_flags()
+    game.mobs = {}
+
+    goo = Goo(id="goo1", pos=Position(x=5, y=5), faction=Faction.DUNGEON)
+    game.mobs[goo.id] = goo
+    assert goo.ai_state == "idle"
+
+    player = game.add_player("p1", "Hero")
+    player.pos = Position(x=6, y=6)
+
+    for _ in range(300):
+        game.update_tick()
+        game.flush_events()
+        if goo.ai_state == "hunting":
+            break
+
+    assert goo.ai_state == "hunting", "Goo should notice the diagonally adjacent hero"
+    assert goo.fight_started is True
+
+
+def test_goo_can_chase_through_rat_king_room():
+    # On the boss floor, floor.rooms includes the Rat King secret room as
+    # rooms[-1] (and the entrance as rooms[0]) - _is_in_safe_room() treats
+    # both as off-limits to non-player mobs so wandering mobs don't spawn
+    # there. But this room's bounding box can overlap Goo's own arena, and
+    # move_entity() applied that same restriction to the boss itself,
+    # permanently trapping Goo on its spawn tile whenever its only step
+    # toward the hero fell inside that box.
+    game = GameInstance("test-goo-ratking-room")
+    game.players = {}
+    game.grid = [[TileType.FLOOR for _ in range(20)] for _ in range(20)]
+    floor = game._get_or_create_floor(game.depth)
+    floor.rebuild_flags()
+    # Rat King room (rooms[-1]) covers the tile directly above Goo - Goo's
+    # own spawn tile is outside it, so this only blocks the first step.
+    floor.rooms = [
+        Room(x=0, y=0, width=1, height=1),
+        Room(x=9, y=9, width=2, height=1),
+    ]
+    game.mobs = {}
+
+    goo = Goo(id="goo1", pos=Position(x=10, y=10), faction=Faction.DUNGEON)
+    game.mobs[goo.id] = goo
+
+    player = game.add_player("p1", "Hero")
+    player.pos = Position(x=10, y=5)
+
+    for _ in range(300):
+        game.update_tick()
+        game.flush_events()
+        if (goo.pos.x, goo.pos.y) != (10, 10):
+            break
+
+    assert (goo.pos.x, goo.pos.y) != (10, 10), "Goo must be able to step into its own arena even if it overlaps the Rat King room"
 
 
 def test_goo_enrage_no_longer_plays_alert_sound():
