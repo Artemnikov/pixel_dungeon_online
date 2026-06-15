@@ -407,12 +407,23 @@ export function drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef,
 
     const x = mob.renderPos.x * TILE_SIZE;
     const y = mob.renderPos.y * TILE_SIZE;
-    const mobHpBarWidth = TILE_SIZE - 8;
-    const mobHpPercent = (mob.hp || 0) / (mob.max_hp || 1);
-    ctx.fillStyle = '#111';
-    ctx.fillRect(x + 4, y - 4, mobHpBarWidth, 3);
-    ctx.fillStyle = '#e74c3c';
-    ctx.fillRect(x + 4, y - 4, mobHpBarWidth * mobHpPercent, 3);
+    const mobHpBarWidth = TILE_SIZE - 4;
+    const mobHpBarHeight = 4;
+    const mobHp = mob.hp || 0;
+    const mobMaxHp = mob.max_hp || 1;
+    const mobShield = (mob.shields || []).reduce((sum, s) => sum + (s.amount || 0), 0);
+    const mobMax = Math.max(mobHp + mobShield, mobMaxHp);
+    const mobHpPercent = mobHp / mobMax;
+    const mobShieldPercent = (mobHp + mobShield) / mobMax;
+    // SPD's HealthBar colors: COLOR_BG = 0xCC0000, COLOR_HP = 0x00EE00, COLOR_SHLD = 0xFFFFFF
+    ctx.fillStyle = '#cc0000';
+    ctx.fillRect(x + 2, y - 5, mobHpBarWidth, mobHpBarHeight);
+    if (mobShieldPercent > mobHpPercent) {
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(x + 2, y - 5, mobHpBarWidth * mobShieldPercent, mobHpBarHeight);
+    }
+    ctx.fillStyle = '#00ee00';
+    ctx.fillRect(x + 2, y - 5, mobHpBarWidth * mobHpPercent, mobHpBarHeight);
 
     // Sleeping indicator: SPD's EmoIcon.Sleep (Icons.SLEEP, icons.png 7,88 9x8)
     // floats above sleeping mobs, gently pulsing between scale 1 and 1.2
