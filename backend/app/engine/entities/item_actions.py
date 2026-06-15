@@ -30,7 +30,7 @@ import math
 import random
 
 from app.engine.entities.base import (
-    Action, Bag, Position, Player, Seed, Wand, ArmorEnchantment,
+    Action, Armor, Bag, KindOfWeapon, Position, Player, Seed, Wand, ArmorEnchantment,
     GooBlob, HealthPotion, ElixirOfAquaticRejuvenation, Waterskin,
 )
 from app.engine.entities.item_catalog import TRANSMUTE_GROUPS, make_catalog_item
@@ -353,7 +353,11 @@ def _apply_identify(game, player, target_item) -> None:
 
 def _replace_in_bag(bag, old_id, new_item) -> bool:
     """Recursively replaces the item with id `old_id` inside `bag` (or one of
-    its sub-bags) with `new_item`, in place. Returns True if found/replaced."""
+    its sub-bags) with `new_item`, in place. Returns True if found/replaced.
+
+    Replacing in place preserves the item's slot/position in the bag, unlike
+    detach+collect which would move it to the end or merge it into an
+    existing stack of the same kind."""
     for idx, it in enumerate(bag.items):
         if it.id == old_id:
             bag.items[idx] = new_item
@@ -363,10 +367,26 @@ def _replace_in_bag(bag, old_id, new_item) -> bool:
     return False
 
 
+def _carry_over_enchantment(target_item, new_item) -> None:
+    """Preserves enchantment/charge state across a transmutation so a cursed
+    or enchanted item doesn't silently lose that state on its new kind."""
+    if isinstance(target_item, KindOfWeapon) and isinstance(new_item, KindOfWeapon):
+        new_item.enchantment = target_item.enchantment
+    if isinstance(target_item, Armor) and isinstance(new_item, Armor):
+        new_item.enchantment = target_item.enchantment.model_copy(deep=True)
+    if isinstance(target_item, Wand) and isinstance(new_item, Wand):
+        new_item.charges = target_item.charges
+        new_item.max_charges = target_item.max_charges
+
+
 def _apply_transmutation(game, player, target_item) -> None:
     group = transmute_group(target_item)
     candidate_kinds = [k for k in TRANSMUTE_GROUPS[group] if k != target_item.kind]
     if not candidate_kinds:
+        # Deliberate fallback for single-member groups (armor/wand/ring each
+        # have only one catalog kind currently): the scroll is still consumed,
+        # but the "transmutation" is a no-op re-roll of the same kind. This is
+        # a known catalog-size limitation, not a bug.
         candidate_kinds = TRANSMUTE_GROUPS[group]
 
     new_kind = random.choice(candidate_kinds)
@@ -376,6 +396,7 @@ def _apply_transmutation(game, player, target_item) -> None:
         source = target_item.split(1)
         new_item.level, new_item.level_known = source.level, source.level_known
         new_item.cursed, new_item.cursed_known = source.cursed, source.cursed_known
+        _carry_over_enchantment(source, new_item)
         new_item.id = source.id
         new_item.quantity = 1
         player.belongings.backpack.collect(new_item)
@@ -383,15 +404,13 @@ def _apply_transmutation(game, player, target_item) -> None:
 
     new_item.level, new_item.level_known = target_item.level, target_item.level_known
     new_item.cursed, new_item.cursed_known = target_item.cursed, target_item.cursed_known
+    _carry_over_enchantment(target_item, new_item)
     new_item.id = target_item.id
-    new_item.quantity = target_item.quantity
 
     if player.belongings.is_equipped(target_item.id):
-        for slot in ("weapon", "armor", "artifact", "misc", "ring"):
-            cur = getattr(player.belongings, slot)
-            if cur is not None and cur.id == target_item.id:
-                setattr(player.belongings, slot, new_item)
-                break
+        slot_name = player.belongings.slot_name_for(new_item)
+        if slot_name is not None:
+            setattr(player.belongings, slot_name, new_item)
     else:
         _replace_in_bag(player.belongings.backpack, target_item.id, new_item)
 

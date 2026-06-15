@@ -560,6 +560,69 @@ def test_scroll_of_transmutation_equipped_weapon_changes_kind_keeps_id_and_flags
     assert new_weapon.cursed_known is True
 
 
+def test_scroll_of_transmutation_equipped_weapon_preserves_enchantment():
+    g = GameInstance("t")
+    p = _player(g)
+
+    weapon = p.belongings.weapon
+    weapon.cursed = True
+    weapon.cursed_known = True
+    weapon.enchantment = "vampiric"
+    original_id = weapon.id
+
+    scroll = ScrollOfTransmutation(id="scroll1")
+    p.belongings.backpack.collect(scroll)
+
+    action_read(g, p, scroll)
+    g.select_scroll_target(p.id, scroll.id, original_id)
+
+    new_weapon = p.belongings.weapon
+    assert new_weapon.id == original_id
+    assert new_weapon.enchantment == "vampiric"
+
+
+def test_scroll_of_transmutation_armor_preserves_enchantment():
+    g = GameInstance("t")
+    p = _player(g)
+
+    armor = p.belongings.armor
+    armor.cursed = True
+    armor.cursed_known = True
+    armor.enchantment.type = "warding"
+    original_id = armor.id
+
+    scroll = ScrollOfTransmutation(id="scroll1")
+    p.belongings.backpack.collect(scroll)
+
+    action_read(g, p, scroll)
+    g.select_scroll_target(p.id, scroll.id, original_id)
+
+    new_armor = p.belongings.armor
+    assert new_armor.id == original_id
+    assert new_armor.enchantment.type == "warding"
+    # Deep-copied, not the same object as the original armor's enchantment.
+    assert new_armor.enchantment is not armor.enchantment
+
+
+def test_scroll_of_transmutation_wand_preserves_charges():
+    g = GameInstance("t")
+    p = _player(g)
+
+    wand = Wand(id="wand1", name="Wand", charges=1, max_charges=5)
+    p.belongings.backpack.collect(wand)
+
+    scroll = ScrollOfTransmutation(id="scroll1")
+    p.belongings.backpack.collect(scroll)
+
+    action_read(g, p, scroll)
+    g.select_scroll_target(p.id, scroll.id, wand.id)
+
+    new_wand = p.belongings.get_item(wand.id)
+    assert new_wand.id == wand.id
+    assert new_wand.charges == 1
+    assert new_wand.max_charges == 5
+
+
 def test_scroll_of_transmutation_potion_stack_splits_off_new_kind():
     g = GameInstance("t")
     p = _player(g)

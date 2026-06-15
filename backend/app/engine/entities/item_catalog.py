@@ -199,6 +199,8 @@ def make_catalog_item(item_kind: str) -> Optional[ItemBase]:
 # each. `_apply_transmutation` (item_actions.py) picks a different kind from
 # the same group as the target item.
 TRANSMUTE_GROUPS: dict = {
+    # Staff is grouped with melee weapons: there's no separate "magic weapon"
+    # transmute pool in this codebase.
     "weapon_melee": ["melee_weapon", "dagger", "worn_shortsword", "staff"],
     "weapon_missile": ["bow", "missile_weapon"],
     "armor": ["armor"],

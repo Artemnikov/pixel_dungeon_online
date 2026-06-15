@@ -87,6 +87,8 @@ def transmute_group(item) -> Optional[str]:
     """Classifies `item` into one of Scroll of Transmutation's broad groups,
     or None if it isn't transmutable. See TRANSMUTE_GROUPS in item_catalog.py
     for the catalog kinds belonging to each group."""
+    # Staff is grouped with melee weapons: there's no separate "magic weapon"
+    # transmute pool in this codebase.
     if isinstance(item, (MeleeWeapon, Staff)):
         return "weapon_melee"
     if isinstance(item, (Bow, MissileWeapon)):
