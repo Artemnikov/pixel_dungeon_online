@@ -255,6 +255,9 @@ def action_read(game, player, item, tx=None, ty=None) -> None:
         return
 
     if effect == "scroll_of_rage":
+        # include_allies=True (unlike SPD, which spares Char.Alignment.ALLY):
+        # in multiplayer, amok-ing other players' shadow clones etc. is the
+        # intended chaotic effect of this scroll.
         floor = game._get_or_create_floor(player.floor_id)
         for mob in game._mobs_in_fov(player, floor, player.floor_id, include_allies=True):
             mob.ai_state = "hunting"
