@@ -27,8 +27,10 @@ from typing import Optional
 from app.engine.dungeon.constants import TileType
 import math
 
+import random
+
 from app.engine.entities.base import (
-    Action, Position, Player, Seed,
+    Action, Position, Player, Seed, Wand,
     GooBlob, HealthPotion, ElixirOfAquaticRejuvenation, Waterskin,
 )
 from app.engine.entities.scroll_predicates import PREDICATE, player_inventory_items
@@ -200,6 +202,41 @@ def _maybe_proc_inscribed_stealth(game, player) -> None:
         game.add_event("PLAY_SOUND", {"sound": "MELD"}, floor_id=player.floor_id, source_player_id=player.id)
 
 
+def _teleport_player(game, player) -> None:
+    """SPD ScrollOfTeleportation: move the player to a random passable,
+    unoccupied cell on their current floor, preferring cells outside their
+    current FOV. Breaks "rooted" on success."""
+    floor = game._get_or_create_floor(player.floor_id)
+
+    occupied = {(m.pos.x, m.pos.y) for m in floor.mobs.values() if m.is_alive}
+    occupied |= {
+        (p.pos.x, p.pos.y)
+        for p in game.players.values()
+        if p.floor_id == player.floor_id and p.is_alive
+    }
+
+    candidates = []
+    for y in range(floor.height):
+        for x in range(floor.width):
+            if floor.flags and floor.flags.passable[y][x] and (x, y) not in occupied:
+                candidates.append((x, y))
+
+    if not candidates:
+        return
+
+    visible = set(game.get_visible_tiles(
+        player.pos, radius=game._view_distance(player), floor_id=player.floor_id,
+        viewer_id=player.id))
+    out_of_fov = [c for c in candidates if c not in visible]
+    pool = out_of_fov if out_of_fov else candidates
+
+    tx, ty = random.choice(pool)
+    player.pos = Position(x=tx, y=ty)
+    player.remove_buff("rooted")
+
+    game.add_event("TELEPORT", {"player": player.id, "x": tx, "y": ty}, floor_id=player.floor_id)
+
+
 def action_read(game, player, item, tx=None, ty=None) -> None:
     game.identify_kind(item)
     effect = getattr(item, "kind", "")
@@ -220,6 +257,19 @@ def action_read(game, player, item, tx=None, ty=None) -> None:
     if effect == "scroll_of_rage":
         player.has_fury = True
         player.fury_turns_remaining = 15
+        removed = player.belongings.backpack.detach(item.id)
+        if removed is not None and player.belongings.get_item(item.id) is None:
+            player.quickslot.convert_to_placeholder(removed)
+    elif effect == "scroll_of_teleportation":
+        removed = player.belongings.backpack.detach(item.id)
+        if removed is not None and player.belongings.get_item(item.id) is None:
+            player.quickslot.convert_to_placeholder(removed)
+        _teleport_player(game, player)
+    elif effect == "scroll_of_recharging":
+        for wand in player_inventory_items(player):
+            if isinstance(wand, Wand):
+                wand.charges = wand.max_charges
+        player.add_buff("recharging", duration=30.0)
         removed = player.belongings.backpack.detach(item.id)
         if removed is not None and player.belongings.get_item(item.id) is None:
             player.quickslot.convert_to_placeholder(removed)

@@ -1607,6 +1607,9 @@ class Player(Entity):
     momentum_stacks: int = 0
     _momentum_decay_accum: float = 0.0
     freerun_seconds: float = 0.0
+    # Scroll of Recharging: while the "recharging" buff is active, accumulates
+    # real seconds toward the next wand charge gained (see tick.py).
+    _recharging_accum: float = 0.0
 
     @property
     def talent_info(self):

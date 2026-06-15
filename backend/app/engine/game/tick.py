@@ -24,7 +24,7 @@ import time
 from typing import List, Optional, Type
 
 from app.engine.dungeon.generator import TileType
-from app.engine.entities.base import Difficulty, Effect, Faction, Player, Position
+from app.engine.entities.base import Difficulty, Effect, Faction, Player, Position, Wand
 from app.engine.entities.buffs import process_buffs
 from app.engine.game.blobs import tick_foliage_blobs
 from app.engine.entities.mobs import (
@@ -40,6 +40,7 @@ from app.engine.game.constants import (
     NO_RESPAWN_FLOORS,
     OOZE_TICK_INTERVAL,
     PASSIVE_REGEN_INTERVAL,
+    RECHARGING_REGEN_INTERVAL,
     PATH_BLOCKED_GIVE_UP_TICKS,
     RESPAWN_TURNS,
     ROOM_HEAL_AMOUNT,
@@ -163,6 +164,7 @@ class TickMixin:
             self._apply_aqua_heal_tick(player)
             self._apply_room_heal_tick(player)
             self._apply_passive_regen(player)
+            self._tick_recharging(player, dt)
 
             if player.armor_charge < 100:
                 player.armor_charge = min(100, player.armor_charge + 2)
@@ -753,3 +755,19 @@ class TickMixin:
             return
         player.hp = min(player.get_total_max_hp(), player.hp + 1)
         player._regen_cooldown = PASSIVE_REGEN_INTERVAL
+
+    def _tick_recharging(self, player: Player, dt: float):
+        """Scroll of Recharging aftereffect: while the "recharging" buff is
+        active, slowly regenerate one charge on the first under-max wand
+        roughly every RECHARGING_REGEN_INTERVAL seconds."""
+        if not player.has_buff("recharging"):
+            player._recharging_accum = 0.0
+            return
+        player._recharging_accum += dt
+        while player._recharging_accum >= RECHARGING_REGEN_INTERVAL:
+            player._recharging_accum -= RECHARGING_REGEN_INTERVAL
+            from app.engine.entities.scroll_predicates import player_inventory_items
+            for item in player_inventory_items(player):
+                if isinstance(item, Wand) and item.charges < item.max_charges:
+                    item.charges += 1
+                    break

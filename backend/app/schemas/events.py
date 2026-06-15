@@ -258,6 +258,12 @@ class ImpRewardData(_EventData):
     item: str
 
 
+class TeleportData(_EventData):
+    player: str
+    x: int
+    y: int
+
+
 class ScrollSelectTargetData(_EventData):
     player: str
     scroll_id: str
@@ -308,4 +314,5 @@ EVENT_MODELS = {
     "IMP_DIALOGUE": ImpDialogueData,
     "IMP_REWARD": ImpRewardData,
     "SCROLL_SELECT_TARGET": ScrollSelectTargetData,
+    "TELEPORT": TeleportData,
 }
