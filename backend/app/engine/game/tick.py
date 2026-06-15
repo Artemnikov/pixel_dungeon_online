@@ -26,6 +26,7 @@ from typing import List, Optional, Type
 from app.engine.dungeon.generator import TileType
 from app.engine.entities.base import Difficulty, Effect, Faction, Player, Position, Wand
 from app.engine.entities.buffs import process_buffs
+from app.engine.entities.scroll_predicates import player_inventory_items
 from app.engine.game.blobs import tick_foliage_blobs
 from app.engine.entities.mobs import (
     Rat, Goo, DwarfKing,
@@ -766,7 +767,6 @@ class TickMixin:
         player._recharging_accum += dt
         while player._recharging_accum >= RECHARGING_REGEN_INTERVAL:
             player._recharging_accum -= RECHARGING_REGEN_INTERVAL
-            from app.engine.entities.scroll_predicates import player_inventory_items
             for item in player_inventory_items(player):
                 if isinstance(item, Wand) and item.charges < item.max_charges:
                     item.charges += 1
