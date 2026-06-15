@@ -220,6 +220,27 @@ class VisionMixin:
                 break
         return []
 
+    def _mobs_in_fov(self, player, floor: "FloorState", floor_id: int, include_allies: bool = False) -> List:
+        """Living mobs visible to `player` on `floor`, for AOE scrolls (Lullaby,
+        Terror, Retribution, Rage). Excludes ally-faction mobs (e.g. shadow
+        allies, mirror images) unless `include_allies=True`."""
+        from app.engine.entities.base import Faction
+
+        visible = set(self.get_visible_tiles(
+            player.pos, radius=self._view_distance(player), floor_id=floor_id,
+            viewer_id=player.id))
+
+        result = []
+        for mob in floor.mobs.values():
+            if not mob.is_alive:
+                continue
+            if (mob.pos.x, mob.pos.y) not in visible:
+                continue
+            if not include_allies and mob.faction == Faction.PLAYER:
+                continue
+            result.append(mob)
+        return result
+
     def get_visible_tiles(self, pos: Position, radius: int = 8, floor_id: Optional[int] = None, viewer_id: Optional[str] = None) -> List[Tuple[int, int]]:
         """Tiles visible from `pos` within `radius`, via recursive shadowcasting
         (matches SPD). The circular cutoff comes from the shadowcaster's ROUNDING

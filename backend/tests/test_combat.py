@@ -309,3 +309,47 @@ def test_no_crit_when_not_surprise():
     # 10 damage, no surprise, no bonus
     assert result["damage"] == 10
     assert result["crit"] is False
+
+
+def test_weakness_reduces_melee_damage():
+    """Weakness debuff reduces the attacker's rolled melee damage by ~33%."""
+    from app.engine.systems.combat import resolve_melee_attack
+
+    def make_player():
+        player = Player(id="p", name="Tester", pos=Position(x=1, y=1),
+                         hp=20, max_hp=20, attack=3, defense=1,
+                         attack_skill=100, defense_skill=0)
+        player.belongings.weapon = KindOfWeapon(id="sw", name="Sword", damage=10,
+                                                 strength_requirement=10, attack_cooldown=0)
+        return player
+
+    mob = MobEntity(
+        id="mob", name="Rat",
+        pos=Position(x=2, y=1),
+        hp=50, max_hp=50,
+        attack=2, defense=0, defense_skill=0,
+        dr_min=0, dr_max=0,
+    )
+
+    # Baseline: fixed 10 damage weapon, no DR.
+    baseline = resolve_melee_attack(
+        make_player(), mob, {}, 1, 1,
+        is_in_los=lambda a, b: True,
+    )
+    assert baseline["damage"] == 10
+
+    weak_player = make_player()
+    weak_player.add_buff("weakness", duration=20.0)
+    weak_mob = MobEntity(
+        id="mob2", name="Rat",
+        pos=Position(x=2, y=1),
+        hp=50, max_hp=50,
+        attack=2, defense=0, defense_skill=0,
+        dr_min=0, dr_max=0,
+    )
+    result = resolve_melee_attack(
+        weak_player, weak_mob, {}, 1, 1,
+        is_in_los=lambda a, b: True,
+    )
+    # 10 * 0.67 = 6.7 -> round to 7
+    assert result["damage"] == 7

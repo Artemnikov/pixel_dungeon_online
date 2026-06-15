@@ -238,6 +238,8 @@ def resolve_melee_attack(
         return result
 
     dmg_roll = _roll_damage(attacker, result, prep)
+    if attacker.has_buff("weakness"):
+        dmg_roll = round(dmg_roll * 0.67)
     dmg_roll = int((dmg_roll + dmg_bonus) * dmg_multi)
     dr_roll = random.randint(defender.get_dr_min(), defender.get_dr_max())
     raw_damage = max(0, dmg_roll - dr_roll)
