@@ -255,8 +255,42 @@ def action_read(game, player, item, tx=None, ty=None) -> None:
         return
 
     if effect == "scroll_of_rage":
-        player.has_fury = True
-        player.fury_turns_remaining = 15
+        floor = game._get_or_create_floor(player.floor_id)
+        for mob in game._mobs_in_fov(player, floor, player.floor_id, include_allies=True):
+            mob.ai_state = "hunting"
+            mob.add_buff("amok", duration=5, source_id=player.id)
+        removed = player.belongings.backpack.detach(item.id)
+        if removed is not None and player.belongings.get_item(item.id) is None:
+            player.quickslot.convert_to_placeholder(removed)
+    elif effect == "scroll_of_retribution":
+        from app.engine.systems.loot import roll_drops
+
+        max_hp = max(1, player.max_hp)
+        power = min(4.0, 4.45 * (max_hp - player.hp) / max_hp)
+
+        floor = game._get_or_create_floor(player.floor_id)
+        for mob in game._mobs_in_fov(player, floor, player.floor_id):
+            dmg = round(mob.max_hp / 10 + mob.hp * power * 0.225)
+            dealt = mob.take_damage(dmg)
+            if dealt > 0:
+                game.add_event("DAMAGE", {"target": mob.id, "amount": dealt}, floor_id=player.floor_id)
+            if not mob.is_alive:
+                mob.die(
+                    floor_mobs=floor.mobs,
+                    tile_x=mob.pos.x,
+                    tile_y=mob.pos.y,
+                    players=list(game._players_on_floor(player.floor_id)),
+                )
+                game.add_event("DEATH", {"target": mob.id}, floor_id=player.floor_id)
+                game.handle_mob_death(mob, floor, player.floor_id)
+                for drop in roll_drops(mob, game.drop_counters, mob.pos.x, mob.pos.y, players=list(game._players_on_floor(player.floor_id))):
+                    floor.items[drop.id] = drop
+            else:
+                mob.add_buff("blindness", duration=10)
+
+        player.add_buff("weakness", duration=20)
+        player.add_buff("blindness", duration=10)
+
         removed = player.belongings.backpack.detach(item.id)
         if removed is not None and player.belongings.get_item(item.id) is None:
             player.quickslot.convert_to_placeholder(removed)

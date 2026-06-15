@@ -1,4 +1,4 @@
-from app.engine.entities.base import ScrollOfTeleportation, ScrollOfRecharging, ScrollOfLullaby, ScrollOfTerror, Wand, Position, Mob
+from app.engine.entities.base import ScrollOfTeleportation, ScrollOfRecharging, ScrollOfLullaby, ScrollOfTerror, ScrollOfRage, ScrollOfRetribution, Wand, Position, Mob, Faction
 from app.engine.entities.mobs import Tengu
 from app.engine.entities.item_actions import action_read
 from app.engine.manager import GameInstance
@@ -142,3 +142,110 @@ def test_scroll_of_terror_makes_mobs_flee_then_revert_to_hunting():
 
     assert not near_mob.has_buff("terror")
     assert near_mob.ai_state == "hunting"
+
+
+def test_scroll_of_retribution_damages_fov_mobs_and_debuffs_reader():
+    g = GameInstance("t")
+    p = _player(g)
+    floor = g._get_or_create_floor(p.floor_id)
+
+    p.hp = p.max_hp // 2  # partial HP -> power > 0
+
+    near_mob = Mob(
+        id="m1", name="Rat1", pos=Position(x=p.pos.x + 1, y=p.pos.y),
+        hp=10, max_hp=10, attack=1, defense=0, faction="dungeon", ai_state="wandering")
+    weak_mob = Mob(
+        id="m2", name="Rat2", pos=Position(x=p.pos.x - 1, y=p.pos.y),
+        hp=1, max_hp=10, attack=1, defense=0, faction="dungeon", ai_state="wandering")
+    far_mob = Mob(
+        id="m3", name="Rat3", pos=Position(x=p.pos.x + 50, y=p.pos.y),
+        hp=10, max_hp=10, attack=1, defense=0, faction="dungeon", ai_state="wandering")
+    floor.mobs["m1"] = near_mob
+    floor.mobs["m2"] = weak_mob
+    floor.mobs["m3"] = far_mob
+
+    scroll = ScrollOfRetribution(id="scroll5")
+    p.belongings.backpack.items.append(scroll)
+
+    action_read(g, p, scroll)
+
+    max_hp = max(1, p.max_hp)
+    power = min(4.0, 4.45 * (max_hp - (p.max_hp // 2)) / max_hp)
+
+    expected_near_dmg = round(near_mob.max_hp / 10 + 10 * power * 0.225)
+    assert near_mob.hp == max(0, 10 - expected_near_dmg)
+    if near_mob.hp > 0:
+        assert near_mob.has_buff("blindness")
+
+    # Weak mob (hp=1) should die from retribution damage.
+    expected_weak_dmg = round(weak_mob.max_hp / 10 + 1 * power * 0.225)
+    assert expected_weak_dmg >= 1
+    assert weak_mob.is_alive is False
+    assert weak_mob.hp == 0
+    death_events = [e for e in g.events if e["type"] == "DEATH" and e["data"]["target"] == "m2"]
+    assert len(death_events) == 1
+
+    # Mob outside FOV is unaffected.
+    assert far_mob.hp == 10
+    assert not far_mob.has_buff("blindness")
+
+    # Reader gets weakness + blindness debuffs.
+    assert p.has_buff("weakness")
+    assert p.has_buff("blindness")
+
+
+def test_scroll_of_rage_sets_amok_and_hunting_on_fov_mobs():
+    g = GameInstance("t")
+    p = _player(g)
+    floor = g._get_or_create_floor(p.floor_id)
+
+    near_mob = Mob(
+        id="m1", name="Rat1", pos=Position(x=p.pos.x + 1, y=p.pos.y),
+        hp=10, max_hp=10, attack=1, defense=0, faction="dungeon", ai_state="wandering")
+    ally_mob = Mob(
+        id="m2", name="Clone", pos=Position(x=p.pos.x - 1, y=p.pos.y),
+        hp=10, max_hp=10, attack=1, defense=0, faction=Faction.PLAYER, ai_state="wandering")
+    far_mob = Mob(
+        id="m3", name="Rat3", pos=Position(x=p.pos.x + 50, y=p.pos.y),
+        hp=10, max_hp=10, attack=1, defense=0, faction="dungeon", ai_state="wandering")
+    floor.mobs["m1"] = near_mob
+    floor.mobs["m2"] = ally_mob
+    floor.mobs["m3"] = far_mob
+
+    scroll = ScrollOfRage(id="scroll6")
+    p.belongings.backpack.items.append(scroll)
+
+    action_read(g, p, scroll)
+
+    assert near_mob.ai_state == "hunting"
+    assert near_mob.has_buff("amok")
+
+    # include_allies=True -> ally (Faction.PLAYER) mob in FOV is also affected.
+    assert ally_mob.ai_state == "hunting"
+    assert ally_mob.has_buff("amok")
+
+    # Out of FOV mob unaffected.
+    assert far_mob.ai_state == "wandering"
+    assert not far_mob.has_buff("amok")
+
+
+def test_find_nearest_entity_returns_nearest_of_mixed_players_and_mobs_excluding_self():
+    g = GameInstance("t")
+    p = _player(g)
+    floor = g._get_or_create_floor(p.floor_id)
+
+    self_mob = Mob(
+        id="self", name="Self", pos=Position(x=p.pos.x + 5, y=p.pos.y),
+        hp=10, max_hp=10, attack=1, defense=0, faction="dungeon", ai_state="hunting")
+    near_mob = Mob(
+        id="m1", name="Near", pos=Position(x=self_mob.pos.x + 1, y=self_mob.pos.y),
+        hp=10, max_hp=10, attack=1, defense=0, faction=Faction.PLAYER, ai_state="wandering")
+    floor.mobs["self"] = self_mob
+    floor.mobs["m1"] = near_mob
+
+    # Player is further away than near_mob.
+    p.pos = Position(x=self_mob.pos.x + 10, y=self_mob.pos.y)
+
+    nearest = g._find_nearest_entity(self_mob.pos, p.floor_id, exclude_id="self")
+
+    assert nearest is near_mob

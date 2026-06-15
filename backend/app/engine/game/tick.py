@@ -306,7 +306,10 @@ class TickMixin:
                 move_interval = 2 * AUTO_MOVE_INTERVAL / max(0.1, mob.speed)
                 can_move = now - move_times.get(mob.id, 0.0) >= move_interval
 
-                target_player = self._find_nearest_player(mob.pos, floor_id)
+                if mob.has_buff("amok"):
+                    target_player = self._find_nearest_entity(mob.pos, floor_id, exclude_id=mob.id)
+                else:
+                    target_player = self._find_nearest_player(mob.pos, floor_id)
                 if mob.ai_state == "fleeing":
                     if can_move and target_player:
                         dx = mob.pos.x - target_player.pos.x
@@ -323,12 +326,12 @@ class TickMixin:
                                 self.move_entity(mob.id, step[0], step[1])
                     continue
 
-                if target_player and target_player.invisible > 0:
+                if target_player and isinstance(target_player, Player) and target_player.invisible > 0:
                     target_player = None
 
                 if target_player and getattr(mob, "never_wakes", False):
                     target_player = None
-                elif target_player and getattr(mob, "ai_state", "") in ("idle", "sleeping"):
+                elif target_player and isinstance(target_player, Player) and getattr(mob, "ai_state", "") in ("idle", "sleeping"):
                     dist = self._get_distance(mob.pos, target_player.pos)
                     if dist > self._view_distance(mob):
                         target_player = None
@@ -345,7 +348,7 @@ class TickMixin:
                         else:
                             mob.ai_state = "hunting"
 
-                if target_player and getattr(mob, "ai_state", "") == "wandering":
+                if target_player and isinstance(target_player, Player) and getattr(mob, "ai_state", "") == "wandering":
                     dist = self._get_distance(mob.pos, target_player.pos)
                     if dist > self._view_distance(mob):
                         target_player = None

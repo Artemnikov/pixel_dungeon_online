@@ -42,6 +42,30 @@ class VisionMixin:
                 nearest = player
         return nearest
 
+    def _find_nearest_entity(self, pos: Position, floor_id: int, exclude_id: str):
+        """Nearest alive entity (Player or Mob) on `floor_id`, excluding
+        `exclude_id`. Used for Amok-buffed mobs, which (per SPD) target the
+        nearest creature of any faction rather than only players."""
+        candidates: List = [
+            p for p in self._players_on_floor(floor_id)
+            if p.id != exclude_id and p.is_alive and not p.is_downed
+        ]
+        floor = self.floors.get(floor_id)
+        if floor is not None:
+            candidates.extend(
+                m for m in floor.mobs.values()
+                if m.id != exclude_id and m.is_alive
+            )
+
+        nearest = None
+        min_dist = float("inf")
+        for entity in candidates:
+            distance = self._get_distance(pos, entity.pos)
+            if distance < min_dist:
+                min_dist = distance
+                nearest = entity
+        return nearest
+
     def _get_distance(self, p1: Position, p2: Position) -> int:
         return abs(p1.x - p2.x) + abs(p1.y - p2.y)
 
