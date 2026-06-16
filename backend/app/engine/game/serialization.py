@@ -150,6 +150,22 @@ class SerializationMixin:
         process(d.get("equipped_wearable"))
         hunger = d.get("hunger", 0.0)
         d["hunger_pct"] = round(min(1.0, hunger / 450.0), 3)
+
+        # Find an adjacent hostile mob (attack target for auto-attack UI)
+        attack_target = None
+        try:
+            floor = self._get_or_create_floor(p.floor_id)
+            for mob in floor.mobs.values():
+                if (
+                    mob.is_alive
+                    and mob.faction == "dungeon"
+                    and abs(mob.pos.x - p.pos.x) + abs(mob.pos.y - p.pos.y) <= 1
+                ):
+                    attack_target = {"id": mob.id, "name": mob.name, "kind": mob.type}
+                    break
+        except Exception:
+            pass
+        d["attack_target"] = attack_target
         return d
 
     def _serialize_floor_item(self, item) -> dict:
