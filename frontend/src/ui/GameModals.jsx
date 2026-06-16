@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import WndBag from './WndBag';
 import WndUseItem from './WndUseItem';
 import RightClickMenu from './RightClickMenu';
@@ -6,11 +7,11 @@ import WndImp from './WndImp';
 import WndQuickBag from './WndQuickBag';
 import RadialMenu from './RadialMenu';
 
-const SCROLL_PICKER_TITLES = {
-  scroll_of_upgrade: 'Choose an item to upgrade',
-  scroll_of_identify: 'Choose an item to identify',
-  scroll_of_remove_curse: 'Choose an item to uncurse',
-  scroll_of_transmutation: 'Choose an item to transmute',
+const SCROLL_PICKER_KEYS = {
+  scroll_of_upgrade: 'modal.upgrade',
+  scroll_of_identify: 'modal.identify',
+  scroll_of_remove_curse: 'modal.uncurse',
+  scroll_of_transmutation: 'modal.transmute',
 };
 
 export default function GameModals({
@@ -20,6 +21,7 @@ export default function GameModals({
   executeItemAction, assignQuickslot, sendSelectScrollTarget,
   send, handleToolbarClick,
 }) {
+  const { t } = useTranslation();
   const {
     useItemTarget, setUseItemTarget,
     ctxMenu, setCtxMenu,
@@ -107,7 +109,7 @@ export default function GameModals({
           energy={energy}
           strength={strength}
           selectMode
-          title="Quickslot an item"
+          title={t('modal.quickslot')}
           onSelectItem={(item) => {
             send({ type: 'SET_QUICKSLOT', index: quickslotPicker, item_id: item.id });
             setQuickslotPicker(null);
@@ -124,7 +126,7 @@ export default function GameModals({
           strength={strength}
           selectMode
           itemFilter={(item) => scrollPickerData.candidates.includes(item.id)}
-          title={SCROLL_PICKER_TITLES[scrollPickerData.scroll_kind] ?? 'Choose an item'}
+          title={t(SCROLL_PICKER_KEYS[scrollPickerData.scroll_kind] ?? 'ui.chooseItem')}
           onSelectItem={(item) => {
             sendSelectScrollTarget(scrollPickerData.scroll_id, item.id);
             setScrollPickerData(null);

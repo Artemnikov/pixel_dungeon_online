@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import './App.css';
 
 import CharacterSelection from './CharacterSelection';
@@ -30,6 +31,7 @@ import TalentLayer from './ui/TalentLayer';
 import GameOverlay from './ui/GameOverlay';
 
 function App() {
+  const { t } = useTranslation();
   // --- screen flow / session state ---
   const [gameState, setGameState] = useState('WELCOME');
   const [selectedClass, setSelectedClass] = useState('warrior');
@@ -420,8 +422,8 @@ function App() {
   if (gameState === 'WELCOME') {
     return (
       <>
-        <title>Online Pixel Dungeon — multiplayer roguelike</title>
-        <meta name="description" content="A multiplayer roguelike dungeon crawler based on Shattered Pixel Dungeon. Play online for free in your browser, no download required." />
+        <title>{t('app.titleWelcome')}</title>
+        <meta name="description" content={t('app.descWelcome')} />
         <div className={isDesktop ? 'desktop-mode' : ''}
              style={isDesktop ? { '--cursor-mouse': `url(${cursorMouseUrl}) 1 1, pointer` } : {}}>
           <MainMenu onStart={() => setGameState('SELECT')} />
@@ -433,8 +435,8 @@ function App() {
   if (gameState === 'SELECT') {
     return (
       <>
-        <title>Online Pixel Dungeon — Choose your class</title>
-        <meta name="description" content="Select your hero class — Warrior, Mage, Rogue, or Archer — and descend into the dungeon." />
+        <title>{t('app.titleSelect')}</title>
+        <meta name="description" content={t('app.descSelect')} />
         <div className={isDesktop ? 'desktop-mode' : ''}
              style={isDesktop ? { '--cursor-mouse': `url(${cursorMouseUrl}) 1 1, pointer` } : {}}>
           <CharacterSelection onSelect={(c, d, n, strongerBosses) => {
@@ -474,8 +476,8 @@ function App() {
 
   return (
     <>
-      <title>Online Pixel Dungeon — Floor {depth}</title>
-      <meta name="description" content={`Playing Online Pixel Dungeon — exploring floor ${depth} of the dungeon.`} />
+      <title>{t('app.titlePlaying', { depth })}</title>
+      <meta name="description" content={t('app.descPlaying', { depth })} />
       <div className={`game-container ${isDesktop ? 'desktop-mode' : ''}`}
            style={isDesktop ? { '--cursor-mouse': `url(${cursorMouseUrl}) 1 1, pointer` } : {}}>
 
@@ -483,7 +485,7 @@ function App() {
 
         {connectionStatus === 'reconnecting' && (
           <div className="reconnect-banner" role="status">
-            Connection lost — reconnecting…
+            {t('app.reconnecting')}
           </div>
         )}
 
@@ -579,7 +581,7 @@ function App() {
           onCloseInventory={() => modals.setShowInventory(false)}
         />
 
-        <button className="fullscreen-btn" onClick={toggleFullscreen} title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}>
+        <button className="fullscreen-btn" onClick={toggleFullscreen} title={isFullscreen ? t('app.exitFullscreen') : t('app.fullscreen')}>
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             {isFullscreen ? (
               <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3" />

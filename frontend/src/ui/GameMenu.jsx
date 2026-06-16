@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import SettingsPanel from '../menu/SettingsPanel';
 
 export default function GameMenu({ onClose, onLeaveGame }) {
+  const { t } = useTranslation();
   const [showSettings, setShowSettings] = useState(false);
 
   useEffect(() => {
@@ -25,15 +27,15 @@ export default function GameMenu({ onClose, onLeaveGame }) {
   return (
     <div className="game-menu-overlay" onClick={onClose}>
       <div className="game-menu" onClick={(e) => e.stopPropagation()}>
-        <h2 className="game-menu-title">Menu</h2>
+        <h2 className="game-menu-title">{t('game.menu')}</h2>
         <button className="game-menu-btn" onClick={() => setShowSettings(true)}>
-          Settings
+          {t('game.settings')}
         </button>
         <button className="game-menu-btn danger" onClick={onLeaveGame}>
-          Leave Game
+          {t('game.leaveGame')}
         </button>
         <button className="game-menu-btn accent" onClick={onClose}>
-          Resume
+          {t('game.resume')}
         </button>
       </div>
     </div>
