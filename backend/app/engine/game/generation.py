@@ -170,6 +170,8 @@ class GenerationMixin:
                 mobs={},
                 items={},
                 region="prison",
+                entrance_pos=rooms[0].center if rooms else None,
+                exit_pos=rooms[-1].center if rooms else None,
             )
         else:
             grid, rooms = generator.generate(10 + depth, 4, 8 + (depth // 10))
@@ -180,6 +182,8 @@ class GenerationMixin:
                 mobs={},
                 items={},
                 region="legacy",
+                entrance_pos=rooms[0].center if rooms else None,
+                exit_pos=rooms[-1].center if rooms else None,
             )
 
         floor.rebuild_flags()

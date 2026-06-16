@@ -6,9 +6,12 @@ stubs, traps, and doors to the existing ``FloorState`` / ``MobEntity`` /
 directly into the game loop.
 """
 
+import logging
 import random as _random
 import uuid
 from typing import Dict, List, Optional, Tuple
+
+_log = logging.getLogger(__name__)
 
 from app.engine.dungeon.constants import RoomKind, TrapType, TrapVisual
 from app.engine.dungeon.models import Room as LegacyRoom, TrapInfo
@@ -473,12 +476,18 @@ def gen_level_to_floor_state(gen_level: GenLevel, depth: int) -> FloorState:
     try:
         entrance_cell = gen_level.entrance()
         entrance_pos: Optional[Tuple[int, int]] = (entrance_cell % w, entrance_cell // w)
-    except (ValueError, AttributeError):
+    except ValueError:
+        entrance_pos = None
+    except AttributeError:
+        _log.warning("gen_level missing entrance() method — GenLevel subclass issue?")
         entrance_pos = None
     try:
         exit_cell = gen_level.exit()
         exit_pos: Optional[Tuple[int, int]] = (exit_cell % w, exit_cell // w)
-    except (ValueError, AttributeError):
+    except ValueError:
+        exit_pos = None
+    except AttributeError:
+        _log.warning("gen_level missing exit() method — GenLevel subclass issue?")
         exit_pos = None
 
     floor = FloorState(
