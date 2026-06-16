@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import './App.css';
 
@@ -24,6 +24,8 @@ import useTargetingExamine from './game/useTargetingExamine';
 
 import StatusPane from './ui/StatusPane';
 import BossHealthBar from './ui/BossHealthBar';
+import DangerIndicator from './ui/DangerIndicator';
+import GameLog from './ui/GameLog';
 import LoadingOverlay from './ui/LoadingOverlay';
 import GameHud from './ui/GameHud';
 import GameModals from './ui/GameModals';
@@ -91,7 +93,14 @@ function App() {
   const transmuteEffectsRef = useRef([]);
   const flareEffectsRef = useRef([]);
   const spellSpriteEffectsRef = useRef([]);
+  const magicMissileRef = useRef([]);
   const screenFlashRef = useRef(null);
+  const lightningRef = useRef([]);
+  const shieldHaloRef = useRef([]);
+  const stateEffectsRef = useRef([]);
+  const surpriseRef = useRef([]);
+  const selectedEnemyIdRef = useRef(null);
+  const hoveredCellRef = useRef(null);
   const trapsRef = useRef([]);
   const customTilesRef = useRef([]);
   const depthRef = useRef(1);
@@ -168,7 +177,7 @@ function App() {
     socketRef, gridRef, myPlayerIdRef, entitiesRef,
     visionRef, openDoorsRef, projectilesRef,
     trapsRef, customTilesRef,
-    mobAnimRef, dyingMobsRef, playerAnimRef, particlesRef, searchEffectsRef, floatingTextRef, screenFlashRef, wasDownedRef, warnedTilesRef, transmuteEffectsRef, flareEffectsRef, spellSpriteEffectsRef,
+    mobAnimRef, dyingMobsRef, playerAnimRef, particlesRef, searchEffectsRef, floatingTextRef, screenFlashRef, wasDownedRef, warnedTilesRef, transmuteEffectsRef, flareEffectsRef, spellSpriteEffectsRef, lightningRef, shieldHaloRef, stateEffectsRef, magicMissileRef, surpriseRef, selectedEnemyIdRef,
     setGrid, setDepth, setMyPlayerId, setInventory,
     setEquippedItems, setMyStats, setDifficulty, setBossInfo,
     setGold, setEnergy, setBelongings, setQuickslot,
@@ -184,6 +193,17 @@ function App() {
     onTalentUpgraded: talent.onTalentUpgraded,
   });
 
+  const isBusy = useMemo(() => {
+    const me = entitiesRef.current?.players?.[myPlayerIdRef.current];
+    if (!me) return false;
+    const anim = playerAnimRef.current?.[myPlayerIdRef.current];
+    if (!anim) return false;
+    const now = performance.now();
+    return (anim.attackUntil || 0) > now
+      || (anim.operateUntil || 0) > now
+      || (anim.readUntil || 0) > now;
+  }, [myStats]); // re-derive when myStats changes (every frame)
+
   const { hasDraggedRef } = useCanvasControls({
     enabled: gameState === 'PLAYING',
     canvasRef, socketRef,
@@ -194,13 +214,14 @@ function App() {
     examineModeRef: targeting.examineModeRef,
     onExamineTapRef: targeting.onExamineTapRef,
     entitiesRef, myPlayerIdRef,
+    hoveredCellRef,
   });
 
   useGameRenderer({
     canvasRef, grid, myPlayerId, depth, assetImages,
     entitiesRef, visionRef, openDoorsRef, projectilesRef,
     trapsRef, customTilesRef,
-    mobAnimRef, dyingMobsRef, playerAnimRef, particlesRef, searchEffectsRef, floatingTextRef, screenFlashRef, myPlayerIdRef, warnedTilesRef, transmuteEffectsRef, flareEffectsRef, spellSpriteEffectsRef,
+    mobAnimRef, dyingMobsRef, playerAnimRef, particlesRef, searchEffectsRef, floatingTextRef, screenFlashRef, myPlayerIdRef, warnedTilesRef, transmuteEffectsRef, flareEffectsRef, spellSpriteEffectsRef, lightningRef, shieldHaloRef, stateEffectsRef, magicMissileRef, surpriseRef, selectedEnemyIdRef, hoveredCellRef,
     panOffsetRef, cameraLerpRef, zoomRef,
     isRefocusingRef, isDraggingRef,
     setCamera,
@@ -491,6 +512,30 @@ function App() {
 
         <BossHealthBar boss={bossInfo} />
 
+        <DangerIndicator
+          visionRef={visionRef}
+          entitiesRef={entitiesRef}
+          myPlayerIdRef={myPlayerIdRef}
+          onCycleEnemy={() => {
+            const visible = visionRef.current.visible;
+            if (!visible) return;
+            const hostile = Object.values(entitiesRef.current.mobs).filter(m =>
+              m.faction === 'enemy' && visible.has(`${Math.round(m.renderPos.x)},${Math.round(m.renderPos.y)}`)
+            );
+            if (hostile.length === 0) return;
+            const pos = (hostile[0].targetPos || hostile[0].renderPos);
+            const lw = canvasRef.current?.getBoundingClientRect()?.width || window.innerWidth;
+            const lh = canvasRef.current?.getBoundingClientRect()?.height || window.innerHeight;
+            const z = zoomRef.current;
+            cameraLerpRef.current = {
+              x: Math.round(pos.x) * TILE_SIZE + TILE_SIZE / 2 - lw / 2 / z,
+              y: Math.round(pos.y) * TILE_SIZE + TILE_SIZE / 2 - lh / 2 / z,
+            };
+            panOffsetRef.current = { x: 0, y: 0 };
+            isRefocusingRef.current = false;
+          }}
+        />
+
         <StatusPane
           myStats={myStats}
           depth={depth}
@@ -499,6 +544,7 @@ function App() {
           hasTalentPoints={Object.values(talent.talentPoints || {}).some(p => p > 0)}
           onOpenTalents={() => talent.setShowTalentPane(v => !v)}
           onTeleport={(floor) => send({ type: 'ADMIN_TELEPORT', target_floor: floor })}
+          isBusy={isBusy}
         />
 
         <div className="canvas-wrapper" ref={wrapperRef}>
@@ -580,6 +626,8 @@ function App() {
           onDefaultAction={(item) => executeItemAction(item.id, item.default_action)}
           onCloseInventory={() => modals.setShowInventory(false)}
         />
+
+        <GameLog />
 
         <button className="fullscreen-btn" onClick={toggleFullscreen} title={isFullscreen ? t('app.exitFullscreen') : t('app.fullscreen')}>
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

@@ -244,6 +244,11 @@ class TenguBadgeQualifiedData(_EventData):
     pass  # no required payload
 
 
+class MessageData(_EventData):
+    text: str
+    color: Optional[str] = None
+
+
 class ImpDialogueData(_EventData):
     player: str
     npc: str
@@ -321,4 +326,5 @@ EVENT_MODELS = {
     "SCROLL_SELECT_TARGET": ScrollSelectTargetData,
     "TELEPORT": TeleportData,
     "MIRROR_IMAGE": MirrorImageData,
+    "MESSAGE": MessageData,
 }

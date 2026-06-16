@@ -53,7 +53,7 @@ function lerpColor(t, colors) {
   return `rgb(${r},${g},${bl})`;
 }
 
-export default function StatusPane({ myStats, depth, isAdmin, onSearch, hasTalentPoints, onOpenTalents, onTeleport }) {
+export default function StatusPane({ myStats, depth, isAdmin, onSearch, hasTalentPoints, onOpenTalents, onTeleport, isBusy }) {
   const { t } = useTranslation();
   const [showFloorPicker, setShowFloorPicker] = useState(false);
   const canvasRef = useRef(null);
@@ -195,17 +195,65 @@ export default function StatusPane({ myStats, depth, isAdmin, onSearch, hasTalen
           ctx.drawImage(avatarCanvas, 9 * SCALE, 8 * SCALE, FRAME_W * SCALE, FRAME_H * SCALE);
         }
 
+        // --- CircleArc (action timer around avatar) ---
+        const nowSec = performance.now() / 1000;
+        const sweep = 1 - (nowSec % 1);
+        ctx.save();
+        ctx.strokeStyle = '#808080';
+        ctx.lineWidth = 4.25 * SCALE / 3;
+        ctx.translate((9 + FRAME_W / 2) * SCALE, (8 + FRAME_H / 2) * SCALE);
+        ctx.rotate(-Math.PI / 2);
+        ctx.beginPath();
+        ctx.arc(0, 0, 18 * SCALE / 3, 0, Math.PI * 2 * sweep);
+        ctx.stroke();
+        ctx.restore();
+
+        // --- BusyIndicator (rotating dots around avatar when busy) ---
+        if (isBusy) {
+          const angle = nowSec * 3;
+          ctx.save();
+          ctx.translate((9 + FRAME_W / 2) * SCALE, (8 + FRAME_H / 2) * SCALE);
+          for (let i = 0; i < 4; i++) {
+            const a = angle + (i / 4) * Math.PI * 2;
+            const r = 22 * SCALE / 3;
+            const dx = Math.cos(a) * r;
+            const dy = Math.sin(a) * r;
+            const dotSize = 1.5 * SCALE / 3;
+            ctx.fillStyle = '#808080';
+            ctx.globalAlpha = 0.3 + 0.7 * (0.5 + 0.5 * Math.sin(a - angle));
+            ctx.beginPath();
+            ctx.arc(dx, dy, dotSize, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          ctx.restore();
+          ctx.globalAlpha = 1;
+        }
+
         const buffsSheet = imgs.buffs;
         if (buffsSheet?.complete && buffsSheet?.naturalWidth > 0) {
           effects.forEach((eff, i) => {
             const idx = eff.icon ?? 0;
             const col = idx % BUFF_COLS;
             const row = Math.floor(idx / BUFF_COLS);
+            const bx = (31 + i * (BUFF_SIZE + 1)) * SCALE;
+            const by = 0;
+            const bw = BUFF_SIZE * SCALE;
+            const bh = BUFF_SIZE * SCALE;
             ctx.globalAlpha = 0.85;
             ctx.drawImage(buffsSheet,
               col * BUFF_SIZE, row * BUFF_SIZE, BUFF_SIZE, BUFF_SIZE,
-              (31 + i * (BUFF_SIZE + 1)) * SCALE, 0, BUFF_SIZE * SCALE, BUFF_SIZE * SCALE);
+              bx, by, bw, bh);
             ctx.globalAlpha = 1;
+            // Duration fade overlay (grey from bottom, SPD BuffIcon.iconFadePercent)
+            if (eff.duration > 0 && eff.remaining != null) {
+              const fade = Math.max(0, Math.min(1, eff.remaining / eff.duration));
+              if (fade < 1) {
+                ctx.fillStyle = '#000';
+                ctx.globalAlpha = 0.35 * (1 - fade);
+                ctx.fillRect(bx, by + bh * (1 - fade), bw, bh * fade);
+                ctx.globalAlpha = 1;
+              }
+            }
           });
         }
 

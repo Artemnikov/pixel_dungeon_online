@@ -16,15 +16,36 @@
 // Mirrors the original SPD's BossHealthBar HUD element.
 export default function BossHealthBar({ boss }) {
   if (!boss) return null;
-  const pct = Math.max(0, Math.min(1, boss.maxHp > 0 ? boss.hp / boss.maxHp : 0));
+  const hp = Math.max(0, boss.hp || 0);
+  const maxHp = Math.max(1, boss.maxHp || 1);
+  const shield = boss.shield || 0;
+  const hpPct = Math.min(1, hp / maxHp);
+  const shieldPct = Math.min(1, (hp + shield) / maxHp);
+  const effects = boss.effects || [];
 
   return (
     <div className="boss-health-bar">
       <div className="boss-health-bar__box">
         <div className="boss-health-bar__name">{boss.name}</div>
         <div className="boss-health-bar__track">
-          <div className="boss-health-bar__fill" style={{ width: `${pct * 100}%` }} />
+          <div className="boss-health-bar__bg" style={{ width: '100%' }} />
+          {shieldPct > 0 && shieldPct > hpPct && (
+            <div className="boss-health-bar__shield" style={{ width: `${shieldPct * 100}%` }} />
+          )}
+          <div className="boss-health-bar__fill" style={{ width: `${hpPct * 100}%` }} />
         </div>
+        <div className="boss-health-bar__hp-text">
+          {hp}{shield > 0 ? `+${shield}` : ''}/{maxHp}
+        </div>
+        {effects.length > 0 && (
+          <div className="boss-health-bar__buffs">
+            {effects.slice(0, 6).map((eff, i) => (
+              <span key={i} className="boss-health-bar__buff" title={eff.name || ''}>
+                {eff.icon != null ? `[${eff.icon}]` : '?'}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

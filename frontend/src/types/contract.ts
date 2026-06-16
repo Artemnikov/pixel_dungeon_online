@@ -237,6 +237,11 @@ export interface MirrorImageEvent {
   data: { player: string; clones: { id: string; x: number; y: number }[] };
 }
 
+export interface MessageEvent {
+  type: 'MESSAGE';
+  data: { text: string; color?: string };
+}
+
 export interface MapPatchEvent {
   type: 'MAP_PATCH';
   data: { tiles: TilePatch[] };
@@ -549,7 +554,8 @@ export type GameEvent =
   | TenguFireEvent
   | TenguShockerEvent
   | TeleportEvent
-  | MirrorImageEvent;
+  | MirrorImageEvent
+  | MessageEvent;
 
 export type GameEventType = GameEvent['type'];
 
