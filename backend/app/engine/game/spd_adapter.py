@@ -8,7 +8,7 @@ directly into the game loop.
 
 import random as _random
 import uuid
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 from app.engine.dungeon.constants import RoomKind, TrapType, TrapVisual
 from app.engine.dungeon.models import Room as LegacyRoom, TrapInfo
@@ -470,6 +470,17 @@ def gen_level_to_floor_state(gen_level: GenLevel, depth: int) -> FloorState:
 
     region = "sewers" if depth <= 5 else "prison" if depth <= 10 else "caves" if depth <= 15 else "city" if depth <= 20 else "halls"
 
+    try:
+        entrance_cell = gen_level.entrance()
+        entrance_pos: Optional[Tuple[int, int]] = (entrance_cell % w, entrance_cell // w)
+    except (ValueError, AttributeError):
+        entrance_pos = None
+    try:
+        exit_cell = gen_level.exit()
+        exit_pos: Optional[Tuple[int, int]] = (exit_cell % w, exit_cell // w)
+    except (ValueError, AttributeError):
+        exit_pos = None
+
     floor = FloorState(
         floor_id=depth,
         grid=grid,
@@ -491,6 +502,8 @@ def gen_level_to_floor_state(gen_level: GenLevel, depth: int) -> FloorState:
         yog_pos=getattr(gen_level, 'yog_pos', None),
         custom_tiles=list(getattr(gen_level, 'custom_tiles', [])),
         alchemy_pots=alchemy_pots,
+        entrance_pos=entrance_pos,
+        exit_pos=exit_pos,
     )
     floor.rebuild_flags()
     return floor

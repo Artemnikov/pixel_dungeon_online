@@ -89,6 +89,7 @@ class ConnectionManager:
         player_floor = state.get("depth", 1)
         map_version = getattr(game.floors.get(player_floor), "map_version", 0)
 
+        floor = game.floors.get(player_floor)
         init = InitMessage(
             player_id=player_id,
             depth=player_floor,
@@ -97,6 +98,8 @@ class ConnectionManager:
             height=state["height"],
             traps=state.get("traps", []),
             custom_tiles=state.get("custom_tiles", []),
+            entrance_pos=getattr(floor, 'entrance_pos', None),
+            exit_pos=getattr(floor, 'exit_pos', None),
         )
         await websocket.send_json(init.model_dump(exclude_none=True))
         self.last_sent_floor.setdefault(game_id, {})[player_id] = (player_floor, map_version)
@@ -176,6 +179,7 @@ class ConnectionManager:
                     previous = self.last_sent_floor.setdefault(game_id, {}).get(player_id)
 
                     if previous != (player_floor, map_version):
+                        floor = game.floors.get(player_floor)
                         init = InitMessage(
                             depth=player_floor,
                             grid=state["grid"],
@@ -183,6 +187,8 @@ class ConnectionManager:
                             height=state["height"],
                             traps=state.get("traps", []),
                             custom_tiles=state.get("custom_tiles", []),
+                            entrance_pos=getattr(floor, 'entrance_pos', None),
+                            exit_pos=getattr(floor, 'exit_pos', None),
                         )
                         await connection.send_json(init.model_dump(exclude_none=True))
                         self.last_sent_floor[game_id][player_id] = (player_floor, map_version)

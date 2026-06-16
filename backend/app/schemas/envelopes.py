@@ -12,7 +12,7 @@ byte-identical keys to the old hand-built dicts (e.g. INIT only carries `player_
 on first connect, where it's set; floor-change INIT leaves it None -> excluded).
 """
 
-from typing import Any, Dict, List, Literal, Optional
+from typing import Any, Dict, List, Literal, Optional, Tuple
 
 from pydantic import BaseModel, ConfigDict
 
@@ -37,6 +37,8 @@ class InitMessage(_Envelope):
     custom_tiles: List[Dict[str, Any]] = []
     # Only set on the very first INIT after connecting; omitted on floor change.
     player_id: Optional[str] = None
+    entrance_pos: Optional[Tuple[int, int]] = None
+    exit_pos: Optional[Tuple[int, int]] = None
 
 
 class StateUpdateMessage(_Envelope):
