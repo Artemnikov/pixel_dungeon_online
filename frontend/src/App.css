@@ -1500,6 +1500,43 @@
   background: #333340;
 }
 
+/* --- Boss slain banner (floating, no dark overlay) --- */
+.boss-slain-root {
+  position: fixed; inset: 0; z-index: 600;
+  pointer-events: none;
+  animation: boss-slain-fadein 0.3s ease-out;
+}
+@keyframes boss-slain-fadein {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.boss-slain-badge {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) translateY(-72px);
+  background: transparent url('./assets/pixel-dungeon/interfaces/badges.png') no-repeat;
+  image-rendering: pixelated;
+  animation: boss-slain-badge-in 0.25s ease-out;
+}
+@keyframes boss-slain-badge-in {
+  from { opacity: 0; transform: translate(-50%, -50%) translateY(-72px) scale(1.5); }
+  to { opacity: 1; transform: translate(-50%, -50%) translateY(-72px) scale(1); }
+}
+.boss-slain-banner {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: transparent url('./assets/pixel-dungeon/interfaces/banners.png') no-repeat;
+  image-rendering: pixelated;
+  animation: boss-slain-banner-in 0.3s ease-out;
+}
+@keyframes boss-slain-banner-in {
+  from { opacity: 0; filter: brightness(2); }
+  to { opacity: 1; filter: brightness(1); }
+}
+
 /* --- Choice overlays (Subclass, Armor Ability) — SPD-style --- */
 .choice-overlay {
   position: fixed; inset: 0; z-index: 450;

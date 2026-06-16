@@ -191,6 +191,7 @@ interface HookProps {
   onShopOpen?: (data: { npc: string; stock: SerializedItem[]; gold: number }) => void;
   onImpDialogue?: (data: { npc: string; text: string; can_claim: boolean; tokens?: number | null }) => void;
   onScrollSelectTarget?: (data: { player: string; scroll_id: string; scroll_kind: string; candidates: string[] }) => void;
+  onBossSlain?: (data: { mob: string; depth: number; badge_image: number }) => void;
 }
 
 type HandlerCtx = Pick<
@@ -230,6 +231,7 @@ type HandlerCtx = Pick<
   onShopOpen?: HookProps['onShopOpen'];
   onImpDialogue?: HookProps['onImpDialogue'];
   onScrollSelectTarget?: HookProps['onScrollSelectTarget'];
+  onBossSlain?: HookProps['onBossSlain'];
 };
 
 export default function useGameSocket({
@@ -291,6 +293,7 @@ export default function useGameSocket({
   onShopOpen,
   onImpDialogue,
   onScrollSelectTarget,
+  onBossSlain,
 }: HookProps) {
   useEffect(() => {
     if (!enabled) return;
@@ -586,7 +589,7 @@ export default function useGameSocket({
             searchEffectsRef, floatingTextRef, screenFlashRef, transmuteEffectsRef, warnedTilesRef, flareEffectsRef, spellSpriteEffectsRef, lightningRef, shieldHaloRef, stateEffectsRef, magicMissileRef, surpriseRef, selectedEnemyIdRef,
             onLevelUp, onSubclassChoiceAvailable, onArmorAbilityChoiceAvailable, onTalentUpgraded,
             onMetamorphOpen, onMetamorphOptions, onGooFightStarted, onTenguFightStarted,
-            onShopOpen, onImpDialogue, onScrollSelectTarget,
+            onShopOpen, onImpDialogue, onScrollSelectTarget, onBossSlain,
           });
         });
       }
@@ -625,7 +628,7 @@ function handleEvent(event: GameEvent, {
   searchEffectsRef, floatingTextRef, screenFlashRef, transmuteEffectsRef, warnedTilesRef, flareEffectsRef, spellSpriteEffectsRef, lightningRef, shieldHaloRef, stateEffectsRef, magicMissileRef, surpriseRef, selectedEnemyIdRef,
   onLevelUp, onSubclassChoiceAvailable, onArmorAbilityChoiceAvailable, onTalentUpgraded,
   onMetamorphOpen, onMetamorphOptions, onGooFightStarted, onTenguFightStarted,
-  onShopOpen, onImpDialogue, onScrollSelectTarget,
+  onShopOpen, onImpDialogue, onScrollSelectTarget, onBossSlain,
 }: HandlerCtx) {
   if (event.type === 'PLAY_SOUND') {
     AudioManager.play(event.data.sound);
@@ -1354,6 +1357,12 @@ function handleEvent(event: GameEvent, {
     if (event.data.player === myPlayerIdRef.current) {
       AudioManager.play('LEVELUP', 1.2);
     }
+    return;
+  }
+
+  if (event.type === 'BOSS_SLAIN') {
+    AudioManager.play('BOSS');
+    onBossSlain?.(event.data);
     return;
   }
 

@@ -1527,6 +1527,8 @@ class Player(Entity):
     websocket_id: Optional[str] = None
     is_downed: bool = False
     death_processed: bool = False
+    kills_count: int = 0
+    floors_explored: int = 1
     # Over-time healing, mirroring SPD's Healing buff. Each application heals
     # `heal_pct_per_tick` of the remaining `heal_left` (plus a flat amount), with a
     # minimum of 1, until exhausted. `heal_cooldown` throttles applications so heals

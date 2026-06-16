@@ -172,6 +172,7 @@ class PlayersMixin:
         self._get_or_create_floor(target_floor_id)
 
         player.floor_id = target_floor_id
+        player.floors_explored = max(player.floors_explored, target_floor_id)
         player.pos = self._get_stairs_pos(spawn_tile, floor_id=target_floor_id)
 
         self.depth = target_floor_id
@@ -276,4 +277,13 @@ class PlayersMixin:
             pos=Position(x=player.pos.x, y=player.pos.y),
         )
 
-        self.add_event("DEATH", {"target": player.id}, floor_id=floor_id)
+        self.add_event("DEATH", {
+            "target": player.id,
+            "score_breakdown": {
+                "kills": player.kills_count,
+                "floors": player.floors_explored,
+                "gold": player.gold,
+            },
+            "can_resurrect": False,
+            "victory": False,
+        }, floor_id=floor_id)

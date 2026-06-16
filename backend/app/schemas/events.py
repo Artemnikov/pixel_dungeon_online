@@ -240,6 +240,12 @@ class TalentMetamorphData(_EventData):
     new_talent: str
 
 
+class BossSlainData(_EventData):
+    mob: str
+    depth: int
+    badge_image: int
+
+
 class TenguBadgeQualifiedData(_EventData):
     pass  # no required payload
 
@@ -320,6 +326,7 @@ EVENT_MODELS = {
     "METAMORPH_OPEN": MetamorphOpenData,
     "METAMORPH_OPTIONS": MetamorphOptionsData,
     "TALENT_METAMORPHED": TalentMetamorphData,
+    "BOSS_SLAIN": BossSlainData,
     "TENGU_BADGE_QUALIFIED": TenguBadgeQualifiedData,
     "IMP_DIALOGUE": ImpDialogueData,
     "IMP_REWARD": ImpRewardData,

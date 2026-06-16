@@ -31,6 +31,7 @@ import GameHud from './ui/GameHud';
 import GameModals from './ui/GameModals';
 import TalentLayer from './ui/TalentLayer';
 import GameOverlay from './ui/GameOverlay';
+import BossSlainBanner from './ui/BossSlainBanner';
 
 function App() {
   const { t } = useTranslation();
@@ -65,6 +66,8 @@ function App() {
   const [, setCamera] = useState({ x: 0, y: 0 });
   const [gold, setGold] = useState(0);
   const [energy, setEnergy] = useState(0);
+  const [showBossSlainBanner, setShowBossSlainBanner] = useState(false);
+  const [bossSlainData, setBossSlainData] = useState(null);
 
   // --- shared refs ---
   const canvasRef = useRef(null);
@@ -191,6 +194,10 @@ function App() {
     onImpDialogue: modals.onImpDialogue,
     onScrollSelectTarget: modals.onScrollSelectTarget,
     onTalentUpgraded: talent.onTalentUpgraded,
+    onBossSlain: (data) => {
+      setBossSlainData(data);
+      setShowBossSlainBanner(true);
+    },
   });
 
   const isBusy = useMemo(() => {
@@ -364,6 +371,8 @@ function App() {
     setMyStats({ hp: 0, maxHp: 10, name: '' });
     setBossInfo(null);
     setBossFightActive(false);
+    setShowBossSlainBanner(false);
+    setBossSlainData(null);
     setInventory([]);
     setConnectionStatus(null);
     talent.resetMetamorph();
@@ -628,6 +637,13 @@ function App() {
         />
 
         <GameLog />
+
+        {showBossSlainBanner && bossSlainData && (
+          <BossSlainBanner
+            badgeImage={bossSlainData.badge_image}
+            onDismiss={() => setShowBossSlainBanner(false)}
+          />
+        )}
 
         <button className="fullscreen-btn" onClick={toggleFullscreen} title={isFullscreen ? t('app.exitFullscreen') : t('app.fullscreen')}>
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

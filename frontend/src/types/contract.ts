@@ -423,6 +423,12 @@ export interface ScrollSelectTargetEvent {
   data: { player: string; scroll_id: string; scroll_kind: string; candidates: string[] };
 }
 
+/** Boss was slain — shows "BOSS SLAIN" banner + badge icon. */
+export interface BossSlainEvent {
+  type: 'BOSS_SLAIN';
+  data: { mob: string; depth: number; badge_image: number };
+}
+
 /** Goo boss: pumped-up charge telegraph. `tiles` lists the threatened cells
  * (cleared with an empty array when the charge is released or cancelled). */
 export interface GooChargeEvent {
@@ -555,7 +561,8 @@ export type GameEvent =
   | TenguShockerEvent
   | TeleportEvent
   | MirrorImageEvent
-  | MessageEvent;
+  | MessageEvent
+  | BossSlainEvent;
 
 export type GameEventType = GameEvent['type'];
 
