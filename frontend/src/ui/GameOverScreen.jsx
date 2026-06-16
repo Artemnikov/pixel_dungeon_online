@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import RankingsPane from './RankingsPane';
 
 export default function GameOverScreen({
@@ -15,6 +16,7 @@ export default function GameOverScreen({
   onNewGame,
   onMenu,
 }) {
+  const { t } = useTranslation();
   const [shown, setShown] = useState(false);
   const [showRankings, setShowRankings] = useState(false);
 
@@ -57,7 +59,7 @@ export default function GameOverScreen({
             letterSpacing: '2px',
           }}
         >
-          You Died
+          {t('game.youDied')}
         </div>
       </div>
 

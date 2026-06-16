@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import TalentTierPane from './TalentTierPane';
 import WndInfoTalent from './WndInfoTalent';
 
@@ -16,9 +17,9 @@ function computeTiersAvailable(level, subclass, armorAbility, maxTiers) {
 }
 
 const BLOCKER_MESSAGES = {
-  1: { level: 7, text: 'Reach level 7 to unlock more talents' },
-  2: { level: 13, text: 'Reach level 13 to unlock more talents' },
-  3: { level: 21, text: 'Reach level 21 to unlock more talents' },
+  1: { level: 7, textKey: 'talent.blocker1' },
+  2: { level: 13, textKey: 'talent.blocker2' },
+  3: { level: 21, textKey: 'talent.blocker3' },
 };
 
 export default function TalentPane({
@@ -43,6 +44,7 @@ export default function TalentPane({
   isAdmin,
   onAdminLevelUp,
 }) {
+  const { t } = useTranslation();
   const [info, setInfo] = useState(null);
 
   const sortedTiers = useMemo(() => {
@@ -81,10 +83,10 @@ export default function TalentPane({
       <div className="talent-overlay" onClick={onClose}>
         <div className="talent-pane" onClick={(e) => e.stopPropagation()}>
           <div className="talent-header">
-            <h2 className="talent-title">Talents</h2>
+            <h2 className="talent-title">{t('talent.title')}</h2>
             <button className="talent-close" onClick={onClose}>×</button>
           </div>
-          <div className="talent-loading">Loading talent data...</div>
+          <div className="talent-loading">{t('talent.loading')}</div>
         </div>
       </div>
     );
@@ -95,10 +97,10 @@ export default function TalentPane({
       <div className="talent-overlay" onClick={onClose}>
         <div className="talent-pane" onClick={(e) => e.stopPropagation()}>
           <div className="talent-header">
-            <h2 className="talent-title">Talents</h2>
+            <h2 className="talent-title">{t('talent.title')}</h2>
             <button className="talent-close" onClick={onClose}>×</button>
           </div>
-          <div className="talent-error">Failed to load talents: {error}</div>
+          <div className="talent-error">{t('talent.error', { error })}</div>
         </div>
       </div>
     );
@@ -108,13 +110,13 @@ export default function TalentPane({
     <div className="talent-overlay" onClick={onClose}>
       <div className="talent-pane" onClick={(e) => e.stopPropagation()}>
         <div className="talent-header">
-          <h2 className="talent-title">{metamorphMode ? 'Replace a talent' : 'Talents'}</h2>
+          <h2 className="talent-title">{metamorphMode ? t('talent.replaceTitle') : t('talent.title')}</h2>
           {!metamorphMode && <span className="talent-level-badge">Lv.{level}</span>}
           {!metamorphMode && isAdmin && (
-            <button className="admin-level-btn" onClick={onAdminLevelUp}>Level Up</button>
+            <button className="admin-level-btn" onClick={onAdminLevelUp}>{t('talent.levelUpAdmin')}</button>
           )}
           {!metamorphMode && subclass && (
-            <span className="talent-badge subclass-badge" title="Tap to view subclass info">
+            <span className="talent-badge subclass-badge" title={subclass}>
               {subclass}
             </span>
           )}
@@ -125,12 +127,12 @@ export default function TalentPane({
           )}
           {!metamorphMode && !subclass && level >= 6 && (
             <button className="talent-action-btn" onClick={onChooseSubclass}>
-              Choose Subclass
+              {t('talent.chooseSubclass')}
             </button>
           )}
           {!metamorphMode && subclass && !armorAbility && level >= 13 && (
             <button className="talent-action-btn" onClick={onChooseArmorAbility}>
-              Choose Ability
+              {t('talent.chooseAbility')}
             </button>
           )}
           {!metamorphMode && hasTalentPoints && (
@@ -138,12 +140,12 @@ export default function TalentPane({
               {Object.entries(talentPoints || {})
                 .filter(([, pts]) => pts > 0)
                 .map(([tier, pts]) => (
-                  <span key={tier} className="talent-tier-pts">T{tier}: {pts}</span>
+                  <span key={tier} className="talent-tier-pts">{t('talent.tierPoints', { tier, pts })}</span>
                 ))}
             </span>
           )}
           {metamorphMode && (
-            <span className="talent-metamorph-hint">Tap a talent to replace it</span>
+            <span className="talent-metamorph-hint">{t('talent.metamorphHint')}</span>
           )}
           <button className="talent-close" onClick={onClose}>&times;</button>
         </div>
@@ -182,7 +184,7 @@ export default function TalentPane({
             <>
               <div className="tier-separator" />
               <div className="tier-pane-blocker">
-                <div className="tier-pane-blocker-text">{blockerMsg.text}</div>
+                <div className="tier-pane-blocker-text">{t(blockerMsg.textKey)}</div>
               </div>
             </>
           )}

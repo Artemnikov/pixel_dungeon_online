@@ -1,23 +1,9 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (C) 2026 ArtemNikov
-//
-// Adapted from Shattered Pixel Dungeon (C) 2014-2024 Evan Debenham
-//
-// This program is free software: you can redistribute it and/or modify
-// it under the terms of the GNU General Public License as published by
-// the Free Software Foundation, either version 3 of the License, or
-// (at your option) any later version.
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-// See the GNU General Public License for more details.
-//
 import { useState, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import ItemIcon from './ItemIcon';
 
-// Admin-only debug panel (press U): browse every item kind in the game and
-// give one to yourself. `catalog` is the list fetched from /api/items/catalog.
 export default function AdminItemBrowser({ catalog, onClose, onGiveItem }) {
+  const { t } = useTranslation();
   const [query, setQuery] = useState('');
 
   const filtered = useMemo(() => {
@@ -32,13 +18,13 @@ export default function AdminItemBrowser({ catalog, onClose, onGiveItem }) {
     <div className="talent-overlay" onClick={onClose}>
       <div className="talent-pane item-browser-pane" onClick={(e) => e.stopPropagation()}>
         <div className="talent-header">
-          <h2 className="talent-title">Give Item</h2>
+          <h2 className="talent-title">{t('admin.giveItem')}</h2>
           <button className="talent-close" onClick={onClose}>&times;</button>
         </div>
         <div className="item-browser-search">
           <input
             type="text"
-            placeholder="Search items..."
+            placeholder={t('admin.searchItems')}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             autoFocus
@@ -57,7 +43,7 @@ export default function AdminItemBrowser({ catalog, onClose, onGiveItem }) {
             </div>
           ))}
           {filtered.length === 0 && (
-            <div className="item-browser-empty">No items match "{query}"</div>
+            <div className="item-browser-empty">{t('admin.noMatch', { query })}</div>
           )}
         </div>
       </div>

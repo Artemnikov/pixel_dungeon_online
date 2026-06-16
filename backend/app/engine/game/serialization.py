@@ -22,6 +22,7 @@ potion colours / scroll runes, shared per-run across the co-op party).
 from typing import Dict, Optional
 
 from app.engine.entities.base import Bag, Difficulty
+from app.engine.entities.locale_keys import item_locale_key, mob_locale_key
 
 
 class SerializationMixin:
@@ -94,6 +95,7 @@ class SerializationMixin:
             d["kind"] = d["type"]
             d.pop("effect", None)
             d["level_known"] = False
+            d.pop("locale_key", None)
             if "description" in d:
                 d["description"] = (
                     "You'll have to drink it to find out what it does."
@@ -132,6 +134,9 @@ class SerializationMixin:
                 node["default_action"] = live.default_action()
                 node["description"] = live.description(p)
                 node["value"] = live.value(identified=live.kind in self.identified_kinds)
+                lk = item_locale_key(live)
+                if lk:
+                    node["locale_key"] = lk
             self._mask_item_dict(node)
 
         belongings = d.get("belongings", {})
@@ -150,7 +155,17 @@ class SerializationMixin:
     def _serialize_floor_item(self, item) -> dict:
         d = item.model_dump()
         d["value"] = item.value(identified=item.kind in self.identified_kinds)
+        lk = item_locale_key(item)
+        if lk:
+            d["locale_key"] = lk
         return self._mask_item_dict(d)
+
+    def _serialize_mob(self, mob) -> dict:
+        d = mob.model_dump()
+        lk = mob_locale_key(mob)
+        if lk:
+            d["locale_key"] = lk
+        return d
 
     def get_state(self, player_id: Optional[str] = None):
         # Occupancy-based open doors and entity positions may have changed since
@@ -170,7 +185,7 @@ class SerializationMixin:
                 return {
                     "depth": player.floor_id,
                     "players": [self._serialize_player(p) for p in floor_players],
-                    "mobs": [m.model_dump() for m in floor.mobs.values() if m.is_alive],
+                    "mobs": [self._serialize_mob(m) for m in floor.mobs.values() if m.is_alive],
                     "items": [self._serialize_floor_item(i) for i in floor.items.values() if i.pos],
                     "visible_tiles": all_tiles,
                     "open_doors": self._get_open_doors(floor),
@@ -212,7 +227,7 @@ class SerializationMixin:
             return {
                 "depth": player.floor_id,
                 "players": [self._serialize_player(p) for p in floor_players],
-                "mobs": [m.model_dump() for m in floor.mobs.values() if m.is_alive
+                "mobs": [self._serialize_mob(m) for m in floor.mobs.values() if m.is_alive
                          and ((m.pos.x, m.pos.y) in visible_set or (m.pos.x, m.pos.y) in mind_vision_set)],
                 "items": [self._serialize_floor_item(i) for i in floor.items.values() if i.pos and (i.pos.x, i.pos.y) in visible_set],
                 "visible_tiles": visible_tiles,
@@ -229,7 +244,7 @@ class SerializationMixin:
         return {
             "depth": self.depth,
             "players": [self._serialize_player(p) for p in self._players_on_floor(self.depth)],
-            "mobs": [m.model_dump() for m in floor.mobs.values() if m.is_alive],
+            "mobs": [self._serialize_mob(m) for m in floor.mobs.values() if m.is_alive],
             "items": [self._serialize_floor_item(i) for i in floor.items.values() if i.pos],
             "open_doors": self._get_open_doors(floor),
             "grid": floor.grid,
