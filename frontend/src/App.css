@@ -2040,6 +2040,8 @@
 .side-tag--loot { border-color: #185898; }
 .side-tag--loot:hover { background: rgba(10, 20, 40, 0.85); }
 .side-tag--resume { border-color: #888; }
+.side-tag--attack { border-color: #c03838; }
+.side-tag--attack:hover { background: rgba(40, 10, 10, 0.85); }
 .side-tag--action { border-color: #8855cc; }
 
 /* --- GameLog — SPD's bottom-left message log --- */

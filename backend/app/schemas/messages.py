@@ -200,6 +200,11 @@ class PickupFloor(_ClientMessageBase):
     type: Literal["PICKUP_FLOOR"]
 
 
+class Attack(_ClientMessageBase):
+    type: Literal["ATTACK"]
+    target_id: str
+
+
 ClientMessage = Annotated[
     Union[
         Ping,
@@ -236,6 +241,7 @@ ClientMessage = Annotated[
         SelectScrollTarget,
         Resume,
         PickupFloor,
+        Attack,
     ],
     Field(discriminator="type"),
 ]

@@ -26,6 +26,7 @@ import StatusPane from './ui/StatusPane';
 import BossHealthBar from './ui/BossHealthBar';
 import DangerIndicator from './ui/DangerIndicator';
 import SideTags from './ui/SideTags';
+import AttackIndicator from './ui/AttackIndicator';
 import LootIndicator from './ui/LootIndicator';
 import ResumeIndicator from './ui/ResumeIndicator';
 import ActionIndicator from './ui/ActionIndicator';
@@ -526,6 +527,10 @@ function App() {
         <BossHealthBar boss={bossInfo} />
 
         <SideTags>
+          <AttackIndicator
+            myStats={myStats}
+            onAttack={(targetId) => send({ type: 'ATTACK', target_id: targetId })}
+          />
           <ActionIndicator
             myStats={myStats}
             onAction={(action) => {
