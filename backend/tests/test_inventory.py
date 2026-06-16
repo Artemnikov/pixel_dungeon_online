@@ -59,6 +59,5 @@ def test_item_pickup_in_game():
     
     assert player.pos.x == item_pos.x
     assert player.pos.y == item_pos.y
-    assert len(player.inventory) == 1
-    assert player.inventory[0].id == item_id
+    assert any(it.id == item_id for it in player.inventory)
     assert item_id not in floor.items

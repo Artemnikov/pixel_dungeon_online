@@ -227,6 +227,20 @@ export default function Toolbar({
         if (item.is_placeholder) ctx.globalAlpha = 0.35;
         ctx.drawImage(ii, coords[0] * 16 + rx, coords[1] * 16 + ry, sw, sh, ix, iy, sw * sc, sh * sc);
         if (item.is_placeholder) ctx.globalAlpha = 1.0;
+        if (!item.is_placeholder && item.quantity > 1) {
+          const qs = 7 * sc;
+          ctx.font = `bold ${qs}px monospace`;
+          ctx.textBaseline = 'top';
+          ctx.textAlign = 'right';
+          const ox = 2 * sc;
+          const oy = 2 * sc;
+          const rx2 = dx + padL + availW;
+          const ty = dy;
+          ctx.fillStyle = '#000';
+          ctx.fillText(String(item.quantity), rx2 - ox + sc, ty + oy + sc);
+          ctx.fillStyle = '#fff';
+          ctx.fillText(String(item.quantity), rx2 - ox, ty + oy);
+        }
       }
 
       function isArmedSlot(item) {

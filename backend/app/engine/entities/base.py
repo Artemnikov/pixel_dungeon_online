@@ -985,6 +985,7 @@ class Throwable(ItemBase):
     kind: Literal["throwable"] = "throwable"
     type: str = "throwable"
     category: ClassVar[str] = ItemCategory.STONE
+    stackable: ClassVar[bool] = True
     damage: int = 1
     range: int = 5
     consumable: bool = True
