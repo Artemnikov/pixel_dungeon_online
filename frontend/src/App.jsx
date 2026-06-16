@@ -73,6 +73,9 @@ function App() {
   const [gold, setGold] = useState(0);
   const [energy, setEnergy] = useState(0);
   const [exitPos, setExitPos] = useState(null);
+  const [scoreBreakdown, setScoreBreakdown] = useState(null);
+  const [canResurrect, setCanResurrect] = useState(false);
+  const [isVictory, setIsVictory] = useState(false);
   const [showBossSlainBanner, setShowBossSlainBanner] = useState(false);
   const [bossSlainData, setBossSlainData] = useState(null);
 
@@ -204,6 +207,11 @@ function App() {
     onBossSlain: (data) => {
       setBossSlainData(data);
       setShowBossSlainBanner(true);
+    },
+    onPlayerDeath: (data) => {
+      setScoreBreakdown(data.score_breakdown || null);
+      setCanResurrect(!!data.can_resurrect);
+      setIsVictory(!!data.victory);
     },
   });
 
@@ -382,6 +390,9 @@ function App() {
     setBossSlainData(null);
     setInventory([]);
     setConnectionStatus(null);
+    setScoreBreakdown(null);
+    setCanResurrect(false);
+    setIsVictory(false);
     talent.resetMetamorph();
   };
 
@@ -728,6 +739,10 @@ function App() {
           talentDefs={talent.talentDefs}
           inventory={inventory}
           selectedClass={selectedClass}
+          scoreBreakdown={scoreBreakdown}
+          canResurrect={canResurrect}
+          isVictory={isVictory}
+          onResurrect={() => send({ type: 'RESURRECT' })}
           onNewGame={() => { resetForRestart(); setGameState('SELECT'); }}
           onMenu={() => { resetForRestart(); setGameState('WELCOME'); }}
         />

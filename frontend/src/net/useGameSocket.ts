@@ -194,6 +194,7 @@ interface HookProps {
   onImpDialogue?: (data: { npc: string; text: string; can_claim: boolean; tokens?: number | null }) => void;
   onScrollSelectTarget?: (data: { player: string; scroll_id: string; scroll_kind: string; candidates: string[] }) => void;
   onBossSlain?: (data: { mob: string; depth: number; badge_image: number }) => void;
+  onPlayerDeath?: (data: { score_breakdown?: { kills: number; floors: number; gold: number }; can_resurrect?: boolean; victory?: boolean }) => void;
 }
 
 type HandlerCtx = Pick<
@@ -234,6 +235,7 @@ type HandlerCtx = Pick<
   onImpDialogue?: HookProps['onImpDialogue'];
   onScrollSelectTarget?: HookProps['onScrollSelectTarget'];
   onBossSlain?: HookProps['onBossSlain'];
+  onPlayerDeath?: HookProps['onPlayerDeath'];
 };
 
 export default function useGameSocket({
@@ -297,6 +299,7 @@ export default function useGameSocket({
   onImpDialogue,
   onScrollSelectTarget,
   onBossSlain,
+  onPlayerDeath,
 }: HookProps) {
   useEffect(() => {
     if (!enabled) return;
@@ -594,7 +597,7 @@ export default function useGameSocket({
             searchEffectsRef, floatingTextRef, screenFlashRef, transmuteEffectsRef, warnedTilesRef, flareEffectsRef, spellSpriteEffectsRef, lightningRef, shieldHaloRef, stateEffectsRef, magicMissileRef, surpriseRef, selectedEnemyIdRef,
             onLevelUp, onSubclassChoiceAvailable, onArmorAbilityChoiceAvailable, onTalentUpgraded,
             onMetamorphOpen, onMetamorphOptions, onGooFightStarted, onTenguFightStarted,
-            onShopOpen, onImpDialogue, onScrollSelectTarget, onBossSlain,
+            onShopOpen, onImpDialogue, onScrollSelectTarget, onBossSlain, onPlayerDeath,
           });
         });
       }
@@ -633,7 +636,7 @@ function handleEvent(event: GameEvent, {
   searchEffectsRef, floatingTextRef, screenFlashRef, transmuteEffectsRef, warnedTilesRef, flareEffectsRef, spellSpriteEffectsRef, lightningRef, shieldHaloRef, stateEffectsRef, magicMissileRef, surpriseRef, selectedEnemyIdRef,
   onLevelUp, onSubclassChoiceAvailable, onArmorAbilityChoiceAvailable, onTalentUpgraded,
   onMetamorphOpen, onMetamorphOptions, onGooFightStarted, onTenguFightStarted,
-  onShopOpen, onImpDialogue, onScrollSelectTarget, onBossSlain,
+  onShopOpen, onImpDialogue, onScrollSelectTarget, onBossSlain, onPlayerDeath,
 }: HandlerCtx) {
   if (event.type === 'PLAY_SOUND') {
     AudioManager.play(event.data.sound);
@@ -1251,6 +1254,14 @@ function handleEvent(event: GameEvent, {
 
   if (event.type === 'DEATH') {
     const id = event.data.target;
+    if (id === myPlayerIdRef.current) {
+      onPlayerDeath?.({
+        score_breakdown: event.data.score_breakdown,
+        can_resurrect: event.data.can_resurrect,
+        victory: event.data.victory,
+      });
+      return;
+    }
     const mob = entitiesRef.current.mobs[id];
     if (mob) {
       dyingMobsRef.current[id] = { ...mob, renderPos: { ...mob.renderPos }, deathStart: performance.now() };

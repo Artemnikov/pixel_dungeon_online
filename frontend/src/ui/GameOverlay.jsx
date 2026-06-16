@@ -1,11 +1,14 @@
 import GameMenu from './GameMenu';
 import GameOverScreen from './GameOverScreen';
+import VictoryScreen from './VictoryScreen';
+import WndResurrect from './WndResurrect';
 
 export default function GameOverlay({
   gameMenuOpen, onCloseMenu, onLeaveGame,
   isDowned, playerName, classType, level, depth, gold,
   subclass, armorAbility, talentLevels, talentDefs, inventory,
-  selectedClass, onNewGame, onMenu,
+  selectedClass, scoreBreakdown, canResurrect, isVictory, onResurrect,
+  onNewGame, onMenu,
 }) {
   return (
     <>
@@ -15,7 +18,20 @@ export default function GameOverlay({
           onLeaveGame={onLeaveGame}
         />
       )}
-      {!!isDowned && (
+      {!!isDowned && canResurrect && (
+        <WndResurrect
+          onConfirm={onResurrect}
+          onDecline={onMenu}
+        />
+      )}
+      {!!isDowned && isVictory && (
+        <VictoryScreen
+          scoreBreakdown={scoreBreakdown}
+          onNewGame={onNewGame}
+          onMenu={onMenu}
+        />
+      )}
+      {!!isDowned && !canResurrect && !isVictory && (
         <GameOverScreen
           playerName={playerName}
           classType={classType || selectedClass}
@@ -27,6 +43,7 @@ export default function GameOverlay({
           talentLevels={talentLevels}
           talentDefs={talentDefs}
           inventory={inventory}
+          scoreBreakdown={scoreBreakdown}
           onNewGame={onNewGame}
           onMenu={onMenu}
         />

@@ -167,7 +167,12 @@ export interface DamageEvent {
 
 export interface DeathEvent {
   type: 'DEATH';
-  data: { target: string };
+  data: {
+    target: string;
+    score_breakdown?: { kills: number; floors: number; gold: number };
+    can_resurrect?: boolean;
+    victory?: boolean;
+  };
 }
 
 export interface MoveEvent {
