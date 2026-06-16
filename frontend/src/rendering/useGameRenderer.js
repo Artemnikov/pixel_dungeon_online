@@ -21,6 +21,7 @@ import { advanceAndDrawLightning } from './draw/lightning';
 import { advanceAndDrawShieldHalos } from './draw/shieldHalo';
 import { advanceAndDrawStateEffects } from './draw/states';
 import { advanceAndDrawSurprises } from './draw/surprise';
+import { drawCharHealth } from './draw/charHealth';
 import { drawTargetHealthIndicator } from './draw/targetHealthIndicator';
 import { drawTargetedCell } from './draw/targetedCell';
 
@@ -158,6 +159,7 @@ export default function useGameRenderer({
       if (warnedTilesRef) drawWarnedTiles(ctx, { ref: warnedTilesRef });
       drawItems(ctx, { entitiesRef, visionRef, assetImages });
       drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef, dyingMobsRef });
+      drawCharHealth(ctx, { entitiesRef, visionRef });
       drawTargetHealthIndicator(ctx, { entitiesRef, visionRef, selectedEnemyIdRef });
       drawPlayers(ctx, { entitiesRef, visionRef, assetImages, playerAnimRef, myPlayerId });
       drawGridCaps(ctx, { grid, depth, assetImages, visionRef });
