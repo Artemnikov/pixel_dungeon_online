@@ -2064,3 +2064,29 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+.toast-overlay {
+  position: fixed;
+  left: 50%;
+  bottom: 80px;
+  transform: translateX(-50%);
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  pointer-events: none;
+}
+.toast-overlay__item {
+  background: rgba(0, 0, 0, 0.75);
+  color: #ffffcc;
+  font: 13px monospace;
+  padding: 5px 12px;
+  border-radius: 4px;
+  text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.9);
+  transition: opacity 0.5s ease;
+  opacity: 1;
+}
+.toast-overlay__item--fade {
+  opacity: 0;
+}

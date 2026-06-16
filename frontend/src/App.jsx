@@ -31,6 +31,7 @@ import LootIndicator from './ui/LootIndicator';
 import ResumeIndicator from './ui/ResumeIndicator';
 import ActionIndicator from './ui/ActionIndicator';
 import GameLog from './ui/GameLog';
+import ToastOverlay from './ui/ToastOverlay';
 import LoadingOverlay from './ui/LoadingOverlay';
 import GameHud from './ui/GameHud';
 import GameModals from './ui/GameModals';
@@ -666,6 +667,7 @@ function App() {
         />
 
         <GameLog />
+        <ToastOverlay />
 
         {showBossSlainBanner && bossSlainData && (
           <BossSlainBanner

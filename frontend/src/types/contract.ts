@@ -242,6 +242,11 @@ export interface MessageEvent {
   data: { text: string; color?: string };
 }
 
+export interface ToastEvent {
+  type: 'TOAST';
+  data: { text: string };
+}
+
 export interface MapPatchEvent {
   type: 'MAP_PATCH';
   data: { tiles: TilePatch[] };
@@ -562,6 +567,7 @@ export type GameEvent =
   | TeleportEvent
   | MirrorImageEvent
   | MessageEvent
+  | ToastEvent
   | BossSlainEvent;
 
 export type GameEventType = GameEvent['type'];

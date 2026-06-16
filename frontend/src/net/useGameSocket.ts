@@ -15,7 +15,7 @@ import { spawnLightning } from '../rendering/draw/lightning';
 import { spawnMagicMissile } from '../rendering/draw/magicMissile';
 import { spawnSpellSprite, SPELL_CHARGE, SPELL_MAP } from '../rendering/draw/spellSprite';
 import { forceAlertMob } from '../rendering/draw/mobs';
-import { addGameLog } from '../ui/gameLogHelpers';
+import { addGameLog, dispatchToast } from '../ui/gameLogHelpers';
 import { sendMessage } from './send';
 import type {
   Player,
@@ -1373,6 +1373,11 @@ function handleEvent(event: GameEvent, {
 
   if (event.type === 'MESSAGE') {
     addGameLog(event.data.text, event.data.color || 'default');
+    return;
+  }
+
+  if (event.type === 'TOAST') {
+    dispatchToast(event.data.text);
     return;
   }
 }
