@@ -71,6 +71,7 @@ function App() {
   const [, setCamera] = useState({ x: 0, y: 0 });
   const [gold, setGold] = useState(0);
   const [energy, setEnergy] = useState(0);
+  const [exitPos, setExitPos] = useState(null);
   const [showBossSlainBanner, setShowBossSlainBanner] = useState(false);
   const [bossSlainData, setBossSlainData] = useState(null);
 
@@ -188,7 +189,7 @@ function App() {
     mobAnimRef, dyingMobsRef, playerAnimRef, particlesRef, searchEffectsRef, floatingTextRef, screenFlashRef, wasDownedRef, warnedTilesRef, transmuteEffectsRef, flareEffectsRef, spellSpriteEffectsRef, lightningRef, shieldHaloRef, stateEffectsRef, magicMissileRef, surpriseRef, selectedEnemyIdRef,
     setGrid, setDepth, setMyPlayerId, setInventory,
     setEquippedItems, setMyStats, setDifficulty, setBossInfo,
-    setGold, setEnergy, setBelongings, setQuickslot,
+    setGold, setEnergy, setExitPos, setBelongings, setQuickslot,
     onLevelUp: talent.onLevelUp,
     onSubclassChoiceAvailable: talent.onSubclassChoiceAvailable,
     onArmorAbilityChoiceAvailable: talent.onArmorAbilityChoiceAvailable,
@@ -575,6 +576,7 @@ function App() {
         <StatusPane
           myStats={myStats}
           depth={depth}
+          exitPos={exitPos}
           isAdmin={myStats.isAdmin}
           onSearch={handleExamineOrReveal}
           hasTalentPoints={Object.values(talent.talentPoints || {}).some(p => p > 0)}

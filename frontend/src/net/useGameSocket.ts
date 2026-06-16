@@ -131,6 +131,7 @@ interface MyStats {
   talentLevels?: Record<string, number>;
   talentPoints?: Record<string, number>;
   bonusTalentPoints?: Record<string, number>;
+  pos?: { x: number; y: number } | null;
 }
 
 interface HookProps {
@@ -178,6 +179,7 @@ interface HookProps {
   setBossInfo?: (info: { name: string; hp: number; maxHp: number; shield?: number; effects?: { key?: string; name?: string; icon?: number; remaining?: number; duration?: number }[] } | null) => void;
   setGold?: (gold: number) => void;
   setEnergy?: (energy: number) => void;
+  setExitPos?: (pos: [number, number] | null) => void;
   setBelongings?: (belongings: Player['belongings'] | null) => void;
   setQuickslot?: (quickslot: Player['quickslot'] | null) => void;
   onLevelUp?: (data: { level: number; tier_unlocked?: number | null; talent_points?: Record<string, number>; can_choose_subclass: boolean; can_choose_armor_ability: boolean }) => void;
@@ -280,6 +282,7 @@ export default function useGameSocket({
   setBossInfo,
   setGold,
   setEnergy,
+  setExitPos,
   setBelongings,
   setQuickslot,
   onLevelUp,
@@ -375,6 +378,7 @@ export default function useGameSocket({
           setMyPlayerId(data.player_id);
           myPlayerIdRef.current = data.player_id;
         }
+        if (setExitPos) setExitPos((data as any).exit_pos || null);
         return;
       }
 
@@ -430,6 +434,7 @@ export default function useGameSocket({
             invisible: p.invisible || 0,
             prepSeconds: p.prep_seconds || 0,
             comboCount: p.combo_count || 0,
+            pos: p.pos ? { x: p.pos.x, y: p.pos.y } : null,
             talentLevels: p.subclass_info?.talent_info?.talents || {},
             talentPoints: p.subclass_info?.talent_points || {},
             bonusTalentPoints: p.subclass_info?.bonus_talent_points || {},
