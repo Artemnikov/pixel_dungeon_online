@@ -271,6 +271,14 @@ def test_scroll_of_upgrade_levels_up_equipped_weapon():
     p.belongings.backpack.collect(scroll)
 
     action_read(g, p, scroll)
+
+    select_events = [e for e in g.events if e["type"] == "SCROLL_SELECT_TARGET"]
+    assert len(select_events) == 1
+    data = select_events[0]["data"]
+    assert data["scroll_kind"] == "scroll_of_upgrade"
+    assert p.belongings.weapon.id in data["candidates"]
+
+    g.select_scroll_target(p.id, scroll.id, p.belongings.weapon.id)
     assert p.belongings.weapon.level == 1
     assert p.belongings.weapon.level_known is True
 
@@ -287,5 +295,34 @@ def test_scroll_of_upgrade_removes_curse():
     p.belongings.backpack.collect(scroll)
 
     action_read(g, p, scroll)
+
+    select_events = [e for e in g.events if e["type"] == "SCROLL_SELECT_TARGET"]
+    assert len(select_events) == 1
+    assert p.belongings.weapon.id in select_events[0]["data"]["candidates"]
+
+    g.select_scroll_target(p.id, scroll.id, p.belongings.weapon.id)
     assert p.belongings.weapon.cursed is False
     assert p.belongings.weapon.cursed_known is True
+
+
+def test_scroll_of_upgrade_excludes_non_upgradable_items():
+    from app.engine.entities.base import ScrollOfUpgrade, Gold
+    from app.engine.entities.item_actions import action_read
+    from app.engine.entities.scroll_predicates import is_upgradable
+
+    g = GameInstance("t")
+    p = _warrior(g)
+    scroll = ScrollOfUpgrade(id="scroll3", name="Scroll of Upgrade")
+    p.belongings.backpack.collect(scroll)
+    gold = Gold(id="gold1", name="Gold", quantity=5)
+    p.belongings.backpack.collect(gold)
+
+    assert is_upgradable(gold, g) is False
+    assert is_upgradable(p.belongings.weapon, g) is True
+
+    action_read(g, p, scroll)
+    select_events = [e for e in g.events if e["type"] == "SCROLL_SELECT_TARGET"]
+    assert len(select_events) == 1
+    candidates = select_events[0]["data"]["candidates"]
+    assert gold.id not in candidates
+    assert p.belongings.weapon.id in candidates

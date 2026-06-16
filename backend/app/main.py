@@ -434,6 +434,9 @@ async def game_websocket(websocket: WebSocket, game_id: str, class_type: str = "
             elif isinstance(message, msg.UseItem):
                 game.use_item(player_id, message.item_id)
 
+            elif isinstance(message, msg.SelectScrollTarget):
+                game.select_scroll_target(player_id, message.scroll_id, message.item_id)
+
             elif isinstance(message, msg.ChangeDifficulty):
                 game.change_difficulty(message.difficulty)
 

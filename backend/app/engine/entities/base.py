@@ -46,6 +46,10 @@ class Shield(BaseModel):
     name: str = ""  # logical id for identifying a specific shield
 
 
+def is_immune(entity, effect: str) -> bool:
+    return effect in getattr(entity, "immunities", [])
+
+
 class Entity(BaseModel):
     id: str
     type: str
@@ -1607,6 +1611,9 @@ class Player(Entity):
     momentum_stacks: int = 0
     _momentum_decay_accum: float = 0.0
     freerun_seconds: float = 0.0
+    # Scroll of Recharging: while the "recharging" buff is active, accumulates
+    # real seconds toward the next wand charge gained (see tick.py).
+    _recharging_accum: float = 0.0
 
     @property
     def talent_info(self):

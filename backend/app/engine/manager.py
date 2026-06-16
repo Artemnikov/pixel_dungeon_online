@@ -53,6 +53,7 @@ from app.engine.game.ai_pylon import PylonAIMixin
 from app.engine.game.ai_dm300 import DM300AIMixin
 from app.engine.game.ai_necromancer import NecromancerAIMixin
 from app.engine.game.ai_tengu import TenguAIMixin
+from app.engine.game.ai_mirror_image import MirrorImageMixin
 from app.engine.game.tick import TickMixin
 from app.engine.game.vision import VisionMixin
 from app.engine.game.world import WorldInteractionMixin
@@ -75,6 +76,7 @@ class GameInstance(
     DM300AIMixin,
     NecromancerAIMixin,
     TenguAIMixin,
+    MirrorImageMixin,
     TickMixin,
     ArmorAbilitiesMixin,
     TalentsMixin,

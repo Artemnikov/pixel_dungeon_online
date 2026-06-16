@@ -24,15 +24,16 @@ import time
 from typing import List, Optional, Type
 
 from app.engine.dungeon.generator import TileType
-from app.engine.entities.base import Difficulty, Effect, Faction, Player, Position
+from app.engine.entities.base import Difficulty, Effect, Faction, Player, Position, Wand
 from app.engine.entities.buffs import process_buffs
+from app.engine.entities.scroll_predicates import player_inventory_items
 from app.engine.game.blobs import tick_foliage_blobs
 from app.engine.entities.mobs import (
     Rat, Goo, DwarfKing,
     YogDzewa, BurningFist, SoiledFist, RottingFist, RustedFist, BrightFist, DarkFist,
     DemonSpawner, Pylon, DM300,
     Wraith, TormentedSpirit, Bee, EbonyMimic, MobEntity,
-    Necromancer, Tengu,
+    Necromancer, Tengu, MirrorImage,
 )
 from app.engine.game.constants import (
     AUTO_MOVE_INTERVAL,
@@ -40,6 +41,7 @@ from app.engine.game.constants import (
     NO_RESPAWN_FLOORS,
     OOZE_TICK_INTERVAL,
     PASSIVE_REGEN_INTERVAL,
+    RECHARGING_REGEN_INTERVAL,
     PATH_BLOCKED_GIVE_UP_TICKS,
     RESPAWN_TURNS,
     ROOM_HEAL_AMOUNT,
@@ -109,7 +111,11 @@ class TickMixin:
         for floor in self.floors.values():
             for mob in floor.mobs.values():
                 if mob.is_alive:
-                    process_buffs(mob.buffs, dt)
+                    removed = process_buffs(mob.buffs, dt)
+                    if "drowsy" in removed and mob.ai_state in ("idle", "wandering"):
+                        mob.ai_state = "sleeping"
+                    if "terror" in removed and mob.ai_state == "fleeing":
+                        mob.ai_state = "hunting"
 
         blob_events = tick_foliage_blobs(self.floors, self.players)
         for ev in blob_events:
@@ -163,6 +169,7 @@ class TickMixin:
             self._apply_aqua_heal_tick(player)
             self._apply_room_heal_tick(player)
             self._apply_passive_regen(player)
+            self._tick_recharging(player, dt)
 
             if player.armor_charge < 100:
                 player.armor_charge = min(100, player.armor_charge + 2)
@@ -244,6 +251,11 @@ class TickMixin:
                     continue
 
                 if mob.faction == Faction.PLAYER:
+                    if isinstance(mob, MirrorImage):
+                        owner = self.players.get(mob.owner_id)
+                        self._refresh_mirror_image_stats(mob, owner, floor, floor_id)
+                        if not mob.is_alive:
+                            continue
                     if mob.type != "ninja_log":
                         self._update_shadow_ally(mob, floor, floor_id)
                     continue
@@ -299,7 +311,10 @@ class TickMixin:
                 move_interval = 2 * AUTO_MOVE_INTERVAL / max(0.1, mob.speed)
                 can_move = now - move_times.get(mob.id, 0.0) >= move_interval
 
-                target_player = self._find_nearest_player(mob.pos, floor_id)
+                if mob.has_buff("amok"):
+                    target_player = self._find_nearest_entity(mob.pos, floor_id, exclude_id=mob.id)
+                else:
+                    target_player = self._find_nearest_player(mob.pos, floor_id)
                 if mob.ai_state == "fleeing":
                     if can_move and target_player:
                         dx = mob.pos.x - target_player.pos.x
@@ -316,12 +331,12 @@ class TickMixin:
                                 self.move_entity(mob.id, step[0], step[1])
                     continue
 
-                if target_player and target_player.invisible > 0:
+                if target_player and isinstance(target_player, Player) and target_player.invisible > 0:
                     target_player = None
 
                 if target_player and getattr(mob, "never_wakes", False):
                     target_player = None
-                elif target_player and getattr(mob, "ai_state", "") in ("idle", "sleeping"):
+                elif target_player and isinstance(target_player, Player) and getattr(mob, "ai_state", "") in ("idle", "sleeping"):
                     dist = self._get_distance(mob.pos, target_player.pos)
                     if dist > self._view_distance(mob):
                         target_player = None
@@ -338,7 +353,7 @@ class TickMixin:
                         else:
                             mob.ai_state = "hunting"
 
-                if target_player and getattr(mob, "ai_state", "") == "wandering":
+                if target_player and isinstance(target_player, Player) and getattr(mob, "ai_state", "") == "wandering":
                     dist = self._get_distance(mob.pos, target_player.pos)
                     if dist > self._view_distance(mob):
                         target_player = None
@@ -753,3 +768,18 @@ class TickMixin:
             return
         player.hp = min(player.get_total_max_hp(), player.hp + 1)
         player._regen_cooldown = PASSIVE_REGEN_INTERVAL
+
+    def _tick_recharging(self, player: Player, dt: float):
+        """Scroll of Recharging aftereffect: while the "recharging" buff is
+        active, slowly regenerate one charge on the first under-max wand
+        roughly every RECHARGING_REGEN_INTERVAL seconds."""
+        if not player.has_buff("recharging"):
+            player._recharging_accum = 0.0
+            return
+        player._recharging_accum += dt
+        while player._recharging_accum >= RECHARGING_REGEN_INTERVAL:
+            player._recharging_accum -= RECHARGING_REGEN_INTERVAL
+            for item in player_inventory_items(player):
+                if isinstance(item, Wand) and item.charges < item.max_charges:
+                    item.charges += 1
+                    break

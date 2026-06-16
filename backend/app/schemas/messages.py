@@ -186,6 +186,12 @@ class ImpClaimReward(_ClientMessageBase):
     npc_id: str
 
 
+class SelectScrollTarget(_ClientMessageBase):
+    type: Literal["SELECT_SCROLL_TARGET"]
+    scroll_id: str
+    item_id: str
+
+
 ClientMessage = Annotated[
     Union[
         Ping,
@@ -219,6 +225,7 @@ ClientMessage = Annotated[
         ShopBuy,
         ShopSell,
         ImpClaimReward,
+        SelectScrollTarget,
     ],
     Field(discriminator="type"),
 ]

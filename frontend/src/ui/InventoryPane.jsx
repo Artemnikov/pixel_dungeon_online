@@ -65,7 +65,7 @@ function strBadge(item, strength) {
   return { text: `:${req}`, cls: strength != null && strength < req ? 'str-bad' : 'str-ok' };
 }
 
-function ItemSlot({ item, holderKey, equipped, strength, empty, onOpen, onContext, onDefaultAction, selectMode, onSelectItem }) {
+function ItemSlot({ item, holderKey, equipped, strength, empty, onOpen, onContext, onDefaultAction, selectMode, onSelectItem, itemFilter }) {
   const timerRef = useRef(null);
   const longFiredRef = useRef(false);
 
@@ -84,7 +84,7 @@ function ItemSlot({ item, holderKey, equipped, strength, empty, onOpen, onContex
 
   const openContext = (clientX, clientY) => onContext(item, clientX, clientY);
 
-  const selectable = item.default_action != null;
+  const selectable = selectMode && itemFilter ? itemFilter(item) : item.default_action != null;
 
   const handleClick = () => {
     if (longFiredRef.current) { longFiredRef.current = false; return; }
@@ -128,7 +128,7 @@ function ItemSlot({ item, holderKey, equipped, strength, empty, onOpen, onContex
   );
 }
 
-export default function InventoryPane({ belongings, gold, energy, strength, onOpenItem, onContextMenu, onDefaultAction, selectMode, onSelectItem }) {
+export default function InventoryPane({ belongings, gold, energy, strength, onOpenItem, onContextMenu, onDefaultAction, selectMode, onSelectItem, itemFilter }) {
   const backpack = (belongings && belongings.backpack) || { items: [], capacity: 20 };
 
   // Bag tabs: backpack first, then any nested bags it contains.
@@ -162,6 +162,7 @@ export default function InventoryPane({ belongings, gold, energy, strength, onOp
             onDefaultAction={onDefaultAction}
             selectMode={selectMode}
             onSelectItem={onSelectItem}
+            itemFilter={itemFilter}
           />
         ))}
         <div className="inv-currency">
@@ -197,6 +198,7 @@ export default function InventoryPane({ belongings, gold, energy, strength, onOp
             onDefaultAction={onDefaultAction}
             selectMode={selectMode}
             onSelectItem={onSelectItem}
+            itemFilter={itemFilter}
           />
         ))}
         {Array.from({ length: emptyCount }).map((_, i) => (

@@ -224,7 +224,17 @@ export interface DrinkEvent {
 
 export interface ReadEvent {
   type: 'READ';
-  data: { player: string; item: string };
+  data: { player: string; item: string; sound?: string; visual?: string };
+}
+
+export interface TeleportEvent {
+  type: 'TELEPORT';
+  data: { player: string; from_x: number; from_y: number; x: number; y: number };
+}
+
+export interface MirrorImageEvent {
+  type: 'MIRROR_IMAGE';
+  data: { player: string; clones: { id: string; x: number; y: number }[] };
 }
 
 export interface MapPatchEvent {
@@ -401,6 +411,13 @@ export interface TalentMetamorphedEvent {
   data: { player: string; old_talent: string; new_talent: string };
 }
 
+/** Scroll item-selector flow: server asks the player to pick a target item
+ * for a scroll (e.g. Scroll of Upgrade). `candidates` lists valid item ids. */
+export interface ScrollSelectTargetEvent {
+  type: 'SCROLL_SELECT_TARGET';
+  data: { player: string; scroll_id: string; scroll_kind: string; candidates: string[] };
+}
+
 /** Goo boss: pumped-up charge telegraph. `tiles` lists the threatened cells
  * (cleared with an empty array when the charge is released or cancelled). */
 export interface GooChargeEvent {
@@ -518,6 +535,7 @@ export type GameEvent =
   | MetamorphOpenEvent
   | MetamorphOptionsEvent
   | TalentMetamorphedEvent
+  | ScrollSelectTargetEvent
   | GooChargeEvent
   | GooEnrageEvent
   | GooFightStartedEvent
@@ -529,7 +547,9 @@ export type GameEvent =
   | TenguBombCountdownEvent
   | TenguBlastEvent
   | TenguFireEvent
-  | TenguShockerEvent;
+  | TenguShockerEvent
+  | TeleportEvent
+  | MirrorImageEvent;
 
 export type GameEventType = GameEvent['type'];
 
@@ -568,6 +588,7 @@ export interface StateUpdateMessage {
   mobs: Mob[];
   items: SerializedItem[];
   visible_tiles: Vec2[];
+  mapped_tiles?: Vec2[];
   traps: TrapInfo[];
   gold: number;
   energy: number;
@@ -624,4 +645,5 @@ export type ClientMessage =
   | { type: 'NPC_INTERACT'; npc_id: string }
   | { type: 'SHOP_BUY'; npc_id: string; item_id: string }
   | { type: 'SHOP_SELL'; item_id: string }
-  | { type: 'IMP_CLAIM_REWARD'; npc_id: string };
+  | { type: 'IMP_CLAIM_REWARD'; npc_id: string }
+  | { type: 'SELECT_SCROLL_TARGET'; scroll_id: string; item_id: string };

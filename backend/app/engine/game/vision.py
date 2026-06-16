@@ -42,6 +42,30 @@ class VisionMixin:
                 nearest = player
         return nearest
 
+    def _find_nearest_entity(self, pos: Position, floor_id: int, exclude_id: str):
+        """Nearest alive entity (Player or Mob) on `floor_id`, excluding
+        `exclude_id`. Used for Amok-buffed mobs, which (per SPD) target the
+        nearest creature of any faction rather than only players."""
+        candidates: List = [
+            p for p in self._players_on_floor(floor_id)
+            if p.id != exclude_id and p.is_alive and not p.is_downed
+        ]
+        floor = self.floors.get(floor_id)
+        if floor is not None:
+            candidates.extend(
+                m for m in floor.mobs.values()
+                if m.id != exclude_id and m.is_alive
+            )
+
+        nearest = None
+        min_dist = float("inf")
+        for entity in candidates:
+            distance = self._get_distance(pos, entity.pos)
+            if distance < min_dist:
+                min_dist = distance
+                nearest = entity
+        return nearest
+
     def _get_distance(self, p1: Position, p2: Position) -> int:
         return abs(p1.x - p2.x) + abs(p1.y - p2.y)
 
@@ -219,6 +243,27 @@ class VisionMixin:
             if len(visited) > 500:
                 break
         return []
+
+    def _mobs_in_fov(self, player, floor: "FloorState", floor_id: int, include_allies: bool = False) -> List:
+        """Living mobs visible to `player` on `floor`, for AOE scrolls (Lullaby,
+        Terror, Retribution, Rage). Excludes ally-faction mobs (e.g. shadow
+        allies, mirror images) unless `include_allies=True`."""
+        from app.engine.entities.base import Faction
+
+        visible = set(self.get_visible_tiles(
+            player.pos, radius=self._view_distance(player), floor_id=floor_id,
+            viewer_id=player.id))
+
+        result = []
+        for mob in floor.mobs.values():
+            if not mob.is_alive:
+                continue
+            if (mob.pos.x, mob.pos.y) not in visible:
+                continue
+            if not include_allies and mob.faction == Faction.PLAYER:
+                continue
+            result.append(mob)
+        return result
 
     def get_visible_tiles(self, pos: Position, radius: int = 8, floor_id: Optional[int] = None, viewer_id: Optional[str] = None) -> List[Tuple[int, int]]:
         """Tiles visible from `pos` within `radius`, via recursive shadowcasting

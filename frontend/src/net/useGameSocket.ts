@@ -3,7 +3,7 @@ import type { Dispatch, SetStateAction } from 'react';
 import { TILE_SIZE, PLAYER_ATTACK_DURATION, PLAYER_OPERATE_DURATION, PLAYER_READ_DURATION, HIT_CONNECT_DELAY, FLASH_DURATION } from '../constants';
 import { getWsBaseUrl } from '../config/urls';
 import AudioManager from '../audio/AudioManager';
-import { spawnBlood, spawnCritSparkle, spawnDust, spawnGrimShadow, spawnHeal } from '../rendering/draw/particles';
+import { spawnBlood, spawnChange, spawnCritSparkle, spawnCurse, spawnDust, spawnEnergy, spawnGrimShadow, spawnHeal, spawnIdentify, spawnLight, spawnNote, spawnScream, spawnTerror, spawnUp } from '../rendering/draw/particles';
 import { spawnCheckedCells } from '../rendering/draw/searchEffects';
 import { spawnFloatingText } from '../rendering/draw/floatingText';
 import { coordsForItem } from '../rendering/sprites';
@@ -110,6 +110,7 @@ interface MyStats {
   effects: Player['active_effects'];
   classType: string;
   armorTier: number;
+  shield: number;
   strength: number;
   subclass?: string | null;
   armorAbility?: string | null;
@@ -148,6 +149,7 @@ interface HookProps {
   searchEffectsRef: Ref<unknown[]>;
   floatingTextRef: Ref<unknown[]>;
   warnedTilesRef?: Ref<{ tiles: [number, number][]; untilMs: number } | null>;
+  screenFlashRef?: Ref<{ until: number } | null>;
   wasDownedRef: Ref<boolean | undefined>;
   setGrid: Dispatch<SetStateAction<number[][]>>;
   setDepth: (depth: number) => void;
@@ -171,6 +173,7 @@ interface HookProps {
   onTenguFightStarted?: (data: { mob: string }) => void;
   onShopOpen?: (data: { npc: string; stock: SerializedItem[]; gold: number }) => void;
   onImpDialogue?: (data: { npc: string; text: string; can_claim: boolean; tokens?: number | null }) => void;
+  onScrollSelectTarget?: (data: { player: string; scroll_id: string; scroll_kind: string; candidates: string[] }) => void;
 }
 
 type HandlerCtx = Pick<
@@ -188,6 +191,7 @@ type HandlerCtx = Pick<
   | 'searchEffectsRef'
   | 'floatingTextRef'
   | 'warnedTilesRef'
+  | 'screenFlashRef'
 > & {
   onLevelUp?: HookProps['onLevelUp'];
   onSubclassChoiceAvailable?: HookProps['onSubclassChoiceAvailable'];
@@ -199,6 +203,7 @@ type HandlerCtx = Pick<
   onTenguFightStarted?: HookProps['onTenguFightStarted'];
   onShopOpen?: HookProps['onShopOpen'];
   onImpDialogue?: HookProps['onImpDialogue'];
+  onScrollSelectTarget?: HookProps['onScrollSelectTarget'];
 };
 
 export default function useGameSocket({
@@ -225,6 +230,7 @@ export default function useGameSocket({
   particlesRef,
   searchEffectsRef,
   floatingTextRef,
+  screenFlashRef,
   warnedTilesRef,
   wasDownedRef,
   setGrid,
@@ -249,6 +255,7 @@ export default function useGameSocket({
   onTenguFightStarted,
   onShopOpen,
   onImpDialogue,
+  onScrollSelectTarget,
 }: HookProps) {
   useEffect(() => {
     if (!enabled) return;
@@ -376,6 +383,7 @@ export default function useGameSocket({
             effects: p.active_effects || [],
             classType: p.class_type || 'warrior',
             armorTier: 0,
+            shield: (p.shields || []).reduce((sum: number, s: any) => sum + (s.amount || 0), 0),
             strength: p.strength ?? 10,
             subclass: p.subclass_info?.subclass || null,
             armorAbility: p.armor_ability || null,
@@ -511,6 +519,10 @@ export default function useGameSocket({
         newVisible.forEach(t => visionRef.current.discovered.add(t));
       }
 
+      if (data.mapped_tiles && data.mapped_tiles.length > 0) {
+        data.mapped_tiles.forEach(t => visionRef.current.discovered.add(`${t[0]},${t[1]}`));
+      }
+
       const myPlayer = data.players.find(p => p.id === myPlayerIdRef.current);
       if (myPlayer?.is_admin && gridRef.current.length > 0) {
         const allTiles = new Set<string>();
@@ -532,10 +544,10 @@ export default function useGameSocket({
           handleEvent(event, {
             myPlayerIdRef, gridRef, setGrid, entitiesRef, visionRef,
             projectilesRef, mobAnimRef, dyingMobsRef, playerAnimRef, particlesRef,
-            searchEffectsRef, floatingTextRef, warnedTilesRef,
+            searchEffectsRef, floatingTextRef, screenFlashRef, warnedTilesRef,
             onLevelUp, onSubclassChoiceAvailable, onArmorAbilityChoiceAvailable, onTalentUpgraded,
             onMetamorphOpen, onMetamorphOptions, onGooFightStarted, onTenguFightStarted,
-            onShopOpen, onImpDialogue,
+            onShopOpen, onImpDialogue, onScrollSelectTarget,
           });
         });
       }
@@ -557,15 +569,24 @@ export default function useGameSocket({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enabled, gameId, sessionId]);
+
+  const sendSelectScrollTarget = (scrollId: string, itemId: string) => {
+    const ws = socketRef.current;
+    if (ws?.readyState === WebSocket.OPEN) {
+      sendMessage(ws, { type: 'SELECT_SCROLL_TARGET', scroll_id: scrollId, item_id: itemId });
+    }
+  };
+
+  return { sendSelectScrollTarget };
 }
 
 function handleEvent(event: GameEvent, {
   myPlayerIdRef, gridRef, setGrid, entitiesRef, visionRef,
   projectilesRef, mobAnimRef, dyingMobsRef, playerAnimRef, particlesRef,
-  searchEffectsRef, floatingTextRef, warnedTilesRef,
+  searchEffectsRef, floatingTextRef, screenFlashRef, warnedTilesRef,
   onLevelUp, onSubclassChoiceAvailable, onArmorAbilityChoiceAvailable, onTalentUpgraded,
   onMetamorphOpen, onMetamorphOptions, onGooFightStarted, onTenguFightStarted,
-  onShopOpen, onImpDialogue,
+  onShopOpen, onImpDialogue, onScrollSelectTarget,
 }: HandlerCtx) {
   if (event.type === 'PLAY_SOUND') {
     AudioManager.play(event.data.sound);
@@ -747,14 +768,62 @@ function handleEvent(event: GameEvent, {
     const reader = entitiesRef.current.players[pid];
     const visible = visionRef?.current?.visible;
     const isLocal = pid === myPlayerIdRef.current;
-    if (isLocal || (reader && visible?.has(`${reader.pos.x},${reader.pos.y}`))) {
-      AudioManager.play('READ');
+    const readerVisible = isLocal || (reader && visible?.has(`${reader.pos.x},${reader.pos.y}`));
+    if (readerVisible) {
+      AudioManager.play(event.data.sound ?? 'READ');
     }
-    // Play the "read" gesture, mirroring HeroSprite.read() in the original game's
-    // scroll-reading flow (Scroll.readAnimation()).
     if (playerAnimRef && entitiesRef.current.players[pid]) {
       if (!playerAnimRef.current[pid]) playerAnimRef.current[pid] = {};
       playerAnimRef.current[pid].readUntil = performance.now() + PLAYER_READ_DURATION;
+    }
+    if (readerVisible && particlesRef && reader) {
+      const cx = reader.pos.x * TILE_SIZE + TILE_SIZE / 2;
+      const cy = reader.pos.y * TILE_SIZE + TILE_SIZE / 2;
+      const visual = event.data.visual;
+      switch (visual) {
+        case 'IDENTIFY': spawnIdentify(particlesRef, cx, cy); break;
+        case 'UP':       spawnUp(particlesRef, cx, cy); break;
+        case 'CURSE':    spawnCurse(particlesRef, cx, cy); break;
+        case 'SCREAM':   spawnScream(particlesRef, cx, cy); break;
+        case 'ENERGY':   spawnEnergy(particlesRef, cx, cy); break;
+        case 'NOTE':     spawnNote(particlesRef, cx, cy); break;
+        case 'TERROR':   spawnTerror(particlesRef, cx, cy); break;
+        case 'CHANGE':   spawnChange(particlesRef, cx, cy); break;
+        case 'FLASH':
+          if (screenFlashRef) screenFlashRef.current = { until: performance.now() + 350 };
+          break;
+      }
+    }
+    return;
+  }
+
+  if (event.type === 'TELEPORT') {
+    const visible = visionRef?.current?.visible;
+    const pid = event.data.player;
+    const isLocal = pid === myPlayerIdRef.current;
+    const fromKey = `${event.data.from_x},${event.data.from_y}`;
+    const toKey = `${event.data.x},${event.data.y}`;
+    if (isLocal || visible?.has(fromKey)) {
+      AudioManager.play('TELEPORT');
+      if (particlesRef) {
+        spawnLight(particlesRef, event.data.from_x * TILE_SIZE + TILE_SIZE / 2, event.data.from_y * TILE_SIZE + TILE_SIZE / 2);
+      }
+    }
+    if ((isLocal || visible?.has(toKey)) && particlesRef) {
+      spawnLight(particlesRef, event.data.x * TILE_SIZE + TILE_SIZE / 2, event.data.y * TILE_SIZE + TILE_SIZE / 2);
+    }
+    return;
+  }
+
+  if (event.type === 'MIRROR_IMAGE') {
+    const visible = visionRef?.current?.visible;
+    const pid = event.data.player;
+    const isLocal = pid === myPlayerIdRef.current;
+    const clones = event.data.clones || [];
+    for (const clone of clones) {
+      if ((isLocal || visible?.has(`${clone.x},${clone.y}`)) && particlesRef) {
+        spawnDust(particlesRef, clone.x * TILE_SIZE + TILE_SIZE / 2, clone.y * TILE_SIZE + TILE_SIZE / 2, 8, '#aaccff');
+      }
     }
     return;
   }
@@ -1108,6 +1177,13 @@ function handleEvent(event: GameEvent, {
   if (event.type === 'COLLECT_DEW') {
     if (event.data.player === myPlayerIdRef.current) {
       AudioManager.play('DEWDROP');
+    }
+    return;
+  }
+
+  if (event.type === 'SCROLL_SELECT_TARGET') {
+    if (event.data.player === myPlayerIdRef.current) {
+      onScrollSelectTarget?.(event.data);
     }
     return;
   }

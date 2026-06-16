@@ -18,7 +18,7 @@ import random
 from app.engine.dungeon.generator import TileType
 from app.engine.dungeon.spd_levelgen import prison_boss_layout as layout
 from app.engine.dungeon.spd_levelgen.level import _CIRCLE8_OFFSETS
-from app.engine.entities.base import Position
+from app.engine.entities.base import Position, is_immune
 from app.engine.entities.buffs import add_buff
 from app.engine.entities.mobs import Tengu
 from app.engine.game.floor_state import FloorState
@@ -53,7 +53,7 @@ class TenguAIMixin:
                         self.boss_scores[1] -= 100
                         self.qualified_for_boss_challenge = False
                 for m in list(floor.mobs.values()):
-                    if m.is_alive and m.pos.x == cx and m.pos.y == cy and not isinstance(m, Tengu):
+                    if m.is_alive and m.pos.x == cx and m.pos.y == cy and not isinstance(m, Tengu) and not is_immune(m, "burning"):
                         add_buff(m.buffs, "burning", duration=4.0, level=1, stack_mode="extend")
                         burned = True
                 for item_id, item in list(floor.items.items()):

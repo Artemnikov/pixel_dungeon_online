@@ -75,6 +75,15 @@ function inspectScreenPos(canvas, cam, zoom, anchor, mobs, visible) {
   return { left, top: below ? bottomY + 6 : topY - 6, below };
 }
 
+// Prompt shown atop the item picker for scroll item-selector flows
+// (SCROLL_SELECT_TARGET), keyed by scroll kind.
+const SCROLL_PICKER_TITLES = {
+  scroll_of_upgrade: 'Choose an item to upgrade',
+  scroll_of_identify: 'Choose an item to identify',
+  scroll_of_remove_curse: 'Choose an item to uncurse',
+  scroll_of_transmutation: 'Choose an item to transmute',
+};
+
 function App() {
   // --- screen flow / session state ---
   const [gameState, setGameState] = useState('WELCOME');
@@ -143,6 +152,7 @@ function App() {
   const [metamorphOptions, setMetamorphOptions] = useState(null);
   const [shopWindow, setShopWindow] = useState(null);
   const [impWindow, setImpWindow] = useState(null);
+  const [scrollPickerData, setScrollPickerData] = useState(null);
   const [showItemBrowser, setShowItemBrowser] = useState(false);
   const [itemCatalog, setItemCatalog] = useState([]);
 
@@ -184,6 +194,7 @@ function App() {
   // Cleared by an empty-tiles GOO_CHARGE event when the charge releases or cancels.
   const warnedTilesRef = useRef(null);
   const floatingTextRef = useRef([]);
+  const screenFlashRef = useRef(null);
   const trapsRef = useRef([]);
   const customTilesRef = useRef([]);
   const depthRef = useRef(1);
@@ -280,14 +291,14 @@ function App() {
   const assetImages = useAssetImages();
   useMusicByDepth({ enabled: gameState === 'PLAYING', depth, bossFightActive: bossFightActive && !!bossInfo, musicRef });
 
-  useGameSocket({
+  const { sendSelectScrollTarget } = useGameSocket({
     enabled: gameState === 'PLAYING',
     gameId, sessionId, selectedClass, difficulty, challenges, playerName,
     setConnectionStatus,
     socketRef, gridRef, myPlayerIdRef, entitiesRef,
     visionRef, openDoorsRef, projectilesRef,
     trapsRef, customTilesRef,
-    mobAnimRef, dyingMobsRef, playerAnimRef, particlesRef, searchEffectsRef, floatingTextRef, wasDownedRef, warnedTilesRef,
+    mobAnimRef, dyingMobsRef, playerAnimRef, particlesRef, searchEffectsRef, floatingTextRef, screenFlashRef, wasDownedRef, warnedTilesRef,
     setGrid, setDepth, setMyPlayerId, setInventory,
     setEquippedItems, setMyStats, setDifficulty, setBossInfo,
     setGold, setEnergy, setBelongings, setQuickslot,
@@ -319,6 +330,7 @@ function App() {
     onImpDialogue: ({ npc, text, can_claim, tokens }) => {
       setImpWindow({ npc, text, canClaim: can_claim, tokens });
     },
+    onScrollSelectTarget: (data) => setScrollPickerData(data),
     onTalentUpgraded: ({ talent }) => {
       // STATE_UPDATE already carries the correct server-recomputed
       // talent_points — no need to decrement locally.
@@ -340,7 +352,7 @@ function App() {
     canvasRef, grid, myPlayerId, depth, assetImages,
     entitiesRef, visionRef, openDoorsRef, projectilesRef,
     trapsRef, customTilesRef,
-    mobAnimRef, dyingMobsRef, playerAnimRef, particlesRef, searchEffectsRef, floatingTextRef, myPlayerIdRef, warnedTilesRef,
+    mobAnimRef, dyingMobsRef, playerAnimRef, particlesRef, searchEffectsRef, floatingTextRef, screenFlashRef, myPlayerIdRef, warnedTilesRef,
     panOffsetRef, cameraLerpRef, zoomRef,
     isRefocusingRef, isDraggingRef,
     setCamera,
@@ -1037,6 +1049,23 @@ function App() {
             setQuickslotPicker(null);
           }}
           onClose={() => setQuickslotPicker(null)}
+        />
+      )}
+
+      {scrollPickerData && (
+        <WndBag
+          belongings={belongings}
+          gold={gold}
+          energy={energy}
+          strength={myStats.strength}
+          selectMode
+          itemFilter={(item) => scrollPickerData.candidates.includes(item.id)}
+          title={SCROLL_PICKER_TITLES[scrollPickerData.scroll_kind] ?? 'Choose an item'}
+          onSelectItem={(item) => {
+            sendSelectScrollTarget(scrollPickerData.scroll_id, item.id);
+            setScrollPickerData(null);
+          }}
+          onClose={() => setScrollPickerData(null)}
         />
       )}
 

@@ -193,3 +193,21 @@ def make_catalog_item(item_kind: str) -> Optional[ItemBase]:
     """Constructs a fresh instance of the given catalog kind, or None if unknown."""
     factory: Optional[Callable[[], ItemBase]] = _FACTORIES.get(item_kind)
     return factory() if factory is not None else None
+
+
+# Scroll of Transmutation: broad item groups and the catalog kinds within
+# each. `_apply_transmutation` (item_actions.py) picks a different kind from
+# the same group as the target item.
+TRANSMUTE_GROUPS: dict = {
+    # Staff is grouped with melee weapons: there's no separate "magic weapon"
+    # transmute pool in this codebase.
+    "weapon_melee": ["melee_weapon", "dagger", "worn_shortsword", "staff"],
+    "weapon_missile": ["bow", "missile_weapon"],
+    "armor": ["armor"],
+    "wand": ["wand"],
+    "ring": ["ring"],
+    "potion": [kind for kind, _name, category, _factory in _CATALOG
+               if category == "potion" and kind != "potion"],
+    "scroll": [kind for kind, _name, category, _factory in _CATALOG
+               if category == "scroll" and kind not in ("scroll", "scroll_of_transmutation")],
+}

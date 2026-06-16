@@ -1562,3 +1562,18 @@ class Imp(MobEntity):
 
     def get_effective_defense_skill(self) -> int:
         return 10 ** 9
+
+
+class MirrorImage(MobEntity):
+    """Hero clone summoned by Scroll of Mirror Image (MirrorImage.java).
+
+    Spawns invisible (guaranteeing a first-strike surprise attack), with
+    1 HP and combat stats refreshed each tick from the owning player.
+    """
+    type: str = "mirror_image"
+    name: str = "Mirror Image"
+    hp: int = 1
+    max_hp: int = 1
+    faction: str = Faction.PLAYER
+    ai_state: str = "hunting"
+    immunities: List[str] = Field(default_factory=lambda: ["toxic_gas", "corrosive_gas", "burning", "ally_buff"])
