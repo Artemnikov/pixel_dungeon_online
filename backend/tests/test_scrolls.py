@@ -1,4 +1,4 @@
-from app.engine.entities.base import ScrollOfTeleportation, ScrollOfRecharging, ScrollOfLullaby, ScrollOfTerror, ScrollOfRage, ScrollOfRetribution, ScrollOfIdentify, ScrollOfRemoveCurse, ScrollOfTransmutation, ScrollOfMirrorImage, ScrollOfMagicMapping, ScrollOfMetamorphosis, Wand, Position, Mob, Faction, HealthPotion, Seed, Dagger, Gold, is_immune
+from app.engine.entities.base import ScrollOfTeleportation, ScrollOfRecharging, ScrollOfLullaby, ScrollOfTerror, ScrollOfRage, ScrollOfRetribution, ScrollOfIdentify, ScrollOfRemoveCurse, ScrollOfTransmutation, ScrollOfMirrorImage, ScrollOfMagicMapping, ScrollOfMetamorphosis, ScrollOfUpgrade, Wand, Position, Mob, Faction, HealthPotion, Seed, Dagger, Gold, is_immune
 from app.engine.entities.mobs import Tengu, MirrorImage
 from app.engine.entities.scroll_actions import action_read
 from app.engine.entities.scroll_predicates import player_inventory_items
@@ -863,6 +863,85 @@ def test_scroll_of_magic_mapping_populates_mapped_tiles_in_state():
 
     state = g.get_state(p.id)
     assert len(state["mapped_tiles"]) == floor.width * floor.height
+
+
+def test_inscribed_stealth_not_granted_when_predicate_scroll_has_no_candidates():
+    """Bug 1 fix: stealth buff must not proc when no valid targets exist."""
+    from app.engine.entities.subclasses import Talent
+
+    g = GameInstance("t")
+    p = _player(g)
+
+    # Give player inscribed_stealth talent (Rogue T2).
+    p.subclass_info.talent_info.talents[Talent.INSCRIBED_STEALTH] = 1
+
+    # Mark every item as identified so Scroll of Identify finds no candidates.
+    for it in player_inventory_items(p):
+        g.identified_kinds.add(it.kind)
+
+    scroll = ScrollOfIdentify(id="scroll_is1")
+    g.identified_kinds.add(scroll.kind)
+    p.belongings.backpack.collect(scroll)
+
+    action_read(g, p, scroll)
+
+    select_events = [e for e in g.events if e["type"] == "SCROLL_SELECT_TARGET"]
+    assert len(select_events) == 0
+    assert not p.has_buff("invisibility"), "stealth must not proc when scroll fizzles"
+    # Scroll is NOT consumed.
+    assert p.belongings.get_item(scroll.id) is not None
+
+
+def test_predicate_scroll_not_identified_when_no_candidates():
+    """Bug 2 fix: reading a PREDICATE scroll with no targets must not reveal its kind."""
+    g = GameInstance("t")
+    p = _player(g)
+
+    # Strip inventory to only non-upgradable items.
+    p.belongings.weapon = None
+    p.belongings.armor = None
+    p.belongings.artifact = None
+    p.belongings.misc = None
+    p.belongings.ring = None
+    p.belongings.backpack.items = []
+
+    scroll = ScrollOfUpgrade(id="scroll_pu1")
+    p.belongings.backpack.collect(scroll)
+
+    action_read(g, p, scroll)
+
+    select_events = [e for e in g.events if e["type"] == "SCROLL_SELECT_TARGET"]
+    assert len(select_events) == 0
+    assert scroll.kind not in g.identified_kinds, "scroll kind must not be revealed on fizzle"
+
+
+def test_predicate_scroll_identified_only_when_candidates_exist():
+    """Bug 2 fix: kind is revealed at action_read when candidates exist, not on fizzle."""
+    g = GameInstance("t")
+    p = _player(g)
+
+    scroll = ScrollOfUpgrade(id="scroll_pu2")
+    p.belongings.backpack.collect(scroll)
+    assert p.belongings.weapon is not None  # player has an upgradable weapon
+
+    action_read(g, p, scroll)
+
+    select_events = [e for e in g.events if e["type"] == "SCROLL_SELECT_TARGET"]
+    assert len(select_events) == 1
+    # Kind is revealed as soon as valid targets are confirmed — not deferred to apply.
+    assert scroll.kind in g.identified_kinds
+
+
+def test_floor_scroll_pool_includes_scroll_of_transmutation():
+    """Bug 3 fix: FLOOR_SCROLL_KINDS must include scroll_of_transmutation."""
+    from app.engine.entities.item_catalog import FLOOR_SCROLL_KINDS
+    assert "scroll_of_transmutation" in FLOOR_SCROLL_KINDS
+
+
+def test_transmutation_output_never_worn_shortsword():
+    """Bug 4 fix: worn_shortsword must not appear as transmutation output."""
+    from app.engine.entities.item_catalog import TRANSMUTE_GROUPS
+    assert "worn_shortsword" not in TRANSMUTE_GROUPS["weapon_melee"]
 
 
 def test_scroll_of_metamorphosis_opens_then_replaces_talent():
