@@ -723,11 +723,11 @@ def test_scroll_of_mirror_image_spawns_two_invisible_player_allies():
 
     mirror_events = [e for e in g.events if e["type"] == "MIRROR_IMAGE"]
     assert len(mirror_events) == 1
-    clone_ids = mirror_events[0]["data"]["clones"]
+    clone_data = mirror_events[0]["data"]["clones"]
     assert mirror_events[0]["data"]["player"] == p.id
-    assert len(clone_ids) == 2
+    assert len(clone_data) == 2
 
-    clones = [floor.mobs[cid] for cid in clone_ids]
+    clones = [floor.mobs[c["id"]] for c in clone_data]
     for clone in clones:
         assert isinstance(clone, MirrorImage)
         assert clone.faction == Faction.PLAYER
@@ -759,7 +759,7 @@ def test_mirror_image_clone_dies_from_single_point_of_damage():
     action_read(g, p, scroll)
 
     mirror_events = [e for e in g.events if e["type"] == "MIRROR_IMAGE"]
-    clone = floor.mobs[mirror_events[0]["data"]["clones"][0]]
+    clone = floor.mobs[mirror_events[0]["data"]["clones"][0]["id"]]
 
     clone.take_damage(1)
     assert clone.is_alive is False
@@ -776,7 +776,7 @@ def test_is_immune_helper():
 
     action_read(g, p, scroll)
     mirror_events = [e for e in g.events if e["type"] == "MIRROR_IMAGE"]
-    clone = floor.mobs[mirror_events[0]["data"]["clones"][0]]
+    clone = floor.mobs[mirror_events[0]["data"]["clones"][0]["id"]]
 
     assert is_immune(clone, "burning") is True
 
@@ -796,7 +796,7 @@ def test_refresh_mirror_image_stats_removes_clone_when_owner_left_floor():
 
     action_read(g, p, scroll)
     mirror_events = [e for e in g.events if e["type"] == "MIRROR_IMAGE"]
-    clone = floor.mobs[mirror_events[0]["data"]["clones"][0]]
+    clone = floor.mobs[mirror_events[0]["data"]["clones"][0]["id"]]
 
     # Owner leaves the floor.
     p.floor_id = p.floor_id + 1

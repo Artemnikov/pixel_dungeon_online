@@ -25,28 +25,32 @@ import mageSheet from '../assets/pixel-dungeon/sprites/mage.png';
 import rogueSheet from '../assets/pixel-dungeon/sprites/rogue.png';
 import huntressSheet from '../assets/pixel-dungeon/sprites/huntress.png';
 
-// Pixel-faithful reproduction of SPD's StatusPane (small / mobile layout).
-// Native coordinates are taken straight from StatusPane.java and scaled up by
-// SCALE. All sprites are drawn with smoothing off so they stay crisp pixels.
+// Pixel-faithful reproduction of SPD's StatusPane (large / PC layout).
+// Native coordinates from StatusPane.java (large=true branch), scaled by SCALE.
 const SCALE = 3;
-const PANE_W = 90;   // a touch wider than the 82px bg so the buff row fits
-const PANE_H = 38;
+const PANE_W = 160;  // portrait (30) + bars (128) + 2px right margin
+const PANE_H = 39;
 
-// status_pane.png source regions (small UI), from StatusPane.java
-const BG = { x: 0, y: 0, w: 82, h: 38 };
-const HP_FILL = { x: 0, y: 40, w: 50, h: 4 };
-const EXP_FILL = { x: 0, y: 48, w: 17, h: 4 };
+// NinePatch source for large background: (0, 64, 41, 39, left=33, right=0, top=4, bottom=0)
+// Fixed left 33px (portrait frame), stretchable right 8px.
+const BG_FIXED_W  = 33;
+const BG_STRETCH_W = 8;
+const BG_Y        = 64;
 
-// Avatar = 12x15 crop of the class sprite sheet at frame index 1 (x=12), row =
-// armour tier (0 when unarmoured). Mirrors HeroSprite.avatar().
+// Large-layout bar sprite regions (status_pane.png)
+const HP_FILL   = { x: 0, y: 103, w: 128, h: 9 };  // green HP bar
+const HP_SHIELD = { x: 0, y: 112, w: 128, h: 9 };  // white shield overlay
+const EXP_FILL  = { x: 0, y: 121, w: 128, h: 7 };  // gold EXP bar
+
+// Avatar: 12x15 crop at column 1 of the class spritesheet (frame index 1).
 const FRAME_W = 12;
 const FRAME_H = 15;
 
-// buffs.png is sliced into 7x7 cells; 128/7 = 18 columns. icon idx -> (col,row).
+// buffs.png — 7x7 cells, 18 columns.
 const BUFF_SIZE = 7;
 const BUFF_COLS = 18;
 
-// 1.5 blinks/sec, like StatusPane.FLASH_RATE.
+// 1.5 blinks/sec matching StatusPane.FLASH_RATE.
 const FLASH_RATE = Math.PI * 1.5;
 const WARNING_COLORS = ['#660000', '#cc0000', '#660000'];
 
@@ -58,7 +62,6 @@ const CLASS_SHEETS = {
 };
 
 function lerpColor(t, colors) {
-  // t in [0,1] across the colors array (matches ColorMath.interpolate).
   const seg = Math.min(Math.floor(t * (colors.length - 1)), colors.length - 2);
   const local = t * (colors.length - 1) - seg;
   const a = parseInt(colors[seg].slice(1), 16);
@@ -137,8 +140,10 @@ export default function StatusPane({ myStats, depth, isAdmin, onSearch, hasTalen
 
         const s = statsRef.current || {};
         const hp = Math.max(0, Math.ceil(s.hp ?? 0));
+        const shield = Math.max(0, Math.floor(s.shield ?? 0));
         const maxHp = Math.max(1, s.maxHp ?? 1);
         const hpPct = Math.min(1, hp / maxHp);
+        const shieldPct = Math.min(1, (hp + shield) / maxHp);
         const exp = s.exp ?? 0;
         const maxExp = Math.max(1, s.maxExp ?? 10);
         const expPct = Math.min(1, exp / maxExp);
@@ -147,6 +152,7 @@ export default function StatusPane({ myStats, depth, isAdmin, onSearch, hasTalen
         const sheet = imgs[s.classType] || imgs.warrior;
 
         if (level > prevLevelRef.current) {
+          // Spawn level-up star particles from avatar center
           const cx = (9 + FRAME_W / 2) * SCALE;
           const cy = (8 + FRAME_H / 2) * SCALE;
           for (let i = 0; i < 12; i++) {
@@ -158,7 +164,6 @@ export default function StatusPane({ myStats, depth, isAdmin, onSearch, hasTalen
         }
         prevLevelRef.current = level;
 
-        // Talent blink — golden pulse when talent points available (SPD StatusPane.talentBlink)
         if (hasPtsRef.current) {
           talentBlinkRef.current = (talentBlinkRef.current + dt * FLASH_RATE) % 2;
         } else {
@@ -170,22 +175,18 @@ export default function StatusPane({ myStats, depth, isAdmin, onSearch, hasTalen
         ctx.save();
         ctx.scale(DPR, DPR);
 
-        // Fallback background: always visible even before pixel-art images load.
-        ctx.fillStyle = '#161616';
-        ctx.fillRect(0, 0, BG.w * SCALE, BG.h * SCALE);
-
-        // Draw a subtle placeholder grid so the HUD area is never empty.
-        ctx.strokeStyle = '#2a2a2a';
-        ctx.lineWidth = 1;
-        ctx.strokeRect(0, 0, BG.w * SCALE, BG.h * SCALE);
-
+        // --- Background (NinePatch: fixed left 33px + stretched right) ---
         const statusImg = imgs.status;
         if (statusImg?.complete && statusImg?.naturalWidth > 0) {
-          ctx.drawImage(statusImg, BG.x, BG.y, BG.w, BG.h, 0, 0, BG.w * SCALE, BG.h * SCALE);
+          ctx.drawImage(statusImg,
+            0, BG_Y, BG_FIXED_W, PANE_H,
+            0, 0, BG_FIXED_W * SCALE, PANE_H * SCALE);
+          ctx.drawImage(statusImg,
+            BG_FIXED_W, BG_Y, BG_STRETCH_W, PANE_H,
+            BG_FIXED_W * SCALE, 0, (PANE_W - BG_FIXED_W) * SCALE, PANE_H * SCALE);
         }
 
         // --- Avatar ---
-        // Solid background so transparent sprite edges show uniform color
         ctx.fillStyle = '#161616';
         ctx.fillRect(9 * SCALE, 8 * SCALE, FRAME_W * SCALE, FRAME_H * SCALE);
 
@@ -208,30 +209,19 @@ export default function StatusPane({ myStats, depth, isAdmin, onSearch, hasTalen
             ac.fillRect(0, 0, FRAME_W, FRAME_H);
             ac.globalAlpha = 1;
             ac.globalCompositeOperation = 'source-over';
+          } else if (hasPtsRef.current && talentBlinkRef.current > 0) {
+            // Golden blink when talent points are available
+            ac.globalCompositeOperation = 'source-atop';
+            ac.fillStyle = '#ffff00';
+            ac.globalAlpha = Math.abs(Math.cos(talentBlinkRef.current * FLASH_RATE)) * 0.5;
+            ac.fillRect(0, 0, FRAME_W, FRAME_H);
+            ac.globalAlpha = 1;
+            ac.globalCompositeOperation = 'source-over';
           }
           ctx.drawImage(avatarCanvas, 9 * SCALE, 8 * SCALE, FRAME_W * SCALE, FRAME_H * SCALE);
         }
 
-        // --- HP bar + text ---
-        if (statusImg?.complete && statusImg?.naturalWidth > 0 && hpPct > 0) {
-          ctx.drawImage(statusImg, HP_FILL.x, HP_FILL.y, HP_FILL.w, HP_FILL.h,
-            30 * SCALE, 2 * SCALE, HP_FILL.w * hpPct * SCALE, HP_FILL.h * SCALE);
-        }
-        ctx.font = `${4 * SCALE}px monospace`;
-        ctx.textBaseline = 'middle';
-        ctx.textAlign = 'center';
-        ctx.fillStyle = 'rgba(255,255,255,0.85)';
-        ctx.fillText(`${hp}/${maxHp}`, (30 + HP_FILL.w / 2) * SCALE, 4.5 * SCALE);
-
-        // --- EXP bar + level ---
-        if (statusImg?.complete && statusImg?.naturalWidth > 0 && expPct > 0) {
-          ctx.drawImage(statusImg, EXP_FILL.x, EXP_FILL.y, EXP_FILL.w, EXP_FILL.h,
-            2 * SCALE, 30 * SCALE, EXP_FILL.w * expPct * SCALE, EXP_FILL.h * SCALE);
-        }
-        ctx.fillStyle = '#ffffaa';
-        ctx.fillText(`${level}`, 25.5 * SCALE, 31.5 * SCALE);
-
-        // --- Buff indicators ---
+        // --- Buff indicators (top of pane, above HP bar) ---
         const buffsSheet = imgs.buffs;
         if (buffsSheet?.complete && buffsSheet?.naturalWidth > 0) {
           effects.forEach((eff, i) => {
@@ -241,10 +231,53 @@ export default function StatusPane({ myStats, depth, isAdmin, onSearch, hasTalen
             ctx.globalAlpha = 0.85;
             ctx.drawImage(buffsSheet,
               col * BUFF_SIZE, row * BUFF_SIZE, BUFF_SIZE, BUFF_SIZE,
-              (31 + i * (BUFF_SIZE + 1)) * SCALE, 9 * SCALE, BUFF_SIZE * SCALE, BUFF_SIZE * SCALE);
+              (31 + i * (BUFF_SIZE + 1)) * SCALE, 0, BUFF_SIZE * SCALE, BUFF_SIZE * SCALE);
             ctx.globalAlpha = 1;
           });
         }
+
+        // --- Shield + HP bars at (30, 19) ---
+        if (statusImg?.complete && statusImg?.naturalWidth > 0) {
+          // Shield drawn first (white, behind HP)
+          if (shieldPct > 0) {
+            ctx.drawImage(statusImg,
+              HP_SHIELD.x, HP_SHIELD.y, HP_SHIELD.w, HP_SHIELD.h,
+              30 * SCALE, 19 * SCALE, HP_SHIELD.w * shieldPct * SCALE, HP_SHIELD.h * SCALE);
+          }
+          // HP drawn on top (green)
+          if (hpPct > 0) {
+            ctx.drawImage(statusImg,
+              HP_FILL.x, HP_FILL.y, HP_FILL.w, HP_FILL.h,
+              30 * SCALE, 19 * SCALE, HP_FILL.w * hpPct * SCALE, HP_FILL.h * SCALE);
+          }
+        }
+
+        // HP text — centered on 128px bar, alpha 0.6
+        const hpLabel = shield > 0 ? `${hp}+${shield}/${maxHp}` : `${hp}/${maxHp}`;
+        ctx.font = `${4 * SCALE}px monospace`;
+        ctx.textBaseline = 'middle';
+        ctx.textAlign = 'center';
+        ctx.globalAlpha = 0.6;
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText(hpLabel, (30 + 64) * SCALE, (19 + 4.5) * SCALE);
+        ctx.globalAlpha = 1;
+
+        // --- EXP bar at (30, 30), 128x7 ---
+        if (statusImg?.complete && statusImg?.naturalWidth > 0 && expPct > 0) {
+          ctx.drawImage(statusImg,
+            EXP_FILL.x, EXP_FILL.y, EXP_FILL.w, EXP_FILL.h,
+            30 * SCALE, 30 * SCALE, EXP_FILL.w * expPct * SCALE, EXP_FILL.h * SCALE);
+        }
+
+        // EXP text — centered on bar, gold, alpha 0.6
+        ctx.globalAlpha = 0.6;
+        ctx.fillStyle = '#ffffaa';
+        ctx.fillText(`${exp}/${maxExp}`, (30 + 64) * SCALE, (30 + 3.5) * SCALE);
+        ctx.globalAlpha = 1;
+
+        // Level "lv. X" — centered in 30px portrait zone at y+33
+        ctx.fillStyle = '#ffffaa';
+        ctx.fillText(`lv. ${level}`, 15 * SCALE, 34 * SCALE);
 
         // --- Level-up star particles ---
         const stars = starsRef.current;
@@ -276,14 +309,7 @@ export default function StatusPane({ myStats, depth, isAdmin, onSearch, hasTalen
   for (let i = 1; i <= 50; i++) floorNumbers.push(i);
 
   return (
-    <div className="top-left-hud" onClick={() => onOpenTalents?.()}>
-      <canvas
-        ref={canvasRef}
-        width={PANE_W * SCALE * DPR}
-        height={PANE_H * SCALE * DPR}
-        style={{ width: PANE_W * SCALE, height: PANE_H * SCALE }}
-        className="status-pane-canvas"
-      />
+    <div className="top-left-hud">
       <div className="status-pane-footer">
         <span
           className={`status-floor-label${isAdmin ? ' status-floor-label--admin' : ''}`}
@@ -294,7 +320,7 @@ export default function StatusPane({ myStats, depth, isAdmin, onSearch, hasTalen
             setShowFloorPicker(v => !v);
           }}
         >
-          floor: {depth}{isAdmin ? ' \u25BE' : ''}
+          floor: {depth}{isAdmin ? ' ▾' : ''}
         </span>
         {showFloorPicker && (
           <div className="floor-picker" onClick={(e) => e.stopPropagation()}>
@@ -321,6 +347,23 @@ export default function StatusPane({ myStats, depth, isAdmin, onSearch, hasTalen
           Search (E)
         </button>
       </div>
+      <canvas
+        ref={canvasRef}
+        width={PANE_W * SCALE * DPR}
+        height={PANE_H * SCALE * DPR}
+        style={{ width: PANE_W * SCALE, height: PANE_H * SCALE }}
+        className="status-pane-canvas"
+        onClick={(e) => {
+          const x = e.nativeEvent.offsetX;
+          const y = e.nativeEvent.offsetY;
+          const ax = 9 * SCALE, ay = 8 * SCALE;
+          const aw = FRAME_W * SCALE, ah = FRAME_H * SCALE;
+          if (x >= ax && x < ax + aw && y >= ay && y < ay + ah) {
+            AudioManager.play('CLICK');
+            onOpenTalents?.();
+          }
+        }}
+      />
     </div>
   );
 }

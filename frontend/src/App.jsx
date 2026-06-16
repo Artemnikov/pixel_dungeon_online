@@ -194,6 +194,7 @@ function App() {
   // Cleared by an empty-tiles GOO_CHARGE event when the charge releases or cancels.
   const warnedTilesRef = useRef(null);
   const floatingTextRef = useRef([]);
+  const screenFlashRef = useRef(null);
   const trapsRef = useRef([]);
   const customTilesRef = useRef([]);
   const depthRef = useRef(1);
@@ -297,7 +298,7 @@ function App() {
     socketRef, gridRef, myPlayerIdRef, entitiesRef,
     visionRef, openDoorsRef, projectilesRef,
     trapsRef, customTilesRef,
-    mobAnimRef, dyingMobsRef, playerAnimRef, particlesRef, searchEffectsRef, floatingTextRef, wasDownedRef, warnedTilesRef,
+    mobAnimRef, dyingMobsRef, playerAnimRef, particlesRef, searchEffectsRef, floatingTextRef, screenFlashRef, wasDownedRef, warnedTilesRef,
     setGrid, setDepth, setMyPlayerId, setInventory,
     setEquippedItems, setMyStats, setDifficulty, setBossInfo,
     setGold, setEnergy, setBelongings, setQuickslot,
@@ -351,7 +352,7 @@ function App() {
     canvasRef, grid, myPlayerId, depth, assetImages,
     entitiesRef, visionRef, openDoorsRef, projectilesRef,
     trapsRef, customTilesRef,
-    mobAnimRef, dyingMobsRef, playerAnimRef, particlesRef, searchEffectsRef, floatingTextRef, myPlayerIdRef, warnedTilesRef,
+    mobAnimRef, dyingMobsRef, playerAnimRef, particlesRef, searchEffectsRef, floatingTextRef, screenFlashRef, myPlayerIdRef, warnedTilesRef,
     panOffsetRef, cameraLerpRef, zoomRef,
     isRefocusingRef, isDraggingRef,
     setCamera,

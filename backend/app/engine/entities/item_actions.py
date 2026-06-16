@@ -196,6 +196,28 @@ def action_affix(game, player, item, tx=None, ty=None) -> None:
     game.add_event("AFFIX_SEAL", {"player": player.id, "armor": armor.id}, floor_id=player.floor_id, source_player_id=player.id)
 
 
+_SCROLL_SOUNDS: dict[str, str] = {
+    "scroll_of_rage": "CHALLENGE",
+    "scroll_of_retribution": "BLAST",
+    "scroll_of_recharging": "CHARGEUP",
+    "scroll_of_lullaby": "LULLABY",
+    "scroll_of_teleportation": "TELEPORT",
+}
+
+_SCROLL_VISUALS: dict[str, str] = {
+    "scroll_of_identify": "IDENTIFY",
+    "scroll_of_upgrade": "UP",
+    "scroll_of_remove_curse": "CURSE",
+    "scroll_of_transmutation": "CHANGE",
+    "scroll_of_metamorphosis": "CHANGE",
+    "scroll_of_rage": "SCREAM",
+    "scroll_of_retribution": "FLASH",
+    "scroll_of_recharging": "ENERGY",
+    "scroll_of_lullaby": "NOTE",
+    "scroll_of_terror": "TERROR",
+}
+
+
 def _maybe_proc_inscribed_stealth(game, player) -> None:
     """Inscribed Stealth talent: reading any scroll grants brief invisibility."""
     inscribed_stealth = player.subclass_info.talent_info.level("inscribed_stealth")
@@ -232,11 +254,12 @@ def _teleport_player(game, player) -> None:
     out_of_fov = [c for c in candidates if c not in visible]
     pool = out_of_fov if out_of_fov else candidates
 
+    from_x, from_y = player.pos.x, player.pos.y
     tx, ty = random.choice(pool)
     player.pos = Position(x=tx, y=ty)
     player.remove_buff("rooted")
 
-    game.add_event("TELEPORT", {"player": player.id, "x": tx, "y": ty}, floor_id=player.floor_id)
+    game.add_event("TELEPORT", {"player": player.id, "from_x": from_x, "from_y": from_y, "x": tx, "y": ty}, floor_id=player.floor_id)
 
 
 def action_read(game, player, item, tx=None, ty=None) -> None:
@@ -358,7 +381,11 @@ def action_read(game, player, item, tx=None, ty=None) -> None:
     elif effect == "scroll_of_mirror_image":
         floor = game._get_or_create_floor(player.floor_id)
         clone_ids = game._spawn_mirror_images(player, floor, player.floor_id)
-        game.add_event("MIRROR_IMAGE", {"player": player.id, "clones": clone_ids}, floor_id=player.floor_id)
+        clone_data = [
+            {"id": cid, "x": floor.mobs[cid].pos.x, "y": floor.mobs[cid].pos.y}
+            for cid in clone_ids if cid in floor.mobs
+        ]
+        game.add_event("MIRROR_IMAGE", {"player": player.id, "clones": clone_data}, floor_id=player.floor_id)
         removed = player.belongings.backpack.detach(item.id)
         if removed is not None and player.belongings.get_item(item.id) is None:
             player.quickslot.convert_to_placeholder(removed)
@@ -366,11 +393,18 @@ def action_read(game, player, item, tx=None, ty=None) -> None:
         removed = player.belongings.backpack.detach(item.id)
         if removed is not None and player.belongings.get_item(item.id) is None:
             player.quickslot.convert_to_placeholder(removed)
+        _maybe_proc_inscribed_stealth(game, player)
+        game.add_event("READ", {"player": player.id, "item": item.id, "sound": "READ", "visual": "CHANGE"}, floor_id=player.floor_id)
         game.add_event("METAMORPH_OPEN", {"player": player.id}, floor_id=player.floor_id)
         return
     _maybe_proc_inscribed_stealth(game, player)
 
-    game.add_event("READ", {"player": player.id, "item": item.id}, floor_id=player.floor_id)
+    sound = _SCROLL_SOUNDS.get(effect, "READ")
+    visual = _SCROLL_VISUALS.get(effect)
+    event_data: dict = {"player": player.id, "item": item.id, "sound": sound}
+    if visual:
+        event_data["visual"] = visual
+    game.add_event("READ", event_data, floor_id=player.floor_id)
 
 
 def _apply_upgrade_target(game, player, target_item) -> None:
@@ -482,7 +516,12 @@ def apply_scroll_target(game, player, scroll_item, target_item) -> None:
     if removed is not None and player.belongings.get_item(scroll_item.id) is None:
         player.quickslot.convert_to_placeholder(removed)
 
-    game.add_event("READ", {"player": player.id, "item": scroll_item.id}, floor_id=player.floor_id)
+    sound = _SCROLL_SOUNDS.get(scroll_item.kind, "READ")
+    visual = _SCROLL_VISUALS.get(scroll_item.kind)
+    read_data: dict = {"player": player.id, "item": scroll_item.id, "sound": sound}
+    if visual:
+        read_data["visual"] = visual
+    game.add_event("READ", read_data, floor_id=player.floor_id)
 
 
 def action_plant(game, player, item, tx=None, ty=None) -> None:

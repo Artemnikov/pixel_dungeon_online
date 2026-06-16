@@ -131,6 +131,180 @@ export function spawnGrimShadow(particlesRef, cx, cy, count = 8, color = '#00000
   }
 }
 
+// Musical notes floating upward — Speck.NOTE pattern for Scroll of Lullaby.
+export function spawnNote(particlesRef, cx, cy, count = 8) {
+  for (let i = 0; i < count; i++) {
+    const life = 0.7 + Math.random() * 0.5;
+    particlesRef.current.push({
+      x: cx + (Math.random() - 0.5) * 20,
+      y: cy + (Math.random() - 0.5) * 8,
+      vx: (Math.random() - 0.5) * 8,
+      vy: -18 - Math.random() * 12,
+      life,
+      maxLife: life,
+      size: 2,
+      color: '#ffffaa',
+      gravity: false,
+    });
+  }
+}
+
+// Fast outward burst — Speck.SCREAM for Scroll of Rage.
+export function spawnScream(particlesRef, cx, cy, count = 10) {
+  for (let i = 0; i < count; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = 60 + Math.random() * 80;
+    const life = 0.25 + Math.random() * 0.2;
+    particlesRef.current.push({
+      x: cx + (Math.random() - 0.5) * 10,
+      y: cy + (Math.random() - 0.5) * 10,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      life,
+      maxLife: life,
+      size: 2 + Math.floor(Math.random() * 2),
+      color: '#ff4422',
+      gravity: false,
+    });
+  }
+}
+
+// Upward energy sparkles — EnergyParticle.FACTORY for Scroll of Recharging.
+export function spawnEnergy(particlesRef, cx, cy, count = 12) {
+  for (let i = 0; i < count; i++) {
+    const life = 0.5 + Math.random() * 0.4;
+    particlesRef.current.push({
+      x: cx + (Math.random() - 0.5) * 16,
+      y: cy + (Math.random() - 0.5) * 12,
+      vx: (Math.random() - 0.5) * 20,
+      vy: -30 - Math.random() * 40,
+      life,
+      maxLife: life,
+      size: 1 + Math.floor(Math.random() * 2),
+      color: Math.random() < 0.5 ? '#44ccff' : '#aaddff',
+      gravity: false,
+    });
+  }
+}
+
+// Bright white specks that fade quickly — Speck.LIGHT for Scroll of Teleportation.
+export function spawnLight(particlesRef, cx, cy, count = 10) {
+  for (let i = 0; i < count; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = 20 + Math.random() * 50;
+    const life = 0.2 + Math.random() * 0.25;
+    particlesRef.current.push({
+      x: cx + (Math.random() - 0.5) * 10,
+      y: cy + (Math.random() - 0.5) * 10,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      life,
+      maxLife: life,
+      size: 2 + Math.floor(Math.random() * 2),
+      color: '#ffffff',
+      gravity: false,
+    });
+  }
+}
+
+// Gold sparkles drifting upward — Identification effect for Scroll of Identify.
+export function spawnIdentify(particlesRef, cx, cy, count = 8) {
+  for (let i = 0; i < count; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = 16 + Math.random() * 32;
+    const life = 0.6 + Math.random() * 0.4;
+    particlesRef.current.push({
+      x: cx + (Math.random() - 0.5) * 14,
+      y: cy + (Math.random() - 0.5) * 14,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed - 20,
+      life,
+      maxLife: life,
+      size: 2,
+      color: '#ffdd44',
+      gravity: false,
+    });
+  }
+}
+
+// Upward green specks — Speck.UP for Scroll of Upgrade.
+export function spawnUp(particlesRef, cx, cy, count = 6) {
+  for (let i = 0; i < count; i++) {
+    const life = 0.5 + Math.random() * 0.3;
+    particlesRef.current.push({
+      x: cx + (Math.random() - 0.5) * 14,
+      y: cy + (Math.random() - 0.5) * 6,
+      vx: (Math.random() - 0.5) * 10,
+      vy: -28 - Math.random() * 20,
+      life,
+      maxLife: life,
+      size: 2,
+      color: '#55ff88',
+      gravity: false,
+    });
+  }
+}
+
+// Purple/magenta sparkles — Speck.CHANGE for Scroll of Transmutation / Metamorphosis.
+export function spawnChange(particlesRef, cx, cy, count = 10) {
+  for (let i = 0; i < count; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = 36 + Math.random() * 60;
+    const life = 0.5 + Math.random() * 0.3;
+    particlesRef.current.push({
+      x: cx + (Math.random() - 0.5) * 12,
+      y: cy + (Math.random() - 0.5) * 12,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed - 15,
+      life,
+      maxLife: life,
+      size: 2 + Math.floor(Math.random() * 2),
+      color: Math.random() < 0.5 ? '#cc44ff' : '#ff88ff',
+      gravity: false,
+    });
+  }
+}
+
+// White burst — Flare(6, 32) white for Scroll of Remove Curse.
+export function spawnCurse(particlesRef, cx, cy, count = 10) {
+  for (let i = 0; i < count; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = 30 + Math.random() * 50;
+    const life = 0.35 + Math.random() * 0.25;
+    particlesRef.current.push({
+      x: cx + (Math.random() - 0.5) * 8,
+      y: cy + (Math.random() - 0.5) * 8,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      life,
+      maxLife: life,
+      size: 2 + Math.floor(Math.random() * 2),
+      color: '#ffffff',
+      gravity: false,
+    });
+  }
+}
+
+// Red outward burst — Flare(5, 32) red for Scroll of Terror.
+export function spawnTerror(particlesRef, cx, cy, count = 10) {
+  for (let i = 0; i < count; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = 30 + Math.random() * 50;
+    const life = 0.35 + Math.random() * 0.25;
+    particlesRef.current.push({
+      x: cx + (Math.random() - 0.5) * 8,
+      y: cy + (Math.random() - 0.5) * 8,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      life,
+      maxLife: life,
+      size: 2 + Math.floor(Math.random() * 2),
+      color: '#ff2200',
+      gravity: false,
+    });
+  }
+}
+
 export function advanceAndDrawParticles(ctx, { particlesRef }) {
   const now = performance.now();
   if (lastNow == null) lastNow = now;

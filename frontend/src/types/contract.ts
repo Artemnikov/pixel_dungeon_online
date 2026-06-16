@@ -224,7 +224,17 @@ export interface DrinkEvent {
 
 export interface ReadEvent {
   type: 'READ';
-  data: { player: string; item: string };
+  data: { player: string; item: string; sound?: string; visual?: string };
+}
+
+export interface TeleportEvent {
+  type: 'TELEPORT';
+  data: { player: string; from_x: number; from_y: number; x: number; y: number };
+}
+
+export interface MirrorImageEvent {
+  type: 'MIRROR_IMAGE';
+  data: { player: string; clones: { id: string; x: number; y: number }[] };
 }
 
 export interface MapPatchEvent {
@@ -537,7 +547,9 @@ export type GameEvent =
   | TenguBombCountdownEvent
   | TenguBlastEvent
   | TenguFireEvent
-  | TenguShockerEvent;
+  | TenguShockerEvent
+  | TeleportEvent
+  | MirrorImageEvent;
 
 export type GameEventType = GameEvent['type'];
 

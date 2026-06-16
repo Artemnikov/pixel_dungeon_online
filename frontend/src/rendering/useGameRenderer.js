@@ -32,6 +32,7 @@ export default function useGameRenderer({
   particlesRef,
   searchEffectsRef,
   floatingTextRef,
+  screenFlashRef,
   warnedTilesRef,
   myPlayerIdRef,
   panOffsetRef,
@@ -145,6 +146,14 @@ export default function useGameRenderer({
       advanceAndDrawProjectiles(ctx, { projectilesRef, assetImages });
 
       ctx.restore();
+
+      // Retribution screen flash: full-screen white overlay that fades in screen space.
+      if (screenFlashRef?.current?.until > performance.now()) {
+        const remaining = screenFlashRef.current.until - performance.now();
+        const alpha = Math.min(remaining / 100, 1) * 0.5;
+        ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
 
       // Vision loss: when the local player is dead, dim the screen but keep the
       // world visible so they can still spectate (alpha ramps 0 -> 0.55 over 2s).
