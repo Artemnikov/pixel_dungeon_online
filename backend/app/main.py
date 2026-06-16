@@ -472,6 +472,16 @@ async def game_websocket(websocket: WebSocket, game_id: str, class_type: str = "
             elif isinstance(message, msg.ChangeDifficulty):
                 game.change_difficulty(message.difficulty)
 
+            elif isinstance(message, msg.Attack):
+                if player_id in game.players:
+                    player = game.players[player_id]
+                    floor = game._get_or_create_floor(player.floor_id)
+                    mob = floor.mobs.get(message.target_id)
+                    if mob and mob.is_alive:
+                        dx = mob.pos.x - player.pos.x
+                        dy = mob.pos.y - player.pos.y
+                        game.move_entity(player_id, dx, dy)
+
             elif isinstance(message, msg.RangedAttack):
                 game.perform_ranged_attack(
                     player_id, message.item_id, message.target_x, message.target_y,
