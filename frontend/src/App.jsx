@@ -25,6 +25,10 @@ import useTargetingExamine from './game/useTargetingExamine';
 import StatusPane from './ui/StatusPane';
 import BossHealthBar from './ui/BossHealthBar';
 import DangerIndicator from './ui/DangerIndicator';
+import SideTags from './ui/SideTags';
+import LootIndicator from './ui/LootIndicator';
+import ResumeIndicator from './ui/ResumeIndicator';
+import ActionIndicator from './ui/ActionIndicator';
 import GameLog from './ui/GameLog';
 import LoadingOverlay from './ui/LoadingOverlay';
 import GameHud from './ui/GameHud';
@@ -521,29 +525,47 @@ function App() {
 
         <BossHealthBar boss={bossInfo} />
 
-        <DangerIndicator
-          visionRef={visionRef}
-          entitiesRef={entitiesRef}
-          myPlayerIdRef={myPlayerIdRef}
-          onCycleEnemy={() => {
-            const visible = visionRef.current.visible;
-            if (!visible) return;
-            const hostile = Object.values(entitiesRef.current.mobs).filter(m =>
-              m.faction === 'enemy' && visible.has(`${Math.round(m.renderPos.x)},${Math.round(m.renderPos.y)}`)
-            );
-            if (hostile.length === 0) return;
-            const pos = (hostile[0].targetPos || hostile[0].renderPos);
-            const lw = canvasRef.current?.getBoundingClientRect()?.width || window.innerWidth;
-            const lh = canvasRef.current?.getBoundingClientRect()?.height || window.innerHeight;
-            const z = zoomRef.current;
-            cameraLerpRef.current = {
-              x: Math.round(pos.x) * TILE_SIZE + TILE_SIZE / 2 - lw / 2 / z,
-              y: Math.round(pos.y) * TILE_SIZE + TILE_SIZE / 2 - lh / 2 / z,
-            };
-            panOffsetRef.current = { x: 0, y: 0 };
-            isRefocusingRef.current = false;
-          }}
-        />
+        <SideTags>
+          <ActionIndicator
+            myStats={myStats}
+            onAction={(action) => {
+              const weapon = myStats?.belongings?.weapon;
+              if (weapon) send({ type: 'EXECUTE_ITEM_ACTION', item_id: weapon.id, action });
+            }}
+          />
+          <LootIndicator
+            entitiesRef={entitiesRef}
+            myPlayerIdRef={myPlayerIdRef}
+            onPickup={() => send({ type: 'PICKUP_FLOOR' })}
+          />
+          <ResumeIndicator
+            myStats={myStats}
+            onResume={() => send({ type: 'RESUME' })}
+          />
+          <DangerIndicator
+            visionRef={visionRef}
+            entitiesRef={entitiesRef}
+            myPlayerIdRef={myPlayerIdRef}
+            onCycleEnemy={() => {
+              const visible = visionRef.current.visible;
+              if (!visible) return;
+              const hostile = Object.values(entitiesRef.current.mobs).filter(m =>
+                m.faction === 'enemy' && visible.has(`${Math.round(m.renderPos.x)},${Math.round(m.renderPos.y)}`)
+              );
+              if (hostile.length === 0) return;
+              const pos = (hostile[0].targetPos || hostile[0].renderPos);
+              const lw = canvasRef.current?.getBoundingClientRect()?.width || window.innerWidth;
+              const lh = canvasRef.current?.getBoundingClientRect()?.height || window.innerHeight;
+              const z = zoomRef.current;
+              cameraLerpRef.current = {
+                x: Math.round(pos.x) * TILE_SIZE + TILE_SIZE / 2 - lw / 2 / z,
+                y: Math.round(pos.y) * TILE_SIZE + TILE_SIZE / 2 - lh / 2 / z,
+              };
+              panOffsetRef.current = { x: 0, y: 0 };
+              isRefocusingRef.current = false;
+            }}
+          />
+        </SideTags>
 
         <StatusPane
           myStats={myStats}

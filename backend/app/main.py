@@ -412,6 +412,26 @@ async def game_websocket(websocket: WebSocket, game_id: str, class_type: str = "
                     if player.path_queue:
                         player.last_auto_move_time = 0.0
 
+            elif isinstance(message, msg.PickupFloor):
+                if player_id in game.players:
+                    player = game.players[player_id]
+                    floor = game._get_or_create_floor(player.floor_id)
+                    items_to_pickup = [
+                        i_id for i_id, i in floor.items.items()
+                        if i.pos and i.pos.x == player.pos.x and i.pos.y == player.pos.y
+                        and i.type != "grave" and not getattr(i, 'for_sale', False)
+                    ]
+                    from app.engine.entities.base import Gold, Dewdrop
+                    for i_id in items_to_pickup:
+                        item = floor.items[i_id]
+                        if isinstance(item, Gold):
+                            player.gold += item.quantity
+                            del floor.items[i_id]
+                            game.add_event("PICKUP_GOLD", {"player": player.id, "amount": item.quantity}, floor_id=player.floor_id)
+                        elif player.add_to_inventory(item):
+                            del floor.items[i_id]
+                            game.add_event("PICKUP", {"player": player.id, "item": item.id}, floor_id=player.floor_id)
+
             elif isinstance(message, msg.MoveTo):
                 if player_id in game.players:
                     player = game.players[player_id]

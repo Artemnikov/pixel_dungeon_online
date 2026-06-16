@@ -196,6 +196,10 @@ class Resume(_ClientMessageBase):
     type: Literal["RESUME"]
 
 
+class PickupFloor(_ClientMessageBase):
+    type: Literal["PICKUP_FLOOR"]
+
+
 ClientMessage = Annotated[
     Union[
         Ping,
@@ -231,6 +235,7 @@ ClientMessage = Annotated[
         ImpClaimReward,
         SelectScrollTarget,
         Resume,
+        PickupFloor,
     ],
     Field(discriminator="type"),
 ]
