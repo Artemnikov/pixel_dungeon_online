@@ -192,6 +192,10 @@ class SelectScrollTarget(_ClientMessageBase):
     item_id: str
 
 
+class Resume(_ClientMessageBase):
+    type: Literal["RESUME"]
+
+
 ClientMessage = Annotated[
     Union[
         Ping,
@@ -226,6 +230,7 @@ ClientMessage = Annotated[
         ShopSell,
         ImpClaimReward,
         SelectScrollTarget,
+        Resume,
     ],
     Field(discriminator="type"),
 ]

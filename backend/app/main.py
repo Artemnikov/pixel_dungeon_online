@@ -406,6 +406,12 @@ async def game_websocket(websocket: WebSocket, game_id: str, class_type: str = "
             elif isinstance(message, msg.MoveStop):
                 game.set_move_intent(player_id, 0, 0)
 
+            elif isinstance(message, msg.Resume):
+                if player_id in game.players:
+                    player = game.players[player_id]
+                    if player.path_queue:
+                        player.last_auto_move_time = 0.0
+
             elif isinstance(message, msg.MoveTo):
                 if player_id in game.players:
                     player = game.players[player_id]
