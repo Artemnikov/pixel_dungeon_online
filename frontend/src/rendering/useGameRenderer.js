@@ -9,10 +9,20 @@ import { drawItems } from './draw/items';
 import { drawMobs } from './draw/mobs';
 import { drawPlayers } from './draw/players';
 import { advanceAndDrawProjectiles } from './draw/projectiles';
+import { advanceAndDrawMagicMissiles } from './draw/magicMissile';
 import { advanceAndDrawParticles } from './draw/particles';
 import { advanceAndDrawCheckedCells } from './draw/searchEffects';
 import { drawWarnedTiles } from './draw/warnedTiles';
 import { advanceAndDrawFloatingText } from './draw/floatingText';
+import { drawTransmuting } from './draw/transmuting';
+import { advanceAndDrawFlares } from './draw/flare';
+import { advanceAndDrawSpellSprites } from './draw/spellSprite';
+import { advanceAndDrawLightning } from './draw/lightning';
+import { advanceAndDrawShieldHalos } from './draw/shieldHalo';
+import { advanceAndDrawStateEffects } from './draw/states';
+import { advanceAndDrawSurprises } from './draw/surprise';
+import { drawTargetHealthIndicator } from './draw/targetHealthIndicator';
+import { drawTargetedCell } from './draw/targetedCell';
 
 export default function useGameRenderer({
   canvasRef,
@@ -41,6 +51,16 @@ export default function useGameRenderer({
   isRefocusingRef,
   isDraggingRef,
   setCamera,
+  transmuteEffectsRef,
+  flareEffectsRef,
+  spellSpriteEffectsRef,
+  lightningRef,
+  shieldHaloRef,
+  stateEffectsRef,
+  magicMissileRef,
+  surpriseRef,
+  selectedEnemyIdRef,
+  hoveredCellRef,
 }) {
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -138,12 +158,22 @@ export default function useGameRenderer({
       if (warnedTilesRef) drawWarnedTiles(ctx, { ref: warnedTilesRef });
       drawItems(ctx, { entitiesRef, visionRef, assetImages });
       drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef, dyingMobsRef });
+      drawTargetHealthIndicator(ctx, { entitiesRef, visionRef, selectedEnemyIdRef });
       drawPlayers(ctx, { entitiesRef, visionRef, assetImages, playerAnimRef, myPlayerId });
       drawGridCaps(ctx, { grid, depth, assetImages, visionRef });
+      drawTargetedCell(ctx, { hoveredCellRef, assetImages });
       advanceAndDrawCheckedCells(ctx, { ref: searchEffectsRef });
       advanceAndDrawParticles(ctx, { particlesRef });
+      advanceAndDrawFlares(ctx, { flareRef: flareEffectsRef });
+      advanceAndDrawSpellSprites(ctx, { spellSpriteRef: spellSpriteEffectsRef, assetImages });
       advanceAndDrawFloatingText(ctx, { floatingTextRef });
+      advanceAndDrawSurprises(ctx, { surpriseRef });
+      advanceAndDrawShieldHalos(ctx, { haloRef: shieldHaloRef });
+      advanceAndDrawStateEffects(ctx, { stateEffectsRef });
+      drawTransmuting(ctx, { transmuteEffectsRef, assetImages });
       advanceAndDrawProjectiles(ctx, { projectilesRef, assetImages });
+      advanceAndDrawMagicMissiles(ctx, magicMissileRef);
+      advanceAndDrawLightning(ctx, { lightningRef });
 
       ctx.restore();
 

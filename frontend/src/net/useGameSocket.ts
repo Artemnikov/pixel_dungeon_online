@@ -3,10 +3,19 @@ import type { Dispatch, SetStateAction } from 'react';
 import { TILE_SIZE, PLAYER_ATTACK_DURATION, PLAYER_OPERATE_DURATION, PLAYER_READ_DURATION, HIT_CONNECT_DELAY, FLASH_DURATION } from '../constants';
 import { getWsBaseUrl } from '../config/urls';
 import AudioManager from '../audio/AudioManager';
-import { spawnBlood, spawnChange, spawnCritSparkle, spawnCurse, spawnDust, spawnEnergy, spawnGrimShadow, spawnHeal, spawnIdentify, spawnLight, spawnNote, spawnScream, spawnTerror, spawnUp } from '../rendering/draw/particles';
+import { spawnBlood, spawnChange, spawnCritSparkle, spawnCurse, spawnDiscover, spawnDust, spawnEnergy, spawnGrimShadow, spawnHeal, spawnIdentify, spawnLight, spawnNote, spawnScream, spawnShadowUp, spawnTerror, spawnUp } from '../rendering/draw/particles';
+import { spawnSurprise } from '../rendering/draw/surprise';
 import { spawnCheckedCells } from '../rendering/draw/searchEffects';
-import { spawnFloatingText } from '../rendering/draw/floatingText';
-import { coordsForItem } from '../rendering/sprites';
+import { spawnFloatingText, TEXT_ICON } from '../rendering/draw/floatingText';
+import { coordsForItem, coordsForKind } from '../rendering/sprites';
+import { spawnFlare } from '../rendering/draw/flare';
+import { spawnShieldHalo, removeShieldHalo } from '../rendering/draw/shieldHalo';
+import { spawnStateParticles } from '../rendering/draw/states';
+import { spawnLightning } from '../rendering/draw/lightning';
+import { spawnMagicMissile } from '../rendering/draw/magicMissile';
+import { spawnSpellSprite, SPELL_CHARGE, SPELL_MAP } from '../rendering/draw/spellSprite';
+import { forceAlertMob } from '../rendering/draw/mobs';
+import { addGameLog } from '../ui/gameLogHelpers';
 import { sendMessage } from './send';
 import type {
   Player,
@@ -150,7 +159,15 @@ interface HookProps {
   floatingTextRef: Ref<unknown[]>;
   warnedTilesRef?: Ref<{ tiles: [number, number][]; untilMs: number } | null>;
   screenFlashRef?: Ref<{ until: number } | null>;
+  transmuteEffectsRef?: Ref<unknown[]>;
+  flareEffectsRef?: Ref<unknown[]>;
+  spellSpriteEffectsRef?: Ref<unknown[]>;
+  lightningRef?: Ref<unknown[]>;
+  shieldHaloRef?: Ref<unknown[]>;
+  stateEffectsRef?: Ref<unknown[]>;
   wasDownedRef: Ref<boolean | undefined>;
+  surpriseRef?: Ref<unknown[]>;
+  selectedEnemyIdRef?: Ref<string | null>;
   setGrid: Dispatch<SetStateAction<number[][]>>;
   setDepth: (depth: number) => void;
   setMyPlayerId: (id: string) => void;
@@ -158,7 +175,7 @@ interface HookProps {
   setEquippedItems: (e: { weapon: Player['equipped_weapon']; wearable: Player['equipped_wearable'] }) => void;
   setMyStats: (stats: MyStats) => void;
   setDifficulty: (difficulty: Difficulty) => void;
-  setBossInfo?: (info: { name: string; hp: number; maxHp: number } | null) => void;
+  setBossInfo?: (info: { name: string; hp: number; maxHp: number; shield?: number; effects?: { key?: string; name?: string; icon?: number; remaining?: number; duration?: number }[] } | null) => void;
   setGold?: (gold: number) => void;
   setEnergy?: (energy: number) => void;
   setBelongings?: (belongings: Player['belongings'] | null) => void;
@@ -192,6 +209,15 @@ type HandlerCtx = Pick<
   | 'floatingTextRef'
   | 'warnedTilesRef'
   | 'screenFlashRef'
+  | 'transmuteEffectsRef'
+  | 'flareEffectsRef'
+    | 'spellSpriteEffectsRef'
+    | 'lightningRef'
+    | 'shieldHaloRef'
+    | 'stateEffectsRef'
+    | 'magicMissileRef'
+    | 'surpriseRef'
+    | 'selectedEnemyIdRef'
 > & {
   onLevelUp?: HookProps['onLevelUp'];
   onSubclassChoiceAvailable?: HookProps['onSubclassChoiceAvailable'];
@@ -231,6 +257,15 @@ export default function useGameSocket({
   searchEffectsRef,
   floatingTextRef,
   screenFlashRef,
+  transmuteEffectsRef,
+  flareEffectsRef,
+  spellSpriteEffectsRef,
+  lightningRef,
+  shieldHaloRef,
+  stateEffectsRef,
+  magicMissileRef,
+  surpriseRef,
+  selectedEnemyIdRef,
   warnedTilesRef,
   wasDownedRef,
   setGrid,
@@ -383,7 +418,7 @@ export default function useGameSocket({
             effects: p.active_effects || [],
             classType: p.class_type || 'warrior',
             armorTier: 0,
-            shield: (p.shields || []).reduce((sum: number, s: any) => sum + (s.amount || 0), 0),
+            shield: (p.shields || []).reduce((sum: number, s: { amount?: number }) => sum + (s.amount || 0), 0),
             strength: p.strength ?? 10,
             subclass: p.subclass_info?.subclass || null,
             armorAbility: p.armor_ability || null,
@@ -508,7 +543,11 @@ export default function useGameSocket({
 
       if (setBossInfo) {
         const boss = data.mobs.find(m => m.type === 'boss' && m.is_alive !== false);
-        setBossInfo(boss ? { name: boss.name, hp: boss.hp, maxHp: boss.max_hp } : null);
+        setBossInfo(boss ? {
+          name: boss.name, hp: boss.hp, maxHp: boss.max_hp,
+          shield: (boss.shields || []).reduce((sum, s) => sum + (s.amount || 0), 0),
+          effects: boss.buffs || [],
+        } : null);
       }
 
       entitiesRef.current.items = data.items || [];
@@ -544,7 +583,7 @@ export default function useGameSocket({
           handleEvent(event, {
             myPlayerIdRef, gridRef, setGrid, entitiesRef, visionRef,
             projectilesRef, mobAnimRef, dyingMobsRef, playerAnimRef, particlesRef,
-            searchEffectsRef, floatingTextRef, screenFlashRef, warnedTilesRef,
+            searchEffectsRef, floatingTextRef, screenFlashRef, transmuteEffectsRef, warnedTilesRef, flareEffectsRef, spellSpriteEffectsRef, lightningRef, shieldHaloRef, stateEffectsRef, magicMissileRef, surpriseRef, selectedEnemyIdRef,
             onLevelUp, onSubclassChoiceAvailable, onArmorAbilityChoiceAvailable, onTalentUpgraded,
             onMetamorphOpen, onMetamorphOptions, onGooFightStarted, onTenguFightStarted,
             onShopOpen, onImpDialogue, onScrollSelectTarget,
@@ -583,7 +622,7 @@ export default function useGameSocket({
 function handleEvent(event: GameEvent, {
   myPlayerIdRef, gridRef, setGrid, entitiesRef, visionRef,
   projectilesRef, mobAnimRef, dyingMobsRef, playerAnimRef, particlesRef,
-  searchEffectsRef, floatingTextRef, screenFlashRef, warnedTilesRef,
+  searchEffectsRef, floatingTextRef, screenFlashRef, transmuteEffectsRef, warnedTilesRef, flareEffectsRef, spellSpriteEffectsRef, lightningRef, shieldHaloRef, stateEffectsRef, magicMissileRef, surpriseRef, selectedEnemyIdRef,
   onLevelUp, onSubclassChoiceAvailable, onArmorAbilityChoiceAvailable, onTalentUpgraded,
   onMetamorphOpen, onMetamorphOptions, onGooFightStarted, onTenguFightStarted,
   onShopOpen, onImpDialogue, onScrollSelectTarget,
@@ -732,6 +771,7 @@ function handleEvent(event: GameEvent, {
   if (event.type === 'DRINK') {
     const pid = event.data.player;
     const isLocal = pid === myPlayerIdRef.current;
+    if (isLocal) addGameLog(`You drink ${event.data.type}`, 'highlight');
     const drinker = entitiesRef.current.players[pid];
     const visible = visionRef?.current?.visible;
     if (isLocal || (drinker && visible?.has(`${drinker.pos.x},${drinker.pos.y}`))) {
@@ -782,13 +822,78 @@ function handleEvent(event: GameEvent, {
       const visual = event.data.visual;
       switch (visual) {
         case 'IDENTIFY': spawnIdentify(particlesRef, cx, cy); break;
-        case 'UP':       spawnUp(particlesRef, cx, cy); break;
-        case 'CURSE':    spawnCurse(particlesRef, cx, cy); break;
-        case 'SCREAM':   spawnScream(particlesRef, cx, cy); break;
-        case 'ENERGY':   spawnEnergy(particlesRef, cx, cy); break;
-        case 'NOTE':     spawnNote(particlesRef, cx, cy); break;
-        case 'TERROR':   spawnTerror(particlesRef, cx, cy); break;
-        case 'CHANGE':   spawnChange(particlesRef, cx, cy); break;
+        case 'UP':
+          spawnUp(particlesRef, cx, cy);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          if ((event.data as any).shadow_particles) spawnShadowUp(particlesRef, cx, cy, 5);
+          break;
+        case 'CURSE':
+          spawnCurse(particlesRef, cx, cy);
+          spawnShadowUp(particlesRef, cx, cy, 10);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          if (flareEffectsRef) spawnFlare(flareEffectsRef as any, cx, cy, 6, 64, '#ffffff', 800);
+          break;
+        case 'SCREAM': {
+          spawnScream(particlesRef, cx, cy);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const beckonedIds: string[] = (event.data as any).beckoned_ids ?? [];
+          for (const id of beckonedIds) forceAlertMob(id);
+          break;
+        }
+        case 'ENERGY':
+          spawnEnergy(particlesRef, cx, cy);
+          if (floatingTextRef) spawnFloatingText(floatingTextRef, cx, cy - TILE_SIZE, 'CHARGED!', '#44ccff');
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          if (spellSpriteEffectsRef) spawnSpellSprite(spellSpriteEffectsRef as any, cx, cy, SPELL_CHARGE);
+          break;
+        case 'NOTE': {
+          spawnNote(particlesRef, cx, cy);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const mobs = (event.data as any).affected_mobs ?? [];
+          const vis = visionRef?.current?.visible;
+          for (const m of mobs) {
+            if (vis?.has(`${m.x},${m.y}`)) {
+              spawnNote(particlesRef, m.x * TILE_SIZE + TILE_SIZE / 2, m.y * TILE_SIZE + TILE_SIZE / 2);
+            }
+          }
+          break;
+        }
+        case 'TERROR':
+          spawnTerror(particlesRef, cx, cy);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          if (flareEffectsRef) spawnFlare(flareEffectsRef as any, cx, cy, 5, 64, '#ff0000', 800);
+          break;
+        case 'CHANGE': {
+          spawnChange(particlesRef, cx, cy);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const oldKind = (event.data as any).old_kind;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const newKind = (event.data as any).new_kind;
+          if (transmuteEffectsRef && oldKind && newKind) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (transmuteEffectsRef.current as any[]).push({
+              x: cx, y: cy,
+              oldCoords: coordsForKind(oldKind),
+              newCoords: coordsForKind(newKind),
+              startTime: performance.now(),
+            });
+          }
+          break;
+        }
+        case 'MAP': {
+          if (floatingTextRef) spawnFloatingText(floatingTextRef, cx, cy - TILE_SIZE, 'MAPPED!', '#ffdd44');
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          if (spellSpriteEffectsRef) spawnSpellSprite(spellSpriteEffectsRef as any, cx, cy, SPELL_MAP);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const discoverPos = (event.data as any).discover_positions ?? [];
+          const vis = visionRef?.current?.visible;
+          for (const pos of discoverPos) {
+            if (vis?.has(`${pos.x},${pos.y}`)) {
+              spawnDiscover(particlesRef, pos.x * TILE_SIZE + TILE_SIZE / 2, pos.y * TILE_SIZE + TILE_SIZE / 2);
+            }
+          }
+          break;
+        }
         case 'FLASH':
           if (screenFlashRef) screenFlashRef.current = { until: performance.now() + 350 };
           break;
@@ -821,8 +926,9 @@ function handleEvent(event: GameEvent, {
     const isLocal = pid === myPlayerIdRef.current;
     const clones = event.data.clones || [];
     for (const clone of clones) {
-      if ((isLocal || visible?.has(`${clone.x},${clone.y}`)) && particlesRef) {
-        spawnDust(particlesRef, clone.x * TILE_SIZE + TILE_SIZE / 2, clone.y * TILE_SIZE + TILE_SIZE / 2, 8, '#aaccff');
+      if (isLocal || visible?.has(`${clone.x},${clone.y}`)) {
+        if (particlesRef) spawnLight(particlesRef, clone.x * TILE_SIZE + TILE_SIZE / 2, clone.y * TILE_SIZE + TILE_SIZE / 2);
+        AudioManager.play('TELEPORT');
       }
     }
     return;
@@ -839,11 +945,17 @@ function handleEvent(event: GameEvent, {
     if (particlesRef) {
       spawnHeal(particlesRef, cx, cy + TILE_SIZE / 2, 4);
     }
+    if (event.data.target === myPlayerIdRef.current) {
+      addGameLog(`You heal for ${event.data.amount}`, 'positive');
+    }
     return;
   }
 
   if (event.type === 'TRAP_TRIGGERED') {
     const player = entitiesRef.current.players[event.data.player];
+    if (event.data.player === myPlayerIdRef.current) {
+      addGameLog(`You trigger a ${event.data.trap} trap${event.data.damage ? ` for ${event.data.damage} damage` : ''}`, 'negative');
+    }
     if (player) {
       const cx = player.renderPos.x * TILE_SIZE + TILE_SIZE / 2;
       const cy = player.renderPos.y * TILE_SIZE;
@@ -941,16 +1053,27 @@ function handleEvent(event: GameEvent, {
         AudioManager.play('ATTACK_BOW');
       }
     }
+
+    // Spawn magic missile trail for magic projectiles
+    if (event.data.projectile === 'magic_bolt' || event.data.projectile === 'magic_missile') {
+      spawnMagicMissile(magicMissileRef, startX, startY, targetX, targetY, '#3498db');
+    }
     return;
   }
 
   if (event.type === 'PICKUP' && event.data.player === myPlayerIdRef.current) {
     AudioManager.play('PICKUP');
+    addGameLog(`You picked up ${event.data.item}`, 'positive');
+    const me = entitiesRef.current?.players?.[myPlayerIdRef.current];
+    if (me) {
+      spawnFloatingText(floatingTextRef, me.renderPos.x * TILE_SIZE + TILE_SIZE / 2, me.renderPos.y * TILE_SIZE, `${event.data.item}`, '#ffffff', 18);
+    }
     return;
   }
 
   if (event.type === 'PICKUP_GOLD' && event.data.player === myPlayerIdRef.current) {
     AudioManager.play('GOLD');
+    addGameLog(`You picked up ${event.data.amount} gold`, 'positive');
     return;
   }
 
@@ -969,6 +1092,20 @@ function handleEvent(event: GameEvent, {
     const srcPlayer = entitiesRef.current.players[src];
     const srcEntity = srcMob || srcPlayer;
     const tgtEntity = entitiesRef.current.mobs[tgt] || entitiesRef.current.players[tgt];
+
+    // Game log
+    if (tgt === myPlayerIdRef.current) {
+      const attackerName = srcMob?.name || srcPlayer?.name || 'Something';
+      addGameLog(`${attackerName} hits you for ${damage}`, 'negative');
+    } else if (src === myPlayerIdRef.current) {
+      const targetName = tgtEntity?.name || 'target';
+      addGameLog(`You hit ${targetName} for ${damage}`, damage > 0 ? 'positive' : 'default');
+    }
+
+    // When the local player attacks a mob, make it the selected target.
+    if (src === myPlayerIdRef.current && !!entitiesRef.current.mobs[tgt]) {
+      if (selectedEnemyIdRef) selectedEnemyIdRef.current = tgt;
+    }
 
     // 1) Play the attacker's swing.
     if (srcMob) {
@@ -1003,6 +1140,11 @@ function handleEvent(event: GameEvent, {
       const isCrit = event.data.crit;
       const isGrim = event.data.grim_proc;
 
+      const isSurprise = event.data.surprise;
+      const hitIcon = isSurprise ? TEXT_ICON.HIT_SUPR
+        : src === myPlayerIdRef.current ? TEXT_ICON.HIT_WEP
+        : TEXT_ICON.HIT_BLS;
+
       setTimeout(() => {
         const flashDuration = isCrit ? FLASH_DURATION * 2 : FLASH_DURATION;
         const flashUntil = performance.now() + flashDuration;
@@ -1015,7 +1157,7 @@ function handleEvent(event: GameEvent, {
               const critCount = Math.min(Math.round(14 * Math.sqrt(damage / maxHp)), 14);
               spawnBlood(particlesRef, tc.x, tc.y, awayAngle, critCount, '#ffcc00');
               spawnCritSparkle(particlesRef, tc.x, tc.y, 10);
-              spawnFloatingText(floatingTextRef, tc.x, tc.y - TILE_SIZE / 2, 'CRIT!', '#ffcc00');
+              spawnFloatingText(floatingTextRef, tc.x, tc.y - TILE_SIZE / 2, 'CRIT!', '#ffcc00', hitIcon);
             } else {
               const count = Math.min(Math.round(9 * Math.sqrt(damage / maxHp)), 9);
               spawnBlood(particlesRef, tc.x, tc.y, awayAngle, count, color);
@@ -1028,11 +1170,14 @@ function handleEvent(event: GameEvent, {
           if (!playerAnimRef.current[tgt]) playerAnimRef.current[tgt] = {};
           playerAnimRef.current[tgt].flashUntil = flashUntil;
           if (isCrit && floatingTextRef) {
-            spawnFloatingText(floatingTextRef, tc.x, tc.y - TILE_SIZE / 2, 'CRIT!', '#ffcc00');
+            spawnFloatingText(floatingTextRef, tc.x, tc.y - TILE_SIZE / 2, 'CRIT!', '#ffcc00', hitIcon);
           }
           if (isGrim && floatingTextRef) {
             spawnGrimShadow(particlesRef, tc.x, tc.y, 8);
           }
+        }
+        if (isSurprise && surpriseRef) {
+          spawnSurprise(surpriseRef, tc.x, tc.y);
         }
       }, HIT_CONNECT_DELAY);
     }
@@ -1043,6 +1188,13 @@ function handleEvent(event: GameEvent, {
     const tgt = event.data.target;
     const verb = event.data.defense_verb || 'dodged';
     const target = entitiesRef.current.mobs[tgt] || entitiesRef.current.players[tgt];
+
+    if (tgt === myPlayerIdRef.current) {
+      addGameLog(`You ${verb}`, 'warning');
+    } else if (event.data.source === myPlayerIdRef.current) {
+      const targetName = target?.name || 'target';
+      addGameLog(`${targetName} ${verb}`, 'warning');
+    }
     if (target) {
       const visible = visionRef?.current?.visible;
       const tx = Math.round(target.renderPos.x);
@@ -1053,7 +1205,10 @@ function handleEvent(event: GameEvent, {
         const cx = target.renderPos.x * TILE_SIZE + TILE_SIZE / 2;
         const cy = target.renderPos.y * TILE_SIZE;
         if (floatingTextRef) {
-          spawnFloatingText(floatingTextRef, cx, cy, verb, '#ffffff');
+          const missIcon = verb === 'blocked' ? TEXT_ICON.MISS_ARM
+            : verb === 'dodged' ? TEXT_ICON.MISS_EVA
+            : TEXT_ICON.MISS_DEF;
+          spawnFloatingText(floatingTextRef, cx, cy, verb, '#ffffff', missIcon);
         }
         AudioManager.play('MISS');
       }
@@ -1075,7 +1230,7 @@ function handleEvent(event: GameEvent, {
     if (amount > 0 && floatingTextRef) {
       const color = isCrit ? '#ffcc00' : '#ff6666';
       const text = isCrit ? `${amount} CRIT!` : `-${amount}`;
-      spawnFloatingText(floatingTextRef, tc.x, tc.y - TILE_SIZE / 2, text, color);
+      spawnFloatingText(floatingTextRef, tc.x, tc.y - TILE_SIZE / 2, text, color, TEXT_ICON.PHYS_DMG);
     }
     if (isGrim && particlesRef) {
       spawnGrimShadow(particlesRef, tc.x, tc.y, 8);
@@ -1091,12 +1246,19 @@ function handleEvent(event: GameEvent, {
     const mob = entitiesRef.current.mobs[id];
     if (mob) {
       dyingMobsRef.current[id] = { ...mob, renderPos: { ...mob.renderPos }, deathStart: performance.now() };
+      if (mob.faction === 'enemy') {
+        addGameLog(`${mob.name} defeated!`, 'positive');
+      }
+    }
+    if (selectedEnemyIdRef?.current === id) {
+      selectedEnemyIdRef.current = null;
     }
     return;
   }
 
   if (event.type === 'LEVEL_UP') {
     if (event.data.player === myPlayerIdRef.current) {
+      addGameLog(`Level up! You are now level ${event.data.level}`, 'positive');
       onLevelUp?.({
         level: event.data.level,
         tier_unlocked: event.data.tier_unlocked,
@@ -1190,10 +1352,13 @@ function handleEvent(event: GameEvent, {
 
   if (event.type === 'TALENT_METAMORPHED') {
     if (event.data.player === myPlayerIdRef.current) {
-      // Remove the replaced old talent, add the new one
-      // The full talentLevels will arrive in next STATE_UPDATE
       AudioManager.play('LEVELUP', 1.2);
     }
+    return;
+  }
+
+  if (event.type === 'MESSAGE') {
+    addGameLog(event.data.text, event.data.color || 'default');
     return;
   }
 }

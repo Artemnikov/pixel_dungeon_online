@@ -1,5 +1,6 @@
 import { TILE_SIZE, TILE_SCALE, PLAYER_ATTACK_DURATION, PLAYER_OPERATE_DURATION, PLAYER_READ_DURATION } from '../../constants';
 import { drawWhiteSilhouette } from './flash';
+import { drawShieldHalo } from './shieldHalo';
 
 export function drawPlayers(ctx, { entitiesRef, visionRef, assetImages, playerAnimRef, myPlayerId }) {
   Object.values(entitiesRef.current.players).forEach(player => {
@@ -98,6 +99,11 @@ export function drawPlayers(ctx, { entitiesRef, visionRef, assetImages, playerAn
       ctx.font = '10px Arial';
       ctx.textAlign = 'center';
       ctx.fillText(player.name, x + TILE_SIZE / 2, y - 15);
+    }
+
+    const totalShield = (player.shields || []).reduce((sum, s) => sum + (s.amount || 0), 0);
+    if (totalShield > 0) {
+      drawShieldHalo(ctx, x + TILE_SIZE / 2, y, totalShield);
     }
   });
 }

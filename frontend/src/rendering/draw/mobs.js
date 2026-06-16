@@ -122,6 +122,7 @@ import {
   getImpFrame,
   getRatKingFrame,
 } from '../mobs';
+import { drawShieldHalo } from './shieldHalo';
 
 // Gnoll's 12x15 frame, centered/bottom-aligned in the 32px tile per SPD placement
 // (x=(col+0.5)*16-w/2, y=(row+1)*16-h), scaled 2x -> 24x30 at offset (+4,+2).
@@ -130,11 +131,45 @@ const GNOLL_DEST = { dx: 4, dy: 2, dw: 24, dh: 30 };
 // Track previous ai_state per mob to detect sleeping→hunting transitions.
 const prevAiState = {};
 
+// EmoIcons: ai_state → short text shown above mob head (SPD EmoIcon).
+const aiStateEmo = {
+  hunting: '!',
+  fleeing: '!!',
+  sleeping: 'zZ',
+  wandering: '?',
+  lost: '?¿',
+};
+
 // Icons.SLEEP in icons.png (Icons.java): uvRectBySize(7, 88, 9, 8).
 const SLEEP_ICON_X = 7;
 const SLEEP_ICON_Y = 88;
 const SLEEP_ICON_W = 9;
 const SLEEP_ICON_H = 8;
+
+// Icons.ALERT in icons.png (Icons.java): uvRectBySize(16, 80, 8, 8).
+const ALERT_ICON_X = 16;
+const ALERT_ICON_Y = 80;
+const ALERT_ICON_W = 8;
+const ALERT_ICON_H = 8;
+const ALERT_DURATION = 1500; // ms
+const LOST_DURATION = 1500; // ms — how long the confused icon shows after losing target
+
+// Icons.LOST in icons.png (Icons.java): uvRectBySize(24, 80, 8, 8).
+const LOST_ICON_X = 24;
+const LOST_ICON_Y = 80;
+const LOST_ICON_W = 8;
+const LOST_ICON_H = 8;
+
+// Track alert expiry timestamps per mob.
+const mobAlertUntil = {};
+// Track lost (confused) expiry timestamps per mob.
+const mobLostUntil = {};
+
+// SPD's beckon()→notice()→showAlert() is unconditional, even for already-hunting mobs.
+// Call this from the socket handler after a Scroll of Rage to force the ! icon.
+export function forceAlertMob(mobId, durationMs = ALERT_DURATION) {
+  mobAlertUntil[mobId] = performance.now() + durationMs;
+}
 
 export function drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef, dyingMobsRef }) {
   const now = performance.now();
@@ -435,23 +470,25 @@ export function drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef,
 
     const x = mob.renderPos.x * TILE_SIZE;
     const y = mob.renderPos.y * TILE_SIZE;
-    const mobHpBarWidth = TILE_SIZE - 4;
-    const mobHpBarHeight = 4;
     const mobHp = mob.hp || 0;
     const mobMaxHp = mob.max_hp || 1;
     const mobShield = (mob.shields || []).reduce((sum, s) => sum + (s.amount || 0), 0);
-    const mobMax = Math.max(mobHp + mobShield, mobMaxHp);
-    const mobHpPercent = mobHp / mobMax;
-    const mobShieldPercent = (mobHp + mobShield) / mobMax;
-    // SPD's HealthBar colors: COLOR_BG = 0xCC0000, COLOR_HP = 0x00EE00, COLOR_SHLD = 0xFFFFFF
-    ctx.fillStyle = '#cc0000';
-    ctx.fillRect(x + 2, y - 5, mobHpBarWidth, mobHpBarHeight);
-    if (mobShieldPercent > mobHpPercent) {
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(x + 2, y - 5, mobHpBarWidth * mobShieldPercent, mobHpBarHeight);
+    const showBar = mobHp < mobMaxHp || mobShield > 0;
+    if (showBar) {
+      const mobHpBarWidth = TILE_SIZE - 4;
+      const mobHpBarHeight = 4;
+      const mobMax = Math.max(mobHp + mobShield, mobMaxHp);
+      const mobHpPercent = mobHp / mobMax;
+      const mobShieldPercent = (mobHp + mobShield) / mobMax;
+      ctx.fillStyle = '#cc0000';
+      ctx.fillRect(x + 2, y - 5, mobHpBarWidth, mobHpBarHeight);
+      if (mobShieldPercent > mobHpPercent) {
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(x + 2, y - 5, mobHpBarWidth * mobShieldPercent, mobHpBarHeight);
+      }
+      ctx.fillStyle = '#00ee00';
+      ctx.fillRect(x + 2, y - 5, mobHpBarWidth * mobHpPercent, mobHpBarHeight);
     }
-    ctx.fillStyle = '#00ee00';
-    ctx.fillRect(x + 2, y - 5, mobHpBarWidth * mobHpPercent, mobHpBarHeight);
 
     // Sleeping indicator: SPD's EmoIcon.Sleep (Icons.SLEEP, icons.png 7,88 9x8)
     // floats above sleeping mobs, gently pulsing between scale 1 and 1.2
@@ -466,20 +503,54 @@ export function drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef,
         x + TILE_SIZE / 2 - dw / 2, y - dh, dw, dh);
     }
 
-    // Alert indicator: "!" when mob transitions to hunting
+    // Alert indicator: SPD's EmoIcon.Alert (Icons.ALERT, icons.png 16,80 8x8).
+    // Record expiry timestamp on non-hunting → hunting transition; draw each frame until expired.
     const prev = prevAiState[mob.id];
     if (prev && prev !== 'hunting' && mob.ai_state === 'hunting') {
-      const cx = x + TILE_SIZE / 2;
-      const cy = y - 8;
-      ctx.font = `bold ${TILE_SIZE * 0.6}px sans-serif`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'bottom';
-      ctx.strokeStyle = '#000';
-      ctx.lineWidth = 3;
-      ctx.strokeText('!', cx, cy + 4);
-      ctx.fillStyle = '#ff0';
-      ctx.fillText('!', cx, cy + 4);
+      mobAlertUntil[mob.id] = now + ALERT_DURATION;
     }
+    if (mobAlertUntil[mob.id] && now < mobAlertUntil[mob.id] && assetImages.icons) {
+      const dw = ALERT_ICON_W * 2;
+      const dh = ALERT_ICON_H * 2;
+      ctx.drawImage(assetImages.icons, ALERT_ICON_X, ALERT_ICON_Y, ALERT_ICON_W, ALERT_ICON_H,
+        x + TILE_SIZE / 2 - dw / 2, y - dh, dw, dh);
+    }
+
+    // Lost (confused) indicator: SPD's EmoIcon.Lost (Icons.LOST, icons.png 24,80 8x8).
+    // Shown when a hunting mob loses its target (hunting → wandering transition).
+    if (prev && prev === 'hunting' && mob.ai_state === 'wandering') {
+      mobLostUntil[mob.id] = now + LOST_DURATION;
+    }
+    if (mobLostUntil[mob.id] && now < mobLostUntil[mob.id] && assetImages.icons) {
+      const dw = LOST_ICON_W * 2;
+      const dh = LOST_ICON_H * 2;
+      ctx.drawImage(assetImages.icons, LOST_ICON_X, LOST_ICON_Y, LOST_ICON_W, LOST_ICON_H,
+        x + TILE_SIZE / 2 - dw / 2, y - dh, dw, dh);
+    }
+
+    const totalMobShield = (mob.shields || []).reduce((sum, s) => sum + (s.amount || 0), 0);
+    if (totalMobShield > 0) {
+      drawShieldHalo(ctx, x + TILE_SIZE / 2, y, totalMobShield);
+    }
+
+    // EmoIcons text fallback for states without a sprite icon.
+    // Skip when a sprite icon is already showing (sleep, alert, lost timers).
+    const hasSpriteIcon = (mob.ai_state === 'sleeping' || mob.ai_state === 'idle')
+      || (mobAlertUntil[mob.id] && now < mobAlertUntil[mob.id])
+      || (mobLostUntil[mob.id] && now < mobLostUntil[mob.id]);
+    if (!hasSpriteIcon) {
+      const emoIcon = aiStateEmo[mob.ai_state];
+      if (emoIcon) {
+        ctx.font = 'bold 14px monospace';
+        ctx.textAlign = 'center';
+        ctx.fillStyle = '#ffffff';
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 3;
+        ctx.strokeText(emoIcon, x + TILE_SIZE / 2, y - 6);
+        ctx.fillText(emoIcon, x + TILE_SIZE / 2, y - 6);
+      }
+    }
+
     prevAiState[mob.id] = mob.ai_state;
   });
 

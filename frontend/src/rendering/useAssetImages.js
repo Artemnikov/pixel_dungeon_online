@@ -54,6 +54,7 @@ import dm300Sprite from '../assets/pixel-dungeon/sprites/dm300.png';
 import bruteSprite from '../assets/pixel-dungeon/sprites/brute.png';
 import swarmSprite from '../assets/pixel-dungeon/sprites/swarm.png';
 import iconsSprite from '../assets/pixel-dungeon/interfaces/icons.png';
+import spellIconsSprite from '../assets/pixel-dungeon/effects/spell_icons.png';
 
 export default function useAssetImages() {
   const [assetImages, setAssetImages] = useState({
@@ -110,6 +111,7 @@ export default function useAssetImages() {
     brute: null,
     swarm: null,
     icons: null,
+    spellIcons: null,
   });
 
   useEffect(() => {
@@ -206,6 +208,7 @@ export default function useAssetImages() {
     loadImage(bruteSprite, 'brute');
     loadImage(swarmSprite, 'swarm');
     loadImage(iconsSprite, 'icons');
+    loadImage(spellIconsSprite, 'spellIcons');
   }, []);
 
   return assetImages;

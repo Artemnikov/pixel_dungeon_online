@@ -1,4 +1,5 @@
 import { useState, useMemo, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import TalentButton from './TalentButton';
 import WndOptions from './WndOptions';
 
@@ -19,6 +20,7 @@ export default function TalentTierPane({
   metamorphMode,
   onMetamorphChoose,
 }) {
+  const { t } = useTranslation();
   const [showShuffle, setShowShuffle] = useState(false);
 
   const ptsAvailable = talentPoints?.[tier] || 0;
@@ -86,7 +88,7 @@ export default function TalentTierPane({
     <div className="tier-pane">
       {!metamorphMode && (
         <div className="tier-pane-header">
-          <div className="tier-title">Tier {tier}</div>
+          <div className="tier-title">{t('talent.tier', { tier })}</div>
           <div className="tier-stars">
             {Array.from({ length: totStars }, (_, i) => {
               let cls = 'tier-star';
@@ -112,7 +114,7 @@ export default function TalentTierPane({
           {ptsAvailable > 0 && (
             <button
               className="tier-random-btn"
-              title="Randomly assign talent points"
+              title={t('talent.randomTooltip')}
               onClick={() => setShowShuffle(true)}
             >
               ↻
@@ -146,9 +148,9 @@ export default function TalentTierPane({
       {showShuffle && (
         <WndOptions
           icon="↻"
-          title="Randomly assign talents"
-          message="Choose how to assign remaining talent points for this tier."
-          options={['Fill all', 'Fill one', 'Cancel']}
+          title={t('talent.randomTitle')}
+          message={t('talent.randomMsg')}
+          options={[t('talent.fillAll'), t('talent.fillOne'), t('talent.cancel')]}
           onSelect={(idx) => {
             if (idx === 0) handleShuffleAll();
             else if (idx === 1) handleShuffleOne();

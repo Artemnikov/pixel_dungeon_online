@@ -1,24 +1,25 @@
+import { useTranslation } from 'react-i18next';
 import Panel from './Panel';
 
-// Rankings and News have no online backend yet; show faithful empty states.
-
 export function RankingsPanel({ onClose }) {
+  const { t } = useTranslation();
   return (
-    <Panel title="Rankings" icon="RANKINGS" onClose={onClose}>
+    <Panel title={t('panel.rankings')} icon="RANKINGS" onClose={onClose}>
       <div className="opd-empty">
-        <p>No rankings recorded yet.</p>
-        <p className="opd-empty-sub">Finished runs will appear here in a future update.</p>
+        <p>{t('rankings.emptyTitle')}</p>
+        <p className="opd-empty-sub">{t('rankings.emptySub')}</p>
       </div>
     </Panel>
   );
 }
 
 export function NewsPanel({ onClose }) {
+  const { t } = useTranslation();
   return (
-    <Panel title="News" icon="NEWS" onClose={onClose}>
+    <Panel title={t('panel.news')} icon="NEWS" onClose={onClose}>
       <div className="opd-empty">
-        <p>No news right now.</p>
-        <p className="opd-empty-sub">Check back later for updates and announcements.</p>
+        <p>{t('rankings.newsEmptyTitle')}</p>
+        <p className="opd-empty-sub">{t('rankings.newsEmptySub')}</p>
       </div>
     </Panel>
   );

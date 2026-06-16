@@ -17,6 +17,7 @@ import AudioManager from '../audio/AudioManager';
 import ItemIcon from './ItemIcon';
 import ItemGlyph from './ItemGlyph';
 import { HOLDER_SPRITES } from '../rendering/sprites';
+import useEntityName from './useEntityName';
 
 // SPD-style persistent inventory pane (port of InventoryPane.java). Shows the
 // five equip slots + an inline gold/energy readout, bag tabs for nested bags,
@@ -25,11 +26,11 @@ import { HOLDER_SPRITES } from '../rendering/sprites';
 // each slot mirrors SPD's ItemSlot (equipped tint, unidentified/curse tint,
 // strength-requirement badge, upgrade level).
 const EQUIP_SLOTS = [
-  { key: 'weapon', label: 'Wep' },
-  { key: 'armor', label: 'Arm' },
-  { key: 'artifact', label: 'Art' },
-  { key: 'misc', label: 'Misc' },
-  { key: 'ring', label: 'Ring' },
+  { key: 'weapon', labelKey: 'slot.wep' },
+  { key: 'armor', labelKey: 'slot.arm' },
+  { key: 'artifact', labelKey: 'slot.art' },
+  { key: 'misc', labelKey: 'slot.misc' },
+  { key: 'ring', labelKey: 'slot.ring' },
 ];
 
 const EQUIPPABLE_TYPES = new Set(['weapon', 'wearable', 'ring', 'artifact']);
@@ -68,6 +69,7 @@ function strBadge(item, strength) {
 function ItemSlot({ item, holderKey, equipped, strength, empty, onOpen, onContext, onDefaultAction, selectMode, onSelectItem, itemFilter }) {
   const timerRef = useRef(null);
   const longFiredRef = useRef(false);
+  const itemName = useEntityName(item);
 
   if (empty || !item) {
     // Empty equip slots show SPD's placeholder holder sprite; empty backpack
@@ -99,7 +101,7 @@ function ItemSlot({ item, holderKey, equipped, strength, empty, onOpen, onContex
   return (
     <button
       className={`inv-slot filled ${equipped ? 'equipped' : ''} ${tintClass(item)} ${selectMode && !selectable ? 'inv-slot-unselectable' : ''}`}
-      title={item.name}
+      title={itemName}
       onClick={handleClick}
       onAuxClick={selectMode ? undefined : (e) => { if (e.button === 1) { e.preventDefault(); if (item.default_action) onDefaultAction(item); } }}
       onContextMenu={selectMode ? undefined : (e) => { e.preventDefault(); AudioManager.play('CLICK'); openContext(e.clientX, e.clientY); }}

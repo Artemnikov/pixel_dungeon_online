@@ -1,11 +1,4 @@
-const ABILITY_LABELS = {
-  heroic_leap: 'Heroic Leap',
-  shockwave: 'Shockwave',
-  endure: 'Endure',
-  smoke_bomb: 'Smoke Bomb',
-  death_mark: 'Death Mark',
-  shadow_clone: 'Shadow Clone',
-};
+import { useTranslation } from 'react-i18next';
 
 const ABILITY_COSTS = {
   heroic_leap: 30,
@@ -21,11 +14,12 @@ export default function AbilityButton({
   armorCharge,
   onUseAbility,
 }) {
-  const label = ABILITY_LABELS[armorAbility] || armorAbility;
+  const { t } = useTranslation();
+  if (!armorAbility) return null;
+
   const cost = ABILITY_COSTS[armorAbility] || 30;
   const pct = Math.min(1, armorCharge / (cost || 1));
-
-  if (!armorAbility) return null;
+  const label = t(`ability.${armorAbility}.name`, { defaultValue: armorAbility });
 
   return (
     <div className="ability-btn-container">
@@ -33,7 +27,7 @@ export default function AbilityButton({
         type="button"
         className={`ability-btn ${pct >= 1 ? 'ability-btn-ready' : ''}`}
         onClick={() => onUseAbility?.(armorAbility)}
-        title={`${label} (${Math.round(pct * 100)}% charge)`}
+        title={t('combat.chargePct', { label, pct: Math.round(pct * 100) })}
       >
         <div className="ability-btn-label">{label}</div>
         <div className="ability-btn-charge-bar">

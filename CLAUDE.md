@@ -3,8 +3,9 @@
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## Important
-This project is a remake of the original shattered pixel dungeon game.
-Before implementing anything, find the exact flow rules from the original project at `../shattered-pixel-dungeon` and implement based on the original game rules logic and map building.
+This project is a remake of the original shattered pixel dungeon (SPD) game.
+Before implementing anything, find the exact flow rules from the original project at `./shattered-pixel-dungeon`
+Porject files may not be longer than 400 lines of code and no deep nesting of 4+ tabs
 
 ## Commands
 
@@ -33,12 +34,6 @@ npm run build
 npm run lint
 npm run typecheck
 npm run gen:types    # regenerate entity types from backend Pydantic schemas
-```
-
-### Docker
-```bash
-docker build -t opd-backend backend/
-docker run -p 8080:8080 opd-backend
 ```
 
 ## Architecture

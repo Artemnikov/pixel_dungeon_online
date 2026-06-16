@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 
 export default function LevelUpBanner({
   level,
@@ -9,6 +10,7 @@ export default function LevelUpBanner({
   onOpenTalents,
   onDismiss,
 }) {
+  const { t } = useTranslation();
   const timerRef = useRef(null);
   const onDismissRef = useRef(onDismiss);
   useEffect(() => { onDismissRef.current = onDismiss; });
@@ -26,20 +28,20 @@ export default function LevelUpBanner({
   };
 
   const totalPts = Object.values(talentPoints || {}).reduce((a, b) => a + b, 0);
-  const milestone = canChooseSubclass ? 'New subclass available!'
-    : canChooseArmorAbility ? 'New armor ability available!'
-    : tierUnlocked ? `Tier ${tierUnlocked} unlocked!`
+  const milestone = canChooseSubclass ? t('ui.newSubclass')
+    : canChooseArmorAbility ? t('ui.newAbility')
+    : tierUnlocked ? t('ui.tierUnlocked', { tier: tierUnlocked })
     : null;
 
   return (
     <div className="levelup-banner" onClick={handleClick}>
       <div className="levelup-banner-content">
-        <span className="levelup-text">Level {level}!</span>
+        <span className="levelup-text">{t('ui.levelUp', { level })}</span>
         {milestone && <span className="levelup-milestone">{milestone}</span>}
         {totalPts > 0 && (
-          <span className="levelup-pts">{totalPts} talent point{totalPts > 1 ? 's' : ''}</span>
+          <span className="levelup-pts">{t('ui.talentPoints', { count: totalPts })}</span>
         )}
-        <span className="levelup-hint">Tap to view</span>
+        <span className="levelup-hint">{t('ui.tapToView')}</span>
       </div>
     </div>
   );

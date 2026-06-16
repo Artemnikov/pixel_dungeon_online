@@ -1,3 +1,5 @@
+import i18n from '../i18n';
+
 // Describe whatever occupies a cell, for the examine-mode "inspect" action.
 // Mirrors the spirit of GameScene.examineCell() in the original Shattered Pixel
 // Dungeon (look at a mob, item, or tile) but returns a short label that the caller
@@ -5,22 +7,22 @@
 //
 // Tile ids match the backend TileType enum (app/engine/dungeon/constants.py).
 const TILE_NAMES = {
-  0: 'Chasm',
-  1: 'Wall',
-  2: 'Floor',
-  3: 'Open door',
-  4: 'Stairs up',
-  5: 'Stairs down',
-  6: 'Wooden floor',
-  7: 'Water',
-  8: 'Cobbled floor',
-  9: 'Grass',
-  10: 'Locked door',
-  17: 'Wall',
-  18: 'Floor',
-  19: 'High grass',
-  20: 'Wall',
-  21: 'Furrowed grass',
+  0: 'tile.chasm',
+  1: 'tile.wall',
+  2: 'tile.floor',
+  3: 'tile.openDoor',
+  4: 'tile.stairsUp',
+  5: 'tile.stairsDown',
+  6: 'tile.woodenFloor',
+  7: 'tile.water',
+  8: 'tile.cobbledFloor',
+  9: 'tile.grass',
+  10: 'tile.lockedDoor',
+  17: 'tile.wall',
+  18: 'tile.floor',
+  19: 'tile.highGrass',
+  20: 'tile.wall',
+  21: 'tile.furrowedGrass',
 };
 
 // Logical tile of an animated entity: prefer its server destination (targetPos),
@@ -45,7 +47,7 @@ export function describeCell({ tileX, tileY, gridRef, entitiesRef, visionRef, my
 
   const visible = visionRef.current.visible.has(`${tileX},${tileY}`);
   const discovered = visible || visionRef.current.discovered.has(`${tileX},${tileY}`);
-  if (!discovered) return { name: 'Darkness', sub: null, anchor: tileAnchor };
+  if (!discovered) return { name: i18n.t('tile.darkness'), sub: null, anchor: tileAnchor };
 
   const ents = entitiesRef.current;
 
@@ -55,21 +57,25 @@ export function describeCell({ tileX, tileY, gridRef, entitiesRef, visionRef, my
       const t = entityTile(mob);
       if (t && t.x === tileX && t.y === tileY) {
         const hp = mob.hp != null && mob.max_hp != null ? `HP ${mob.hp}/${mob.max_hp}` : null;
-        return { name: mob.name || 'Creature', sub: hp, anchor: { type: 'mob', id: mob.id } };
+        const mobName = mob.locale_key ? i18n.t(mob.locale_key, { defaultValue: mob.name || '' }) : (mob.name || i18n.t('entity.creature'));
+        return { name: mobName, sub: hp, anchor: { type: 'mob', id: mob.id } };
       }
     }
     for (const pl of Object.values(ents.players || {})) {
       const t = entityTile(pl);
       if (t && t.x === tileX && t.y === tileY) {
-        return { name: pl.id === myPlayerId ? 'You' : (pl.name || 'Adventurer'), sub: null, anchor: tileAnchor };
+        const plName = pl.id === myPlayerId ? i18n.t('entity.you') : (pl.name || i18n.t('entity.adventurer'));
+        return { name: plName, sub: null, anchor: tileAnchor };
       }
     }
     for (const item of ents.items || []) {
       if (item.pos && item.pos.x === tileX && item.pos.y === tileY) {
-        return { name: item.name || 'Item', sub: null, anchor: tileAnchor };
+        const itemName = item.locale_key ? i18n.t(item.locale_key, { defaultValue: item.name || '' }) : (item.name || i18n.t('tile.item'));
+        return { name: itemName, sub: null, anchor: tileAnchor };
       }
     }
   }
 
-  return { name: TILE_NAMES[grid[tileY][tileX]] || 'Floor', sub: null, anchor: tileAnchor };
+  const tileKey = TILE_NAMES[grid[tileY][tileX]];
+  return { name: tileKey ? i18n.t(tileKey) : i18n.t('tile.floor'), sub: null, anchor: tileAnchor };
 }

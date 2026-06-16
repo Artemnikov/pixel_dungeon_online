@@ -1,9 +1,11 @@
+import { useTranslation } from 'react-i18next';
+
 const COMBO_MOVES = {
-  clobber: { count: 2, tint: '#00ff00', label: 'Clobber' },
-  slam: { count: 4, tint: '#ccff00', label: 'Slam' },
-  parry: { count: 6, tint: '#ffff00', label: 'Parry' },
-  crush: { count: 8, tint: '#ffcc00', label: 'Crush' },
-  fury: { count: 10, tint: '#ff0000', label: 'Fury' },
+  clobber: { count: 2, tint: '#00ff00', labelKey: 'combat.clobber' },
+  slam: { count: 4, tint: '#ccff00', labelKey: 'combat.slam' },
+  parry: { count: 6, tint: '#ffff00', labelKey: 'combat.parry' },
+  crush: { count: 8, tint: '#ffcc00', labelKey: 'combat.crush' },
+  fury: { count: 10, tint: '#ff0000', labelKey: 'combat.fury' },
 };
 
 export default function ComboDisplay({
@@ -11,6 +13,7 @@ export default function ComboDisplay({
   comboCount,
   onUseComboMove,
 }) {
+  const { t } = useTranslation();
   if (subclass !== 'gladiator' || !comboCount) return null;
 
   const unlockedMoves = Object.entries(COMBO_MOVES)
@@ -19,7 +22,7 @@ export default function ComboDisplay({
   return (
     <div className="combo-container">
       <div className="combo-label">
-        Combo <span className="combo-count">{comboCount}</span>
+        {t('combat.combo')} <span className="combo-count">{t('combat.comboCount', { count: comboCount })}</span>
       </div>
       {unlockedMoves.length > 0 && (
         <div className="combo-moves">
@@ -30,7 +33,7 @@ export default function ComboDisplay({
               style={{ color: move.tint, borderColor: move.tint }}
               onClick={() => onUseComboMove?.(id)}
             >
-              {move.label}
+              {t(move.labelKey)}
             </button>
           ))}
         </div>

@@ -3,8 +3,24 @@ import { coordsForItem } from '../sprites';
 
 export function drawItems(ctx, { entitiesRef, visionRef, assetImages }) {
   if (!entitiesRef.current.items) return;
+  const now = performance.now();
+  const glowPhase = Math.sin(now / 400) * 0.15 + 0.15;
+
   entitiesRef.current.items.forEach(item => {
     if (!visionRef.current.visible.has(`${item.pos.x},${item.pos.y}`)) return;
+
+    // Item glow
+    ctx.save();
+    ctx.globalAlpha = glowPhase;
+    ctx.fillStyle = '#ffffbb';
+    ctx.beginPath();
+    ctx.arc(
+      item.pos.x * TILE_SIZE + TILE_SIZE / 2,
+      item.pos.y * TILE_SIZE + TILE_SIZE / 2,
+      TILE_SIZE * 0.4, 0, Math.PI * 2
+    );
+    ctx.fill();
+    ctx.restore();
 
     if (assetImages.items) {
       const coords = coordsForItem(item);

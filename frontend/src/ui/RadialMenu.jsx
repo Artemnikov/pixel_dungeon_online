@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import AudioManager from '../audio/AudioManager';
 import ItemIcon from './ItemIcon';
 
 export default function RadialMenu({ items, size = 140, onSelect, onAssign, onClose }) {
+  const { t } = useTranslation();
   const containerRef = useRef(null);
   const [activeIdx, setActiveIdx] = useState(-1);
   const activeRef = useRef(-1);
@@ -166,7 +168,7 @@ export default function RadialMenu({ items, size = 140, onSelect, onAssign, onCl
             <button
               key={i}
               className={`radial-slot ${activeIdx === i ? 'active' : ''} ${!item ? 'empty' : ''} ${item?.is_placeholder ? 'placeholder' : ''} ${!item || item.default_action == null ? 'assignable' : ''}`}
-              title={!item || item.default_action == null ? 'Assign Quickslot' : undefined}
+              title={!item || item.default_action == null ? t('ui.assignQuickslot') : undefined}
               style={{
                 left: pos.x,
                 top: pos.y,

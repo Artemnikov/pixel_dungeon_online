@@ -1,3 +1,5 @@
+import { useTranslation } from 'react-i18next';
+
 export default function RankingsPane({
   playerName,
   classType,
@@ -12,6 +14,7 @@ export default function RankingsPane({
   onNewGame,
   onMenu,
 }) {
+  const { t } = useTranslation();
   const score = depth * 100 + level * 50 + gold * 2;
 
   const ownedTalents = Object.entries(talentLevels || {})
@@ -38,48 +41,45 @@ export default function RankingsPane({
   }
 
   return (
-    <div
-      className="rankings-overlay"
-      onClick={() => {}}
-    >
+    <div className="rankings-overlay" onClick={() => {}}>
       <div className="rankings-pane" onClick={e => e.stopPropagation()}>
-        <h2 className="rankings-title">Rankings</h2>
+        <h2 className="rankings-title">{t('rankings.title')}</h2>
 
-        <div className="rankings-score">{score.toLocaleString()} pts</div>
+        <div className="rankings-score">{t('rankings.pts', { score: score.toLocaleString() })}</div>
 
         <div className="rankings-stats">
           <div className="rankings-stat-row">
-            <span className="rankings-stat-label">Name</span>
+            <span className="rankings-stat-label">{t('rankings.name')}</span>
             <span className="rankings-stat-value">{playerName}</span>
           </div>
           <div className="rankings-stat-row">
-            <span className="rankings-stat-label">Class</span>
+            <span className="rankings-stat-label">{t('rankings.class')}</span>
             <span className="rankings-stat-value">{classType} {subclass || ''}</span>
           </div>
           <div className="rankings-stat-row">
-            <span className="rankings-stat-label">Depth</span>
+            <span className="rankings-stat-label">{t('rankings.depth')}</span>
             <span className="rankings-stat-value">{depth}</span>
           </div>
           <div className="rankings-stat-row">
-            <span className="rankings-stat-label">Level</span>
+            <span className="rankings-stat-label">{t('rankings.level')}</span>
             <span className="rankings-stat-value">{level}</span>
           </div>
           <div className="rankings-stat-row">
-            <span className="rankings-stat-label">Gold</span>
+            <span className="rankings-stat-label">{t('rankings.gold')}</span>
             <span className="rankings-stat-value">{gold}</span>
           </div>
           {armorAbility && (
             <div className="rankings-stat-row">
-              <span className="rankings-stat-label">Armor Ability</span>
+              <span className="rankings-stat-label">{t('rankings.armorAbility')}</span>
               <span className="rankings-stat-value">{armorAbility.replace(/_/g, ' ')}</span>
             </div>
           )}
         </div>
 
-        <h3 className="rankings-section-title">Talents</h3>
+        <h3 className="rankings-section-title">{t('rankings.talents')}</h3>
         <div className="rankings-talents">
           {ownedTalents.length === 0 && (
-            <div className="rankings-empty">No talents acquired</div>
+            <div className="rankings-empty">{t('rankings.noTalents')}</div>
           )}
           {ownedTalents.map(([tid, lvl]) => (
             <div key={tid} className="rankings-talent-row">
@@ -89,10 +89,10 @@ export default function RankingsPane({
           ))}
         </div>
 
-        <h3 className="rankings-section-title">Items</h3>
+        <h3 className="rankings-section-title">{t('rankings.items')}</h3>
         <div className="rankings-items">
           {(inventory || []).length === 0 && (
-            <div className="rankings-empty">No items</div>
+            <div className="rankings-empty">{t('rankings.noItems')}</div>
           )}
           {(inventory || []).slice(0, 20).map((item, i) => (
             <div key={i} className="rankings-item-row">
@@ -102,8 +102,8 @@ export default function RankingsPane({
         </div>
 
         <div className="rankings-buttons">
-          <button className="rankings-btn" onClick={onNewGame}>New Game</button>
-          <button className="rankings-btn" onClick={onMenu}>Menu</button>
+          <button className="rankings-btn" onClick={onNewGame}>{t('game.newGame')}</button>
+          <button className="rankings-btn" onClick={onMenu}>{t('game.menuBtn')}</button>
         </div>
       </div>
     </div>

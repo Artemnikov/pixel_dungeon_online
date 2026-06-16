@@ -15,7 +15,8 @@ Remove Curse) are also implemented.
 from typing import List, Optional
 
 from app.engine.entities.base import (
-    Bow, ItemCategory, ItemBase, MeleeWeapon, MissileWeapon, Player, Staff,
+    Artifact, Bow, ItemCategory, ItemBase, MeleeWeapon, MissileWeapon,
+    Player, Seed, Staff, Stone,
 )
 from app.engine.entities.weapon_enchants import CURSES
 
@@ -99,10 +100,16 @@ def transmute_group(item) -> Optional[str]:
         return "wand"
     if item.category == ItemCategory.RING:
         return "ring"
+    if item.category == ItemCategory.ARTIFACT:
+        return "artifact"
     if item.category == ItemCategory.POTION:
         return "potion"
     if item.category == ItemCategory.SCROLL:
         return "scroll"
+    if item.category == ItemCategory.SEED:
+        return "seed"
+    if item.category == ItemCategory.STONE:
+        return "stone"
     return None
 
 

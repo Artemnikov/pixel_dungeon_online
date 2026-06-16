@@ -43,6 +43,7 @@
 }
 
 .boss-health-bar__track {
+  position: relative;
   width: 100%;
   height: 10px;
   background: rgba(0, 0, 0, 0.6);
@@ -50,12 +51,49 @@
   border-radius: 2px;
   overflow: hidden;
 }
-
-.boss-health-bar__fill {
+.boss-health-bar__bg {
+  position: absolute;
+  top: 0; left: 0;
   height: 100%;
-  background: #b03030;
+  background: #cc0000;
+}
+.boss-health-bar__shield {
+  position: absolute;
+  top: 0; left: 0;
+  height: 100%;
+  background: #ffffff;
   transition: width 0.2s ease-out;
 }
+.boss-health-bar__fill {
+  position: absolute;
+  top: 0; left: 0;
+  height: 100%;
+  background: #00ee00;
+  transition: width 0.2s ease-out;
+}
+.boss-health-bar__hp-text {
+  font: 10px monospace;
+  color: #fff;
+  text-shadow: 1px 1px 0 #000;
+  text-align: center;
+  margin-top: 2px;
+  opacity: 0.8;
+}
+.boss-health-bar__buffs {
+  display: flex;
+  justify-content: center;
+  gap: 2px;
+  margin-top: 4px;
+}
+.boss-health-bar__buff {
+  font: 8px monospace;
+  color: #aaa;
+  background: rgba(0,0,0,0.4);
+  padding: 1px 3px;
+  border-radius: 2px;
+}
+
+
 
 .game-canvas {
   display: block;
@@ -1912,4 +1950,51 @@
 }
 .rankings-btn:hover {
   filter: brightness(1.2);
+}
+
+/* --- DangerIndicator — SPD's skull + enemy count tag --- */
+.danger-indicator {
+  position: fixed;
+  right: max(6px, env(safe-area-inset-right));
+  bottom: 50%;
+  z-index: 46;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: rgba(15, 12, 10, 0.7);
+  border: 1px solid #c03838;
+  border-radius: 4px;
+  cursor: pointer;
+  pointer-events: auto;
+  user-select: none;
+}
+.danger-indicator:hover {
+  background: rgba(40, 20, 20, 0.85);
+}
+.danger-indicator__count {
+  font: 12px monospace;
+  color: #c03838;
+  font-weight: bold;
+}
+
+/* --- GameLog — SPD's bottom-left message log --- */
+.game-log {
+  position: fixed;
+  left: max(6px, env(safe-area-inset-left));
+  bottom: max(6px, env(safe-area-inset-bottom));
+  z-index: 45;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  pointer-events: none;
+  max-width: min(360px, 50vw);
+}
+.game-log__line {
+  font: 11px monospace;
+  text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.8);
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
