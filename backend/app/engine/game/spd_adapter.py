@@ -6,6 +6,7 @@ stubs, traps, and doors to the existing ``FloorState`` / ``MobEntity`` /
 directly into the game loop.
 """
 
+import random as _random
 import uuid
 from typing import Dict, List, Tuple
 
@@ -35,6 +36,7 @@ from app.engine.entities.base import (
     Wand,
     Weapon,
 )
+from app.engine.entities.item_catalog import FLOOR_SCROLL_KINDS, TRANSMUTE_GROUPS, make_catalog_item
 from app.engine.entities.weapon_defs import WEP_TIER_ORDER
 from app.engine.entities.mobs import (
     AcidicScorpio,
@@ -245,6 +247,14 @@ _MOB_CLASSES: Dict[str, type[MobEntity]] = {
 _SPD_TRAP_TYPE: Dict[type[SpdTrap], str] = {}
 
 
+def _random_scroll(iid: str, pos: Position) -> Item:
+    kind = _random.choice(FLOOR_SCROLL_KINDS)
+    item = make_catalog_item(kind)
+    item.id = iid
+    item.pos = pos
+    return item
+
+
 def _register_trap(spd_cls: type[SpdTrap], trap_type: str) -> None:
     _SPD_TRAP_TYPE[spd_cls] = trap_type
 
@@ -321,7 +331,7 @@ def _rolled_item_to_item(ri: RolledItem, cx: int, cy: int) -> Item:
     if ri.category == "POTION":
         return HealthPotion(id=iid, pos=pos)
     if ri.category == "SCROLL":
-        return Scroll(id=iid, pos=pos, name="Scroll")
+        return _random_scroll(iid, pos)
     if ri.category == "FOOD":
         return Food(id=iid, pos=pos, name="Food")
     if ri.category == "SEED":
@@ -351,7 +361,7 @@ def _rolled_item_to_item(ri: RolledItem, cx: int, cy: int) -> Item:
 
 _DESCRIPTOR_ITEM_MAP = {
     "PotionOfStrength": lambda iid, pos: HealthPotion(id=iid, pos=pos),
-    "Scroll": lambda iid, pos: Scroll(id=iid, pos=pos, name="Scroll"),
+    "Scroll": lambda iid, pos: _random_scroll(iid, pos),
     "Runestone": lambda iid, pos: Stone(id=iid, pos=pos, name="Runestone", damage=1, range=5),
     "TrinketCatalyst": lambda iid, pos: Dewdrop(id=iid, pos=pos, name="Trinket Catalyst"),
     "IronKey": lambda iid, pos: Key(id=iid, pos=pos, name="Iron Key", key_id="iron"),

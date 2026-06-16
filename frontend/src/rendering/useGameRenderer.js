@@ -13,6 +13,9 @@ import { advanceAndDrawParticles } from './draw/particles';
 import { advanceAndDrawCheckedCells } from './draw/searchEffects';
 import { drawWarnedTiles } from './draw/warnedTiles';
 import { advanceAndDrawFloatingText } from './draw/floatingText';
+import { drawTransmuting } from './draw/transmuting';
+import { advanceAndDrawFlares } from './draw/flare';
+import { advanceAndDrawSpellSprites } from './draw/spellSprite';
 
 export default function useGameRenderer({
   canvasRef,
@@ -41,6 +44,9 @@ export default function useGameRenderer({
   isRefocusingRef,
   isDraggingRef,
   setCamera,
+  transmuteEffectsRef,
+  flareEffectsRef,
+  spellSpriteEffectsRef,
 }) {
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -142,7 +148,10 @@ export default function useGameRenderer({
       drawGridCaps(ctx, { grid, depth, assetImages, visionRef });
       advanceAndDrawCheckedCells(ctx, { ref: searchEffectsRef });
       advanceAndDrawParticles(ctx, { particlesRef });
+      advanceAndDrawFlares(ctx, { flareRef: flareEffectsRef });
+      advanceAndDrawSpellSprites(ctx, { spellSpriteRef: spellSpriteEffectsRef, assetImages });
       advanceAndDrawFloatingText(ctx, { floatingTextRef });
+      drawTransmuting(ctx, { transmuteEffectsRef, assetImages });
       advanceAndDrawProjectiles(ctx, { projectilesRef, assetImages });
 
       ctx.restore();

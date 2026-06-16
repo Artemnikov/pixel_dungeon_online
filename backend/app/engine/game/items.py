@@ -7,7 +7,7 @@ identification of potion/scroll kinds.
 
 from typing import Optional
 
-from app.engine.entities import item_actions
+from app.engine.entities import item_actions, scroll_actions
 from app.engine.entities.scroll_predicates import PREDICATE
 
 
@@ -81,7 +81,7 @@ class ItemsMixin:
         target = player.belongings.get_item(item_id)
         if target is None or not predicate(target, self):
             return
-        item_actions.apply_scroll_target(self, player, scroll, target)
+        scroll_actions.apply_scroll_target(self, player, scroll, target)
 
     def identify_kind(self, item):
         # Reveal a potion/scroll kind for the whole party (co-op shared knowledge).

@@ -222,6 +222,33 @@ export const getItemGlyphCoords = (item) => {
   return null;
 };
 
+// Map backend item kind strings to [col, row] in items.png for VFX (e.g. Transmuting animation).
+// Covers the kinds that appear in transmutation targets; falls back to category prefixes.
+const KIND_COORDS = {
+  'melee_weapon':    [0, 7],   // Sword (tier 3 generic)
+  'dagger':          [4, 6],
+  'worn_shortsword': [0, 6],
+  'bow':             [0, 9],
+  'staff':           [5, 6],
+  'missile_weapon':  [2, 9],
+  'armor':           [1, 11],  // Leather
+  'ring':            [0, 14],
+  'artifact':        [0, 15],
+  'wand':            [0, 13],
+};
+
+export function coordsForKind(kind) {
+  if (!kind) return [0, 0];
+  if (KIND_COORDS[kind]) return KIND_COORDS[kind];
+  if (kind.startsWith('scroll_'))  return [0, 19];
+  if (kind.startsWith('potion_'))  return [0, 22];
+  if (kind.startsWith('ring_'))    return [0, 14];
+  if (kind.startsWith('wand_'))    return [0, 13];
+  if (kind.startsWith('armor'))    return [0, 11];
+  if (kind.startsWith('seed'))     return [3, 24];
+  return [0, 0];
+}
+
 export const fallbackTileMap = {
   1: { x: 0, y: 3 }, // Wall
   2: { x: 0, y: 0 }, // Floor

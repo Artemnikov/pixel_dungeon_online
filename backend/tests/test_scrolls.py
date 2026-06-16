@@ -1,6 +1,6 @@
 from app.engine.entities.base import ScrollOfTeleportation, ScrollOfRecharging, ScrollOfLullaby, ScrollOfTerror, ScrollOfRage, ScrollOfRetribution, ScrollOfIdentify, ScrollOfRemoveCurse, ScrollOfTransmutation, ScrollOfMirrorImage, ScrollOfMagicMapping, ScrollOfMetamorphosis, Wand, Position, Mob, Faction, HealthPotion, Seed, Dagger, Gold, is_immune
 from app.engine.entities.mobs import Tengu, MirrorImage
-from app.engine.entities.item_actions import action_read
+from app.engine.entities.scroll_actions import action_read
 from app.engine.entities.scroll_predicates import player_inventory_items
 from app.engine.entities.subclasses import Talent
 from app.engine.dungeon.constants import TileType
@@ -96,6 +96,7 @@ def test_scroll_of_lullaby_drowses_mobs_in_fov_and_eventually_sleeps_them():
 
     assert near_mob.has_buff("drowsy")
     assert not far_mob.has_buff("drowsy")
+    assert p.has_buff("drowsy")  # SPD also drowses the reader
 
     # Move the player out of the mob's view distance so it can't re-aggro
     # while the drowsy buff is ticking down.
@@ -227,8 +228,8 @@ def test_scroll_of_rage_sets_amok_and_hunting_on_fov_mobs():
     assert ally_mob.ai_state == "hunting"
     assert ally_mob.has_buff("amok")
 
-    # Out of FOV mob unaffected.
-    assert far_mob.ai_state == "wandering"
+    # Out of FOV mob: beckoned (hunting) but no amok.
+    assert far_mob.ai_state == "hunting"
     assert not far_mob.has_buff("amok")
 
 
@@ -322,7 +323,7 @@ def test_scroll_of_identify_select_target_reveals_kind():
 
 
 def test_scroll_of_identify_no_candidates_does_not_consume_scroll():
-    from app.engine.entities.item_actions import player_inventory_items
+    from app.engine.entities.scroll_predicates import player_inventory_items
 
     g = GameInstance("t")
     p = _player(g)
@@ -519,16 +520,17 @@ def test_scroll_of_transmutation_lists_expected_candidates():
     assert len(select_events) == 1
     candidates = select_events[0]["data"]["candidates"]
 
-    # The starting melee weapon is transmutable.
+    # The starting melee weapon is transmutable as input.
+    # worn_shortsword is no longer in the output pool (Bug 4 fix).
     assert p.belongings.weapon.id in candidates
-    assert p.belongings.weapon.kind in TRANSMUTE_GROUPS["weapon_melee"]
 
     assert potion.id in candidates
     assert extra_scroll.id in candidates
 
-    # Not transmutable: the transmutation scroll itself, seeds, gold.
+    # Seed is now transmutable (SPD allows it).
+    assert seed.id in candidates
+    # Not transmutable: the transmutation scroll itself, gold.
     assert scroll.id not in candidates
-    assert seed.id not in candidates
     assert gold.id not in candidates
 
 
@@ -691,9 +693,6 @@ def test_scroll_of_transmutation_no_candidates_does_not_consume_scroll():
     p.belongings.misc = None
     p.belongings.ring = None
     p.belongings.backpack.items = []
-
-    seed = Seed(id="seed1", name="Seed")
-    p.belongings.backpack.collect(seed)
 
     gold = Gold(id="gold1", name="Gold", quantity=50)
     p.belongings.backpack.collect(gold)

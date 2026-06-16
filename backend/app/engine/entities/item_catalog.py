@@ -147,7 +147,6 @@ _CATALOG: List[tuple] = [
     ("scroll_of_mirror_image", "Scroll of Mirror Image", "scroll", lambda: ScrollOfMirrorImage()),
     ("scroll_of_retribution", "Scroll of Retribution", "scroll", lambda: ScrollOfRetribution()),
     ("scroll_of_transmutation", "Scroll of Transmutation", "scroll", lambda: ScrollOfTransmutation()),
-    ("scroll", "Scroll", "scroll", lambda: Scroll(name="Scroll")),
 
     # Currency
     ("gold", "Gold", "currency", lambda: Gold(name="Gold", quantity=100)),
@@ -196,18 +195,31 @@ def make_catalog_item(item_kind: str) -> Optional[ItemBase]:
 
 
 # Scroll of Transmutation: broad item groups and the catalog kinds within
-# each. `_apply_transmutation` (item_actions.py) picks a different kind from
+# each. `_apply_transmutation` (scroll_actions.py) picks a different kind from
 # the same group as the target item.
+# NOTE: TRANSMUTE_GROUPS["scroll"] excludes scroll_of_transmutation to prevent
+# self-transmutation. Use FLOOR_SCROLL_KINDS for random floor loot pools.
 TRANSMUTE_GROUPS: dict = {
     # Staff is grouped with melee weapons: there's no separate "magic weapon"
     # transmute pool in this codebase.
-    "weapon_melee": ["melee_weapon", "dagger", "worn_shortsword", "staff"],
+    "weapon_melee": ["melee_weapon", "dagger", "staff"],
     "weapon_missile": ["bow", "missile_weapon"],
     "armor": ["armor"],
     "wand": ["wand"],
     "ring": ["ring"],
+    "artifact": [kind for kind, _name, category, _factory in _CATALOG
+                 if category == "artifact" and kind != "artifact"],
     "potion": [kind for kind, _name, category, _factory in _CATALOG
                if category == "potion" and kind != "potion"],
     "scroll": [kind for kind, _name, category, _factory in _CATALOG
-               if category == "scroll" and kind not in ("scroll", "scroll_of_transmutation")],
+               if category == "scroll" and kind != "scroll_of_transmutation"],
+    "seed": [kind for kind, _name, category, _factory in _CATALOG
+             if category == "misc" and kind == "seed"],
+    "stone": [kind for kind, _name, category, _factory in _CATALOG
+              if category == "misc" and kind == "stone"],
 }
+
+# All scroll kinds including scroll_of_transmutation — for random floor loot.
+FLOOR_SCROLL_KINDS: list = [
+    kind for kind, _name, category, _factory in _CATALOG if category == "scroll"
+]

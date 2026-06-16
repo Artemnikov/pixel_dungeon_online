@@ -34,7 +34,7 @@ export function orderedActions(item) {
 }
 
 export function titleColor(item) {
-  if (item.level_known && item.level > 0) return '#5fd35f';
-  if (item.level_known && item.level < 0) return '#e06666';
+  if (item.level_known && item.level > 0) return '#44ff44';
+  if (item.level_known && item.level < 0) return '#ff4444';
   return '#f1c40f';
 }

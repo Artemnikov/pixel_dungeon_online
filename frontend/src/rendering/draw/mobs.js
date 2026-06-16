@@ -136,6 +136,22 @@ const SLEEP_ICON_Y = 88;
 const SLEEP_ICON_W = 9;
 const SLEEP_ICON_H = 8;
 
+// Icons.ALERT in icons.png (Icons.java): uvRectBySize(16, 80, 8, 8).
+const ALERT_ICON_X = 16;
+const ALERT_ICON_Y = 80;
+const ALERT_ICON_W = 8;
+const ALERT_ICON_H = 8;
+const ALERT_DURATION = 1500; // ms
+
+// Track alert expiry timestamps per mob.
+const mobAlertUntil = {};
+
+// SPD's beckon()→notice()→showAlert() is unconditional, even for already-hunting mobs.
+// Call this from the socket handler after a Scroll of Rage to force the ! icon.
+export function forceAlertMob(mobId, durationMs = ALERT_DURATION) {
+  mobAlertUntil[mobId] = performance.now() + durationMs;
+}
+
 export function drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef, dyingMobsRef }) {
   const now = performance.now();
 
@@ -466,19 +482,17 @@ export function drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef,
         x + TILE_SIZE / 2 - dw / 2, y - dh, dw, dh);
     }
 
-    // Alert indicator: "!" when mob transitions to hunting
+    // Alert indicator: SPD's EmoIcon.Alert (Icons.ALERT, icons.png 16,80 8x8).
+    // Record expiry timestamp on non-hunting → hunting transition; draw each frame until expired.
     const prev = prevAiState[mob.id];
     if (prev && prev !== 'hunting' && mob.ai_state === 'hunting') {
-      const cx = x + TILE_SIZE / 2;
-      const cy = y - 8;
-      ctx.font = `bold ${TILE_SIZE * 0.6}px sans-serif`;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'bottom';
-      ctx.strokeStyle = '#000';
-      ctx.lineWidth = 3;
-      ctx.strokeText('!', cx, cy + 4);
-      ctx.fillStyle = '#ff0';
-      ctx.fillText('!', cx, cy + 4);
+      mobAlertUntil[mob.id] = now + ALERT_DURATION;
+    }
+    if (mobAlertUntil[mob.id] && now < mobAlertUntil[mob.id] && assetImages.icons) {
+      const dw = ALERT_ICON_W * 2;
+      const dh = ALERT_ICON_H * 2;
+      ctx.drawImage(assetImages.icons, ALERT_ICON_X, ALERT_ICON_Y, ALERT_ICON_W, ALERT_ICON_H,
+        x + TILE_SIZE / 2 - dw / 2, y - dh, dw, dh);
     }
     prevAiState[mob.id] = mob.ai_state;
   });

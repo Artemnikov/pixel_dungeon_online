@@ -3,10 +3,13 @@ import type { Dispatch, SetStateAction } from 'react';
 import { TILE_SIZE, PLAYER_ATTACK_DURATION, PLAYER_OPERATE_DURATION, PLAYER_READ_DURATION, HIT_CONNECT_DELAY, FLASH_DURATION } from '../constants';
 import { getWsBaseUrl } from '../config/urls';
 import AudioManager from '../audio/AudioManager';
-import { spawnBlood, spawnChange, spawnCritSparkle, spawnCurse, spawnDust, spawnEnergy, spawnGrimShadow, spawnHeal, spawnIdentify, spawnLight, spawnNote, spawnScream, spawnTerror, spawnUp } from '../rendering/draw/particles';
+import { spawnBlood, spawnChange, spawnCritSparkle, spawnCurse, spawnDiscover, spawnDust, spawnEnergy, spawnGrimShadow, spawnHeal, spawnIdentify, spawnLight, spawnNote, spawnScream, spawnShadowUp, spawnTerror, spawnUp } from '../rendering/draw/particles';
 import { spawnCheckedCells } from '../rendering/draw/searchEffects';
 import { spawnFloatingText } from '../rendering/draw/floatingText';
-import { coordsForItem } from '../rendering/sprites';
+import { coordsForItem, coordsForKind } from '../rendering/sprites';
+import { spawnFlare } from '../rendering/draw/flare';
+import { spawnSpellSprite, SPELL_CHARGE, SPELL_MAP } from '../rendering/draw/spellSprite';
+import { forceAlertMob } from '../rendering/draw/mobs';
 import { sendMessage } from './send';
 import type {
   Player,
@@ -150,6 +153,9 @@ interface HookProps {
   floatingTextRef: Ref<unknown[]>;
   warnedTilesRef?: Ref<{ tiles: [number, number][]; untilMs: number } | null>;
   screenFlashRef?: Ref<{ until: number } | null>;
+  transmuteEffectsRef?: Ref<unknown[]>;
+  flareEffectsRef?: Ref<unknown[]>;
+  spellSpriteEffectsRef?: Ref<unknown[]>;
   wasDownedRef: Ref<boolean | undefined>;
   setGrid: Dispatch<SetStateAction<number[][]>>;
   setDepth: (depth: number) => void;
@@ -192,6 +198,9 @@ type HandlerCtx = Pick<
   | 'floatingTextRef'
   | 'warnedTilesRef'
   | 'screenFlashRef'
+  | 'transmuteEffectsRef'
+  | 'flareEffectsRef'
+  | 'spellSpriteEffectsRef'
 > & {
   onLevelUp?: HookProps['onLevelUp'];
   onSubclassChoiceAvailable?: HookProps['onSubclassChoiceAvailable'];
@@ -231,6 +240,9 @@ export default function useGameSocket({
   searchEffectsRef,
   floatingTextRef,
   screenFlashRef,
+  transmuteEffectsRef,
+  flareEffectsRef,
+  spellSpriteEffectsRef,
   warnedTilesRef,
   wasDownedRef,
   setGrid,
@@ -544,7 +556,7 @@ export default function useGameSocket({
           handleEvent(event, {
             myPlayerIdRef, gridRef, setGrid, entitiesRef, visionRef,
             projectilesRef, mobAnimRef, dyingMobsRef, playerAnimRef, particlesRef,
-            searchEffectsRef, floatingTextRef, screenFlashRef, warnedTilesRef,
+            searchEffectsRef, floatingTextRef, screenFlashRef, transmuteEffectsRef, warnedTilesRef, flareEffectsRef, spellSpriteEffectsRef,
             onLevelUp, onSubclassChoiceAvailable, onArmorAbilityChoiceAvailable, onTalentUpgraded,
             onMetamorphOpen, onMetamorphOptions, onGooFightStarted, onTenguFightStarted,
             onShopOpen, onImpDialogue, onScrollSelectTarget,
@@ -583,7 +595,7 @@ export default function useGameSocket({
 function handleEvent(event: GameEvent, {
   myPlayerIdRef, gridRef, setGrid, entitiesRef, visionRef,
   projectilesRef, mobAnimRef, dyingMobsRef, playerAnimRef, particlesRef,
-  searchEffectsRef, floatingTextRef, screenFlashRef, warnedTilesRef,
+  searchEffectsRef, floatingTextRef, screenFlashRef, transmuteEffectsRef, warnedTilesRef, flareEffectsRef, spellSpriteEffectsRef,
   onLevelUp, onSubclassChoiceAvailable, onArmorAbilityChoiceAvailable, onTalentUpgraded,
   onMetamorphOpen, onMetamorphOptions, onGooFightStarted, onTenguFightStarted,
   onShopOpen, onImpDialogue, onScrollSelectTarget,
@@ -782,13 +794,78 @@ function handleEvent(event: GameEvent, {
       const visual = event.data.visual;
       switch (visual) {
         case 'IDENTIFY': spawnIdentify(particlesRef, cx, cy); break;
-        case 'UP':       spawnUp(particlesRef, cx, cy); break;
-        case 'CURSE':    spawnCurse(particlesRef, cx, cy); break;
-        case 'SCREAM':   spawnScream(particlesRef, cx, cy); break;
-        case 'ENERGY':   spawnEnergy(particlesRef, cx, cy); break;
-        case 'NOTE':     spawnNote(particlesRef, cx, cy); break;
-        case 'TERROR':   spawnTerror(particlesRef, cx, cy); break;
-        case 'CHANGE':   spawnChange(particlesRef, cx, cy); break;
+        case 'UP':
+          spawnUp(particlesRef, cx, cy);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          if ((event.data as any).shadow_particles) spawnShadowUp(particlesRef, cx, cy, 5);
+          break;
+        case 'CURSE':
+          spawnCurse(particlesRef, cx, cy);
+          spawnShadowUp(particlesRef, cx, cy, 10);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          if (flareEffectsRef) spawnFlare(flareEffectsRef as any, cx, cy, 6, 64, '#ffffff', 800);
+          break;
+        case 'SCREAM': {
+          spawnScream(particlesRef, cx, cy);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const beckonedIds: string[] = (event.data as any).beckoned_ids ?? [];
+          for (const id of beckonedIds) forceAlertMob(id);
+          break;
+        }
+        case 'ENERGY':
+          spawnEnergy(particlesRef, cx, cy);
+          if (floatingTextRef) spawnFloatingText(floatingTextRef, cx, cy - TILE_SIZE, 'CHARGED!', '#44ccff');
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          if (spellSpriteEffectsRef) spawnSpellSprite(spellSpriteEffectsRef as any, cx, cy, SPELL_CHARGE);
+          break;
+        case 'NOTE': {
+          spawnNote(particlesRef, cx, cy);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const mobs = (event.data as any).affected_mobs ?? [];
+          const vis = visionRef?.current?.visible;
+          for (const m of mobs) {
+            if (vis?.has(`${m.x},${m.y}`)) {
+              spawnNote(particlesRef, m.x * TILE_SIZE + TILE_SIZE / 2, m.y * TILE_SIZE + TILE_SIZE / 2);
+            }
+          }
+          break;
+        }
+        case 'TERROR':
+          spawnTerror(particlesRef, cx, cy);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          if (flareEffectsRef) spawnFlare(flareEffectsRef as any, cx, cy, 5, 64, '#ff0000', 800);
+          break;
+        case 'CHANGE': {
+          spawnChange(particlesRef, cx, cy);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const oldKind = (event.data as any).old_kind;
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const newKind = (event.data as any).new_kind;
+          if (transmuteEffectsRef && oldKind && newKind) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (transmuteEffectsRef.current as any[]).push({
+              x: cx, y: cy,
+              oldCoords: coordsForKind(oldKind),
+              newCoords: coordsForKind(newKind),
+              startTime: performance.now(),
+            });
+          }
+          break;
+        }
+        case 'MAP': {
+          if (floatingTextRef) spawnFloatingText(floatingTextRef, cx, cy - TILE_SIZE, 'MAPPED!', '#ffdd44');
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          if (spellSpriteEffectsRef) spawnSpellSprite(spellSpriteEffectsRef as any, cx, cy, SPELL_MAP);
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          const discoverPos = (event.data as any).discover_positions ?? [];
+          const vis = visionRef?.current?.visible;
+          for (const pos of discoverPos) {
+            if (vis?.has(`${pos.x},${pos.y}`)) {
+              spawnDiscover(particlesRef, pos.x * TILE_SIZE + TILE_SIZE / 2, pos.y * TILE_SIZE + TILE_SIZE / 2);
+            }
+          }
+          break;
+        }
         case 'FLASH':
           if (screenFlashRef) screenFlashRef.current = { until: performance.now() + 350 };
           break;
@@ -821,8 +898,9 @@ function handleEvent(event: GameEvent, {
     const isLocal = pid === myPlayerIdRef.current;
     const clones = event.data.clones || [];
     for (const clone of clones) {
-      if ((isLocal || visible?.has(`${clone.x},${clone.y}`)) && particlesRef) {
-        spawnDust(particlesRef, clone.x * TILE_SIZE + TILE_SIZE / 2, clone.y * TILE_SIZE + TILE_SIZE / 2, 8, '#aaccff');
+      if (isLocal || visible?.has(`${clone.x},${clone.y}`)) {
+        if (particlesRef) spawnLight(particlesRef, clone.x * TILE_SIZE + TILE_SIZE / 2, clone.y * TILE_SIZE + TILE_SIZE / 2);
+        AudioManager.play('TELEPORT');
       }
     }
     return;

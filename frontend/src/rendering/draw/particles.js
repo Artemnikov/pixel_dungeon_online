@@ -285,6 +285,44 @@ export function spawnCurse(particlesRef, cx, cy, count = 10) {
   }
 }
 
+// Gold outward sparkle burst — Speck.DISCOVER for Scroll of Magic Mapping (secret reveals).
+export function spawnDiscover(particlesRef, cx, cy, count = 6) {
+  for (let i = 0; i < count; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = 20 + Math.random() * 40;
+    const life = 0.3 + Math.random() * 0.3;
+    particlesRef.current.push({
+      x: cx,
+      y: cy,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      life,
+      maxLife: life,
+      size: 2,
+      color: Math.random() < 0.5 ? '#ffdd44' : '#ffaa00',
+      gravity: false,
+    });
+  }
+}
+
+// Dark purple upward smoke — ShadowParticle.UP for Scroll of Upgrade (cursed) / Remove Curse.
+export function spawnShadowUp(particlesRef, cx, cy, count = 10) {
+  for (let i = 0; i < count; i++) {
+    const life = 0.8 + Math.random() * 0.4;
+    particlesRef.current.push({
+      x: cx + (Math.random() - 0.5) * 14,
+      y: cy + (Math.random() - 0.5) * 6,
+      vx: (Math.random() - 0.5) * 16,
+      vy: -32 - Math.random() * 16,
+      life,
+      maxLife: life,
+      size: 6,
+      color: '#440044',
+      gravity: false,
+    });
+  }
+}
+
 // Red outward burst — Flare(5, 32) red for Scroll of Terror.
 export function spawnTerror(particlesRef, cx, cy, count = 10) {
   for (let i = 0; i < count; i++) {
