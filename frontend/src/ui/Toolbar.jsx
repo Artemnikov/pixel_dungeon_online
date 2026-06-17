@@ -21,8 +21,7 @@ import { coordsForItem } from '../rendering/sprites';
 import { itemRects } from '../rendering/spriteRects';
 import { MAX_DPR } from '../constants';
 
-const S = 3;
-const DPR = Math.min(window.devicePixelRatio || 1, MAX_DPR);
+const S = 2;
 
 const BTN_INVENTORY = { x: 0, y: 0, w: 24, h: 26, iconX: 160, iconY: 0, iconW: 16, iconH: 16 };
 const BTN_WAIT      = { x: 24, y: 0, w: 20, h: 26, iconX: 176, iconY: 0, iconW: 16, iconH: 16 };
@@ -65,6 +64,8 @@ export default function Toolbar({
   const animFrame = useRef(null);
   const touchTimerRef = useRef(null);
   const longPressFiredRef = useRef(false);
+  const zoomRef = useRef(1);
+  const baseDprRef = useRef(window.devicePixelRatio || 1);
 
   useEffect(() => {
     const toolbarImg = new Image();
@@ -87,6 +88,11 @@ export default function Toolbar({
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
+
+    const rawDPR = window.devicePixelRatio || 1;
+    const cappedDPR = Math.min(rawDPR, MAX_DPR);
+    zoomRef.current = baseDprRef.current / rawDPR;
+    const zoomScale = zoomRef.current;
 
     const quickslotsToShow = 4 +
       (canvasWidth > 152 * S ? 1 : 0) +
@@ -120,10 +126,10 @@ export default function Toolbar({
     if (showSwap) totalW += SWAP_BTN.w + TOOL_PAD;
 
     const height = (BTN_INVENTORY.h + TOOL_PAD) * S;
-    canvas.width = Math.ceil(totalW) * S * DPR;
-    canvas.height = height * DPR;
-    canvas.style.width = `${Math.ceil(totalW) * S}px`;
-    canvas.style.height = `${height}px`;
+    canvas.width = Math.ceil(totalW) * S * cappedDPR;
+    canvas.height = height * cappedDPR;
+    canvas.style.width = `${Math.ceil(totalW) * S * zoomScale}px`;
+    canvas.style.height = `${height * zoomScale}px`;
 
     animFrame.current = requestAnimationFrame(render);
     return () => cancelAnimationFrame(animFrame.current);
@@ -141,7 +147,7 @@ export default function Toolbar({
       ctx.imageSmoothingEnabled = false;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      const sc = S * DPR;
+      const sc = S * cappedDPR;
       const areas = makeButtonAreas();
       const yOff = TOOL_PAD * sc;
 
@@ -227,6 +233,20 @@ export default function Toolbar({
         if (item.is_placeholder) ctx.globalAlpha = 0.35;
         ctx.drawImage(ii, coords[0] * 16 + rx, coords[1] * 16 + ry, sw, sh, ix, iy, sw * sc, sh * sc);
         if (item.is_placeholder) ctx.globalAlpha = 1.0;
+        if (!item.is_placeholder && item.quantity > 1) {
+          const qs = 7 * sc;
+          ctx.font = `bold ${qs}px monospace`;
+          ctx.textBaseline = 'top';
+          ctx.textAlign = 'right';
+          const ox = 2 * sc;
+          const oy = 2 * sc;
+          const rx2 = dx + padL + availW;
+          const ty = dy;
+          ctx.fillStyle = '#000';
+          ctx.fillText(String(item.quantity), rx2 - ox + sc, ty + oy + sc);
+          ctx.fillStyle = '#fff';
+          ctx.fillText(String(item.quantity), rx2 - ox, ty + oy);
+        }
       }
 
       function isArmedSlot(item) {
@@ -398,8 +418,9 @@ export default function Toolbar({
     const canvas = canvasRef.current;
     if (!canvas) return;
     const rect = canvas.getBoundingClientRect();
-    const mx = (e.clientX - rect.left) / S;
-    const my = (e.clientY - rect.top) / S;
+    const div = S * zoomRef.current;
+    const mx = (e.clientX - rect.left) / div;
+    const my = (e.clientY - rect.top) / div;
     const areas = areasRef.current;
 
     function hit(a) { return a && mx >= a.x && mx <= a.x + a.w && my >= a.y && my <= a.y + a.h; }
@@ -436,8 +457,9 @@ export default function Toolbar({
     if (!canvas) return;
     if (longPressFiredRef.current) { longPressFiredRef.current = false; return; }
     const rect = canvas.getBoundingClientRect();
-    const mx = (e.clientX - rect.left) / S;
-    const my = (e.clientY - rect.top) / S;
+    const div = S * zoomRef.current;
+    const mx = (e.clientX - rect.left) / div;
+    const my = (e.clientY - rect.top) / div;
     const areas = areasRef.current;
 
     function hit(a) { return a && mx >= a.x && mx <= a.x + a.w && my >= a.y && my <= a.y + a.h; }
@@ -477,8 +499,9 @@ export default function Toolbar({
     const canvas = canvasRef.current;
     if (!canvas) return;
     const rect = canvas.getBoundingClientRect();
-    const mx = (e.clientX - rect.left) / S;
-    const my = (e.clientY - rect.top) / S;
+    const div = S * zoomRef.current;
+    const mx = (e.clientX - rect.left) / div;
+    const my = (e.clientY - rect.top) / div;
     const areas = areasRef.current;
 
     function hit(a) { return a && mx >= a.x && mx <= a.x + a.w && my >= a.y && my <= a.y + a.h; }
@@ -497,8 +520,9 @@ export default function Toolbar({
     const canvas = canvasRef.current;
     if (!canvas) return;
     const rect = canvas.getBoundingClientRect();
-    const mx = (e.clientX - rect.left) / S;
-    const my = (e.clientY - rect.top) / S;
+    const div = S * zoomRef.current;
+    const mx = (e.clientX - rect.left) / div;
+    const my = (e.clientY - rect.top) / div;
     const areas = areasRef.current;
 
     function hit(a) { return a && mx >= a.x && mx <= a.x + a.w && my >= a.y && my <= a.y + a.h; }

@@ -125,10 +125,13 @@ class GenerationMixin:
         floor: FloorState
         if depth <= SEWERS_MAX_FLOOR:
             sewers_result = generator.generate_sewers(SewersProfile(depth=depth))
+            rooms = sewers_result.rooms
+            entrance_pos = rooms[0].center if rooms else None
+            exit_pos = rooms[-1].center if rooms else None
             floor = FloorState(
                 floor_id=depth,
                 grid=sewers_result.grid,
-                rooms=sewers_result.rooms,
+                rooms=rooms,
                 mobs={},
                 items={},
                 region=sewers_result.metadata.region,
@@ -144,6 +147,8 @@ class GenerationMixin:
                     "end_room_id": sewers_result.metadata.end_room_id,
                     "seed": sewers_result.metadata.seed,
                 },
+                entrance_pos=entrance_pos,
+                exit_pos=exit_pos,
             )
         elif depth == 5:
             grid, rooms = generator.generate_boss_floor()
@@ -165,6 +170,8 @@ class GenerationMixin:
                 mobs={},
                 items={},
                 region="prison",
+                entrance_pos=rooms[0].center if rooms else None,
+                exit_pos=rooms[-1].center if rooms else None,
             )
         else:
             grid, rooms = generator.generate(10 + depth, 4, 8 + (depth // 10))
@@ -175,6 +182,8 @@ class GenerationMixin:
                 mobs={},
                 items={},
                 region="legacy",
+                entrance_pos=rooms[0].center if rooms else None,
+                exit_pos=rooms[-1].center if rooms else None,
             )
 
         floor.rebuild_flags()

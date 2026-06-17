@@ -25,12 +25,19 @@ import useTargetingExamine from './game/useTargetingExamine';
 import StatusPane from './ui/StatusPane';
 import BossHealthBar from './ui/BossHealthBar';
 import DangerIndicator from './ui/DangerIndicator';
+import SideTags from './ui/SideTags';
+import AttackIndicator from './ui/AttackIndicator';
+import LootIndicator from './ui/LootIndicator';
+import ResumeIndicator from './ui/ResumeIndicator';
+import ActionIndicator from './ui/ActionIndicator';
 import GameLog from './ui/GameLog';
+import ToastOverlay from './ui/ToastOverlay';
 import LoadingOverlay from './ui/LoadingOverlay';
 import GameHud from './ui/GameHud';
 import GameModals from './ui/GameModals';
 import TalentLayer from './ui/TalentLayer';
 import GameOverlay from './ui/GameOverlay';
+import BossSlainBanner from './ui/BossSlainBanner';
 
 function App() {
   const { t } = useTranslation();
@@ -65,6 +72,12 @@ function App() {
   const [, setCamera] = useState({ x: 0, y: 0 });
   const [gold, setGold] = useState(0);
   const [energy, setEnergy] = useState(0);
+  const [exitPos, setExitPos] = useState(null);
+  const [scoreBreakdown, setScoreBreakdown] = useState(null);
+  const [canResurrect, setCanResurrect] = useState(false);
+  const [isVictory, setIsVictory] = useState(false);
+  const [showBossSlainBanner, setShowBossSlainBanner] = useState(false);
+  const [bossSlainData, setBossSlainData] = useState(null);
 
   // --- shared refs ---
   const canvasRef = useRef(null);
@@ -95,6 +108,9 @@ function App() {
   const spellSpriteEffectsRef = useRef([]);
   const magicMissileRef = useRef([]);
   const screenFlashRef = useRef(null);
+  const screenShakeRef = useRef(null);
+  const beamRef = useRef([]);
+  const blobAreasRef = useRef({});
   const lightningRef = useRef([]);
   const shieldHaloRef = useRef([]);
   const stateEffectsRef = useRef([]);
@@ -177,10 +193,10 @@ function App() {
     socketRef, gridRef, myPlayerIdRef, entitiesRef,
     visionRef, openDoorsRef, projectilesRef,
     trapsRef, customTilesRef,
-    mobAnimRef, dyingMobsRef, playerAnimRef, particlesRef, searchEffectsRef, floatingTextRef, screenFlashRef, wasDownedRef, warnedTilesRef, transmuteEffectsRef, flareEffectsRef, spellSpriteEffectsRef, lightningRef, shieldHaloRef, stateEffectsRef, magicMissileRef, surpriseRef, selectedEnemyIdRef,
+    mobAnimRef, dyingMobsRef, playerAnimRef, particlesRef, searchEffectsRef, floatingTextRef, screenFlashRef, screenShakeRef, wasDownedRef, warnedTilesRef, transmuteEffectsRef, flareEffectsRef, spellSpriteEffectsRef, lightningRef, shieldHaloRef, stateEffectsRef, magicMissileRef, surpriseRef, selectedEnemyIdRef, beamRef, blobAreasRef,
     setGrid, setDepth, setMyPlayerId, setInventory,
     setEquippedItems, setMyStats, setDifficulty, setBossInfo,
-    setGold, setEnergy, setBelongings, setQuickslot,
+    setGold, setEnergy, setExitPos, setBelongings, setQuickslot,
     onLevelUp: talent.onLevelUp,
     onSubclassChoiceAvailable: talent.onSubclassChoiceAvailable,
     onArmorAbilityChoiceAvailable: talent.onArmorAbilityChoiceAvailable,
@@ -191,6 +207,15 @@ function App() {
     onImpDialogue: modals.onImpDialogue,
     onScrollSelectTarget: modals.onScrollSelectTarget,
     onTalentUpgraded: talent.onTalentUpgraded,
+    onBossSlain: (data) => {
+      setBossSlainData(data);
+      setShowBossSlainBanner(true);
+    },
+    onPlayerDeath: (data) => {
+      setScoreBreakdown(data.score_breakdown || null);
+      setCanResurrect(!!data.can_resurrect);
+      setIsVictory(!!data.victory);
+    },
   });
 
   const isBusy = useMemo(() => {
@@ -221,7 +246,7 @@ function App() {
     canvasRef, grid, myPlayerId, depth, assetImages,
     entitiesRef, visionRef, openDoorsRef, projectilesRef,
     trapsRef, customTilesRef,
-    mobAnimRef, dyingMobsRef, playerAnimRef, particlesRef, searchEffectsRef, floatingTextRef, screenFlashRef, myPlayerIdRef, warnedTilesRef, transmuteEffectsRef, flareEffectsRef, spellSpriteEffectsRef, lightningRef, shieldHaloRef, stateEffectsRef, magicMissileRef, surpriseRef, selectedEnemyIdRef, hoveredCellRef,
+    mobAnimRef, dyingMobsRef, playerAnimRef, particlesRef, searchEffectsRef, floatingTextRef, screenFlashRef, screenShakeRef, myPlayerIdRef, warnedTilesRef, transmuteEffectsRef, flareEffectsRef, spellSpriteEffectsRef, lightningRef, shieldHaloRef, stateEffectsRef, magicMissileRef, surpriseRef, selectedEnemyIdRef, hoveredCellRef, beamRef, blobAreasRef,
     panOffsetRef, cameraLerpRef, zoomRef,
     isRefocusingRef, isDraggingRef,
     setCamera,
@@ -256,6 +281,10 @@ function App() {
       return;
     }
     if (item.type === 'weapon') {
+      if (item.kind === 'staff') {
+        executeItemAction(item.id, 'ZAP');
+        return;
+      }
       const isEquipped = equippedItems.weapon && equippedItems.weapon.id === item.id;
       if (!isEquipped) {
         equipItem(item.id);
@@ -364,8 +393,13 @@ function App() {
     setMyStats({ hp: 0, maxHp: 10, name: '' });
     setBossInfo(null);
     setBossFightActive(false);
+    setShowBossSlainBanner(false);
+    setBossSlainData(null);
     setInventory([]);
     setConnectionStatus(null);
+    setScoreBreakdown(null);
+    setCanResurrect(false);
+    setIsVictory(false);
     talent.resetMetamorph();
   };
 
@@ -384,6 +418,7 @@ function App() {
     quickslot, itemsById,
     onRadialSelect: modals.handleRadialSelect,
     gameMenuOpenRef: modals.gameMenuOpenRef,
+    showItemBrowserRef: modals.showItemBrowserRef,
     onOpenTalents: () => talent.setShowTalentPane(v => !v),
     onOpenItemBrowser: () => {
       if (!myStats.isAdmin) return;
@@ -512,33 +547,56 @@ function App() {
 
         <BossHealthBar boss={bossInfo} />
 
-        <DangerIndicator
-          visionRef={visionRef}
-          entitiesRef={entitiesRef}
-          myPlayerIdRef={myPlayerIdRef}
-          onCycleEnemy={() => {
-            const visible = visionRef.current.visible;
-            if (!visible) return;
-            const hostile = Object.values(entitiesRef.current.mobs).filter(m =>
-              m.faction === 'enemy' && visible.has(`${Math.round(m.renderPos.x)},${Math.round(m.renderPos.y)}`)
-            );
-            if (hostile.length === 0) return;
-            const pos = (hostile[0].targetPos || hostile[0].renderPos);
-            const lw = canvasRef.current?.getBoundingClientRect()?.width || window.innerWidth;
-            const lh = canvasRef.current?.getBoundingClientRect()?.height || window.innerHeight;
-            const z = zoomRef.current;
-            cameraLerpRef.current = {
-              x: Math.round(pos.x) * TILE_SIZE + TILE_SIZE / 2 - lw / 2 / z,
-              y: Math.round(pos.y) * TILE_SIZE + TILE_SIZE / 2 - lh / 2 / z,
-            };
-            panOffsetRef.current = { x: 0, y: 0 };
-            isRefocusingRef.current = false;
-          }}
-        />
+        <SideTags>
+          <AttackIndicator
+            myStats={myStats}
+            onAttack={(targetId) => send({ type: 'ATTACK', target_id: targetId })}
+          />
+          <ActionIndicator
+            myStats={myStats}
+            onAction={(action) => {
+              const weapon = myStats?.belongings?.weapon;
+              if (weapon) executeItemAction(weapon.id, action);
+            }}
+          />
+          <LootIndicator
+            entitiesRef={entitiesRef}
+            myPlayerIdRef={myPlayerIdRef}
+            onPickup={() => send({ type: 'PICKUP_FLOOR' })}
+          />
+          <ResumeIndicator
+            myStats={myStats}
+            onResume={() => send({ type: 'RESUME' })}
+          />
+          <DangerIndicator
+            visionRef={visionRef}
+            entitiesRef={entitiesRef}
+            myPlayerIdRef={myPlayerIdRef}
+            onCycleEnemy={() => {
+              const visible = visionRef.current.visible;
+              if (!visible) return;
+              const hostile = Object.values(entitiesRef.current.mobs).filter(m =>
+                m.faction === 'enemy' && visible.has(`${Math.round(m.renderPos.x)},${Math.round(m.renderPos.y)}`)
+              );
+              if (hostile.length === 0) return;
+              const pos = (hostile[0].targetPos || hostile[0].renderPos);
+              const lw = canvasRef.current?.getBoundingClientRect()?.width || window.innerWidth;
+              const lh = canvasRef.current?.getBoundingClientRect()?.height || window.innerHeight;
+              const z = zoomRef.current;
+              cameraLerpRef.current = {
+                x: Math.round(pos.x) * TILE_SIZE + TILE_SIZE / 2 - lw / 2 / z,
+                y: Math.round(pos.y) * TILE_SIZE + TILE_SIZE / 2 - lh / 2 / z,
+              };
+              panOffsetRef.current = { x: 0, y: 0 };
+              isRefocusingRef.current = false;
+            }}
+          />
+        </SideTags>
 
         <StatusPane
           myStats={myStats}
           depth={depth}
+          exitPos={exitPos}
           isAdmin={myStats.isAdmin}
           onSearch={handleExamineOrReveal}
           hasTalentPoints={Object.values(talent.talentPoints || {}).some(p => p > 0)}
@@ -628,6 +686,14 @@ function App() {
         />
 
         <GameLog />
+        <ToastOverlay />
+
+        {showBossSlainBanner && bossSlainData && (
+          <BossSlainBanner
+            badgeImage={bossSlainData.badge_image}
+            onDismiss={() => setShowBossSlainBanner(false)}
+          />
+        )}
 
         <button className="fullscreen-btn" onClick={toggleFullscreen} title={isFullscreen ? t('app.exitFullscreen') : t('app.fullscreen')}>
           <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -681,6 +747,10 @@ function App() {
           talentDefs={talent.talentDefs}
           inventory={inventory}
           selectedClass={selectedClass}
+          scoreBreakdown={scoreBreakdown}
+          canResurrect={canResurrect}
+          isVictory={isVictory}
+          onResurrect={() => send({ type: 'RESURRECT' })}
           onNewGame={() => { resetForRestart(); setGameState('SELECT'); }}
           onMenu={() => { resetForRestart(); setGameState('WELCOME'); }}
         />

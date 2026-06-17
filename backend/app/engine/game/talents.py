@@ -353,6 +353,7 @@ class TalentsMixin:
         result = resolve_melee_attack(
             player, target, floor.mobs, player.pos.x, player.pos.y,
             is_in_los=is_in_los, dmg_multi=dmg_multi, dmg_bonus=dmg_bonus, guaranteed_hit=True,
+            add_event=lambda t, d: self.add_event(t, d, floor_id=floor_id, source_player_id=player.id),
         )
         dmg = result["damage"]
         self.add_event("ATTACK", {
@@ -599,6 +600,7 @@ class TalentsMixin:
                     item.charges = min(item.max_charges, item.charges + inscribed)
 
     def on_kill(self, player: Player, target, floor_mobs: dict, floor_id: int) -> None:
+        player.kills_count += 1
         ti = player.subclass_info.talent_info
 
         # Cleave (warrior T3 gladiator): extend combo timer on kill

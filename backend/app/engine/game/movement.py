@@ -32,6 +32,7 @@ from app.engine.entities.base import (
     Player,
     Position,
     RevivingPotion,
+    Staff,
     Throwable,
     Wand,
     Waterskin,
@@ -141,6 +142,7 @@ class MovementCombatMixin:
                     floor.mobs, entity.pos.x, entity.pos.y,
                     is_in_los=lambda a, b: self._is_in_los(a, b, floor_id=floor_id),
                     floor=floor,
+                    add_event=lambda type, data: self.add_event(type, data, floor_id=floor_id, source_player_id=entity.id if isinstance(entity, Player) else None),
                 )
                 if result["missed"]:
                     self.add_event("MISS", {"source": entity.id, "target": target_entity.id, "defense_verb": result.get("defense_verb", "dodged")}, floor_id=floor_id)
@@ -156,8 +158,13 @@ class MovementCombatMixin:
                     "grim_proc": result.get("grim_proc", False),
                 }, floor_id=floor_id)
                 if isinstance(entity, Player):
+                    weapon = getattr(getattr(entity, "belongings", None), "weapon", None)
                     sound = "HIT_STRONG" if result.get("crit") else "HIT_SLASH"
-                    self.add_event("PLAY_SOUND", {"sound": sound}, floor_id=floor_id, source_player_id=entity.id)
+                    rate = 1.0
+                    if weapon and getattr(weapon, "hit_sound", None):
+                        sound = weapon.hit_sound
+                        rate = getattr(weapon, "hit_sound_pitch", 1.0)
+                    self.add_event("PLAY_SOUND", {"sound": sound, "rate": rate}, floor_id=floor_id, source_player_id=entity.id)
                 if dmg > 0:
                     self.add_event("DAMAGE", {
                         "target": target_entity.id,
@@ -306,7 +313,7 @@ class MovementCombatMixin:
                         continue
                 if entity.add_to_inventory(item):
                     del floor.items[i_id]
-                    self.add_event("PICKUP", {"player": entity.id, "item": item.id}, floor_id=floor_id)
+                    self.add_event("PICKUP", {"player": entity.id, "item": item.name}, floor_id=floor_id)
 
             self._trigger_trap_if_needed(floor, entity, floor_id)
 
@@ -345,11 +352,22 @@ class MovementCombatMixin:
         is_throwable = isinstance(item, Throwable)
         is_weapon = isinstance(item, Weapon)
         is_wand = isinstance(item, Wand)
-        print(f"[perform_ranged_attack] is_throwable={is_throwable} is_weapon={is_weapon} is_wand={is_wand}")
+        is_staff = isinstance(item, Staff)
+        print(f"[perform_ranged_attack] is_throwable={is_throwable} is_weapon={is_weapon} is_wand={is_wand} is_staff={is_staff}")
 
+        # Staff zap: delegate to imbued wand for charge/damage checks
+        staff_wand = item.imbued_wand if is_staff else None
 
         if is_wand and item.charges <= 0:
             print(f"[perform_ranged_attack] BAIL: wand out of charges")
+            return None
+
+        if is_staff and staff_wand is None:
+            print(f"[perform_ranged_attack] BAIL: staff has no imbued wand")
+            return None
+
+        if is_staff and staff_wand.charges <= 0:
+            print(f"[perform_ranged_attack] BAIL: staff wand out of charges")
             return None
 
         current_time = time.time()
@@ -397,6 +415,8 @@ class MovementCombatMixin:
             "projectile": projectile_type,
             "crit": False,
             "grim_proc": False,
+            "beam_type": getattr(item, "beam_type", None),
+            "sound": getattr(item, "wand_sound", None),
         }
         # Thrown inventory items fly as their own sprite (not a generic dart).
         # Wands keep the magic_bolt projectile.
@@ -410,12 +430,19 @@ class MovementCombatMixin:
 
         damage_dealt = 0
         if target_entity and player.faction != target_entity.faction:
+            # Staff/wand zap: override damage with item damage
+            old_min, old_max = player.damage_min, player.damage_max
+            if is_staff and staff_wand:
+                player.damage_min = player.damage_max = staff_wand.damage
+            elif is_wand:
+                player.damage_min = player.damage_max = item.damage
             if isinstance(target_entity, MobEntity):
                 result = resolve_ranged_attack(
                     player, target_entity, item,
                     floor.mobs, target_x, target_y,
                     is_in_los=lambda a, b: self._is_in_los(a, b, floor_id=floor_id),
                 )
+                player.damage_min, player.damage_max = old_min, old_max
                 if result["missed"]:
                     self.add_event("MISS", {"source": player.id, "target": target_entity.id, "defense_verb": result.get("defense_verb", "dodged")}, floor_id=floor_id)
                 damage_dealt = result["damage"]
@@ -457,7 +484,8 @@ class MovementCombatMixin:
                 }, floor_id=floor_id)
                 if result.get("grim_proc"):
                     self.add_event("PLAY_SOUND", {"sound": "HIT_STRONG"}, floor_id=floor_id, source_player_id=player.id)
-                if projectile_type == "magic_bolt":
+                _magic_projectiles = {"magic_bolt", "magic_missile", "fire_bolt", "frost", "corrosion", "foliage", "force", "beacon", "shadow", "rainbow", "earth", "ward", "shaman_red", "shaman_blue", "shaman_purple", "elmo", "poison", "light_missile", "lightning", "beam"}
+                if projectile_type in _magic_projectiles:
                     self.add_event("PLAY_SOUND", {"sound": "HIT_MAGIC"}, floor_id=floor_id, source_player_id=player.id)
                 else:
                     self.add_event("PLAY_SOUND", {"sound": "HIT_ARROW"}, floor_id=floor_id, source_player_id=player.id)
@@ -492,16 +520,30 @@ class MovementCombatMixin:
                     for d in drops:
                         floor.items[d.id] = d
 
-        if is_wand:
+        if is_wand or is_staff:
+            wand_item = staff_wand if is_staff else item
             # Wand Preservation (mage T2): chance to not consume charge
             wp = player.talent_info.level("wand_preservation")
             if wp <= 0 or random.random() >= wp * 0.17:
-                item.charges -= 1
+                wand_item.charges -= 1
             # Shield Battery (mage T2): gain shield on wand zap
             sb = player.talent_info.level("shield_battery")
             if sb > 0:
                 shield_amt = 1 + sb
                 player.add_shield("shield_battery", shield_amt, priority=1, decay=600)
+            # Imbued wand on_hit on ranged zap (battlemage synergy)
+            if damage_dealt > 0 and is_staff and staff_wand:
+                staff_wand.on_hit(
+                    player, target_entity, damage_dealt,
+                    floor_mobs=floor.mobs if target_entity and isinstance(target_entity, MobEntity) else None,
+                    tile_x=target_x, tile_y=target_y,
+                    floor=floor, add_event=lambda t, d: self.add_event(t, d, floor_id=floor_id, source_player_id=player.id),
+                )
+            # Apply Empowered Strike tracker after zap if applicable
+            if is_staff and damage_dealt > 0:
+                es_talent = player.talent_info.level("empowered_strike")
+                if es_talent > 0:
+                    player.add_buff("empowered_strike_tracker", duration=10.0, level=es_talent)
         else:
             removed = player.belongings.backpack.detach(item.id)
             if removed is not None and player.belongings.get_item(item.id) is None:

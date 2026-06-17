@@ -189,6 +189,7 @@ def resolve_melee_attack(
     dmg_bonus: int = 0,
     guaranteed_hit: bool = False,
     floor=None,
+    add_event=None,
 ) -> dict:
     result = {
         "hit": False,
@@ -293,7 +294,47 @@ def resolve_melee_attack(
             weapon.enchantment, attacker, defender, weapon,
             raw_damage, actual_damage, hp_before, result,
             floor_mobs, tile_x, tile_y, floor,
+            add_event=add_event,
         )
+
+    # Empowered Strike (battlemage T3): after the imbued wand gains a charge
+    # (from a prior melee hit), the next staff melee deals bonus damage and
+    # plays HIT_STRONG at 0.75 vol / 1.2 pitch (SPD MagesStaff.proc).
+    if actual_damage > 0:
+        es_buff = attacker.remove_buff("empowered_strike_tracker")
+        if es_buff is not None:
+            es_level = getattr(es_buff, "level", 1)
+            mult = 1.0 + es_level / 6.0
+            bonus = int(actual_damage * (mult - 1.0))
+            if bonus > 0:
+                actual_damage += defender.take_damage(bonus)
+                result["damage"] = actual_damage
+            surprised = getattr(defender, "surprised", False) or result.get("surprise", False)
+            if not surprised and add_event:
+                add_event("PLAY_SOUND", {"sound": "HIT_STRONG", "rate": 1.2}, floor_id=getattr(attacker, "floor_id", 0))
+
+    # Battlemage staff proc: melee hits with the Mage's Staff trigger the
+    # imbued wand's onHit effect (SPD MagesStaff.proc), AND restore one
+    # charge (up to max). If a charge was restored, also apply Empowered
+    # Strike tracker so the next staff hit gets the bonus.
+    if actual_damage > 0:
+        subclass_info = getattr(attacker, "subclass_info", None)
+        if subclass_info is not None and subclass_info.subclass == "battlemage":
+            from app.engine.entities.base import Staff, Wand
+            w = getattr(getattr(attacker, "belongings", None), "weapon", None)
+            if isinstance(w, Staff) and w.imbued_wand is not None:
+                wand = w.imbued_wand
+                charged = wand.charges < wand.max_charges
+                if charged:
+                    wand.charges = min(wand.max_charges, wand.charges + 1)
+                    es_talent = getattr(attacker, "talent_info", None)
+                    if es_talent is not None and es_talent.level("empowered_strike") > 0:
+                        attacker.add_buff("empowered_strike_tracker", duration=10.0, level=es_talent.level("empowered_strike"))
+                wand.on_hit(
+                    attacker, defender, actual_damage,
+                    floor_mobs=floor_mobs, tile_x=tile_x, tile_y=tile_y,
+                    floor=floor, add_event=add_event,
+                )
 
     return result
 

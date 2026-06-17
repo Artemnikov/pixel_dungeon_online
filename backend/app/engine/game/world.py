@@ -71,6 +71,7 @@ class WorldInteractionMixin:
             self.boss_scores[1] += 2000
             if self.qualified_for_boss_challenge:
                 self.add_event("TENGU_BADGE_QUALIFIED", {}, floor_id=floor_id)
+            self.add_event("BOSS_SLAIN", {"mob": mob.id, "depth": floor_id, "badge_image": 48}, floor_id=floor_id)
             return
 
         if not isinstance(mob, Goo):
@@ -88,6 +89,7 @@ class WorldInteractionMixin:
         )
         floor.items[key.id] = key
         self.add_event("PLAY_SOUND", {"sound": "BOSS"}, floor_id=floor_id)
+        self.add_event("BOSS_SLAIN", {"mob": mob.id, "depth": floor_id, "badge_image": 15}, floor_id=floor_id)
     def search(self, player_id: str):
         player = self.players.get(player_id)
         if not player:

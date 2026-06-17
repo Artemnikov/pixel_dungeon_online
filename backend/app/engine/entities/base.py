@@ -15,6 +15,7 @@
 from __future__ import annotations
 
 import uuid as _uuid
+import random as _random
 from typing import Annotated, ClassVar, Literal, Optional, List, Dict, Tuple, Union
 
 from pydantic import BaseModel, Field, computed_field
@@ -521,14 +522,35 @@ class Bow(KindOfWeapon):
     DESC: ClassVar[str] = "A ranged weapon that fires arrows at distant foes. Equip it, then target an enemy to shoot."
 
 
-class Staff(KindOfWeapon):
+class Staff(MeleeWeapon):
     kind: Literal["staff"] = "staff"
-    name: str = "Staff"
+    name: str = "Mage's Staff"
     range: int = 4
     magic_damage: int = 0
     charges: int = 4
     projectile_type: str = "magic_bolt"
+    imbued_wand: Optional["Wand"] = None
+    unique: bool = True
+    bones: bool = False
+    tier: int = 1
+    strength_requirement: int = 10
+    attack_cooldown: float = 1.0
+    acc_factor: float = 1.0
+    hit_sound: str = "HIT_BODY"
+    hit_sound_pitch: float = 1.1
     DESC: ClassVar[str] = "A magical staff that hurls bolts of energy at a distance."
+
+    def dmg_min(self, lvl: int = 0) -> int:
+        return 1 + lvl
+
+    def dmg_max(self, lvl: int = 0) -> int:
+        return 6 + 2 * lvl
+
+    def actions(self, player: Optional["Player"] = None) -> List[str]:
+        return [Action.ZAP] + super().actions(player)
+
+    def default_action(self) -> Optional[str]:
+        return Action.ZAP
 
 
 class MissileWeapon(KindOfWeapon):
@@ -604,6 +626,8 @@ class Wand(ItemBase):
     max_charges: int = 2
     range: int = 4
     projectile_type: str = "magic_bolt"
+    beam_type: Optional[str] = None
+    wand_sound: Optional[str] = None
     DESC: ClassVar[str] = "A wand of magical power. Zap an enemy to spend a charge; charges recover over time."
 
     def actions(self, player: Optional["Player"] = None) -> List[str]:
@@ -619,6 +643,312 @@ class Wand(ItemBase):
 
     def value(self, identified: bool = False) -> int:
         return _charm_value(self.level, self.level_known, self.cursed, self.cursed_known)
+
+    def on_hit(self, attacker, defender, damage, floor_mobs=None, tile_x=None, tile_y=None, floor=None, add_event=None):
+        pass
+
+
+# --- Wand subclasses -----------------------------------------------------------
+
+class WandOfMagicMissile(Wand):
+    kind: Literal["wand_magic_missile"] = "wand_magic_missile"
+    name: str = "Wand of Magic Missile"
+    type: str = "wand"
+    damage: int = 4
+    charges: int = 4
+    max_charges: int = 4
+    projectile_type: str = "magic_missile"
+    DESC: ClassVar[str] = "A basic wand that fires a magic missile."
+
+    def on_hit(self, attacker, defender, damage, floor_mobs=None, tile_x=None, tile_y=None, floor=None, add_event=None):
+        belongings = getattr(attacker, "belongings", None)
+        if belongings is None:
+            return
+        for item in belongings.all_items():
+            if isinstance(item, Wand) and item.id != self.id and item.charges < item.max_charges:
+                item.charges = min(item.max_charges, item.charges + 1)
+
+
+class WandOfFireblast(Wand):
+    kind: Literal["wand_fireblast"] = "wand_fireblast"
+    name: str = "Wand of Fireblast"
+    type: str = "wand"
+    damage: int = 6
+    charges: int = 2
+    max_charges: int = 2
+    projectile_type: str = "fire_bolt"
+    DESC: ClassVar[str] = "A catastrophic wand that unleashes fire."
+
+    def on_hit(self, attacker, defender, damage, floor_mobs=None, tile_x=None, tile_y=None, floor=None, add_event=None):
+        if defender is None or not defender.is_alive:
+            return
+        proc_chance = 0.0
+        from app.engine.entities.base import has_buff
+        for dx in (-1, 0, 1):
+            for dy in (-1, 0, 1):
+                cx, cy = defender.pos.x + dx, defender.pos.y + dy
+                ch = None
+                if floor_mobs:
+                    ch = next((m for m in floor_mobs.values() if m.is_alive and m.pos.x == cx and m.pos.y == cy), None)
+                if ch and ch.has_buff("burning"):
+                    proc_chance += 0.25
+        proc_chance = min(1.0, proc_chance)
+        if _random.random() < proc_chance:
+            power_mult = max(1.0, proc_chance)
+            lvl = max(0, self.level)
+            dmg_range = (2 + 2 * lvl, 8 + 4 * lvl)
+            from app.engine.entities.base import has_buff
+            hit_any = False
+            for dx in (-1, 0, 1):
+                for dy in (-1, 0, 1):
+                    cx, cy = defender.pos.x + dx, defender.pos.y + dy
+                    ch = None
+                    if floor_mobs:
+                        ch = next((m for m in floor_mobs.values() if m.is_alive and m.pos.x == cx and m.pos.y == cy), None)
+                    if ch and ch != attacker and ch.faction != attacker.faction:
+                        aoe_dmg = _random.randint(dmg_range[0], dmg_range[1])
+                        aoe_dmg = int(aoe_dmg * power_mult)
+                        ch.take_damage(aoe_dmg)
+                        hit_any = True
+                        if ch.has_buff("burning"):
+                            ch.remove_buff("burning")
+            if hit_any and add_event:
+                add_event("PLAY_SOUND", {"sound": "BLAST"}, floor_id=getattr(defender, "floor_id", 0))
+
+
+class WandOfFrost(Wand):
+    kind: Literal["wand_frost"] = "wand_frost"
+    name: str = "Wand of Frost"
+    type: str = "wand"
+    damage: int = 5
+    charges: int = 3
+    max_charges: int = 3
+    projectile_type: str = "frost"
+    DESC: ClassVar[str] = "A wand that freezes enemies solid."
+
+    def on_hit(self, attacker, defender, damage, floor_mobs=None, tile_x=None, tile_y=None, floor=None, add_event=None):
+        if defender is None:
+            return
+        chill_buff = defender.get_buff("chill")
+        if chill_buff:
+            chill_turns = int(chill_buff.remaining)
+            proc_chance = (chill_turns - 1) / 9.0
+            if _random.random() < proc_chance:
+                power_mult = max(1.0, proc_chance)
+                duration = round(3.0 * power_mult)
+                defender.add_buff("frost", duration=duration, level=1)
+
+
+class WandOfLightning(Wand):
+    kind: Literal["wand_lightning"] = "wand_lightning"
+    name: str = "Wand of Lightning"
+    type: str = "wand"
+    damage: int = 8
+    charges: int = 2
+    max_charges: int = 2
+    projectile_type: str = "lightning"
+    wand_sound: str = "LIGHTNING"
+    DESC: ClassVar[str] = "A wand that arcs lightning to its target."
+
+    def on_hit(self, attacker, defender, damage, floor_mobs=None, tile_x=None, tile_y=None, floor=None, add_event=None):
+        if attacker is None:
+            return
+        lvl = max(0, self.level)
+        proc_chance = (lvl + 1) / (lvl + 4)
+        if _random.random() < proc_chance:
+            attacker.add_buff("lightning_charge", duration=10.0, level=1)
+            if add_event:
+                add_event("PLAY_SOUND", {"sound": "LIGHTNING"}, floor_id=getattr(attacker, "floor_id", 0))
+
+
+class WandOfDisintegration(Wand):
+    kind: Literal["wand_disintegration"] = "wand_disintegration"
+    name: str = "Wand of Disintegration"
+    type: str = "wand"
+    damage: int = 6
+    charges: int = 3
+    max_charges: int = 3
+    range: int = 8
+    projectile_type: str = "beam"
+    beam_type: str = "death_ray"
+    wand_sound: str = "RAY"
+    DESC: ClassVar[str] = "A wand that fires a deadly disintegration beam."
+
+    def on_hit(self, attacker, defender, damage, floor_mobs=None, tile_x=None, tile_y=None, floor=None, add_event=None):
+        pass
+
+
+class WandOfPrismaticLight(Wand):
+    kind: Literal["wand_prismatic_light"] = "wand_prismatic_light"
+    name: str = "Wand of Prismatic Light"
+    type: str = "wand"
+    damage: int = 4
+    charges: int = 4
+    max_charges: int = 4
+    range: int = 8
+    projectile_type: str = "beam"
+    beam_type: str = "light_ray"
+    wand_sound: str = "RAY"
+    DESC: ClassVar[str] = "A wand that fires a beam of prismatic light."
+
+    def on_hit(self, attacker, defender, damage, floor_mobs=None, tile_x=None, tile_y=None, floor=None, add_event=None):
+        if defender is None:
+            return
+        lvl = max(0, self.level)
+        duration = round((1 + lvl))
+        defender.add_buff("cripple", duration=float(duration), level=1)
+
+
+class WandOfBlastWave(Wand):
+    kind: Literal["wand_blast_wave"] = "wand_blast_wave"
+    name: str = "Wand of Blast Wave"
+    type: str = "wand"
+    damage: int = 2
+    charges: int = 3
+    max_charges: int = 3
+    projectile_type: str = "force"
+    DESC: ClassVar[str] = "A wand that blasts enemies backwards."
+
+    def on_hit(self, attacker, defender, damage, floor_mobs=None, tile_x=None, tile_y=None, floor=None, add_event=None):
+        if defender is None or not defender.is_alive:
+            return
+        if defender.has_buff("paralysis"):
+            defender.remove_buff("paralysis")
+            lvl = max(0, self.level)
+            dmg = _random.randint(8 + 2 * lvl, 12 + 3 * lvl)
+            defender.take_damage(dmg)
+            defender.add_buff("blast_on_hit_tracker", duration=3.0, level=1)
+            if add_event:
+                add_event("PLAY_SOUND", {"sound": "BLAST"}, floor_id=getattr(defender, "floor_id", 0))
+
+
+class WandOfTransfusion(Wand):
+    kind: Literal["wand_transfusion"] = "wand_transfusion"
+    name: str = "Wand of Transfusion"
+    type: str = "wand"
+    damage: int = 0
+    charges: int = 3
+    max_charges: int = 3
+    range: int = 6
+    projectile_type: str = "beam"
+    beam_type: str = "health_ray"
+    wand_sound: str = "RAY"
+    DESC: ClassVar[str] = "A wand that transfers health."
+
+    def on_hit(self, attacker, defender, damage, floor_mobs=None, tile_x=None, tile_y=None, floor=None, add_event=None):
+        if defender is None or attacker is None:
+            return
+        if defender.has_buff("charm"):
+            lvl = max(0, self.level)
+            shield_amt = int(2 * (5 + lvl))
+            attacker.add_shield("transfusion_shield", shield_amt, priority=1, decay=5)
+
+
+class WandOfCorrosion(Wand):
+    kind: Literal["wand_corrosion"] = "wand_corrosion"
+    name: str = "Wand of Corrosion"
+    type: str = "wand"
+    damage: int = 3
+    charges: int = 3
+    max_charges: int = 3
+    projectile_type: str = "corrosion"
+    DESC: ClassVar[str] = "A wand that spews corrosive gas."
+
+    def on_hit(self, attacker, defender, damage, floor_mobs=None, tile_x=None, tile_y=None, floor=None, add_event=None):
+        if defender is None:
+            return
+        lvl = max(0, self.level)
+        proc_chance = (lvl + 1) / (lvl + 3)
+        if _random.random() < proc_chance:
+            defender.add_buff("ooze", duration=5.0, level=1)
+
+
+class WandOfCorruption(Wand):
+    kind: Literal["wand_corruption"] = "wand_corruption"
+    name: str = "Wand of Corruption"
+    type: str = "wand"
+    damage: int = 2
+    charges: int = 3
+    max_charges: int = 3
+    projectile_type: str = "shadow"
+    DESC: ClassVar[str] = "A wand that corrupts the minds of enemies."
+
+    def on_hit(self, attacker, defender, damage, floor_mobs=None, tile_x=None, tile_y=None, floor=None, add_event=None):
+        if defender is None:
+            return
+        lvl = max(0, self.level)
+        proc_chance = (lvl + 1) / (lvl + 6)
+        if _random.random() < proc_chance:
+            duration = int((4 + lvl * 2))
+            defender.add_buff("amok", duration=float(duration), level=1)
+
+
+class WandOfRegrowth(Wand):
+    kind: Literal["wand_regrowth"] = "wand_regrowth"
+    name: str = "Wand of Regrowth"
+    type: str = "wand"
+    damage: int = 1
+    charges: int = 4
+    max_charges: int = 4
+    projectile_type: str = "foliage"
+    DESC: ClassVar[str] = "A wand that causes vegetation to spring forth."
+
+    def on_hit(self, attacker, defender, damage, floor_mobs=None, tile_x=None, tile_y=None, floor=None, add_event=None):
+        if attacker is None or damage <= 0:
+            return
+        from app.engine.dungeon.constants import TileType
+        on_grass = False
+        if floor and tile_x is not None and tile_y is not None:
+            for px, py in [(attacker.pos.x, attacker.pos.y), (tile_x, tile_y)]:
+                if 0 <= py < len(floor.grid) and 0 <= px < len(floor.grid[0]):
+                    t = floor.grid[py][px]
+                    if t in (TileType.FLOOR_GRASS, TileType.HIGH_GRASS, TileType.FURROWED_GRASS):
+                        on_grass = True
+                        break
+        if on_grass:
+            lvl = max(0, self.level)
+            healing = int(damage * (lvl + 2) / (lvl + 6) / 2)
+            if healing > 0:
+                attacker.hp = min(attacker.get_total_max_hp(), attacker.hp + healing)
+
+
+class WandOfWarding(Wand):
+    kind: Literal["wand_warding"] = "wand_warding"
+    name: str = "Wand of Warding"
+    type: str = "wand"
+    damage: int = 2
+    charges: int = 3
+    max_charges: int = 3
+    projectile_type: str = "ward"
+    DESC: ClassVar[str] = "A wand that deploys a sentry ward."
+
+    def on_hit(self, attacker, defender, damage, floor_mobs=None, tile_x=None, tile_y=None, floor=None, add_event=None):
+        if attacker is None or floor_mobs is None:
+            return
+        lvl = max(0, self.level)
+        proc_chance = (lvl + 1) / (lvl + 5)
+        if _random.random() < proc_chance:
+            for mob in floor_mobs.values():
+                if mob.is_alive and getattr(mob, "mob_type", None) == "ward":
+                    heal_amt = max(1, lvl)
+                    mob.hp = min(mob.max_hp, mob.hp + heal_amt)
+
+
+class WandOfLivingEarth(Wand):
+    kind: Literal["wand_living_earth"] = "wand_living_earth"
+    name: str = "Wand of Living Earth"
+    type: str = "wand"
+    damage: int = 4
+    charges: int = 3
+    max_charges: int = 3
+    projectile_type: str = "earth"
+    DESC: ClassVar[str] = "A wand that summons an earth guardian."
+
+    def on_hit(self, attacker, defender, damage, floor_mobs=None, tile_x=None, tile_y=None, floor=None, add_event=None):
+        if attacker is None or damage <= 0:
+            return
+        armor = int(damage * 0.33)
+        attacker.add_buff("rock_armor", duration=10.0, level=armor)
 
 
 class Potion(ItemBase):
@@ -985,6 +1315,7 @@ class Throwable(ItemBase):
     kind: Literal["throwable"] = "throwable"
     type: str = "throwable"
     category: ClassVar[str] = ItemCategory.STONE
+    stackable: ClassVar[bool] = True
     damage: int = 1
     range: int = 5
     consumable: bool = True
@@ -1527,6 +1858,8 @@ class Player(Entity):
     websocket_id: Optional[str] = None
     is_downed: bool = False
     death_processed: bool = False
+    kills_count: int = 0
+    floors_explored: int = 1
     # Over-time healing, mirroring SPD's Healing buff. Each application heals
     # `heal_pct_per_tick` of the remaining `heal_left` (plus a flat amount), with a
     # minimum of 1, until exhausted. `heal_cooldown` throttles applications so heals

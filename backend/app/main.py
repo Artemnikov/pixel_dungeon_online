@@ -89,6 +89,7 @@ class ConnectionManager:
         player_floor = state.get("depth", 1)
         map_version = getattr(game.floors.get(player_floor), "map_version", 0)
 
+        floor = game.floors.get(player_floor)
         init = InitMessage(
             player_id=player_id,
             depth=player_floor,
@@ -97,6 +98,8 @@ class ConnectionManager:
             height=state["height"],
             traps=state.get("traps", []),
             custom_tiles=state.get("custom_tiles", []),
+            entrance_pos=getattr(floor, 'entrance_pos', None),
+            exit_pos=getattr(floor, 'exit_pos', None),
         )
         await websocket.send_json(init.model_dump(exclude_none=True))
         self.last_sent_floor.setdefault(game_id, {})[player_id] = (player_floor, map_version)
@@ -176,6 +179,7 @@ class ConnectionManager:
                     previous = self.last_sent_floor.setdefault(game_id, {}).get(player_id)
 
                     if previous != (player_floor, map_version):
+                        floor = game.floors.get(player_floor)
                         init = InitMessage(
                             depth=player_floor,
                             grid=state["grid"],
@@ -183,6 +187,8 @@ class ConnectionManager:
                             height=state["height"],
                             traps=state.get("traps", []),
                             custom_tiles=state.get("custom_tiles", []),
+                            entrance_pos=getattr(floor, 'entrance_pos', None),
+                            exit_pos=getattr(floor, 'exit_pos', None),
                         )
                         await connection.send_json(init.model_dump(exclude_none=True))
                         self.last_sent_floor[game_id][player_id] = (player_floor, map_version)
@@ -190,10 +196,6 @@ class ConnectionManager:
                     player_obj = game.players.get(player_id)
                     gold = player_obj.gold if player_obj else 0
                     energy = player_obj.energy if player_obj else 0
-
-                    # DEBUG: log player level in broadcast
-                    pl = game.players.get(player_id)
-                    print(f"[BROADCAST] {player_id}: level={pl.level if pl else 'NO_PLAYER'}, talents={pl.subclass_info.talent_info.talents if pl else {}}")
 
                     update = StateUpdateMessage(
                         depth=player_floor,
@@ -400,6 +402,32 @@ async def game_websocket(websocket: WebSocket, game_id: str, class_type: str = "
             elif isinstance(message, msg.MoveStop):
                 game.set_move_intent(player_id, 0, 0)
 
+            elif isinstance(message, msg.Resume):
+                if player_id in game.players:
+                    player = game.players[player_id]
+                    if player.path_queue:
+                        player.last_auto_move_time = 0.0
+
+            elif isinstance(message, msg.PickupFloor):
+                if player_id in game.players:
+                    player = game.players[player_id]
+                    floor = game._get_or_create_floor(player.floor_id)
+                    items_to_pickup = [
+                        i_id for i_id, i in floor.items.items()
+                        if i.pos and i.pos.x == player.pos.x and i.pos.y == player.pos.y
+                        and i.type != "grave" and not getattr(i, 'for_sale', False)
+                    ]
+                    from app.engine.entities.base import Gold, Dewdrop
+                    for i_id in items_to_pickup:
+                        item = floor.items[i_id]
+                        if isinstance(item, Gold):
+                            player.gold += item.quantity
+                            del floor.items[i_id]
+                            game.add_event("PICKUP_GOLD", {"player": player.id, "amount": item.quantity}, floor_id=player.floor_id)
+                        elif player.add_to_inventory(item):
+                            del floor.items[i_id]
+                            game.add_event("PICKUP", {"player": player.id, "item": item.name}, floor_id=player.floor_id)
+
             elif isinstance(message, msg.MoveTo):
                 if player_id in game.players:
                     player = game.players[player_id]
@@ -439,6 +467,16 @@ async def game_websocket(websocket: WebSocket, game_id: str, class_type: str = "
 
             elif isinstance(message, msg.ChangeDifficulty):
                 game.change_difficulty(message.difficulty)
+
+            elif isinstance(message, msg.Attack):
+                if player_id in game.players:
+                    player = game.players[player_id]
+                    floor = game._get_or_create_floor(player.floor_id)
+                    mob = floor.mobs.get(message.target_id)
+                    if mob and mob.is_alive:
+                        dx = mob.pos.x - player.pos.x
+                        dy = mob.pos.y - player.pos.y
+                        game.move_entity(player_id, dx, dy)
 
             elif isinstance(message, msg.RangedAttack):
                 game.perform_ranged_attack(

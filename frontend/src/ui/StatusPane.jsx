@@ -53,13 +53,14 @@ function lerpColor(t, colors) {
   return `rgb(${r},${g},${bl})`;
 }
 
-export default function StatusPane({ myStats, depth, isAdmin, onSearch, hasTalentPoints, onOpenTalents, onTeleport, isBusy }) {
+export default function StatusPane({ myStats, depth, exitPos, isAdmin, onSearch, hasTalentPoints, onOpenTalents, onTeleport, isBusy }) {
   const { t } = useTranslation();
   const [showFloorPicker, setShowFloorPicker] = useState(false);
   const canvasRef = useRef(null);
   const imagesRef = useRef({});
   const imgsLoadedRef = useRef(false);
   const statsRef = useRef(myStats);
+  const exitPosRef = useRef(exitPos);
   const starsRef = useRef([]);
   const prevLevelRef = useRef(myStats.level || 1);
   const warningRef = useRef(0);
@@ -68,6 +69,7 @@ export default function StatusPane({ myStats, depth, isAdmin, onSearch, hasTalen
   useEffect(() => { hasPtsRef.current = !!hasTalentPoints; }, [hasTalentPoints]);
 
   useEffect(() => { statsRef.current = myStats; }, [myStats]);
+  useEffect(() => { exitPosRef.current = exitPos; }, [exitPos]);
 
   useEffect(() => {
     const sources = { status: statusPaneImg, buffs: buffsImg, ...CLASS_SHEETS };
@@ -193,6 +195,29 @@ export default function StatusPane({ myStats, depth, isAdmin, onSearch, hasTalen
             ac.globalCompositeOperation = 'source-over';
           }
           ctx.drawImage(avatarCanvas, 9 * SCALE, 8 * SCALE, FRAME_W * SCALE, FRAME_H * SCALE);
+        }
+
+        // --- Compass needle pointing toward floor exit ---
+        const ep = exitPosRef.current;
+        const heroPos = statsRef.current?.pos;
+        if (ep && heroPos) {
+          const angle = Math.atan2(ep[1] - heroPos.y, ep[0] - heroPos.x);
+          const cx = (9 + FRAME_W / 2) * SCALE;
+          const cy = (8 + FRAME_H / 2) * SCALE;
+          ctx.save();
+          ctx.translate(cx, cy);
+          ctx.rotate(angle);
+          ctx.strokeStyle = '#ffff00';
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          ctx.lineTo(6 * SCALE / 3, 0);
+          ctx.stroke();
+          ctx.fillStyle = '#ffff00';
+          ctx.beginPath();
+          ctx.arc(0, 0, 1.2, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
         }
 
         // --- CircleArc (action timer around avatar) ---

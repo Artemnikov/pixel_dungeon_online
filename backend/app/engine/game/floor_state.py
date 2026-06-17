@@ -49,6 +49,9 @@ class FloorState:
     # viewer's own view_distance.
     view_distance: Optional[int] = None
 
+    entrance_pos: Optional[Tuple[int, int]] = None
+    exit_pos: Optional[Tuple[int, int]] = None
+
     def rebuild_flags(self) -> None:
         self.flags = build_flag_maps(self.grid)
 

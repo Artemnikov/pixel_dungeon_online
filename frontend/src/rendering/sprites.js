@@ -84,7 +84,21 @@ export const ITEM_SPRITES = {
   "Rogue's Cloak":    [7, 11],  // ARMOR_ROGUE (ARMOR+7)
 
   // Wands / rings / artifacts (section bases, generic first entry)
-  "Wand":             [0, 13],  // WANDS = xy(1,14) = idx 208
+  // Row 13: 13 individual wand sprites (WANDS = xy(1,14) = idx 208, cells 0..12)
+  "Wand of Magic Missile":   [0, 13],  // WAND_MAGIC_MISSILE
+  "Wand of Fireblast":       [1, 13],  // WAND_FIREBOLT
+  "Wand of Frost":           [2, 13],  // WAND_FROST
+  "Wand of Lightning":       [3, 13],  // WAND_LIGHTNING
+  "Wand of Disintegration":  [4, 13],  // WAND_DISINTEGRATION
+  "Wand of Prismatic Light": [5, 13],  // WAND_PRISMATIC_LIGHT
+  "Wand of Corrosion":       [6, 13],  // WAND_CORROSION
+  "Wand of Living Earth":    [7, 13],  // WAND_LIVING_EARTH
+  "Wand of Blast Wave":      [8, 13],  // WAND_BLAST_WAVE
+  "Wand of Corruption":      [9, 13],  // WAND_CORRUPTION
+  "Wand of Warding":         [10, 13], // WAND_WARDING
+  "Wand of Regrowth":        [11, 13], // WAND_REGROWTH
+  "Wand of Transfusion":     [12, 13], // WAND_TRANSFUSION
+  "Wand":             [0, 13],  // generic fallback
   "Ring":             [0, 14],  // RINGS = xy(1,15) = idx 224
   "Artifact":         [0, 15],  // ARTIFACTS = xy(1,16) = idx 240
 
@@ -186,6 +200,7 @@ const PLACEHOLDER_TYPE_BY_KIND_PREFIX = [
   ['chargrilled_meat', 'food'],
   ['dewdrop', 'dewdrop'],
   ['gold', 'gold'],
+  ['wand', 'wand'],
 ];
 
 // Resolve a serialized item to its sprite cell: server-sent per-run appearance
@@ -234,7 +249,20 @@ const KIND_COORDS = {
   'armor':           [1, 11],  // Leather
   'ring':            [0, 14],
   'artifact':        [0, 15],
-  'wand':            [0, 13],
+  'wand_magic_missile':   [0, 13],
+  'wand_fireblast':       [1, 13],
+  'wand_frost':           [2, 13],
+  'wand_lightning':       [3, 13],
+  'wand_disintegration':  [4, 13],
+  'wand_prismatic_light': [5, 13],
+  'wand_corrosion':       [6, 13],
+  'wand_living_earth':    [7, 13],
+  'wand_blast_wave':      [8, 13],
+  'wand_corruption':      [9, 13],
+  'wand_warding':         [10, 13],
+  'wand_regrowth':        [11, 13],
+  'wand_transfusion':     [12, 13],
+  'wand':                 [0, 13],
 };
 
 export function coordsForKind(kind) {

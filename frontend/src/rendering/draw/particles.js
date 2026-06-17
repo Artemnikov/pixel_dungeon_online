@@ -19,6 +19,8 @@
 // Coordinates are in world pixels (tile * TILE_SIZE). Particles are advanced and
 // drawn inside the render loop's camera transform.
 
+import { setLightMode } from './blending';
+
 const GRAVITY = 320;        // px/s^2
 const SPREAD = Math.PI / 2; // total cone width (matches bloodBurstA)
 const MIN_SPEED = 24;       // px/s
@@ -362,6 +364,7 @@ export function advanceAndDrawParticles(ctx, { particlesRef }) {
     p.y += p.vy * dt;
 
     ctx.save();
+    if (p.additive) setLightMode(ctx);
     ctx.globalAlpha = Math.max(0, Math.min(1, p.life / p.maxLife));
     ctx.fillStyle = p.color;
     ctx.fillRect(Math.round(p.x), Math.round(p.y), p.size, p.size);

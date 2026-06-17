@@ -13,6 +13,7 @@ export default function GameOverScreen({
   talentLevels,
   talentDefs,
   inventory,
+  scoreBreakdown,
   onNewGame,
   onMenu,
 }) {
@@ -61,6 +62,22 @@ export default function GameOverScreen({
         >
           {t('game.youDied')}
         </div>
+        {scoreBreakdown && (
+          <div className="game-over-score">
+            <div className="game-over-score__row">
+              <span>{t('game.score.kills', 'Enemies slain')}</span>
+              <span>{scoreBreakdown.kills}</span>
+            </div>
+            <div className="game-over-score__row">
+              <span>{t('game.score.floors', 'Floors explored')}</span>
+              <span>{scoreBreakdown.floors}</span>
+            </div>
+            <div className="game-over-score__row">
+              <span>{t('game.score.gold', 'Gold collected')}</span>
+              <span>{scoreBreakdown.gold}</span>
+            </div>
+          </div>
+        )}
       </div>
 
       {showRankings && (

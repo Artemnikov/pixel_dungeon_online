@@ -35,6 +35,7 @@ export default function useKeyboardControls({
   itemsById,
   onRadialSelect,
   gameMenuOpenRef,
+  showItemBrowserRef,
   onOpenTalents,
   onOpenItemBrowser,
 }) {
@@ -61,6 +62,14 @@ export default function useKeyboardControls({
     };
 
     const handleKeyDown = (e) => {
+      if (showItemBrowserRef?.current) {
+        if (e.key === 'u' || e.key === 'Escape') {
+          e.preventDefault();
+          if (onOpenItemBrowser) onOpenItemBrowser();
+        }
+        return;
+      }
+
       pressedKeysRef.current.add(e.key);
 
       if (e.key === 'f') {
@@ -90,6 +99,7 @@ export default function useKeyboardControls({
         return;
       }
       if (e.key === 'u') {
+        e.preventDefault();
         if (onOpenItemBrowser) onOpenItemBrowser();
         return;
       }
@@ -121,7 +131,7 @@ export default function useKeyboardControls({
 
     const handleKeyUp = (e) => {
       pressedKeysRef.current.delete(e.key);
-      if (DIRECTION_KEYS.has(e.key)) {
+      if (DIRECTION_KEYS.has(e.key) && !showItemBrowserRef?.current) {
         syncMoveIntent();
       }
     };
@@ -139,5 +149,5 @@ export default function useKeyboardControls({
       window.removeEventListener('keyup', handleKeyUp);
       window.removeEventListener('blur', handleBlur);
     };
-  }, [inventory, handleToolbarClick, handleToolbarDoubleClick, socketRef, setShowInventory, onExamineOrReveal, onCancelModes, triggerWait, isRefocusingRef, isDraggingRef, quickslot, itemsById, onRadialSelect, gameMenuOpenRef, onOpenTalents, onOpenItemBrowser]);
+  }, [inventory, handleToolbarClick, handleToolbarDoubleClick, socketRef, setShowInventory, onExamineOrReveal, onCancelModes, triggerWait, isRefocusingRef, isDraggingRef, quickslot, itemsById, onRadialSelect, gameMenuOpenRef, showItemBrowserRef, onOpenTalents, onOpenItemBrowser]);
 }

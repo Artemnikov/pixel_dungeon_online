@@ -62,6 +62,8 @@ class RangedAttackData(_EventData):
     projectile: str
     crit: bool
     grim_proc: bool
+    beam_type: Optional[str] = None
+    sound: Optional[str] = None
     # Present for thrown inventory items (not wands); a serialized item dict.
     item: Optional[dict] = None
 
@@ -240,6 +242,12 @@ class TalentMetamorphData(_EventData):
     new_talent: str
 
 
+class BossSlainData(_EventData):
+    mob: str
+    depth: int
+    badge_image: int
+
+
 class TenguBadgeQualifiedData(_EventData):
     pass  # no required payload
 
@@ -281,6 +289,47 @@ class ScrollSelectTargetData(_EventData):
     candidates: List[str]
 
 
+class ShockingProcData(_EventData):
+    attacker_id: str
+    target_id: str
+    defender_x: int
+    defender_y: int
+    chain_targets: List[dict]
+
+
+class BlobUpdateData(_EventData):
+    id: str
+    type: str
+    cells: List[Tuple[int, int, int]]
+
+
+class BlobDepletedData(_EventData):
+    id: str
+
+
+class StateEffectData(_EventData):
+    entity_id: str
+    effect: str
+    x: int
+    y: int
+
+
+class FireImbueActivatedData(_EventData):
+    player: str
+    x: int
+    y: int
+
+
+class InfernoActivatedData(_EventData):
+    x: int
+    y: int
+
+
+class SacrificialFireData(_EventData):
+    x: int
+    y: int
+
+
 # event "type" -> payload model. Used by the opt-in dev validation hook.
 EVENT_MODELS = {
     "ATTACK": AttackData,
@@ -320,11 +369,19 @@ EVENT_MODELS = {
     "METAMORPH_OPEN": MetamorphOpenData,
     "METAMORPH_OPTIONS": MetamorphOptionsData,
     "TALENT_METAMORPHED": TalentMetamorphData,
+    "BOSS_SLAIN": BossSlainData,
     "TENGU_BADGE_QUALIFIED": TenguBadgeQualifiedData,
     "IMP_DIALOGUE": ImpDialogueData,
     "IMP_REWARD": ImpRewardData,
     "SCROLL_SELECT_TARGET": ScrollSelectTargetData,
     "TELEPORT": TeleportData,
     "MIRROR_IMAGE": MirrorImageData,
+    "SHOCKING_PROC": ShockingProcData,
     "MESSAGE": MessageData,
+    "BLOB_UPDATE": BlobUpdateData,
+    "BLOB_DEPLETED": BlobDepletedData,
+    "STATE_EFFECT": StateEffectData,
+    "FIRE_IMBUE_ACTIVATED": FireImbueActivatedData,
+    "INFERNO_ACTIVATED": InfernoActivatedData,
+    "SACRIFICIAL_FIRE": SacrificialFireData,
 }

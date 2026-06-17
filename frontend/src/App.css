@@ -1500,6 +1500,43 @@
   background: #333340;
 }
 
+/* --- Boss slain banner (floating, no dark overlay) --- */
+.boss-slain-root {
+  position: fixed; inset: 0; z-index: 600;
+  pointer-events: none;
+  animation: boss-slain-fadein 0.3s ease-out;
+}
+@keyframes boss-slain-fadein {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.boss-slain-badge {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) translateY(-72px);
+  background: transparent url('./assets/pixel-dungeon/interfaces/badges.png') no-repeat;
+  image-rendering: pixelated;
+  animation: boss-slain-badge-in 0.25s ease-out;
+}
+@keyframes boss-slain-badge-in {
+  from { opacity: 0; transform: translate(-50%, -50%) translateY(-72px) scale(1.5); }
+  to { opacity: 1; transform: translate(-50%, -50%) translateY(-72px) scale(1); }
+}
+.boss-slain-banner {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: transparent url('./assets/pixel-dungeon/interfaces/banners.png') no-repeat;
+  image-rendering: pixelated;
+  animation: boss-slain-banner-in 0.3s ease-out;
+}
+@keyframes boss-slain-banner-in {
+  from { opacity: 0; filter: brightness(2); }
+  to { opacity: 1; filter: brightness(1); }
+}
+
 /* --- Choice overlays (Subclass, Armor Ability) — SPD-style --- */
 .choice-overlay {
   position: fixed; inset: 0; z-index: 450;
@@ -1954,10 +1991,6 @@
 
 /* --- DangerIndicator — SPD's skull + enemy count tag --- */
 .danger-indicator {
-  position: fixed;
-  right: max(6px, env(safe-area-inset-right));
-  bottom: 50%;
-  z-index: 46;
   display: flex;
   align-items: center;
   gap: 4px;
@@ -1977,6 +2010,39 @@
   color: #c03838;
   font-weight: bold;
 }
+
+/* --- Side tags — stacked indicator tags on right edge --- */
+.side-tags {
+  position: fixed;
+  right: max(6px, env(safe-area-inset-right));
+  bottom: 50%;
+  z-index: 46;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  pointer-events: none;
+}
+.side-tag {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: rgba(15, 12, 10, 0.7);
+  border: 1px solid #666;
+  border-radius: 4px;
+  cursor: pointer;
+  pointer-events: auto;
+  user-select: none;
+}
+.side-tag:hover { background: rgba(30, 25, 20, 0.85); }
+.side-tag__label { font: 12px monospace; color: #ccc; font-weight: bold; max-width: 80px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.side-tag--loot { border-color: #185898; }
+.side-tag--loot:hover { background: rgba(10, 20, 40, 0.85); }
+.side-tag--resume { border-color: #888; }
+.side-tag--attack { border-color: #c03838; }
+.side-tag--attack:hover { background: rgba(40, 10, 10, 0.85); }
+.side-tag--action { border-color: #8855cc; }
 
 /* --- GameLog — SPD's bottom-left message log --- */
 .game-log {
@@ -1998,3 +2064,131 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
+
+.toast-overlay {
+  position: fixed;
+  left: 50%;
+  bottom: 80px;
+  transform: translateX(-50%);
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  pointer-events: none;
+}
+.toast-overlay__item {
+  background: rgba(0, 0, 0, 0.75);
+  color: #ffffcc;
+  font: 13px monospace;
+  padding: 5px 12px;
+  border-radius: 4px;
+  text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.9);
+  transition: opacity 0.5s ease;
+  opacity: 1;
+}
+.toast-overlay__item--fade {
+  opacity: 0;
+}
+
+/* --- score breakdown (game over + victory) --- */
+.game-over-score {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: rgba(0,0,0,0.5);
+  border: 1px solid #555;
+  padding: 12px 20px;
+  min-width: 200px;
+  pointer-events: auto;
+}
+.game-over-score__row {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  font: 13px monospace;
+  color: #ffffcc;
+}
+.game-over-actions {
+  display: flex;
+  gap: 12px;
+  pointer-events: auto;
+}
+.game-over-btn {
+  font: 14px monospace;
+  background: rgba(0,0,0,0.7);
+  color: #fff;
+  border: 1px solid #888;
+  padding: 6px 16px;
+  cursor: pointer;
+}
+.game-over-btn:hover { border-color: #fff; }
+
+/* --- VictoryScreen --- */
+.victory-screen {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  z-index: 50;
+  opacity: 0;
+  transition: opacity 2s ease-in;
+}
+.victory-screen--shown { opacity: 1; }
+.victory-screen__title {
+  font: bold 48px monospace;
+  color: #ffd700;
+  text-shadow: 0 2px 6px #000;
+  letter-spacing: 2px;
+}
+.victory-screen__subtitle {
+  font: 16px monospace;
+  color: #ffffcc;
+  text-shadow: 0 1px 4px #000;
+}
+
+/* --- WndResurrect --- */
+.wnd-resurrect-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 55;
+  background: rgba(0,0,0,0.6);
+}
+.wnd-resurrect {
+  background: #1a1a2e;
+  border: 2px solid #888;
+  padding: 24px 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  max-width: 320px;
+  text-align: center;
+}
+.wnd-resurrect__title {
+  font: bold 20px monospace;
+  color: #ffffcc;
+}
+.wnd-resurrect__desc {
+  font: 13px monospace;
+  color: #ccc;
+}
+.wnd-resurrect__actions { display: flex; gap: 12px; }
+.wnd-resurrect__btn {
+  font: 14px monospace;
+  padding: 6px 20px;
+  border: 1px solid #888;
+  cursor: pointer;
+  background: rgba(0,0,0,0.5);
+  color: #fff;
+}
+.wnd-resurrect__btn--yes { border-color: #4caf50; color: #4caf50; }
+.wnd-resurrect__btn--yes:hover { background: rgba(76,175,80,0.2); }
+.wnd-resurrect__btn--no { border-color: #e74c3c; color: #e74c3c; }
+.wnd-resurrect__btn--no:hover { background: rgba(231,76,60,0.2); }

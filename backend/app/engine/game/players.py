@@ -27,7 +27,6 @@ from app.engine.entities.base import (
     Armor,
     Belongings,
     Bow,
-    BrokenSeal,
     CharacterClass,
     CloakOfShadows,
     Dagger,
@@ -36,10 +35,12 @@ from app.engine.entities.base import (
     Player,
     Position,
     QuickSlot,
-    ScrollOfRage,
+    Ration,
     Staff,
     Stone,
     ThrowableDagger,
+    VelvetPouch,
+    WandOfMagicMissile,
     Waterskin,
     Weapon,
     WornShortsword,
@@ -60,6 +61,8 @@ class PlayersMixin:
         # equipped items live in Belongings, not the backpack).
         belongings = Belongings()
 
+        class_starting_quickslots = []
+
         if class_type == CharacterClass.WARRIOR:
             belongings.weapon = WornShortsword(
                 id=str(uuid.uuid4()),
@@ -70,26 +73,29 @@ class PlayersMixin:
                 tier=1,
                 strength_requirement=10,
             )
-            belongings.artifact = BrokenSeal(
-                id=str(uuid.uuid4()),
-            )
-            belongings.backpack.collect(Stone(
+            stones = Stone(
                 id=str(uuid.uuid4()),
                 quantity=3,
-            ))
-            belongings.backpack.collect(ScrollOfRage(
-                id=str(uuid.uuid4()),
-            ))
+                level_known=True,
+                cursed_known=True,
+            )
+            belongings.backpack.collect(stones)
+            class_starting_quickslots.append((0, stones))
 
         elif class_type == CharacterClass.MAGE:
+            wand = WandOfMagicMissile(
+                id=str(uuid.uuid4()),
+                charges=4,
+                max_charges=4,
+                level_known=True,
+                cursed_known=True,
+            )
             belongings.weapon = Staff(
                 id=str(uuid.uuid4()),
-                name="Mage's Staff",
-                damage=2,
-                magic_damage=3,
-                strength_requirement=10,
+                imbued_wand=wand,
+                level_known=True,
+                cursed_known=True,
                 charges=4,
-                attack_cooldown=3.0,
             )
 
         elif class_type == CharacterClass.ROGUE:
@@ -124,6 +130,15 @@ class PlayersMixin:
                 attack_cooldown=3.5,
             )
 
+        # HeroClass.initHero(): every hero starts with a ration of food, a
+        # Velvet Pouch (for seeds/stones), and a Waterskin in the backpack.
+        belongings.backpack.collect(Ration(
+            id=str(uuid.uuid4()),
+        ))
+        belongings.backpack.collect(VelvetPouch(
+            id=str(uuid.uuid4()),
+        ))
+
         # HeroClass.initHero(): every hero starts with a Waterskin in the
         # backpack, bound to the first empty quickslot.
         waterskin = Waterskin(id=str(uuid.uuid4()))
@@ -152,8 +167,16 @@ class PlayersMixin:
             is_admin=is_admin,
         )
 
-        # HeroClass.initHero(): bind the Waterskin to quickslot 2.
+        # HeroClass.initHero(): class-specific quickslots (slot 0 for stones,
+        # slot 2 for throwing knives, etc.), then Waterskin to slot 1.
+        for slot_idx, item in class_starting_quickslots:
+            player.quickslot.set_slot(slot_idx, item)
         player.quickslot.set_slot(1, waterskin)
+
+        # HeroClass.initWarrior(): the BrokenSeal starts affixed to the cloth
+        # armor (not in any equip slot), providing shielding on low HP.
+        if class_type == CharacterClass.WARRIOR:
+            player.seal_affixed = True
 
         self.players[player_id] = player
         self.depth = 1
@@ -172,6 +195,7 @@ class PlayersMixin:
         self._get_or_create_floor(target_floor_id)
 
         player.floor_id = target_floor_id
+        player.floors_explored = max(player.floors_explored, target_floor_id)
         player.pos = self._get_stairs_pos(spawn_tile, floor_id=target_floor_id)
 
         self.depth = target_floor_id
@@ -276,4 +300,13 @@ class PlayersMixin:
             pos=Position(x=player.pos.x, y=player.pos.y),
         )
 
-        self.add_event("DEATH", {"target": player.id}, floor_id=floor_id)
+        self.add_event("DEATH", {
+            "target": player.id,
+            "score_breakdown": {
+                "kills": player.kills_count,
+                "floors": player.floors_explored,
+                "gold": player.gold,
+            },
+            "can_resurrect": False,
+            "victory": False,
+        }, floor_id=floor_id)

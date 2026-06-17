@@ -13,9 +13,15 @@ import { spawnShieldHalo, removeShieldHalo } from '../rendering/draw/shieldHalo'
 import { spawnStateParticles } from '../rendering/draw/states';
 import { spawnLightning } from '../rendering/draw/lightning';
 import { spawnMagicMissile } from '../rendering/draw/magicMissile';
+import { spawnBeam } from '../rendering/draw/beam';
+import { updateBlobArea, removeBlobArea } from '../rendering/draw/blobArea';
+import { spawnScreenShake } from '../rendering/draw/screenShake';
+import { spawnSparkMoving, spawnSparkStatic } from '../rendering/draw/sparkParticle';
+import { spawnFlameBurst } from '../rendering/draw/flameParticle';
+import { spawnElmo } from '../rendering/draw/elmoParticle';
 import { spawnSpellSprite, SPELL_CHARGE, SPELL_MAP } from '../rendering/draw/spellSprite';
 import { forceAlertMob } from '../rendering/draw/mobs';
-import { addGameLog } from '../ui/gameLogHelpers';
+import { addGameLog, dispatchToast } from '../ui/gameLogHelpers';
 import { sendMessage } from './send';
 import type {
   Player,
@@ -131,6 +137,7 @@ interface MyStats {
   talentLevels?: Record<string, number>;
   talentPoints?: Record<string, number>;
   bonusTalentPoints?: Record<string, number>;
+  pos?: { x: number; y: number } | null;
 }
 
 interface HookProps {
@@ -165,6 +172,10 @@ interface HookProps {
   lightningRef?: Ref<unknown[]>;
   shieldHaloRef?: Ref<unknown[]>;
   stateEffectsRef?: Ref<unknown[]>;
+  screenShakeRef?: Ref<{ intensity: number; until: number } | null>;
+  magicMissileRef?: Ref<unknown[]>;
+  beamRef?: Ref<unknown[]>;
+  blobAreasRef?: Ref<Record<string, { type: string; cells: Map<string, number> }>>;
   wasDownedRef: Ref<boolean | undefined>;
   surpriseRef?: Ref<unknown[]>;
   selectedEnemyIdRef?: Ref<string | null>;
@@ -178,6 +189,7 @@ interface HookProps {
   setBossInfo?: (info: { name: string; hp: number; maxHp: number; shield?: number; effects?: { key?: string; name?: string; icon?: number; remaining?: number; duration?: number }[] } | null) => void;
   setGold?: (gold: number) => void;
   setEnergy?: (energy: number) => void;
+  setExitPos?: (pos: [number, number] | null) => void;
   setBelongings?: (belongings: Player['belongings'] | null) => void;
   setQuickslot?: (quickslot: Player['quickslot'] | null) => void;
   onLevelUp?: (data: { level: number; tier_unlocked?: number | null; talent_points?: Record<string, number>; can_choose_subclass: boolean; can_choose_armor_ability: boolean }) => void;
@@ -191,6 +203,8 @@ interface HookProps {
   onShopOpen?: (data: { npc: string; stock: SerializedItem[]; gold: number }) => void;
   onImpDialogue?: (data: { npc: string; text: string; can_claim: boolean; tokens?: number | null }) => void;
   onScrollSelectTarget?: (data: { player: string; scroll_id: string; scroll_kind: string; candidates: string[] }) => void;
+  onBossSlain?: (data: { mob: string; depth: number; badge_image: number }) => void;
+  onPlayerDeath?: (data: { score_breakdown?: { kills: number; floors: number; gold: number }; can_resurrect?: boolean; victory?: boolean }) => void;
 }
 
 type HandlerCtx = Pick<
@@ -218,6 +232,9 @@ type HandlerCtx = Pick<
     | 'magicMissileRef'
     | 'surpriseRef'
     | 'selectedEnemyIdRef'
+    | 'screenShakeRef'
+    | 'beamRef'
+    | 'blobAreasRef'
 > & {
   onLevelUp?: HookProps['onLevelUp'];
   onSubclassChoiceAvailable?: HookProps['onSubclassChoiceAvailable'];
@@ -230,6 +247,8 @@ type HandlerCtx = Pick<
   onShopOpen?: HookProps['onShopOpen'];
   onImpDialogue?: HookProps['onImpDialogue'];
   onScrollSelectTarget?: HookProps['onScrollSelectTarget'];
+  onBossSlain?: HookProps['onBossSlain'];
+  onPlayerDeath?: HookProps['onPlayerDeath'];
 };
 
 export default function useGameSocket({
@@ -264,6 +283,9 @@ export default function useGameSocket({
   shieldHaloRef,
   stateEffectsRef,
   magicMissileRef,
+  screenShakeRef,
+  beamRef,
+  blobAreasRef,
   surpriseRef,
   selectedEnemyIdRef,
   warnedTilesRef,
@@ -278,6 +300,7 @@ export default function useGameSocket({
   setBossInfo,
   setGold,
   setEnergy,
+  setExitPos,
   setBelongings,
   setQuickslot,
   onLevelUp,
@@ -291,6 +314,8 @@ export default function useGameSocket({
   onShopOpen,
   onImpDialogue,
   onScrollSelectTarget,
+  onBossSlain,
+  onPlayerDeath,
 }: HookProps) {
   useEffect(() => {
     if (!enabled) return;
@@ -372,6 +397,7 @@ export default function useGameSocket({
           setMyPlayerId(data.player_id);
           myPlayerIdRef.current = data.player_id;
         }
+        if (setExitPos) setExitPos((data as any).exit_pos || null);
         return;
       }
 
@@ -427,6 +453,7 @@ export default function useGameSocket({
             invisible: p.invisible || 0,
             prepSeconds: p.prep_seconds || 0,
             comboCount: p.combo_count || 0,
+            pos: p.pos ? { x: p.pos.x, y: p.pos.y } : null,
             talentLevels: p.subclass_info?.talent_info?.talents || {},
             talentPoints: p.subclass_info?.talent_points || {},
             bonusTalentPoints: p.subclass_info?.bonus_talent_points || {},
@@ -583,10 +610,10 @@ export default function useGameSocket({
           handleEvent(event, {
             myPlayerIdRef, gridRef, setGrid, entitiesRef, visionRef,
             projectilesRef, mobAnimRef, dyingMobsRef, playerAnimRef, particlesRef,
-            searchEffectsRef, floatingTextRef, screenFlashRef, transmuteEffectsRef, warnedTilesRef, flareEffectsRef, spellSpriteEffectsRef, lightningRef, shieldHaloRef, stateEffectsRef, magicMissileRef, surpriseRef, selectedEnemyIdRef,
+            searchEffectsRef, floatingTextRef, screenFlashRef, screenShakeRef, transmuteEffectsRef, warnedTilesRef, flareEffectsRef, spellSpriteEffectsRef, lightningRef, shieldHaloRef, stateEffectsRef, magicMissileRef, surpriseRef, selectedEnemyIdRef, beamRef, blobAreasRef,
             onLevelUp, onSubclassChoiceAvailable, onArmorAbilityChoiceAvailable, onTalentUpgraded,
             onMetamorphOpen, onMetamorphOptions, onGooFightStarted, onTenguFightStarted,
-            onShopOpen, onImpDialogue, onScrollSelectTarget,
+            onShopOpen, onImpDialogue, onScrollSelectTarget, onBossSlain, onPlayerDeath,
           });
         });
       }
@@ -622,13 +649,13 @@ export default function useGameSocket({
 function handleEvent(event: GameEvent, {
   myPlayerIdRef, gridRef, setGrid, entitiesRef, visionRef,
   projectilesRef, mobAnimRef, dyingMobsRef, playerAnimRef, particlesRef,
-  searchEffectsRef, floatingTextRef, screenFlashRef, transmuteEffectsRef, warnedTilesRef, flareEffectsRef, spellSpriteEffectsRef, lightningRef, shieldHaloRef, stateEffectsRef, magicMissileRef, surpriseRef, selectedEnemyIdRef,
+  searchEffectsRef, floatingTextRef, screenFlashRef, screenShakeRef, transmuteEffectsRef, warnedTilesRef, flareEffectsRef, spellSpriteEffectsRef, lightningRef, shieldHaloRef, stateEffectsRef, magicMissileRef, surpriseRef, selectedEnemyIdRef, beamRef, blobAreasRef,
   onLevelUp, onSubclassChoiceAvailable, onArmorAbilityChoiceAvailable, onTalentUpgraded,
   onMetamorphOpen, onMetamorphOptions, onGooFightStarted, onTenguFightStarted,
-  onShopOpen, onImpDialogue, onScrollSelectTarget,
+  onShopOpen, onImpDialogue, onScrollSelectTarget, onBossSlain, onPlayerDeath,
 }: HandlerCtx) {
   if (event.type === 'PLAY_SOUND') {
-    AudioManager.play(event.data.sound);
+    AudioManager.play(event.data.sound, event.data.rate ?? 1.0);
     return;
   }
 
@@ -740,7 +767,6 @@ function handleEvent(event: GameEvent, {
   }
 
   if (event.type === 'TENGU_FIRE' || event.type === 'TENGU_SHOCKER') {
-    // FireAbility / ShockerAbility: highlight the affected cells.
     if (particlesRef) {
       const color = event.type === 'TENGU_FIRE' ? '#ff6600' : '#66ccff';
       for (const [x, y] of event.data.cells) {
@@ -749,6 +775,59 @@ function handleEvent(event: GameEvent, {
         const cy = y * TILE_SIZE + TILE_SIZE / 2;
         spawnCritSparkle(particlesRef, cx, cy, 8, color);
       }
+    }
+    return;
+  }
+
+  if (event.type === 'BLOB_UPDATE') {
+    const { id, type, cells } = event.data;
+    if (blobAreasRef) {
+      updateBlobArea(blobAreasRef, id, type, cells);
+    }
+    return;
+  }
+
+  if (event.type === 'BLOB_DEPLETED') {
+    if (blobAreasRef) {
+      removeBlobArea(blobAreasRef, event.data.id);
+    }
+    return;
+  }
+
+  if (event.type === 'STATE_EFFECT') {
+    const { effect, x, y } = event.data;
+    if (stateEffectsRef && visionRef?.current?.visible?.has(`${x},${y}`)) {
+      spawnStateParticles(stateEffectsRef, x * TILE_SIZE + TILE_SIZE / 2, y * TILE_SIZE + TILE_SIZE / 2, effect);
+    }
+    return;
+  }
+
+  if (event.type === 'FIRE_IMBUE_ACTIVATED') {
+    const { x, y } = event.data;
+    if (visionRef?.current?.visible?.has(`${x},${y}`)) {
+      const cx = x * TILE_SIZE + TILE_SIZE / 2;
+      const cy = y * TILE_SIZE + TILE_SIZE / 2;
+      spawnFlameBurst(particlesRef, cx, cy, 16);
+    }
+    return;
+  }
+
+  if (event.type === 'INFERNO_ACTIVATED') {
+    const { x, y } = event.data;
+    if (visionRef?.current?.visible?.has(`${x},${y}`)) {
+      const cx = x * TILE_SIZE + TILE_SIZE / 2;
+      const cy = y * TILE_SIZE + TILE_SIZE / 2;
+      spawnElmo(particlesRef, cx, cy, 12);
+    }
+    return;
+  }
+
+  if (event.type === 'SACRIFICIAL_FIRE') {
+    const { x, y } = event.data;
+    if (visionRef?.current?.visible?.has(`${x},${y}`)) {
+      const cx = x * TILE_SIZE + TILE_SIZE / 2;
+      const cy = y * TILE_SIZE + TILE_SIZE / 2;
+      spawnElmo(particlesRef, cx, cy, 8);
     }
     return;
   }
@@ -1022,11 +1101,13 @@ function handleEvent(event: GameEvent, {
     const targetX = event.data.target_x * TILE_SIZE + TILE_SIZE / 2;
     const targetY = event.data.target_y * TILE_SIZE + TILE_SIZE / 2;
 
-    // Thrown inventory items carry their own item data so they fly as the real
-    // item sprite; wands/arrows fall back to the generic projectile sprite map.
     const thrownItem = event.data.item;
     const spriteCoords = thrownItem ? coordsForItem(thrownItem) : null;
 
+    const projType = event.data.projectile || 'arrow';
+    const beamType = event.data.beam_type;
+
+    // Sprite projectile for physical thrown items
     projectilesRef.current.push({
       x: startX,
       y: startY,
@@ -1034,7 +1115,7 @@ function handleEvent(event: GameEvent, {
       startY,
       targetX,
       targetY,
-      type: event.data.projectile || 'arrow',
+      type: projType,
       spriteCoords,
       progress: 0,
       rotation: 0,
@@ -1044,19 +1125,36 @@ function handleEvent(event: GameEvent, {
     const src = event.data.source;
     const isLocal = src === myPlayerIdRef.current;
     const visible = visionRef?.current?.visible;
-    if (isLocal || visible?.has(`${event.data.x},${event.data.y}`)) {
-      if (thrownItem) {
-        AudioManager.play('THROW');
-      } else if (event.data.projectile === 'magic_bolt') {
-        AudioManager.play('ATTACK_MAGIC');
-      } else {
-        AudioManager.play('ATTACK_BOW');
-      }
-    }
+    const audible = isLocal || visible?.has(`${event.data.x},${event.data.y}`);
 
-    // Spawn magic missile trail for magic projectiles
-    if (event.data.projectile === 'magic_bolt' || event.data.projectile === 'magic_missile') {
-      spawnMagicMissile(magicMissileRef, startX, startY, targetX, targetY, '#3498db');
+    // Magic projectiles: beam, lightning, or bolt dispatch
+    const MAGIC_PROJECTILES = new Set([
+      'magic_bolt', 'magic_missile', 'fire_bolt', 'frost', 'corrosion',
+      'foliage', 'force', 'beacon', 'shadow', 'rainbow', 'earth', 'ward',
+      'shaman_red', 'shaman_blue', 'shaman_purple', 'elmo', 'poison', 'light_missile',
+    ]);
+
+    if (projType === 'lightning') {
+      if (audible) AudioManager.play('LIGHTNING');
+      spawnLightning(lightningRef, startX, startY, targetX, targetY, '#66ccff');
+      spawnSparkMoving(particlesRef, targetX, targetY, 3);
+      if (isLocal) spawnScreenShake(screenShakeRef, 2, 300);
+    } else if (beamType && (projType === 'beam' || projType === 'magic_bolt')) {
+      if (audible) AudioManager.play('RAY');
+      spawnBeam(beamRef, startX, startY, targetX, targetY, beamType);
+    } else if (MAGIC_PROJECTILES.has(projType)) {
+      if (audible) {
+        if (event.data.sound) {
+          AudioManager.play(event.data.sound);
+        } else {
+          AudioManager.play('ATTACK_MAGIC');
+        }
+      }
+      spawnMagicMissile(magicMissileRef, startX, startY, targetX, targetY, projType);
+    } else if (thrownItem) {
+      if (audible) AudioManager.play('THROW');
+    } else {
+      if (audible) AudioManager.play('ATTACK_BOW');
     }
     return;
   }
@@ -1241,8 +1339,34 @@ function handleEvent(event: GameEvent, {
     return;
   }
 
+  if (event.type === 'SHOCKING_PROC') {
+    const dfX = event.data.defender_x * TILE_SIZE + TILE_SIZE / 2;
+    const dfY = event.data.defender_y * TILE_SIZE + TILE_SIZE / 2;
+    if (visionRef?.current?.visible?.has(`${event.data.defender_x},${event.data.defender_y}`)) {
+      spawnSparkMoving(particlesRef, dfX, dfY, 3);
+      AudioManager.play('LIGHTNING');
+      if (event.data.source === myPlayerIdRef.current) {
+        spawnScreenShake(screenShakeRef, 2, 300);
+      }
+      for (const tgt of event.data.chain_targets || []) {
+        const tx = tgt.x * TILE_SIZE + TILE_SIZE / 2;
+        const ty = tgt.y * TILE_SIZE + TILE_SIZE / 2;
+        spawnLightning(lightningRef, dfX, dfY, tx, ty, '#66ccff');
+      }
+    }
+    return;
+  }
+
   if (event.type === 'DEATH') {
     const id = event.data.target;
+    if (id === myPlayerIdRef.current) {
+      onPlayerDeath?.({
+        score_breakdown: event.data.score_breakdown,
+        can_resurrect: event.data.can_resurrect,
+        victory: event.data.victory,
+      });
+      return;
+    }
     const mob = entitiesRef.current.mobs[id];
     if (mob) {
       dyingMobsRef.current[id] = { ...mob, renderPos: { ...mob.renderPos }, deathStart: performance.now() };
@@ -1357,8 +1481,19 @@ function handleEvent(event: GameEvent, {
     return;
   }
 
+  if (event.type === 'BOSS_SLAIN') {
+    AudioManager.play('BOSS');
+    onBossSlain?.(event.data);
+    return;
+  }
+
   if (event.type === 'MESSAGE') {
     addGameLog(event.data.text, event.data.color || 'default');
+    return;
+  }
+
+  if (event.type === 'TOAST') {
+    dispatchToast(event.data.text);
     return;
   }
 }
