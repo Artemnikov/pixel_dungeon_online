@@ -40,6 +40,7 @@ from app.engine.entities.base import (
     Stone,
     ThrowableDagger,
     VelvetPouch,
+    WandOfMagicMissile,
     Waterskin,
     Weapon,
     WornShortsword,
@@ -82,14 +83,19 @@ class PlayersMixin:
             class_starting_quickslots.append((0, stones))
 
         elif class_type == CharacterClass.MAGE:
+            wand = WandOfMagicMissile(
+                id=str(uuid.uuid4()),
+                charges=4,
+                max_charges=4,
+                level_known=True,
+                cursed_known=True,
+            )
             belongings.weapon = Staff(
                 id=str(uuid.uuid4()),
-                name="Mage's Staff",
-                damage=2,
-                magic_damage=3,
-                strength_requirement=10,
+                imbued_wand=wand,
+                level_known=True,
+                cursed_known=True,
                 charges=4,
-                attack_cooldown=3.0,
             )
 
         elif class_type == CharacterClass.ROGUE:

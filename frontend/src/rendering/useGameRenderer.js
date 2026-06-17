@@ -21,6 +21,9 @@ import { advanceAndDrawLightning } from './draw/lightning';
 import { advanceAndDrawShieldHalos } from './draw/shieldHalo';
 import { advanceAndDrawStateEffects } from './draw/states';
 import { advanceAndDrawSurprises } from './draw/surprise';
+import { advanceAndDrawScreenShake } from './draw/screenShake';
+import { advanceAndDrawBeams } from './draw/beam';
+import { advanceAndDrawBlobAreas } from './draw/blobArea';
 import { drawCharHealth } from './draw/charHealth';
 import { drawTargetHealthIndicator } from './draw/targetHealthIndicator';
 import { drawTargetedCell } from './draw/targetedCell';
@@ -62,6 +65,9 @@ export default function useGameRenderer({
   surpriseRef,
   selectedEnemyIdRef,
   hoveredCellRef,
+  screenShakeRef,
+  beamRef,
+  blobAreasRef,
 }) {
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -151,11 +157,13 @@ export default function useGameRenderer({
       ctx.scale(z, z);
       ctx.translate(-lw / 2, -lh / 2);
       ctx.translate(-cameraLerpRef.current.x, -cameraLerpRef.current.y);
+      advanceAndDrawScreenShake(ctx, { shakeRef: screenShakeRef });
 
       drawWaterBackground(ctx, waterTex, waterClipPath, gridBounds, performance.now());
       drawGrid(ctx, { grid, depth, assetImages, visionRef, openDoorsRef });
       drawCustomTiles(ctx, { customTiles: customTilesRef.current, assetImages, visionRef });
       drawTerrainFeatures(ctx, assetImages.terrainFeatures, trapsRef.current, grid, visionRef);
+      advanceAndDrawBlobAreas(ctx, { blobAreasRef, visionRef });
       if (warnedTilesRef) drawWarnedTiles(ctx, { ref: warnedTilesRef });
       drawItems(ctx, { entitiesRef, visionRef, assetImages });
       drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef, dyingMobsRef });
@@ -175,6 +183,7 @@ export default function useGameRenderer({
       drawTransmuting(ctx, { transmuteEffectsRef, assetImages });
       advanceAndDrawProjectiles(ctx, { projectilesRef, assetImages });
       advanceAndDrawMagicMissiles(ctx, magicMissileRef);
+      advanceAndDrawBeams(ctx, { beamRef, assetImages });
       advanceAndDrawLightning(ctx, { lightningRef });
 
       ctx.restore();

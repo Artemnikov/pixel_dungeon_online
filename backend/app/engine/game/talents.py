@@ -353,6 +353,7 @@ class TalentsMixin:
         result = resolve_melee_attack(
             player, target, floor.mobs, player.pos.x, player.pos.y,
             is_in_los=is_in_los, dmg_multi=dmg_multi, dmg_bonus=dmg_bonus, guaranteed_hit=True,
+            add_event=lambda t, d: self.add_event(t, d, floor_id=floor_id, source_player_id=player.id),
         )
         dmg = result["damage"]
         self.add_event("ATTACK", {

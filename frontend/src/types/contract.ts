@@ -191,6 +191,8 @@ export interface RangedAttackEvent {
     projectile: string;
     crit: boolean;
     grim_proc: boolean;
+    beam_type?: string;
+    sound?: string;
     /** Serialized thrown item, present for thrown inventory items (not wands). */
     item?: SerializedItem;
   };
@@ -198,7 +200,18 @@ export interface RangedAttackEvent {
 
 export interface PlaySoundEvent {
   type: 'PLAY_SOUND';
-  data: { sound: string };
+  data: { sound: string; rate?: number };
+}
+
+export interface ShockingProcEvent {
+  type: 'SHOCKING_PROC';
+  data: {
+    source: string;
+    defender: string;
+    defender_x: number;
+    defender_y: number;
+    chain_targets: Array<{ id: string; x: number; y: number }>;
+  };
 }
 
 export interface SearchEvent {
@@ -512,6 +525,42 @@ export interface TenguShockerEvent {
   data: { mob: string; cells: Vec2[] };
 }
 
+/** Persistent blob area (fire, gas, electricity) state update. */
+export interface BlobUpdateEvent {
+  type: 'BLOB_UPDATE';
+  data: { id: string; type: string; cells: [number, number, number][] };
+}
+
+/** Blob area fully depleted. */
+export interface BlobDepletedEvent {
+  type: 'BLOB_DEPLETED';
+  data: { id: string };
+}
+
+/** State effect (burning, frozen, etc.) triggered from buff. */
+export interface StateEffectEvent {
+  type: 'STATE_EFFECT';
+  data: { entity_id: string; effect: string; x: number; y: number };
+}
+
+/** FireImbue activated — flame burst around player. */
+export interface FireImbueActivatedEvent {
+  type: 'FIRE_IMBUE_ACTIVATED';
+  data: { player: string; x: number; y: number };
+}
+
+/** Inferno blob activated — green fire burst. */
+export interface InfernoActivatedEvent {
+  type: 'INFERNO_ACTIVATED';
+  data: { x: number; y: number };
+}
+
+/** Sacrificial fire — blue flame particles. */
+export interface SacrificialFireEvent {
+  type: 'SACRIFICIAL_FIRE';
+  data: { x: number; y: number };
+}
+
 export type GameEvent =
   | AttackEvent
   | MissEvent
@@ -573,7 +622,14 @@ export type GameEvent =
   | MirrorImageEvent
   | MessageEvent
   | ToastEvent
-  | BossSlainEvent;
+  | BossSlainEvent
+  | ShockingProcEvent
+  | BlobUpdateEvent
+  | BlobDepletedEvent
+  | StateEffectEvent
+  | FireImbueActivatedEvent
+  | InfernoActivatedEvent
+  | SacrificialFireEvent;
 
 export type GameEventType = GameEvent['type'];
 

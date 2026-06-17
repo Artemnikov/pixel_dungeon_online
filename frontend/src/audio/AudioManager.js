@@ -34,6 +34,8 @@ import lullabySound from '../assets/sounds/lullaby.mp3';
 import challengeSound from '../assets/sounds/challenge.mp3';
 import teleportSound from '../assets/sounds/teleport.mp3';
 import meldSound from '../assets/sounds/meld.mp3';
+import gasSound from '../assets/sounds/gas.mp3';
+import shatterSound from '../assets/sounds/shatter.mp3';
 import { effectiveSfxVolume } from '../menu/menuSettings';
 
 class AudioManager {
@@ -85,6 +87,8 @@ class AudioManager {
         this.loadSound('CHALLENGE', challengeSound);
         this.loadSound('TELEPORT', teleportSound);
         this.loadSound('MELD', meldSound);
+        this.loadSound('GAS', gasSound);
+        this.loadSound('SHATTER', shatterSound);
 
         const doorSounds = import.meta.glob('../assets/sounds/door_open.mp3', { eager: true, query: '?url' });
         const doorUrl = doorSounds['../assets/sounds/door_open.mp3']?.default;

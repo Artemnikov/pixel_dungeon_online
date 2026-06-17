@@ -185,7 +185,7 @@ def _is_hostile(a: "Entity", b: "Entity") -> bool:
     return a.faction != b.faction
 
 
-def _proc_vampiric(attacker, defender, weapon, raw_damage, actual_damage, hp_before, result, floor_mobs, tile_x, tile_y, floor):
+def _proc_vampiric(attacker, defender, weapon, raw_damage, actual_damage, hp_before, result, floor_mobs, tile_x, tile_y, floor, **kwargs):
     if not _is_hostile(attacker, defender):
         return
     chance = vampiric_chance(missing_hp_pct(attacker)) + enraged_catalyst_bonus(attacker)
@@ -195,13 +195,13 @@ def _proc_vampiric(attacker, defender, weapon, raw_damage, actual_damage, hp_bef
             attacker.hp = min(attacker.max_hp, attacker.hp + heal)
 
 
-def _proc_blocking(attacker, defender, weapon, raw_damage, actual_damage, hp_before, result, floor_mobs, tile_x, tile_y, floor):
+def _proc_blocking(attacker, defender, weapon, raw_damage, actual_damage, hp_before, result, floor_mobs, tile_x, tile_y, floor, **kwargs):
     lvl = weapon.buffed_lvl()
     if random.random() < blocking_chance(lvl) + enraged_catalyst_bonus(attacker):
         attacker.add_shield("block", round((2 + lvl) * striking_wave_multiplier(attacker)), priority=0)
 
 
-def _proc_elastic(attacker, defender, weapon, raw_damage, actual_damage, hp_before, result, floor_mobs, tile_x, tile_y, floor):
+def _proc_elastic(attacker, defender, weapon, raw_damage, actual_damage, hp_before, result, floor_mobs, tile_x, tile_y, floor, **kwargs):
     lvl = weapon.buffed_lvl()
     if random.random() >= elastic_chance(lvl) + enraged_catalyst_bonus(attacker):
         return
@@ -226,10 +226,11 @@ def _proc_elastic(attacker, defender, weapon, raw_damage, actual_damage, hp_befo
     defender.pos.x, defender.pos.y = x, y
 
 
-def _proc_shocking(attacker, defender, weapon, raw_damage, actual_damage, hp_before, result, floor_mobs, tile_x, tile_y, floor):
+def _proc_shocking(attacker, defender, weapon, raw_damage, actual_damage, hp_before, result, floor_mobs, tile_x, tile_y, floor, add_event=None):
     if random.random() >= SHOCKING_CHANCE + enraged_catalyst_bonus(attacker):
         return
     lvl = weapon.buffed_lvl()
+    chain_targets = []
     hit = 0
     for mob in floor_mobs.values():
         if hit >= 2:
@@ -241,10 +242,19 @@ def _proc_shocking(attacker, defender, weapon, raw_damage, actual_damage, hp_bef
         if max(abs(mob.pos.x - defender.pos.x), abs(mob.pos.y - defender.pos.y)) > 2:
             continue
         mob.take_damage(round(random.randint(1, 2 + lvl) * striking_wave_multiplier(attacker)))
+        chain_targets.append({"id": mob.id, "x": mob.pos.x, "y": mob.pos.y})
         hit += 1
+    if chain_targets and add_event:
+        add_event("SHOCKING_PROC", {
+            "source": attacker.id,
+            "defender": defender.id,
+            "defender_x": defender.pos.x,
+            "defender_y": defender.pos.y,
+            "chain_targets": chain_targets,
+        })
 
 
-def _proc_sacrificial(attacker, defender, weapon, raw_damage, actual_damage, hp_before, result, floor_mobs, tile_x, tile_y, floor):
+def _proc_sacrificial(attacker, defender, weapon, raw_damage, actual_damage, hp_before, result, floor_mobs, tile_x, tile_y, floor, **kwargs):
     if random.random() >= CURSE_PROC_CHANCE["sacrificial"] + enraged_catalyst_bonus(attacker):
         return
     cost = round(missing_hp_pct(attacker) ** 2 * attacker.max_hp / 8 * random.random())
@@ -252,7 +262,7 @@ def _proc_sacrificial(attacker, defender, weapon, raw_damage, actual_damage, hp_
         attacker.take_damage(cost)
 
 
-def _proc_displacing(attacker, defender, weapon, raw_damage, actual_damage, hp_before, result, floor_mobs, tile_x, tile_y, floor):
+def _proc_displacing(attacker, defender, weapon, raw_damage, actual_damage, hp_before, result, floor_mobs, tile_x, tile_y, floor, **kwargs):
     if random.random() >= CURSE_PROC_CHANCE["displacing"] + enraged_catalyst_bonus(attacker):
         return
     if "IMMOVABLE" in getattr(defender, "properties", []):
@@ -269,7 +279,7 @@ def _proc_displacing(attacker, defender, weapon, raw_damage, actual_damage, hp_b
         defender.pos.x, defender.pos.y = random.choice(candidates)
 
 
-def _proc_annoying(attacker, defender, weapon, raw_damage, actual_damage, hp_before, result, floor_mobs, tile_x, tile_y, floor):
+def _proc_annoying(attacker, defender, weapon, raw_damage, actual_damage, hp_before, result, floor_mobs, tile_x, tile_y, floor, **kwargs):
     if random.random() >= CURSE_PROC_CHANCE["annoying"] + enraged_catalyst_bonus(attacker):
         return
     for mob in floor_mobs.values():
@@ -279,9 +289,9 @@ def _proc_annoying(attacker, defender, weapon, raw_damage, actual_damage, hp_bef
         mob.ai_state = "hunting"
 
 
-def _proc_unstable(attacker, defender, weapon, raw_damage, actual_damage, hp_before, result, floor_mobs, tile_x, tile_y, floor):
+def _proc_unstable(attacker, defender, weapon, raw_damage, actual_damage, hp_before, result, floor_mobs, tile_x, tile_y, floor, **kwargs):
     name = random.choice(_UNSTABLE_POOL)
-    _PROC_HANDLERS[name](attacker, defender, weapon, raw_damage, actual_damage, hp_before, result, floor_mobs, tile_x, tile_y, floor)
+    _PROC_HANDLERS[name](attacker, defender, weapon, raw_damage, actual_damage, hp_before, result, floor_mobs, tile_x, tile_y, floor, **kwargs)
 
 
 _PROC_HANDLERS: Dict[str, Callable] = {
@@ -309,12 +319,13 @@ def apply_enchant_proc(
     tile_x: int,
     tile_y: int,
     floor=None,
+    add_event=None,
 ) -> None:
     """Dispatch an on-hit weapon enchant/curse proc. Grim, Kinetic, Polarized
     and Projecting are handled separately in combat.py (see plan §3)."""
     handler = _PROC_HANDLERS.get(name)
     if handler is not None:
-        handler(attacker, defender, weapon, raw_damage, actual_damage, hp_before, result, floor_mobs, tile_x, tile_y, floor)
+        handler(attacker, defender, weapon, raw_damage, actual_damage, hp_before, result, floor_mobs, tile_x, tile_y, floor, add_event=add_event)
 
 
 def polarized_roll() -> float:

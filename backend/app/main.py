@@ -197,10 +197,6 @@ class ConnectionManager:
                     gold = player_obj.gold if player_obj else 0
                     energy = player_obj.energy if player_obj else 0
 
-                    # DEBUG: log player level in broadcast
-                    pl = game.players.get(player_id)
-                    print(f"[BROADCAST] {player_id}: level={pl.level if pl else 'NO_PLAYER'}, talents={pl.subclass_info.talent_info.talents if pl else {}}")
-
                     update = StateUpdateMessage(
                         depth=player_floor,
                         difficulty=game.difficulty,
@@ -430,7 +426,7 @@ async def game_websocket(websocket: WebSocket, game_id: str, class_type: str = "
                             game.add_event("PICKUP_GOLD", {"player": player.id, "amount": item.quantity}, floor_id=player.floor_id)
                         elif player.add_to_inventory(item):
                             del floor.items[i_id]
-                            game.add_event("PICKUP", {"player": player.id, "item": item.id}, floor_id=player.floor_id)
+                            game.add_event("PICKUP", {"player": player.id, "item": item.name}, floor_id=player.floor_id)
 
             elif isinstance(message, msg.MoveTo):
                 if player_id in game.players:

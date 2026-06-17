@@ -16,8 +16,10 @@ export default function useModalState() {
   const [quickslotPicker, setQuickslotPicker] = useState(null);
   const [gameMenuOpen, setGameMenuOpen] = useState(false);
   const gameMenuOpenRef = useRef(false);
+  const showItemBrowserRef = useRef(false);
 
   useEffect(() => { gameMenuOpenRef.current = gameMenuOpen; }, [gameMenuOpen]);
+  useEffect(() => { showItemBrowserRef.current = showItemBrowser; }, [showItemBrowser]);
 
   useEffect(() => {
     if (!showItemBrowser || itemCatalog.length > 0) return;
@@ -52,6 +54,7 @@ export default function useModalState() {
     quickslotPicker, setQuickslotPicker,
     gameMenuOpen, setGameMenuOpen,
     gameMenuOpenRef,
+    showItemBrowserRef,
     handleQuickBag,
     handleSwap,
     handleRadialSelect,

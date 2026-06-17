@@ -25,9 +25,9 @@ from typing import List, Optional, Type
 
 from app.engine.dungeon.generator import TileType
 from app.engine.entities.base import Difficulty, Effect, Faction, Player, Position, Wand
-from app.engine.entities.buffs import process_buffs
+from app.engine.entities.buffs import get_buff, has_buff, process_buffs
 from app.engine.entities.scroll_predicates import player_inventory_items
-from app.engine.game.blobs import tick_foliage_blobs
+from app.engine.game.blobs import tick_blob_areas
 from app.engine.entities.mobs import (
     Rat, Goo, DwarfKing,
     YogDzewa, BurningFist, SoiledFist, RottingFist, RustedFist, BrightFist, DarkFist,
@@ -117,12 +117,14 @@ class TickMixin:
                     if "terror" in removed and mob.ai_state == "fleeing":
                         mob.ai_state = "hunting"
 
-        blob_events = tick_foliage_blobs(self.floors, self.players)
+        blob_events = tick_blob_areas(self.floors, self.players)
         for ev in blob_events:
             self.add_event(ev["type"], ev["data"])
 
         for floor_id, floor in self.floors.items():
             self._tick_tengu_blobs(floor, floor_id)
+
+        self._emit_state_effects()
 
         for player in self.players.values():
             if not player.is_alive and not player.death_processed:
@@ -616,6 +618,45 @@ class TickMixin:
         if universal_extra:
             _apply_floor_scaling(mob, floor_id)
         floor.mobs[mob.id] = mob
+
+    def _emit_state_effects(self):
+        for player in self.players.values():
+            if not player.is_alive:
+                continue
+            self._check_state_buff(player, player.pos.x, player.pos.y, player.floor_id)
+        for floor_id, floor in self.floors.items():
+            for mob in floor.mobs.values():
+                if not mob.is_alive:
+                    continue
+                self._check_state_buff(mob, mob.pos.x, mob.pos.y, floor_id)
+
+    STATE_BUFF_MAP = {
+        "burning": "burning",
+        "frozen": "frozen",
+        "chilled": "chilled",
+        "illuminated": "illuminated",
+        "marked": "marked",
+        "shocked": "shocked",
+        "bleeding": "bleeding",
+        "poisoned": "poisoned",
+        "bless": "hearts",
+        "charm": "hearts",
+        "chill": "chilled",
+        "frost": "frozen",
+        "lightning_charge": "shocked",
+        "rock_armor": "hearts",
+        "barrier": "hearts",
+    }
+
+    def _check_state_buff(self, entity, x, y, floor_id):
+        for buff_name, effect_type in self.STATE_BUFF_MAP.items():
+            if has_buff(entity.buffs, buff_name):
+                self.add_event("STATE_EFFECT", {
+                    "entity_id": entity.id,
+                    "effect": effect_type,
+                    "x": x,
+                    "y": y,
+                }, floor_id=floor_id)
 
     def _sync_effects(self, player: Player):
         from app.engine.entities.buffs import has_buff, get_buff

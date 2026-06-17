@@ -55,6 +55,8 @@ import bruteSprite from '../assets/pixel-dungeon/sprites/brute.png';
 import swarmSprite from '../assets/pixel-dungeon/sprites/swarm.png';
 import iconsSprite from '../assets/pixel-dungeon/interfaces/icons.png';
 import spellIconsSprite from '../assets/pixel-dungeon/effects/spell_icons.png';
+import effectsSprite from '../assets/pixel-dungeon/effects/effects.png';
+import specksSprite from '../assets/pixel-dungeon/effects/specks.png';
 
 export default function useAssetImages() {
   const [assetImages, setAssetImages] = useState({
@@ -112,6 +114,8 @@ export default function useAssetImages() {
     swarm: null,
     icons: null,
     spellIcons: null,
+    effects: null,
+    specks: null,
   });
 
   useEffect(() => {
@@ -209,6 +213,8 @@ export default function useAssetImages() {
     loadImage(swarmSprite, 'swarm');
     loadImage(iconsSprite, 'icons');
     loadImage(spellIconsSprite, 'spellIcons');
+    loadImage(effectsSprite, 'effects');
+    loadImage(specksSprite, 'specks');
   }, []);
 
   return assetImages;

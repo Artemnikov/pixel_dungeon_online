@@ -108,6 +108,9 @@ function App() {
   const spellSpriteEffectsRef = useRef([]);
   const magicMissileRef = useRef([]);
   const screenFlashRef = useRef(null);
+  const screenShakeRef = useRef(null);
+  const beamRef = useRef([]);
+  const blobAreasRef = useRef({});
   const lightningRef = useRef([]);
   const shieldHaloRef = useRef([]);
   const stateEffectsRef = useRef([]);
@@ -190,7 +193,7 @@ function App() {
     socketRef, gridRef, myPlayerIdRef, entitiesRef,
     visionRef, openDoorsRef, projectilesRef,
     trapsRef, customTilesRef,
-    mobAnimRef, dyingMobsRef, playerAnimRef, particlesRef, searchEffectsRef, floatingTextRef, screenFlashRef, wasDownedRef, warnedTilesRef, transmuteEffectsRef, flareEffectsRef, spellSpriteEffectsRef, lightningRef, shieldHaloRef, stateEffectsRef, magicMissileRef, surpriseRef, selectedEnemyIdRef,
+    mobAnimRef, dyingMobsRef, playerAnimRef, particlesRef, searchEffectsRef, floatingTextRef, screenFlashRef, screenShakeRef, wasDownedRef, warnedTilesRef, transmuteEffectsRef, flareEffectsRef, spellSpriteEffectsRef, lightningRef, shieldHaloRef, stateEffectsRef, magicMissileRef, surpriseRef, selectedEnemyIdRef, beamRef, blobAreasRef,
     setGrid, setDepth, setMyPlayerId, setInventory,
     setEquippedItems, setMyStats, setDifficulty, setBossInfo,
     setGold, setEnergy, setExitPos, setBelongings, setQuickslot,
@@ -243,7 +246,7 @@ function App() {
     canvasRef, grid, myPlayerId, depth, assetImages,
     entitiesRef, visionRef, openDoorsRef, projectilesRef,
     trapsRef, customTilesRef,
-    mobAnimRef, dyingMobsRef, playerAnimRef, particlesRef, searchEffectsRef, floatingTextRef, screenFlashRef, myPlayerIdRef, warnedTilesRef, transmuteEffectsRef, flareEffectsRef, spellSpriteEffectsRef, lightningRef, shieldHaloRef, stateEffectsRef, magicMissileRef, surpriseRef, selectedEnemyIdRef, hoveredCellRef,
+    mobAnimRef, dyingMobsRef, playerAnimRef, particlesRef, searchEffectsRef, floatingTextRef, screenFlashRef, screenShakeRef, myPlayerIdRef, warnedTilesRef, transmuteEffectsRef, flareEffectsRef, spellSpriteEffectsRef, lightningRef, shieldHaloRef, stateEffectsRef, magicMissileRef, surpriseRef, selectedEnemyIdRef, hoveredCellRef, beamRef, blobAreasRef,
     panOffsetRef, cameraLerpRef, zoomRef,
     isRefocusingRef, isDraggingRef,
     setCamera,
@@ -278,6 +281,10 @@ function App() {
       return;
     }
     if (item.type === 'weapon') {
+      if (item.kind === 'staff') {
+        executeItemAction(item.id, 'ZAP');
+        return;
+      }
       const isEquipped = equippedItems.weapon && equippedItems.weapon.id === item.id;
       if (!isEquipped) {
         equipItem(item.id);
@@ -411,6 +418,7 @@ function App() {
     quickslot, itemsById,
     onRadialSelect: modals.handleRadialSelect,
     gameMenuOpenRef: modals.gameMenuOpenRef,
+    showItemBrowserRef: modals.showItemBrowserRef,
     onOpenTalents: () => talent.setShowTalentPane(v => !v),
     onOpenItemBrowser: () => {
       if (!myStats.isAdmin) return;
@@ -548,7 +556,7 @@ function App() {
             myStats={myStats}
             onAction={(action) => {
               const weapon = myStats?.belongings?.weapon;
-              if (weapon) send({ type: 'EXECUTE_ITEM_ACTION', item_id: weapon.id, action });
+              if (weapon) executeItemAction(weapon.id, action);
             }}
           />
           <LootIndicator
