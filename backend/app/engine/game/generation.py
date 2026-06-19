@@ -63,7 +63,6 @@ from app.engine.entities.base import (
     Key,
     Mob as MobEntity,
     Position,
-    Staff,
     Stone,
     ThrowableDagger,
     Weapon,
@@ -360,16 +359,11 @@ class GenerationMixin:
                     strength_requirement=10,
                     attack_cooldown=3.5,
                 )
-            elif rand < 0.4:
-                floor.items[item_id] = Staff(
-                    id=item_id,
-                    name="Magic Staff",
-                    pos=Position(x=x, y=y),
-                    damage=1 + random.randint(0, 2),
-                    magic_damage=2 + random.randint(0, 2),
-                    strength_requirement=10,
-                )
-            elif rand < 0.6:
+            # Thresholds below rescaled by 7/6 after the unique never-dropping
+            # Staff's 10%-wide band (rand<0.4) was removed, so armor/throwables/
+            # potion/scroll/food keep their original relative proportions instead
+            # of armor silently absorbing the freed probability mass.
+            elif rand < 0.53:
                 armor_tiers = [
                     ("Cloth Armor", 1, 10),
                     ("Leather Armor", 2, 12),
@@ -385,7 +379,7 @@ class GenerationMixin:
                     pos=Position(x=x, y=y),
                     strength_requirement=str_req,
                 )
-            elif rand < 0.65:
+            elif rand < 0.59:
                 t_rand = random.random()
                 if t_rand < 0.5:
                     floor.items[item_id] = Stone(id=item_id, pos=Position(x=x, y=y), damage=1, range=5)
@@ -393,10 +387,10 @@ class GenerationMixin:
                     floor.items[item_id] = ThrowableDagger(id=item_id, pos=Position(x=x, y=y), damage=4, range=4)
                 else:
                     floor.items[item_id] = Boomerang(id=item_id, pos=Position(x=x, y=y), damage=3, range=6)
-            elif rand < 0.80:
+            elif rand < 0.77:
                 cls = random.choice(_ALL_POTIONS)
                 floor.items[item_id] = cls(id=item_id, pos=Position(x=x, y=y))
-            elif rand < 0.93:
+            elif rand < 0.92:
                 cls = random.choice(_ALL_SCROLLS)
                 floor.items[item_id] = cls(id=item_id, pos=Position(x=x, y=y))
             else:

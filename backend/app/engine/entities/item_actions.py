@@ -29,7 +29,7 @@ from typing import Optional
 
 from app.engine.dungeon.constants import TileType
 from app.engine.entities.base import (
-    Action, Position, Seed,
+    Action, Position, Seed, Wand,
     GooBlob, HealthPotion, ElixirOfAquaticRejuvenation, Waterskin,
 )
 from app.engine.entities.scroll_actions import action_read
@@ -146,6 +146,18 @@ def action_drink(game, player, item, tx=None, ty=None) -> None:
             player.quickslot.convert_to_placeholder(removed)
         game.add_event("DRINK", {"player": player.id, "type": "mind_vision"}, floor_id=player.floor_id, source_player_id=player.id)
     game.on_potion_drunk(player, item)
+
+
+def action_imbue(game, player, item, tx=None, ty=None) -> None:
+    """Open wand selection dialog (SPD MagesStaff AC_IMBUE)."""
+    wands = [i for i in player.belongings.all_items() if isinstance(i, Wand) and i is not item.imbued_wand]
+    if not wands:
+        return
+    game.add_event("IMBUE_WAND_CHOICE_AVAILABLE", {
+        "player": player.id,
+        "staff_id": item.id,
+        "candidates": [w.id for w in wands],
+    }, floor_id=player.floor_id, source_player_id=player.id)
 
 
 def action_alchemize(game, player, item, tx=None, ty=None) -> None:
@@ -329,6 +341,7 @@ ITEM_ACTION_DISPATCH = {
     Action.EAT: action_eat_handler,
     Action.WEAR: action_wear,
     Action.ALCHEMIZE: action_alchemize,
+    Action.IMBUE: action_imbue,
     Action.OPEN: action_noop,
     Action.INFO: action_noop,
 }

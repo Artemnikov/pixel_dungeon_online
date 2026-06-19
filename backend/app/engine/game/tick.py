@@ -171,6 +171,7 @@ class TickMixin:
             self._apply_aqua_heal_tick(player)
             self._apply_room_heal_tick(player)
             self._apply_passive_regen(player)
+            self._tick_passive_wand_recharge(player, dt)
             self._tick_recharging(player, dt)
 
             if player.armor_charge < 100:
@@ -280,6 +281,7 @@ class TickMixin:
                         target = self._find_nearest_player(mob.pos, floor_id)
                         if target is not None:
                             mob.fight_started = True
+                            self.add_event("DM300_FIGHT_STARTED", {"mob": mob.id}, floor_id=floor_id)
                     if mob.supercharged:
                         self._update_dm300_chase(mob, floor, floor_id)
                         self._update_dm300_chase(mob, floor, floor_id)
@@ -809,6 +811,30 @@ class TickMixin:
             return
         player.hp = min(player.get_total_max_hp(), player.hp + 1)
         player._regen_cooldown = PASSIVE_REGEN_INTERVAL
+
+    def _tick_passive_wand_recharge(self, player: Player, dt: float):
+        """Passive wand recharge:
+        - Normal wands: SPD formula (10 + 40 * 0.875^missing)
+        - Staff-imbued wands: +1 charge every 2s (SPD MagesStaff style)."""
+        from app.engine.entities.base import Staff as StaffCls
+        weapon = getattr(player, "belongings", None)
+        if weapon is not None:
+            weapon = weapon.weapon
+        imbued_wand = weapon.imbued_wand if isinstance(weapon, StaffCls) else None
+
+        for item in player_inventory_items(player):
+            if item is imbued_wand:
+                continue  # handled below by the dedicated staff-recharge block
+            if isinstance(item, Wand) and item.charges < item.max_charges and not item.cursed:
+                missing = item.max_charges - item.charges
+                turns_to_charge = 10.0 + 40.0 * (0.875 ** missing)
+                item.gain_charge(dt / turns_to_charge)
+        # Staff-imbued wand recharge: +1 charge every 2s, scaled by the
+        # wand's recharge_scale (set to 0.75 by MagesStaff imbuing).
+        if imbued_wand is not None:
+            w = imbued_wand
+            if w.charges < w.max_charges and not w.cursed:
+                w.gain_charge(dt / (2.0 * w.recharge_scale))
 
     def _tick_recharging(self, player: Player, dt: float):
         """Scroll of Recharging aftereffect: while the "recharging" buff is

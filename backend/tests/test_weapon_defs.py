@@ -62,7 +62,7 @@ def test_make_named_melee_weapon_dagger_and_worn_shortsword():
 def test_wep_tier_order_indices_resolve_for_every_tier():
     for cat, names in WEP_TIER_ORDER.items():
         for idx, name in enumerate(names):
-            if name in ("Mage's Staff", "Pickaxe"):
+            if name == "Pickaxe":
                 continue  # never selected (weight 0)
             ri = RolledItem(category=cat, is_artifact=False, is_upgradable=True, level=0, item_index=idx)
             item = _make_melee_weapon(ri.category, ri.item_index, ri.level, "test-id", None)

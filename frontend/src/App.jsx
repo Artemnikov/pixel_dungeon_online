@@ -68,6 +68,7 @@ function App() {
   const [myStats, setMyStats] = useState({ hp: 0, maxHp: 10, name: '' });
   const [bossInfo, setBossInfo] = useState(null);
   const [bossFightActive, setBossFightActive] = useState(false);
+  const [bossBleeding, setBossBleeding] = useState(false);
   const [depth, setDepth] = useState(1);
   const [, setCamera] = useState({ x: 0, y: 0 });
   const [gold, setGold] = useState(0);
@@ -107,6 +108,7 @@ function App() {
   const flareEffectsRef = useRef([]);
   const spellSpriteEffectsRef = useRef([]);
   const magicMissileRef = useRef([]);
+  const staffAmbientRef = useRef([]);
   const screenFlashRef = useRef(null);
   const screenShakeRef = useRef(null);
   const beamRef = useRef([]);
@@ -184,7 +186,7 @@ function App() {
   });
   useAudioUnlock();
   const assetImages = useAssetImages();
-  useMusicByDepth({ enabled: gameState === 'PLAYING', depth, bossFightActive: bossFightActive && !!bossInfo, musicRef });
+  useMusicByDepth({ enabled: true, menu: gameState !== 'PLAYING', depth, bossFightActive: bossFightActive && !!bossInfo, bossBleeding, tense: false, amuletObtained: false, musicRef });
 
   const { sendSelectScrollTarget } = useGameSocket({
     enabled: gameState === 'PLAYING',
@@ -193,7 +195,7 @@ function App() {
     socketRef, gridRef, myPlayerIdRef, entitiesRef,
     visionRef, openDoorsRef, projectilesRef,
     trapsRef, customTilesRef,
-    mobAnimRef, dyingMobsRef, playerAnimRef, particlesRef, searchEffectsRef, floatingTextRef, screenFlashRef, screenShakeRef, wasDownedRef, warnedTilesRef, transmuteEffectsRef, flareEffectsRef, spellSpriteEffectsRef, lightningRef, shieldHaloRef, stateEffectsRef, magicMissileRef, surpriseRef, selectedEnemyIdRef, beamRef, blobAreasRef,
+    mobAnimRef, dyingMobsRef, playerAnimRef, particlesRef, searchEffectsRef, floatingTextRef, screenFlashRef, screenShakeRef, wasDownedRef, warnedTilesRef, transmuteEffectsRef, flareEffectsRef, spellSpriteEffectsRef, lightningRef, shieldHaloRef, stateEffectsRef, magicMissileRef, staffAmbientRef, surpriseRef, selectedEnemyIdRef, beamRef, blobAreasRef,
     setGrid, setDepth, setMyPlayerId, setInventory,
     setEquippedItems, setMyStats, setDifficulty, setBossInfo,
     setGold, setEnergy, setExitPos, setBelongings, setQuickslot,
@@ -201,15 +203,24 @@ function App() {
     onSubclassChoiceAvailable: talent.onSubclassChoiceAvailable,
     onArmorAbilityChoiceAvailable: talent.onArmorAbilityChoiceAvailable,
     onGooFightStarted: () => setBossFightActive(true),
+    onTenguFightStarted: () => setBossFightActive(true),
+    onDM300FightStarted: () => setBossFightActive(true),
+    onDwarfKingFightStarted: () => setBossFightActive(true),
+    onDwarfKingPhase2: () => setBossBleeding(true),
+    onYogFightStarted: () => setBossFightActive(true),
+    onYogFinalPhase: () => setBossBleeding(true),
     onMetamorphOpen: talent.onMetamorphOpen,
     onMetamorphOptions: talent.onMetamorphOptions,
     onShopOpen: modals.onShopOpen,
     onImpDialogue: modals.onImpDialogue,
+    onImbueWandChoiceAvailable: modals.onImbueWand,
     onScrollSelectTarget: modals.onScrollSelectTarget,
     onTalentUpgraded: talent.onTalentUpgraded,
     onBossSlain: (data) => {
       setBossSlainData(data);
       setShowBossSlainBanner(true);
+      setBossFightActive(false);
+      setBossBleeding(false);
     },
     onPlayerDeath: (data) => {
       setScoreBreakdown(data.score_breakdown || null);
@@ -246,7 +257,7 @@ function App() {
     canvasRef, grid, myPlayerId, depth, assetImages,
     entitiesRef, visionRef, openDoorsRef, projectilesRef,
     trapsRef, customTilesRef,
-    mobAnimRef, dyingMobsRef, playerAnimRef, particlesRef, searchEffectsRef, floatingTextRef, screenFlashRef, screenShakeRef, myPlayerIdRef, warnedTilesRef, transmuteEffectsRef, flareEffectsRef, spellSpriteEffectsRef, lightningRef, shieldHaloRef, stateEffectsRef, magicMissileRef, surpriseRef, selectedEnemyIdRef, hoveredCellRef, beamRef, blobAreasRef,
+    mobAnimRef, dyingMobsRef, playerAnimRef, particlesRef, searchEffectsRef, floatingTextRef, screenFlashRef, screenShakeRef, myPlayerIdRef, warnedTilesRef, transmuteEffectsRef, flareEffectsRef, spellSpriteEffectsRef, lightningRef, shieldHaloRef, stateEffectsRef, magicMissileRef, staffAmbientRef, surpriseRef, selectedEnemyIdRef, hoveredCellRef, beamRef, blobAreasRef,
     panOffsetRef, cameraLerpRef, zoomRef,
     isRefocusingRef, isDraggingRef,
     setCamera,
@@ -282,7 +293,11 @@ function App() {
     }
     if (item.type === 'weapon') {
       if (item.kind === 'staff') {
-        executeItemAction(item.id, 'ZAP');
+        if (targeting.targetingMode && typeof targeting.targetingMode === 'object' && targeting.targetingMode.itemId === item.id) {
+          targeting.setTargetingMode(false);
+        } else if (item.default_action) {
+          executeItemAction(item.id, item.default_action);
+        }
         return;
       }
       const isEquipped = equippedItems.weapon && equippedItems.weapon.id === item.id;
@@ -393,6 +408,7 @@ function App() {
     setMyStats({ hp: 0, maxHp: 10, name: '' });
     setBossInfo(null);
     setBossFightActive(false);
+    setBossBleeding(false);
     setShowBossSlainBanner(false);
     setBossSlainData(null);
     setInventory([]);

@@ -11,6 +11,7 @@ import { drawPlayers } from './draw/players';
 import { advanceAndDrawProjectiles } from './draw/projectiles';
 import { advanceAndDrawMagicMissiles } from './draw/magicMissile';
 import { advanceAndDrawParticles } from './draw/particles';
+import { advanceAndDrawStaffAmbient } from './draw/staffAmbient';
 import { advanceAndDrawCheckedCells } from './draw/searchEffects';
 import { drawWarnedTiles } from './draw/warnedTiles';
 import { advanceAndDrawFloatingText } from './draw/floatingText';
@@ -62,6 +63,7 @@ export default function useGameRenderer({
   shieldHaloRef,
   stateEffectsRef,
   magicMissileRef,
+  staffAmbientRef,
   surpriseRef,
   selectedEnemyIdRef,
   hoveredCellRef,
@@ -170,6 +172,7 @@ export default function useGameRenderer({
       drawCharHealth(ctx, { entitiesRef, visionRef });
       drawTargetHealthIndicator(ctx, { entitiesRef, visionRef, selectedEnemyIdRef });
       drawPlayers(ctx, { entitiesRef, visionRef, assetImages, playerAnimRef, myPlayerId });
+      advanceAndDrawStaffAmbient(ctx, staffAmbientRef, entitiesRef, visionRef, myPlayerId);
       drawGridCaps(ctx, { grid, depth, assetImages, visionRef });
       drawTargetedCell(ctx, { hoveredCellRef, assetImages });
       advanceAndDrawCheckedCells(ctx, { ref: searchEffectsRef });

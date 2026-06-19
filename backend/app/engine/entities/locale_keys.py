@@ -160,7 +160,6 @@ _GENERATED_ITEM_NAME_MAP: dict[str, str] = {
     "Mail Armor": "item.mail_armor",
     "Leather Armor": "item.leather_armor",
     "Cloth Armor": "item.cloth_armor",
-    "Mage's Staff": "item.mages_staff",
     "Pickaxe": "item.pickaxe",
 }
 
@@ -168,7 +167,7 @@ _GENERATED_ITEM_NAME_MAP: dict[str, str] = {
 _KIND_AS_KEY: dict[str, str] = {
     "dagger": "item.dagger",
     "bow": "item.bow",
-    "staff": "item.staff",
+    # "staff" intentionally excluded — Staff name is dynamic (depends on imbued wand).
     "boomerang": "item.boomerang",
     "stone": "item.stone",
     "dewdrop": "item.dewdrop",
@@ -211,7 +210,7 @@ def item_locale_key(item) -> Optional[str]:
     # Auto-derive from class name.
     # Skip base/abstract classes that have no fixed identity.
     if cls in (
-        "ItemBase", "EquipableItem", "KindOfWeapon", "MeleeWeapon",
+        "ItemBase", "EquipableItem", "KindOfWeapon", "MeleeWeapon", "Staff",
         "MissileWeapon", "Armor", "KindofMisc", "Ring", "Artifact",
         "Wand", "Potion", "Scroll", "Food", "Key", "Gold", "Throwable",
         "Seed", "Scenery", "Bag", "Stone",

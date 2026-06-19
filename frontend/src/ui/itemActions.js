@@ -6,6 +6,7 @@ export const ACTION_KEYS = {
   DRINK: 'action.drink',
   READ: 'action.read',
   ZAP: 'action.zap',
+  IMBUE: 'action.imbue',
   EAT: 'action.eat',
   OPEN: 'action.open',
   AFFIX: 'action.affix',

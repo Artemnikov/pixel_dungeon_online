@@ -167,7 +167,8 @@ class ConnectionManager:
             game = self.game_instances[game_id]
             game.update_tick()
             events = game.flush_events()
-            
+            dead_connections = []
+
             for connection, player_id in self.active_connections[game_id].items():
                 try:
                     if player_id not in game.players:
@@ -212,7 +213,10 @@ class ConnectionManager:
                     await connection.send_json(update.model_dump(exclude_none=True))
                 except Exception as e:
                     print(f"Error broadcasting to {player_id}: {e}")
-                    pass
+                    dead_connections.append(connection)
+
+            for conn in dead_connections:
+                self.disconnect(game_id, conn)
 
 manager = ConnectionManager()
 
@@ -464,6 +468,9 @@ async def game_websocket(websocket: WebSocket, game_id: str, class_type: str = "
 
             elif isinstance(message, msg.SelectScrollTarget):
                 game.select_scroll_target(player_id, message.scroll_id, message.item_id)
+
+            elif isinstance(message, msg.ChooseImbueWand):
+                game.imbue_wand(player_id, message.staff_id, message.wand_id)
 
             elif isinstance(message, msg.ChangeDifficulty):
                 game.change_difficulty(message.difficulty)

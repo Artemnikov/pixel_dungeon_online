@@ -8,6 +8,7 @@ export default function useModalState() {
   const [shopWindow, setShopWindow] = useState(null);
   const [impWindow, setImpWindow] = useState(null);
   const [scrollPickerData, setScrollPickerData] = useState(null);
+  const [imbueWandData, setImbueWandData] = useState(null);
   const [showItemBrowser, setShowItemBrowser] = useState(false);
   const [itemCatalog, setItemCatalog] = useState([]);
   const [showQuickBag, setShowQuickBag] = useState(false);
@@ -37,6 +38,7 @@ export default function useModalState() {
   // Socket callbacks for useGameSocket
   const onShopOpen = ({ npc, stock, gold: shopGold }) => setShopWindow({ npc, stock, gold: shopGold });
   const onImpDialogue = ({ npc, text, can_claim, tokens }) => setImpWindow({ npc, text, canClaim: can_claim, tokens });
+  const onImbueWand = (data) => setImbueWandData(data);
   const onScrollSelectTarget = (data) => setScrollPickerData(data);
 
   return {
@@ -46,6 +48,7 @@ export default function useModalState() {
     shopWindow, setShopWindow,
     impWindow, setImpWindow,
     scrollPickerData, setScrollPickerData,
+    imbueWandData, setImbueWandData,
     showItemBrowser, setShowItemBrowser,
     itemCatalog,
     showQuickBag, setShowQuickBag,
@@ -61,6 +64,7 @@ export default function useModalState() {
     openQuickslotPicker,
     onShopOpen,
     onImpDialogue,
+    onImbueWand,
     onScrollSelectTarget,
   };
 }
