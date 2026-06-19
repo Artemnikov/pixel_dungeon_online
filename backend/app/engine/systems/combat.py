@@ -326,7 +326,7 @@ def resolve_melee_attack(
                 wand = w.imbued_wand
                 charged = wand.charges < wand.max_charges
                 if charged:
-                    wand.charges = min(wand.max_charges, wand.charges + 1)
+                    wand.gain_charge(0.5)
                     es_talent = getattr(attacker, "talent_info", None)
                     if es_talent is not None and es_talent.level("empowered_strike") > 0:
                         attacker.add_buff("empowered_strike_tracker", duration=10.0, level=es_talent.level("empowered_strike"))

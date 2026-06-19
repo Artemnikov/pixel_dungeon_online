@@ -8,6 +8,7 @@ identification of potion/scroll kinds.
 from typing import Optional
 
 from app.engine.entities import item_actions, scroll_actions
+from app.engine.entities.base import Position, Wand
 from app.engine.entities.scroll_predicates import PREDICATE
 
 
@@ -16,20 +17,14 @@ class ItemsMixin:
     def execute_item_action(self, player_id: str, item_id: str, action: str,
                             target_x: Optional[int] = None, target_y: Optional[int] = None):
         player = self.players.get(player_id)
-        print(f"[execute_item_action] player={player_id}, item={item_id}, action={action}, tx={target_x}, ty={target_y}")
         if not player or not player.is_alive or player.is_downed:
-            print(f"[execute_item_action] BAIL: player invalid (alive={player.is_alive if player else 'N/A'}, downed={player.is_downed if player else 'N/A'})")
             return
         item = player.belongings.get_item(item_id)
         if item is None:
-            print(f"[execute_item_action] BAIL: item not found (id={item_id})")
             return
-        print(f"[execute_item_action] found item: {item.name} ({type(item).__name__}), actions={item.actions(player)}")
         if action not in item.actions(player):
-            print(f"[execute_item_action] BAIL: action {action} not in item actions {item.actions(player)}")
             return
         handler = item_actions.ITEM_ACTION_DISPATCH.get(action)
-        print(f"[execute_item_action] dispatching to handler={handler}")
         if handler is not None:
             handler(self, player, item, target_x, target_y)
 
@@ -82,6 +77,31 @@ class ItemsMixin:
         if target is None or not predicate(target, self):
             return
         scroll_actions.apply_scroll_target(self, player, scroll, target)
+
+    def imbue_wand(self, player_id: str, staff_id: str, wand_id: str):
+        """Handle imbue wand choice from IMBUE_WAND_CHOICE_AVAILABLE dialog."""
+        player = self.players.get(player_id)
+        if not player:
+            return
+        staff = player.belongings.get_item(staff_id)
+        if staff is None or staff.kind != "staff":
+            return
+        wand = player.belongings.get_item(wand_id)
+        if wand is None or not isinstance(wand, Wand):
+            return
+        player.belongings.backpack.detach(wand.id)
+        displaced = staff.imbue_wand(wand, player)
+        if displaced is not None:
+            floor = self._get_or_create_floor(player.floor_id)
+            displaced.pos = Position(x=player.pos.x, y=player.pos.y)
+            floor.items[displaced.id] = displaced
+        # Notify client of the change
+        player.quickslot.clear_item(wand_id)
+        self.add_event("IMBUE_WAND_DONE", {
+            "player": player.id,
+            "staff_id": staff_id,
+            "old_wand_id": wand_id,
+        }, floor_id=player.floor_id, source_player_id=player.id)
 
     def identify_kind(self, item):
         # Reveal a potion/scroll kind for the whole party (co-op shared knowledge).

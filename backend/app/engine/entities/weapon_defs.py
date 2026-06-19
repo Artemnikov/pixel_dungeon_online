@@ -21,9 +21,8 @@ is per-weapon, captured here as (max0, max_per_lvl).
 
 `WEP_TIER_ORDER` mirrors the deck order of `_WEP_T1.._WEP_T5` in
 `spd_levelgen/generator.py` -- the index `RolledItem.item_index` selects into
-these tuples. `Worn Shortsword`/`Dagger`/`Mage's Staff` and `Pickaxe` are
-handled by their own classes/items elsewhere (Mage's Staff and Pickaxe never
-drop -- weight 0 in the deck)."""
+these tuples. `Worn Shortsword`/`Dagger` are handled by their own classes/items
+elsewhere. Staff is unique (mage only). Pickaxe never drops -- weight 0."""
 
 from __future__ import annotations
 
@@ -85,9 +84,9 @@ WEAPON_DEFS: Dict[str, WeaponDef] = {
 
 
 # Deck order of `_WEP_T1.._WEP_T5` (generator.py) -- index = drop weight slot.
-# "Mage's Staff" and "Pickaxe" have weight 0 and are never selected.
+# "Pickaxe" has weight 0 and is never selected. Staff is unique, never drops.
 WEP_TIER_ORDER: Dict[str, Tuple[str, ...]] = {
-    "WEP_T1": ("Worn Shortsword", "Mage's Staff", "Dagger", "Gloves", "Rapier", "Cudgel"),
+    "WEP_T1": ("Worn Shortsword", "Dagger", "Gloves", "Rapier", "Cudgel"),
     "WEP_T2": ("Shortsword", "Hand Axe", "Spear", "Quarterstaff", "Dirk", "Sickle", "Pickaxe"),
     "WEP_T3": ("Sword", "Mace", "Scimitar", "Round Shield", "Sai", "Whip"),
     "WEP_T4": ("Longsword", "Battle Axe", "Flail", "Runic Blade", "Assassin's Blade", "Crossbow", "Katana"),

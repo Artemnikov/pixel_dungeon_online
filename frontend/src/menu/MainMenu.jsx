@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next';
 import './menu.css';
 import AudioManager from '../audio/AudioManager';
 import useTitleAnimation from './useTitleAnimation';
-import { effectiveMusicVolume, subscribe } from './menuSettings';
 import MenuButton from './MenuButton';
 import Icon from './Icon';
 import { APP_VERSION } from './content/changelog';
@@ -14,14 +13,11 @@ import GuidePanel from './GuidePanel';
 import AboutPanel from './AboutPanel';
 import { RankingsPanel, NewsPanel } from './StubPanels';
 
-import themeMusic from '../assets/pixel-dungeon/themes/theme_1.ogg';
-
 const SUPPORT_URL = 'https://github.com/Artemnikov/shattered_pixel_dungeon_online';
 
 export default function MainMenu({ onStart }) {
   const { t } = useTranslation();
   const canvasRef = useRef(null);
-  const audioRef = useRef(null);
   const [panel, setPanel] = useState(null);
   const [uiHidden, setUiHidden] = useState(false);
   const [landscape, setLandscape] = useState(
@@ -34,26 +30,6 @@ export default function MainMenu({ onStart }) {
     const onResize = () => setLandscape(window.innerWidth > window.innerHeight);
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
-  }, []);
-
-  useEffect(() => {
-    const audio = new Audio(themeMusic);
-    audio.loop = true;
-    audio.volume = effectiveMusicVolume();
-    audioRef.current = audio;
-
-    const tryPlay = () => { audio.play().catch(() => {}); };
-    tryPlay();
-    document.addEventListener('pointerdown', tryPlay, { once: true });
-
-    const unsub = subscribe(() => { audio.volume = effectiveMusicVolume(); });
-
-    return () => {
-      unsub();
-      document.removeEventListener('pointerdown', tryPlay);
-      audio.pause();
-      audio.currentTime = 0;
-    };
   }, []);
 
   const open = (p) => () => setPanel(p);

@@ -274,15 +274,20 @@ def _convert_tile(val: int) -> int:
 
 
 def _convert_room(spd_room) -> LegacyRoom:
-    w = spd_room.right - spd_room.left + 1
-    h = spd_room.bottom - spd_room.top + 1
+    # SPD's left/right/top/bottom are the wall tiles themselves (doors sit
+    # exactly on them); LegacyRoom.x/y/width/height describe the floor
+    # interior only, with walls living one tile outside on every side
+    # (see LegacyRoom.is_perimeter). Shrink by one tile on each side so the
+    # two conventions line up.
+    w = spd_room.right - spd_room.left - 1
+    h = spd_room.bottom - spd_room.top - 1
     kind = RoomKind.STANDARD
     from app.engine.dungeon.spd_levelgen.room_types import SpecialRoom
     if isinstance(spd_room, SpecialRoom):
         kind = RoomKind.SPECIAL
     return LegacyRoom(
-        x=spd_room.left,
-        y=spd_room.top,
+        x=spd_room.left + 1,
+        y=spd_room.top + 1,
         width=w,
         height=h,
         kind=kind,

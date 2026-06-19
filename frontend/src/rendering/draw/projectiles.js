@@ -4,7 +4,6 @@ const PROJECTILE_ROTATION_SPEED = 0.15;
 
 const PROJECTILE_SPRITE_MAP = {
   arrow: [0, 9],
-  magic_bolt: [0, 13],
   users_projectile: [3, 9],
   stone: [3, 9],
   boomerang: [12, 9],

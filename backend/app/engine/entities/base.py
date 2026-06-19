@@ -18,7 +18,7 @@ import uuid as _uuid
 import random as _random
 from typing import Annotated, ClassVar, Literal, Optional, List, Dict, Tuple, Union
 
-from pydantic import BaseModel, Field, computed_field
+from pydantic import BaseModel, Field, computed_field, model_validator, SerializeAsAny
 
 from app.engine.entities.buffs import Buff, add_buff, remove_buff, has_buff, get_buff
 from app.engine.entities.subclasses import SubclassInfo, TalentInfo, Talent
@@ -273,6 +273,7 @@ class Action:
     STEALTH = "STEALTH"  # Cloak of Shadows: toggle invisibility
     WEAR = "WEAR"        # TengusMask: choose subclass
     ALCHEMIZE = "ALCHEMIZE"  # GooBlob + HealthPotion at an Alchemy Pot -> Elixir of Aquatic Rejuvenation
+    IMBUE = "IMBUE"      # MagesStaff: imbue a wand into the staff
 
 # Actions that require the player to pick a target cell before resolving.
 TARGETED_ACTIONS = {Action.THROW, Action.ZAP}
@@ -527,9 +528,8 @@ class Staff(MeleeWeapon):
     name: str = "Mage's Staff"
     range: int = 4
     magic_damage: int = 0
-    charges: int = 4
     projectile_type: str = "magic_bolt"
-    imbued_wand: Optional["Wand"] = None
+    imbued_wand: Optional[SerializeAsAny["Wand"]] = None
     unique: bool = True
     bones: bool = False
     tier: int = 1
@@ -540,17 +540,148 @@ class Staff(MeleeWeapon):
     hit_sound_pitch: float = 1.1
     DESC: ClassVar[str] = "A magical staff that hurls bolts of energy at a distance."
 
+    @model_validator(mode='after')
+    def _sync_imbued_wand(self):
+        if self.imbued_wand is not None:
+            self.name = self.imbued_wand.staff_name
+            self.projectile_type = self.imbued_wand.projectile_type
+        return self
+
     def dmg_min(self, lvl: int = 0) -> int:
-        return 1 + lvl
+        return 1
 
     def dmg_max(self, lvl: int = 0) -> int:
         return 6 + 2 * lvl
 
+    @computed_field
+    @property
+    def charges(self) -> int:
+        return self.imbued_wand.charges if self.imbued_wand else 0
+
+    @computed_field
+    @property
+    def max_charges(self) -> int:
+        return self.imbued_wand.max_charges if self.imbued_wand else 0
+
     def actions(self, player: Optional["Player"] = None) -> List[str]:
-        return [Action.ZAP] + super().actions(player)
+        actions = [Action.IMBUE] + super().actions(player)
+        if self.imbued_wand is not None and self.imbued_wand.charges > 0:
+            actions.append(Action.ZAP)
+        return actions
 
     def default_action(self) -> Optional[str]:
-        return Action.ZAP
+        if self.imbued_wand is not None and self.imbued_wand.charges > 0:
+            return Action.ZAP
+        return Action.IMBUE
+
+    def update_wand(self, levelled: bool = False):
+        """Sync wand level/staff level. SPD MagesStaff.updateWand."""
+        if self.imbued_wand is None:
+            return
+        cur_charges = self.imbued_wand.charges
+        self.imbued_wand.level = self.level
+        base = self.imbued_wand.initial_charges()
+        self.imbued_wand.max_charges = min(base + self.level + 1, 10)
+        self.imbued_wand.charges = min(
+            cur_charges + (1 if levelled else 0),
+            self.imbued_wand.max_charges,
+        )
+        self.imbued_wand.recharge_scale = 0.75
+
+    def upgrade(self, enchant: bool = True) -> "Staff":
+        self.level += 1
+        self.update_wand(True)
+        return self
+
+    def degrade(self) -> "Staff":
+        self.level -= 1
+        self.update_wand(False)
+        return self
+
+    def imbue_wand(self, wand: "Wand", owner=None) -> Optional["Wand"]:
+        """SPD MagesStaff.imbueWand — full level/charge sync.
+
+        Returns the displaced old wand if Wand Preservation triggered but
+        the backpack had no room to hold it (caller should drop it on the
+        floor instead of losing it); otherwise None.
+        """
+        old_charges = self.imbued_wand.charges if self.imbued_wand else 0
+        old_wand = self.imbued_wand
+        displaced_wand: Optional["Wand"] = None
+
+        target_level = max(self.level, wand.level)
+        if wand.level >= self.level and self.level > 0:
+            target_level += 1
+
+        self.level = target_level
+        self.imbued_wand = wand
+        wand.level_known = True
+        wand.cursed_known = True
+        self.name = wand.staff_name
+        self.update_wand(False)
+        self.imbued_wand.charges = min(
+            self.imbued_wand.max_charges,
+            self.imbued_wand.charges + old_charges,
+        )
+
+        if owner is not None:
+            self._apply_wand_charge_buff(owner)
+
+        if wand.cursed and (not self.cursed or not self._has_curse_enchant()):
+            self.cursed = True
+            self.cursed_known = True
+
+        if old_wand is not None and owner is not None:
+            preservation_talent = getattr(getattr(owner, 'talent_info', None), 'level', lambda x: 0)('wand_preservation')
+            if preservation_talent > 0:
+                counter_buff = next((b for b in getattr(owner, 'buffs', []) if getattr(b, 'name', None) == 'wand_preservation_counter'), None)
+                if counter_buff is None:
+                    old_wand.level = 0
+                    from app.engine.entities.buffs import add_buff
+                    add_buff(owner.buffs, "wand_preservation_counter", duration=999999, level=1)
+                    if not (hasattr(owner, 'belongings') and owner.belongings.backpack.collect(old_wand)):
+                        displaced_wand = old_wand
+
+        return displaced_wand
+
+    def _apply_wand_charge_buff(self, owner: "Char"):
+        if self.imbued_wand is not None:
+            self.imbued_wand.recharge_scale = 0.75
+
+    def _has_curse_enchant(self) -> bool:
+        from app.engine.entities.weapon_enchants import CURSES
+        return self.enchantment in CURSES
+
+    def get_reach(self) -> int:
+        if self.imbued_wand is not None:
+            return self.imbued_wand.get_reach()
+        return super().get_reach()
+
+    def status(self) -> str:
+        if self.imbued_wand is not None:
+            return f"{self.imbued_wand.charges}/{self.imbued_wand.max_charges}"
+        return super().status()
+
+    def value(self, identified: bool = False) -> int:
+        return 0
+
+    def reach_factor(self, owner: Optional["Char"] = None) -> int:
+        reach = super().reach_factor(owner)
+        if self.imbued_wand is not None and owner is not None:
+            subclass = getattr(getattr(owner, 'subclass_info', None), 'subclass', None)
+            if subclass == "battlemage" and isinstance(self.imbued_wand, WandOfDisintegration):
+                reach += 1
+        return reach
+
+    def targeting_pos(self, user: "Player", dst: int) -> int:
+        if self.imbued_wand is not None:
+            return self.imbued_wand.targeting_pos(user, dst)
+        return super().targeting_pos(user, dst)
+
+    def buffed_visibly_upgraded(self) -> int:
+        if self.imbued_wand is not None:
+            return max(super().buffed_visibly_upgraded(), self.imbued_wand.buffed_lvl())
+        return super().buffed_visibly_upgraded()
 
 
 class MissileWeapon(KindOfWeapon):
@@ -628,6 +759,9 @@ class Wand(ItemBase):
     projectile_type: str = "magic_bolt"
     beam_type: Optional[str] = None
     wand_sound: Optional[str] = None
+    partial_charge: float = 0.0
+    staff_name: str = "Staff"
+    recharge_scale: float = 1.0
     DESC: ClassVar[str] = "A wand of magical power. Zap an enemy to spend a charge; charges recover over time."
 
     def actions(self, player: Optional["Player"] = None) -> List[str]:
@@ -637,30 +771,97 @@ class Wand(ItemBase):
         return Action.ZAP
 
     def _info_lines(self, player: Optional["Player"] = None) -> List[str]:
-        lines = [f"Deals {self.damage} damage per hit."]
+        if hasattr(self, "min") and hasattr(self, "max"):
+            lvl = self.level if self.level_known else 0
+            lines = [f"Deals {self.min(lvl)}-{self.max(lvl)} damage per hit."]
+        else:
+            lines = [f"Deals {self.damage} damage per hit."]
         lines.append(f"It currently holds {self.charges} of {self.max_charges} charges.")
         return lines
 
     def value(self, identified: bool = False) -> int:
         return _charm_value(self.level, self.level_known, self.cursed, self.cursed_known)
 
+    def initial_charges(self) -> int:
+        return self.max_charges
+
+    def buffed_lvl(self) -> int:
+        return max(0, self.level)
+
+    def get_reach(self) -> int:
+        return self.range
+
+    def gain_charge(self, amt: float, overcharge: bool = False):
+        self.partial_charge += amt
+        while self.partial_charge >= 1.0:
+            if overcharge:
+                self.charges = min(self.max_charges + int(amt), self.charges + 1)
+            else:
+                self.charges = min(self.max_charges, self.charges + 1)
+            self.partial_charge -= 1.0
+
     def on_hit(self, attacker, defender, damage, floor_mobs=None, tile_x=None, tile_y=None, floor=None, add_event=None):
         pass
 
 
+class DamageWand(Wand):
+    """Base for wands that deal direct damage to a target.
+
+    Subclasses define *min(lvl)* and *max(lvl)*; *damage_roll(lvl)* returns a
+    random integer in that range.
+    """
+
+    kind: Literal["damage_wand"] = "damage_wand"
+
+    def min(self, lvl: int) -> int:
+        raise NotImplementedError
+
+    def max(self, lvl: int) -> int:
+        raise NotImplementedError
+
+    def min_damage(self) -> int:
+        return self.min(self.buffed_lvl())
+
+    def max_damage(self) -> int:
+        return self.max(self.buffed_lvl())
+
+    def damage_roll(self, lvl: int) -> int:
+        from app.engine.entities.base import _random
+        return _random.randint(self.min(lvl), self.max(lvl))
+
+    def damage_roll_buffed(self) -> int:
+        return self.damage_roll(self.buffed_lvl())
+
+    def _info_lines(self, player: Optional["Player"] = None) -> List[str]:
+        lvl = self.level if self.level_known else 0
+        lines = [f"Deals {self.min(lvl)}-{self.max(lvl)} damage per hit."]
+        lines.append(f"It currently holds {self.charges} of {self.max_charges} charges.")
+        return lines
+
+
 # --- Wand subclasses -----------------------------------------------------------
 
-class WandOfMagicMissile(Wand):
+class WandOfMagicMissile(DamageWand):
     kind: Literal["wand_magic_missile"] = "wand_magic_missile"
     name: str = "Wand of Magic Missile"
     type: str = "wand"
-    damage: int = 4
     charges: int = 4
     max_charges: int = 4
     projectile_type: str = "magic_missile"
+    staff_name: str = "Staff of Magic Missile"
     DESC: ClassVar[str] = "A basic wand that fires a magic missile."
 
+    def min(self, lvl: int) -> int: return 2 + lvl
+    def max(self, lvl: int) -> int: return 8 + 2 * lvl
+
+    def initial_charges(self) -> int:
+        return 3
+
     def on_hit(self, attacker, defender, damage, floor_mobs=None, tile_x=None, tile_y=None, floor=None, add_event=None):
+        if add_event:
+            add_event("SPELL_SPRITE", {
+                "x": attacker.pos.x, "y": attacker.pos.y, "index": 2  # SPELL_CHARGE
+            }, floor_id=getattr(attacker, "floor_id", 0))
         belongings = getattr(attacker, "belongings", None)
         if belongings is None:
             return
@@ -669,15 +870,18 @@ class WandOfMagicMissile(Wand):
                 item.charges = min(item.max_charges, item.charges + 1)
 
 
-class WandOfFireblast(Wand):
+class WandOfFireblast(DamageWand):
     kind: Literal["wand_fireblast"] = "wand_fireblast"
     name: str = "Wand of Fireblast"
     type: str = "wand"
-    damage: int = 6
     charges: int = 2
     max_charges: int = 2
     projectile_type: str = "fire_bolt"
+    staff_name: str = "Staff of Fireblast"
     DESC: ClassVar[str] = "A catastrophic wand that unleashes fire."
+
+    def min(self, lvl: int) -> int: return (1 + lvl)
+    def max(self, lvl: int) -> int: return 8 + 4 * lvl
 
     def on_hit(self, attacker, defender, damage, floor_mobs=None, tile_x=None, tile_y=None, floor=None, add_event=None):
         if defender is None or not defender.is_alive:
@@ -716,15 +920,18 @@ class WandOfFireblast(Wand):
                 add_event("PLAY_SOUND", {"sound": "BLAST"}, floor_id=getattr(defender, "floor_id", 0))
 
 
-class WandOfFrost(Wand):
+class WandOfFrost(DamageWand):
     kind: Literal["wand_frost"] = "wand_frost"
     name: str = "Wand of Frost"
     type: str = "wand"
-    damage: int = 5
     charges: int = 3
     max_charges: int = 3
     projectile_type: str = "frost"
+    staff_name: str = "Staff of Frost"
     DESC: ClassVar[str] = "A wand that freezes enemies solid."
+
+    def min(self, lvl: int) -> int: return 2 + lvl
+    def max(self, lvl: int) -> int: return 8 + 5 * lvl
 
     def on_hit(self, attacker, defender, damage, floor_mobs=None, tile_x=None, tile_y=None, floor=None, add_event=None):
         if defender is None:
@@ -739,16 +946,19 @@ class WandOfFrost(Wand):
                 defender.add_buff("frost", duration=duration, level=1)
 
 
-class WandOfLightning(Wand):
+class WandOfLightning(DamageWand):
     kind: Literal["wand_lightning"] = "wand_lightning"
     name: str = "Wand of Lightning"
     type: str = "wand"
-    damage: int = 8
     charges: int = 2
     max_charges: int = 2
     projectile_type: str = "lightning"
     wand_sound: str = "LIGHTNING"
+    staff_name: str = "Staff of Lightning"
     DESC: ClassVar[str] = "A wand that arcs lightning to its target."
+
+    def min(self, lvl: int) -> int: return 5 + lvl
+    def max(self, lvl: int) -> int: return 10 + 5 * lvl
 
     def on_hit(self, attacker, defender, damage, floor_mobs=None, tile_x=None, tile_y=None, floor=None, add_event=None):
         if attacker is None:
@@ -761,35 +971,41 @@ class WandOfLightning(Wand):
                 add_event("PLAY_SOUND", {"sound": "LIGHTNING"}, floor_id=getattr(attacker, "floor_id", 0))
 
 
-class WandOfDisintegration(Wand):
+class WandOfDisintegration(DamageWand):
     kind: Literal["wand_disintegration"] = "wand_disintegration"
     name: str = "Wand of Disintegration"
     type: str = "wand"
-    damage: int = 6
     charges: int = 3
     max_charges: int = 3
     range: int = 8
     projectile_type: str = "beam"
     beam_type: str = "death_ray"
     wand_sound: str = "RAY"
+    staff_name: str = "Staff of Disintegration"
     DESC: ClassVar[str] = "A wand that fires a deadly disintegration beam."
+
+    def min(self, lvl: int) -> int: return 2 + lvl
+    def max(self, lvl: int) -> int: return 8 + 4 * lvl
 
     def on_hit(self, attacker, defender, damage, floor_mobs=None, tile_x=None, tile_y=None, floor=None, add_event=None):
         pass
 
 
-class WandOfPrismaticLight(Wand):
+class WandOfPrismaticLight(DamageWand):
     kind: Literal["wand_prismatic_light"] = "wand_prismatic_light"
     name: str = "Wand of Prismatic Light"
     type: str = "wand"
-    damage: int = 4
     charges: int = 4
     max_charges: int = 4
     range: int = 8
     projectile_type: str = "beam"
     beam_type: str = "light_ray"
     wand_sound: str = "RAY"
+    staff_name: str = "Staff of Prismatic Light"
     DESC: ClassVar[str] = "A wand that fires a beam of prismatic light."
+
+    def min(self, lvl: int) -> int: return 1 + lvl
+    def max(self, lvl: int) -> int: return 5 + 3 * lvl
 
     def on_hit(self, attacker, defender, damage, floor_mobs=None, tile_x=None, tile_y=None, floor=None, add_event=None):
         if defender is None:
@@ -799,15 +1015,18 @@ class WandOfPrismaticLight(Wand):
         defender.add_buff("cripple", duration=float(duration), level=1)
 
 
-class WandOfBlastWave(Wand):
+class WandOfBlastWave(DamageWand):
     kind: Literal["wand_blast_wave"] = "wand_blast_wave"
     name: str = "Wand of Blast Wave"
     type: str = "wand"
-    damage: int = 2
     charges: int = 3
     max_charges: int = 3
     projectile_type: str = "force"
+    staff_name: str = "Staff of Blast Wave"
     DESC: ClassVar[str] = "A wand that blasts enemies backwards."
+
+    def min(self, lvl: int) -> int: return 1 + lvl
+    def max(self, lvl: int) -> int: return 3 + 3 * lvl
 
     def on_hit(self, attacker, defender, damage, floor_mobs=None, tile_x=None, tile_y=None, floor=None, add_event=None):
         if defender is None or not defender.is_alive:
@@ -822,18 +1041,21 @@ class WandOfBlastWave(Wand):
                 add_event("PLAY_SOUND", {"sound": "BLAST"}, floor_id=getattr(defender, "floor_id", 0))
 
 
-class WandOfTransfusion(Wand):
+class WandOfTransfusion(DamageWand):
     kind: Literal["wand_transfusion"] = "wand_transfusion"
     name: str = "Wand of Transfusion"
     type: str = "wand"
-    damage: int = 0
     charges: int = 3
     max_charges: int = 3
     range: int = 6
     projectile_type: str = "beam"
     beam_type: str = "health_ray"
     wand_sound: str = "RAY"
+    staff_name: str = "Staff of Transfusion"
     DESC: ClassVar[str] = "A wand that transfers health."
+
+    def min(self, lvl: int) -> int: return 3 + lvl
+    def max(self, lvl: int) -> int: return 6 + 2 * lvl
 
     def on_hit(self, attacker, defender, damage, floor_mobs=None, tile_x=None, tile_y=None, floor=None, add_event=None):
         if defender is None or attacker is None:
@@ -852,6 +1074,7 @@ class WandOfCorrosion(Wand):
     charges: int = 3
     max_charges: int = 3
     projectile_type: str = "corrosion"
+    staff_name: str = "Staff of Corrosion"
     DESC: ClassVar[str] = "A wand that spews corrosive gas."
 
     def on_hit(self, attacker, defender, damage, floor_mobs=None, tile_x=None, tile_y=None, floor=None, add_event=None):
@@ -871,6 +1094,7 @@ class WandOfCorruption(Wand):
     charges: int = 3
     max_charges: int = 3
     projectile_type: str = "shadow"
+    staff_name: str = "Staff of Corruption"
     DESC: ClassVar[str] = "A wand that corrupts the minds of enemies."
 
     def on_hit(self, attacker, defender, damage, floor_mobs=None, tile_x=None, tile_y=None, floor=None, add_event=None):
@@ -891,6 +1115,7 @@ class WandOfRegrowth(Wand):
     charges: int = 4
     max_charges: int = 4
     projectile_type: str = "foliage"
+    staff_name: str = "Staff of Regrowth"
     DESC: ClassVar[str] = "A wand that causes vegetation to spring forth."
 
     def on_hit(self, attacker, defender, damage, floor_mobs=None, tile_x=None, tile_y=None, floor=None, add_event=None):
@@ -920,6 +1145,7 @@ class WandOfWarding(Wand):
     charges: int = 3
     max_charges: int = 3
     projectile_type: str = "ward"
+    staff_name: str = "Staff of Warding"
     DESC: ClassVar[str] = "A wand that deploys a sentry ward."
 
     def on_hit(self, attacker, defender, damage, floor_mobs=None, tile_x=None, tile_y=None, floor=None, add_event=None):
@@ -934,15 +1160,18 @@ class WandOfWarding(Wand):
                     mob.hp = min(mob.max_hp, mob.hp + heal_amt)
 
 
-class WandOfLivingEarth(Wand):
+class WandOfLivingEarth(DamageWand):
     kind: Literal["wand_living_earth"] = "wand_living_earth"
     name: str = "Wand of Living Earth"
     type: str = "wand"
-    damage: int = 4
     charges: int = 3
     max_charges: int = 3
     projectile_type: str = "earth"
+    staff_name: str = "Staff of Living Earth"
     DESC: ClassVar[str] = "A wand that summons an earth guardian."
+
+    def min(self, lvl: int) -> int: return 4
+    def max(self, lvl: int) -> int: return 6 + 2 * lvl
 
     def on_hit(self, attacker, defender, damage, floor_mobs=None, tile_x=None, tile_y=None, floor=None, add_event=None):
         if attacker is None or damage <= 0:
@@ -1743,6 +1972,8 @@ class Belongings(BaseModel):
         for s in self.equipped_slots():
             if s is not None:
                 yield s
+        if isinstance(self.weapon, Staff) and self.weapon.imbued_wand is not None:
+            yield self.weapon.imbued_wand
         yield from self._iter_bag(self.backpack)
 
     def _iter_bag(self, bag: "Bag"):

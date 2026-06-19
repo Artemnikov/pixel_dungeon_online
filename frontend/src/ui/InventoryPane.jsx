@@ -121,6 +121,9 @@ function ItemSlot({ item, holderKey, equipped, strength, empty, onOpen, onContex
       {item.kind === 'waterskin'
         ? <span className="inv-qty">{item.volume}/20</span>
         : item.quantity > 1 && <span className="inv-qty">{item.quantity}</span>}
+      {item.kind?.startsWith('wand_') && item.max_charges > 0 && (
+        <span className="inv-qty">{item.charges}/{item.max_charges}</span>
+      )}
       {badge && <span className={`inv-str ${badge.cls}`}>{badge.text}</span>}
       {levelText(item) && (
         <span className={`inv-level ${item.level > 0 ? 'up' : 'down'}`}>{levelText(item)}</span>

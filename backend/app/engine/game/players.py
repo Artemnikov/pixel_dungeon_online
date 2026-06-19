@@ -95,8 +95,9 @@ class PlayersMixin:
                 imbued_wand=wand,
                 level_known=True,
                 cursed_known=True,
-                charges=4,
             )
+            belongings.weapon.update_wand(False)
+            class_starting_quickslots.append((0, belongings.weapon))
 
         elif class_type == CharacterClass.ROGUE:
             # SPD: Dagger + Cloth Armor base + Cloak of Shadows artifact +

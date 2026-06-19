@@ -103,6 +103,7 @@
     "quickslot": "Quickslot",
     "quickUse": "Quick-use",
     "chooseItem": "Choose an item",
+    "chooseWandToImbue": "Choose a wand to imbue",
     "assignQuickslot": "Assign Quickslot"
   },
   "game": {
@@ -140,6 +141,7 @@
     "drink": "Drink",
     "read": "Read",
     "zap": "Zap",
+    "imbue": "Imbue",
     "eat": "Eat",
     "open": "Open",
     "affix": "Affix",

@@ -41,6 +41,8 @@ class DamageData(_EventData):
     crit: Optional[bool] = None
     grim_proc: Optional[bool] = None
     bleed: Optional[bool] = None
+    projectile: Optional[str] = None
+    splash_count: Optional[int] = None
 
 
 class DeathData(_EventData):
@@ -64,6 +66,7 @@ class RangedAttackData(_EventData):
     grim_proc: bool
     beam_type: Optional[str] = None
     sound: Optional[str] = None
+    is_wand: Optional[bool] = None
     # Present for thrown inventory items (not wands); a serialized item dict.
     item: Optional[dict] = None
 
@@ -330,6 +333,12 @@ class SacrificialFireData(_EventData):
     y: int
 
 
+class SpellSpriteData(_EventData):
+    x: int
+    y: int
+    index: int
+
+
 # event "type" -> payload model. Used by the opt-in dev validation hook.
 EVENT_MODELS = {
     "ATTACK": AttackData,
@@ -384,4 +393,5 @@ EVENT_MODELS = {
     "FIRE_IMBUE_ACTIVATED": FireImbueActivatedData,
     "INFERNO_ACTIVATED": InfernoActivatedData,
     "SACRIFICIAL_FIRE": SacrificialFireData,
+    "SPELL_SPRITE": SpellSpriteData,
 }

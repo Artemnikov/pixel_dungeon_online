@@ -162,6 +162,17 @@ export interface DamageEvent {
     crit?: boolean;
     grim_proc?: boolean;
     bleed?: boolean;
+    projectile?: string;
+    splash_count?: number;
+  };
+}
+
+export interface SpellSpriteEvent {
+  type: 'SPELL_SPRITE';
+  data: {
+    index: number;
+    x: number;
+    y: number;
   };
 }
 
@@ -193,6 +204,7 @@ export interface RangedAttackEvent {
     grim_proc: boolean;
     beam_type?: string;
     sound?: string;
+    is_wand?: boolean;
     /** Serialized thrown item, present for thrown inventory items (not wands). */
     item?: SerializedItem;
   };
@@ -364,6 +376,16 @@ export interface ArmorAbilityChoiceAvailableEvent {
   data: { player: string; options: string[] };
 }
 
+export interface ImbueWandChoiceAvailableEvent {
+  type: 'IMBUE_WAND_CHOICE_AVAILABLE';
+  data: { player: string; staff_id: string; candidates: string[] };
+}
+
+export interface ImbueWandDoneEvent {
+  type: 'IMBUE_WAND_DONE';
+  data: { player: string; staff_id: string; old_wand_id: string };
+}
+
 export interface SubclassChosenEvent {
   type: 'SUBCLASS_CHOSEN';
   data: { player: string; subclass: string };
@@ -468,6 +490,48 @@ export interface GooEnrageEvent {
 /** Goo boss noticed the hero — the fight begins (mirrors SPD's Goo.notice()/seal()). */
 export interface GooFightStartedEvent {
   type: 'GOO_FIGHT_STARTED';
+  data: { mob: string };
+}
+
+/** DM-300 noticed the hero — the fight begins. */
+export interface DM300FightStartedEvent {
+  type: 'DM300_FIGHT_STARTED';
+  data: { mob: string };
+}
+
+/** Dwarf King noticed the hero — the fight begins. */
+export interface DwarfKingFightStartedEvent {
+  type: 'DWARF_KING_FIGHT_STARTED';
+  data: { mob: string };
+}
+
+/** Dwarf King enters phase 2 (HP <= 200). */
+export interface DwarfKingPhase2Event {
+  type: 'DWARF_KING_PHASE2';
+  data: { mob: string };
+}
+
+/** Dwarf King enters phase 3 (HP <= 100). */
+export interface DwarfKingPhase3Event {
+  type: 'DWARF_KING_PHASE3';
+  data: { mob: string };
+}
+
+/** Yog-Dzewa noticed the hero — the fight begins. */
+export interface YogFightStartedEvent {
+  type: 'YOG_FIGHT_STARTED';
+  data: { mob: string };
+}
+
+/** Yog-Dzewa entered a new phase. */
+export interface YogPhaseChangeEvent {
+  type: 'YOG_PHASE_CHANGE';
+  data: { mob: string; phase: number };
+}
+
+/** Yog-Dzewa entered the final phase (phase 5). */
+export interface YogFinalPhaseEvent {
+  type: 'YOG_FINAL_PHASE';
   data: { mob: string };
 }
 
@@ -602,6 +666,8 @@ export type GameEvent =
   | ShieldEvent
   | SubclassChoiceAvailableEvent
   | ArmorAbilityChoiceAvailableEvent
+  | ImbueWandChoiceAvailableEvent
+  | ImbueWandDoneEvent
   | MetamorphOpenEvent
   | MetamorphOptionsEvent
   | TalentMetamorphedEvent
@@ -609,6 +675,13 @@ export type GameEvent =
   | GooChargeEvent
   | GooEnrageEvent
   | GooFightStartedEvent
+  | DM300FightStartedEvent
+  | DwarfKingFightStartedEvent
+  | DwarfKingPhase2Event
+  | DwarfKingPhase3Event
+  | YogFightStartedEvent
+  | YogPhaseChangeEvent
+  | YogFinalPhaseEvent
   | TenguFightStartedEvent
   | ZapSummonEvent
   | NecroSummonEvent
@@ -629,7 +702,8 @@ export type GameEvent =
   | StateEffectEvent
   | FireImbueActivatedEvent
   | InfernoActivatedEvent
-  | SacrificialFireEvent;
+  | SacrificialFireEvent
+  | SpellSpriteEvent;
 
 export type GameEventType = GameEvent['type'];
 
@@ -717,6 +791,7 @@ export type ClientMessage =
   | { type: 'USE_ARMOR_ABILITY'; ability: string; target_x?: number; target_y?: number }
   | { type: 'TRIGGER_BERSERK' }
   | { type: 'PREPARATION_STRIKE'; target_x: number; target_y: number }
+  | { type: 'CHOOSE_IMBUE_WAND'; staff_id: string; wand_id: string }
   | { type: 'METAMORPH_CHOOSE'; talent: string }
   | { type: 'METAMORPH_REPLACE'; old_talent: string; new_talent: string }
   | { type: 'ADMIN_TELEPORT'; target_floor: number }

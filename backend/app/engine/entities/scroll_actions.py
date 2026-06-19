@@ -269,7 +269,11 @@ def action_read(game, player, item, tx=None, ty=None) -> None:
 
 
 def _apply_upgrade_target(game, player, target_item) -> None:
-    target_item.level += 1
+    from app.engine.entities.base import Staff
+    if isinstance(target_item, Staff):
+        target_item.upgrade()
+    else:
+        target_item.level += 1
     target_item.level_known = True
     target_item.cursed = False
     target_item.cursed_known = True

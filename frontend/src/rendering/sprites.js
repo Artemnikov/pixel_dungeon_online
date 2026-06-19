@@ -36,6 +36,7 @@ export const ITEM_SPRITES = {
   "Worn":             [0, 6],
   "Mage's Staff":     [5, 6],   // MagesStaff (tier 1)
   "Magic Staff":      [5, 6],
+  "Staff of":         [5, 6],   // any "Staff of <Wand>" — MagesStaff (tier 1)
   "Staff":            [5, 6],
   "Dagger":           [4, 6],   // Dagger (tier 1)
   "Gloves":           [2, 6],   // Gloves (tier 1)

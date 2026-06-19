@@ -75,7 +75,7 @@ export function advanceAndDrawMagicMissiles(ctx, magicMissileRef) {
       if (pt <= 0) continue;
       const px = m.startX + (m.endX - m.startX) * pt;
       const py = m.startY + (m.endY - m.startY) * pt - Math.sin(pt * Math.PI) * TILE_SIZE * m.arcHeight + (m.driftY || 0) * (1 - Math.abs(2 * pt - 1)) * TILE_SIZE;
-      const alpha = (1 - pt) * 0.6;
+      const alpha = t * (1 - pt) * 0.6;
       const size = m.size * 0.5 + (1 - pt) * m.size * 0.8;
       ctx.globalAlpha = alpha;
       if (m.rainbow) {

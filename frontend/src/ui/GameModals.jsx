@@ -31,6 +31,7 @@ export default function GameModals({
     radialOpen, setRadialOpen,
     quickslotPicker, setQuickslotPicker,
     scrollPickerData, setScrollPickerData,
+    imbueWandData, setImbueWandData,
     openQuickslotPicker,
   } = modals;
 
@@ -132,6 +133,23 @@ export default function GameModals({
             setScrollPickerData(null);
           }}
           onClose={() => setScrollPickerData(null)}
+        />
+      )}
+
+      {imbueWandData && (
+        <WndBag
+          belongings={belongings}
+          gold={gold}
+          energy={energy}
+          strength={strength}
+          selectMode
+          itemFilter={(item) => imbueWandData.candidates.includes(item.id)}
+          title={t('ui.chooseWandToImbue')}
+          onSelectItem={(item) => {
+            send({ type: 'CHOOSE_IMBUE_WAND', staff_id: imbueWandData.staff_id, wand_id: item.id });
+            setImbueWandData(null);
+          }}
+          onClose={() => setImbueWandData(null)}
         />
       )}
     </>

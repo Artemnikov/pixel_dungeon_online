@@ -79,3 +79,8 @@ Prefer structured `evaluate_script` over screenshots — cheaper, more data.
 - `docs/spd_line_of_sight.md` — LOS mechanics
 - `docs/enemies.txt` — enemy stats
 - `shattered-pixel-dungeon/` — original Java source for flow verification
+
+## Deploying to google cloud
+
+Never use the website project, use "my project"
+Do not access anything related to gainguard
