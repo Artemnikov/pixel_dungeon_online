@@ -41,6 +41,7 @@ from app.engine.entities.base import (
     HealthPotion,
     ItemBase,
     Key,
+    KingsCrown,
     MagicalHolster,
     MeleeWeapon,
     MissileWeapon,
@@ -83,6 +84,7 @@ from app.engine.entities.base import (
     Stone,
     Throwable,
     ThrowableDagger,
+    TenguMask,
     VelvetPouch,
     Wand,
     WandOfMagicMissile,
@@ -197,6 +199,8 @@ _CATALOG: List[tuple] = [
     ("throwable", "Throwable", "misc", lambda: Throwable(name="Throwable")),
     ("goo_blob", "Goo Blob", "misc", lambda: GooBlob()),
     ("dwarf_token", "Dwarf Token", "misc", lambda: DwarfToken()),
+    ("tengu_mask", "Tengu's Mask", "misc", lambda: TenguMask()),
+    ("kings_crown", "King's Crown", "misc", lambda: KingsCrown()),
 
     # Containers
     ("velvet_pouch", "Velvet Pouch", "container", lambda: VelvetPouch()),

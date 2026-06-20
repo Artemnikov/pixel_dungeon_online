@@ -69,7 +69,7 @@ class PrisonBossMixin:
 
     def _find_tengu(self, floor: FloorState) -> Optional[Tengu]:
         for mob in floor.mobs.values():
-            if isinstance(mob, Tengu):
+            if isinstance(mob, Tengu) and mob.is_alive:
                 return mob
         return None
 
@@ -233,6 +233,8 @@ class PrisonBossMixin:
         if self._find_tengu(floor) is not None:
             return  # Tengu still alive
 
+        self._clear_entities_outside(floor, floor_id, layout.TENGU_CELL)
+
         for p in self._players_on_floor(floor_id):
             p.pos.x, p.pos.y = layout.TENGU_CELL.left + 4, layout.TENGU_CELL.top + 2
 
@@ -240,6 +242,7 @@ class PrisonBossMixin:
         level = layout._new_level(PRISON_BOSS_FLOOR)
         layout.apply_end_patch(level, rng)
         floor.grid = _grid_from_level(level)
+        floor.exit_pos = (layout.LEVEL_EXIT.x, layout.LEVEL_EXIT.y)
         floor.rebuild_flags()
         floor.map_version += 1
 

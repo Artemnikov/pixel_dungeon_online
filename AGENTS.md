@@ -7,8 +7,6 @@ Before implementing a game mechanic, check the original SPD source at `./shatter
 ### Backend (run from `backend/`)
 ```bash
 venv/bin/python app/main.py              # dev server on :8080
-venv/bin/python -m pytest tests/         # all tests
-venv/bin/python -m pytest tests/test_foo.py::test_name  # single test
 venv/bin/python scripts/export_contract_schema.py       # regen Pydantic→TS schema
 ```
 
@@ -21,11 +19,6 @@ npm run typecheck        # tsc --noEmit
 npm run gen:types        # export_contract_schema.py → json2ts → entities.ts
 ```
 Run `lint → typecheck` before committing frontend changes.
-
-### Docker
-```bash
-docker compose up        # backend:8080 + frontend:3000
-```
 
 ## Architecture
 
@@ -80,7 +73,3 @@ Prefer structured `evaluate_script` over screenshots — cheaper, more data.
 - `docs/enemies.txt` — enemy stats
 - `shattered-pixel-dungeon/` — original Java source for flow verification
 
-## Deploying to google cloud
-
-Never use the website project, use "my project"
-Do not access anything related to gainguard

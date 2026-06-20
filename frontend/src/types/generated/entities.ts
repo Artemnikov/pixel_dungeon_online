@@ -163,6 +163,7 @@ export interface Player {
     | Scroll
     | Gold
     | MysteryMeat
+    | FrozenCarpaccio
     | Berry
     | SmallRation
     | Ration
@@ -170,6 +171,8 @@ export interface Player {
     | ChargrilledMeat
     | Food
     | Key
+    | TenguMask
+    | KingsCrown
     | Seed
     | Dewdrop
     | Waterskin
@@ -245,6 +248,7 @@ export interface Player {
         | Scroll
         | Gold
         | MysteryMeat
+        | FrozenCarpaccio
         | Berry
         | SmallRation
         | Ration
@@ -252,6 +256,8 @@ export interface Player {
         | ChargrilledMeat
         | Food
         | Key
+        | TenguMask
+        | KingsCrown
         | Seed
         | Dewdrop
         | Waterskin
@@ -328,6 +334,7 @@ export interface Player {
         | Scroll
         | Gold
         | MysteryMeat
+        | FrozenCarpaccio
         | Berry
         | SmallRation
         | Ration
@@ -335,6 +342,8 @@ export interface Player {
         | ChargrilledMeat
         | Food
         | Key
+        | TenguMask
+        | KingsCrown
         | Seed
         | Dewdrop
         | Waterskin
@@ -440,6 +449,7 @@ export interface Belongings {
         | Scroll
         | Gold
         | MysteryMeat
+        | FrozenCarpaccio
         | Berry
         | SmallRation
         | Ration
@@ -447,6 +457,8 @@ export interface Belongings {
         | ChargrilledMeat
         | Food
         | Key
+        | TenguMask
+        | KingsCrown
         | Seed
         | Dewdrop
         | Waterskin
@@ -523,6 +535,7 @@ export interface Belongings {
         | Scroll
         | Gold
         | MysteryMeat
+        | FrozenCarpaccio
         | Berry
         | SmallRation
         | Ration
@@ -530,6 +543,8 @@ export interface Belongings {
         | ChargrilledMeat
         | Food
         | Key
+        | TenguMask
+        | KingsCrown
         | Seed
         | Dewdrop
         | Waterskin
@@ -606,6 +621,7 @@ export interface Belongings {
         | Scroll
         | Gold
         | MysteryMeat
+        | FrozenCarpaccio
         | Berry
         | SmallRation
         | Ration
@@ -613,6 +629,8 @@ export interface Belongings {
         | ChargrilledMeat
         | Food
         | Key
+        | TenguMask
+        | KingsCrown
         | Seed
         | Dewdrop
         | Waterskin
@@ -689,6 +707,7 @@ export interface Belongings {
         | Scroll
         | Gold
         | MysteryMeat
+        | FrozenCarpaccio
         | Berry
         | SmallRation
         | Ration
@@ -696,6 +715,8 @@ export interface Belongings {
         | ChargrilledMeat
         | Food
         | Key
+        | TenguMask
+        | KingsCrown
         | Seed
         | Dewdrop
         | Waterskin
@@ -772,6 +793,7 @@ export interface Belongings {
         | Scroll
         | Gold
         | MysteryMeat
+        | FrozenCarpaccio
         | Berry
         | SmallRation
         | Ration
@@ -779,6 +801,8 @@ export interface Belongings {
         | ChargrilledMeat
         | Food
         | Key
+        | TenguMask
+        | KingsCrown
         | Seed
         | Dewdrop
         | Waterskin
@@ -871,6 +895,7 @@ export interface Bag {
     | Scroll
     | Gold
     | MysteryMeat
+    | FrozenCarpaccio
     | Berry
     | SmallRation
     | Ration
@@ -878,6 +903,8 @@ export interface Bag {
     | ChargrilledMeat
     | Food
     | Key
+    | TenguMask
+    | KingsCrown
     | Seed
     | Dewdrop
     | Waterskin
@@ -2085,6 +2112,23 @@ export interface MysteryMeat {
   seen?: boolean;
   energy?: number;
 }
+export interface FrozenCarpaccio {
+  kind?: "frozen_carpaccio";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  energy?: number;
+}
 export interface Berry {
   kind?: "berry";
   id?: string;
@@ -2203,6 +2247,38 @@ export interface Key {
   for_sale?: boolean;
   seen?: boolean;
   key_id?: string;
+}
+export interface TenguMask {
+  kind?: "tengu_mask";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+}
+export interface KingsCrown {
+  kind?: "kings_crown";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
 }
 export interface Seed {
   kind?: "seed";
@@ -2441,6 +2517,7 @@ export interface VelvetPouch {
     | Scroll
     | Gold
     | MysteryMeat
+    | FrozenCarpaccio
     | Berry
     | SmallRation
     | Ration
@@ -2448,6 +2525,8 @@ export interface VelvetPouch {
     | ChargrilledMeat
     | Food
     | Key
+    | TenguMask
+    | KingsCrown
     | Seed
     | Dewdrop
     | Waterskin
@@ -2539,6 +2618,7 @@ export interface ScrollHolder {
     | Scroll
     | Gold
     | MysteryMeat
+    | FrozenCarpaccio
     | Berry
     | SmallRation
     | Ration
@@ -2546,6 +2626,8 @@ export interface ScrollHolder {
     | ChargrilledMeat
     | Food
     | Key
+    | TenguMask
+    | KingsCrown
     | Seed
     | Dewdrop
     | Waterskin
@@ -2637,6 +2719,7 @@ export interface MagicalHolster {
     | Scroll
     | Gold
     | MysteryMeat
+    | FrozenCarpaccio
     | Berry
     | SmallRation
     | Ration
@@ -2644,6 +2727,8 @@ export interface MagicalHolster {
     | ChargrilledMeat
     | Food
     | Key
+    | TenguMask
+    | KingsCrown
     | Seed
     | Dewdrop
     | Waterskin
@@ -2735,6 +2820,7 @@ export interface PotionBandolier {
     | Scroll
     | Gold
     | MysteryMeat
+    | FrozenCarpaccio
     | Berry
     | SmallRation
     | Ration
@@ -2742,6 +2828,8 @@ export interface PotionBandolier {
     | ChargrilledMeat
     | Food
     | Key
+    | TenguMask
+    | KingsCrown
     | Seed
     | Dewdrop
     | Waterskin
