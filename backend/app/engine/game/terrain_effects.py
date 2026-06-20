@@ -234,14 +234,20 @@ def _heal_activator(entity: Entity, duration: float):
 
 
 def _explode_fire(floor: FloorState, pos: Tuple[int, int]):
+    blob_id = f"firebloom_{pos[0]}_{pos[1]}"
+    cells = set()
+    volume = {}
     for dy in (-1, 0, 1):
         for dx in (-1, 0, 1):
             nx, ny = pos[0] + dx, pos[1] + dy
             if 0 <= nx < floor.width and 0 <= ny < floor.height:
                 tile = floor.grid[ny][nx]
-                if tile == TileType.FLOOR_GRASS or tile == TileType.HIGH_GRASS or tile == TileType.FURROWED_GRASS:
-                    floor.grid[ny][nx] = TileType.FLOOR
-    floor.rebuild_flags()
+                flamable = floor.flags.flamable[ny][nx] if floor.flags else False
+                if flamable or tile == TileType.FLOOR or tile == TileType.EMPTY_DECO:
+                    cells.add((nx, ny))
+                    volume[(nx, ny)] = 2
+    if cells:
+        floor.blob_areas[blob_id] = {"type": "fire", "cells": cells, "volume": volume}
 
 
 def _freeze_area(floor: FloorState, pos: Tuple[int, int]):

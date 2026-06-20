@@ -36,6 +36,9 @@ const EQUIP_SLOTS = [
 const EQUIPPABLE_TYPES = new Set(['weapon', 'wearable', 'ring', 'artifact']);
 const LONG_PRESS_MS = 450;
 
+// All Bag subtypes (generic backpack + the SPD-style category pouches/holsters).
+const BAG_KINDS = new Set(['bag', 'velvet_pouch', 'scroll_holder', 'magical_holster', 'potion_bandolier']);
+
 function levelText(item) {
   if (!item || !item.level_known || !item.level) return null;
   return `${item.level > 0 ? '+' : ''}${item.level}`;
@@ -137,7 +140,7 @@ export default function InventoryPane({ belongings, gold, energy, strength, onOp
   const backpack = (belongings && belongings.backpack) || { items: [], capacity: 20 };
 
   // Bag tabs: backpack first, then any nested bags it contains.
-  const nestedBags = (backpack.items || []).filter(i => i.kind === 'bag');
+  const nestedBags = (backpack.items || []).filter(i => BAG_KINDS.has(i.kind));
   const bags = [backpack, ...nestedBags];
 
   const [activeBagId, setActiveBagId] = useState(backpack.id);
@@ -146,7 +149,7 @@ export default function InventoryPane({ belongings, gold, energy, strength, onOp
   const effectiveBagId = bags.some(b => b.id === activeBagId) ? activeBagId : backpack.id;
 
   const activeBag = bags.find(b => b.id === effectiveBagId) || backpack;
-  const items = (activeBag.items || []).filter(i => i.kind !== 'bag');
+  const items = (activeBag.items || []).filter(i => !BAG_KINDS.has(i.kind));
   const capacity = activeBag.capacity || 20;
   const emptyCount = Math.max(0, capacity - items.length);
 

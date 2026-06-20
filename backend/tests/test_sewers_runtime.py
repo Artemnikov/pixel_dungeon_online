@@ -82,7 +82,7 @@ def test_locked_door_requires_matching_key_and_unlocks_with_patch():
     assert neighbor is not None
     player.pos.x, player.pos.y = neighbor
 
-    player.belongings.backpack.items = [item for item in player.inventory if not (isinstance(item, Key) and item.key_id == key_id)]
+    assert player.key_count(key_id, floor.floor_id) == 0
 
     game.flush_events()
     game.move_entity(player.id, door_x - player.pos.x, door_y - player.pos.y)
@@ -90,14 +90,14 @@ def test_locked_door_requires_matching_key_and_unlocks_with_patch():
     assert (player.pos.x, player.pos.y) == neighbor
     assert floor.grid[door_y][door_x] == TileType.LOCKED_DOOR
 
-    player.inventory.append(Key(id="test-key", name="Rusty Key", key_id=key_id))
+    player.add_key(key_id, floor.floor_id, "Rusty Key")
 
     game.move_entity(player.id, door_x - player.pos.x, door_y - player.pos.y)
 
     assert (player.pos.x, player.pos.y) == (door_x, door_y)
     # Player stands on the door → it's OPEN_DOOR (runtime door-enter mutation)
     assert floor.grid[door_y][door_x] == TileType.OPEN_DOOR
-    assert not any(isinstance(item, Key) and item.key_id == key_id for item in player.inventory)
+    assert player.key_count(key_id, floor.floor_id) == 0
 
     events = game.flush_events()
     map_patches = [e for e in events if e["type"] == "MAP_PATCH"]

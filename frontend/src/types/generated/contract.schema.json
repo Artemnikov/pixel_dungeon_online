@@ -261,6 +261,7 @@
                 "chargrilled_meat": "#/$defs/ChargrilledMeat",
                 "cloak_of_shadows": "#/$defs/CloakOfShadows",
                 "dagger": "#/$defs/Dagger",
+                "damage_wand": "#/$defs/DamageWand",
                 "dewdrop": "#/$defs/Dewdrop",
                 "dwarf_token": "#/$defs/DwarfToken",
                 "elixir_aqua_rejuv": "#/$defs/ElixirOfAquaticRejuvenation",
@@ -314,6 +315,19 @@
                 "throwable_dagger": "#/$defs/ThrowableDagger",
                 "velvet_pouch": "#/$defs/VelvetPouch",
                 "wand": "#/$defs/Wand",
+                "wand_blast_wave": "#/$defs/WandOfBlastWave",
+                "wand_corrosion": "#/$defs/WandOfCorrosion",
+                "wand_corruption": "#/$defs/WandOfCorruption",
+                "wand_disintegration": "#/$defs/WandOfDisintegration",
+                "wand_fireblast": "#/$defs/WandOfFireblast",
+                "wand_frost": "#/$defs/WandOfFrost",
+                "wand_lightning": "#/$defs/WandOfLightning",
+                "wand_living_earth": "#/$defs/WandOfLivingEarth",
+                "wand_magic_missile": "#/$defs/WandOfMagicMissile",
+                "wand_prismatic_light": "#/$defs/WandOfPrismaticLight",
+                "wand_regrowth": "#/$defs/WandOfRegrowth",
+                "wand_transfusion": "#/$defs/WandOfTransfusion",
+                "wand_warding": "#/$defs/WandOfWarding",
                 "waterskin": "#/$defs/Waterskin",
                 "worn_shortsword": "#/$defs/WornShortsword"
               },
@@ -352,6 +366,48 @@
               },
               {
                 "$ref": "#/$defs/CloakOfShadows"
+              },
+              {
+                "$ref": "#/$defs/DamageWand"
+              },
+              {
+                "$ref": "#/$defs/WandOfMagicMissile"
+              },
+              {
+                "$ref": "#/$defs/WandOfFireblast"
+              },
+              {
+                "$ref": "#/$defs/WandOfFrost"
+              },
+              {
+                "$ref": "#/$defs/WandOfLightning"
+              },
+              {
+                "$ref": "#/$defs/WandOfDisintegration"
+              },
+              {
+                "$ref": "#/$defs/WandOfPrismaticLight"
+              },
+              {
+                "$ref": "#/$defs/WandOfBlastWave"
+              },
+              {
+                "$ref": "#/$defs/WandOfTransfusion"
+              },
+              {
+                "$ref": "#/$defs/WandOfCorrosion"
+              },
+              {
+                "$ref": "#/$defs/WandOfCorruption"
+              },
+              {
+                "$ref": "#/$defs/WandOfRegrowth"
+              },
+              {
+                "$ref": "#/$defs/WandOfWarding"
+              },
+              {
+                "$ref": "#/$defs/WandOfLivingEarth"
               },
               {
                 "$ref": "#/$defs/Wand"
@@ -545,6 +601,7 @@
                   "chargrilled_meat": "#/$defs/ChargrilledMeat",
                   "cloak_of_shadows": "#/$defs/CloakOfShadows",
                   "dagger": "#/$defs/Dagger",
+                  "damage_wand": "#/$defs/DamageWand",
                   "dewdrop": "#/$defs/Dewdrop",
                   "dwarf_token": "#/$defs/DwarfToken",
                   "elixir_aqua_rejuv": "#/$defs/ElixirOfAquaticRejuvenation",
@@ -598,6 +655,19 @@
                   "throwable_dagger": "#/$defs/ThrowableDagger",
                   "velvet_pouch": "#/$defs/VelvetPouch",
                   "wand": "#/$defs/Wand",
+                  "wand_blast_wave": "#/$defs/WandOfBlastWave",
+                  "wand_corrosion": "#/$defs/WandOfCorrosion",
+                  "wand_corruption": "#/$defs/WandOfCorruption",
+                  "wand_disintegration": "#/$defs/WandOfDisintegration",
+                  "wand_fireblast": "#/$defs/WandOfFireblast",
+                  "wand_frost": "#/$defs/WandOfFrost",
+                  "wand_lightning": "#/$defs/WandOfLightning",
+                  "wand_living_earth": "#/$defs/WandOfLivingEarth",
+                  "wand_magic_missile": "#/$defs/WandOfMagicMissile",
+                  "wand_prismatic_light": "#/$defs/WandOfPrismaticLight",
+                  "wand_regrowth": "#/$defs/WandOfRegrowth",
+                  "wand_transfusion": "#/$defs/WandOfTransfusion",
+                  "wand_warding": "#/$defs/WandOfWarding",
                   "waterskin": "#/$defs/Waterskin",
                   "worn_shortsword": "#/$defs/WornShortsword"
                 },
@@ -636,6 +706,48 @@
                 },
                 {
                   "$ref": "#/$defs/CloakOfShadows"
+                },
+                {
+                  "$ref": "#/$defs/DamageWand"
+                },
+                {
+                  "$ref": "#/$defs/WandOfMagicMissile"
+                },
+                {
+                  "$ref": "#/$defs/WandOfFireblast"
+                },
+                {
+                  "$ref": "#/$defs/WandOfFrost"
+                },
+                {
+                  "$ref": "#/$defs/WandOfLightning"
+                },
+                {
+                  "$ref": "#/$defs/WandOfDisintegration"
+                },
+                {
+                  "$ref": "#/$defs/WandOfPrismaticLight"
+                },
+                {
+                  "$ref": "#/$defs/WandOfBlastWave"
+                },
+                {
+                  "$ref": "#/$defs/WandOfTransfusion"
+                },
+                {
+                  "$ref": "#/$defs/WandOfCorrosion"
+                },
+                {
+                  "$ref": "#/$defs/WandOfCorruption"
+                },
+                {
+                  "$ref": "#/$defs/WandOfRegrowth"
+                },
+                {
+                  "$ref": "#/$defs/WandOfWarding"
+                },
+                {
+                  "$ref": "#/$defs/WandOfLivingEarth"
                 },
                 {
                   "$ref": "#/$defs/Wand"
@@ -822,6 +934,7 @@
                   "chargrilled_meat": "#/$defs/ChargrilledMeat",
                   "cloak_of_shadows": "#/$defs/CloakOfShadows",
                   "dagger": "#/$defs/Dagger",
+                  "damage_wand": "#/$defs/DamageWand",
                   "dewdrop": "#/$defs/Dewdrop",
                   "dwarf_token": "#/$defs/DwarfToken",
                   "elixir_aqua_rejuv": "#/$defs/ElixirOfAquaticRejuvenation",
@@ -875,6 +988,19 @@
                   "throwable_dagger": "#/$defs/ThrowableDagger",
                   "velvet_pouch": "#/$defs/VelvetPouch",
                   "wand": "#/$defs/Wand",
+                  "wand_blast_wave": "#/$defs/WandOfBlastWave",
+                  "wand_corrosion": "#/$defs/WandOfCorrosion",
+                  "wand_corruption": "#/$defs/WandOfCorruption",
+                  "wand_disintegration": "#/$defs/WandOfDisintegration",
+                  "wand_fireblast": "#/$defs/WandOfFireblast",
+                  "wand_frost": "#/$defs/WandOfFrost",
+                  "wand_lightning": "#/$defs/WandOfLightning",
+                  "wand_living_earth": "#/$defs/WandOfLivingEarth",
+                  "wand_magic_missile": "#/$defs/WandOfMagicMissile",
+                  "wand_prismatic_light": "#/$defs/WandOfPrismaticLight",
+                  "wand_regrowth": "#/$defs/WandOfRegrowth",
+                  "wand_transfusion": "#/$defs/WandOfTransfusion",
+                  "wand_warding": "#/$defs/WandOfWarding",
                   "waterskin": "#/$defs/Waterskin",
                   "worn_shortsword": "#/$defs/WornShortsword"
                 },
@@ -913,6 +1039,48 @@
                 },
                 {
                   "$ref": "#/$defs/CloakOfShadows"
+                },
+                {
+                  "$ref": "#/$defs/DamageWand"
+                },
+                {
+                  "$ref": "#/$defs/WandOfMagicMissile"
+                },
+                {
+                  "$ref": "#/$defs/WandOfFireblast"
+                },
+                {
+                  "$ref": "#/$defs/WandOfFrost"
+                },
+                {
+                  "$ref": "#/$defs/WandOfLightning"
+                },
+                {
+                  "$ref": "#/$defs/WandOfDisintegration"
+                },
+                {
+                  "$ref": "#/$defs/WandOfPrismaticLight"
+                },
+                {
+                  "$ref": "#/$defs/WandOfBlastWave"
+                },
+                {
+                  "$ref": "#/$defs/WandOfTransfusion"
+                },
+                {
+                  "$ref": "#/$defs/WandOfCorrosion"
+                },
+                {
+                  "$ref": "#/$defs/WandOfCorruption"
+                },
+                {
+                  "$ref": "#/$defs/WandOfRegrowth"
+                },
+                {
+                  "$ref": "#/$defs/WandOfWarding"
+                },
+                {
+                  "$ref": "#/$defs/WandOfLivingEarth"
                 },
                 {
                   "$ref": "#/$defs/Wand"
@@ -1099,6 +1267,7 @@
                   "chargrilled_meat": "#/$defs/ChargrilledMeat",
                   "cloak_of_shadows": "#/$defs/CloakOfShadows",
                   "dagger": "#/$defs/Dagger",
+                  "damage_wand": "#/$defs/DamageWand",
                   "dewdrop": "#/$defs/Dewdrop",
                   "dwarf_token": "#/$defs/DwarfToken",
                   "elixir_aqua_rejuv": "#/$defs/ElixirOfAquaticRejuvenation",
@@ -1152,6 +1321,19 @@
                   "throwable_dagger": "#/$defs/ThrowableDagger",
                   "velvet_pouch": "#/$defs/VelvetPouch",
                   "wand": "#/$defs/Wand",
+                  "wand_blast_wave": "#/$defs/WandOfBlastWave",
+                  "wand_corrosion": "#/$defs/WandOfCorrosion",
+                  "wand_corruption": "#/$defs/WandOfCorruption",
+                  "wand_disintegration": "#/$defs/WandOfDisintegration",
+                  "wand_fireblast": "#/$defs/WandOfFireblast",
+                  "wand_frost": "#/$defs/WandOfFrost",
+                  "wand_lightning": "#/$defs/WandOfLightning",
+                  "wand_living_earth": "#/$defs/WandOfLivingEarth",
+                  "wand_magic_missile": "#/$defs/WandOfMagicMissile",
+                  "wand_prismatic_light": "#/$defs/WandOfPrismaticLight",
+                  "wand_regrowth": "#/$defs/WandOfRegrowth",
+                  "wand_transfusion": "#/$defs/WandOfTransfusion",
+                  "wand_warding": "#/$defs/WandOfWarding",
                   "waterskin": "#/$defs/Waterskin",
                   "worn_shortsword": "#/$defs/WornShortsword"
                 },
@@ -1190,6 +1372,48 @@
                 },
                 {
                   "$ref": "#/$defs/CloakOfShadows"
+                },
+                {
+                  "$ref": "#/$defs/DamageWand"
+                },
+                {
+                  "$ref": "#/$defs/WandOfMagicMissile"
+                },
+                {
+                  "$ref": "#/$defs/WandOfFireblast"
+                },
+                {
+                  "$ref": "#/$defs/WandOfFrost"
+                },
+                {
+                  "$ref": "#/$defs/WandOfLightning"
+                },
+                {
+                  "$ref": "#/$defs/WandOfDisintegration"
+                },
+                {
+                  "$ref": "#/$defs/WandOfPrismaticLight"
+                },
+                {
+                  "$ref": "#/$defs/WandOfBlastWave"
+                },
+                {
+                  "$ref": "#/$defs/WandOfTransfusion"
+                },
+                {
+                  "$ref": "#/$defs/WandOfCorrosion"
+                },
+                {
+                  "$ref": "#/$defs/WandOfCorruption"
+                },
+                {
+                  "$ref": "#/$defs/WandOfRegrowth"
+                },
+                {
+                  "$ref": "#/$defs/WandOfWarding"
+                },
+                {
+                  "$ref": "#/$defs/WandOfLivingEarth"
                 },
                 {
                   "$ref": "#/$defs/Wand"
@@ -1376,6 +1600,7 @@
                   "chargrilled_meat": "#/$defs/ChargrilledMeat",
                   "cloak_of_shadows": "#/$defs/CloakOfShadows",
                   "dagger": "#/$defs/Dagger",
+                  "damage_wand": "#/$defs/DamageWand",
                   "dewdrop": "#/$defs/Dewdrop",
                   "dwarf_token": "#/$defs/DwarfToken",
                   "elixir_aqua_rejuv": "#/$defs/ElixirOfAquaticRejuvenation",
@@ -1429,6 +1654,19 @@
                   "throwable_dagger": "#/$defs/ThrowableDagger",
                   "velvet_pouch": "#/$defs/VelvetPouch",
                   "wand": "#/$defs/Wand",
+                  "wand_blast_wave": "#/$defs/WandOfBlastWave",
+                  "wand_corrosion": "#/$defs/WandOfCorrosion",
+                  "wand_corruption": "#/$defs/WandOfCorruption",
+                  "wand_disintegration": "#/$defs/WandOfDisintegration",
+                  "wand_fireblast": "#/$defs/WandOfFireblast",
+                  "wand_frost": "#/$defs/WandOfFrost",
+                  "wand_lightning": "#/$defs/WandOfLightning",
+                  "wand_living_earth": "#/$defs/WandOfLivingEarth",
+                  "wand_magic_missile": "#/$defs/WandOfMagicMissile",
+                  "wand_prismatic_light": "#/$defs/WandOfPrismaticLight",
+                  "wand_regrowth": "#/$defs/WandOfRegrowth",
+                  "wand_transfusion": "#/$defs/WandOfTransfusion",
+                  "wand_warding": "#/$defs/WandOfWarding",
                   "waterskin": "#/$defs/Waterskin",
                   "worn_shortsword": "#/$defs/WornShortsword"
                 },
@@ -1467,6 +1705,48 @@
                 },
                 {
                   "$ref": "#/$defs/CloakOfShadows"
+                },
+                {
+                  "$ref": "#/$defs/DamageWand"
+                },
+                {
+                  "$ref": "#/$defs/WandOfMagicMissile"
+                },
+                {
+                  "$ref": "#/$defs/WandOfFireblast"
+                },
+                {
+                  "$ref": "#/$defs/WandOfFrost"
+                },
+                {
+                  "$ref": "#/$defs/WandOfLightning"
+                },
+                {
+                  "$ref": "#/$defs/WandOfDisintegration"
+                },
+                {
+                  "$ref": "#/$defs/WandOfPrismaticLight"
+                },
+                {
+                  "$ref": "#/$defs/WandOfBlastWave"
+                },
+                {
+                  "$ref": "#/$defs/WandOfTransfusion"
+                },
+                {
+                  "$ref": "#/$defs/WandOfCorrosion"
+                },
+                {
+                  "$ref": "#/$defs/WandOfCorruption"
+                },
+                {
+                  "$ref": "#/$defs/WandOfRegrowth"
+                },
+                {
+                  "$ref": "#/$defs/WandOfWarding"
+                },
+                {
+                  "$ref": "#/$defs/WandOfLivingEarth"
                 },
                 {
                   "$ref": "#/$defs/Wand"
@@ -1653,6 +1933,7 @@
                   "chargrilled_meat": "#/$defs/ChargrilledMeat",
                   "cloak_of_shadows": "#/$defs/CloakOfShadows",
                   "dagger": "#/$defs/Dagger",
+                  "damage_wand": "#/$defs/DamageWand",
                   "dewdrop": "#/$defs/Dewdrop",
                   "dwarf_token": "#/$defs/DwarfToken",
                   "elixir_aqua_rejuv": "#/$defs/ElixirOfAquaticRejuvenation",
@@ -1706,6 +1987,19 @@
                   "throwable_dagger": "#/$defs/ThrowableDagger",
                   "velvet_pouch": "#/$defs/VelvetPouch",
                   "wand": "#/$defs/Wand",
+                  "wand_blast_wave": "#/$defs/WandOfBlastWave",
+                  "wand_corrosion": "#/$defs/WandOfCorrosion",
+                  "wand_corruption": "#/$defs/WandOfCorruption",
+                  "wand_disintegration": "#/$defs/WandOfDisintegration",
+                  "wand_fireblast": "#/$defs/WandOfFireblast",
+                  "wand_frost": "#/$defs/WandOfFrost",
+                  "wand_lightning": "#/$defs/WandOfLightning",
+                  "wand_living_earth": "#/$defs/WandOfLivingEarth",
+                  "wand_magic_missile": "#/$defs/WandOfMagicMissile",
+                  "wand_prismatic_light": "#/$defs/WandOfPrismaticLight",
+                  "wand_regrowth": "#/$defs/WandOfRegrowth",
+                  "wand_transfusion": "#/$defs/WandOfTransfusion",
+                  "wand_warding": "#/$defs/WandOfWarding",
                   "waterskin": "#/$defs/Waterskin",
                   "worn_shortsword": "#/$defs/WornShortsword"
                 },
@@ -1744,6 +2038,48 @@
                 },
                 {
                   "$ref": "#/$defs/CloakOfShadows"
+                },
+                {
+                  "$ref": "#/$defs/DamageWand"
+                },
+                {
+                  "$ref": "#/$defs/WandOfMagicMissile"
+                },
+                {
+                  "$ref": "#/$defs/WandOfFireblast"
+                },
+                {
+                  "$ref": "#/$defs/WandOfFrost"
+                },
+                {
+                  "$ref": "#/$defs/WandOfLightning"
+                },
+                {
+                  "$ref": "#/$defs/WandOfDisintegration"
+                },
+                {
+                  "$ref": "#/$defs/WandOfPrismaticLight"
+                },
+                {
+                  "$ref": "#/$defs/WandOfBlastWave"
+                },
+                {
+                  "$ref": "#/$defs/WandOfTransfusion"
+                },
+                {
+                  "$ref": "#/$defs/WandOfCorrosion"
+                },
+                {
+                  "$ref": "#/$defs/WandOfCorruption"
+                },
+                {
+                  "$ref": "#/$defs/WandOfRegrowth"
+                },
+                {
+                  "$ref": "#/$defs/WandOfWarding"
+                },
+                {
+                  "$ref": "#/$defs/WandOfLivingEarth"
                 },
                 {
                   "$ref": "#/$defs/Wand"
@@ -2600,6 +2936,132 @@
       },
       "type": "object"
     },
+    "DamageWand": {
+      "description": "Base for wands that deal direct damage to a target.\n\nSubclasses define *min(lvl)* and *max(lvl)*; *damage_roll(lvl)* returns a\nrandom integer in that range.",
+      "properties": {
+        "kind": {
+          "const": "damage_wand",
+          "default": "damage_wand",
+          "type": "string"
+        },
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "default": "wand",
+          "type": "string"
+        },
+        "pos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Position"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "quantity": {
+          "default": 1,
+          "type": "integer"
+        },
+        "level": {
+          "default": 0,
+          "type": "integer"
+        },
+        "level_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "unique": {
+          "default": false,
+          "type": "boolean"
+        },
+        "kept_though_lost": {
+          "default": false,
+          "type": "boolean"
+        },
+        "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        },
+        "damage": {
+          "default": 0,
+          "type": "integer"
+        },
+        "charges": {
+          "default": 2,
+          "type": "integer"
+        },
+        "max_charges": {
+          "default": 2,
+          "type": "integer"
+        },
+        "range": {
+          "default": 4,
+          "type": "integer"
+        },
+        "projectile_type": {
+          "default": "magic_bolt",
+          "type": "string"
+        },
+        "beam_type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "wand_sound": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "partial_charge": {
+          "default": 0.0,
+          "type": "number"
+        },
+        "staff_name": {
+          "default": "Staff",
+          "type": "string"
+        },
+        "recharge_scale": {
+          "default": 1.0,
+          "type": "number"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "type": "object"
+    },
     "Dewdrop": {
       "properties": {
         "kind": {
@@ -3293,6 +3755,30 @@
       ],
       "type": "object"
     },
+    "KeyRecord": {
+      "description": "A held key, tracked outside the bag (mirrors SPD's Notes.KeyRecord).\n\nUniqueness is (key_id, depth): a key only unlocks doors on the floor it\nwas found on, so two records with the same key_id but different depth\nare tracked separately.",
+      "properties": {
+        "key_id": {
+          "type": "string"
+        },
+        "depth": {
+          "type": "integer"
+        },
+        "quantity": {
+          "default": 1,
+          "type": "integer"
+        },
+        "name": {
+          "default": "",
+          "type": "string"
+        }
+      },
+      "required": [
+        "key_id",
+        "depth"
+      ],
+      "type": "object"
+    },
     "MagicalHolster": {
       "properties": {
         "kind": {
@@ -3377,6 +3863,7 @@
                 "chargrilled_meat": "#/$defs/ChargrilledMeat",
                 "cloak_of_shadows": "#/$defs/CloakOfShadows",
                 "dagger": "#/$defs/Dagger",
+                "damage_wand": "#/$defs/DamageWand",
                 "dewdrop": "#/$defs/Dewdrop",
                 "dwarf_token": "#/$defs/DwarfToken",
                 "elixir_aqua_rejuv": "#/$defs/ElixirOfAquaticRejuvenation",
@@ -3430,6 +3917,19 @@
                 "throwable_dagger": "#/$defs/ThrowableDagger",
                 "velvet_pouch": "#/$defs/VelvetPouch",
                 "wand": "#/$defs/Wand",
+                "wand_blast_wave": "#/$defs/WandOfBlastWave",
+                "wand_corrosion": "#/$defs/WandOfCorrosion",
+                "wand_corruption": "#/$defs/WandOfCorruption",
+                "wand_disintegration": "#/$defs/WandOfDisintegration",
+                "wand_fireblast": "#/$defs/WandOfFireblast",
+                "wand_frost": "#/$defs/WandOfFrost",
+                "wand_lightning": "#/$defs/WandOfLightning",
+                "wand_living_earth": "#/$defs/WandOfLivingEarth",
+                "wand_magic_missile": "#/$defs/WandOfMagicMissile",
+                "wand_prismatic_light": "#/$defs/WandOfPrismaticLight",
+                "wand_regrowth": "#/$defs/WandOfRegrowth",
+                "wand_transfusion": "#/$defs/WandOfTransfusion",
+                "wand_warding": "#/$defs/WandOfWarding",
                 "waterskin": "#/$defs/Waterskin",
                 "worn_shortsword": "#/$defs/WornShortsword"
               },
@@ -3468,6 +3968,48 @@
               },
               {
                 "$ref": "#/$defs/CloakOfShadows"
+              },
+              {
+                "$ref": "#/$defs/DamageWand"
+              },
+              {
+                "$ref": "#/$defs/WandOfMagicMissile"
+              },
+              {
+                "$ref": "#/$defs/WandOfFireblast"
+              },
+              {
+                "$ref": "#/$defs/WandOfFrost"
+              },
+              {
+                "$ref": "#/$defs/WandOfLightning"
+              },
+              {
+                "$ref": "#/$defs/WandOfDisintegration"
+              },
+              {
+                "$ref": "#/$defs/WandOfPrismaticLight"
+              },
+              {
+                "$ref": "#/$defs/WandOfBlastWave"
+              },
+              {
+                "$ref": "#/$defs/WandOfTransfusion"
+              },
+              {
+                "$ref": "#/$defs/WandOfCorrosion"
+              },
+              {
+                "$ref": "#/$defs/WandOfCorruption"
+              },
+              {
+                "$ref": "#/$defs/WandOfRegrowth"
+              },
+              {
+                "$ref": "#/$defs/WandOfWarding"
+              },
+              {
+                "$ref": "#/$defs/WandOfLivingEarth"
               },
               {
                 "$ref": "#/$defs/Wand"
@@ -3997,6 +4539,14 @@
           "default": 0,
           "type": "integer"
         },
+        "burning_accum": {
+          "default": 0.0,
+          "type": "number"
+        },
+        "burning_total_seconds": {
+          "default": 0.0,
+          "type": "number"
+        },
         "shields": {
           "items": {
             "$ref": "#/$defs/Shield"
@@ -4362,6 +4912,14 @@
           "default": 0,
           "type": "integer"
         },
+        "burning_accum": {
+          "default": 0.0,
+          "type": "number"
+        },
+        "burning_total_seconds": {
+          "default": 0.0,
+          "type": "number"
+        },
         "shields": {
           "items": {
             "$ref": "#/$defs/Shield"
@@ -4431,6 +4989,12 @@
         "quickslot": {
           "$ref": "#/$defs/QuickSlot"
         },
+        "keys": {
+          "items": {
+            "$ref": "#/$defs/KeyRecord"
+          },
+          "type": "array"
+        },
         "gold": {
           "default": 0,
           "type": "integer"
@@ -4457,6 +5021,14 @@
         "death_processed": {
           "default": false,
           "type": "boolean"
+        },
+        "kills_count": {
+          "default": 0,
+          "type": "integer"
+        },
+        "floors_explored": {
+          "default": 1,
+          "type": "integer"
         },
         "heal_left": {
           "default": 0.0,
@@ -4641,6 +5213,7 @@
                 "chargrilled_meat": "#/$defs/ChargrilledMeat",
                 "cloak_of_shadows": "#/$defs/CloakOfShadows",
                 "dagger": "#/$defs/Dagger",
+                "damage_wand": "#/$defs/DamageWand",
                 "dewdrop": "#/$defs/Dewdrop",
                 "dwarf_token": "#/$defs/DwarfToken",
                 "elixir_aqua_rejuv": "#/$defs/ElixirOfAquaticRejuvenation",
@@ -4694,6 +5267,19 @@
                 "throwable_dagger": "#/$defs/ThrowableDagger",
                 "velvet_pouch": "#/$defs/VelvetPouch",
                 "wand": "#/$defs/Wand",
+                "wand_blast_wave": "#/$defs/WandOfBlastWave",
+                "wand_corrosion": "#/$defs/WandOfCorrosion",
+                "wand_corruption": "#/$defs/WandOfCorruption",
+                "wand_disintegration": "#/$defs/WandOfDisintegration",
+                "wand_fireblast": "#/$defs/WandOfFireblast",
+                "wand_frost": "#/$defs/WandOfFrost",
+                "wand_lightning": "#/$defs/WandOfLightning",
+                "wand_living_earth": "#/$defs/WandOfLivingEarth",
+                "wand_magic_missile": "#/$defs/WandOfMagicMissile",
+                "wand_prismatic_light": "#/$defs/WandOfPrismaticLight",
+                "wand_regrowth": "#/$defs/WandOfRegrowth",
+                "wand_transfusion": "#/$defs/WandOfTransfusion",
+                "wand_warding": "#/$defs/WandOfWarding",
                 "waterskin": "#/$defs/Waterskin",
                 "worn_shortsword": "#/$defs/WornShortsword"
               },
@@ -4732,6 +5318,48 @@
               },
               {
                 "$ref": "#/$defs/CloakOfShadows"
+              },
+              {
+                "$ref": "#/$defs/DamageWand"
+              },
+              {
+                "$ref": "#/$defs/WandOfMagicMissile"
+              },
+              {
+                "$ref": "#/$defs/WandOfFireblast"
+              },
+              {
+                "$ref": "#/$defs/WandOfFrost"
+              },
+              {
+                "$ref": "#/$defs/WandOfLightning"
+              },
+              {
+                "$ref": "#/$defs/WandOfDisintegration"
+              },
+              {
+                "$ref": "#/$defs/WandOfPrismaticLight"
+              },
+              {
+                "$ref": "#/$defs/WandOfBlastWave"
+              },
+              {
+                "$ref": "#/$defs/WandOfTransfusion"
+              },
+              {
+                "$ref": "#/$defs/WandOfCorrosion"
+              },
+              {
+                "$ref": "#/$defs/WandOfCorruption"
+              },
+              {
+                "$ref": "#/$defs/WandOfRegrowth"
+              },
+              {
+                "$ref": "#/$defs/WandOfWarding"
+              },
+              {
+                "$ref": "#/$defs/WandOfLivingEarth"
               },
               {
                 "$ref": "#/$defs/Wand"
@@ -4915,6 +5543,7 @@
                   "chargrilled_meat": "#/$defs/ChargrilledMeat",
                   "cloak_of_shadows": "#/$defs/CloakOfShadows",
                   "dagger": "#/$defs/Dagger",
+                  "damage_wand": "#/$defs/DamageWand",
                   "dewdrop": "#/$defs/Dewdrop",
                   "dwarf_token": "#/$defs/DwarfToken",
                   "elixir_aqua_rejuv": "#/$defs/ElixirOfAquaticRejuvenation",
@@ -4968,6 +5597,19 @@
                   "throwable_dagger": "#/$defs/ThrowableDagger",
                   "velvet_pouch": "#/$defs/VelvetPouch",
                   "wand": "#/$defs/Wand",
+                  "wand_blast_wave": "#/$defs/WandOfBlastWave",
+                  "wand_corrosion": "#/$defs/WandOfCorrosion",
+                  "wand_corruption": "#/$defs/WandOfCorruption",
+                  "wand_disintegration": "#/$defs/WandOfDisintegration",
+                  "wand_fireblast": "#/$defs/WandOfFireblast",
+                  "wand_frost": "#/$defs/WandOfFrost",
+                  "wand_lightning": "#/$defs/WandOfLightning",
+                  "wand_living_earth": "#/$defs/WandOfLivingEarth",
+                  "wand_magic_missile": "#/$defs/WandOfMagicMissile",
+                  "wand_prismatic_light": "#/$defs/WandOfPrismaticLight",
+                  "wand_regrowth": "#/$defs/WandOfRegrowth",
+                  "wand_transfusion": "#/$defs/WandOfTransfusion",
+                  "wand_warding": "#/$defs/WandOfWarding",
                   "waterskin": "#/$defs/Waterskin",
                   "worn_shortsword": "#/$defs/WornShortsword"
                 },
@@ -5006,6 +5648,48 @@
                 },
                 {
                   "$ref": "#/$defs/CloakOfShadows"
+                },
+                {
+                  "$ref": "#/$defs/DamageWand"
+                },
+                {
+                  "$ref": "#/$defs/WandOfMagicMissile"
+                },
+                {
+                  "$ref": "#/$defs/WandOfFireblast"
+                },
+                {
+                  "$ref": "#/$defs/WandOfFrost"
+                },
+                {
+                  "$ref": "#/$defs/WandOfLightning"
+                },
+                {
+                  "$ref": "#/$defs/WandOfDisintegration"
+                },
+                {
+                  "$ref": "#/$defs/WandOfPrismaticLight"
+                },
+                {
+                  "$ref": "#/$defs/WandOfBlastWave"
+                },
+                {
+                  "$ref": "#/$defs/WandOfTransfusion"
+                },
+                {
+                  "$ref": "#/$defs/WandOfCorrosion"
+                },
+                {
+                  "$ref": "#/$defs/WandOfCorruption"
+                },
+                {
+                  "$ref": "#/$defs/WandOfRegrowth"
+                },
+                {
+                  "$ref": "#/$defs/WandOfWarding"
+                },
+                {
+                  "$ref": "#/$defs/WandOfLivingEarth"
                 },
                 {
                   "$ref": "#/$defs/Wand"
@@ -5192,6 +5876,7 @@
                   "chargrilled_meat": "#/$defs/ChargrilledMeat",
                   "cloak_of_shadows": "#/$defs/CloakOfShadows",
                   "dagger": "#/$defs/Dagger",
+                  "damage_wand": "#/$defs/DamageWand",
                   "dewdrop": "#/$defs/Dewdrop",
                   "dwarf_token": "#/$defs/DwarfToken",
                   "elixir_aqua_rejuv": "#/$defs/ElixirOfAquaticRejuvenation",
@@ -5245,6 +5930,19 @@
                   "throwable_dagger": "#/$defs/ThrowableDagger",
                   "velvet_pouch": "#/$defs/VelvetPouch",
                   "wand": "#/$defs/Wand",
+                  "wand_blast_wave": "#/$defs/WandOfBlastWave",
+                  "wand_corrosion": "#/$defs/WandOfCorrosion",
+                  "wand_corruption": "#/$defs/WandOfCorruption",
+                  "wand_disintegration": "#/$defs/WandOfDisintegration",
+                  "wand_fireblast": "#/$defs/WandOfFireblast",
+                  "wand_frost": "#/$defs/WandOfFrost",
+                  "wand_lightning": "#/$defs/WandOfLightning",
+                  "wand_living_earth": "#/$defs/WandOfLivingEarth",
+                  "wand_magic_missile": "#/$defs/WandOfMagicMissile",
+                  "wand_prismatic_light": "#/$defs/WandOfPrismaticLight",
+                  "wand_regrowth": "#/$defs/WandOfRegrowth",
+                  "wand_transfusion": "#/$defs/WandOfTransfusion",
+                  "wand_warding": "#/$defs/WandOfWarding",
                   "waterskin": "#/$defs/Waterskin",
                   "worn_shortsword": "#/$defs/WornShortsword"
                 },
@@ -5283,6 +5981,48 @@
                 },
                 {
                   "$ref": "#/$defs/CloakOfShadows"
+                },
+                {
+                  "$ref": "#/$defs/DamageWand"
+                },
+                {
+                  "$ref": "#/$defs/WandOfMagicMissile"
+                },
+                {
+                  "$ref": "#/$defs/WandOfFireblast"
+                },
+                {
+                  "$ref": "#/$defs/WandOfFrost"
+                },
+                {
+                  "$ref": "#/$defs/WandOfLightning"
+                },
+                {
+                  "$ref": "#/$defs/WandOfDisintegration"
+                },
+                {
+                  "$ref": "#/$defs/WandOfPrismaticLight"
+                },
+                {
+                  "$ref": "#/$defs/WandOfBlastWave"
+                },
+                {
+                  "$ref": "#/$defs/WandOfTransfusion"
+                },
+                {
+                  "$ref": "#/$defs/WandOfCorrosion"
+                },
+                {
+                  "$ref": "#/$defs/WandOfCorruption"
+                },
+                {
+                  "$ref": "#/$defs/WandOfRegrowth"
+                },
+                {
+                  "$ref": "#/$defs/WandOfWarding"
+                },
+                {
+                  "$ref": "#/$defs/WandOfLivingEarth"
                 },
                 {
                   "$ref": "#/$defs/Wand"
@@ -5641,6 +6381,7 @@
                 "chargrilled_meat": "#/$defs/ChargrilledMeat",
                 "cloak_of_shadows": "#/$defs/CloakOfShadows",
                 "dagger": "#/$defs/Dagger",
+                "damage_wand": "#/$defs/DamageWand",
                 "dewdrop": "#/$defs/Dewdrop",
                 "dwarf_token": "#/$defs/DwarfToken",
                 "elixir_aqua_rejuv": "#/$defs/ElixirOfAquaticRejuvenation",
@@ -5694,6 +6435,19 @@
                 "throwable_dagger": "#/$defs/ThrowableDagger",
                 "velvet_pouch": "#/$defs/VelvetPouch",
                 "wand": "#/$defs/Wand",
+                "wand_blast_wave": "#/$defs/WandOfBlastWave",
+                "wand_corrosion": "#/$defs/WandOfCorrosion",
+                "wand_corruption": "#/$defs/WandOfCorruption",
+                "wand_disintegration": "#/$defs/WandOfDisintegration",
+                "wand_fireblast": "#/$defs/WandOfFireblast",
+                "wand_frost": "#/$defs/WandOfFrost",
+                "wand_lightning": "#/$defs/WandOfLightning",
+                "wand_living_earth": "#/$defs/WandOfLivingEarth",
+                "wand_magic_missile": "#/$defs/WandOfMagicMissile",
+                "wand_prismatic_light": "#/$defs/WandOfPrismaticLight",
+                "wand_regrowth": "#/$defs/WandOfRegrowth",
+                "wand_transfusion": "#/$defs/WandOfTransfusion",
+                "wand_warding": "#/$defs/WandOfWarding",
                 "waterskin": "#/$defs/Waterskin",
                 "worn_shortsword": "#/$defs/WornShortsword"
               },
@@ -5732,6 +6486,48 @@
               },
               {
                 "$ref": "#/$defs/CloakOfShadows"
+              },
+              {
+                "$ref": "#/$defs/DamageWand"
+              },
+              {
+                "$ref": "#/$defs/WandOfMagicMissile"
+              },
+              {
+                "$ref": "#/$defs/WandOfFireblast"
+              },
+              {
+                "$ref": "#/$defs/WandOfFrost"
+              },
+              {
+                "$ref": "#/$defs/WandOfLightning"
+              },
+              {
+                "$ref": "#/$defs/WandOfDisintegration"
+              },
+              {
+                "$ref": "#/$defs/WandOfPrismaticLight"
+              },
+              {
+                "$ref": "#/$defs/WandOfBlastWave"
+              },
+              {
+                "$ref": "#/$defs/WandOfTransfusion"
+              },
+              {
+                "$ref": "#/$defs/WandOfCorrosion"
+              },
+              {
+                "$ref": "#/$defs/WandOfCorruption"
+              },
+              {
+                "$ref": "#/$defs/WandOfRegrowth"
+              },
+              {
+                "$ref": "#/$defs/WandOfWarding"
+              },
+              {
+                "$ref": "#/$defs/WandOfLivingEarth"
               },
               {
                 "$ref": "#/$defs/Wand"
@@ -7123,6 +7919,7 @@
                 "chargrilled_meat": "#/$defs/ChargrilledMeat",
                 "cloak_of_shadows": "#/$defs/CloakOfShadows",
                 "dagger": "#/$defs/Dagger",
+                "damage_wand": "#/$defs/DamageWand",
                 "dewdrop": "#/$defs/Dewdrop",
                 "dwarf_token": "#/$defs/DwarfToken",
                 "elixir_aqua_rejuv": "#/$defs/ElixirOfAquaticRejuvenation",
@@ -7176,6 +7973,19 @@
                 "throwable_dagger": "#/$defs/ThrowableDagger",
                 "velvet_pouch": "#/$defs/VelvetPouch",
                 "wand": "#/$defs/Wand",
+                "wand_blast_wave": "#/$defs/WandOfBlastWave",
+                "wand_corrosion": "#/$defs/WandOfCorrosion",
+                "wand_corruption": "#/$defs/WandOfCorruption",
+                "wand_disintegration": "#/$defs/WandOfDisintegration",
+                "wand_fireblast": "#/$defs/WandOfFireblast",
+                "wand_frost": "#/$defs/WandOfFrost",
+                "wand_lightning": "#/$defs/WandOfLightning",
+                "wand_living_earth": "#/$defs/WandOfLivingEarth",
+                "wand_magic_missile": "#/$defs/WandOfMagicMissile",
+                "wand_prismatic_light": "#/$defs/WandOfPrismaticLight",
+                "wand_regrowth": "#/$defs/WandOfRegrowth",
+                "wand_transfusion": "#/$defs/WandOfTransfusion",
+                "wand_warding": "#/$defs/WandOfWarding",
                 "waterskin": "#/$defs/Waterskin",
                 "worn_shortsword": "#/$defs/WornShortsword"
               },
@@ -7214,6 +8024,48 @@
               },
               {
                 "$ref": "#/$defs/CloakOfShadows"
+              },
+              {
+                "$ref": "#/$defs/DamageWand"
+              },
+              {
+                "$ref": "#/$defs/WandOfMagicMissile"
+              },
+              {
+                "$ref": "#/$defs/WandOfFireblast"
+              },
+              {
+                "$ref": "#/$defs/WandOfFrost"
+              },
+              {
+                "$ref": "#/$defs/WandOfLightning"
+              },
+              {
+                "$ref": "#/$defs/WandOfDisintegration"
+              },
+              {
+                "$ref": "#/$defs/WandOfPrismaticLight"
+              },
+              {
+                "$ref": "#/$defs/WandOfBlastWave"
+              },
+              {
+                "$ref": "#/$defs/WandOfTransfusion"
+              },
+              {
+                "$ref": "#/$defs/WandOfCorrosion"
+              },
+              {
+                "$ref": "#/$defs/WandOfCorruption"
+              },
+              {
+                "$ref": "#/$defs/WandOfRegrowth"
+              },
+              {
+                "$ref": "#/$defs/WandOfWarding"
+              },
+              {
+                "$ref": "#/$defs/WandOfLivingEarth"
               },
               {
                 "$ref": "#/$defs/Wand"
@@ -8462,7 +9314,7 @@
           "type": "string"
         },
         "name": {
-          "default": "Staff",
+          "default": "Mage's Staff",
           "type": "string"
         },
         "type": {
@@ -8501,7 +9353,7 @@
           "type": "boolean"
         },
         "unique": {
-          "default": false,
+          "default": true,
           "type": "boolean"
         },
         "kept_though_lost": {
@@ -8525,7 +9377,7 @@
           "type": "integer"
         },
         "range": {
-          "default": 4,
+          "default": 1,
           "type": "integer"
         },
         "attack_cooldown": {
@@ -8563,15 +9415,50 @@
           "default": 0,
           "type": "integer"
         },
+        "tier": {
+          "default": 1,
+          "type": "integer"
+        },
         "magic_damage": {
           "default": 0,
           "type": "integer"
         },
+        "imbued_wand": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Wand"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "bones": {
+          "default": false,
+          "type": "boolean"
+        },
+        "hit_sound": {
+          "default": "HIT_BODY",
+          "type": "string"
+        },
+        "hit_sound_pitch": {
+          "default": 1.1,
+          "type": "number"
+        },
         "charges": {
-          "default": 4,
+          "readOnly": true,
+          "type": "integer"
+        },
+        "max_charges": {
+          "readOnly": true,
           "type": "integer"
         }
       },
+      "required": [
+        "charges",
+        "max_charges"
+      ],
       "type": "object"
     },
     "Stone": {
@@ -8946,7 +9833,7 @@
           "type": "boolean"
         },
         "capacity": {
-          "default": 20,
+          "default": 19,
           "type": "integer"
         },
         "items": {
@@ -8963,6 +9850,7 @@
                 "chargrilled_meat": "#/$defs/ChargrilledMeat",
                 "cloak_of_shadows": "#/$defs/CloakOfShadows",
                 "dagger": "#/$defs/Dagger",
+                "damage_wand": "#/$defs/DamageWand",
                 "dewdrop": "#/$defs/Dewdrop",
                 "dwarf_token": "#/$defs/DwarfToken",
                 "elixir_aqua_rejuv": "#/$defs/ElixirOfAquaticRejuvenation",
@@ -9016,6 +9904,19 @@
                 "throwable_dagger": "#/$defs/ThrowableDagger",
                 "velvet_pouch": "#/$defs/VelvetPouch",
                 "wand": "#/$defs/Wand",
+                "wand_blast_wave": "#/$defs/WandOfBlastWave",
+                "wand_corrosion": "#/$defs/WandOfCorrosion",
+                "wand_corruption": "#/$defs/WandOfCorruption",
+                "wand_disintegration": "#/$defs/WandOfDisintegration",
+                "wand_fireblast": "#/$defs/WandOfFireblast",
+                "wand_frost": "#/$defs/WandOfFrost",
+                "wand_lightning": "#/$defs/WandOfLightning",
+                "wand_living_earth": "#/$defs/WandOfLivingEarth",
+                "wand_magic_missile": "#/$defs/WandOfMagicMissile",
+                "wand_prismatic_light": "#/$defs/WandOfPrismaticLight",
+                "wand_regrowth": "#/$defs/WandOfRegrowth",
+                "wand_transfusion": "#/$defs/WandOfTransfusion",
+                "wand_warding": "#/$defs/WandOfWarding",
                 "waterskin": "#/$defs/Waterskin",
                 "worn_shortsword": "#/$defs/WornShortsword"
               },
@@ -9054,6 +9955,48 @@
               },
               {
                 "$ref": "#/$defs/CloakOfShadows"
+              },
+              {
+                "$ref": "#/$defs/DamageWand"
+              },
+              {
+                "$ref": "#/$defs/WandOfMagicMissile"
+              },
+              {
+                "$ref": "#/$defs/WandOfFireblast"
+              },
+              {
+                "$ref": "#/$defs/WandOfFrost"
+              },
+              {
+                "$ref": "#/$defs/WandOfLightning"
+              },
+              {
+                "$ref": "#/$defs/WandOfDisintegration"
+              },
+              {
+                "$ref": "#/$defs/WandOfPrismaticLight"
+              },
+              {
+                "$ref": "#/$defs/WandOfBlastWave"
+              },
+              {
+                "$ref": "#/$defs/WandOfTransfusion"
+              },
+              {
+                "$ref": "#/$defs/WandOfCorrosion"
+              },
+              {
+                "$ref": "#/$defs/WandOfCorruption"
+              },
+              {
+                "$ref": "#/$defs/WandOfRegrowth"
+              },
+              {
+                "$ref": "#/$defs/WandOfWarding"
+              },
+              {
+                "$ref": "#/$defs/WandOfLivingEarth"
               },
               {
                 "$ref": "#/$defs/Wand"
@@ -9308,11 +10251,1595 @@
         "projectile_type": {
           "default": "magic_bolt",
           "type": "string"
+        },
+        "beam_type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "wand_sound": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "partial_charge": {
+          "default": 0.0,
+          "type": "number"
+        },
+        "staff_name": {
+          "default": "Staff",
+          "type": "string"
+        },
+        "recharge_scale": {
+          "default": 1.0,
+          "type": "number"
         }
       },
       "required": [
         "name"
       ],
+      "type": "object"
+    },
+    "WandOfBlastWave": {
+      "properties": {
+        "kind": {
+          "const": "wand_blast_wave",
+          "default": "wand_blast_wave",
+          "type": "string"
+        },
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "name": {
+          "default": "Wand of Blast Wave",
+          "type": "string"
+        },
+        "type": {
+          "default": "wand",
+          "type": "string"
+        },
+        "pos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Position"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "quantity": {
+          "default": 1,
+          "type": "integer"
+        },
+        "level": {
+          "default": 0,
+          "type": "integer"
+        },
+        "level_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "unique": {
+          "default": false,
+          "type": "boolean"
+        },
+        "kept_though_lost": {
+          "default": false,
+          "type": "boolean"
+        },
+        "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        },
+        "damage": {
+          "default": 0,
+          "type": "integer"
+        },
+        "charges": {
+          "default": 3,
+          "type": "integer"
+        },
+        "max_charges": {
+          "default": 3,
+          "type": "integer"
+        },
+        "range": {
+          "default": 4,
+          "type": "integer"
+        },
+        "projectile_type": {
+          "default": "force",
+          "type": "string"
+        },
+        "beam_type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "wand_sound": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "partial_charge": {
+          "default": 0.0,
+          "type": "number"
+        },
+        "staff_name": {
+          "default": "Staff of Blast Wave",
+          "type": "string"
+        },
+        "recharge_scale": {
+          "default": 1.0,
+          "type": "number"
+        }
+      },
+      "type": "object"
+    },
+    "WandOfCorrosion": {
+      "properties": {
+        "kind": {
+          "const": "wand_corrosion",
+          "default": "wand_corrosion",
+          "type": "string"
+        },
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "name": {
+          "default": "Wand of Corrosion",
+          "type": "string"
+        },
+        "type": {
+          "default": "wand",
+          "type": "string"
+        },
+        "pos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Position"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "quantity": {
+          "default": 1,
+          "type": "integer"
+        },
+        "level": {
+          "default": 0,
+          "type": "integer"
+        },
+        "level_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "unique": {
+          "default": false,
+          "type": "boolean"
+        },
+        "kept_though_lost": {
+          "default": false,
+          "type": "boolean"
+        },
+        "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        },
+        "damage": {
+          "default": 3,
+          "type": "integer"
+        },
+        "charges": {
+          "default": 3,
+          "type": "integer"
+        },
+        "max_charges": {
+          "default": 3,
+          "type": "integer"
+        },
+        "range": {
+          "default": 4,
+          "type": "integer"
+        },
+        "projectile_type": {
+          "default": "corrosion",
+          "type": "string"
+        },
+        "beam_type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "wand_sound": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "partial_charge": {
+          "default": 0.0,
+          "type": "number"
+        },
+        "staff_name": {
+          "default": "Staff of Corrosion",
+          "type": "string"
+        },
+        "recharge_scale": {
+          "default": 1.0,
+          "type": "number"
+        }
+      },
+      "type": "object"
+    },
+    "WandOfCorruption": {
+      "properties": {
+        "kind": {
+          "const": "wand_corruption",
+          "default": "wand_corruption",
+          "type": "string"
+        },
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "name": {
+          "default": "Wand of Corruption",
+          "type": "string"
+        },
+        "type": {
+          "default": "wand",
+          "type": "string"
+        },
+        "pos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Position"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "quantity": {
+          "default": 1,
+          "type": "integer"
+        },
+        "level": {
+          "default": 0,
+          "type": "integer"
+        },
+        "level_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "unique": {
+          "default": false,
+          "type": "boolean"
+        },
+        "kept_though_lost": {
+          "default": false,
+          "type": "boolean"
+        },
+        "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        },
+        "damage": {
+          "default": 2,
+          "type": "integer"
+        },
+        "charges": {
+          "default": 3,
+          "type": "integer"
+        },
+        "max_charges": {
+          "default": 3,
+          "type": "integer"
+        },
+        "range": {
+          "default": 4,
+          "type": "integer"
+        },
+        "projectile_type": {
+          "default": "shadow",
+          "type": "string"
+        },
+        "beam_type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "wand_sound": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "partial_charge": {
+          "default": 0.0,
+          "type": "number"
+        },
+        "staff_name": {
+          "default": "Staff of Corruption",
+          "type": "string"
+        },
+        "recharge_scale": {
+          "default": 1.0,
+          "type": "number"
+        }
+      },
+      "type": "object"
+    },
+    "WandOfDisintegration": {
+      "properties": {
+        "kind": {
+          "const": "wand_disintegration",
+          "default": "wand_disintegration",
+          "type": "string"
+        },
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "name": {
+          "default": "Wand of Disintegration",
+          "type": "string"
+        },
+        "type": {
+          "default": "wand",
+          "type": "string"
+        },
+        "pos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Position"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "quantity": {
+          "default": 1,
+          "type": "integer"
+        },
+        "level": {
+          "default": 0,
+          "type": "integer"
+        },
+        "level_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "unique": {
+          "default": false,
+          "type": "boolean"
+        },
+        "kept_though_lost": {
+          "default": false,
+          "type": "boolean"
+        },
+        "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        },
+        "damage": {
+          "default": 0,
+          "type": "integer"
+        },
+        "charges": {
+          "default": 3,
+          "type": "integer"
+        },
+        "max_charges": {
+          "default": 3,
+          "type": "integer"
+        },
+        "range": {
+          "default": 8,
+          "type": "integer"
+        },
+        "projectile_type": {
+          "default": "beam",
+          "type": "string"
+        },
+        "beam_type": {
+          "default": "death_ray",
+          "type": "string"
+        },
+        "wand_sound": {
+          "default": "RAY",
+          "type": "string"
+        },
+        "partial_charge": {
+          "default": 0.0,
+          "type": "number"
+        },
+        "staff_name": {
+          "default": "Staff of Disintegration",
+          "type": "string"
+        },
+        "recharge_scale": {
+          "default": 1.0,
+          "type": "number"
+        }
+      },
+      "type": "object"
+    },
+    "WandOfFireblast": {
+      "properties": {
+        "kind": {
+          "const": "wand_fireblast",
+          "default": "wand_fireblast",
+          "type": "string"
+        },
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "name": {
+          "default": "Wand of Fireblast",
+          "type": "string"
+        },
+        "type": {
+          "default": "wand",
+          "type": "string"
+        },
+        "pos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Position"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "quantity": {
+          "default": 1,
+          "type": "integer"
+        },
+        "level": {
+          "default": 0,
+          "type": "integer"
+        },
+        "level_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "unique": {
+          "default": false,
+          "type": "boolean"
+        },
+        "kept_though_lost": {
+          "default": false,
+          "type": "boolean"
+        },
+        "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        },
+        "damage": {
+          "default": 0,
+          "type": "integer"
+        },
+        "charges": {
+          "default": 2,
+          "type": "integer"
+        },
+        "max_charges": {
+          "default": 2,
+          "type": "integer"
+        },
+        "range": {
+          "default": 4,
+          "type": "integer"
+        },
+        "projectile_type": {
+          "default": "fire_bolt",
+          "type": "string"
+        },
+        "beam_type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "wand_sound": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "partial_charge": {
+          "default": 0.0,
+          "type": "number"
+        },
+        "staff_name": {
+          "default": "Staff of Fireblast",
+          "type": "string"
+        },
+        "recharge_scale": {
+          "default": 1.0,
+          "type": "number"
+        }
+      },
+      "type": "object"
+    },
+    "WandOfFrost": {
+      "properties": {
+        "kind": {
+          "const": "wand_frost",
+          "default": "wand_frost",
+          "type": "string"
+        },
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "name": {
+          "default": "Wand of Frost",
+          "type": "string"
+        },
+        "type": {
+          "default": "wand",
+          "type": "string"
+        },
+        "pos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Position"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "quantity": {
+          "default": 1,
+          "type": "integer"
+        },
+        "level": {
+          "default": 0,
+          "type": "integer"
+        },
+        "level_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "unique": {
+          "default": false,
+          "type": "boolean"
+        },
+        "kept_though_lost": {
+          "default": false,
+          "type": "boolean"
+        },
+        "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        },
+        "damage": {
+          "default": 0,
+          "type": "integer"
+        },
+        "charges": {
+          "default": 3,
+          "type": "integer"
+        },
+        "max_charges": {
+          "default": 3,
+          "type": "integer"
+        },
+        "range": {
+          "default": 4,
+          "type": "integer"
+        },
+        "projectile_type": {
+          "default": "frost",
+          "type": "string"
+        },
+        "beam_type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "wand_sound": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "partial_charge": {
+          "default": 0.0,
+          "type": "number"
+        },
+        "staff_name": {
+          "default": "Staff of Frost",
+          "type": "string"
+        },
+        "recharge_scale": {
+          "default": 1.0,
+          "type": "number"
+        }
+      },
+      "type": "object"
+    },
+    "WandOfLightning": {
+      "properties": {
+        "kind": {
+          "const": "wand_lightning",
+          "default": "wand_lightning",
+          "type": "string"
+        },
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "name": {
+          "default": "Wand of Lightning",
+          "type": "string"
+        },
+        "type": {
+          "default": "wand",
+          "type": "string"
+        },
+        "pos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Position"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "quantity": {
+          "default": 1,
+          "type": "integer"
+        },
+        "level": {
+          "default": 0,
+          "type": "integer"
+        },
+        "level_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "unique": {
+          "default": false,
+          "type": "boolean"
+        },
+        "kept_though_lost": {
+          "default": false,
+          "type": "boolean"
+        },
+        "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        },
+        "damage": {
+          "default": 0,
+          "type": "integer"
+        },
+        "charges": {
+          "default": 2,
+          "type": "integer"
+        },
+        "max_charges": {
+          "default": 2,
+          "type": "integer"
+        },
+        "range": {
+          "default": 4,
+          "type": "integer"
+        },
+        "projectile_type": {
+          "default": "lightning",
+          "type": "string"
+        },
+        "beam_type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "wand_sound": {
+          "default": "LIGHTNING",
+          "type": "string"
+        },
+        "partial_charge": {
+          "default": 0.0,
+          "type": "number"
+        },
+        "staff_name": {
+          "default": "Staff of Lightning",
+          "type": "string"
+        },
+        "recharge_scale": {
+          "default": 1.0,
+          "type": "number"
+        }
+      },
+      "type": "object"
+    },
+    "WandOfLivingEarth": {
+      "properties": {
+        "kind": {
+          "const": "wand_living_earth",
+          "default": "wand_living_earth",
+          "type": "string"
+        },
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "name": {
+          "default": "Wand of Living Earth",
+          "type": "string"
+        },
+        "type": {
+          "default": "wand",
+          "type": "string"
+        },
+        "pos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Position"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "quantity": {
+          "default": 1,
+          "type": "integer"
+        },
+        "level": {
+          "default": 0,
+          "type": "integer"
+        },
+        "level_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "unique": {
+          "default": false,
+          "type": "boolean"
+        },
+        "kept_though_lost": {
+          "default": false,
+          "type": "boolean"
+        },
+        "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        },
+        "damage": {
+          "default": 0,
+          "type": "integer"
+        },
+        "charges": {
+          "default": 3,
+          "type": "integer"
+        },
+        "max_charges": {
+          "default": 3,
+          "type": "integer"
+        },
+        "range": {
+          "default": 4,
+          "type": "integer"
+        },
+        "projectile_type": {
+          "default": "earth",
+          "type": "string"
+        },
+        "beam_type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "wand_sound": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "partial_charge": {
+          "default": 0.0,
+          "type": "number"
+        },
+        "staff_name": {
+          "default": "Staff of Living Earth",
+          "type": "string"
+        },
+        "recharge_scale": {
+          "default": 1.0,
+          "type": "number"
+        }
+      },
+      "type": "object"
+    },
+    "WandOfMagicMissile": {
+      "properties": {
+        "kind": {
+          "const": "wand_magic_missile",
+          "default": "wand_magic_missile",
+          "type": "string"
+        },
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "name": {
+          "default": "Wand of Magic Missile",
+          "type": "string"
+        },
+        "type": {
+          "default": "wand",
+          "type": "string"
+        },
+        "pos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Position"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "quantity": {
+          "default": 1,
+          "type": "integer"
+        },
+        "level": {
+          "default": 0,
+          "type": "integer"
+        },
+        "level_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "unique": {
+          "default": false,
+          "type": "boolean"
+        },
+        "kept_though_lost": {
+          "default": false,
+          "type": "boolean"
+        },
+        "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        },
+        "damage": {
+          "default": 0,
+          "type": "integer"
+        },
+        "charges": {
+          "default": 4,
+          "type": "integer"
+        },
+        "max_charges": {
+          "default": 4,
+          "type": "integer"
+        },
+        "range": {
+          "default": 4,
+          "type": "integer"
+        },
+        "projectile_type": {
+          "default": "magic_missile",
+          "type": "string"
+        },
+        "beam_type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "wand_sound": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "partial_charge": {
+          "default": 0.0,
+          "type": "number"
+        },
+        "staff_name": {
+          "default": "Staff of Magic Missile",
+          "type": "string"
+        },
+        "recharge_scale": {
+          "default": 1.0,
+          "type": "number"
+        }
+      },
+      "type": "object"
+    },
+    "WandOfPrismaticLight": {
+      "properties": {
+        "kind": {
+          "const": "wand_prismatic_light",
+          "default": "wand_prismatic_light",
+          "type": "string"
+        },
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "name": {
+          "default": "Wand of Prismatic Light",
+          "type": "string"
+        },
+        "type": {
+          "default": "wand",
+          "type": "string"
+        },
+        "pos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Position"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "quantity": {
+          "default": 1,
+          "type": "integer"
+        },
+        "level": {
+          "default": 0,
+          "type": "integer"
+        },
+        "level_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "unique": {
+          "default": false,
+          "type": "boolean"
+        },
+        "kept_though_lost": {
+          "default": false,
+          "type": "boolean"
+        },
+        "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        },
+        "damage": {
+          "default": 0,
+          "type": "integer"
+        },
+        "charges": {
+          "default": 4,
+          "type": "integer"
+        },
+        "max_charges": {
+          "default": 4,
+          "type": "integer"
+        },
+        "range": {
+          "default": 8,
+          "type": "integer"
+        },
+        "projectile_type": {
+          "default": "beam",
+          "type": "string"
+        },
+        "beam_type": {
+          "default": "light_ray",
+          "type": "string"
+        },
+        "wand_sound": {
+          "default": "RAY",
+          "type": "string"
+        },
+        "partial_charge": {
+          "default": 0.0,
+          "type": "number"
+        },
+        "staff_name": {
+          "default": "Staff of Prismatic Light",
+          "type": "string"
+        },
+        "recharge_scale": {
+          "default": 1.0,
+          "type": "number"
+        }
+      },
+      "type": "object"
+    },
+    "WandOfRegrowth": {
+      "properties": {
+        "kind": {
+          "const": "wand_regrowth",
+          "default": "wand_regrowth",
+          "type": "string"
+        },
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "name": {
+          "default": "Wand of Regrowth",
+          "type": "string"
+        },
+        "type": {
+          "default": "wand",
+          "type": "string"
+        },
+        "pos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Position"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "quantity": {
+          "default": 1,
+          "type": "integer"
+        },
+        "level": {
+          "default": 0,
+          "type": "integer"
+        },
+        "level_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "unique": {
+          "default": false,
+          "type": "boolean"
+        },
+        "kept_though_lost": {
+          "default": false,
+          "type": "boolean"
+        },
+        "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        },
+        "damage": {
+          "default": 1,
+          "type": "integer"
+        },
+        "charges": {
+          "default": 4,
+          "type": "integer"
+        },
+        "max_charges": {
+          "default": 4,
+          "type": "integer"
+        },
+        "range": {
+          "default": 4,
+          "type": "integer"
+        },
+        "projectile_type": {
+          "default": "foliage",
+          "type": "string"
+        },
+        "beam_type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "wand_sound": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "partial_charge": {
+          "default": 0.0,
+          "type": "number"
+        },
+        "staff_name": {
+          "default": "Staff of Regrowth",
+          "type": "string"
+        },
+        "recharge_scale": {
+          "default": 1.0,
+          "type": "number"
+        }
+      },
+      "type": "object"
+    },
+    "WandOfTransfusion": {
+      "properties": {
+        "kind": {
+          "const": "wand_transfusion",
+          "default": "wand_transfusion",
+          "type": "string"
+        },
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "name": {
+          "default": "Wand of Transfusion",
+          "type": "string"
+        },
+        "type": {
+          "default": "wand",
+          "type": "string"
+        },
+        "pos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Position"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "quantity": {
+          "default": 1,
+          "type": "integer"
+        },
+        "level": {
+          "default": 0,
+          "type": "integer"
+        },
+        "level_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "unique": {
+          "default": false,
+          "type": "boolean"
+        },
+        "kept_though_lost": {
+          "default": false,
+          "type": "boolean"
+        },
+        "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        },
+        "damage": {
+          "default": 0,
+          "type": "integer"
+        },
+        "charges": {
+          "default": 3,
+          "type": "integer"
+        },
+        "max_charges": {
+          "default": 3,
+          "type": "integer"
+        },
+        "range": {
+          "default": 6,
+          "type": "integer"
+        },
+        "projectile_type": {
+          "default": "beam",
+          "type": "string"
+        },
+        "beam_type": {
+          "default": "health_ray",
+          "type": "string"
+        },
+        "wand_sound": {
+          "default": "RAY",
+          "type": "string"
+        },
+        "partial_charge": {
+          "default": 0.0,
+          "type": "number"
+        },
+        "staff_name": {
+          "default": "Staff of Transfusion",
+          "type": "string"
+        },
+        "recharge_scale": {
+          "default": 1.0,
+          "type": "number"
+        }
+      },
+      "type": "object"
+    },
+    "WandOfWarding": {
+      "properties": {
+        "kind": {
+          "const": "wand_warding",
+          "default": "wand_warding",
+          "type": "string"
+        },
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "name": {
+          "default": "Wand of Warding",
+          "type": "string"
+        },
+        "type": {
+          "default": "wand",
+          "type": "string"
+        },
+        "pos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Position"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "quantity": {
+          "default": 1,
+          "type": "integer"
+        },
+        "level": {
+          "default": 0,
+          "type": "integer"
+        },
+        "level_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "unique": {
+          "default": false,
+          "type": "boolean"
+        },
+        "kept_though_lost": {
+          "default": false,
+          "type": "boolean"
+        },
+        "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        },
+        "damage": {
+          "default": 2,
+          "type": "integer"
+        },
+        "charges": {
+          "default": 3,
+          "type": "integer"
+        },
+        "max_charges": {
+          "default": 3,
+          "type": "integer"
+        },
+        "range": {
+          "default": 4,
+          "type": "integer"
+        },
+        "projectile_type": {
+          "default": "ward",
+          "type": "string"
+        },
+        "beam_type": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "wand_sound": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "partial_charge": {
+          "default": 0.0,
+          "type": "number"
+        },
+        "staff_name": {
+          "default": "Staff of Warding",
+          "type": "string"
+        },
+        "recharge_scale": {
+          "default": 1.0,
+          "type": "number"
+        }
+      },
       "type": "object"
     },
     "Waterskin": {

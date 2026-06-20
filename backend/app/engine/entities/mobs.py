@@ -763,6 +763,7 @@ class FireElemental(MobEntity):
     exp: int = 10
     max_lvl: int = 20
     properties: List[str] = ["FIERY", "INORGANIC"]
+    immunities: List[str] = Field(default_factory=lambda: ["burning"])
 
 
 class FrostElemental(FireElemental):

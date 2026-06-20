@@ -3,7 +3,7 @@ import { TILE_SIZE, MOVE_DURATION, CAMERA_LERP } from '../constants';
 import { DEST_TILE_SIZE } from './sewers/constants';
 import { buildWaterClipPath, drawWaterBackground, getWaterTextureForDepth } from './sewers/draw';
 import { drawGrid, drawGridCaps } from './draw/grid';
-import { drawCustomTiles } from './draw/customTiles';
+import { drawCustomTiles, drawCustomWalls } from './draw/customTiles';
 import { drawTerrainFeatures } from './draw/terrainFeatures';
 import { drawItems } from './draw/items';
 import { drawMobs } from './draw/mobs';
@@ -24,7 +24,7 @@ import { advanceAndDrawStateEffects } from './draw/states';
 import { advanceAndDrawSurprises } from './draw/surprise';
 import { advanceAndDrawScreenShake } from './draw/screenShake';
 import { advanceAndDrawBeams } from './draw/beam';
-import { advanceAndDrawBlobAreas } from './draw/blobArea';
+import { advanceAndDrawBlobAreas, advanceAndDrawFireParticles } from './draw/blobArea';
 import { drawCharHealth } from './draw/charHealth';
 import { drawTargetHealthIndicator } from './draw/targetHealthIndicator';
 import { drawTargetedCell } from './draw/targetedCell';
@@ -41,6 +41,7 @@ export default function useGameRenderer({
   projectilesRef,
   trapsRef,
   customTilesRef,
+  customWallsRef,
   mobAnimRef,
   dyingMobsRef,
   playerAnimRef,
@@ -166,12 +167,14 @@ export default function useGameRenderer({
       drawCustomTiles(ctx, { customTiles: customTilesRef.current, assetImages, visionRef });
       drawTerrainFeatures(ctx, assetImages.terrainFeatures, trapsRef.current, grid, visionRef);
       advanceAndDrawBlobAreas(ctx, { blobAreasRef, visionRef });
+      advanceAndDrawFireParticles(ctx, { blobAreasRef, visionRef, particlesRef });
       if (warnedTilesRef) drawWarnedTiles(ctx, { ref: warnedTilesRef });
       drawItems(ctx, { entitiesRef, visionRef, assetImages });
       drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef, dyingMobsRef });
       drawCharHealth(ctx, { entitiesRef, visionRef });
       drawTargetHealthIndicator(ctx, { entitiesRef, visionRef, selectedEnemyIdRef });
       drawPlayers(ctx, { entitiesRef, visionRef, assetImages, playerAnimRef, myPlayerId });
+      drawCustomWalls(ctx, { customWalls: customWallsRef.current, assetImages, visionRef });
       advanceAndDrawStaffAmbient(ctx, staffAmbientRef, entitiesRef, visionRef, myPlayerId);
       drawGridCaps(ctx, { grid, depth, assetImages, visionRef });
       drawTargetedCell(ctx, { hoveredCellRef, assetImages });

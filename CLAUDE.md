@@ -5,6 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Important
 This project is a remake of the original shattered pixel dungeon (SPD) game.
 Before implementing anything, find the exact flow rules from the original project at `./shattered-pixel-dungeon`
+When building/porting/implementing the game logic/visuals/sound effects - always match it to the original game.
 Porject files may not be longer than 400 lines of code and no deep nesting of 4+ tabs
 
 ## Commands

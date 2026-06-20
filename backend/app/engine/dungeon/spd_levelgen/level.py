@@ -139,6 +139,9 @@ class GenLevel:
         # painted on top of the base grid. Each entry:
         # {"texture": str, "x": int, "y": int, "w": int, "h": int, "tiles": list[list[int]]}
         self.custom_tiles: list[dict] = []
+        # Custom wall overlay tilemaps rendered above characters, e.g.
+        # SewerExitOverhang arch above the boss exit. Same format as custom_tiles.
+        self.custom_walls: list[dict] = []
 
     def width(self) -> int:
         return self._width

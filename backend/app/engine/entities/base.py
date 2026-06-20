@@ -87,6 +87,10 @@ class Entity(BaseModel):
     ooze_amount: int = 0       # remaining ooze "turns" (caustic DoT)
     ooze_cooldown: int = 0     # ticks until the next ooze damage application
 
+    # Burning DoT: accumulating tick timer (seconds) for ~1s burn intervals
+    burning_accum: float = 0.0
+    burning_total_seconds: float = 0.0  # total time burning (for inventory destruction)
+
     # Shields (absorption layers)
     shields: List[Shield] = Field(default_factory=list)
 
@@ -526,7 +530,6 @@ class Bow(KindOfWeapon):
 class Staff(MeleeWeapon):
     kind: Literal["staff"] = "staff"
     name: str = "Mage's Staff"
-    range: int = 4
     magic_damage: int = 0
     projectile_type: str = "magic_bolt"
     imbued_wand: Optional[SerializeAsAny["Wand"]] = None
@@ -918,6 +921,20 @@ class WandOfFireblast(DamageWand):
                             ch.remove_buff("burning")
             if hit_any and add_event:
                 add_event("PLAY_SOUND", {"sound": "BLAST"}, floor_id=getattr(defender, "floor_id", 0))
+
+        if floor is not None:
+            from app.engine.dungeon.constants import TileType
+            strength = 1 + self.charges
+            cx, cy = defender.pos.x, defender.pos.y
+            if 0 <= cx < floor.width and 0 <= cy < floor.height:
+                tile = floor.grid[cy][cx]
+                if tile != TileType.FLOOR_WATER:
+                    blob_id = f"wand_fireblast_{defender.id}_{cx}_{cy}"
+                    floor.blob_areas[blob_id] = {
+                        "type": "fire",
+                        "cells": {(cx, cy)},
+                        "volume": {(cx, cy): strength},
+                    }
 
 
 class WandOfFrost(DamageWand):
@@ -1359,6 +1376,19 @@ class Key(ItemBase):
     DESC: ClassVar[str] = "A key that unlocks a matching door or chest somewhere on this floor."
 
 
+class KeyRecord(BaseModel):
+    """A held key, tracked outside the bag (mirrors SPD's Notes.KeyRecord).
+
+    Uniqueness is (key_id, depth): a key only unlocks doors on the floor it
+    was found on, so two records with the same key_id but different depth
+    are tracked separately.
+    """
+    key_id: str
+    depth: int
+    quantity: int = 1
+    name: str = ""
+
+
 class TenguMask(ItemBase):
     kind: Literal["tengu_mask"] = "tengu_mask"
     name: str = "Tengu's Mask"
@@ -1687,6 +1717,13 @@ class ChargrilledMeat(Food):
     DESC: ClassVar[str] = "Properly cooked mystery meat. Smells delicious."
 
 
+class FrozenCarpaccio(Food):
+    kind: Literal["frozen_carpaccio"] = "frozen_carpaccio"
+    name: str = "Frozen Carpaccio"
+    energy: int = 300
+    DESC: ClassVar[str] = "Raw meat that has been frozen solid. Can be defrosted by cooking it."
+
+
 class GooBlob(ItemBase):
     # Goo's death drop (SPD GooBlob): stackable quest reagent, used with a
     # Health Potion at an Alchemy Pot to brew an Elixir of Aquatic Rejuvenation
@@ -1767,10 +1804,16 @@ class Bag(ItemBase):
         # Sub-bags expand storage in SPD rather than consuming a slot.
         return len([i for i in self.items if not isinstance(i, Bag)])
 
+    def _accepts_extra(self, item: "ItemBase") -> bool:
+        # Hook for specialised bags that accept a specific item class outside
+        # of their category set (e.g. VelvetPouch + GooBlob in SPD).
+        return False
+
     def can_hold(self, item: "ItemBase") -> bool:
         if isinstance(item, Bag) and self.accepts is not None:
             return False  # specialised pouches can't nest bags
-        if self.accepts is not None and item.category not in self.accepts:
+        if (self.accepts is not None and item.category not in self.accepts
+                and not self._accepts_extra(item)):
             return False
         if item.stackable:
             for it in self.items:
@@ -1833,7 +1876,8 @@ class Bag(ItemBase):
         if self.accepts is None:
             return
         movable = [i for i in list(source.items)
-                   if not isinstance(i, Bag) and i.category in self.accepts]
+                   if not isinstance(i, Bag)
+                   and (i.category in self.accepts or self._accepts_extra(i))]
         for it in movable:
             source.items.remove(it)
             self.collect(it)
@@ -1842,7 +1886,12 @@ class Bag(ItemBase):
 class VelvetPouch(Bag):
     kind: Literal["velvet_pouch"] = "velvet_pouch"
     name: str = "Velvet Pouch"
-    accepts: ClassVar[Optional[set]] = {ItemCategory.SEED, ItemCategory.STONE}
+    capacity: int = 19
+    accepts: ClassVar[Optional[set]] = {ItemCategory.SEED}
+    DESC: ClassVar[str] = "This small velvet pouch can store seeds and other small alchemy ingredients."
+
+    def _accepts_extra(self, item: "ItemBase") -> bool:
+        return isinstance(item, GooBlob)
 
     def value(self, identified: bool = False) -> int:
         return 30
@@ -1882,7 +1931,13 @@ class PotionBandolier(Bag):
 AnyItem = Annotated[
     Union[
         MeleeWeapon, Dagger, WornShortsword, Bow, Staff, MissileWeapon,
-        Armor, Ring, Artifact, BrokenSeal, CloakOfShadows, Wand,
+        Armor, Ring, Artifact, BrokenSeal, CloakOfShadows,
+        DamageWand,
+        WandOfMagicMissile, WandOfFireblast, WandOfFrost, WandOfLightning,
+        WandOfDisintegration, WandOfPrismaticLight, WandOfBlastWave,
+        WandOfTransfusion, WandOfCorrosion, WandOfCorruption,
+        WandOfRegrowth, WandOfWarding, WandOfLivingEarth,
+        Wand,
         HealthPotion, RevivingPotion, FuryPotion,
         PotionOfStrength, PotionOfHaste, PotionOfInvisibility, PotionOfLevitation,
         PotionOfMindVision, PotionOfFrost, PotionOfLiquidFlame, PotionOfToxicGas,
@@ -1895,7 +1950,7 @@ AnyItem = Annotated[
         ScrollOfMirrorImage, ScrollOfRetribution, ScrollOfTransmutation,
         Scroll,
         Gold,
-        MysteryMeat, Berry, SmallRation, Ration, Pasty, ChargrilledMeat, Food,
+        MysteryMeat, FrozenCarpaccio, Berry, SmallRation, Ration, Pasty, ChargrilledMeat, Food,
         Key,
         Seed, Dewdrop, Waterskin, Stone, Boomerang, ThrowableDagger, Throwable,
         GooBlob, DwarfToken,
@@ -2084,6 +2139,9 @@ class Player(Entity):
     strength: int = 10
     belongings: Belongings = Field(default_factory=Belongings)
     quickslot: QuickSlot = Field(default_factory=QuickSlot)
+    # Keys never enter the bag (mirrors SPD's Notes-based key tracking) — see
+    # add_key/key_count/remove_key.
+    keys: List[KeyRecord] = Field(default_factory=list)
     gold: int = 0
     energy: int = 0
     websocket_id: Optional[str] = None
@@ -2392,6 +2450,30 @@ class Player(Entity):
         if ok:
             self.quickslot.replace_placeholder(item)
         return ok
+
+    def add_key(self, key_id: str, depth: int, name: str = "", quantity: int = 1) -> None:
+        for rec in self.keys:
+            if rec.key_id == key_id and rec.depth == depth:
+                rec.quantity += quantity
+                return
+        self.keys.append(KeyRecord(key_id=key_id, depth=depth, quantity=quantity, name=name))
+
+    def key_count(self, key_id: str, depth: int) -> int:
+        for rec in self.keys:
+            if rec.key_id == key_id and rec.depth == depth:
+                return rec.quantity
+        return 0
+
+    def remove_key(self, key_id: str, depth: int, quantity: int = 1) -> bool:
+        for rec in self.keys:
+            if rec.key_id == key_id and rec.depth == depth:
+                if rec.quantity < quantity:
+                    return False
+                rec.quantity -= quantity
+                if rec.quantity <= 0:
+                    self.keys.remove(rec)
+                return True
+        return False
 
     def equip_item(self, item_id: str) -> bool:
         item = self.belongings.backpack.find(item_id)

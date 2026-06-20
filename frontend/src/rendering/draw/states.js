@@ -1,4 +1,5 @@
 import { TILE_SIZE } from '../../constants';
+import { setLightMode } from './blending';
 
 const FLAME_PARTICLE_DURATION = 600;
 const FROST_PARTICLE_DURATION = 800;
@@ -6,9 +7,19 @@ const SNOW_PARTICLE_DURATION = 1000;
 const MARK_PARTICLE_DURATION = 700;
 const HEART_PARTICLE_DURATION = 900;
 
+const CONTINUOUS_EFFECTS = new Set(['burning', 'frozen', 'chilled', 'shielded']);
+
 let lastNow = null;
 
 export function spawnStateParticles(stateEffectsRef, cx, cy, type, color = null) {
+  if (CONTINUOUS_EFFECTS.has(type)) {
+    const existing = stateEffectsRef.current.find(e => e.type === type && e.cx === cx && e.cy === cy);
+    if (existing) {
+      existing.startTime = performance.now();
+      existing.particles = [];
+      return;
+    }
+  }
   stateEffectsRef.current.push({
     cx, cy, type, color,
     startTime: performance.now(),
@@ -55,10 +66,12 @@ export function advanceAndDrawStateEffects(ctx, { stateEffectsRef }) {
         entries.splice(i, 1);
     }
 
-    if (e.type !== 'burning' && e.type !== 'frozen' && e.type !== 'chilled' && e.type !== 'shielded') {
-      if (elapsed > getDuration(e.type)) {
+    if (CONTINUOUS_EFFECTS.has(e.type)) {
+      if (elapsed > 2000) {
         entries.splice(i, 1);
       }
+    } else if (elapsed > getDuration(e.type)) {
+      entries.splice(i, 1);
     }
   }
 }
@@ -105,27 +118,46 @@ function drawBurning(ctx, e, elapsed, dt) {
   const cx = e.cx;
   const cy = e.cy;
 
-  if (Math.random() < 0.3) {
-    const life = 0.3 + Math.random() * 0.3;
+  if (Math.random() < 0.5) {
+    const life = 0.4 + Math.random() * 0.3;
+    const size = 4 + Math.floor(Math.random() * 3);
     e.particles.push({
-      x: cx + (Math.random() - 0.5) * 12,
-      y: cy + (Math.random() - 0.5) * 4 - 4,
-      vx: (Math.random() - 0.5) * 8,
+      x: cx + (Math.random() - 0.5) * 10,
+      y: cy + (Math.random() - 0.5) * 6 + 4,
+      vx: (Math.random() - 0.5) * 10,
       vy: -16 - Math.random() * 16,
       life, maxLife: life,
-      size: 2 + Math.floor(Math.random() * 2),
+      size,
+      _startSize: size,
       alpha: 1,
     });
   }
-  updateParticles(e, dt, false);
+  for (let i = e.particles.length - 1; i >= 0; i--) {
+    const p = e.particles[i];
+    p.life -= dt;
+    if (p.life <= 0) { e.particles.splice(i, 1); continue; }
+    p.vy += -60 * dt;
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+    const t = p.life / p.maxLife;
+    if (p._startSize !== undefined) {
+      p.size = Math.max(1, p._startSize * t);
+    }
+    p.alpha = t;
+  }
 
   ctx.save();
-  ctx.globalAlpha = 0.15 + 0.08 * Math.sin(elapsed * 0.01);
-  ctx.fillStyle = '#ff4400';
-  ctx.fillRect(cx - TILE_SIZE / 2, cy - TILE_SIZE / 2, TILE_SIZE, TILE_SIZE);
+  setLightMode(ctx);
+  for (const p of e.particles) {
+    const t = p.life / p.maxLife;
+    ctx.globalAlpha = p.alpha * 0.4;
+    ctx.fillStyle = '#ff4400';
+    ctx.fillRect(Math.round(p.x) - 1, Math.round(p.y) - 1, p.size + 2, p.size + 2);
+    ctx.globalAlpha = p.alpha * 0.9;
+    ctx.fillStyle = t > 0.6 ? '#ffcc00' : '#ff6622';
+    ctx.fillRect(Math.round(p.x), Math.round(p.y), p.size, p.size);
+  }
   ctx.restore();
-
-  drawParticles(ctx, e, '#ff6622');
 }
 
 function drawFrozen(ctx, e, elapsed, dt) {

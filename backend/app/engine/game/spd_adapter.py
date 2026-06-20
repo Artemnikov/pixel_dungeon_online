@@ -20,6 +20,7 @@ from app.engine.dungeon.spd_levelgen.level import GenLevel
 from app.engine.dungeon.spd_levelgen.mob_spawner import GenMob
 from app.engine.dungeon.spd_levelgen.room import DoorType
 from app.engine.dungeon.spd_levelgen.traps import Trap as SpdTrap
+from app.engine.dungeon.spd_levelgen.traps import BurningTrap, BlazingTrap
 from app.engine.dungeon.generator import TileType
 from app.engine.entities.base import (
     Armor,
@@ -131,7 +132,7 @@ _SPD_TO_TILE = {
     spd_terrain.ENTRANCE: TileType.STAIRS_UP,
     spd_terrain.ENTRANCE_SP: TileType.STAIRS_UP,
     spd_terrain.EXIT: TileType.STAIRS_DOWN,
-    spd_terrain.EMBERS: TileType.FLOOR,
+    spd_terrain.EMBERS: TileType.EMBERS,
     spd_terrain.LOCKED_DOOR: TileType.LOCKED_DOOR,
     spd_terrain.HERO_LKD_DR: TileType.LOCKED_DOOR,
     spd_terrain.CRYSTAL_DOOR: TileType.LOCKED_DOOR,
@@ -263,6 +264,8 @@ def _register_trap(spd_cls: type[SpdTrap], trap_type: str) -> None:
 
 
 _register_trap(type("WornDartTrap", (SpdTrap,), {}), TrapType.WORN_DART)
+_register_trap(BurningTrap, TrapType.BURNING_TRAP)
+_register_trap(BlazingTrap, TrapType.BLAZING_TRAP)
 
 
 _SPD_TRAP_COLOR = TrapVisual.GREY
@@ -515,6 +518,7 @@ def gen_level_to_floor_state(gen_level: GenLevel, depth: int) -> FloorState:
         dk_summon_spots=list(getattr(gen_level, 'dk_summon_spots', [])),
         yog_pos=getattr(gen_level, 'yog_pos', None),
         custom_tiles=list(getattr(gen_level, 'custom_tiles', [])),
+        custom_walls=list(getattr(gen_level, 'custom_walls', [])),
         alchemy_pots=alchemy_pots,
         entrance_pos=entrance_pos,
         exit_pos=exit_pos,

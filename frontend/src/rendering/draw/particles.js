@@ -369,7 +369,7 @@ export function spawnWhiteSplash(particlesRef, cx, cy, count = 3) {
 export function advanceAndDrawParticles(ctx, { particlesRef }) {
   const now = performance.now();
   if (lastNow == null) lastNow = now;
-  const dt = Math.min((now - lastNow) / 1000, 0.05); // clamp to avoid jumps
+  const dt = Math.min((now - lastNow) / 1000, 0.05);
   lastNow = now;
 
   const particles = particlesRef.current;
@@ -380,13 +380,27 @@ export function advanceAndDrawParticles(ctx, { particlesRef }) {
       particles.splice(i, 1);
       continue;
     }
-    if (p.gravity !== false) p.vy += GRAVITY * dt;
+    if (p.accY !== undefined) {
+      p.vy += p.accY * dt;
+    } else if (p.gravity !== false) {
+      p.vy += GRAVITY * dt;
+    }
     p.x += p.vx * dt;
     p.y += p.vy * dt;
 
+    const t = p.life / p.maxLife;
+    let alpha = t;
+    if (p.fadeIn) {
+      alpha = t > 0.8 ? (1 - t) * 5 : 1;
+    }
+    if (p.shrink !== false) {
+      if (p._startSize === undefined) p._startSize = p.size;
+      p.size = Math.max(1, p._startSize * t);
+    }
+
     ctx.save();
     if (p.additive) setLightMode(ctx);
-    ctx.globalAlpha = Math.max(0, Math.min(1, p.life / p.maxLife));
+    ctx.globalAlpha = Math.max(0, Math.min(1, alpha));
     ctx.fillStyle = p.color;
     ctx.fillRect(Math.round(p.x), Math.round(p.y), p.size, p.size);
     ctx.restore();

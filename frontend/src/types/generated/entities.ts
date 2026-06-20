@@ -43,6 +43,8 @@ export interface Player {
   bleed_turns?: number;
   ooze_amount?: number;
   ooze_cooldown?: number;
+  burning_accum?: number;
+  burning_total_seconds?: number;
   shields?: Shield[];
   crit_damage_bonus?: number;
   grim_max_chance?: number;
@@ -59,11 +61,14 @@ export interface Player {
   strength?: number;
   belongings?: Belongings;
   quickslot?: QuickSlot;
+  keys?: KeyRecord[];
   gold?: number;
   energy?: number;
   websocket_id?: string | null;
   is_downed?: boolean;
   death_processed?: boolean;
+  kills_count?: number;
+  floors_explored?: number;
   heal_left?: number;
   heal_pct_per_tick?: number;
   heal_flat_per_tick?: number;
@@ -111,6 +116,20 @@ export interface Player {
     | Artifact
     | BrokenSeal
     | CloakOfShadows
+    | DamageWand
+    | WandOfMagicMissile
+    | WandOfFireblast
+    | WandOfFrost
+    | WandOfLightning
+    | WandOfDisintegration
+    | WandOfPrismaticLight
+    | WandOfBlastWave
+    | WandOfTransfusion
+    | WandOfCorrosion
+    | WandOfCorruption
+    | WandOfRegrowth
+    | WandOfWarding
+    | WandOfLivingEarth
     | Wand
     | HealthPotion
     | RevivingPotion
@@ -179,6 +198,20 @@ export interface Player {
         | Artifact
         | BrokenSeal
         | CloakOfShadows
+        | DamageWand
+        | WandOfMagicMissile
+        | WandOfFireblast
+        | WandOfFrost
+        | WandOfLightning
+        | WandOfDisintegration
+        | WandOfPrismaticLight
+        | WandOfBlastWave
+        | WandOfTransfusion
+        | WandOfCorrosion
+        | WandOfCorruption
+        | WandOfRegrowth
+        | WandOfWarding
+        | WandOfLivingEarth
         | Wand
         | HealthPotion
         | RevivingPotion
@@ -248,6 +281,20 @@ export interface Player {
         | Artifact
         | BrokenSeal
         | CloakOfShadows
+        | DamageWand
+        | WandOfMagicMissile
+        | WandOfFireblast
+        | WandOfFrost
+        | WandOfLightning
+        | WandOfDisintegration
+        | WandOfPrismaticLight
+        | WandOfBlastWave
+        | WandOfTransfusion
+        | WandOfCorrosion
+        | WandOfCorruption
+        | WandOfRegrowth
+        | WandOfWarding
+        | WandOfLivingEarth
         | Wand
         | HealthPotion
         | RevivingPotion
@@ -346,6 +393,20 @@ export interface Belongings {
         | Artifact
         | BrokenSeal
         | CloakOfShadows
+        | DamageWand
+        | WandOfMagicMissile
+        | WandOfFireblast
+        | WandOfFrost
+        | WandOfLightning
+        | WandOfDisintegration
+        | WandOfPrismaticLight
+        | WandOfBlastWave
+        | WandOfTransfusion
+        | WandOfCorrosion
+        | WandOfCorruption
+        | WandOfRegrowth
+        | WandOfWarding
+        | WandOfLivingEarth
         | Wand
         | HealthPotion
         | RevivingPotion
@@ -415,6 +476,20 @@ export interface Belongings {
         | Artifact
         | BrokenSeal
         | CloakOfShadows
+        | DamageWand
+        | WandOfMagicMissile
+        | WandOfFireblast
+        | WandOfFrost
+        | WandOfLightning
+        | WandOfDisintegration
+        | WandOfPrismaticLight
+        | WandOfBlastWave
+        | WandOfTransfusion
+        | WandOfCorrosion
+        | WandOfCorruption
+        | WandOfRegrowth
+        | WandOfWarding
+        | WandOfLivingEarth
         | Wand
         | HealthPotion
         | RevivingPotion
@@ -484,6 +559,20 @@ export interface Belongings {
         | Artifact
         | BrokenSeal
         | CloakOfShadows
+        | DamageWand
+        | WandOfMagicMissile
+        | WandOfFireblast
+        | WandOfFrost
+        | WandOfLightning
+        | WandOfDisintegration
+        | WandOfPrismaticLight
+        | WandOfBlastWave
+        | WandOfTransfusion
+        | WandOfCorrosion
+        | WandOfCorruption
+        | WandOfRegrowth
+        | WandOfWarding
+        | WandOfLivingEarth
         | Wand
         | HealthPotion
         | RevivingPotion
@@ -553,6 +642,20 @@ export interface Belongings {
         | Artifact
         | BrokenSeal
         | CloakOfShadows
+        | DamageWand
+        | WandOfMagicMissile
+        | WandOfFireblast
+        | WandOfFrost
+        | WandOfLightning
+        | WandOfDisintegration
+        | WandOfPrismaticLight
+        | WandOfBlastWave
+        | WandOfTransfusion
+        | WandOfCorrosion
+        | WandOfCorruption
+        | WandOfRegrowth
+        | WandOfWarding
+        | WandOfLivingEarth
         | Wand
         | HealthPotion
         | RevivingPotion
@@ -622,6 +725,20 @@ export interface Belongings {
         | Artifact
         | BrokenSeal
         | CloakOfShadows
+        | DamageWand
+        | WandOfMagicMissile
+        | WandOfFireblast
+        | WandOfFrost
+        | WandOfLightning
+        | WandOfDisintegration
+        | WandOfPrismaticLight
+        | WandOfBlastWave
+        | WandOfTransfusion
+        | WandOfCorrosion
+        | WandOfCorruption
+        | WandOfRegrowth
+        | WandOfWarding
+        | WandOfLivingEarth
         | Wand
         | HealthPotion
         | RevivingPotion
@@ -707,6 +824,20 @@ export interface Bag {
     | Artifact
     | BrokenSeal
     | CloakOfShadows
+    | DamageWand
+    | WandOfMagicMissile
+    | WandOfFireblast
+    | WandOfFrost
+    | WandOfLightning
+    | WandOfDisintegration
+    | WandOfPrismaticLight
+    | WandOfBlastWave
+    | WandOfTransfusion
+    | WandOfCorrosion
+    | WandOfCorruption
+    | WandOfRegrowth
+    | WandOfWarding
+    | WandOfLivingEarth
     | Wand
     | HealthPotion
     | RevivingPotion
@@ -895,8 +1026,40 @@ export interface Staff {
   acc_factor?: number;
   dr_bonus_base?: number;
   dr_bonus_per_lvl?: number;
+  tier?: number;
   magic_damage?: number;
+  imbued_wand?: Wand | null;
+  bones?: boolean;
+  hit_sound?: string;
+  hit_sound_pitch?: number;
+  charges: number;
+  max_charges: number;
+}
+export interface Wand {
+  kind?: "wand";
+  id?: string;
+  name: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  damage?: number;
   charges?: number;
+  max_charges?: number;
+  range?: number;
+  projectile_type?: string;
+  beam_type?: string | null;
+  wand_sound?: string | null;
+  partial_charge?: number;
+  staff_name?: string;
+  recharge_scale?: number;
 }
 export interface MissileWeapon {
   kind?: "missile_weapon";
@@ -1023,8 +1186,14 @@ export interface CloakOfShadows {
   charge_cap?: number;
   exp?: number;
 }
-export interface Wand {
-  kind?: "wand";
+/**
+ * Base for wands that deal direct damage to a target.
+ *
+ * Subclasses define *min(lvl)* and *max(lvl)*; *damage_roll(lvl)* returns a
+ * random integer in that range.
+ */
+export interface DamageWand {
+  kind?: "damage_wand";
   id?: string;
   name: string;
   type?: string;
@@ -1043,6 +1212,349 @@ export interface Wand {
   max_charges?: number;
   range?: number;
   projectile_type?: string;
+  beam_type?: string | null;
+  wand_sound?: string | null;
+  partial_charge?: number;
+  staff_name?: string;
+  recharge_scale?: number;
+}
+export interface WandOfMagicMissile {
+  kind?: "wand_magic_missile";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  damage?: number;
+  charges?: number;
+  max_charges?: number;
+  range?: number;
+  projectile_type?: string;
+  beam_type?: string | null;
+  wand_sound?: string | null;
+  partial_charge?: number;
+  staff_name?: string;
+  recharge_scale?: number;
+}
+export interface WandOfFireblast {
+  kind?: "wand_fireblast";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  damage?: number;
+  charges?: number;
+  max_charges?: number;
+  range?: number;
+  projectile_type?: string;
+  beam_type?: string | null;
+  wand_sound?: string | null;
+  partial_charge?: number;
+  staff_name?: string;
+  recharge_scale?: number;
+}
+export interface WandOfFrost {
+  kind?: "wand_frost";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  damage?: number;
+  charges?: number;
+  max_charges?: number;
+  range?: number;
+  projectile_type?: string;
+  beam_type?: string | null;
+  wand_sound?: string | null;
+  partial_charge?: number;
+  staff_name?: string;
+  recharge_scale?: number;
+}
+export interface WandOfLightning {
+  kind?: "wand_lightning";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  damage?: number;
+  charges?: number;
+  max_charges?: number;
+  range?: number;
+  projectile_type?: string;
+  beam_type?: string | null;
+  wand_sound?: string;
+  partial_charge?: number;
+  staff_name?: string;
+  recharge_scale?: number;
+}
+export interface WandOfDisintegration {
+  kind?: "wand_disintegration";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  damage?: number;
+  charges?: number;
+  max_charges?: number;
+  range?: number;
+  projectile_type?: string;
+  beam_type?: string;
+  wand_sound?: string;
+  partial_charge?: number;
+  staff_name?: string;
+  recharge_scale?: number;
+}
+export interface WandOfPrismaticLight {
+  kind?: "wand_prismatic_light";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  damage?: number;
+  charges?: number;
+  max_charges?: number;
+  range?: number;
+  projectile_type?: string;
+  beam_type?: string;
+  wand_sound?: string;
+  partial_charge?: number;
+  staff_name?: string;
+  recharge_scale?: number;
+}
+export interface WandOfBlastWave {
+  kind?: "wand_blast_wave";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  damage?: number;
+  charges?: number;
+  max_charges?: number;
+  range?: number;
+  projectile_type?: string;
+  beam_type?: string | null;
+  wand_sound?: string | null;
+  partial_charge?: number;
+  staff_name?: string;
+  recharge_scale?: number;
+}
+export interface WandOfTransfusion {
+  kind?: "wand_transfusion";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  damage?: number;
+  charges?: number;
+  max_charges?: number;
+  range?: number;
+  projectile_type?: string;
+  beam_type?: string;
+  wand_sound?: string;
+  partial_charge?: number;
+  staff_name?: string;
+  recharge_scale?: number;
+}
+export interface WandOfCorrosion {
+  kind?: "wand_corrosion";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  damage?: number;
+  charges?: number;
+  max_charges?: number;
+  range?: number;
+  projectile_type?: string;
+  beam_type?: string | null;
+  wand_sound?: string | null;
+  partial_charge?: number;
+  staff_name?: string;
+  recharge_scale?: number;
+}
+export interface WandOfCorruption {
+  kind?: "wand_corruption";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  damage?: number;
+  charges?: number;
+  max_charges?: number;
+  range?: number;
+  projectile_type?: string;
+  beam_type?: string | null;
+  wand_sound?: string | null;
+  partial_charge?: number;
+  staff_name?: string;
+  recharge_scale?: number;
+}
+export interface WandOfRegrowth {
+  kind?: "wand_regrowth";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  damage?: number;
+  charges?: number;
+  max_charges?: number;
+  range?: number;
+  projectile_type?: string;
+  beam_type?: string | null;
+  wand_sound?: string | null;
+  partial_charge?: number;
+  staff_name?: string;
+  recharge_scale?: number;
+}
+export interface WandOfWarding {
+  kind?: "wand_warding";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  damage?: number;
+  charges?: number;
+  max_charges?: number;
+  range?: number;
+  projectile_type?: string;
+  beam_type?: string | null;
+  wand_sound?: string | null;
+  partial_charge?: number;
+  staff_name?: string;
+  recharge_scale?: number;
+}
+export interface WandOfLivingEarth {
+  kind?: "wand_living_earth";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  damage?: number;
+  charges?: number;
+  max_charges?: number;
+  range?: number;
+  projectile_type?: string;
+  beam_type?: string | null;
+  wand_sound?: string | null;
+  partial_charge?: number;
+  staff_name?: string;
+  recharge_scale?: number;
 }
 export interface HealthPotion {
   kind?: "health_potion";
@@ -1882,6 +2394,20 @@ export interface VelvetPouch {
     | Artifact
     | BrokenSeal
     | CloakOfShadows
+    | DamageWand
+    | WandOfMagicMissile
+    | WandOfFireblast
+    | WandOfFrost
+    | WandOfLightning
+    | WandOfDisintegration
+    | WandOfPrismaticLight
+    | WandOfBlastWave
+    | WandOfTransfusion
+    | WandOfCorrosion
+    | WandOfCorruption
+    | WandOfRegrowth
+    | WandOfWarding
+    | WandOfLivingEarth
     | Wand
     | HealthPotion
     | RevivingPotion
@@ -1966,6 +2492,20 @@ export interface ScrollHolder {
     | Artifact
     | BrokenSeal
     | CloakOfShadows
+    | DamageWand
+    | WandOfMagicMissile
+    | WandOfFireblast
+    | WandOfFrost
+    | WandOfLightning
+    | WandOfDisintegration
+    | WandOfPrismaticLight
+    | WandOfBlastWave
+    | WandOfTransfusion
+    | WandOfCorrosion
+    | WandOfCorruption
+    | WandOfRegrowth
+    | WandOfWarding
+    | WandOfLivingEarth
     | Wand
     | HealthPotion
     | RevivingPotion
@@ -2050,6 +2590,20 @@ export interface MagicalHolster {
     | Artifact
     | BrokenSeal
     | CloakOfShadows
+    | DamageWand
+    | WandOfMagicMissile
+    | WandOfFireblast
+    | WandOfFrost
+    | WandOfLightning
+    | WandOfDisintegration
+    | WandOfPrismaticLight
+    | WandOfBlastWave
+    | WandOfTransfusion
+    | WandOfCorrosion
+    | WandOfCorruption
+    | WandOfRegrowth
+    | WandOfWarding
+    | WandOfLivingEarth
     | Wand
     | HealthPotion
     | RevivingPotion
@@ -2134,6 +2688,20 @@ export interface PotionBandolier {
     | Artifact
     | BrokenSeal
     | CloakOfShadows
+    | DamageWand
+    | WandOfMagicMissile
+    | WandOfFireblast
+    | WandOfFrost
+    | WandOfLightning
+    | WandOfDisintegration
+    | WandOfPrismaticLight
+    | WandOfBlastWave
+    | WandOfTransfusion
+    | WandOfCorrosion
+    | WandOfCorruption
+    | WandOfRegrowth
+    | WandOfWarding
+    | WandOfLivingEarth
     | Wand
     | HealthPotion
     | RevivingPotion
@@ -2198,6 +2766,19 @@ export interface QuickSlotEntry {
   is_placeholder?: boolean;
   placeholder_kind?: string | null;
 }
+/**
+ * A held key, tracked outside the bag (mirrors SPD's Notes.KeyRecord).
+ *
+ * Uniqueness is (key_id, depth): a key only unlocks doors on the floor it
+ * was found on, so two records with the same key_id but different depth
+ * are tracked separately.
+ */
+export interface KeyRecord {
+  key_id: string;
+  depth: number;
+  quantity?: number;
+  name?: string;
+}
 export interface SubclassInfo {
   subclass?: string | null;
   talent_info?: TalentInfo;
@@ -2243,6 +2824,8 @@ export interface Mob {
   bleed_turns?: number;
   ooze_amount?: number;
   ooze_cooldown?: number;
+  burning_accum?: number;
+  burning_total_seconds?: number;
   shields?: Shield[];
   crit_damage_bonus?: number;
   grim_max_chance?: number;

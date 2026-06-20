@@ -210,6 +210,7 @@ class SerializationMixin:
                     "height": floor.height,
                     "traps": admin_traps,
                     "custom_tiles": floor.custom_tiles,
+                    "custom_walls": floor.custom_walls,
                 }
 
             visible_tiles = self.get_visible_tiles(
@@ -254,6 +255,7 @@ class SerializationMixin:
                 "height": floor.height,
                 "traps": player_traps,
                 "custom_tiles": floor.custom_tiles,
+                "custom_walls": floor.custom_walls,
             }
 
         floor = self._get_or_create_floor(self.depth)
@@ -268,4 +270,5 @@ class SerializationMixin:
             "height": floor.height,
             "traps": [],
             "custom_tiles": floor.custom_tiles,
+            "custom_walls": floor.custom_walls,
         }

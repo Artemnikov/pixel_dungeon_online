@@ -33,3 +33,35 @@ export function drawCustomTiles(ctx, { customTiles, assetImages, visionRef }) {
     }
   }
 }
+
+// Custom wall overlays rendered above characters (e.g. SewerExitOverhang arch),
+// matching SPD's level.customWalls layer. Same format as customTiles.
+export function drawCustomWalls(ctx, { customWalls, assetImages, visionRef }) {
+  if (!customWalls || !customWalls.length) return;
+
+  for (const layer of customWalls) {
+    const atlas = assetImages.customTiles?.[layer.texture];
+    if (!atlas) continue;
+
+    for (let row = 0; row < layer.h; row++) {
+      const tileRow = layer.tiles[row];
+      for (let col = 0; col < layer.w; col++) {
+        const idx = tileRow[col];
+        if (idx < 0) continue;
+
+        const x = layer.x + col;
+        const y = layer.y + row;
+        const key = `${x},${y}`;
+        if (!visionRef.current.discovered.has(key)) continue;
+
+        const sx = (idx % ATLAS_COLS) * SOURCE_TILE_SIZE;
+        const sy = Math.floor(idx / ATLAS_COLS) * SOURCE_TILE_SIZE;
+        ctx.drawImage(
+          atlas,
+          sx, sy, SOURCE_TILE_SIZE, SOURCE_TILE_SIZE,
+          x * DEST_TILE_SIZE, y * DEST_TILE_SIZE, DEST_TILE_SIZE, DEST_TILE_SIZE
+        );
+      }
+    }
+  }
+}

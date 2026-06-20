@@ -27,7 +27,52 @@ from app.engine.entities.base import DwarfToken
 from app.engine.entities.mobs import Imp, Shopkeeper
 from app.engine.game.floor_state import FloorState
 
+_FIRE_CARDINALS = [(0, -1), (1, 0), (0, 1), (-1, 0)]
 
+
+def _spawn_trap_fire(floor: FloorState, cx: int, cy: int, radius: int, strength: int) -> None:
+    blob_id = f"fire_trap_{cx}_{cy}"
+    cells = set()
+    volume = {}
+    for dy in range(-radius, radius + 1):
+        for dx in range(-radius, radius + 1):
+            nx, ny = cx + dx, cy + dy
+            if 0 <= nx < floor.width and 0 <= ny < floor.height:
+                tile = floor.grid[ny][nx]
+                if tile == TileType.FLOOR_WATER:
+                    continue
+                can_burn = (floor.flags.flamable[ny][nx] if floor.flags else False)
+                can_burn = can_burn or tile in (TileType.FLOOR, TileType.EMPTY_DECO)
+                if can_burn or tile not in (TileType.WALL, TileType.VOID):
+                    cells.add((nx, ny))
+                    volume[(nx, ny)] = strength
+    if cells:
+        floor.blob_areas[blob_id] = {"type": "fire", "cells": cells, "volume": volume}
+
+
+def _spawn_blazing_trap_fire(floor: FloorState, cx: int, cy: int) -> None:
+    blob_id = f"blazing_trap_{cx}_{cy}"
+    cells = set()
+    volume = {}
+    visited = set()
+    queue = [(cx, cy, 0)]
+    while queue:
+        nx, ny, dist = queue.pop(0)
+        if (nx, ny) in visited or dist > 2:
+            continue
+        visited.add((nx, ny))
+        if not (0 <= nx < floor.width and 0 <= ny < floor.height):
+            continue
+        tile = floor.grid[ny][nx]
+        if tile in (TileType.WALL, TileType.VOID, TileType.FLOOR_WATER):
+            continue
+        if dist > 0:
+            cells.add((nx, ny))
+            volume[(nx, ny)] = 5
+        for dx, dy in _FIRE_CARDINALS:
+            queue.append((nx + dx, ny + dy, dist + 1))
+    if cells:
+        floor.blob_areas[blob_id] = {"type": "fire", "cells": cells, "volume": volume}
 class WorldInteractionMixin:
     def handle_mob_death(self, mob, floor: FloorState, floor_id: int) -> None:
         """Boss-specific on-death drops, called at every mob-death site.
@@ -167,18 +212,9 @@ class WorldInteractionMixin:
         if not key_id:
             return False
 
-        key_idx = next(
-            (
-                idx
-                for idx, item in enumerate(player.inventory)
-                if isinstance(item, Key) and item.key_id == key_id
-            ),
-            -1,
-        )
-        if key_idx == -1:
+        if not player.remove_key(key_id, floor.floor_id):
             return False
 
-        player.inventory.pop(key_idx)
         floor.locked_doors.pop((x, y), None)
         # The boss-arena exit (SPD's LOCKED_EXIT -> UNLOCKED_EXIT) becomes the
         # level's stairs down once unlocked, not a regular door.
@@ -219,6 +255,16 @@ class WorldInteractionMixin:
             add_buff(player.buffs, "poison", duration=8.0, level=1, stack_mode="extend")
             self.boss_scores[1] -= 100
             self.qualified_for_boss_challenge = False
+        elif trap.trap_type == "burning_trap":
+            _spawn_trap_fire(floor, player.pos.x, player.pos.y, 2, 2)
+            self.add_event("PLAY_SOUND", {"sound": "BURNING"}, floor_id=floor_id)
+            damage = 0
+            dealt = 0
+        elif trap.trap_type == "blazing_trap":
+            _spawn_blazing_trap_fire(floor, player.pos.x, player.pos.y)
+            self.add_event("PLAY_SOUND", {"sound": "BURNING"}, floor_id=floor_id)
+            damage = 0
+            dealt = 0
         else:
             damage = 2
             dealt = player.take_damage(damage)

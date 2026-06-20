@@ -5,17 +5,27 @@ const BEAM_TYPES = {
   death_ray:   { atlas: EFFECTS.DEATH_RAY,  duration: 500, tint: null },
   light_ray:   { atlas: EFFECTS.LIGHT_RAY,  duration: 1000, tint: null },
   sun_ray:     { atlas: EFFECTS.LIGHT_RAY,  duration: 1000, tint: '#FFFF40' },
-  health_ray:  { atlas: EFFECTS.HEALTH_RAY,  duration: 750, tint: '#FF4444' },
+  health_ray:  { atlas: EFFECTS.HEALTH_RAY,  duration: 750, tint: '#FF4444', tintHigh: '#FF8888' },
 };
 
-export function spawnBeam(beamRef, startX, startY, endX, endY, type) {
+function lerpColor(c1, c2, t) {
+  const r = parseInt(c1.slice(1, 3), 16), g = parseInt(c1.slice(3, 5), 16), b = parseInt(c1.slice(5, 7), 16);
+  const r2 = parseInt(c2.slice(1, 3), 16), g2 = parseInt(c2.slice(3, 5), 16), b2 = parseInt(c2.slice(5, 7), 16);
+  return `#${Math.round(r + (r2 - r) * t).toString(16).padStart(2, '0')}${Math.round(g + (g2 - g) * t).toString(16).padStart(2, '0')}${Math.round(b + (b2 - b) * t).toString(16).padStart(2, '0')}`;
+}
+
+export function spawnBeam(beamRef, startX, startY, endX, endY, type, hpRatio) {
   const cfg = BEAM_TYPES[type] || BEAM_TYPES.death_ray;
+  let tint = cfg.tint;
+  if (type === 'health_ray' && hpRatio != null) {
+    tint = lerpColor(cfg.tint, cfg.tintHigh, hpRatio);
+  }
   beamRef.current.push({
     startX, startY, endX, endY,
     type,
     duration: cfg.duration,
     atlas: cfg.atlas,
-    tint: cfg.tint,
+    tint,
     startTime: performance.now(),
   });
 }

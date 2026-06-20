@@ -1,6 +1,11 @@
 import AudioManager from '../audio/AudioManager';
-import type { StateUpdateMessage } from '../types/contract';
+import type { StateUpdateMessage, SerializedItem } from '../types/contract';
 import type { SyncCtx, RenderPlayer, RenderMob } from './types';
+
+interface DropBounce {
+  startTime: number;
+  startY: number;
+}
 
 export function syncState(data: StateUpdateMessage, ctx: SyncCtx): void {
   const {
@@ -48,6 +53,7 @@ export function syncState(data: StateUpdateMessage, ctx: SyncCtx): void {
         talentLevels: p.subclass_info?.talent_info?.talents || {},
         talentPoints: p.subclass_info?.talent_points || {},
         bonusTalentPoints: p.subclass_info?.bonus_talent_points || {},
+        keys: p.keys || [],
       });
     }
 
@@ -149,8 +155,34 @@ export function syncState(data: StateUpdateMessage, ctx: SyncCtx): void {
     } : null);
   }
 
-  // --- Items / Vision / Doors ---
-  entitiesRef.current.items = data.items || [];
+  // --- Items with drop bounce animation ---
+  // Preserve active dropBounce state from previous items by id, so
+  // mid-animation items continue bouncing across state updates.
+  const oldItems = entitiesRef.current.items || [];
+  const oldDropBounce = new Map<string, DropBounce>();
+  for (const item of oldItems) {
+    if (!item.id) continue;
+    const bounce = (item as SerializedItem & { dropBounce?: DropBounce }).dropBounce;
+    if (bounce) oldDropBounce.set(item.id, bounce);
+  }
+  const oldItemIds = new Set<string>();
+  for (const i of oldItems) { if (i.id) oldItemIds.add(i.id); }
+  entitiesRef.current.items = (data.items || []).map(newItem => {
+    const id = newItem.id;
+    if (!id) return newItem;
+    const newItemWithBounce = newItem as SerializedItem & { dropBounce?: DropBounce };
+    const existing = oldDropBounce.get(id);
+    if (existing) {
+      newItemWithBounce.dropBounce = existing;
+    } else if (!oldItemIds.has(id) && newItem.pos) {
+      // Brand-new server item — start the drop-from-above animation
+      newItemWithBounce.dropBounce = {
+        startTime: performance.now(),
+        startY: newItem.pos.y - 1.5,
+      };
+    }
+    return newItem;
+  });
 
   if (data.visible_tiles) {
     const newVisible = new Set(data.visible_tiles.map(t => `${t[0]},${t[1]}`));

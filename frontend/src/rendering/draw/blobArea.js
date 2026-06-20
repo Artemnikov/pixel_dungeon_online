@@ -1,16 +1,44 @@
 import { TILE_SIZE } from '../../constants';
 import { setLightMode } from './blending';
+import { spawnFlame } from './flameParticle';
+import { spawnElmo } from './elmoParticle';
 
 const BLOB_COLORS = {
-  fire:      { fill: '#FF4400', alpha: 0.25, edge: '#FF8800' },
   electricity: { fill: '#4488FF', alpha: 0.2, edge: '#88CCFF' },
   toxic_gas: { fill: '#00CC33', alpha: 0.3, edge: '#44FF66' },
   paralytic_gas: { fill: '#9900CC', alpha: 0.3, edge: '#CC44FF' },
   corrosive_gas: { fill: '#88CC00', alpha: 0.3, edge: '#AAFF00' },
   confusion_gas: { fill: '#CC6600', alpha: 0.25, edge: '#FFAA00' },
-  tengu_fire: { fill: '#FF4400', alpha: 0.3, edge: '#FF8800' },
   tengu_shocker: { fill: '#4488FF', alpha: 0.25, edge: '#88CCFF' },
 };
+
+const FIRE_TYPES = new Set(['fire', 'tengu_fire']);
+const FIRE_EMIT_RATE = 25;
+
+let lastFireNow = performance.now();
+
+export function advanceAndDrawFireParticles(ctx, { blobAreasRef, visionRef, particlesRef }) {
+  if (!blobAreasRef?.current) return;
+  const now = performance.now();
+  if (lastFireNow == null) lastFireNow = now;
+  const dt = Math.min((now - lastFireNow) / 1000, 0.05);
+  lastFireNow = now;
+
+  const visible = visionRef?.current?.visible;
+  for (const [, area] of Object.entries(blobAreasRef.current)) {
+    if (!FIRE_TYPES.has(area.type)) continue;
+    const isTengu = area.type === 'tengu_fire';
+    const spawnFn = isTengu ? spawnElmo : spawnFlame;
+    for (const [key] of area.cells) {
+      if (visible && !visible.has(key)) continue;
+      if (Math.random() > dt * FIRE_EMIT_RATE) continue;
+      const [x, y] = key.split(',').map(Number);
+      const cx = x * TILE_SIZE + TILE_SIZE / 2;
+      const cy = y * TILE_SIZE + TILE_SIZE / 2;
+      spawnFn(particlesRef, cx, cy, 1);
+    }
+  }
+}
 
 export function updateBlobArea(blobAreasRef, id, type, cells) {
   if (!blobAreasRef.current) blobAreasRef.current = {};
