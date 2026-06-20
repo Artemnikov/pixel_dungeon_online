@@ -620,11 +620,16 @@
     "multiplayer2": "If you fall, you can start a new run or return to the main menu from the game-over screen."
   },
   "changelog": {
-    "title": "v0.4.1",
+    "title": "v0.4.2",
     "titleName": "Tengu & Items Bugfix",
     "changes0": "Added Tengu's Mask and King's Crown items with inventory serialization and sprite fixes.",
     "changes1": "Fixed Tengu arena layout level exiting and boss tracking mechanics.",
     "changes2": "Resolved issues with integer conversion of entity health during state updates.",
+    "v041": "v0.4.1",
+    "v041Name": "Scroll VFX/SFX Polish",
+    "v0410": "Add per-scroll particle emitters mirroring SPD's Speck types.",
+    "v0411": "Add lullaby, challenge, teleport, and meld sound assets.",
+    "v0412": "Rewrite StatusPane to large-layout (PC) with health/shield/EXP bars.",
     "v040": "v0.4.0",
     "v040Name": "Warrior Update",
     "v0400": "Full Warrior talent tree: T1-T3 talents, Berserk and Combo mechanics, Gladiator finisher moves.",
