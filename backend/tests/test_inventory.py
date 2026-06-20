@@ -61,3 +61,15 @@ def test_item_pickup_in_game():
     assert player.pos.y == item_pos.y
     assert any(it.id == item_id for it in player.inventory)
     assert item_id not in floor.items
+
+def test_special_items_serialization():
+    from app.engine.entities.base import TenguMask, KingsCrown
+    player = Player(id="p1", name="Test", pos=Position(x=0,y=0), hp=20, max_hp=20, attack=1, defense=0)
+    player.add_to_inventory(TenguMask(id="mask1"))
+    player.add_to_inventory(KingsCrown(id="crown1"))
+    
+    data = player.model_dump()
+    
+    assert any(item["kind"] == "tengu_mask" and item["id"] == "mask1" for item in data["inventory"])
+    assert any(item["kind"] == "kings_crown" and item["id"] == "crown1" for item in data["inventory"])
+

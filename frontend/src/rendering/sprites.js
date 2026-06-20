@@ -136,7 +136,7 @@ export const ITEM_SPRITES = {
   "Seed":             [3, 24],  // generic Seed / "Seed of Sunlight" -> SEED_SUNGRASS
 
   // Misc
-  "Tengu's Mask":     [0, 6],   // MASK (WEP_TIER1+0 = idx 96 = col 0, row 6 in items.png)
+  "Tengu's Mask":     [11, 3],  // MASK (MISC_CONSUMABLE+11 = idx 59 = col 11, row 3 in items.png)
   "Goo Blob":         [7, 29],  // BLOB (QUEST+7, QUEST = xy(1,30) = idx 464)
   "Gold":             [2, 1],   // GOLD (UNCOLLECTIBLE+0 = xy(3,2) = idx 18)
   "Dewdrop":          [5, 1],   // DEWDROP (UNCOLLECTIBLE+3 = idx 21)

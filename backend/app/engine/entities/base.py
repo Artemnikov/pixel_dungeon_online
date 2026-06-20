@@ -110,6 +110,10 @@ class Entity(BaseModel):
     # Generic buff system
     buffs: List[Buff] = Field(default_factory=list)
 
+    def __setattr__(self, name, value):
+        if name in ("hp", "hp_bracket") and value is not None:
+            value = int(value)
+        super().__setattr__(name, value)
 
     def add_buff(self, buff_type: str, duration: float, level: int = 0, source_id: str = None, stack_mode: str = "replace") -> Buff:
         result = add_buff(self.buffs, buff_type, duration, level, source_id, stack_mode)
@@ -1952,6 +1956,7 @@ AnyItem = Annotated[
         Gold,
         MysteryMeat, FrozenCarpaccio, Berry, SmallRation, Ration, Pasty, ChargrilledMeat, Food,
         Key,
+        TenguMask, KingsCrown,
         Seed, Dewdrop, Waterskin, Stone, Boomerang, ThrowableDagger, Throwable,
         GooBlob, DwarfToken,
         VelvetPouch, ScrollHolder, MagicalHolster, PotionBandolier, Bag,

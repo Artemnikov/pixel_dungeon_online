@@ -266,11 +266,13 @@
                 "dwarf_token": "#/$defs/DwarfToken",
                 "elixir_aqua_rejuv": "#/$defs/ElixirOfAquaticRejuvenation",
                 "food": "#/$defs/Food",
+                "frozen_carpaccio": "#/$defs/FrozenCarpaccio",
                 "fury_potion": "#/$defs/FuryPotion",
                 "gold": "#/$defs/Gold",
                 "goo_blob": "#/$defs/GooBlob",
                 "health_potion": "#/$defs/HealthPotion",
                 "key": "#/$defs/Key",
+                "kings_crown": "#/$defs/KingsCrown",
                 "magical_holster": "#/$defs/MagicalHolster",
                 "melee_weapon": "#/$defs/MeleeWeapon",
                 "missile_weapon": "#/$defs/MissileWeapon",
@@ -311,6 +313,7 @@
                 "small_ration": "#/$defs/SmallRation",
                 "staff": "#/$defs/Staff",
                 "stone": "#/$defs/Stone",
+                "tengu_mask": "#/$defs/TenguMask",
                 "throwable": "#/$defs/Throwable",
                 "throwable_dagger": "#/$defs/ThrowableDagger",
                 "velvet_pouch": "#/$defs/VelvetPouch",
@@ -509,6 +512,9 @@
                 "$ref": "#/$defs/MysteryMeat"
               },
               {
+                "$ref": "#/$defs/FrozenCarpaccio"
+              },
+              {
                 "$ref": "#/$defs/Berry"
               },
               {
@@ -528,6 +534,12 @@
               },
               {
                 "$ref": "#/$defs/Key"
+              },
+              {
+                "$ref": "#/$defs/TenguMask"
+              },
+              {
+                "$ref": "#/$defs/KingsCrown"
               },
               {
                 "$ref": "#/$defs/Seed"
@@ -606,11 +618,13 @@
                   "dwarf_token": "#/$defs/DwarfToken",
                   "elixir_aqua_rejuv": "#/$defs/ElixirOfAquaticRejuvenation",
                   "food": "#/$defs/Food",
+                  "frozen_carpaccio": "#/$defs/FrozenCarpaccio",
                   "fury_potion": "#/$defs/FuryPotion",
                   "gold": "#/$defs/Gold",
                   "goo_blob": "#/$defs/GooBlob",
                   "health_potion": "#/$defs/HealthPotion",
                   "key": "#/$defs/Key",
+                  "kings_crown": "#/$defs/KingsCrown",
                   "magical_holster": "#/$defs/MagicalHolster",
                   "melee_weapon": "#/$defs/MeleeWeapon",
                   "missile_weapon": "#/$defs/MissileWeapon",
@@ -651,6 +665,7 @@
                   "small_ration": "#/$defs/SmallRation",
                   "staff": "#/$defs/Staff",
                   "stone": "#/$defs/Stone",
+                  "tengu_mask": "#/$defs/TenguMask",
                   "throwable": "#/$defs/Throwable",
                   "throwable_dagger": "#/$defs/ThrowableDagger",
                   "velvet_pouch": "#/$defs/VelvetPouch",
@@ -849,6 +864,9 @@
                   "$ref": "#/$defs/MysteryMeat"
                 },
                 {
+                  "$ref": "#/$defs/FrozenCarpaccio"
+                },
+                {
                   "$ref": "#/$defs/Berry"
                 },
                 {
@@ -868,6 +886,12 @@
                 },
                 {
                   "$ref": "#/$defs/Key"
+                },
+                {
+                  "$ref": "#/$defs/TenguMask"
+                },
+                {
+                  "$ref": "#/$defs/KingsCrown"
                 },
                 {
                   "$ref": "#/$defs/Seed"
@@ -939,11 +963,13 @@
                   "dwarf_token": "#/$defs/DwarfToken",
                   "elixir_aqua_rejuv": "#/$defs/ElixirOfAquaticRejuvenation",
                   "food": "#/$defs/Food",
+                  "frozen_carpaccio": "#/$defs/FrozenCarpaccio",
                   "fury_potion": "#/$defs/FuryPotion",
                   "gold": "#/$defs/Gold",
                   "goo_blob": "#/$defs/GooBlob",
                   "health_potion": "#/$defs/HealthPotion",
                   "key": "#/$defs/Key",
+                  "kings_crown": "#/$defs/KingsCrown",
                   "magical_holster": "#/$defs/MagicalHolster",
                   "melee_weapon": "#/$defs/MeleeWeapon",
                   "missile_weapon": "#/$defs/MissileWeapon",
@@ -984,6 +1010,7 @@
                   "small_ration": "#/$defs/SmallRation",
                   "staff": "#/$defs/Staff",
                   "stone": "#/$defs/Stone",
+                  "tengu_mask": "#/$defs/TenguMask",
                   "throwable": "#/$defs/Throwable",
                   "throwable_dagger": "#/$defs/ThrowableDagger",
                   "velvet_pouch": "#/$defs/VelvetPouch",
@@ -1182,6 +1209,9 @@
                   "$ref": "#/$defs/MysteryMeat"
                 },
                 {
+                  "$ref": "#/$defs/FrozenCarpaccio"
+                },
+                {
                   "$ref": "#/$defs/Berry"
                 },
                 {
@@ -1201,6 +1231,12 @@
                 },
                 {
                   "$ref": "#/$defs/Key"
+                },
+                {
+                  "$ref": "#/$defs/TenguMask"
+                },
+                {
+                  "$ref": "#/$defs/KingsCrown"
                 },
                 {
                   "$ref": "#/$defs/Seed"
@@ -1272,11 +1308,13 @@
                   "dwarf_token": "#/$defs/DwarfToken",
                   "elixir_aqua_rejuv": "#/$defs/ElixirOfAquaticRejuvenation",
                   "food": "#/$defs/Food",
+                  "frozen_carpaccio": "#/$defs/FrozenCarpaccio",
                   "fury_potion": "#/$defs/FuryPotion",
                   "gold": "#/$defs/Gold",
                   "goo_blob": "#/$defs/GooBlob",
                   "health_potion": "#/$defs/HealthPotion",
                   "key": "#/$defs/Key",
+                  "kings_crown": "#/$defs/KingsCrown",
                   "magical_holster": "#/$defs/MagicalHolster",
                   "melee_weapon": "#/$defs/MeleeWeapon",
                   "missile_weapon": "#/$defs/MissileWeapon",
@@ -1317,6 +1355,7 @@
                   "small_ration": "#/$defs/SmallRation",
                   "staff": "#/$defs/Staff",
                   "stone": "#/$defs/Stone",
+                  "tengu_mask": "#/$defs/TenguMask",
                   "throwable": "#/$defs/Throwable",
                   "throwable_dagger": "#/$defs/ThrowableDagger",
                   "velvet_pouch": "#/$defs/VelvetPouch",
@@ -1515,6 +1554,9 @@
                   "$ref": "#/$defs/MysteryMeat"
                 },
                 {
+                  "$ref": "#/$defs/FrozenCarpaccio"
+                },
+                {
                   "$ref": "#/$defs/Berry"
                 },
                 {
@@ -1534,6 +1576,12 @@
                 },
                 {
                   "$ref": "#/$defs/Key"
+                },
+                {
+                  "$ref": "#/$defs/TenguMask"
+                },
+                {
+                  "$ref": "#/$defs/KingsCrown"
                 },
                 {
                   "$ref": "#/$defs/Seed"
@@ -1605,11 +1653,13 @@
                   "dwarf_token": "#/$defs/DwarfToken",
                   "elixir_aqua_rejuv": "#/$defs/ElixirOfAquaticRejuvenation",
                   "food": "#/$defs/Food",
+                  "frozen_carpaccio": "#/$defs/FrozenCarpaccio",
                   "fury_potion": "#/$defs/FuryPotion",
                   "gold": "#/$defs/Gold",
                   "goo_blob": "#/$defs/GooBlob",
                   "health_potion": "#/$defs/HealthPotion",
                   "key": "#/$defs/Key",
+                  "kings_crown": "#/$defs/KingsCrown",
                   "magical_holster": "#/$defs/MagicalHolster",
                   "melee_weapon": "#/$defs/MeleeWeapon",
                   "missile_weapon": "#/$defs/MissileWeapon",
@@ -1650,6 +1700,7 @@
                   "small_ration": "#/$defs/SmallRation",
                   "staff": "#/$defs/Staff",
                   "stone": "#/$defs/Stone",
+                  "tengu_mask": "#/$defs/TenguMask",
                   "throwable": "#/$defs/Throwable",
                   "throwable_dagger": "#/$defs/ThrowableDagger",
                   "velvet_pouch": "#/$defs/VelvetPouch",
@@ -1848,6 +1899,9 @@
                   "$ref": "#/$defs/MysteryMeat"
                 },
                 {
+                  "$ref": "#/$defs/FrozenCarpaccio"
+                },
+                {
                   "$ref": "#/$defs/Berry"
                 },
                 {
@@ -1867,6 +1921,12 @@
                 },
                 {
                   "$ref": "#/$defs/Key"
+                },
+                {
+                  "$ref": "#/$defs/TenguMask"
+                },
+                {
+                  "$ref": "#/$defs/KingsCrown"
                 },
                 {
                   "$ref": "#/$defs/Seed"
@@ -1938,11 +1998,13 @@
                   "dwarf_token": "#/$defs/DwarfToken",
                   "elixir_aqua_rejuv": "#/$defs/ElixirOfAquaticRejuvenation",
                   "food": "#/$defs/Food",
+                  "frozen_carpaccio": "#/$defs/FrozenCarpaccio",
                   "fury_potion": "#/$defs/FuryPotion",
                   "gold": "#/$defs/Gold",
                   "goo_blob": "#/$defs/GooBlob",
                   "health_potion": "#/$defs/HealthPotion",
                   "key": "#/$defs/Key",
+                  "kings_crown": "#/$defs/KingsCrown",
                   "magical_holster": "#/$defs/MagicalHolster",
                   "melee_weapon": "#/$defs/MeleeWeapon",
                   "missile_weapon": "#/$defs/MissileWeapon",
@@ -1983,6 +2045,7 @@
                   "small_ration": "#/$defs/SmallRation",
                   "staff": "#/$defs/Staff",
                   "stone": "#/$defs/Stone",
+                  "tengu_mask": "#/$defs/TenguMask",
                   "throwable": "#/$defs/Throwable",
                   "throwable_dagger": "#/$defs/ThrowableDagger",
                   "velvet_pouch": "#/$defs/VelvetPouch",
@@ -2181,6 +2244,9 @@
                   "$ref": "#/$defs/MysteryMeat"
                 },
                 {
+                  "$ref": "#/$defs/FrozenCarpaccio"
+                },
+                {
                   "$ref": "#/$defs/Berry"
                 },
                 {
@@ -2200,6 +2266,12 @@
                 },
                 {
                   "$ref": "#/$defs/Key"
+                },
+                {
+                  "$ref": "#/$defs/TenguMask"
+                },
+                {
+                  "$ref": "#/$defs/KingsCrown"
                 },
                 {
                   "$ref": "#/$defs/Seed"
@@ -3394,6 +3466,79 @@
       ],
       "type": "object"
     },
+    "FrozenCarpaccio": {
+      "properties": {
+        "kind": {
+          "const": "frozen_carpaccio",
+          "default": "frozen_carpaccio",
+          "type": "string"
+        },
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "name": {
+          "default": "Frozen Carpaccio",
+          "type": "string"
+        },
+        "type": {
+          "default": "food",
+          "type": "string"
+        },
+        "pos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Position"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "quantity": {
+          "default": 1,
+          "type": "integer"
+        },
+        "level": {
+          "default": 0,
+          "type": "integer"
+        },
+        "level_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "unique": {
+          "default": false,
+          "type": "boolean"
+        },
+        "kept_though_lost": {
+          "default": false,
+          "type": "boolean"
+        },
+        "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        },
+        "energy": {
+          "default": 300,
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    },
     "FuryPotion": {
       "properties": {
         "kind": {
@@ -3779,6 +3924,75 @@
       ],
       "type": "object"
     },
+    "KingsCrown": {
+      "properties": {
+        "kind": {
+          "const": "kings_crown",
+          "default": "kings_crown",
+          "type": "string"
+        },
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "name": {
+          "default": "King's Crown",
+          "type": "string"
+        },
+        "type": {
+          "default": "misc",
+          "type": "string"
+        },
+        "pos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Position"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "quantity": {
+          "default": 1,
+          "type": "integer"
+        },
+        "level": {
+          "default": 0,
+          "type": "integer"
+        },
+        "level_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "unique": {
+          "default": true,
+          "type": "boolean"
+        },
+        "kept_though_lost": {
+          "default": false,
+          "type": "boolean"
+        },
+        "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
     "MagicalHolster": {
       "properties": {
         "kind": {
@@ -3868,11 +4082,13 @@
                 "dwarf_token": "#/$defs/DwarfToken",
                 "elixir_aqua_rejuv": "#/$defs/ElixirOfAquaticRejuvenation",
                 "food": "#/$defs/Food",
+                "frozen_carpaccio": "#/$defs/FrozenCarpaccio",
                 "fury_potion": "#/$defs/FuryPotion",
                 "gold": "#/$defs/Gold",
                 "goo_blob": "#/$defs/GooBlob",
                 "health_potion": "#/$defs/HealthPotion",
                 "key": "#/$defs/Key",
+                "kings_crown": "#/$defs/KingsCrown",
                 "magical_holster": "#/$defs/MagicalHolster",
                 "melee_weapon": "#/$defs/MeleeWeapon",
                 "missile_weapon": "#/$defs/MissileWeapon",
@@ -3913,6 +4129,7 @@
                 "small_ration": "#/$defs/SmallRation",
                 "staff": "#/$defs/Staff",
                 "stone": "#/$defs/Stone",
+                "tengu_mask": "#/$defs/TenguMask",
                 "throwable": "#/$defs/Throwable",
                 "throwable_dagger": "#/$defs/ThrowableDagger",
                 "velvet_pouch": "#/$defs/VelvetPouch",
@@ -4111,6 +4328,9 @@
                 "$ref": "#/$defs/MysteryMeat"
               },
               {
+                "$ref": "#/$defs/FrozenCarpaccio"
+              },
+              {
                 "$ref": "#/$defs/Berry"
               },
               {
@@ -4130,6 +4350,12 @@
               },
               {
                 "$ref": "#/$defs/Key"
+              },
+              {
+                "$ref": "#/$defs/TenguMask"
+              },
+              {
+                "$ref": "#/$defs/KingsCrown"
               },
               {
                 "$ref": "#/$defs/Seed"
@@ -5218,11 +5444,13 @@
                 "dwarf_token": "#/$defs/DwarfToken",
                 "elixir_aqua_rejuv": "#/$defs/ElixirOfAquaticRejuvenation",
                 "food": "#/$defs/Food",
+                "frozen_carpaccio": "#/$defs/FrozenCarpaccio",
                 "fury_potion": "#/$defs/FuryPotion",
                 "gold": "#/$defs/Gold",
                 "goo_blob": "#/$defs/GooBlob",
                 "health_potion": "#/$defs/HealthPotion",
                 "key": "#/$defs/Key",
+                "kings_crown": "#/$defs/KingsCrown",
                 "magical_holster": "#/$defs/MagicalHolster",
                 "melee_weapon": "#/$defs/MeleeWeapon",
                 "missile_weapon": "#/$defs/MissileWeapon",
@@ -5263,6 +5491,7 @@
                 "small_ration": "#/$defs/SmallRation",
                 "staff": "#/$defs/Staff",
                 "stone": "#/$defs/Stone",
+                "tengu_mask": "#/$defs/TenguMask",
                 "throwable": "#/$defs/Throwable",
                 "throwable_dagger": "#/$defs/ThrowableDagger",
                 "velvet_pouch": "#/$defs/VelvetPouch",
@@ -5461,6 +5690,9 @@
                 "$ref": "#/$defs/MysteryMeat"
               },
               {
+                "$ref": "#/$defs/FrozenCarpaccio"
+              },
+              {
                 "$ref": "#/$defs/Berry"
               },
               {
@@ -5480,6 +5712,12 @@
               },
               {
                 "$ref": "#/$defs/Key"
+              },
+              {
+                "$ref": "#/$defs/TenguMask"
+              },
+              {
+                "$ref": "#/$defs/KingsCrown"
               },
               {
                 "$ref": "#/$defs/Seed"
@@ -5548,11 +5786,13 @@
                   "dwarf_token": "#/$defs/DwarfToken",
                   "elixir_aqua_rejuv": "#/$defs/ElixirOfAquaticRejuvenation",
                   "food": "#/$defs/Food",
+                  "frozen_carpaccio": "#/$defs/FrozenCarpaccio",
                   "fury_potion": "#/$defs/FuryPotion",
                   "gold": "#/$defs/Gold",
                   "goo_blob": "#/$defs/GooBlob",
                   "health_potion": "#/$defs/HealthPotion",
                   "key": "#/$defs/Key",
+                  "kings_crown": "#/$defs/KingsCrown",
                   "magical_holster": "#/$defs/MagicalHolster",
                   "melee_weapon": "#/$defs/MeleeWeapon",
                   "missile_weapon": "#/$defs/MissileWeapon",
@@ -5593,6 +5833,7 @@
                   "small_ration": "#/$defs/SmallRation",
                   "staff": "#/$defs/Staff",
                   "stone": "#/$defs/Stone",
+                  "tengu_mask": "#/$defs/TenguMask",
                   "throwable": "#/$defs/Throwable",
                   "throwable_dagger": "#/$defs/ThrowableDagger",
                   "velvet_pouch": "#/$defs/VelvetPouch",
@@ -5791,6 +6032,9 @@
                   "$ref": "#/$defs/MysteryMeat"
                 },
                 {
+                  "$ref": "#/$defs/FrozenCarpaccio"
+                },
+                {
                   "$ref": "#/$defs/Berry"
                 },
                 {
@@ -5810,6 +6054,12 @@
                 },
                 {
                   "$ref": "#/$defs/Key"
+                },
+                {
+                  "$ref": "#/$defs/TenguMask"
+                },
+                {
+                  "$ref": "#/$defs/KingsCrown"
                 },
                 {
                   "$ref": "#/$defs/Seed"
@@ -5881,11 +6131,13 @@
                   "dwarf_token": "#/$defs/DwarfToken",
                   "elixir_aqua_rejuv": "#/$defs/ElixirOfAquaticRejuvenation",
                   "food": "#/$defs/Food",
+                  "frozen_carpaccio": "#/$defs/FrozenCarpaccio",
                   "fury_potion": "#/$defs/FuryPotion",
                   "gold": "#/$defs/Gold",
                   "goo_blob": "#/$defs/GooBlob",
                   "health_potion": "#/$defs/HealthPotion",
                   "key": "#/$defs/Key",
+                  "kings_crown": "#/$defs/KingsCrown",
                   "magical_holster": "#/$defs/MagicalHolster",
                   "melee_weapon": "#/$defs/MeleeWeapon",
                   "missile_weapon": "#/$defs/MissileWeapon",
@@ -5926,6 +6178,7 @@
                   "small_ration": "#/$defs/SmallRation",
                   "staff": "#/$defs/Staff",
                   "stone": "#/$defs/Stone",
+                  "tengu_mask": "#/$defs/TenguMask",
                   "throwable": "#/$defs/Throwable",
                   "throwable_dagger": "#/$defs/ThrowableDagger",
                   "velvet_pouch": "#/$defs/VelvetPouch",
@@ -6124,6 +6377,9 @@
                   "$ref": "#/$defs/MysteryMeat"
                 },
                 {
+                  "$ref": "#/$defs/FrozenCarpaccio"
+                },
+                {
                   "$ref": "#/$defs/Berry"
                 },
                 {
@@ -6143,6 +6399,12 @@
                 },
                 {
                   "$ref": "#/$defs/Key"
+                },
+                {
+                  "$ref": "#/$defs/TenguMask"
+                },
+                {
+                  "$ref": "#/$defs/KingsCrown"
                 },
                 {
                   "$ref": "#/$defs/Seed"
@@ -6386,11 +6648,13 @@
                 "dwarf_token": "#/$defs/DwarfToken",
                 "elixir_aqua_rejuv": "#/$defs/ElixirOfAquaticRejuvenation",
                 "food": "#/$defs/Food",
+                "frozen_carpaccio": "#/$defs/FrozenCarpaccio",
                 "fury_potion": "#/$defs/FuryPotion",
                 "gold": "#/$defs/Gold",
                 "goo_blob": "#/$defs/GooBlob",
                 "health_potion": "#/$defs/HealthPotion",
                 "key": "#/$defs/Key",
+                "kings_crown": "#/$defs/KingsCrown",
                 "magical_holster": "#/$defs/MagicalHolster",
                 "melee_weapon": "#/$defs/MeleeWeapon",
                 "missile_weapon": "#/$defs/MissileWeapon",
@@ -6431,6 +6695,7 @@
                 "small_ration": "#/$defs/SmallRation",
                 "staff": "#/$defs/Staff",
                 "stone": "#/$defs/Stone",
+                "tengu_mask": "#/$defs/TenguMask",
                 "throwable": "#/$defs/Throwable",
                 "throwable_dagger": "#/$defs/ThrowableDagger",
                 "velvet_pouch": "#/$defs/VelvetPouch",
@@ -6629,6 +6894,9 @@
                 "$ref": "#/$defs/MysteryMeat"
               },
               {
+                "$ref": "#/$defs/FrozenCarpaccio"
+              },
+              {
                 "$ref": "#/$defs/Berry"
               },
               {
@@ -6648,6 +6916,12 @@
               },
               {
                 "$ref": "#/$defs/Key"
+              },
+              {
+                "$ref": "#/$defs/TenguMask"
+              },
+              {
+                "$ref": "#/$defs/KingsCrown"
               },
               {
                 "$ref": "#/$defs/Seed"
@@ -7924,11 +8198,13 @@
                 "dwarf_token": "#/$defs/DwarfToken",
                 "elixir_aqua_rejuv": "#/$defs/ElixirOfAquaticRejuvenation",
                 "food": "#/$defs/Food",
+                "frozen_carpaccio": "#/$defs/FrozenCarpaccio",
                 "fury_potion": "#/$defs/FuryPotion",
                 "gold": "#/$defs/Gold",
                 "goo_blob": "#/$defs/GooBlob",
                 "health_potion": "#/$defs/HealthPotion",
                 "key": "#/$defs/Key",
+                "kings_crown": "#/$defs/KingsCrown",
                 "magical_holster": "#/$defs/MagicalHolster",
                 "melee_weapon": "#/$defs/MeleeWeapon",
                 "missile_weapon": "#/$defs/MissileWeapon",
@@ -7969,6 +8245,7 @@
                 "small_ration": "#/$defs/SmallRation",
                 "staff": "#/$defs/Staff",
                 "stone": "#/$defs/Stone",
+                "tengu_mask": "#/$defs/TenguMask",
                 "throwable": "#/$defs/Throwable",
                 "throwable_dagger": "#/$defs/ThrowableDagger",
                 "velvet_pouch": "#/$defs/VelvetPouch",
@@ -8167,6 +8444,9 @@
                 "$ref": "#/$defs/MysteryMeat"
               },
               {
+                "$ref": "#/$defs/FrozenCarpaccio"
+              },
+              {
                 "$ref": "#/$defs/Berry"
               },
               {
@@ -8186,6 +8466,12 @@
               },
               {
                 "$ref": "#/$defs/Key"
+              },
+              {
+                "$ref": "#/$defs/TenguMask"
+              },
+              {
+                "$ref": "#/$defs/KingsCrown"
               },
               {
                 "$ref": "#/$defs/Seed"
@@ -9594,6 +9880,75 @@
       },
       "type": "object"
     },
+    "TenguMask": {
+      "properties": {
+        "kind": {
+          "const": "tengu_mask",
+          "default": "tengu_mask",
+          "type": "string"
+        },
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "name": {
+          "default": "Tengu's Mask",
+          "type": "string"
+        },
+        "type": {
+          "default": "misc",
+          "type": "string"
+        },
+        "pos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Position"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "quantity": {
+          "default": 1,
+          "type": "integer"
+        },
+        "level": {
+          "default": 0,
+          "type": "integer"
+        },
+        "level_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "unique": {
+          "default": true,
+          "type": "boolean"
+        },
+        "kept_though_lost": {
+          "default": false,
+          "type": "boolean"
+        },
+        "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
     "Throwable": {
       "properties": {
         "kind": {
@@ -9855,11 +10210,13 @@
                 "dwarf_token": "#/$defs/DwarfToken",
                 "elixir_aqua_rejuv": "#/$defs/ElixirOfAquaticRejuvenation",
                 "food": "#/$defs/Food",
+                "frozen_carpaccio": "#/$defs/FrozenCarpaccio",
                 "fury_potion": "#/$defs/FuryPotion",
                 "gold": "#/$defs/Gold",
                 "goo_blob": "#/$defs/GooBlob",
                 "health_potion": "#/$defs/HealthPotion",
                 "key": "#/$defs/Key",
+                "kings_crown": "#/$defs/KingsCrown",
                 "magical_holster": "#/$defs/MagicalHolster",
                 "melee_weapon": "#/$defs/MeleeWeapon",
                 "missile_weapon": "#/$defs/MissileWeapon",
@@ -9900,6 +10257,7 @@
                 "small_ration": "#/$defs/SmallRation",
                 "staff": "#/$defs/Staff",
                 "stone": "#/$defs/Stone",
+                "tengu_mask": "#/$defs/TenguMask",
                 "throwable": "#/$defs/Throwable",
                 "throwable_dagger": "#/$defs/ThrowableDagger",
                 "velvet_pouch": "#/$defs/VelvetPouch",
@@ -10098,6 +10456,9 @@
                 "$ref": "#/$defs/MysteryMeat"
               },
               {
+                "$ref": "#/$defs/FrozenCarpaccio"
+              },
+              {
                 "$ref": "#/$defs/Berry"
               },
               {
@@ -10117,6 +10478,12 @@
               },
               {
                 "$ref": "#/$defs/Key"
+              },
+              {
+                "$ref": "#/$defs/TenguMask"
+              },
+              {
+                "$ref": "#/$defs/KingsCrown"
               },
               {
                 "$ref": "#/$defs/Seed"

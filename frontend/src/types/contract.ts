@@ -36,6 +36,8 @@ import type {
   Food,
   MysteryMeat,
   Key,
+  TenguMask,
+  KingsCrown,
   Seed,
   Stone,
   Boomerang,
@@ -79,6 +81,8 @@ export type GeneratedItem =
   | Food
   | MysteryMeat
   | Key
+  | TenguMask
+  | KingsCrown
   | Seed
   | Stone
   | Boomerang
