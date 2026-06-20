@@ -3,13 +3,19 @@ import { getWsBaseUrl } from '../config/urls';
 import { sendMessage } from './send';
 import { syncState } from './syncState';
 import { handleEvent } from './handleEvent';
-import type { ServerMessage } from '../types/contract';
+import { startFloorFade } from '../rendering/floorTransition';
+import { TILE_SIZE, FLOOR_FADE_OUT_MS } from '../constants';
+import type { ServerMessage, InitMessage, StateUpdateMessage } from '../types/contract';
 import type { HookProps, HandlerCtx } from './types';
 
 const HEARTBEAT_INTERVAL_MS = 15000;
 const WATCHDOG_TIMEOUT_MS = 30000;
 const RECONNECT_BASE_MS = 500;
 const RECONNECT_MAX_MS = 10000;
+
+// Stairs/chasm events that should fade-and-snap the camera on floor change. A future
+// CHASM_FALL_START call site adds itself here once the chasm-fall mechanic lands.
+const FLOOR_CHANGE_EVENT_TYPES = new Set(['STAIRS_DOWN', 'STAIRS_UP']);
 
 export default function useGameSocket({
   enabled,
@@ -29,6 +35,7 @@ export default function useGameSocket({
   projectilesRef,
   trapsRef,
   customTilesRef,
+  customWallsRef,
   mobAnimRef,
   dyingMobsRef,
   playerAnimRef,
@@ -50,6 +57,8 @@ export default function useGameSocket({
   selectedEnemyIdRef,
   warnedTilesRef,
   wasDownedRef,
+  floorFadeRef,
+  cameraLerpRef,
   setGrid,
   setDepth,
   setMyPlayerId,
@@ -142,31 +151,34 @@ export default function useGameSocket({
         scheduleReconnect();
       };
 
-      ws.onmessage = (event) => {
-        lastMsgAt = Date.now();
-        const data = JSON.parse(event.data) as ServerMessage;
-        if (data.type === 'PONG') return;
+      // INIT only arrives on floor change (or first connect) — see main.py's
+      // last_sent_floor check. We don't yet know at INIT-receipt time whether this
+      // floor change came from stairs (fade) or an admin/debug warp (no fade), so the
+      // grid swap is always stashed here and only actually applied from
+      // applyStateUpdate below, once we've seen the paired STATE_UPDATE's events.
+      let pendingInit: InitMessage | null = null;
+      // While true, the fade-out is mid-flight: any STATE_UPDATE/INIT arriving before
+      // the deferred apply fires gets folded into the pending payload instead of being
+      // applied (and instead of triggering a second, overlapping fade).
+      let deferredApplyPending = false;
 
-        if (data.type === 'INIT') {
-          setGrid(data.grid);
-          gridRef.current = data.grid;
-          visionRef.current.discovered = new Set();
-          trapsRef.current = data.traps || [];
-          customTilesRef.current = data.custom_tiles || [];
-          if (typeof data.depth === 'number') setDepth(data.depth);
-          if (data.player_id) {
-            setMyPlayerId(data.player_id);
-            myPlayerIdRef.current = data.player_id;
-          }
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          if (setExitPos) setExitPos((data as any).exit_pos || null);
-          return;
+      const applyInit = (data: InitMessage) => {
+        setGrid(data.grid);
+        gridRef.current = data.grid;
+        visionRef.current.discovered = new Set();
+        trapsRef.current = data.traps || [];
+        customTilesRef.current = data.custom_tiles || [];
+        customWallsRef.current = data.custom_walls || [];
+        if (typeof data.depth === 'number') setDepth(data.depth);
+        if (data.player_id) {
+          setMyPlayerId(data.player_id);
+          myPlayerIdRef.current = data.player_id;
         }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        if (setExitPos) setExitPos((data as any).exit_pos || null);
+      };
 
-        if (data.type !== 'STATE_UPDATE') return;
-
-        console.log('[WS] STATE_UPDATE', data.players.length, 'players, my level:', data.players.find(p => p.id === myPlayerIdRef.current)?.level);
-
+      const applyStateUpdate = (data: StateUpdateMessage) => {
         if (typeof data.depth === 'number') setDepth(data.depth);
         if (data.difficulty) setDifficulty(data.difficulty);
         if (typeof data.gold === 'number' && setGold) setGold(data.gold);
@@ -195,6 +207,71 @@ export default function useGameSocket({
         if (data.events) {
           data.events.forEach(ev => handleEvent(ev, handlerCtx));
         }
+      };
+
+      // Camera snap-then-pan (SPD GameScene.java): force-offset cameraLerpRef one tile
+      // in the direction the player just dropped from/rose to, on top of the player's
+      // raw movement delta (which keeps any existing pan/zoom offset intact); the
+      // existing CAMERA_LERP exponential settle in useGameRenderer pulls it back onto
+      // the player next frame, reading as "drop down" / "rise up" into view.
+      const snapCameraForFloorChange = (direction: 'down' | 'up', newPos: { x: number; y: number }) => {
+        if (!cameraLerpRef?.current) return;
+        const me = entitiesRef.current.players[myPlayerIdRef.current ?? ''];
+        const oldPos = me?.renderPos ?? newPos;
+        const dx = (newPos.x - oldPos.x) * TILE_SIZE;
+        const dy = (newPos.y - oldPos.y) * TILE_SIZE;
+        const snapTileOffset = direction === 'down' ? -TILE_SIZE : TILE_SIZE;
+        cameraLerpRef.current.x += dx;
+        cameraLerpRef.current.y += dy + snapTileOffset;
+      };
+
+      ws.onmessage = (event) => {
+        lastMsgAt = Date.now();
+        const data = JSON.parse(event.data) as ServerMessage;
+        if (data.type === 'PONG') return;
+
+        if (data.type === 'INIT') {
+          pendingInit = data;
+          return;
+        }
+
+        if (data.type !== 'STATE_UPDATE') return;
+
+        console.log('[WS] STATE_UPDATE', data.players.length, 'players, my level:', data.players.find(p => p.id === myPlayerIdRef.current)?.level);
+
+        // A fade triggered by an earlier tick is still mid-flight (screen is fading to
+        // black / held black); drop intermediate ticks rather than risk them being
+        // applied mid-fade or racing the deferred apply below.
+        if (deferredApplyPending) return;
+
+        const floorChangeEvent = data.events?.find(
+          ev => FLOOR_CHANGE_EVENT_TYPES.has(ev.type) && ev.data.player === myPlayerIdRef.current,
+        );
+
+        if (!floorChangeEvent) {
+          // Steady state (most ticks), or a non-stairs depth change (admin teleport,
+          // resurrect, etc.) — apply any stashed INIT immediately, no fade.
+          if (pendingInit) { applyInit(pendingInit); pendingInit = null; }
+          applyStateUpdate(data);
+          return;
+        }
+
+        // Stairs/chasm floor change: fade out, then swap grid+position+camera while
+        // the screen is fully black, then let the fade play back in. Input is gated
+        // client-side for the whole fade window via isFloorFadeActive(floorFadeRef).
+        const direction = floorChangeEvent.type === 'STAIRS_UP' ? 'up' : 'down';
+        if (floorFadeRef) startFloorFade(floorFadeRef, direction);
+        const initToApply = pendingInit;
+        pendingInit = null;
+        const newPos = data.players.find(p => p.id === myPlayerIdRef.current)?.pos;
+        deferredApplyPending = true;
+
+        setTimeout(() => {
+          deferredApplyPending = false;
+          if (initToApply) applyInit(initToApply);
+          applyStateUpdate(data);
+          if (newPos) snapCameraForFloorChange(direction, newPos);
+        }, FLOOR_FADE_OUT_MS);
       };
     }
 

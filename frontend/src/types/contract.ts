@@ -164,6 +164,9 @@ export interface DamageEvent {
     bleed?: boolean;
     projectile?: string;
     splash_count?: number;
+    source_x?: number;
+    source_y?: number;
+    beam_type?: string;
   };
 }
 
@@ -203,6 +206,7 @@ export interface RangedAttackEvent {
     crit: boolean;
     grim_proc: boolean;
     beam_type?: string;
+    target_hp_ratio?: number;
     sound?: string;
     is_wand?: boolean;
     /** Serialized thrown item, present for thrown inventory items (not wands). */
@@ -304,6 +308,12 @@ export interface PickupGoldEvent {
   data: { player: string; amount: number };
 }
 
+/** Key picked up — added directly to the per-floor key counter, not the inventory. */
+export interface PickupKeyEvent {
+  type: 'PICKUP_KEY';
+  data: { player: string; key_id: string; name: string };
+}
+
 /** Player interacted with a Shopkeeper NPC — opens the shop window. */
 export interface ShopOpenEvent {
   type: 'SHOP_OPEN';
@@ -336,7 +346,7 @@ export interface ImpRewardEvent {
 
 export interface StairsDownEvent {
   type: 'STAIRS_DOWN';
-  data: { player: string };
+  data: { player: string; first_visit: boolean };
 }
 
 export interface StairsUpEvent {
@@ -625,6 +635,12 @@ export interface SacrificialFireEvent {
   data: { x: number; y: number };
 }
 
+/** Potion of Liquid Flame shatter — orange flame burst. */
+export interface FlameBurstEvent {
+  type: 'FLAME_BURST';
+  data: { x: number; y: number };
+}
+
 export type GameEvent =
   | AttackEvent
   | MissEvent
@@ -643,6 +659,7 @@ export type GameEvent =
   | DropEvent
   | CollectDewEvent
   | PickupGoldEvent
+  | PickupKeyEvent
   | ShopOpenEvent
   | ShopBuyEvent
   | ShopSellEvent
@@ -703,6 +720,7 @@ export type GameEvent =
   | FireImbueActivatedEvent
   | InfernoActivatedEvent
   | SacrificialFireEvent
+  | FlameBurstEvent
   | SpellSpriteEvent;
 
 export type GameEventType = GameEvent['type'];
@@ -719,6 +737,8 @@ export interface InitMessage {
   traps: TrapInfo[];
   /** Decorative custom tilemaps (e.g. GooNest), cosmetic only. */
   custom_tiles?: CustomTileLayer[];
+  /** Custom wall overlays rendered above characters (e.g. SewerExitOverhang). */
+  custom_walls?: CustomTileLayer[];
   /** Only present on the very first INIT after connecting. */
   player_id?: string;
 }

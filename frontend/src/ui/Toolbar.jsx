@@ -19,6 +19,7 @@ import toolbarSpriteSrc from '../assets/pixel-dungeon/interfaces/toolbar.png';
 import iconsSpriteSrc from '../assets/pixel-dungeon/interfaces/icons.png';
 import { coordsForItem } from '../rendering/sprites';
 import { itemRects } from '../rendering/spriteRects';
+import { centeredItemCrop } from '../rendering/itemCrop';
 import { MAX_DPR } from '../constants';
 
 const S = 2;
@@ -203,13 +204,13 @@ export default function Toolbar({
           const coords = coordsForItem(item);
           if (!coords) continue;
           const rect = itemRects.get(coords[0], coords[1]);
-          const rx = rect ? rect.rx : 0;
-          const ry = rect ? rect.ry : 0;
-          const sw = rect ? Math.min(rect.w, tiny) : tiny;
-          const sh = rect ? Math.min(rect.h, tiny) : tiny;
-          const px = (btnArea.x + previewPos[i].x) * sc;
-          const py = (btnArea.y + previewPos[i].y) * sc;
-          ctx.drawImage(ii, coords[0] * 16 + rx, coords[1] * 16 + ry, sw, sh, px, py, sw * sc, sh * sc);
+          const clamped = rect
+            ? { rx: rect.rx, ry: rect.ry, w: Math.min(rect.w, tiny), h: Math.min(rect.h, tiny) }
+            : null;
+          const { sx, sy, sw, sh, dw, dh, offsetX, offsetY } = centeredItemCrop(clamped, tiny * sc, tiny);
+          const px = (btnArea.x + previewPos[i].x) * sc + offsetX;
+          const py = (btnArea.y + previewPos[i].y) * sc + offsetY;
+          ctx.drawImage(ii, coords[0] * 16 + sx, coords[1] * 16 + sy, sw, sh, px, py, dw, dh);
         }
       }
 

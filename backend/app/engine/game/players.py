@@ -34,8 +34,11 @@ from app.engine.entities.base import (
     Item,
     Player,
     Position,
+    PotionOfLiquidFlame,
     QuickSlot,
     Ration,
+    ScrollOfIdentify,
+    ScrollOfUpgrade,
     Staff,
     Stone,
     ThrowableDagger,
@@ -99,6 +102,15 @@ class PlayersMixin:
             belongings.weapon.update_wand(False)
             class_starting_quickslots.append((0, belongings.weapon))
 
+            # HeroClass.initMage(): Scroll of Upgrade + Potion of Liquid Flame
+            # (both auto-identified).
+            soi = ScrollOfUpgrade(id=str(uuid.uuid4()), level_known=True, cursed_known=True)
+            belongings.backpack.collect(soi)
+            self.identify_kind(soi)
+            plf = PotionOfLiquidFlame(id=str(uuid.uuid4()), level_known=True, cursed_known=True)
+            belongings.backpack.collect(plf)
+            self.identify_kind(plf)
+
         elif class_type == CharacterClass.ROGUE:
             # SPD: Dagger + Cloth Armor base + Cloak of Shadows artifact +
             # Throwing Knives (quickslot). The cloak — not the armor — is the
@@ -144,6 +156,12 @@ class PlayersMixin:
         # backpack, bound to the first empty quickslot.
         waterskin = Waterskin(id=str(uuid.uuid4()))
         belongings.backpack.collect(waterskin)
+
+        # HeroClass.initHero(): every hero starts with a Scroll of Identify
+        # (auto-identified).
+        si = ScrollOfIdentify(id=str(uuid.uuid4()), level_known=True, cursed_known=True)
+        belongings.backpack.collect(si)
+        self.identify_kind(si)
 
         # SPD identifies a hero's starting gear (HeroClass.java's .identify()), so
         # its STR requirement renders in white (":N") instead of the orange,

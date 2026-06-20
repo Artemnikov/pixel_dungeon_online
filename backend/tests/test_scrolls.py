@@ -7,6 +7,13 @@ from app.engine.dungeon.constants import TileType
 from app.engine.manager import GameInstance
 
 
+def _detach_starter_scroll(p):
+    for it in list(p.belongings.backpack.items):
+        if it.kind == "scroll_of_identify":
+            p.belongings.backpack.detach(it.id)
+            return
+
+
 def _player(g):
     return g.add_player("p1", "Hero", "warrior")
 
@@ -266,6 +273,7 @@ def test_scroll_of_identify_lists_unidentified_identifiable_items():
     seed = Seed(id="seed1", name="Seed")
     p.belongings.backpack.collect(seed)
 
+    _detach_starter_scroll(p)
     scroll = ScrollOfIdentify(id="scroll1")
     p.belongings.backpack.collect(scroll)
 
@@ -287,6 +295,7 @@ def test_scroll_of_identify_excludes_already_identified_kind():
     p.belongings.backpack.collect(potion)
     g.identified_kinds.add(potion.kind)
 
+    _detach_starter_scroll(p)
     scroll = ScrollOfIdentify(id="scroll1")
     p.belongings.backpack.collect(scroll)
 
@@ -306,6 +315,7 @@ def test_scroll_of_identify_select_target_reveals_kind():
     potion.cursed_known = False
     p.belongings.backpack.collect(potion)
 
+    _detach_starter_scroll(p)
     scroll = ScrollOfIdentify(id="scroll1")
     p.belongings.backpack.collect(scroll)
 
@@ -331,6 +341,8 @@ def test_scroll_of_identify_no_candidates_does_not_consume_scroll():
     # Mark every starting item's kind as already identified so none qualify.
     for it in player_inventory_items(p):
         g.identified_kinds.add(it.kind)
+
+    _detach_starter_scroll(p)
 
     # Only other item present besides the scroll itself is a seed (not identifiable).
     seed = Seed(id="seed1", name="Seed")
@@ -874,6 +886,8 @@ def test_inscribed_stealth_not_granted_when_predicate_scroll_has_no_candidates()
 
     # Give player inscribed_stealth talent (Rogue T2).
     p.subclass_info.talent_info.talents[Talent.INSCRIBED_STEALTH] = 1
+
+    _detach_starter_scroll(p)
 
     # Mark every item as identified so Scroll of Identify finds no candidates.
     for it in player_inventory_items(p):

@@ -35,6 +35,7 @@ class FloorState:
     dk_summon_spots: List[Tuple[int, int]] = field(default_factory=list)
     yog_pos: Optional[Tuple[int, int]] = None
     custom_tiles: List[dict] = field(default_factory=list)
+    custom_walls: List[dict] = field(default_factory=list)
     alchemy_pots: List[Tuple[int, int]] = field(default_factory=list)
 
     # PrisonBossLevel (floor 10, Tengu) state machine -- mirrors

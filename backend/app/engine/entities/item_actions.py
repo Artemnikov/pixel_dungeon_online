@@ -29,7 +29,7 @@ from typing import Optional
 
 from app.engine.dungeon.constants import TileType
 from app.engine.entities.base import (
-    Action, Position, Seed, Wand,
+    Action, Position, Potion, Seed, Wand,
     GooBlob, HealthPotion, ElixirOfAquaticRejuvenation, Waterskin,
 )
 from app.engine.entities.scroll_actions import action_read
@@ -145,6 +145,37 @@ def action_drink(game, player, item, tx=None, ty=None) -> None:
         if removed is not None and player.belongings.get_item(item.id) is None:
             player.quickslot.convert_to_placeholder(removed)
         game.add_event("DRINK", {"player": player.id, "type": "mind_vision"}, floor_id=player.floor_id, source_player_id=player.id)
+    elif effect == "liquid_flame":
+        dmg = max(1, player.hp // 3)
+        player.take_damage(dmg)
+        player.add_buff("burning", duration=8.0, level=1, stack_mode="extend")
+        removed = player.belongings.backpack.detach(item.id)
+        if removed is not None and player.belongings.get_item(item.id) is None:
+            player.quickslot.convert_to_placeholder(removed)
+        game.add_event("DAMAGE", {"target": player.id, "amount": dmg, "burning": True}, floor_id=player.floor_id)
+        game.add_event("FLAME_BURST", {"x": player.pos.x, "y": player.pos.y}, floor_id=player.floor_id)
+        cx, cy = player.pos.x, player.pos.y
+        floor = game._get_or_create_floor(player.floor_id)
+        blob_id = f"fire_drink_{player.id}"
+        cells = set()
+        volume = {}
+        strength = 1 + player.floor_id
+        for dy in (-1, 0, 1):
+            for dx in (-1, 0, 1):
+                nx, ny = cx + dx, cy + dy
+                if 0 <= nx < floor.width and 0 <= ny < floor.height:
+                    if floor.flags.passable[ny][nx] if floor.flags else False:
+                        if floor.grid[ny][nx] != TileType.FLOOR_WATER:
+                            cells.add((nx, ny))
+                            volume[(nx, ny)] = strength
+        if cells:
+            for bid in list(floor.blob_areas.keys()):
+                b = floor.blob_areas[bid]
+                if b.get("type") == "fire" and b.get("cells", set()) & cells:
+                    del floor.blob_areas[bid]
+            floor.blob_areas[blob_id] = {"type": "fire", "cells": cells, "volume": volume}
+            game.add_event("PLAY_SOUND", {"sound": "SHATTER"}, floor_id=player.floor_id)
+            game.add_event("PLAY_SOUND", {"sound": "BURNING"}, floor_id=player.floor_id)
     game.on_potion_drunk(player, item)
 
 
@@ -253,7 +284,50 @@ def action_throw(game, player, item, tx=None, ty=None) -> None:
     if isinstance(item, Seed):
         action_plant(game, player, item, tx, ty)
         return
+    # Potion of Liquid Flame: shatter on impact, create fire blob
+    if isinstance(item, Potion) and item.effect == "liquid_flame":
+        _shatter_liquid_flame(game, player, item, tx, ty)
+        return
     game.perform_ranged_attack(player.id, item.id, tx, ty)
+
+
+def _shatter_liquid_flame(game, player, item, tx, ty) -> None:
+    floor = game._get_or_create_floor(player.floor_id)
+    if not (0 <= tx < floor.width and 0 <= ty < floor.height):
+        return
+
+    # Remove potion from inventory
+    removed = player.belongings.backpack.detach(item.id)
+    if removed is not None and player.belongings.get_item(item.id) is None:
+        player.quickslot.convert_to_placeholder(removed)
+
+    # Create fire blob in 3x3 area centered on impact, SPD strength 1+depth
+    blob_id = f"fire_potion_{player.id}_{tx}_{ty}"
+    cells = set()
+    volume = {}
+    strength = 1 + player.floor_id
+    for dy in (-1, 0, 1):
+        for dx in (-1, 0, 1):
+            nx, ny = tx + dx, ty + dy
+            if 0 <= nx < floor.width and 0 <= ny < floor.height:
+                if floor.flags.passable[ny][nx] if floor.flags else False:
+                    if floor.grid[ny][nx] != TileType.FLOOR_WATER:
+                        cells.add((nx, ny))
+                        volume[(nx, ny)] = strength
+
+    if cells:
+        for bid in list(floor.blob_areas.keys()):
+            b = floor.blob_areas[bid]
+            if b.get("type") == "fire" and b.get("cells", set()) & cells:
+                del floor.blob_areas[bid]
+        floor.blob_areas[blob_id] = {
+            "type": "fire",
+            "cells": cells,
+            "volume": volume,
+        }
+        game.add_event("PLAY_SOUND", {"sound": "SHATTER"}, floor_id=player.floor_id)
+        game.add_event("FLAME_BURST", {"x": tx, "y": ty}, floor_id=player.floor_id)
+        game.add_event("PLAY_SOUND", {"sound": "BURNING"}, floor_id=player.floor_id)
 
 
 def action_zap(game, player, item, tx=None, ty=None) -> None:

@@ -250,14 +250,14 @@ def test_key_unlocks_the_boss_door():
 
     game = GameInstance("test-goo-unlock")
     player = Player(id="p1", name="Hero", pos=Position(x=dx - 1, y=dy), hp=50, max_hp=50, faction=Faction.PLAYER)
-    player.inventory.append(Key(id="k1", name="Worn Key", pos=Position(x=dx - 1, y=dy), key_id=key_id))
+    player.add_key(key_id, floor.floor_id, "Worn Key")
 
     assert game._try_unlock_locked_door(player, floor, dx, dy) is True
     # Boss-arena exit (goo_door) unlocks into stairs down, not a regular door.
     assert floor.grid[dy][dx] == TileType.STAIRS_DOWN
     assert floor.locked_doors == {}
     assert floor.flags.passable[dy][dx] is True
-    assert player.inventory == []
+    assert player.key_count(key_id, floor.floor_id) == 0
 
 
 def test_locked_door_blocks_without_matching_key():
@@ -279,7 +279,7 @@ def test_unlock_non_goo_door_stays_a_door():
 
     game = GameInstance("test-iron-unlock")
     player = Player(id="p1", name="Hero", pos=Position(x=dx - 1, y=dy), hp=50, max_hp=50, faction=Faction.PLAYER)
-    player.inventory.append(Key(id="k1", name="Iron Key", pos=Position(x=dx - 1, y=dy), key_id="iron"))
+    player.add_key("iron", floor.floor_id, "Iron Key")
 
     assert game._try_unlock_locked_door(player, floor, dx, dy) is True
     assert floor.grid[dy][dx] == TileType.DOOR

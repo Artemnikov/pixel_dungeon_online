@@ -15,3 +15,11 @@ export const HIT_CONNECT_DELAY = 130;      // delay before swing "connects" and 
 export const FLASH_DURATION = 50;          // white hit-flash duration
 
 export const easeOutQuad = t => 1 - (1 - t) * (1 - t);
+
+// Floor transition fade (stairs/chasm). SPD's InterlevelScene has 3 fade-time tiers
+// (slow/norm/fast, up to 2s) timed against a background level-gen thread; floors here
+// are already generated server-side with no load delay, so we collapse to one simple
+// out/hold/in cycle just long enough to mask the instant grid+position swap.
+export const FLOOR_FADE_OUT_MS = 330;
+export const FLOOR_FADE_HOLD_MS = 80;
+export const FLOOR_FADE_IN_MS = 330;

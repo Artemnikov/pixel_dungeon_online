@@ -45,6 +45,14 @@ export function handleWorldEvents(event: GameEvent, ctx: HandlerCtx): boolean {
     return true;
   }
 
+  if (event.type === 'FLAME_BURST') {
+    const { x, y } = event.data;
+    if (visionRef?.current?.visible?.has(`${x},${y}`)) {
+      spawnFlameBurst(particlesRef, x * TILE_SIZE + TILE_SIZE / 2, y * TILE_SIZE + TILE_SIZE / 2, 8);
+    }
+    return true;
+  }
+
   if (event.type === 'INFERNO_ACTIVATED') {
     const { x, y } = event.data;
     if (visionRef?.current?.visible?.has(`${x},${y}`)) {

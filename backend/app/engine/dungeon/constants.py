@@ -13,6 +13,7 @@ class TileType:
     SECRET_TRAP = 11
     TRAP = 12
     INACTIVE_TRAP = 13
+    EMBERS = 14
     WALL_DECO = 17
     EMPTY_DECO = 18
     HIGH_GRASS = 19
@@ -30,6 +31,8 @@ class RoomKind:
 class TrapType:
     WORN_DART = "worn_dart"
     TENGU_DART = "tengu_dart"  # hidden dart trap in Tengu cell (floor 10 boss)
+    BURNING_TRAP = "burning_trap"
+    BLAZING_TRAP = "blazing_trap"
 
     # Whether each trap type can be hidden (SECRET_TRAP).
     # False → always placed as visible TRAP terrain.
@@ -37,6 +40,8 @@ class TrapType:
     CAN_BE_HIDDEN = {
         WORN_DART: False,
         TENGU_DART: True,  # hidden until revealed by search or trigger
+        BURNING_TRAP: True,
+        BLAZING_TRAP: True,
     }
 
 
@@ -62,6 +67,8 @@ class TrapVisual:
     MAPPING = {
         TrapType.WORN_DART: (GREY, CROSSHAIR),
         TrapType.TENGU_DART: (RED, CROSSHAIR),
+        TrapType.BURNING_TRAP: (ORANGE, DOTS),
+        TrapType.BLAZING_TRAP: (ORANGE, STARS),
     }
 
     @staticmethod

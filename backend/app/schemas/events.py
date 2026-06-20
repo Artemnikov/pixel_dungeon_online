@@ -43,6 +43,9 @@ class DamageData(_EventData):
     bleed: Optional[bool] = None
     projectile: Optional[str] = None
     splash_count: Optional[int] = None
+    source_x: Optional[int] = None
+    source_y: Optional[int] = None
+    beam_type: Optional[str] = None
 
 
 class DeathData(_EventData):
@@ -136,6 +139,12 @@ class PickupGoldData(_EventData):
     amount: int
 
 
+class PickupKeyData(_EventData):
+    player: str
+    key_id: str
+    name: str
+
+
 class ShopOpenData(_EventData):
     player: str
     npc: str
@@ -157,6 +166,7 @@ class ShopSellData(_EventData):
 
 class StairsDownData(_EventData):
     player: str
+    first_visit: bool
 
 
 class StairsUpData(_EventData):
@@ -358,6 +368,7 @@ EVENT_MODELS = {
     "DROP": DropData,
     "COLLECT_DEW": CollectDewData,
     "PICKUP_GOLD": PickupGoldData,
+    "PICKUP_KEY": PickupKeyData,
     "SHOP_OPEN": ShopOpenData,
     "SHOP_BUY": ShopBuyData,
     "SHOP_SELL": ShopSellData,

@@ -15,6 +15,28 @@
   overflow: hidden;
 }
 
+/* --- Key display — small icon+count row for keys held on this floor --- */
+.key-display {
+  position: fixed;
+  top: max(8px, env(safe-area-inset-top));
+  left: max(8px, env(safe-area-inset-left));
+  z-index: 45;
+  display: flex;
+  gap: 4px;
+  pointer-events: none;
+}
+.key-display__pill {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: rgba(15, 12, 10, 0.7);
+  border: 1px solid #666;
+  border-radius: 4px;
+}
+
 .boss-health-bar {
   position: absolute;
   top: 12px;

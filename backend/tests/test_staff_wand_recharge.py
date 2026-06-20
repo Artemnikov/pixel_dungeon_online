@@ -2,8 +2,15 @@
 passive recharge tick (_tick_passive_wand_recharge / recharge_scale)."""
 import pytest
 
+from app.engine.entities.base import (
+    CharacterClass,
+    PotionOfLiquidFlame,
+    ScrollOfIdentify,
+    ScrollOfUpgrade,
+    Staff,
+    Wand,
+)
 from app.engine.manager import GameInstance
-from app.engine.entities.base import CharacterClass
 
 
 def test_all_items_includes_the_imbued_wand():
@@ -53,3 +60,54 @@ def test_staff_recharge_respects_recharge_scale():
     game._tick_passive_wand_recharge(player, dt=1.5)
 
     assert wand.charges == wand.max_charges
+
+
+# --- Mage starting state ----------------------------------------------------
+
+def test_mage_starts_with_scroll_of_upgrade():
+    game = GameInstance("test-game")
+    player = game.add_player("mage-1", "T", CharacterClass.MAGE)
+    items = list(player.belongings.all_items())
+    assert any(it.kind == "scroll_of_upgrade" for it in items)
+
+
+def test_mage_starts_with_potion_of_liquid_flame():
+    game = GameInstance("test-game")
+    player = game.add_player("mage-1", "T", CharacterClass.MAGE)
+    items = list(player.belongings.all_items())
+    assert any(it.kind == "potion_of_liquid_flame" for it in items)
+
+
+def test_mage_starter_scroll_and_potion_are_identified():
+    game = GameInstance("test-game")
+    player = game.add_player("mage-1", "T", CharacterClass.MAGE)
+    assert "scroll_of_upgrade" in game.identified_kinds
+    assert "potion_of_liquid_flame" in game.identified_kinds
+
+
+def test_mage_staff_melee_range_is_1():
+    game = GameInstance("test-game")
+    player = game.add_player("mage-1", "T", CharacterClass.MAGE)
+    staff = player.belongings.weapon
+    assert isinstance(staff, Staff)
+    # KindOfWeapon.range default = 1; zap range comes from imbued wand.
+    assert staff.range == 1
+
+
+def test_mage_staff_zap_range_comes_from_wand():
+    game = GameInstance("test-game")
+    player = game.add_player("mage-1", "T", CharacterClass.MAGE)
+    staff = player.belongings.weapon
+    assert isinstance(staff, Staff)
+    assert staff.imbued_wand is not None
+    wand_reach = staff.imbued_wand.get_reach()
+    assert wand_reach == 4
+
+
+def test_all_classes_start_with_scroll_of_identify():
+    for cls in (CharacterClass.WARRIOR, CharacterClass.MAGE, CharacterClass.ROGUE, CharacterClass.HUNTRESS):
+        game = GameInstance("test-game")
+        player = game.add_player("p", "T", cls)
+        items = list(player.belongings.all_items())
+        assert any(it.kind == "scroll_of_identify" for it in items), f"{cls} missing ScrollOfIdentify"
+        assert "scroll_of_identify" in game.identified_kinds, f"{cls} ScrollOfIdentify not identified"

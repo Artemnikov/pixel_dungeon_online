@@ -175,7 +175,7 @@ def _check_kinetic(attacker: "Entity", raw_damage: int, defender: "Entity", hp_b
     if not defender.is_alive and hp_before > 0:
         overflow = raw_damage - hp_before
         if overflow > 0:
-            attacker.conserved_damage += overflow
+            attacker.conserved_damage += int(overflow)
 
 
 def resolve_melee_attack(

@@ -18,7 +18,13 @@ shops on floors 6/11/16 (Dungeon.shopOnLevel()).
 Deviations from SPD, per the approved plan:
  - TippedDart -> 2x Stone
  - Alchemize -> skipped
- - Bag (ChooseBag) -> skipped (no Bag items implemented yet)
+ - Bag (ChooseBag) -> simplified to a fixed depth->bag mapping (6=Scroll
+   Holder, 11=Potion Bandolier, 16=Magical Holster; depth 20 gets none).
+   VelvetPouch is excluded since every player already starts with one
+   (matches SPD's LimitedDrops state at run start). The original's
+   per-player "most inventory savings" weighting needs a specific hero's
+   belongings, which isn't available here: shop stock is generated once per
+   shared multiplayer floor, not per player.
  - Bomb/DoubleBomb/Honeypot -> +1 Food ("Mystery Meat")
  - Ankh / StoneOfAugmentation / TimekeepersHourglass.sandBag -> skipped
  - Stylus (7/10 rare roll) -> redistributed to Wand/Ring
@@ -42,9 +48,12 @@ from app.engine.entities.base import (
     Food,
     HealthPotion,
     Item,
+    MagicalHolster,
     make_named_melee_weapon,
     MissileWeapon,
+    PotionBandolier,
     Ring,
+    ScrollHolder,
     ScrollOfIdentify,
     ScrollOfMagicMapping,
     ScrollOfRemoveCurse,
@@ -89,6 +98,15 @@ _SHOP_TIERS = {
     20: (5, 4),
 }
 
+# ShopRoom.ChooseBag(), simplified: a fixed depth -> bag class so each shop
+# grants exactly one free storage bag, no duplicates across a run. VelvetPouch
+# isn't a candidate (every player starts with one already).
+_SHOP_BAGS = {
+    6: ScrollHolder,
+    11: PotionBandolier,
+    16: MagicalHolster,
+}
+
 
 def generate_shop_items(rng: SPDRandom, depth: int) -> List[Item]:
     weapon_tier, armor_tier = _SHOP_TIERS.get(depth, (2, 1))
@@ -128,6 +146,10 @@ def generate_shop_items(rng: SPDRandom, depth: int) -> List[Item]:
     else:
         rare = Ring(name="Ring", cursed_known=True)
     items.append(rare)
+
+    bag_cls = _SHOP_BAGS.get(depth)
+    if bag_cls is not None:
+        items.append(bag_cls())
 
     rng.shuffle(items)
 

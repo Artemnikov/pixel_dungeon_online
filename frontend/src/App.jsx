@@ -24,6 +24,7 @@ import useTargetingExamine from './game/useTargetingExamine';
 
 import StatusPane from './ui/StatusPane';
 import BossHealthBar from './ui/BossHealthBar';
+import KeyDisplay from './ui/KeyDisplay';
 import DangerIndicator from './ui/DangerIndicator';
 import SideTags from './ui/SideTags';
 import AttackIndicator from './ui/AttackIndicator';
@@ -121,6 +122,7 @@ function App() {
   const hoveredCellRef = useRef(null);
   const trapsRef = useRef([]);
   const customTilesRef = useRef([]);
+  const customWallsRef = useRef([]);
   const depthRef = useRef(1);
 
   useEffect(() => { depthRef.current = depth; }, [depth]);
@@ -194,7 +196,7 @@ function App() {
     setConnectionStatus,
     socketRef, gridRef, myPlayerIdRef, entitiesRef,
     visionRef, openDoorsRef, projectilesRef,
-    trapsRef, customTilesRef,
+    trapsRef, customTilesRef, customWallsRef,
     mobAnimRef, dyingMobsRef, playerAnimRef, particlesRef, searchEffectsRef, floatingTextRef, screenFlashRef, screenShakeRef, wasDownedRef, warnedTilesRef, transmuteEffectsRef, flareEffectsRef, spellSpriteEffectsRef, lightningRef, shieldHaloRef, stateEffectsRef, magicMissileRef, staffAmbientRef, surpriseRef, selectedEnemyIdRef, beamRef, blobAreasRef,
     setGrid, setDepth, setMyPlayerId, setInventory,
     setEquippedItems, setMyStats, setDifficulty, setBossInfo,
@@ -256,7 +258,7 @@ function App() {
   useGameRenderer({
     canvasRef, grid, myPlayerId, depth, assetImages,
     entitiesRef, visionRef, openDoorsRef, projectilesRef,
-    trapsRef, customTilesRef,
+    trapsRef, customTilesRef, customWallsRef,
     mobAnimRef, dyingMobsRef, playerAnimRef, particlesRef, searchEffectsRef, floatingTextRef, screenFlashRef, screenShakeRef, myPlayerIdRef, warnedTilesRef, transmuteEffectsRef, flareEffectsRef, spellSpriteEffectsRef, lightningRef, shieldHaloRef, stateEffectsRef, magicMissileRef, staffAmbientRef, surpriseRef, selectedEnemyIdRef, hoveredCellRef, beamRef, blobAreasRef,
     panOffsetRef, cameraLerpRef, zoomRef,
     isRefocusingRef, isDraggingRef,
@@ -562,6 +564,7 @@ function App() {
         )}
 
         <BossHealthBar boss={bossInfo} />
+        <KeyDisplay keys={myStats.keys} depth={depth} />
 
         <SideTags>
           <AttackIndicator

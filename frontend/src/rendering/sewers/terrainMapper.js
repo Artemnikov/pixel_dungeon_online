@@ -117,6 +117,10 @@ export const getSewerTerrainInstructions = (grid, x, y, tile, openDoors = new Se
     return instructions;
   }
 
+  if (tile === BACKEND_TILE.EMBERS.id) {
+    return [{ srcIndex: BACKEND_TILE.EMBERS.atlasIndex, quadrant: QUADRANT.FULL }];
+  }
+
   if (tile === BACKEND_TILE.EMPTY_DECO.id) {
     // SPD picks one of two full-tile FLOOR_DECO variants, not an overlay on
     // a plain floor. hashCell gives stable per-cell variation.

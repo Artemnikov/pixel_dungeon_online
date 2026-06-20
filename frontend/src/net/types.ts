@@ -100,6 +100,7 @@ export interface MyStats {
   talentPoints?: Record<string, number>;
   bonusTalentPoints?: Record<string, number>;
   pos?: { x: number; y: number } | null;
+  keys?: Player['keys'];
 }
 
 export interface HookProps {
@@ -120,6 +121,7 @@ export interface HookProps {
   projectilesRef: Ref<Projectile[]>;
   trapsRef: Ref<TrapInfo[]>;
   customTilesRef: Ref<CustomTileLayer[]>;
+  customWallsRef: Ref<CustomTileLayer[]>;
   mobAnimRef: Ref<Record<string, AnimState>>;
   dyingMobsRef: Ref<Record<string, DyingMob>>;
   playerAnimRef: Ref<Record<string, AnimState>>;

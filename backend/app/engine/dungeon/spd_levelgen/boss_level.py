@@ -527,7 +527,7 @@ class SewerBossEntranceRoom(StandardRoom):
 
 class SewerBossExitRoom(StandardRoom):
     """Port of SewerBossExitRoom — pedestal with LOCKED_EXIT and visual
-    sewer exit custom tilemap (skipped)."""
+    sewer exit custom tilemap + overhang arch."""
 
     def min_width(self) -> int:
         return max(super().min_width(), 8)
@@ -550,6 +550,33 @@ class SewerBossExitRoom(StandardRoom):
         Painter.fill(level, c.x - 1, c.y + 1, 3, 1, terrain.EMPTY_SP)
 
         Painter.set(level, c, terrain.LOCKED_EXIT)
+
+        # SewerExit decorative floor tiles (3x3, idx 21-24 from sewer_boss.png)
+        level.custom_tiles.append({
+            "texture": "sewer_boss",
+            "x": c.x - 1,
+            "y": c.y,
+            "w": 3,
+            "h": 3,
+            "tiles": [
+                [21, -1, 22],
+                [23, 23, 23],
+                [24, 24, 24],
+            ],
+        })
+
+        # SewerExitOverhang arch above the exit (3x2, rendered above characters)
+        level.custom_walls.append({
+            "texture": "sewer_boss",
+            "x": c.x - 1,
+            "y": c.y - 2,
+            "w": 3,
+            "h": 2,
+            "tiles": [
+                [16, 17, 18],
+                [19, -1, 20],
+            ],
+        })
 
 
 # ---- RatKingRoom -----------------------------------------------------------

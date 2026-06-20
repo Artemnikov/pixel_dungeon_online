@@ -9,11 +9,34 @@ import { spawnMagicMissile, MISSILE_TYPES } from '../../rendering/draw/magicMiss
 import { spawnBeam } from '../../rendering/draw/beam';
 import { spawnScreenShake } from '../../rendering/draw/screenShake';
 import { spawnSparkMoving } from '../../rendering/draw/sparkParticle';
+import { spawnFlameBurst } from '../../rendering/draw/flameParticle';
+import { spawnEarthBurst } from '../../rendering/draw/earthParticle';
+import { spawnPurpleBurst } from '../../rendering/draw/purpleParticle';
+import { spawnRainbowBurst } from '../../rendering/draw/rainbowParticle';
+import { spawnElmo } from '../../rendering/draw/elmoParticle';
 import { addGameLog } from '../../ui/gameLogHelpers';
 import type { GameEvent } from '../../types/contract';
 import type { HandlerCtx } from '../types';
 
 const BLOOD_COLORS: Record<string, string> = { Goo: '#000000' };
+
+function rasterizeLine(x0: number, y0: number, x1: number, y1: number): Array<{ x: number; y: number }> {
+  const cells: Array<{ x: number; y: number }> = [];
+  const dx = Math.abs(x1 - x0);
+  const dy = Math.abs(y1 - y0);
+  const sx = x0 < x1 ? 1 : -1;
+  const sy = y0 < y1 ? 1 : -1;
+  let err = dx - dy;
+  let cx = x0, cy = y0;
+  while (true) {
+    if (cx !== x1 || cy !== y1) cells.push({ x: cx, y: cy });
+    if (cx === x1 && cy === y1) break;
+    const e2 = 2 * err;
+    if (e2 > -dy) { err -= dy; cx += sx; }
+    if (e2 < dx) { err += dx; cy += sy; }
+  }
+  return cells;
+}
 
 const MAGIC_PROJECTILES = new Set([
   'magic_bolt', 'magic_missile', 'fire_bolt', 'frost', 'corrosion',
@@ -66,7 +89,7 @@ export function handleCombatEvents(event: GameEvent, ctx: HandlerCtx): boolean {
       if (isLocal) spawnScreenShake(screenShakeRef, 2, 300);
     } else if (beamType && (projType === 'beam' || projType === 'magic_bolt')) {
       if (audible) AudioManager.play('RAY');
-      spawnBeam(beamRef, startX, startY, targetX, targetY, beamType);
+      spawnBeam(beamRef, startX, startY, targetX, targetY, beamType, event.data.target_hp_ratio);
     } else if (event.data.is_wand) {
       if (audible) AudioManager.play(event.data.sound ?? 'ATTACK_MAGIC');
       if (MAGIC_PROJECTILES.has(projType)) spawnMagicMissile(magicMissileRef, startX, startY, targetX, targetY, projType);
@@ -216,6 +239,53 @@ export function handleCombatEvents(event: GameEvent, ctx: HandlerCtx): boolean {
     setTimeout(() => {
       if (isMagic && particlesRef) {
         const count = event.data.splash_count ?? 3;
+        if (projectile === 'beam') {
+          const sx = event.data.source_x;
+          const sy = event.data.source_y;
+          if (sx != null && sy != null && visionRef?.current?.visible) {
+            const beamType = event.data.beam_type;
+            const cells = rasterizeLine(sx, sy, tgtEntity.renderPos.x, tgtEntity.renderPos.y);
+            for (const cell of cells) {
+              const key = `${cell.x},${cell.y}`;
+              if (!visionRef.current.visible.has(key)) continue;
+              const px = cell.x * TILE_SIZE + TILE_SIZE / 2;
+              const py = cell.y * TILE_SIZE + TILE_SIZE / 2;
+              if (beamType === 'health_ray') {
+                spawnBlood(particlesRef, px, py, -Math.PI / 2, 1, '#cc0000');
+              } else if (beamType === 'light_ray') {
+                spawnRainbowBurst(particlesRef, px, py, 2);
+              } else {
+                spawnPurpleBurst(particlesRef, px, py, 1);
+              }
+            }
+          }
+        } else {
+          switch (projectile) {
+            case 'fire_bolt':
+              spawnFlameBurst(particlesRef, tc.x, tc.y, 5);
+              break;
+            case 'frost':
+              spawnWhiteSplash(particlesRef, tc.x, tc.y, 5);
+              break;
+            case 'earth':
+            case 'force':
+              spawnEarthBurst(particlesRef, tc.x, tc.y, 8);
+              break;
+            case 'shadow':
+            case 'ward':
+              spawnPurpleBurst(particlesRef, tc.x, tc.y, 6);
+              break;
+            case 'rainbow':
+              spawnRainbowBurst(particlesRef, tc.x, tc.y, 10);
+              break;
+            case 'elmo':
+              spawnElmo(particlesRef, tc.x, tc.y, 4);
+              break;
+            case 'foliage':
+              spawnEarthBurst(particlesRef, tc.x, tc.y, 6);
+              break;
+          }
+        }
         spawnWhiteSplash(particlesRef, tc.x, tc.y, count);
         const isAudible = tgt === myPlayerIdRef.current
           || visionRef?.current?.visible?.has(`${Math.round(tgtEntity.renderPos.x)},${Math.round(tgtEntity.renderPos.y)}`);

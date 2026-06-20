@@ -24,8 +24,10 @@ import time
 from typing import List, Optional, Type
 
 from app.engine.dungeon.generator import TileType
-from app.engine.entities.base import Difficulty, Effect, Faction, Player, Position, Wand
-from app.engine.entities.buffs import get_buff, has_buff, process_buffs
+from app.engine.entities.base import (
+    ChargrilledMeat, Difficulty, Effect, Faction, FrozenCarpaccio, is_immune, MysteryMeat, Player, Position, Wand,
+)
+from app.engine.entities.buffs import add_buff, get_buff, has_buff, process_buffs, remove_buff
 from app.engine.entities.scroll_predicates import player_inventory_items
 from app.engine.game.blobs import tick_blob_areas
 from app.engine.entities.mobs import (
@@ -246,6 +248,7 @@ class TickMixin:
                 continue
 
             self._process_bleed_ooze(floor_id, active_players)
+            self._process_burning(floor_id, active_players)
             self._process_respawns(floor_id, floor, active_players)
             self._update_prison_boss(floor, floor_id)
 
@@ -584,6 +587,117 @@ class TickMixin:
                     if mob.bleed_turns <= 0:
                         mob.bleed_amount = 0
 
+    def _process_burning(self, floor_id: int, active_players: List[Player]):
+        floor = self._get_or_create_floor(floor_id)
+        for player in active_players:
+            if not has_buff(player.buffs, "burning"):
+                player.burning_accum = 0.0
+                continue
+
+            is_water = floor.grid[player.pos.y][player.pos.x] == TileType.FLOOR_WATER
+            if is_water:
+                remove_buff(player.buffs, "burning")
+                player.burning_accum = 0.0
+                continue
+
+            player.burning_accum += 0.05
+            if player.burning_accum < 1.0:
+                continue
+            player.burning_accum = 0.0
+
+            remove_buff(player.buffs, "chill")
+
+            dmg = random.randint(1, 3 + player.floor_id // 4)
+            player.take_damage(dmg)
+            self.add_event("DAMAGE", {"target": player.id, "amount": dmg, "burning": True}, floor_id=floor_id)
+            self._ignite_floor_if_flammable(player, floor, floor_id)
+
+            self._burn_player_inventory(player, floor_id)
+
+        for mob in floor.mobs.values():
+            if not mob.is_alive or not has_buff(mob.buffs, "burning"):
+                mob.burning_accum = 0.0
+                continue
+
+            is_water = floor.grid[mob.pos.y][mob.pos.x] == TileType.FLOOR_WATER
+            if is_water:
+                remove_buff(mob.buffs, "burning")
+                mob.burning_accum = 0.0
+                continue
+
+            mob.burning_accum += 0.05
+            if mob.burning_accum < 1.0:
+                continue
+            mob.burning_accum = 0.0
+
+            if is_immune(mob, "burning"):
+                remove_buff(mob.buffs, "burning")
+                self._ignite_floor_if_flammable(mob, floor, floor_id)
+                continue
+
+            dmg = random.randint(1, 3 + floor_id // 4)
+            mob.hp -= dmg
+            self.add_event("DAMAGE", {"target": mob.id, "amount": dmg, "burning": True}, floor_id=floor_id)
+            self._ignite_floor_if_flammable(mob, floor, floor_id)
+            if mob.hp <= 0:
+                mob.hp = 0
+                mob.is_alive = False
+                mob.die(
+                    floor_mobs=floor.mobs,
+                    tile_x=mob.pos.x,
+                    tile_y=mob.pos.y,
+                    players=list(self._players_on_floor(floor_id)),
+                )
+                self.add_event("DEATH", {"target": mob.id}, floor_id=floor_id)
+                self.handle_mob_death(mob, floor, floor_id)
+                for item in roll_drops(mob, self.drop_counters, mob.pos.x, mob.pos.y, players=list(self._players_on_floor(floor_id))):
+                    floor.items[item.id] = item
+
+    def _burn_player_inventory(self, player: Player, floor_id: int):
+        player.burning_total_seconds += 1.0
+        if player.burning_total_seconds < 4.0:
+            return
+
+        chance = (player.burning_total_seconds - 3.0) / 3.0
+        if random.random() >= chance:
+            return
+
+        player.burning_total_seconds = 0.0
+
+        inv = player.inventory
+        for item in list(inv):
+            if item.kind == "scroll" and not item.unique:
+                inv.remove(item)
+                self.add_event("PLAY_SOUND", {"sound": "BURNING"}, floor_id=floor_id)
+                return
+
+        for item in list(inv):
+            if isinstance(item, (MysteryMeat, FrozenCarpaccio)):
+                idx = inv.index(item)
+                cooked = ChargrilledMeat(id=item.id, quantity=item.quantity)
+                inv[idx] = cooked
+                self.add_event("PLAY_SOUND", {"sound": "BURNING"}, floor_id=floor_id)
+                return
+
+    def _ignite_floor_if_flammable(self, entity, floor: FloorState, floor_id: int):
+        """Seed fire under a burning entity standing on a flammable tile w/o fire.
+        Mirrors SPD Burning.act() lines 161-163."""
+        x, y = entity.pos.x, entity.pos.y
+        if not (floor.flags and floor.flags.flamable[y][x]):
+            return
+        has_fire = any(
+            b.get("type") == "fire" and (x, y) in b.get("cells", set())
+            for b in floor.blob_areas.values()
+        )
+        if has_fire:
+            return
+        blob_id = f"burning_footprint_{entity.id}"
+        floor.blob_areas[blob_id] = {
+            "type": "fire",
+            "cells": {(x, y)},
+            "volume": {(x, y): 4},
+        }
+
     def _process_respawns(self, floor_id: int, floor: FloorState, active_players: List[Player]):
         if floor_id in NO_RESPAWN_FLOORS:
             return
@@ -702,11 +816,11 @@ class TickMixin:
         if player.heal_cooldown > 0:
             return
 
-        amt = round(player.heal_left * player.heal_pct_per_tick) + player.heal_flat_per_tick
-        amt = max(1, min(amt, player.heal_left))
+        amt = int(round(player.heal_left * player.heal_pct_per_tick) + player.heal_flat_per_tick)
+        amt = int(max(1, min(amt, player.heal_left)))
 
         if player.hp < player.get_total_max_hp():
-            player.hp = min(player.get_total_max_hp(), player.hp + amt)
+            player.hp = int(min(player.get_total_max_hp(), player.hp + amt))
 
         player.heal_left -= amt
         player.heal_cooldown = HEAL_TICK_INTERVAL
@@ -743,9 +857,9 @@ class TickMixin:
         frac = raw - whole
         amt = whole + 1 if random.random() < frac else whole
         amt = max(1, amt)
-        amt = min(amt, player.aqua_heal_left, max_hp - player.hp)
+        amt = int(min(amt, player.aqua_heal_left, max_hp - player.hp))
 
-        player.hp = min(max_hp, player.hp + amt)
+        player.hp = int(min(max_hp, player.hp + amt))
         player.aqua_heal_left -= amt
         if player.aqua_heal_left <= 0:
             player.aqua_heal_left = 0.0

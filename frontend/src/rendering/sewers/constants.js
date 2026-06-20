@@ -42,6 +42,7 @@ export const BACKEND_TILE = {
   SECRET_TRAP: { id: 11, atlasIndex: null, seethrough: true },
   TRAP: { id: 12, atlasIndex: null, seethrough: true },
   INACTIVE_TRAP: { id: 13, atlasIndex: null, seethrough: true },
+  EMBERS: { id: 14, atlasIndex: atlasIndex(3, 0), seethrough: true },
   WALL_DECO: { id: 17, atlasIndex: atlasIndex(1, 3), seethrough: false },
   EMPTY_DECO: { id: 18, atlasIndex: atlasIndex(3, 0), seethrough: true },
   HIGH_GRASS: { id: 19, atlasIndex: null, seethrough: false },
@@ -229,6 +230,8 @@ export const isGrassTile = (tile) =>
 
 export const TRAP_VISUAL = {
   worn_dart: { color: 7, shape: 5 },
+  burning_trap: { color: 1, shape: 0 },
+  blazing_trap: { color: 1, shape: 3 },
 };
 
 export const trapSpriteIndex = (trapType) => {

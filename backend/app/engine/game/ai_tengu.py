@@ -44,6 +44,10 @@ class TenguAIMixin:
         observe = False
 
         for (cx, cy) in list(cells):
+            if floor.grid[cy][cx] == TileType.FLOOR_WATER:
+                cells.discard((cx, cy))
+                del volume[(cx, cy)]
+                continue
             vol = volume.get((cx, cy), 1) - 1
             if vol <= 0:
                 for p in self._players_on_floor(floor_id):
@@ -417,6 +421,8 @@ class TenguAIMixin:
                 if not (0 <= nx < floor.width and 0 <= ny < floor.height):
                     continue
                 if floor.flags and floor.flags.solid[ny][nx]:
+                    continue
+                if floor.grid[ny][nx] == TileType.FLOOR_WATER:
                     continue
                 if (nx, ny) not in cells:
                     cells.add((nx, ny))
