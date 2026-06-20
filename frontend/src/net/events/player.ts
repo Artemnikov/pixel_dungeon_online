@@ -248,7 +248,7 @@ export function handlePlayerEvents(event: GameEvent, ctx: HandlerCtx): boolean {
   }
 
   if (event.type === 'STAIRS_DOWN' && event.data.player === myPlayerIdRef.current) {
-    AudioManager.play('STAIRS_DOWN');
+    if (event.data.first_visit) AudioManager.play('STAIRS_DOWN');
     return true;
   }
 

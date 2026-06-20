@@ -336,7 +336,7 @@ export interface ImpRewardEvent {
 
 export interface StairsDownEvent {
   type: 'STAIRS_DOWN';
-  data: { player: string };
+  data: { player: string; first_visit: boolean };
 }
 
 export interface StairsUpEvent {

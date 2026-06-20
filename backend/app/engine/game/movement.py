@@ -326,8 +326,9 @@ class MovementCombatMixin:
             self._trigger_trap_if_needed(floor, entity, floor_id)
 
         if isinstance(entity, Player) and tile == TileType.STAIRS_DOWN and entity.floor_id < MAX_FLOOR_ID:
+            first_visit = entity.floor_id + 1 > entity.floors_explored
             self._move_player_to_floor(entity, entity.floor_id + 1, TileType.STAIRS_UP)
-            self.add_event("STAIRS_DOWN", {"player": entity_id}, player_id=entity_id)
+            self.add_event("STAIRS_DOWN", {"player": entity_id, "first_visit": first_visit}, player_id=entity_id)
 
         if isinstance(entity, Player) and tile == TileType.STAIRS_UP and entity.floor_id > 1:
             self._move_player_to_floor(entity, entity.floor_id - 1, TileType.STAIRS_DOWN)

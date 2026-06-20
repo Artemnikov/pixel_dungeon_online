@@ -157,6 +157,7 @@ class ShopSellData(_EventData):
 
 class StairsDownData(_EventData):
     player: str
+    first_visit: bool
 
 
 class StairsUpData(_EventData):
