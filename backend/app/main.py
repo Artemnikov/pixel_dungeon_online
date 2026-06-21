@@ -197,6 +197,11 @@ class ConnectionManager:
                     player_obj = game.players.get(player_id)
                     gold = player_obj.gold if player_obj else 0
                     energy = player_obj.energy if player_obj else 0
+                    from app.engine.entities.base import Amulet
+                    has_amulet = (
+                        any(isinstance(it, Amulet) for it in player_obj.belongings.all_items())
+                        if player_obj else False
+                    )
 
                     update = StateUpdateMessage(
                         depth=player_floor,
@@ -208,6 +213,7 @@ class ConnectionManager:
                         traps=state.get("traps", []),
                         gold=gold,
                         energy=energy,
+                        has_amulet=has_amulet,
                         events=game.filter_events_for_player(events, player_id),
                     )
                     await connection.send_json(update.model_dump(exclude_none=True))
@@ -471,6 +477,11 @@ async def game_websocket(websocket: WebSocket, game_id: str, class_type: str = "
 
             elif isinstance(message, msg.ChooseImbueWand):
                 game.imbue_wand(player_id, message.staff_id, message.wand_id)
+
+            elif isinstance(message, msg.EquipGhostItem):
+                game.equip_ghost_item(
+                    player_id, message.rose_id, message.slot, message.item_id,
+                )
 
             elif isinstance(message, msg.ChangeDifficulty):
                 game.change_difficulty(message.difficulty)

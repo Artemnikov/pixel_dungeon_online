@@ -88,11 +88,11 @@ def test_init_floor_change_omits_player_id():
 def test_state_update_keys_match():
     update = StateUpdateMessage(
         depth=1, difficulty="normal", players=[], mobs=[], items=[],
-        visible_tiles=[], traps=[], gold=0, energy=0, events=[],
+        visible_tiles=[], traps=[], gold=0, energy=0, has_amulet=False, events=[],
     )
     assert set(update.model_dump(exclude_none=True)) == {
         "type", "depth", "difficulty", "players", "mobs", "items",
-        "visible_tiles", "traps", "gold", "energy", "events",
+        "visible_tiles", "traps", "gold", "energy", "has_amulet", "events",
     }
 
 
@@ -102,7 +102,7 @@ def test_state_update_passes_nested_payloads_through_untouched():
     event = {"type": "ATTACK", "data": {"source": "a", "target": "b"}}
     update = StateUpdateMessage(
         depth=1, difficulty="normal", players=[player], mobs=[], items=[item],
-        visible_tiles=[[1, 2]], traps=[], gold=5, energy=3, events=[event],
+        visible_tiles=[[1, 2]], traps=[], gold=5, energy=3, has_amulet=True, events=[event],
     )
     dumped = update.model_dump(exclude_none=True)
     assert dumped["players"][0] == player

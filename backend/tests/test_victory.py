@@ -52,3 +52,12 @@ def test_leaving_depth_1_with_amulet_wins():
     # Victory keeps everything -- no drop, no grave.
     assert any(isinstance(it, Amulet) for it in player.belongings.all_items())
     assert not any(getattr(i, "type", "") == "grave" for i in floor.items.values())
+
+
+def test_has_amulet_reflects_inventory():
+    game = GameInstance("victory-test-has-amulet")
+    player = game.add_player("p-has-amulet", "Carrier")
+    assert not any(isinstance(it, Amulet) for it in player.belongings.all_items())
+
+    player.add_to_inventory(Amulet(id="amulet-2"))
+    assert any(isinstance(it, Amulet) for it in player.belongings.all_items())

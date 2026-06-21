@@ -52,4 +52,5 @@ class StateUpdateMessage(_Envelope):
     traps: List[Dict[str, Any]]
     gold: int
     energy: int
+    has_amulet: bool
     events: List[Any]
