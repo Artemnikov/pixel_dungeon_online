@@ -74,6 +74,7 @@ function App() {
   const [, setCamera] = useState({ x: 0, y: 0 });
   const [gold, setGold] = useState(0);
   const [energy, setEnergy] = useState(0);
+  const [hasAmulet, setHasAmulet] = useState(false);
   const [exitPos, setExitPos] = useState(null);
   const [scoreBreakdown, setScoreBreakdown] = useState(null);
   const [canResurrect, setCanResurrect] = useState(false);
@@ -191,7 +192,7 @@ function App() {
   });
   useAudioUnlock();
   const assetImages = useAssetImages();
-  useMusicByDepth({ enabled: true, menu: gameState !== 'PLAYING', depth, bossFightActive: bossFightActive && !!bossInfo, bossBleeding, tense: ghostQuestGiven && depth <= 5, amuletObtained: false, musicRef });
+  useMusicByDepth({ enabled: true, menu: gameState !== 'PLAYING', depth, bossFightActive: bossFightActive && !!bossInfo, bossBleeding, tense: ghostQuestGiven && depth <= 5, amuletObtained: hasAmulet, musicRef });
 
   const { sendSelectScrollTarget } = useGameSocket({
     enabled: gameState === 'PLAYING',
@@ -204,7 +205,7 @@ function App() {
     cameraLerpRef, isCameraDetachedRef,
     setGrid, setDepth, setMyPlayerId, setInventory,
     setEquippedItems, setMyStats, setDifficulty, setBossInfo,
-    setGold, setEnergy, setExitPos, setBelongings, setQuickslot,
+    setGold, setEnergy, setHasAmulet, setExitPos, setBelongings, setQuickslot,
     onLevelUp: talent.onLevelUp,
     onSubclassChoiceAvailable: talent.onSubclassChoiceAvailable,
     onArmorAbilityChoiceAvailable: talent.onArmorAbilityChoiceAvailable,

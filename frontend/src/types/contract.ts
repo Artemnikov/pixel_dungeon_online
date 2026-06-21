@@ -363,6 +363,26 @@ export interface GhostRewardEvent {
   data: { player: string; npc: string; item: string };
 }
 
+export interface GhostSummonEvent {
+  type: 'GHOST_SUMMON';
+  data: { player: string; ghost_id: string; x: number; y: number };
+}
+
+export interface GhostDirectEvent {
+  type: 'GHOST_DIRECT';
+  data: { player: string; ghost_id: string; x: number; y: number };
+}
+
+export interface GhostGearOpenEvent {
+  type: 'GHOST_GEAR_OPEN';
+  data: {
+    player: string; rose_id: string; ghost_id: string;
+    ghost_hp: number; ghost_max_hp: number;
+    weapon?: Record<string, unknown> | null;
+    armor?: Record<string, unknown> | null;
+  };
+}
+
 export interface StairsDownEvent {
   type: 'STAIRS_DOWN';
   data: { player: string; first_visit: boolean };
@@ -712,6 +732,9 @@ export type GameEvent =
   | ImpRewardEvent
   | GhostDialogueEvent
   | GhostRewardEvent
+  | GhostSummonEvent
+  | GhostDirectEvent
+  | GhostGearOpenEvent
   | StairsDownEvent
   | StairsUpEvent
   | ReviveEvent
@@ -818,6 +841,7 @@ export interface StateUpdateMessage {
   traps: TrapInfo[];
   gold: number;
   energy: number;
+  has_amulet: boolean;
   events: GameEvent[];
   /**
    * Read defensively by the client but not currently forwarded in STATE_UPDATE;
@@ -864,6 +888,7 @@ export type ClientMessage =
   | { type: 'TRIGGER_BERSERK' }
   | { type: 'PREPARATION_STRIKE'; target_x: number; target_y: number }
   | { type: 'CHOOSE_IMBUE_WAND'; staff_id: string; wand_id: string }
+  | { type: 'EQUIP_GHOST_ITEM'; rose_id: string; slot: 'weapon' | 'armor'; item_id?: string }
   | { type: 'METAMORPH_CHOOSE'; talent: string }
   | { type: 'METAMORPH_REPLACE'; old_talent: string; new_talent: string }
   | { type: 'ADMIN_TELEPORT'; target_floor: number }

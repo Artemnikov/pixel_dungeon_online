@@ -70,6 +70,7 @@ export default function useGameSocket({
   setBossInfo,
   setGold,
   setEnergy,
+  setHasAmulet,
   setExitPos,
   setBelongings,
   setQuickslot,
@@ -190,6 +191,7 @@ export default function useGameSocket({
         if (data.difficulty) setDifficulty(data.difficulty);
         if (typeof data.gold === 'number' && setGold) setGold(data.gold);
         if (typeof data.energy === 'number' && setEnergy) setEnergy(data.energy);
+        if (typeof data.has_amulet === 'boolean' && setHasAmulet) setHasAmulet(data.has_amulet);
 
         syncState(data, {
           myPlayerIdRef, gridRef, entitiesRef, visionRef, openDoorsRef, trapsRef,

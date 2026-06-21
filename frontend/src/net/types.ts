@@ -156,6 +156,7 @@ export interface HookProps {
   setBossInfo?: (info: { name: string; hp: number; maxHp: number; shield?: number; effects?: { key?: string; name?: string; icon?: number; remaining?: number; duration?: number }[] } | null) => void;
   setGold?: (gold: number) => void;
   setEnergy?: (energy: number) => void;
+  setHasAmulet?: (hasAmulet: boolean) => void;
   setExitPos?: (pos: [number, number] | null) => void;
   setBelongings?: (belongings: Player['belongings'] | null) => void;
   setQuickslot?: (quickslot: Player['quickslot'] | null) => void;
