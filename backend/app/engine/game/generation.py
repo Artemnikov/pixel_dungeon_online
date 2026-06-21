@@ -83,7 +83,7 @@ class GenerationMixin:
         depth = max(1, min(MAX_FLOOR_ID, depth))
         self.depth = depth
 
-        if depth <= 25:
+        if depth <= 26:
             floor = self._generate_floor_spd(depth)
         else:
             floor = self._generate_floor_legacy(depth)
@@ -94,13 +94,16 @@ class GenerationMixin:
     def _generate_floor_spd(self, depth: int) -> FloorState:
         from app.engine.dungeon.spd_random import SPDRandom
         from app.engine.dungeon.spd_levelgen.boss_level import build_boss_floor
+        from app.engine.dungeon.spd_levelgen.last_level import build_last_level
         from app.engine.dungeon.spd_levelgen.regular_level import build_floor
         from app.engine.dungeon.spd_levelgen.run_state import is_boss_level
 
         floor_seed = seed_for_depth(self.master_seed, depth, 0)
         rng = SPDRandom()
         rng.push_generator(floor_seed)
-        if is_boss_level(depth):
+        if depth == 26:
+            gen_level, _rooms = build_last_level(rng, depth, self.run_state)
+        elif is_boss_level(depth):
             gen_level, _rooms = build_boss_floor(rng, depth, self.run_state)
         else:
             gen_level, _rooms = build_floor(rng, depth, self.run_state)
