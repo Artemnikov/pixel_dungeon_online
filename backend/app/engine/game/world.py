@@ -153,7 +153,7 @@ class WorldInteractionMixin:
         must drop no matter how Goo died (melee or bleed) so progression can't
         soft-lock."""
         from app.engine.entities.base import DwarfToken
-        from app.engine.entities.mobs import DM300, Golem, Goo, Monk, Necromancer, Pylon, Tengu
+        from app.engine.entities.mobs import DM300, Golem, Goo, Monk, Necromancer, Pylon, Tengu, YogDzewa
 
         # Imp.Quest.process(): once the quest is given (and not yet
         # completed), killing a Monk (alternative) or Golem (!alternative)
@@ -171,9 +171,7 @@ class WorldInteractionMixin:
         ghost_quest = self.run_state.ghost_quest
         if ghost_quest.boss_id and mob.id == ghost_quest.boss_id and ghost_quest.process(floor_id):
             self.add_event("MESSAGE", {"text": "Thank you... come find me..."}, floor_id=floor_id)
-            # Assets.Sounds.GHOST isn't bundled in this remake's audio assets;
-            # SECRET is the closest existing "something significant happened" cue.
-            self.add_event("PLAY_SOUND", {"sound": "SECRET"}, floor_id=floor_id)
+            self.add_event("PLAY_SOUND", {"sound": "GHOST"}, floor_id=floor_id)
 
         # CavesBossLevel.eliminatePylon -> DM300.loseSupercharge: when an
         # activated Pylon dies, DM300 becomes vulnerable again. No
@@ -183,6 +181,18 @@ class WorldInteractionMixin:
                 if isinstance(other, DM300):
                     other.supercharged = False
                     break
+
+        # GhostHeroMob death: clear ghost_id on the owner's DriedRose so
+        # the rose can be recharged and re-summoned.
+        from app.engine.entities.base import DriedRose
+        from app.engine.entities.mobs import GhostHeroMob
+        if isinstance(mob, GhostHeroMob) and mob.owner_id:
+            owner = self.players.get(mob.owner_id)
+            if owner:
+                for item in owner.belongings.all_items():
+                    if isinstance(item, DriedRose) and item.ghost_id == mob.id:
+                        item.ghost_id = None
+                        break
 
         # Necromancer.die(): kill the linked NecroSkeleton (mob.die already
         # zeroed its HP); emit DEATH so the frontend plays its death animation.
@@ -197,6 +207,20 @@ class WorldInteractionMixin:
             if self.qualified_for_boss_challenge:
                 self.add_event("TENGU_BADGE_QUALIFIED", {}, floor_id=floor_id)
             self.add_event("BOSS_SLAIN", {"mob": mob.id, "depth": floor_id, "badge_image": 48}, floor_id=floor_id)
+            return
+
+        if isinstance(mob, YogDzewa):
+            key_id = next(iter(floor.locked_doors.values()), "goo_door")
+            if not any(isinstance(i, Key) and getattr(i, "key_id", None) == key_id
+                       for i in floor.items.values()):
+                key = Key(
+                    id=str(uuid.uuid4()),
+                    name="Worn Key",
+                    pos=Position(x=mob.pos.x, y=mob.pos.y),
+                    key_id=key_id,
+                )
+                floor.items[key.id] = key
+            self.add_event("PLAY_SOUND", {"sound": "BOSS"}, floor_id=floor_id)
             return
 
         if not isinstance(mob, Goo):
