@@ -172,6 +172,7 @@ export interface HookProps {
   onYogFinalPhase?: (data: { mob: string }) => void;
   onShopOpen?: (data: { npc: string; stock: SerializedItem[]; gold: number }) => void;
   onImpDialogue?: (data: { npc: string; text: string; can_claim: boolean; tokens?: number | null }) => void;
+  onGhostDialogue?: (data: { npc: string; text: string; can_claim: boolean; weapon?: SerializedItem | null; armor?: SerializedItem | null }) => void;
   onScrollSelectTarget?: (data: { player: string; scroll_id: string; scroll_kind: string; candidates: string[] }) => void;
   onBossSlain?: (data: { mob: string; depth: number; badge_image: number }) => void;
   onPlayerDeath?: (data: { score_breakdown?: { kills: number; floors: number; gold: number }; can_resurrect?: boolean; victory?: boolean }) => void;
@@ -222,9 +223,11 @@ export type HandlerCtx = Pick<
   onYogFinalPhase?: HookProps['onYogFinalPhase'];
   onShopOpen?: HookProps['onShopOpen'];
   onImpDialogue?: HookProps['onImpDialogue'];
+  onGhostDialogue?: HookProps['onGhostDialogue'];
   onScrollSelectTarget?: HookProps['onScrollSelectTarget'];
   onBossSlain?: HookProps['onBossSlain'];
   onPlayerDeath?: HookProps['onPlayerDeath'];
+  depth?: number;
 };
 
 export type SyncCtx = Pick<

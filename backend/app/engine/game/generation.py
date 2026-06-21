@@ -23,7 +23,7 @@ import uuid
 import zlib
 from typing import List, Tuple, Type
 
-from app.engine.dungeon.generator import DungeonGenerator, SewersProfile, TileType
+from app.engine.dungeon.generator import DungeonGenerator, TileType
 from app.engine.dungeon.dungeon_seed import seed_for_depth
 from app.engine.entities.base import (
     Armor,
@@ -119,71 +119,23 @@ class GenerationMixin:
         return floor
 
     def _generate_floor_legacy(self, depth: int) -> FloorState:
+        # Only reachable for depth > 25 (see generate_floor's dispatch above),
+        # so this never produces an SPD-faithful sewers/prison/boss layout --
+        # depths 1-25 always take the _generate_floor_spd path instead.
         floor_seed = zlib.crc32(f"{self.game_id}:{depth}".encode("utf-8"))
         generator = DungeonGenerator(MAP_WIDTH, MAP_HEIGHT, seed=floor_seed)
-        floor: FloorState
-        if depth <= SEWERS_MAX_FLOOR:
-            sewers_result = generator.generate_sewers(SewersProfile(depth=depth))
-            rooms = sewers_result.rooms
-            entrance_pos = rooms[0].center if rooms else None
-            exit_pos = rooms[-1].center if rooms else None
-            floor = FloorState(
-                floor_id=depth,
-                grid=sewers_result.grid,
-                rooms=rooms,
-                mobs={},
-                items={},
-                region=sewers_result.metadata.region,
-                hidden_doors=dict(sewers_result.metadata.hidden_doors),
-                locked_doors=dict(sewers_result.metadata.locked_doors),
-                traps=dict(sewers_result.metadata.traps),
-                key_spawns=dict(sewers_result.metadata.key_spawns),
-                generation_meta={
-                    "layout_kind": sewers_result.metadata.layout_kind,
-                    "room_ids_by_kind": sewers_result.metadata.room_ids_by_kind,
-                    "room_connections": sewers_result.metadata.room_connections,
-                    "start_room_id": sewers_result.metadata.start_room_id,
-                    "end_room_id": sewers_result.metadata.end_room_id,
-                    "seed": sewers_result.metadata.seed,
-                },
-                entrance_pos=entrance_pos,
-                exit_pos=exit_pos,
-            )
-        elif depth == 5:
-            grid, rooms = generator.generate_boss_floor()
-            floor = FloorState(
-                floor_id=depth,
-                grid=grid,
-                rooms=rooms,
-                mobs={},
-                items={},
-                region="sewers",
-                locked_doors=dict(getattr(generator, "boss_locked_doors", {})),
-            )
-        elif depth <= PRISON_MAX_FLOOR:
-            grid, rooms = generator.generate(10 + depth, 4, 8 + (depth // 10))
-            floor = FloorState(
-                floor_id=depth,
-                grid=grid,
-                rooms=rooms,
-                mobs={},
-                items={},
-                region="prison",
-                entrance_pos=rooms[0].center if rooms else None,
-                exit_pos=rooms[-1].center if rooms else None,
-            )
-        else:
-            grid, rooms = generator.generate(10 + depth, 4, 8 + (depth // 10))
-            floor = FloorState(
-                floor_id=depth,
-                grid=grid,
-                rooms=rooms,
-                mobs={},
-                items={},
-                region="legacy",
-                entrance_pos=rooms[0].center if rooms else None,
-                exit_pos=rooms[-1].center if rooms else None,
-            )
+        grid, rooms = generator.generate(10 + depth, 4, 8 + (depth // 10))
+        region = "prison" if depth <= PRISON_MAX_FLOOR else "legacy"
+        floor = FloorState(
+            floor_id=depth,
+            grid=grid,
+            rooms=rooms,
+            mobs={},
+            items={},
+            region=region,
+            entrance_pos=rooms[0].center if rooms else None,
+            exit_pos=rooms[-1].center if rooms else None,
+        )
 
         floor.rebuild_flags()
         self._spawn_content(floor)

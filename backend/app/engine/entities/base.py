@@ -1770,6 +1770,15 @@ class Scenery(ItemBase):
     category: ClassVar[str] = ItemCategory.SCENERY
 
 
+class Chest(ItemBase):
+    kind: Literal["chest"] = "chest"
+    type: str = "chest"
+    category: ClassVar[str] = ItemCategory.SCENERY
+    chest_type: str = "CHEST"
+    opened: bool = False
+    contents: List["AnyItem"] = Field(default_factory=list)
+
+
 class Bag(ItemBase):
     kind: Literal["bag"] = "bag"
     type: str = "bag"
@@ -1959,6 +1968,7 @@ AnyItem = Annotated[
         TenguMask, KingsCrown,
         Seed, Dewdrop, Waterskin, Stone, Boomerang, ThrowableDagger, Throwable,
         GooBlob, DwarfToken,
+        Chest,
         VelvetPouch, ScrollHolder, MagicalHolster, PotionBandolier, Bag,
     ],
     Field(discriminator="kind"),
@@ -2171,6 +2181,7 @@ class Player(Entity):
     path_blocked_ticks: int = 0
     move_intent: Optional[Tuple[int, int]] = None
     last_auto_move_time: float = 0.0
+    action_until: float = 0.0
     # Hold Fast (warrior T3): ticks since the player last moved.
     stationary_ticks: int = 0
     is_admin: bool = False

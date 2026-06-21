@@ -10,11 +10,6 @@ Porject files may not be longer than 400 lines of code and no deep nesting of 4+
 
 ## Commands
 
-### Backend (run from `backend/`)
-```bash
-# Run server (dev)
-venv/bin/python app/main.py          # port 8080
-
 # Run all tests
 venv/bin/python -m pytest tests/
 
@@ -26,15 +21,6 @@ venv/bin/python -m pytest tests/test_combat.py::test_name
 
 # Export TypeScript contract schema (used by frontend gen:types)
 venv/bin/python scripts/export_contract_schema.py
-```
-
-### Frontend (run from `frontend/`)
-```bash
-npm run dev          # Vite dev server — http://localhost:5173
-npm run build
-npm run lint
-npm run typecheck
-npm run gen:types    # regenerate entity types from backend Pydantic schemas
 ```
 
 ## Architecture

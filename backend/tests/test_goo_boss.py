@@ -3,22 +3,19 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 from app.engine.entities.base import Position, Faction, Player, Key
 from app.engine.entities.mobs import Goo
-from app.engine.dungeon.generator import DungeonGenerator, TileType
+from app.engine.dungeon.constants import TileType
 from app.engine.dungeon.models import Room
-from app.engine.game.constants import MAP_WIDTH, MAP_HEIGHT, OOZE_DURATION
-from app.engine.game.floor_state import FloorState
+from app.engine.game.constants import OOZE_DURATION
 from app.engine.manager import GameInstance
 
 
 def make_goo_floor(seed=1):
-    gen = DungeonGenerator(MAP_WIDTH, MAP_HEIGHT, seed=seed)
-    grid, rooms = gen.generate_boss_floor()
-    floor = FloorState(
-        floor_id=5, grid=grid, rooms=rooms, mobs={}, items={}, region="sewers",
-        locked_doors=dict(getattr(gen, "boss_locked_doors", {})),
-    )
-    floor.rebuild_flags()
-    return floor, rooms
+    # Builds the real SPD-faithful sewers boss floor (depth 5) via the live
+    # spd_levelgen pipeline -- this already spawns its own Goo/RatKing and a
+    # "goo_door"-keyed locked exit (spd_adapter.py), matching SewerBossLevel.
+    game = GameInstance(f"goo-floor-seed-{seed}")
+    floor = game.generate_floor(5)
+    return floor, floor.rooms
 
 
 # ---------------------------------------------------------------------------
@@ -204,7 +201,7 @@ def test_boss_floor_has_water_arena_and_locked_door():
     assert len(floor.locked_doors) == 1
     (dx, dy), key_id = next(iter(floor.locked_doors.items()))
     assert key_id == "goo_door"
-    assert floor.grid[dy][dx] == TileType.LOCKED_DOOR
+    assert floor.grid[dy][dx] == TileType.LOCKED_EXIT
     assert floor.flags.passable[dy][dx] is False, "Locked door must block movement until unlocked"
 
 
@@ -268,13 +265,16 @@ def test_locked_door_blocks_without_matching_key():
     player = Player(id="p1", name="Hero", pos=Position(x=dx - 1, y=dy), hp=50, max_hp=50, faction=Faction.PLAYER)
 
     assert game._try_unlock_locked_door(player, floor, dx, dy) is False
-    assert floor.grid[dy][dx] == TileType.LOCKED_DOOR
+    assert floor.grid[dy][dx] == TileType.LOCKED_EXIT
     assert (dx, dy) in floor.locked_doors
 
 
 def test_unlock_non_goo_door_stays_a_door():
     floor, rooms = make_goo_floor()
     (dx, dy), _key_id = next(iter(floor.locked_doors.items()))
+    # The boss arena's own door is always a LOCKED_EXIT (unlocks to stairs);
+    # to exercise a regular locked door with a non-goo key, swap the tile too.
+    floor.grid[dy][dx] = TileType.LOCKED_DOOR
     floor.locked_doors[(dx, dy)] = "iron"
 
     game = GameInstance("test-iron-unlock")

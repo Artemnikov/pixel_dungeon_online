@@ -1,0 +1,37 @@
+@media (max-width: 600px) {
+  .toolbar-slot {
+    width: 44px;
+    height: 44px;
+  }
+
+  .inventory-toggle-btn-bottom {
+    width: 48px;
+    height: 48px;
+    font-size: 20px;
+  }
+
+  .game-hud-bottom {
+    bottom: max(12px, env(safe-area-inset-bottom, 12px));
+  }
+
+  .top-left-hud {
+    bottom: max(0px, env(safe-area-inset-bottom, 0px));
+    left: 0;
+    top: auto;
+  }
+
+  .toolbar-item-name {
+    display: none;
+  }
+
+  .slot-number {
+    font-size: 8px;
+  }
+
+  .fullscreen-btn {
+    bottom: max(12px, env(safe-area-inset-bottom, 12px));
+    right: 8px;
+    width: 36px;
+    height: 36px;
+  }
+}

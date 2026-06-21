@@ -24,6 +24,7 @@ SEWERS_MAX_FLOOR = 4
 PRISON_MAX_FLOOR = 9
 
 AUTO_MOVE_INTERVAL = 0.15
+KEY_TIME_TO_UNLOCK = 1.0
 
 # How many consecutive blocked steps a queued MOVE_TO path tolerates (a mob
 # briefly standing on the next tile) before giving up on the route.

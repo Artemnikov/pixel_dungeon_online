@@ -14,12 +14,17 @@ class TileType:
     TRAP = 12
     INACTIVE_TRAP = 13
     EMBERS = 14
+    REGION_DECO = 15
+    REGION_DECO_ALT = 16
     WALL_DECO = 17
     EMPTY_DECO = 18
     HIGH_GRASS = 19
     SECRET_DOOR = 20
-    FURROWED_GRASS = 21
+    LOCKED_EXIT = 21
     OPEN_DOOR = 22
+    FURROWED_GRASS = 30
+    CRYSTAL_DOOR = 31
+    BARRICADE = 32
 
 
 class RoomKind:

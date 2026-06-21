@@ -470,25 +470,6 @@ export function drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef,
 
     const x = mob.renderPos.x * TILE_SIZE;
     const y = mob.renderPos.y * TILE_SIZE;
-    const mobHp = mob.hp || 0;
-    const mobMaxHp = mob.max_hp || 1;
-    const mobShield = (mob.shields || []).reduce((sum, s) => sum + (s.amount || 0), 0);
-    const showBar = mobHp < mobMaxHp || mobShield > 0;
-    if (showBar) {
-      const mobHpBarWidth = TILE_SIZE - 4;
-      const mobHpBarHeight = 4;
-      const mobMax = Math.max(mobHp + mobShield, mobMaxHp);
-      const mobHpPercent = mobHp / mobMax;
-      const mobShieldPercent = (mobHp + mobShield) / mobMax;
-      ctx.fillStyle = '#cc0000';
-      ctx.fillRect(x + 2, y - 5, mobHpBarWidth, mobHpBarHeight);
-      if (mobShieldPercent > mobHpPercent) {
-        ctx.fillStyle = '#ffffff';
-        ctx.fillRect(x + 2, y - 5, mobHpBarWidth * mobShieldPercent, mobHpBarHeight);
-      }
-      ctx.fillStyle = '#00ee00';
-      ctx.fillRect(x + 2, y - 5, mobHpBarWidth * mobHpPercent, mobHpBarHeight);
-    }
 
     // Sleeping indicator: SPD's EmoIcon.Sleep (Icons.SLEEP, icons.png 7,88 9x8)
     // floats above sleeping mobs, gently pulsing between scale 1 and 1.2

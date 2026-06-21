@@ -74,7 +74,7 @@ export const getSewerTerrainInstructions = (grid, x, y, tile, openDoors = new Se
     ];
   }
 
-  if (tile === BACKEND_TILE.DOOR.id || tile === BACKEND_TILE.OPEN_DOOR.id || tile === BACKEND_TILE.LOCKED_DOOR.id) {
+  if (tile === BACKEND_TILE.DOOR.id || tile === BACKEND_TILE.OPEN_DOOR.id || tile === BACKEND_TILE.LOCKED_DOOR.id || tile === BACKEND_TILE.LOCKED_EXIT.id || tile === BACKEND_TILE.CRYSTAL_DOOR.id) {
     // Side door: when the cell above is a wall AND at least one side is open,
     // the door is set into a vertical wall and uses the dedicated side-door
     // body sprite. Mirrors SPD DungeonTileSheet.getRaisedDoorTile.
@@ -84,10 +84,12 @@ export const getSewerTerrainInstructions = (grid, x, y, tile, openDoors = new Se
     // Top-facing door: raised 3D door sprite (SPD's RAISED_DOOR family).
     // Adjacent-wall stitching is handled by wallMapper.getSewerCap
     // (DOOR_OVERHANG family).
-    const srcIndex = tile === BACKEND_TILE.LOCKED_DOOR.id
-      ? WALL_INDEX.RAISED_DOOR_LOCKED
-      : (tile === BACKEND_TILE.OPEN_DOOR.id ? WALL_INDEX.RAISED_DOOR_OPEN
-        : (openDoors.has(`${x},${y}`) ? WALL_INDEX.RAISED_DOOR_OPEN : WALL_INDEX.RAISED_DOOR));
+    const srcIndex = tile === BACKEND_TILE.CRYSTAL_DOOR.id
+      ? WALL_INDEX.RAISED_DOOR_CRYSTAL
+      : (tile === BACKEND_TILE.LOCKED_DOOR.id || tile === BACKEND_TILE.LOCKED_EXIT.id
+        ? WALL_INDEX.RAISED_DOOR_LOCKED
+        : (tile === BACKEND_TILE.OPEN_DOOR.id ? WALL_INDEX.RAISED_DOOR_OPEN
+          : (openDoors.has(`${x},${y}`) ? WALL_INDEX.RAISED_DOOR_OPEN : WALL_INDEX.RAISED_DOOR)));
     return [{ srcIndex, quadrant: QUADRANT.FULL }];
   }
 
@@ -119,6 +121,17 @@ export const getSewerTerrainInstructions = (grid, x, y, tile, openDoors = new Se
 
   if (tile === BACKEND_TILE.EMBERS.id) {
     return [{ srcIndex: BACKEND_TILE.EMBERS.atlasIndex, quadrant: QUADRANT.FULL }];
+  }
+
+  if (tile === BACKEND_TILE.REGION_DECO.id) {
+    // Barrel prop -- solid but not a wall (see Gap 1), single fixed sprite,
+    // no per-cell variant hashing needed (REGION_DECO/REGION_DECO_ALT are
+    // already two distinct tile identities).
+    return [{ srcIndex: BACKEND_TILE.REGION_DECO.atlasIndex, quadrant: QUADRANT.FULL }];
+  }
+
+  if (tile === BACKEND_TILE.REGION_DECO_ALT.id) {
+    return [{ srcIndex: BACKEND_TILE.REGION_DECO_ALT.atlasIndex, quadrant: QUADRANT.FULL }];
   }
 
   if (tile === BACKEND_TILE.EMPTY_DECO.id) {

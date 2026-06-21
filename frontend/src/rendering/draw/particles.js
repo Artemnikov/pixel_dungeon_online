@@ -366,6 +366,74 @@ export function spawnWhiteSplash(particlesRef, cx, cy, count = 3) {
   }
 }
 
+// Dark-green splash burst — SewerLevel.destroy()'s Splash.at(pos, 0xFF507B5D, 10)
+// fired when a REGION_DECO/REGION_DECO_ALT barrel burns.
+export function spawnSewerBarrelBurst(particlesRef, cx, cy, count = 10) {
+  for (let i = 0; i < count; i++) {
+    const angle = -Math.PI / 2 + (Math.random() - 0.5) * Math.PI;
+    const speed = 40 + Math.random() * 40;
+    const life = 0.3 + Math.random() * 0.15;
+    particlesRef.current.push({
+      x: cx, y: cy,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      life,
+      maxLife: life,
+      size: 3,
+      color: '#507b5d',
+      gravity: true,
+    });
+  }
+}
+
+// LeafParticle (effects/particles/LeafParticle.java): shrinking specks tossed
+// up and to the side, colored by interpolating between a region's color1/color2
+// (ColorMath.random == a single random factor applied uniformly to all 3
+// channels, not per-channel). LEVEL_SPECIFIC bursts use the current region's
+// pair; GENERAL (used outside any specific level context) uses the fixed
+// 0x004400/0x88CC44 default declared on Level.java itself.
+const LEAF_LIFESPAN = 1.2;
+const LEAF_GENERAL_LO = [0x00, 0x44, 0x00];
+const LEAF_GENERAL_HI = [0x88, 0xcc, 0x44];
+
+// SewerLevel/PrisonLevel/CavesLevel/CityLevel/HallsLevel color1/color2 pairs.
+export const REGION_LEAF_COLORS = {
+  sewers: [[0x48, 0x76, 0x3c], [0x59, 0x99, 0x4a]],
+  prison: [[0x6a, 0x72, 0x3d], [0x88, 0x92, 0x4c]],
+  caves: [[0x53, 0x4f, 0x3e], [0xb9, 0xd6, 0x61]],
+  city: [[0x4b, 0x66, 0x36], [0xf2, 0xf2, 0xf2]],
+  halls: [[0x80, 0x15, 0x00], [0xa6, 0x85, 0x21]],
+};
+
+function randomLeafColor(lo, hi) {
+  const t = Math.random();
+  const c = lo.map((v, i) => Math.round(v + (hi[i] - v) * t));
+  return `#${c.map((v) => v.toString(16).padStart(2, '0')).join('')}`;
+}
+
+export function spawnLeaf(particlesRef, cx, cy, count = 4, colorLo = LEAF_GENERAL_LO, colorHi = LEAF_GENERAL_HI) {
+  for (let i = 0; i < count; i++) {
+    particlesRef.current.push({
+      x: cx,
+      y: cy,
+      vx: (Math.random() - 0.5) * 16,
+      vy: -20,
+      life: LEAF_LIFESPAN,
+      maxLife: LEAF_LIFESPAN,
+      size: 2 + Math.random(),
+      color: randomLeafColor(colorLo, colorHi),
+      accY: 25,
+    });
+  }
+}
+
+// LEVEL_SPECIFIC factory — looks up the given region's color1/color2 pair.
+export function spawnLeafForRegion(particlesRef, cx, cy, count, region) {
+  const pair = REGION_LEAF_COLORS[region];
+  const [lo, hi] = pair || [LEAF_GENERAL_LO, LEAF_GENERAL_HI];
+  spawnLeaf(particlesRef, cx, cy, count, lo, hi);
+}
+
 export function advanceAndDrawParticles(ctx, { particlesRef }) {
   const now = performance.now();
   if (lastNow == null) lastNow = now;

@@ -54,7 +54,7 @@ class FloorState:
     exit_pos: Optional[Tuple[int, int]] = None
 
     def rebuild_flags(self) -> None:
-        self.flags = build_flag_maps(self.grid)
+        self.flags = build_flag_maps(self.grid, region=self.region)
 
     def update_open_space(self) -> None:
         """Recompute open_space in-place (lighter than full rebuild_flags).

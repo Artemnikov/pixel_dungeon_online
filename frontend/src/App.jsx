@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import './App.css';
+import './styles/index.css';
 
 import CharacterSelection from './CharacterSelection';
 import MainMenu from './menu/MainMenu';
@@ -215,6 +215,7 @@ function App() {
     onMetamorphOptions: talent.onMetamorphOptions,
     onShopOpen: modals.onShopOpen,
     onImpDialogue: modals.onImpDialogue,
+    onGhostDialogue: modals.onGhostDialogue,
     onImbueWandChoiceAvailable: modals.onImbueWand,
     onScrollSelectTarget: modals.onScrollSelectTarget,
     onTalentUpgraded: talent.onTalentUpgraded,

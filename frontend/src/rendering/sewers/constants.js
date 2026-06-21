@@ -43,11 +43,21 @@ export const BACKEND_TILE = {
   TRAP: { id: 12, atlasIndex: null, seethrough: true },
   INACTIVE_TRAP: { id: 13, atlasIndex: null, seethrough: true },
   EMBERS: { id: 14, atlasIndex: atlasIndex(3, 0), seethrough: true },
+  // SPD DungeonTileSheet: FLAT_OTHER = xy(1,5) -> atlasIndex(0,4); REGION_DECO
+  // = FLAT_OTHER+10, REGION_DECO_ALT = FLAT_OTHER+11. SOLID but NOT a wall --
+  // seethrough so it never participates in wall fog/stitching (see Gap 1).
+  REGION_DECO: { id: 15, atlasIndex: atlasIndex(10, 4), seethrough: true },
+  REGION_DECO_ALT: { id: 16, atlasIndex: atlasIndex(11, 4), seethrough: true },
   WALL_DECO: { id: 17, atlasIndex: atlasIndex(1, 3), seethrough: false },
   EMPTY_DECO: { id: 18, atlasIndex: atlasIndex(3, 0), seethrough: true },
   HIGH_GRASS: { id: 19, atlasIndex: null, seethrough: false },
   SECRET_DOOR: { id: 20, atlasIndex: atlasIndex(0, 5), seethrough: false },
-  FURROWED_GRASS: { id: 21, atlasIndex: null, seethrough: false },
+  LOCKED_EXIT: { id: 21, atlasIndex: atlasIndex(8, 3), seethrough: false },
+  FURROWED_GRASS: { id: 30, atlasIndex: null, seethrough: false },
+  CRYSTAL_DOOR: { id: 31, atlasIndex: atlasIndex(3, 7), seethrough: false },
+  // Destructible wooden obstacle (StorageRoom etc.) -- looks like a wall
+  // until burned away into EMBERS, same placeholder convention as SECRET_DOOR.
+  BARRICADE: { id: 32, atlasIndex: atlasIndex(0, 5), seethrough: false },
 };
 
 export const toAtlasCoords = (index) => ({
@@ -190,7 +200,8 @@ export const QUADRANT_NEIGHBORS = {
 export const isWallTile = (tile) =>
   tile === BACKEND_TILE.WALL.id ||
   tile === BACKEND_TILE.WALL_DECO.id ||
-  tile === BACKEND_TILE.SECRET_DOOR.id;
+  tile === BACKEND_TILE.SECRET_DOOR.id ||
+  tile === BACKEND_TILE.BARRICADE.id;
 
 // Used ONLY by wall-autotile stitching: any tile that should visually
 // continue a wall surface. Out-of-bounds (-1) and unpainted VOID cells
@@ -201,12 +212,15 @@ export const isWallStitcheable = (tile) =>
   tile === BACKEND_TILE.VOID.id ||
   tile === BACKEND_TILE.WALL.id ||
   tile === BACKEND_TILE.WALL_DECO.id ||
-  tile === BACKEND_TILE.SECRET_DOOR.id;
+  tile === BACKEND_TILE.SECRET_DOOR.id ||
+  tile === BACKEND_TILE.BARRICADE.id;
 
 export const isDoorTile = (tile) =>
   tile === BACKEND_TILE.DOOR.id ||
   tile === BACKEND_TILE.OPEN_DOOR.id ||
-  tile === BACKEND_TILE.LOCKED_DOOR.id;
+  tile === BACKEND_TILE.LOCKED_DOOR.id ||
+  tile === BACKEND_TILE.LOCKED_EXIT.id ||
+  tile === BACKEND_TILE.CRYSTAL_DOOR.id;
 
 // A door cell is "sideways" (set into a vertical wall, body sprite facing
 // the player from the side) only when the cell above is a wall AND at least

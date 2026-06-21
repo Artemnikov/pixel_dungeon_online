@@ -35,7 +35,8 @@ import math
 from typing import List, Optional, Tuple, Type
 
 from app.engine.dungeon.spd_levelgen.geom import _to_f32
-from app.engine.dungeon.spd_levelgen.generator import GeneratorState, _CategoryDeck, init_generator_state
+from app.engine.dungeon.spd_levelgen.generator import GeneratorState, _CategoryDeck, _random_deck_category, init_generator_state
+from app.engine.dungeon.spd_levelgen.mob_spawner import GenMob
 from app.engine.dungeon.spd_levelgen.room import Room
 from app.engine.dungeon.spd_levelgen import special_rooms as sr
 from app.engine.dungeon.spd_random import SPDRandom
@@ -200,6 +201,113 @@ class ImpQuestState:
         return AmbitiousImpRoom()
 
 
+# Weapon.Enchantment.random()/Armor.Glyph.random() (Weapon.java:606-615,
+# Armor.java:863-872): chances(50,40,10) picks common/uncommon/rare, then
+# Random.element() draws one item from that tier's list. Both enchant and
+# glyph have identical tier sizes (4/6/3) -- consumed below for RNG-sequence
+# parity only; this engine has no enchant/glyph application yet (a separate,
+# pre-existing gap), so the rolled identity itself is discarded.
+_ENCHANT_GLYPH_TYPE_CHANCES = (50.0, 40.0, 10.0)
+_ENCHANT_GLYPH_TIER_SIZES = (4, 6, 3)
+
+
+def _consume_enchant_or_glyph_roll(rng: SPDRandom) -> None:
+    tier = rng.chances(_ENCHANT_GLYPH_TYPE_CHANCES)
+    rng.IntMax(_ENCHANT_GLYPH_TIER_SIZES[tier])
+
+
+class GhostQuestState:
+    """Mirrors actors/mobs/npcs/Ghost.Quest's static fields (Ghost.java):
+    tracks the sewers floors-2-4 side quest (kill the depth-specific
+    miniboss, claim a hidden weapon-or-armor reward)."""
+
+    def __init__(self) -> None:
+        self.spawned: bool = False
+        self.quest_type: int = 0          # 1=FetidRat(depth2) 2=GnollTrickster(depth3) 3=GreatCrab(depth4)
+        self.given: bool = False
+        self.processed: bool = False
+        self.depth: Optional[int] = None  # floor the quest was given on -- process() only fires there
+        self.ghost_id: Optional[str] = None
+        self.boss_id: Optional[str] = None
+        # Reward, rolled once at spawn time and hidden until `processed`.
+        self.armor_tier: Optional[int] = None             # 2-5
+        self.weapon_tier_category: Optional[str] = None   # "WEP_T2".."WEP_T5"
+        self.weapon_item_index: Optional[int] = None
+        self.item_level: int = 0                          # +0/+1/+2/+3, shared by both
+
+    def process(self, depth: int) -> bool:
+        """Ghost.Quest.process() (Ghost.java:367-385) -- called from the
+        quest boss's death handler. Marks the quest complete if it's still
+        active and the boss died on the same depth the quest was given on.
+        Returns True the moment it just completed (caller plays the
+        "find_me" message/sound)."""
+        if self.spawned and self.given and not self.processed and self.depth == depth:
+            self.processed = True
+            return True
+        return False
+
+    def maybe_spawn(self, rng: SPDRandom, level) -> Optional[GenMob]:
+        """Ghost.Quest.spawn(SewerLevel, Room) (Ghost.java:303-364) -- depths
+        2-4 only, one ghost per run. Returns a GenMob for the caller to add
+        to the floor's mob list, or None."""
+        depth = level.depth
+        if self.spawned or depth <= 1:
+            return None
+        if rng.IntMax(5 - depth) != 0:
+            return None
+
+        # do { ghost.pos = level.pointToCell(room.random()); } while (...) --
+        # unbounded retry, no tries cap (matches the original exactly).
+        room = level.room_exit
+        while True:
+            pos = level.point_to_cell(room.random(rng))
+            if pos != -1 and not level.solid[pos] and level.open_space[pos] and pos != level.exit():
+                break
+
+        self.spawned = True
+        self.quest_type = depth - 1
+        self.given = False
+        self.processed = False
+        self.depth = depth
+
+        # Armor tier: chances(0,0,10,6,3,1) -> index IS the tier (2-5), since
+        # indices 0/1 have zero weight and the original switches on the same
+        # index value (case 2: Leather, case 3: Mail, case 4: Scale, case 5: Plate).
+        self.armor_tier = rng.chances((0.0, 0.0, 10.0, 6.0, 3.0, 1.0))
+
+        # Weapon tier: same chances() shape, then Generator.random(wepTiers[
+        # tier-1]) -- a deck-backed roll within that one tier (reuses the
+        # existing weapon-tier deck roller used elsewhere for normal loot).
+        wep_tier = rng.chances((0.0, 0.0, 10.0, 6.0, 3.0, 1.0))
+        tier_category = f"WEP_T{wep_tier}"
+        ri = _random_deck_category(level.run_state.generator_state, rng, tier_category)
+        # ri.level (the item's natural upgrade roll) is discarded -- the
+        # original immediately resets weapon.level(0)/enchant(null)/cursed=
+        # false right after Generator.random() returns.
+        self.weapon_tier_category = tier_category
+        self.weapon_item_index = ri.item_index
+
+        # Item level: 50%/30%/15%/5% -> +0/+1/+2/+3, via manual thresholds on
+        # ONE Float() draw (not chances()) -- shared by both weapon and armor.
+        roll = rng.Float()
+        if roll < 0.5:
+            self.item_level = 0
+        elif roll < 0.8:
+            self.item_level = 1
+        elif roll < 0.95:
+            self.item_level = 2
+        else:
+            self.item_level = 3
+
+        # Enchant/glyph: pre-rolled so the outcome doesn't affect RNG-call
+        # count even when discarded (see _consume_enchant_or_glyph_roll).
+        _consume_enchant_or_glyph_roll(rng)  # Weapon.Enchantment.random()
+        _consume_enchant_or_glyph_roll(rng)  # Armor.Glyph.random()
+        rng.Float()  # enchantRoll -- ParchmentScrap.enchantChanceMultiplier() == 1.0 baseline
+
+        return GenMob(cls_name="Ghost", pos=pos, depth=depth)
+
+
 def is_boss_level(depth: int) -> bool:
     return depth in (5, 10, 15, 20, 25)
 
@@ -249,6 +357,9 @@ class RunState:
 
         # Imp quest (actors/mobs/npcs/Imp.Quest), depths 17-19 + floor 20 shop.
         self.imp_quest = ImpQuestState()
+
+        # Ghost quest (actors/mobs/npcs/Ghost.Quest), sewers depths 2-4.
+        self.ghost_quest = GhostQuestState()
 
     @property
     def potion_deck(self) -> _CategoryDeck:

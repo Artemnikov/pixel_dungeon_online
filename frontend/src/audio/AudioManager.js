@@ -164,6 +164,19 @@ class AudioManager {
                 this.playTone(300, 'triangle', 0.15, 0.2);
                 this.playTone(200, 'triangle', 0.25, 0.15, 0.1);
                 break;
+            case 'TOMB':
+                this.playTone(80, 'sine', 0.6, 0.3);
+                this.playTone(60, 'sine', 0.6, 0.2, 0.15);
+                this.playNoise(0.3, 0.15, 'lowpass', 200);
+                break;
+            case 'BONES':
+                this.playNoise(0.2, 0.15, 'highpass', 3000);
+                this.playTone(400, 'triangle', 0.1, 0.1);
+                break;
+            case 'LOCKED':
+                this.playTone(250, 'square', 0.08, 0.12);
+                this.playTone(200, 'square', 0.08, 0.08, 0.06);
+                break;
             default:
                 // console.log(`Sound not found: ${soundName}`);
                 break;

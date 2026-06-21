@@ -589,6 +589,14 @@
     "claimReward": "Claim Reward",
     "close": "Close"
   },
+  "ghost": {
+    "title": "Ghost",
+    "takeWeapon": "Take Weapon",
+    "takeArmor": "Take Armor",
+    "close": "Close",
+    "confirm": "Take it",
+    "cancel": "Back"
+  },
   "modal": {
     "upgrade": "Choose an item to upgrade",
     "identify": "Choose an item to identify",

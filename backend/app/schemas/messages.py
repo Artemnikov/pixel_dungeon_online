@@ -186,6 +186,12 @@ class ImpClaimReward(_ClientMessageBase):
     npc_id: str
 
 
+class GhostClaimReward(_ClientMessageBase):
+    type: Literal["GHOST_CLAIM_REWARD"]
+    npc_id: str
+    choice: Literal["weapon", "armor"]
+
+
 class ChooseImbueWand(_ClientMessageBase):
     type: Literal["CHOOSE_IMBUE_WAND"]
     staff_id: str
@@ -244,6 +250,7 @@ ClientMessage = Annotated[
         ShopBuy,
         ShopSell,
         ImpClaimReward,
+        GhostClaimReward,
         SelectScrollTarget,
         ChooseImbueWand,
         Resume,

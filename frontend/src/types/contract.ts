@@ -348,6 +348,21 @@ export interface ImpRewardEvent {
   data: { player: string; npc: string; item: string };
 }
 
+/** Ghost NPC dialogue (quest offer / reminder / reward-ready). */
+export interface GhostDialogueEvent {
+  type: 'GHOST_DIALOGUE';
+  data: {
+    player: string; npc: string; text: string; can_claim: boolean;
+    weapon?: SerializedItem | null; armor?: SerializedItem | null;
+  };
+}
+
+/** Player claimed the Ghost's quest reward (weapon or armor); the Ghost despawns. */
+export interface GhostRewardEvent {
+  type: 'GHOST_REWARD';
+  data: { player: string; npc: string; item: string };
+}
+
 export interface StairsDownEvent {
   type: 'STAIRS_DOWN';
   data: { player: string; first_visit: boolean };
@@ -366,6 +381,26 @@ export interface ReviveEvent {
 export interface UnlockEvent {
   type: 'UNLOCK';
   data: { player: string; x: number; y: number };
+}
+
+export interface LockedEvent {
+  type: 'LOCKED';
+  data: { player: string; x: number; y: number };
+}
+
+export interface OpenChestEvent {
+  type: 'OPEN_CHEST';
+  data: { player: string; x: number; y: number; chest_type: string };
+}
+
+export interface CrystalChestShatterEvent {
+  type: 'CRYSTAL_CHEST_SHATTER';
+  data: { x: number; y: number };
+}
+
+export interface SpawnMobEvent {
+  type: 'SPAWN_MOB';
+  data: { mob: Record<string, unknown> };
 }
 
 export interface LevelUpEvent {
@@ -645,6 +680,12 @@ export interface FlameBurstEvent {
   data: { x: number; y: number };
 }
 
+/** Grass terrain changed (trampled/regrown) — region-colored leaf particles. */
+export interface LeafBurstEvent {
+  type: 'LEAF_BURST';
+  data: { x: number; y: number };
+}
+
 export type GameEvent =
   | AttackEvent
   | MissEvent
@@ -669,6 +710,8 @@ export type GameEvent =
   | ShopSellEvent
   | ImpDialogueEvent
   | ImpRewardEvent
+  | GhostDialogueEvent
+  | GhostRewardEvent
   | StairsDownEvent
   | StairsUpEvent
   | ReviveEvent
@@ -725,7 +768,12 @@ export type GameEvent =
   | InfernoActivatedEvent
   | SacrificialFireEvent
   | FlameBurstEvent
-  | SpellSpriteEvent;
+  | LeafBurstEvent
+  | SpellSpriteEvent
+  | LockedEvent
+  | OpenChestEvent
+  | CrystalChestShatterEvent
+  | SpawnMobEvent;
 
 export type GameEventType = GameEvent['type'];
 

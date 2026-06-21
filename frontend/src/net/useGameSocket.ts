@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { getWsBaseUrl } from '../config/urls';
 import { sendMessage } from './send';
 import { syncState } from './syncState';
@@ -88,10 +88,13 @@ export default function useGameSocket({
   onYogFinalPhase,
   onShopOpen,
   onImpDialogue,
+  onGhostDialogue,
   onScrollSelectTarget,
   onBossSlain,
   onPlayerDeath,
 }: HookProps) {
+  const depthRef = useRef(1);
+
   useEffect(() => {
     if (!enabled) return;
 
@@ -169,7 +172,7 @@ export default function useGameSocket({
         trapsRef.current = data.traps || [];
         customTilesRef.current = data.custom_tiles || [];
         customWallsRef.current = data.custom_walls || [];
-        if (typeof data.depth === 'number') setDepth(data.depth);
+        if (typeof data.depth === 'number') { setDepth(data.depth); depthRef.current = data.depth; }
         if (data.player_id) {
           setMyPlayerId(data.player_id);
           myPlayerIdRef.current = data.player_id;
@@ -179,7 +182,7 @@ export default function useGameSocket({
       };
 
       const applyStateUpdate = (data: StateUpdateMessage) => {
-        if (typeof data.depth === 'number') setDepth(data.depth);
+        if (typeof data.depth === 'number') { setDepth(data.depth); depthRef.current = data.depth; }
         if (data.difficulty) setDifficulty(data.difficulty);
         if (typeof data.gold === 'number' && setGold) setGold(data.gold);
         if (typeof data.energy === 'number' && setEnergy) setEnergy(data.energy);
@@ -201,7 +204,8 @@ export default function useGameSocket({
           onImbueWandChoiceAvailable, onTalentUpgraded,
           onMetamorphOpen, onMetamorphOptions, onGooFightStarted, onTenguFightStarted,
           onDM300FightStarted, onDwarfKingFightStarted, onDwarfKingPhase2, onYogFightStarted, onYogFinalPhase,
-          onShopOpen, onImpDialogue, onScrollSelectTarget, onBossSlain, onPlayerDeath,
+          onShopOpen, onImpDialogue, onGhostDialogue, onScrollSelectTarget, onBossSlain, onPlayerDeath,
+          depth: depthRef.current,
         };
 
         if (data.events) {

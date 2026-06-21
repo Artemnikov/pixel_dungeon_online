@@ -607,21 +607,22 @@ class RatKingRoom(SecretRoom):
         door = door_x + door_y * level.width()
 
         for i in range(self.left + 1, self.right):
-            self._add_chest(level, (self.top + 1) * level.width() + i, door)
-            self._add_chest(level, (self.bottom - 1) * level.width() + i, door)
+            self._add_chest(rng, level, (self.top + 1) * level.width() + i, door)
+            self._add_chest(rng, level, (self.bottom - 1) * level.width() + i, door)
 
         for i in range(self.top + 2, self.bottom - 1):
-            self._add_chest(level, i * level.width() + self.left + 1, door)
-            self._add_chest(level, i * level.width() + self.right - 1, door)
+            self._add_chest(rng, level, i * level.width() + self.left + 1, door)
+            self._add_chest(rng, level, i * level.width() + self.right - 1, door)
 
         king_pos = level.point_to_cell(self.random(rng, 2))
         level.mobs.append(GenMob(cls_name="RatKing", pos=king_pos))
 
     @staticmethod
-    def _add_chest(level: GenLevel, pos: int, door: int) -> None:
+    def _add_chest(rng: SPDRandom, level: GenLevel, pos: int, door: int) -> None:
         if (pos == door - 1 or pos == door + 1
                 or pos == door - level.width() or pos == door + level.width()):
             return
+        rng.IntRange(10, 25)  # new Gold(Random.IntRange(10, 25)) -- RNG-call parity
         level.drop(frozenset({"Gold", "CHEST"}), pos).type = "CHEST"
 
 

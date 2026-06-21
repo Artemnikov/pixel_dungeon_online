@@ -142,6 +142,10 @@ class GenLevel:
         # Custom wall overlay tilemaps rendered above characters, e.g.
         # SewerExitOverhang arch above the boss exit. Same format as custom_tiles.
         self.custom_walls: list[dict] = []
+        # Which Builder shape produced this floor's room graph ("loop" or
+        # "figure_eight") -- set by build_floor, surfaced via generation_meta
+        # for layout-dependent debug/test assertions.
+        self.layout_kind: str = "loop"
 
     def width(self) -> int:
         return self._width

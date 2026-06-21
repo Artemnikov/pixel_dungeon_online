@@ -284,6 +284,21 @@ class ImpRewardData(_EventData):
     item: str
 
 
+class GhostDialogueData(_EventData):
+    player: str
+    npc: str
+    text: str
+    can_claim: bool
+    weapon: Optional[dict] = None
+    armor: Optional[dict] = None
+
+
+class GhostRewardData(_EventData):
+    player: str
+    npc: str
+    item: str
+
+
 class TeleportData(_EventData):
     player: str
     x: int
@@ -343,6 +358,11 @@ class SacrificialFireData(_EventData):
     y: int
 
 
+class LeafBurstData(_EventData):
+    x: int
+    y: int
+
+
 class SpellSpriteData(_EventData):
     x: int
     y: int
@@ -393,6 +413,8 @@ EVENT_MODELS = {
     "TENGU_BADGE_QUALIFIED": TenguBadgeQualifiedData,
     "IMP_DIALOGUE": ImpDialogueData,
     "IMP_REWARD": ImpRewardData,
+    "GHOST_DIALOGUE": GhostDialogueData,
+    "GHOST_REWARD": GhostRewardData,
     "SCROLL_SELECT_TARGET": ScrollSelectTargetData,
     "TELEPORT": TeleportData,
     "MIRROR_IMAGE": MirrorImageData,
@@ -404,5 +426,6 @@ EVENT_MODELS = {
     "FIRE_IMBUE_ACTIVATED": FireImbueActivatedData,
     "INFERNO_ACTIVATED": InfernoActivatedData,
     "SACRIFICIAL_FIRE": SacrificialFireData,
+    "LEAF_BURST": LeafBurstData,
     "SPELL_SPRITE": SpellSpriteData,
 }

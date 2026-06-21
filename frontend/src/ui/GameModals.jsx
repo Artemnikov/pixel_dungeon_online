@@ -4,6 +4,7 @@ import WndUseItem from './WndUseItem';
 import RightClickMenu from './RightClickMenu';
 import WndShop from './WndShop';
 import WndImp from './WndImp';
+import WndSadGhost from './WndSadGhost';
 import WndQuickBag from './WndQuickBag';
 import RadialMenu from './RadialMenu';
 
@@ -27,6 +28,7 @@ export default function GameModals({
     ctxMenu, setCtxMenu,
     shopWindow, setShopWindow,
     impWindow, setImpWindow,
+    ghostWindow, setGhostWindow,
     showQuickBag, setShowQuickBag,
     radialOpen, setRadialOpen,
     quickslotPicker, setQuickslotPicker,
@@ -82,6 +84,21 @@ export default function GameModals({
             setImpWindow(null);
           }}
           onClose={() => setImpWindow(null)}
+        />
+      )}
+
+      {ghostWindow && (
+        <WndSadGhost
+          npcId={ghostWindow.npc}
+          text={ghostWindow.text}
+          canClaim={ghostWindow.canClaim}
+          weapon={ghostWindow.weapon}
+          armor={ghostWindow.armor}
+          onChoose={(npcId, choice) => {
+            send({ type: 'GHOST_CLAIM_REWARD', npc_id: npcId, choice });
+            setGhostWindow(null);
+          }}
+          onClose={() => setGhostWindow(null)}
         />
       )}
 

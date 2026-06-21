@@ -9,7 +9,7 @@ export function handleProgressionEvents(event: GameEvent, ctx: HandlerCtx): bool
     onLevelUp, onSubclassChoiceAvailable, onArmorAbilityChoiceAvailable,
     onImbueWandChoiceAvailable, onTalentUpgraded, onMetamorphOpen, onMetamorphOptions,
     onGooFightStarted: _g, onTenguFightStarted: _t,
-    onShopOpen, onImpDialogue, onScrollSelectTarget, onBossSlain,
+    onShopOpen, onImpDialogue, onGhostDialogue, onScrollSelectTarget, onBossSlain,
   } = ctx;
 
   if (event.type === 'LEVEL_UP') {
@@ -95,6 +95,21 @@ export function handleProgressionEvents(event: GameEvent, ctx: HandlerCtx): bool
   }
 
   if (event.type === 'IMP_REWARD') {
+    if (event.data.player === myPlayerIdRef.current) AudioManager.play('BOSS');
+    return true;
+  }
+
+  if (event.type === 'GHOST_DIALOGUE') {
+    if (event.data.player === myPlayerIdRef.current) {
+      onGhostDialogue?.({
+        npc: event.data.npc, text: event.data.text,
+        can_claim: event.data.can_claim, weapon: event.data.weapon, armor: event.data.armor,
+      });
+    }
+    return true;
+  }
+
+  if (event.type === 'GHOST_REWARD') {
     if (event.data.player === myPlayerIdRef.current) AudioManager.play('BOSS');
     return true;
   }
