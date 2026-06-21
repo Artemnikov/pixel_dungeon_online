@@ -143,6 +143,9 @@ export interface HookProps {
   wasDownedRef: Ref<boolean | undefined>;
   surpriseRef?: Ref<unknown[]>;
   selectedEnemyIdRef?: Ref<string | null>;
+  floorFadeRef?: Ref<unknown>;
+  cameraLerpRef?: Ref<{ x: number; y: number }>;
+  isCameraDetachedRef?: Ref<boolean>;
   setGrid: Dispatch<SetStateAction<number[][]>>;
   setDepth: (depth: number) => void;
   setMyPlayerId: (id: string) => void;
@@ -172,8 +175,15 @@ export interface HookProps {
   onYogFinalPhase?: (data: { mob: string }) => void;
   onShopOpen?: (data: { npc: string; stock: SerializedItem[]; gold: number }) => void;
   onImpDialogue?: (data: { npc: string; text: string; can_claim: boolean; tokens?: number | null }) => void;
+  onGhostQuestGiven?: () => void;
+  onGhostQuestComplete?: () => void;
   onGhostDialogue?: (data: { npc: string; text: string; can_claim: boolean; weapon?: SerializedItem | null; armor?: SerializedItem | null }) => void;
   onScrollSelectTarget?: (data: { player: string; scroll_id: string; scroll_kind: string; candidates: string[] }) => void;
+  onGhostGearOpen?: (data: {
+    player: string; rose_id: string; ghost_id: string;
+    ghost_hp: number; ghost_max_hp: number;
+    weapon?: Record<string, unknown> | null; armor?: Record<string, unknown> | null;
+  }) => void;
   onBossSlain?: (data: { mob: string; depth: number; badge_image: number }) => void;
   onPlayerDeath?: (data: { score_breakdown?: { kills: number; floors: number; gold: number }; can_resurrect?: boolean; victory?: boolean }) => void;
 }
@@ -224,7 +234,10 @@ export type HandlerCtx = Pick<
   onShopOpen?: HookProps['onShopOpen'];
   onImpDialogue?: HookProps['onImpDialogue'];
   onGhostDialogue?: HookProps['onGhostDialogue'];
+  onGhostQuestGiven?: HookProps['onGhostQuestGiven'];
+  onGhostQuestComplete?: HookProps['onGhostQuestComplete'];
   onScrollSelectTarget?: HookProps['onScrollSelectTarget'];
+  onGhostGearOpen?: HookProps['onGhostGearOpen'];
   onBossSlain?: HookProps['onBossSlain'];
   onPlayerDeath?: HookProps['onPlayerDeath'];
   depth?: number;

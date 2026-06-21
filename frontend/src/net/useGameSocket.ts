@@ -59,6 +59,7 @@ export default function useGameSocket({
   wasDownedRef,
   floorFadeRef,
   cameraLerpRef,
+  isCameraDetachedRef,
   setGrid,
   setDepth,
   setMyPlayerId,
@@ -89,7 +90,10 @@ export default function useGameSocket({
   onShopOpen,
   onImpDialogue,
   onGhostDialogue,
+  onGhostQuestGiven,
+  onGhostQuestComplete,
   onScrollSelectTarget,
+  onGhostGearOpen,
   onBossSlain,
   onPlayerDeath,
 }: HookProps) {
@@ -204,7 +208,7 @@ export default function useGameSocket({
           onImbueWandChoiceAvailable, onTalentUpgraded,
           onMetamorphOpen, onMetamorphOptions, onGooFightStarted, onTenguFightStarted,
           onDM300FightStarted, onDwarfKingFightStarted, onDwarfKingPhase2, onYogFightStarted, onYogFinalPhase,
-          onShopOpen, onImpDialogue, onGhostDialogue, onScrollSelectTarget, onBossSlain, onPlayerDeath,
+          onShopOpen, onImpDialogue, onGhostDialogue, onGhostQuestGiven, onGhostQuestComplete, onScrollSelectTarget, onGhostGearOpen, onBossSlain, onPlayerDeath,
           depth: depthRef.current,
         };
 
@@ -219,6 +223,7 @@ export default function useGameSocket({
       // existing CAMERA_LERP exponential settle in useGameRenderer pulls it back onto
       // the player next frame, reading as "drop down" / "rise up" into view.
       const snapCameraForFloorChange = (direction: 'down' | 'up', newPos: { x: number; y: number }) => {
+        if (isCameraDetachedRef) isCameraDetachedRef.current = false;
         if (!cameraLerpRef?.current) return;
         const me = entitiesRef.current.players[myPlayerIdRef.current ?? ''];
         const oldPos = me?.renderPos ?? newPos;
@@ -255,7 +260,7 @@ export default function useGameSocket({
         if (!floorChangeEvent) {
           // Steady state (most ticks), or a non-stairs depth change (admin teleport,
           // resurrect, etc.) — apply any stashed INIT immediately, no fade.
-          if (pendingInit) { applyInit(pendingInit); pendingInit = null; }
+          if (pendingInit) { if (isCameraDetachedRef) isCameraDetachedRef.current = false; applyInit(pendingInit); pendingInit = null; }
           applyStateUpdate(data);
           return;
         }

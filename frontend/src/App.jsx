@@ -78,6 +78,7 @@ function App() {
   const [scoreBreakdown, setScoreBreakdown] = useState(null);
   const [canResurrect, setCanResurrect] = useState(false);
   const [isVictory, setIsVictory] = useState(false);
+  const [ghostQuestGiven, setGhostQuestGiven] = useState(false);
   const [showBossSlainBanner, setShowBossSlainBanner] = useState(false);
   const [bossSlainData, setBossSlainData] = useState(null);
 
@@ -97,6 +98,8 @@ function App() {
   const isDraggingRef = useRef(false);
   const isRefocusingRef = useRef(false);
   const isPinchingRef = useRef(false);
+  const isCameraDetachedRef = useRef(false);
+  const detachedCameraRef = useRef({ x: 0, y: 0 });
   const wasDownedRef = useRef(false);
   const mobAnimRef = useRef({});
   const dyingMobsRef = useRef({});
@@ -188,7 +191,7 @@ function App() {
   });
   useAudioUnlock();
   const assetImages = useAssetImages();
-  useMusicByDepth({ enabled: true, menu: gameState !== 'PLAYING', depth, bossFightActive: bossFightActive && !!bossInfo, bossBleeding, tense: false, amuletObtained: false, musicRef });
+  useMusicByDepth({ enabled: true, menu: gameState !== 'PLAYING', depth, bossFightActive: bossFightActive && !!bossInfo, bossBleeding, tense: ghostQuestGiven && depth <= 5, amuletObtained: false, musicRef });
 
   const { sendSelectScrollTarget } = useGameSocket({
     enabled: gameState === 'PLAYING',
@@ -198,6 +201,7 @@ function App() {
     visionRef, openDoorsRef, projectilesRef,
     trapsRef, customTilesRef, customWallsRef,
     mobAnimRef, dyingMobsRef, playerAnimRef, particlesRef, searchEffectsRef, floatingTextRef, screenFlashRef, screenShakeRef, wasDownedRef, warnedTilesRef, transmuteEffectsRef, flareEffectsRef, spellSpriteEffectsRef, lightningRef, shieldHaloRef, stateEffectsRef, magicMissileRef, staffAmbientRef, surpriseRef, selectedEnemyIdRef, beamRef, blobAreasRef,
+    cameraLerpRef, isCameraDetachedRef,
     setGrid, setDepth, setMyPlayerId, setInventory,
     setEquippedItems, setMyStats, setDifficulty, setBossInfo,
     setGold, setEnergy, setExitPos, setBelongings, setQuickslot,
@@ -216,8 +220,11 @@ function App() {
     onShopOpen: modals.onShopOpen,
     onImpDialogue: modals.onImpDialogue,
     onGhostDialogue: modals.onGhostDialogue,
+    onGhostQuestGiven: () => setGhostQuestGiven(true),
+    onGhostQuestComplete: () => setGhostQuestGiven(false),
     onImbueWandChoiceAvailable: modals.onImbueWand,
     onScrollSelectTarget: modals.onScrollSelectTarget,
+    onGhostGearOpen: modals.onGhostGearOpen,
     onTalentUpgraded: talent.onTalentUpgraded,
     onBossSlain: (data) => {
       setBossSlainData(data);
@@ -248,6 +255,7 @@ function App() {
     canvasRef, socketRef,
     panOffsetRef, zoomRef, cameraLerpRef,
     isDraggingRef, isRefocusingRef, isPinchingRef,
+    isCameraDetachedRef, detachedCameraRef,
     targetingModeRef: targeting.targetingModeRef,
     onTargetTapRef: targeting.onTargetTapRef,
     examineModeRef: targeting.examineModeRef,
@@ -263,11 +271,12 @@ function App() {
     mobAnimRef, dyingMobsRef, playerAnimRef, particlesRef, searchEffectsRef, floatingTextRef, screenFlashRef, screenShakeRef, myPlayerIdRef, warnedTilesRef, transmuteEffectsRef, flareEffectsRef, spellSpriteEffectsRef, lightningRef, shieldHaloRef, stateEffectsRef, magicMissileRef, staffAmbientRef, surpriseRef, selectedEnemyIdRef, hoveredCellRef, beamRef, blobAreasRef,
     panOffsetRef, cameraLerpRef, zoomRef,
     isRefocusingRef, isDraggingRef,
+    isCameraDetachedRef, detachedCameraRef,
     setCamera,
   });
 
   // --- item action dispatch ---
-  const TARGETED_ACTIONS = ['THROW', 'ZAP'];
+  const TARGETED_ACTIONS = ['THROW', 'ZAP', 'DIRECT'];
 
   const equipItem = (itemId) => send({ type: 'EQUIP_ITEM', item_id: itemId });
 
@@ -609,6 +618,7 @@ function App() {
               };
               panOffsetRef.current = { x: 0, y: 0 };
               isRefocusingRef.current = false;
+              isCameraDetachedRef.current = false;
             }}
           />
         </SideTags>
