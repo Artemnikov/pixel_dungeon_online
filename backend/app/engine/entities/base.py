@@ -1686,6 +1686,16 @@ class Waterskin(ItemBase):
         return [f"It contains {self.volume}/{self.MAX_VOLUME} drops of dew."]
 
 
+class Amulet(ItemBase):
+    kind: Literal["amulet"] = "amulet"
+    name: str = "Amulet of Yendor"
+    type: str = "amulet"
+    category: ClassVar[str] = ItemCategory.MISC
+    stackable: ClassVar[bool] = False
+    unique: bool = True
+    DESC: ClassVar[str] = "The legendary Amulet of Yendor. Carry it to the surface to win."
+
+
 class Berry(Food):
     kind: Literal["berry"] = "berry"
     name: str = "Berry"
@@ -1966,7 +1976,7 @@ AnyItem = Annotated[
         MysteryMeat, FrozenCarpaccio, Berry, SmallRation, Ration, Pasty, ChargrilledMeat, Food,
         Key,
         TenguMask, KingsCrown,
-        Seed, Dewdrop, Waterskin, Stone, Boomerang, ThrowableDagger, Throwable,
+        Seed, Dewdrop, Waterskin, Amulet, Stone, Boomerang, ThrowableDagger, Throwable,
         GooBlob, DwarfToken,
         Chest,
         VelvetPouch, ScrollHolder, MagicalHolster, PotionBandolier, Bag,

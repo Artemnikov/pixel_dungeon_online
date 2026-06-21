@@ -23,6 +23,7 @@ from app.engine.dungeon.spd_levelgen.traps import Trap as SpdTrap
 from app.engine.dungeon.spd_levelgen.traps import BurningTrap, BlazingTrap
 from app.engine.dungeon.generator import TileType
 from app.engine.entities.base import (
+    Amulet,
     Armor,
     Chest,
     Dewdrop,
@@ -419,6 +420,7 @@ _DESCRIPTOR_ITEM_MAP = {
     "IronKey": lambda iid, pos: Key(id=iid, pos=pos, name="Iron Key", key_id="iron"),
     "GoldenKey": lambda iid, pos: Key(id=iid, pos=pos, name="Golden Key", key_id="golden"),
     "CrystalKey": lambda iid, pos: Key(id=iid, pos=pos, name="Crystal Key", key_id="crystal"),
+    "Amulet": lambda iid, pos: Amulet(id=iid, pos=pos, name="Amulet of Yendor"),
     "GuidePage": lambda iid, pos: Scroll(id=iid, pos=pos, name="Guide Page"),
     "DocumentPage": lambda iid, pos: Scroll(id=iid, pos=pos, name="Document Page"),
     "Food": lambda iid, pos: Food(id=iid, pos=pos, name="Food"),

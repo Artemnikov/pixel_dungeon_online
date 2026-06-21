@@ -21,6 +21,7 @@ Backs the admin "give item" debug tool (`GET /api/items/catalog` and the
 from typing import Callable, List, Optional, TypedDict
 
 from app.engine.entities.base import (
+    Amulet,
     Armor,
     Artifact,
     Bag,
@@ -201,6 +202,7 @@ _CATALOG: List[tuple] = [
     ("dwarf_token", "Dwarf Token", "misc", lambda: DwarfToken()),
     ("tengu_mask", "Tengu's Mask", "misc", lambda: TenguMask()),
     ("kings_crown", "King's Crown", "misc", lambda: KingsCrown()),
+    ("amulet", "Amulet of Yendor", "misc", lambda: Amulet()),
 
     # Containers
     ("velvet_pouch", "Velvet Pouch", "container", lambda: VelvetPouch()),

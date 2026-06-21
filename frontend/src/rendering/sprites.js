@@ -151,6 +151,7 @@ export const ITEM_SPRITES = {
   "Crystal Key":      [9, 3],   // CRYSTAL_KEY (MISC_CONSUMABLE+9 = idx 57)
   "Rusty Key":        [7, 3],   // IRON_KEY (MISC_CONSUMABLE+7 = idx 55)
   "Key":              [7, 3],
+  "Amulet of Yendor": [14, 4],  // AMULET = MISC_CONSUMABLE+13 = xy(1,4)+13 = idx 78 -> col14,row4
 
   // Default fallback (SOMETHING "?" placeholder, idx 0)
   "default":          [0, 0],
