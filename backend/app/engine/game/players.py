@@ -24,6 +24,7 @@ from typing import List, Optional, Tuple
 
 from app.engine.dungeon.generator import TileType
 from app.engine.entities.base import (
+    Amulet,
     Armor,
     Belongings,
     Bow,
@@ -328,4 +329,24 @@ class PlayersMixin:
             },
             "can_resurrect": False,
             "victory": False,
+        }, floor_id=floor_id)
+
+    def _complete_victory(self, player: Player, floor: FloorState, floor_id: int):
+        # Parallel to _kill_player, not built on it: a winner keeps every
+        # item (no backpack scatter, no grave) -- the run ends in triumph,
+        # not death. Setting is_alive=False + death_processed=True together
+        # excludes the player from further ticking/input via the same checks
+        # _kill_player relies on, without ever routing through it.
+        player.is_alive = False
+        player.death_processed = True
+
+        self.add_event("DEATH", {
+            "target": player.id,
+            "score_breakdown": {
+                "kills": player.kills_count,
+                "floors": player.floors_explored,
+                "gold": player.gold,
+            },
+            "can_resurrect": False,
+            "victory": True,
         }, floor_id=floor_id)

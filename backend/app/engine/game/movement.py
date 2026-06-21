@@ -25,6 +25,7 @@ from typing import Optional
 
 from app.engine.dungeon.generator import TileType
 from app.engine.entities.base import (
+    Amulet,
     Dewdrop,
     Faction,
     Gold,
@@ -445,6 +446,16 @@ class MovementCombatMixin:
         if isinstance(entity, Player) and tile == TileType.STAIRS_UP and entity.floor_id > 1:
             self._move_player_to_floor(entity, entity.floor_id - 1, TileType.STAIRS_DOWN)
             self.add_event("STAIRS_UP", {"player": entity_id}, player_id=entity_id)
+
+        if isinstance(entity, Player) and tile == TileType.STAIRS_UP and entity.floor_id == 1:
+            if any(isinstance(it, Amulet) for it in entity.belongings.all_items()):
+                self._complete_victory(entity, floor, floor_id)
+            else:
+                self.add_event(
+                    "MESSAGE",
+                    {"text": "You can't leave yet, the rest of the dungeon awaits below!"},
+                    player_id=entity_id,
+                )
 
     def _maybe_trigger_dm300_supercharge(self, target: "MobEntity", floor, floor_id: int, near_pos: Position):
         """Trigger DM300 pylon activation if target is DM300 with pending activation."""
