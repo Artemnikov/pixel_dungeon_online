@@ -739,7 +739,7 @@ class WorldInteractionMixin:
         # ImpShopRoom.onLevelLoad(): if floor 20 already exists, spawn the
         # shop immediately (otherwise paint() handles it when floor 20 is
         # first generated).
-        floor20 = self.floors.get(20)
+        floor20 = self._get_or_create_floor(20)
         if floor20 is not None:
             self._spawn_imp_shop(floor20)
 

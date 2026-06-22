@@ -87,9 +87,10 @@ class ConnectionManager:
         game = self.game_instances[game_id]
         state = game.get_state(player_id)
         player_floor = state.get("depth", 1)
-        map_version = getattr(game.floors.get(player_floor), "map_version", 0)
+        floor = game._get_or_create_floor(player_floor)
+        map_version = getattr(floor, "map_version", 0)
 
-        floor = game.floors.get(player_floor)
+        floor = game._get_or_create_floor(player_floor)
         init = InitMessage(
             player_id=player_id,
             depth=player_floor,
@@ -178,11 +179,12 @@ class ConnectionManager:
 
                     state = game.get_state(player_id)
                     player_floor = state.get("depth", 1)
-                    map_version = getattr(game.floors.get(player_floor), "map_version", 0)
+                    floor = game._get_or_create_floor(player_floor)
+                    map_version = getattr(floor, "map_version", 0)
                     previous = self.last_sent_floor.setdefault(game_id, {}).get(player_id)
 
                     if previous != (player_floor, map_version):
-                        floor = game.floors.get(player_floor)
+                        floor = game._get_or_create_floor(player_floor)
                         init = InitMessage(
                             depth=player_floor,
                             grid=state["grid"],
