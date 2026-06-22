@@ -98,6 +98,8 @@ class ConnectionManager:
             height=state["height"],
             traps=state.get("traps", []),
             custom_tiles=state.get("custom_tiles", []),
+            custom_walls=state.get("custom_walls", []),
+            torches=state.get("torches", []),
             entrance_pos=getattr(floor, 'entrance_pos', None),
             exit_pos=getattr(floor, 'exit_pos', None),
         )
@@ -188,6 +190,8 @@ class ConnectionManager:
                             height=state["height"],
                             traps=state.get("traps", []),
                             custom_tiles=state.get("custom_tiles", []),
+                            custom_walls=state.get("custom_walls", []),
+                            torches=state.get("torches", []),
                             entrance_pos=getattr(floor, 'entrance_pos', None),
                             exit_pos=getattr(floor, 'exit_pos', None),
                         )
@@ -202,6 +206,7 @@ class ConnectionManager:
                         any(isinstance(it, Amulet) for it in player_obj.belongings.all_items())
                         if player_obj else False
                     )
+                    boss_lurking = game._boss_lurking_on_floor(player_floor)
 
                     update = StateUpdateMessage(
                         depth=player_floor,
@@ -214,6 +219,7 @@ class ConnectionManager:
                         gold=gold,
                         energy=energy,
                         has_amulet=has_amulet,
+                        boss_lurking=boss_lurking,
                         events=game.filter_events_for_player(events, player_id),
                     )
                     await connection.send_json(update.model_dump(exclude_none=True))
@@ -495,6 +501,9 @@ async def game_websocket(websocket: WebSocket, game_id: str, class_type: str = "
                         dx = mob.pos.x - player.pos.x
                         dy = mob.pos.y - player.pos.y
                         game.move_entity(player_id, dx, dy)
+
+            elif isinstance(message, msg.ConfirmChasmFall):
+                game.confirm_chasm_fall(player_id, message.x, message.y)
 
             elif isinstance(message, msg.RangedAttack):
                 game.perform_ranged_attack(

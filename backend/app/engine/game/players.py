@@ -49,6 +49,7 @@ from app.engine.entities.base import (
     Weapon,
     WornShortsword,
 )
+from app.engine.entities.buffs import add_buff
 from app.engine.entities.item_catalog import make_catalog_item
 from app.engine.game.constants import MAX_FLOOR_ID
 from app.engine.game.floor_state import FloorState
@@ -275,6 +276,74 @@ class PlayersMixin:
         xp_needed = player.max_exp() - player.experience
         if player.earn_exp(xp_needed):
             self.on_talent_level_up(player)
+
+    def _random_fall_landing_cell(self, floor: FloorState) -> Position:
+        """Any passable, unoccupied cell on `floor` — simplified from SPD's
+        entrance-room-biased randomRespawnCell() (see design spec)."""
+        occupied = {
+            (p.pos.x, p.pos.y) for p in self._players_on_floor(floor.floor_id)
+        }
+        occupied |= {
+            (m.pos.x, m.pos.y) for m in floor.mobs.values() if m.is_alive
+        }
+        candidates = [
+            (x, y)
+            for y in range(floor.height)
+            for x in range(floor.width)
+            if floor.flags and floor.flags.passable[y][x] and (x, y) not in occupied
+        ]
+        if not candidates:
+            return Position(x=0, y=0)
+        x, y = random.choice(candidates)
+        return Position(x=x, y=y)
+
+    def _perform_chasm_fall(self, player: Player, floor_id: int, x: int, y: int):
+        """SPD Chasm.heroLand(): damage, Cripple, a Bleeding-equivalent, a
+        screen shake, then drop to floor_id + 1 at a random landing cell."""
+        player.pos = Position(x=x, y=y)
+        player.pending_chasm_fall = None
+
+        add_buff(player.buffs, "cripple", duration=10.0, level=1)
+
+        hp = player.hp
+        max_hp = player.get_total_max_hp()
+        player.bleed_amount = max(1, round(max_hp / (6 + 6 * (hp / max_hp))))
+        player.bleed_turns = 2
+
+        lo, hi = sorted((hp // 2, max_hp // 4))
+        dmg_roll = random.randint(lo, hi) if lo < hi else lo
+        dmg = max(hp // 2, dmg_roll)
+        dealt = player.take_damage(dmg)
+
+        self.add_event("DAMAGE", {"target": player.id, "amount": dealt}, floor_id=floor_id)
+        self.add_event("SCREEN_SHAKE", {"intensity": 4, "duration_ms": 300}, floor_id=floor_id)
+        self.add_event("PLAY_SOUND", {"sound": "STAIRS_DOWN"}, floor_id=floor_id, player_id=player.id)
+
+        target_floor = self._get_or_create_floor(floor_id + 1)
+        landing = self._random_fall_landing_cell(target_floor)
+        player.floor_id = floor_id + 1
+        player.floors_explored = max(player.floors_explored, floor_id + 1)
+        player.pos = landing
+        self.depth = floor_id + 1
+
+    def confirm_chasm_fall(self, player_id: str, x: int, y: int):
+        player = self.players.get(player_id)
+        if not player or not player.is_alive or player.is_downed:
+            return
+        if player.pending_chasm_fall != (x, y):
+            return
+        floor_id = player.floor_id
+        if floor_id >= MAX_FLOOR_ID:
+            player.pending_chasm_fall = None
+            return
+        if abs(player.pos.x - x) > 1 or abs(player.pos.y - y) > 1:
+            player.pending_chasm_fall = None
+            return
+        floor = self._get_or_create_floor(floor_id)
+        if floor.grid[y][x] != TileType.CHASM:
+            player.pending_chasm_fall = None
+            return
+        self._perform_chasm_fall(player, floor_id, x, y)
 
     def _kill_player(self, player: Player, floor: FloorState, floor_id: int):
         # Run the death sequence once: scatter the backpack and mark the spot

@@ -191,3 +191,78 @@ def test_bfs_full_path_never_routes_through_a_non_target_chasm_cell():
         visited_y += dy
         if (visited_x, visited_y) != (5, 3):
             assert floor.grid[visited_y][visited_x] != TileType.CHASM
+
+
+def make_chasm_fall_game():
+    game = GameInstance("test-chasm-fall")
+    floor = game._get_or_create_floor(game.depth)
+    floor.grid = [[TileType.FLOOR for _ in range(5)] for _ in range(5)]
+    floor.grid[2][3] = TileType.CHASM
+    floor.rebuild_flags()
+    below = game._get_or_create_floor(game.depth + 1)
+    below.grid = [[TileType.FLOOR for _ in range(5)] for _ in range(5)]
+    below.rebuild_flags()
+    player = game.add_player("p1", "Hero")
+    player.pos.x, player.pos.y = 2, 2
+    player.hp = player.get_total_max_hp()
+    return game, floor, player
+
+
+def test_confirm_chasm_fall_rejected_without_a_matching_pending_state():
+    game, floor, player = make_chasm_fall_game()
+    start_floor = player.floor_id
+
+    game.confirm_chasm_fall(player.id, 3, 2)
+
+    assert player.floor_id == start_floor
+    assert (player.pos.x, player.pos.y) == (2, 2)
+
+
+def test_confirm_chasm_fall_moves_player_down_one_floor_and_clears_pending():
+    game, floor, player = make_chasm_fall_game()
+    player.pending_chasm_fall = (3, 2)
+    start_floor = player.floor_id
+
+    game.confirm_chasm_fall(player.id, 3, 2)
+
+    assert player.floor_id == start_floor + 1
+    assert player.pending_chasm_fall is None
+    assert player.floors_explored >= start_floor + 1
+
+
+def test_confirm_chasm_fall_applies_damage_cripple_and_bleed():
+    from app.engine.entities.buffs import get_buff
+    game, floor, player = make_chasm_fall_game()
+    player.pending_chasm_fall = (3, 2)
+    full_hp = player.hp
+
+    game.confirm_chasm_fall(player.id, 3, 2)
+
+    assert player.hp < full_hp
+    assert get_buff(player.buffs, "cripple") is not None
+    assert player.bleed_amount > 0
+    assert player.bleed_turns > 0
+
+
+def test_confirm_chasm_fall_emits_damage_and_screen_shake_events():
+    game, floor, player = make_chasm_fall_game()
+    player.pending_chasm_fall = (3, 2)
+
+    game.confirm_chasm_fall(player.id, 3, 2)
+
+    events = [e["type"] for e in game.flush_events()]
+    assert "DAMAGE" in events
+    assert "SCREEN_SHAKE" in events
+    assert "PLAY_SOUND" in events
+
+
+def test_confirm_chasm_fall_rejected_at_max_floor_id():
+    from app.engine.game.constants import MAX_FLOOR_ID
+    game, floor, player = make_chasm_fall_game()
+    player.floor_id = MAX_FLOOR_ID
+    player.pending_chasm_fall = (3, 2)
+
+    game.confirm_chasm_fall(player.id, 3, 2)
+
+    assert player.floor_id == MAX_FLOOR_ID
+    assert player.pending_chasm_fall is None

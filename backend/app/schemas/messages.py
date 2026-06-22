@@ -217,6 +217,12 @@ class Attack(_ClientMessageBase):
     target_id: str
 
 
+class ConfirmChasmFall(_ClientMessageBase):
+    type: Literal["CONFIRM_CHASM_FALL"]
+    x: int
+    y: int
+
+
 ClientMessage = Annotated[
     Union[
         Ping,
@@ -256,6 +262,7 @@ ClientMessage = Annotated[
         Resume,
         PickupFloor,
         Attack,
+        ConfirmChasmFall,
     ],
     Field(discriminator="type"),
 ]
