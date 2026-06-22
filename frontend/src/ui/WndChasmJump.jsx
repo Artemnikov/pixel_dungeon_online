@@ -4,10 +4,17 @@
 // WndChasmJump — confirm dialog shown when a player steps onto a chasm tile
 // (mirrors SPD's Chasm.heroJump() WndOptions, adapted to this engine's
 // click-to-confirm pattern instead of Java's click-again-to-commit one).
+import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
 export default function WndChasmJump({ onConfirm, onDecline }) {
   const { t } = useTranslation();
+
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === 'Escape') onDecline(); };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onDecline]);
 
   return (
     <div className="wnd-chasm-jump-overlay">
