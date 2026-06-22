@@ -58,6 +58,7 @@ export const BACKEND_TILE = {
   // Destructible wooden obstacle (StorageRoom etc.) -- looks like a wall
   // until burned away into EMBERS, same placeholder convention as SECRET_DOOR.
   BARRICADE: { id: 32, atlasIndex: atlasIndex(0, 5), seethrough: false },
+  CHASM: { id: 33, atlasIndex: atlasIndex(8, 1), seethrough: true },
 };
 
 export const toAtlasCoords = (index) => ({
@@ -163,6 +164,17 @@ export const WALL_INDEX = {
   RAISED_DOOR_LOCKED: atlasIndex(2, 7),
   RAISED_DOOR_CRYSTAL: atlasIndex(3, 7),
   RAISED_DOOR_SIDEWAYS: atlasIndex(4, 7),
+};
+
+// SPD DungeonTileSheet.CHASM block (verified present in every region atlas
+// at this exact offset): an 8-slot row, base void + 4 "stitched" variants
+// picked by whatever terrain sits directly above the chasm cell.
+export const CHASM_INDEX = {
+  BASE: atlasIndex(8, 1),
+  FLOOR: atlasIndex(9, 1),
+  FLOOR_SP: atlasIndex(10, 1),
+  WALL: atlasIndex(11, 1),
+  WATER: atlasIndex(12, 1),
 };
 
 export const WATER_SCROLL_PX_PER_SEC = 10;

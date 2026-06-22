@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { getSewerTerrainInstructions } from './terrainMapper.js';
-import { BACKEND_TILE, QUADRANT, TERRAIN_INDEX, WALL_INDEX, isGrassTile, isWallTile } from './constants.js';
+import { BACKEND_TILE, QUADRANT, TERRAIN_INDEX, WALL_INDEX, CHASM_INDEX, isGrassTile, isWallTile } from './constants.js';
 
 const gridOfIds = (tileId, width = 3, height = 3) =>
   Array.from({ length: height }, () => Array.from({ length: width }, () => tileId));
@@ -138,4 +138,33 @@ test('isGrassTile accepts both regular and high grass', () => {
   assert.equal(isGrassTile(BACKEND_TILE.FLOOR_GRASS.id), true);
   assert.equal(isGrassTile(BACKEND_TILE.HIGH_GRASS.id), true);
   assert.equal(isGrassTile(BACKEND_TILE.FLOOR.id), false);
+});
+
+test('CHASM stitches to the base void tile when nothing recognizable is above it', () => {
+  const grid = gridOfIds(BACKEND_TILE.CHASM.id);
+  const instructions = getSewerTerrainInstructions(grid, 1, 1, BACKEND_TILE.CHASM.id);
+  assert.equal(instructions.length, 1);
+  assert.equal(instructions[0].srcIndex, CHASM_INDEX.BASE);
+  assert.equal(instructions[0].quadrant, QUADRANT.FULL);
+});
+
+test('CHASM stitches to the floor variant under a floor tile', () => {
+  const grid = gridOfIds(BACKEND_TILE.CHASM.id);
+  grid[0][1] = BACKEND_TILE.FLOOR.id;
+  const instructions = getSewerTerrainInstructions(grid, 1, 1, BACKEND_TILE.CHASM.id);
+  assert.equal(instructions[0].srcIndex, CHASM_INDEX.FLOOR);
+});
+
+test('CHASM stitches to the wall variant under a wall tile', () => {
+  const grid = gridOfIds(BACKEND_TILE.CHASM.id);
+  grid[0][1] = BACKEND_TILE.WALL.id;
+  const instructions = getSewerTerrainInstructions(grid, 1, 1, BACKEND_TILE.CHASM.id);
+  assert.equal(instructions[0].srcIndex, CHASM_INDEX.WALL);
+});
+
+test('CHASM stitches to the water variant under a water tile', () => {
+  const grid = gridOfIds(BACKEND_TILE.CHASM.id);
+  grid[0][1] = BACKEND_TILE.FLOOR_WATER.id;
+  const instructions = getSewerTerrainInstructions(grid, 1, 1, BACKEND_TILE.CHASM.id);
+  assert.equal(instructions[0].srcIndex, CHASM_INDEX.WATER);
 });

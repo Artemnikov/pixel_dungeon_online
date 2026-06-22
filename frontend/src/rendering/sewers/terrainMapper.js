@@ -1,5 +1,6 @@
 import {
   BACKEND_TILE,
+  CHASM_INDEX,
   QUADRANT,
   QUADRANT_NEIGHBORS,
   TERRAIN_INDEX,
@@ -7,6 +8,7 @@ import {
   hashCell,
   isGrassTile,
   isSidewaysDoor,
+  isWallTile,
   isWaterStitcheable,
 } from './constants.js';
 
@@ -101,6 +103,19 @@ export const getSewerTerrainInstructions = (grid, x, y, tile, openDoors = new Se
     if (isWaterStitcheable(getTile(grid, x - 1, y))) mask |= 8;  // left
     if (mask === 0) return [];
     return [{ srcIndex: TERRAIN_INDEX.WATER_STITCH_BASE + mask, quadrant: QUADRANT.FULL }];
+  }
+
+  if (tile === BACKEND_TILE.CHASM.id) {
+    const above = getTile(grid, x, y - 1);
+    let srcIndex = CHASM_INDEX.BASE;
+    if (isWallTile(above)) {
+      srcIndex = CHASM_INDEX.WALL;
+    } else if (above === BACKEND_TILE.FLOOR_WATER.id) {
+      srcIndex = CHASM_INDEX.WATER;
+    } else if (above !== BACKEND_TILE.VOID.id && above !== BACKEND_TILE.CHASM.id) {
+      srcIndex = CHASM_INDEX.FLOOR;
+    }
+    return [{ srcIndex, quadrant: QUADRANT.FULL }];
   }
 
   if (tile === BACKEND_TILE.FLOOR_GRASS.id) {
