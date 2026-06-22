@@ -91,11 +91,12 @@
   margin-top: 4px;
 }
 .boss-health-bar__buff {
-  font: 8px monospace;
-  color: #aaa;
-  background: rgba(0,0,0,0.4);
-  padding: 1px 3px;
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  background-color: rgba(0, 0, 0, 0.4);
   border-radius: 2px;
+  image-rendering: pixelated;
 }
 
 /* Top Left HUD */

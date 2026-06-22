@@ -14,6 +14,15 @@
 //
 // Top-of-screen boss HP bar, shown while a boss (e.g. Goo) is alive on the floor.
 // Mirrors the original SPD's BossHealthBar HUD element.
+import buffsImg from '../assets/pixel-dungeon/interfaces/buffs.png';
+
+const BUFF_SIZE = 7;
+const BUFF_COLS = 18;
+const BUFF_SHEET_W = 128;
+const BUFF_SHEET_H = 64;
+const BUFF_ICON_DISPLAY = 16;
+const BUFF_ICON_SCALE = BUFF_ICON_DISPLAY / BUFF_SIZE;
+
 export default function BossHealthBar({ boss }) {
   if (!boss) return null;
   const hp = Math.max(0, boss.hp || 0);
@@ -39,11 +48,23 @@ export default function BossHealthBar({ boss }) {
         </div>
         {effects.length > 0 && (
           <div className="boss-health-bar__buffs">
-            {effects.slice(0, 6).map((eff, i) => (
-              <span key={i} className="boss-health-bar__buff" title={eff.name || ''}>
-                {eff.icon != null ? `[${eff.icon}]` : '?'}
-              </span>
-            ))}
+            {effects.slice(0, 6).map((eff, i) => {
+              const idx = eff.icon ?? 0;
+              const col = idx % BUFF_COLS;
+              const row = Math.floor(idx / BUFF_COLS);
+              return (
+                <span
+                  key={i}
+                  className="boss-health-bar__buff"
+                  title={eff.name || ''}
+                  style={{
+                    backgroundImage: `url(${buffsImg})`,
+                    backgroundPosition: `-${col * BUFF_SIZE * BUFF_ICON_SCALE}px -${row * BUFF_SIZE * BUFF_ICON_SCALE}px`,
+                    backgroundSize: `${BUFF_SHEET_W * BUFF_ICON_SCALE}px ${BUFF_SHEET_H * BUFF_ICON_SCALE}px`,
+                  }}
+                />
+              );
+            })}
           </div>
         )}
       </div>
