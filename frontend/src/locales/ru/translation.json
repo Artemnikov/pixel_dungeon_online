@@ -189,6 +189,19 @@
     "boomerang": "Бумеранг",
     "throwable_dagger": "Метательный кинжал",
     "stone": "Камень",
+    "wand_of_magic_missile": "Жезл магической стрелы",
+    "wand_of_fireblast": "Жезл огненной вспышки",
+    "wand_of_frost": "Жезл холода",
+    "wand_of_lightning": "Жезл молний",
+    "wand_of_disintegration": "Жезл дезинтеграции",
+    "wand_of_prismatic_light": "Жезл чистого света",
+    "wand_of_blast_wave": "Жезл взрывной волны",
+    "wand_of_transfusion": "Жезл трансфузии",
+    "wand_of_corrosion": "Жезл коррозии",
+    "wand_of_corruption": "Жезл порчи",
+    "wand_of_regrowth": "Жезл восстановления",
+    "wand_of_warding": "Жезл стражей",
+    "wand_of_living_earth": "Жезл живой земли",
     "health_potion": "Зелье здоровья",
     "reviving_potion": "Зелье воскрешения",
     "fury_potion": "Зелье ярости",
@@ -223,6 +236,7 @@
     "small_ration": "Малый паёк",
     "ration": "Паёк",
     "pasty": "Пирожок",
+    "frozen_carpaccio": "Замороженное мясо",
     "dewdrop": "Роса",
     "waterskin": "Бурдюк",
     "goo_blob": "Капля гу",
@@ -231,6 +245,9 @@
     "kings_crown": "Корона короля",
     "broken_seal": "Сломанная печать",
     "cloak_of_shadows": "Плащ теней",
+    "dried_rose": "Засохшая роза",
+    "petal": "Лепесток",
+    "amulet": "Амулет Индора",
     "velvet_pouch": "Бархатный кошелёк",
     "scroll_holder": "Футляр для свитков",
     "magical_holster": "Магическая кобура",
@@ -272,7 +289,8 @@
     "cloth_armor": "Тканевая броня",
     "mages_staff": "Посох мага",
     "pickaxe": "Кирка",
-    "throwing_knife": "Метательный нож"
+    "throwing_knife": "Метательный нож",
+    "chest": "Сундук"
   },
   "mob": {
     "rat": "Крыса",
@@ -350,7 +368,8 @@
     "rat_king": "Крысиный король",
     "shopkeeper": "Торговец",
     "imp": "Имп",
-    "mirror_image": "Зеркальное отражение"
+    "mirror_image": "Зеркальное отражение",
+    "ghost_hero": "Призрак-герой"
   },
   "talent": {
     "title": "Таланты",
