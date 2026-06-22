@@ -106,3 +106,49 @@ def test_arena_to_won_on_tengu_death():
     assert (player.pos.x, player.pos.y) == (layout.TENGU_CELL.left + 4, layout.TENGU_CELL.top + 2)
     # endMap chasm cells should now be present somewhere on the floor
     assert any(TileType.STAIRS_DOWN in row for row in floor.grid)
+
+
+def test_chasm_in_post_tengu_reveal_can_be_fallen_through():
+    from app.engine.dungeon.generator import TileType as TT
+
+    game, floor = make_game()
+    player = game.add_player("p1", "Hero")
+    player.floor_id = 10
+    player.pos = Position(x=layout.TENGU_CELL_CENTER.x, y=layout.TENGU_CELL.top + 2)
+
+    game._update_prison_boss(floor, 10)  # -> FIGHT_START
+    tengu = next(m for m in floor.mobs.values() if isinstance(m, Tengu))
+    tengu.hp = tengu.max_hp // 2
+    game._update_prison_boss(floor, 10)  # -> FIGHT_PAUSE
+    player.pos = Position(x=layout.START_HALLWAY.left + 2, y=layout.START_HALLWAY.top)
+    game._update_prison_boss(floor, 10)  # -> FIGHT_ARENA
+    del floor.mobs[tengu.id]
+    game._update_prison_boss(floor, 10)  # -> WON
+    game.flush_events()
+
+    # Find a chasm cell with a passable cell directly beside it (matching the
+    # endMap's real layout: rows 3-4 of the chasm column have walkable cells
+    # at the same y immediately to the chasm's west).
+    chasm_pos = None
+    for y in range(floor.height):
+        for x in range(floor.width):
+            if floor.grid[y][x] == TT.CHASM and x > 0 and floor.flags.passable[y][x - 1]:
+                chasm_pos = (x, y)
+                break
+        if chasm_pos:
+            break
+    assert chasm_pos is not None, "endMap must have at least one chasm cell reachable from a walkable neighbour"
+
+    cx, cy = chasm_pos
+    player.pos.x, player.pos.y = cx - 1, cy
+    start_floor_id = player.floor_id
+
+    game.move_entity(player.id, 1, 0)
+    assert (player.pos.x, player.pos.y) == (cx - 1, cy), "must not step onto the chasm without confirming"
+    assert player.pending_chasm_fall == (cx, cy)
+    prompts = [e for e in game.flush_events() if e["type"] == "CHASM_PROMPT"]
+    assert len(prompts) == 1
+
+    game.confirm_chasm_fall(player.id, cx, cy)
+    assert player.floor_id == start_floor_id + 1
+    assert player.pending_chasm_fall is None
