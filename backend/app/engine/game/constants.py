@@ -19,7 +19,7 @@ without pulling in the whole GameInstance. manager.py re-exports these for
 backward-compatible imports.
 """
 
-MAX_FLOOR_ID = 50
+MAX_FLOOR_ID = 26
 SEWERS_MAX_FLOOR = 4
 PRISON_MAX_FLOOR = 9
 

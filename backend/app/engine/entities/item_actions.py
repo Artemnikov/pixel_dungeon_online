@@ -65,7 +65,7 @@ def action_drop(game, player, item, tx=None, ty=None) -> None:
         return
     player.quickslot.clear_item(detached.id)
     _floor_drop(game, player, detached)
-    game.add_event("DROP", {"player": player.id, "item": detached.id}, floor_id=player.floor_id)
+    game.add_event("DROP", {"player": player.id, "item": detached.id, "item_name": detached.name}, floor_id=player.floor_id)
 
 
 def action_drink_waterskin(game, player, item, tx=None, ty=None) -> None:
@@ -341,6 +341,101 @@ def action_stealth(game, player, item, tx=None, ty=None) -> None:
     game.toggle_cloak_stealth(player.id)
 
 
+def action_summon(game, player, item, tx=None, ty=None) -> None:
+    import random
+    import uuid
+    from app.engine.entities.base import DriedRose
+    from app.engine.entities.mobs import GhostHeroMob
+
+    if not isinstance(item, DriedRose):
+        return
+    floor = game._get_or_create_floor(player.floor_id)
+    neighbors = [(-1,-1),(0,-1),(1,-1),(-1,0),(1,0),(-1,1),(0,1),(1,1)]
+    random.shuffle(neighbors)
+    spawn_pos = None
+    for dx, dy in neighbors:
+        nx, ny = player.pos.x + dx, player.pos.y + dy
+        if not (0 <= nx < floor.width and 0 <= ny < floor.height):
+            continue
+        if not floor.flags.passable[ny][nx]:
+            continue
+        occupied = any(m.is_alive and m.pos.x == nx and m.pos.y == ny for m in floor.mobs.values())
+        if not occupied:
+            spawn_pos = (nx, ny)
+            break
+    if spawn_pos is None:
+        return
+
+    ghost = GhostHeroMob(
+        id=f"ghost_hero_{uuid.uuid4().hex[:8]}",
+        pos=Position(x=spawn_pos[0], y=spawn_pos[1]),
+        owner_id=player.id,
+    )
+    floor.mobs[ghost.id] = ghost
+    item.ghost_id = ghost.id
+    item.charge = 0
+    game.add_event("GHOST_SUMMON", {
+        "player": player.id, "ghost_id": ghost.id,
+        "x": ghost.pos.x, "y": ghost.pos.y,
+    }, floor_id=player.floor_id, source_player_id=player.id)
+
+
+def action_direct(game, player, item, tx=None, ty=None) -> None:
+    from app.engine.entities.base import DriedRose
+    from app.engine.entities.mobs import GhostHeroMob
+    if not isinstance(item, DriedRose) or tx is None or ty is None:
+        return
+    floor = game._get_or_create_floor(player.floor_id)
+    ghost = floor.mobs.get(item.ghost_id)
+    if ghost is None or not ghost.is_alive:
+        return
+    if isinstance(ghost, GhostHeroMob):
+        ghost.direct_x = tx
+        ghost.direct_y = ty
+        ghost.target_id = ""
+        game.add_event("GHOST_DIRECT", {
+            "player": player.id, "ghost_id": ghost.id,
+            "x": tx, "y": ty,
+        }, floor_id=player.floor_id, source_player_id=player.id)
+
+
+def _ghost_weapon_info(w) -> dict:
+    if w is None:
+        return None
+    return {
+        "id": w.id, "name": w.name, "kind": w.kind, "tier": getattr(w, "tier", 0),
+        "damage_min": w.damage_min, "damage_max": w.damage_max,
+    }
+
+
+def _ghost_armor_info(a) -> dict:
+    if a is None:
+        return None
+    return {
+        "id": a.id, "name": a.name, "kind": a.kind, "tier": getattr(a, "tier", 0),
+        "dr_min": a.dr_min, "dr_max": a.dr_max,
+    }
+
+
+def action_ghost_gear(game, player, item, tx=None, ty=None) -> None:
+    from app.engine.entities.base import DriedRose
+    if not isinstance(item, DriedRose):
+        return
+    floor = game._get_or_create_floor(player.floor_id)
+    ghost = floor.mobs.get(item.ghost_id)
+    if ghost is None or not ghost.is_alive:
+        return
+    game.add_event("GHOST_GEAR_OPEN", {
+        "player": player.id,
+        "rose_id": item.id,
+        "ghost_id": ghost.id,
+        "ghost_hp": ghost.hp,
+        "ghost_max_hp": ghost.max_hp,
+        "weapon": _ghost_weapon_info(item.weapon),
+        "armor": _ghost_armor_info(item.armor),
+    }, floor_id=player.floor_id, source_player_id=player.id)
+
+
 def action_eat_handler(game, player, item, tx=None, ty=None) -> None:
     removed = player.belongings.backpack.detach(item.id)
     if removed is not None:
@@ -412,6 +507,9 @@ ITEM_ACTION_DISPATCH = {
     Action.ZAP: action_zap,
     Action.AFFIX: action_affix,
     Action.STEALTH: action_stealth,
+    Action.SUMMON: action_summon,
+    Action.DIRECT: action_direct,
+    "GHOST_GEAR": action_ghost_gear,
     Action.EAT: action_eat_handler,
     Action.WEAR: action_wear,
     Action.ALCHEMIZE: action_alchemize,

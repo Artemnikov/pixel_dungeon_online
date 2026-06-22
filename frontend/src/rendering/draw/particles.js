@@ -434,6 +434,48 @@ export function spawnLeafForRegion(particlesRef, cx, cy, count, region) {
   spawnLeaf(particlesRef, cx, cy, count, lo, hi);
 }
 
+// Bone rattle — Speck.RATTLE for Skeleton/Remains opening.
+// Bone fragments shoot upward then fall with gravity.
+export function spawnBoneRattle(particlesRef, cx, cy, count = 8) {
+  for (let i = 0; i < count; i++) {
+    const angle = -Math.PI / 2 + (Math.random() - 0.5) * 1.2;
+    const speed = 40 + Math.random() * 40;
+    const life = 0.4 + Math.random() * 0.2;
+    particlesRef.current.push({
+      x: cx + (Math.random() - 0.5) * 8,
+      y: cy + (Math.random() - 0.5) * 8,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      life,
+      maxLife: life,
+      size: 2 + Math.floor(Math.random() * 2),
+      color: '#bbaa88',
+      gravity: true,
+    });
+  }
+}
+
+// Coin burst — Speck.COIN for gold drop visual.
+// Golden coin specks tossed upward with gravity.
+export function spawnCoin(particlesRef, cx, cy, count = 5) {
+  for (let i = 0; i < count; i++) {
+    const angle = -Math.PI / 2 + (Math.random() - 0.5) * 1.0;
+    const speed = 40 + Math.random() * 40;
+    const life = 0.5 + Math.random() * 0.25;
+    particlesRef.current.push({
+      x: cx + (Math.random() - 0.5) * 6,
+      y: cy + (Math.random() - 0.5) * 6,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      life,
+      maxLife: life,
+      size: 2,
+      color: '#ffdd44',
+      gravity: true,
+    });
+  }
+}
+
 export function advanceAndDrawParticles(ctx, { particlesRef }) {
   const now = performance.now();
   if (lastNow == null) lastNow = now;

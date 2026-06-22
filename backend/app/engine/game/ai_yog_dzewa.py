@@ -25,6 +25,14 @@ from app.engine.entities.mobs import (
 )
 from app.engine.game.floor_state import FloorState
 
+# YogDzewa.java's MIN/MAX_SUMMON_CD and MIN/MAX_ABILITY_CD are turn counts.
+# This engine's mob AI runs once per server tick (20Hz, see main.py's
+# global_game_loop), so raw turn counts would resolve 20x too fast --
+# matching the conversion already used elsewhere in this engine (see
+# OOZE_TICK_INTERVAL/GOO_WATER_HEAL_INTERVAL in game/constants.py, both
+# "ticks (~1s at 20Hz)").
+_TICKS_PER_TURN = 20
+
 
 def _yog_phase_view_distance(phase: int) -> int:
     """SPD: level.viewDistance during the Yog fight, shrinking each phase
@@ -111,10 +119,10 @@ class YogDzewaAIMixin:
             self.add_event("YOG_DEATH_RAY",
                            {"mob": yog.id, "target": target.id, "beams": beams},
                            floor_id=floor_id)
-            cooldown = random.randint(10, 15) - (yog.phase - 1)
-            yog.ability_cooldown = max(2, cooldown)
+            cooldown = (random.randint(10, 15) - (yog.phase - 1)) * _TICKS_PER_TURN
+            yog.ability_cooldown = max(2 * _TICKS_PER_TURN, cooldown)
             if yog.phase == 5:
-                yog.ability_cooldown = min(yog.ability_cooldown, 2)
+                yog.ability_cooldown = min(yog.ability_cooldown, 2 * _TICKS_PER_TURN)
 
         if yog.summon_cooldown > 0:
             yog.summon_cooldown -= 1
@@ -137,12 +145,12 @@ class YogDzewaAIMixin:
                     floor.mobs[minion.id] = minion
                     break
 
-            cooldown = random.randint(10, 15) - (yog.phase - 1)
+            cooldown = (random.randint(10, 15) - (yog.phase - 1)) * _TICKS_PER_TURN
             if alive_fists:
-                cooldown += 10
+                cooldown += 10 * _TICKS_PER_TURN
             yog.summon_cooldown = max(1, cooldown)
             if yog.phase == 5:
-                yog.summon_cooldown = min(yog.summon_cooldown, 3)
+                yog.summon_cooldown = min(yog.summon_cooldown, 3 * _TICKS_PER_TURN)
 
     def _update_yog_fist(self, fist, floor: FloorState, floor_id: int) -> bool:
         if fist.ranged_cooldown > 0:

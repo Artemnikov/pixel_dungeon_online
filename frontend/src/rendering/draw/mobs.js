@@ -3,9 +3,11 @@ import {
   FRAME_W,
   FRAME_H,
   SCORPIO_FW,
-  GNOLL_FW,
-  GNOLL_FH,
-  SNAKE_FW,
+   GNOLL_FW,
+   GNOLL_FH,
+   SHAMAN_FW,
+   SHAMAN_FH,
+   SNAKE_FW,
   SNAKE_FH,
   SNAKE_DEST,
   SKELETON_FW,
@@ -14,10 +16,13 @@ import {
   THIEF_FW,
   THIEF_FH,
   THIEF_DEST,
-  DM100_FW,
-  DM100_FH,
-  DM100_DEST,
-  GUARD_FW,
+   DM100_FW,
+   DM100_FH,
+   DM100_DEST,
+   DM200_FW,
+   DM200_FH,
+   DM200_DEST,
+   GUARD_FW,
   GUARD_FH,
   GUARD_DEST,
   GOO_FW,
@@ -74,28 +79,40 @@ import {
   SWARM_FW,
   SWARM_FH,
   SWARM_DEST,
-  KEEPER_FW,
-  KEEPER_FH,
-  KEEPER_DEST,
-  IMP_FW,
-  IMP_FH,
-  IMP_DEST,
-  RATKING_FW,
-  RATKING_FH,
-  RATKING_DEST,
-  drawMobSprite,
+   KEEPER_FW,
+   KEEPER_FH,
+   KEEPER_DEST,
+   IMP_FW,
+   IMP_FH,
+   IMP_DEST,
+   RATKING_FW,
+   RATKING_FH,
+   RATKING_DEST,
+   GHOST_FW,
+   GHOST_FH,
+   GHOST_DEST,
+   SUCCUBUS_FW,
+   SUCCUBUS_FH,
+   SUCCUBUS_DEST,
+   drawMobSprite,
+   getGhostFrame,
+   getFetidRatFrame,
+   getGnollTricksterFrame,
+   getGreatCrabFrame,
   getCrabFrame,
   getHermitCrabFrame,
-  getGnollFrame,
-  getGooFrame,
+   getGnollFrame,
+   getShamanFrame,
+   getGooFrame,
   getSlimeFrame,
   getRatFrame,
   getSnakeFrame,
   getScorpioFrame,
   getSkeletonFrame,
   getThiefFrame,
-  getDM100Frame,
-  getGuardFrame,
+   getDM100Frame,
+   getDM200Frame,
+   getGuardFrame,
   getNecromancerFrame,
   getWraithFrame,
   getPiranhaFrame,
@@ -105,12 +122,14 @@ import {
   getGhoulFrame,
   getMonkFrame,
   getWarlockFrame,
-  getGolemFrame,
-  getYogFrame,
+   getGolemFrame,
+   getSpinnerFrame,
+   getYogFrame,
   getFistFrame,
   getEyeFrame,
   getRipperFrame,
   getSpawnerFrame,
+  getSuccubusFrame,
   getPylonFrame,
   getStatueFrame,
   getTenguFrame,
@@ -127,6 +146,7 @@ import { drawShieldHalo } from './shieldHalo';
 // Gnoll's 12x15 frame, centered/bottom-aligned in the 32px tile per SPD placement
 // (x=(col+0.5)*16-w/2, y=(row+1)*16-h), scaled 2x -> 24x30 at offset (+4,+2).
 const GNOLL_DEST = { dx: 4, dy: 2, dw: 24, dh: 30 };
+const SHAMAN_DEST = { dx: 4, dy: 2, dw: 24, dh: 30 };
 
 // Track previous ai_state per mob to detect sleeping→hunting transitions.
 const prevAiState = {};
@@ -252,6 +272,9 @@ export function drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef,
     } else if (mob.name === 'Gnoll') {
       mobSprite = assetImages.gnoll;
       sx = getGnollFrame(mob, mobAnimRef.current, now);
+    } else if (mob.name === 'Red Shaman' || mob.name === 'Blue Shaman' || mob.name === 'Purple Shaman') {
+      mobSprite = assetImages.shaman;
+      sx = getShamanFrame(mob, mobAnimRef.current, now);
     } else if (mob.name === 'Goo') {
       mobSprite = assetImages.goo;
       sx = getGooFrame(mob, mobAnimRef.current, now);
@@ -273,6 +296,9 @@ export function drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef,
     } else if (mob.name === 'DM-100') {
       mobSprite = assetImages.dm100;
       sx = getDM100Frame(mob, mobAnimRef.current, now);
+    } else if (mob.name === 'DM-200' || mob.name === 'DM-201') {
+      mobSprite = assetImages.dm200;
+      sx = getDM200Frame(mob, mobAnimRef.current, now);
     } else if (mob.name === 'Guard') {
       mobSprite = assetImages.guard;
       sx = getGuardFrame(mob, mobAnimRef.current, now);
@@ -297,18 +323,21 @@ export function drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef,
     } else if (mob.name === 'Dwarf King') {
       mobSprite = assetImages.king;
       sx = getDwarfKingFrame(mob, mobAnimRef.current, now);
-    } else if (mob.name === 'DK Ghoul') {
+    } else if (mob.name === 'Ghoul' || mob.name === 'DK Ghoul') {
       mobSprite = assetImages.ghoul;
       sx = getGhoulFrame(mob, mobAnimRef.current, now);
     } else if (mob.name === 'DK Monk') {
       mobSprite = assetImages.monk;
       sx = getMonkFrame(mob, mobAnimRef.current, now);
-    } else if (mob.name === 'DK Warlock') {
+    } else if (mob.name === 'Warlock' || mob.name === 'DK Warlock') {
       mobSprite = assetImages.warlock;
       sx = getWarlockFrame(mob, mobAnimRef.current, now);
-    } else if (mob.name === 'DK Golem') {
+    } else if (mob.name === 'Golem' || mob.name === 'DK Golem') {
       mobSprite = assetImages.golem;
       sx = getGolemFrame(mob, mobAnimRef.current, now);
+    } else if (mob.name === 'Spinner') {
+      mobSprite = assetImages.spinner;
+      sx = getSpinnerFrame(mob, mobAnimRef.current, now);
     } else if (mob.name === 'Yog-Dzewa') {
       mobSprite = assetImages.yog;
       sx = getYogFrame(mob, mobAnimRef.current, now);
@@ -318,7 +347,7 @@ export function drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef,
     ) {
       mobSprite = assetImages.fists;
       sx = getFistFrame(mob, mobAnimRef.current, now);
-    } else if (mob.name === 'Yog Eye') {
+    } else if (mob.name === 'Evil Eye' || mob.name === 'Yog Eye') {
       mobSprite = assetImages.eye;
       sx = getEyeFrame(mob, mobAnimRef.current, now);
     } else if (mob.name === 'Yog Scorpio') {
@@ -330,6 +359,12 @@ export function drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef,
     } else if (mob.name === 'Demon Spawner') {
       mobSprite = assetImages.spawner;
       sx = getSpawnerFrame(mob, mobAnimRef.current, now);
+    } else if (mob.name === 'Succubus') {
+      mobSprite = assetImages.succubus;
+      sx = getSuccubusFrame(mob, mobAnimRef.current, now);
+    } else if (mob.name === 'Ripper Demon') {
+      mobSprite = assetImages.ripper;
+      sx = getRipperFrame(mob, mobAnimRef.current, now);
     } else if (mob.name === 'Pylon') {
       mobSprite = assetImages.pylon;
       sx = getPylonFrame(mob, mobAnimRef.current, now);
@@ -351,6 +386,18 @@ export function drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef,
     } else if (mob.name === 'Rat King') {
       mobSprite = assetImages.ratking;
       sx = getRatKingFrame(mob, mobAnimRef.current, now);
+    } else if (mob.name === 'Ghost' || mob.name === 'Ghost Hero') {
+      mobSprite = assetImages.ghost;
+      sx = getGhostFrame(mob, mobAnimRef.current, now);
+    } else if (mob.name === 'Fetid Rat') {
+      mobSprite = assetImages.rat;
+      sx = getFetidRatFrame(mob, mobAnimRef.current, now);
+    } else if (mob.name === 'Gnoll Trickster') {
+      mobSprite = assetImages.gnoll;
+      sx = getGnollTricksterFrame(mob, mobAnimRef.current, now);
+    } else if (mob.name === 'Great Crab') {
+      mobSprite = assetImages.crab;
+      sx = getGreatCrabFrame(mob, mobAnimRef.current, now);
     }
 
     const isScorpio = mob.name === 'Scorpio' || mob.name === 'Yog Scorpio';
@@ -365,25 +412,31 @@ export function drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef,
     const isBandit = mob.name === 'Bandit';
     const isSwarm = mob.name === 'Swarm';
     const isDM100 = mob.name === 'DM-100';
+    const isDM200 = mob.name === 'DM-200' || mob.name === 'DM-201';
     const isGuard = mob.name === 'Guard';
     const isGoo = mob.name === 'Goo';
     const isWraith = mob.name === 'Wraith' || mob.name === 'Tormented Spirit';
     const isPiranha = mob.name === 'Piranha';
     const isPhantomPiranha = mob.name === 'Phantom Piranha';
+    const shamanRow = { 'Red Shaman': 0, 'Blue Shaman': 1, 'Purple Shaman': 2 }[mob.name];
+    const isShaman = shamanRow !== undefined;
     const isMimic = mob.name === 'Mimic';
     const isGoldenMimic = mob.name === 'Golden Mimic';
     const isEbonyMimic = mob.name === 'Ebony Mimic';
     const isStatue = mob.name === 'Statue';
     const isArmoredStatue = mob.name === 'Armored Statue';
-    const isGhoul = mob.name === 'DK Ghoul';
+    const isGhoul = mob.name === 'Ghoul' || mob.name === 'DK Ghoul';
     const isMonk = mob.name === 'DK Monk';
-    const isWarlock = mob.name === 'DK Warlock';
-    const isGolem = mob.name === 'DK Golem';
+    const isWarlock = mob.name === 'Warlock' || mob.name === 'DK Warlock';
+    const isGolem = mob.name === 'Golem' || mob.name === 'DK Golem';
+    const isSpinner = mob.name === 'Spinner';
     const isYog = mob.name === 'Yog-Dzewa';
     const fistRow = { 'Burning Fist': 0, 'Soiled Fist': 1, 'Rotting Fist': 2, 'Rusted Fist': 3, 'Bright Fist': 4, 'Dark Fist': 5 }[mob.name];
     const isFist = fistRow !== undefined;
-    const isEye = mob.name === 'Yog Eye';
+    const isEye = mob.name === 'Evil Eye' || mob.name === 'Yog Eye';
     const isRipper = mob.name === 'Yog Ripper';
+    const isRipperDemon = mob.name === 'Ripper Demon';
+    const isSuccubus = mob.name === 'Succubus';
     const isPylon = mob.name === 'Pylon';
     const isTengu = mob.name === 'Tengu';
     const isDM300 = mob.name === 'DM-300';
@@ -392,9 +445,15 @@ export function drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef,
     const isShopkeeper = mob.name === 'Shopkeeper';
     const isImp = mob.name === 'Imp';
     const isRatKing = mob.name === 'Rat King';
+    const isGhost = mob.name === 'Ghost' || mob.name === 'Ghost Hero';
+    const isFetidRat = mob.name === 'Fetid Rat';
+    const isGnollTrickster = mob.name === 'Gnoll Trickster';
+    const isGreatCrab = mob.name === 'Great Crab';
     const flash = !!(mobAnimRef.current[mob.id]?.flashUntil && now < mobAnimRef.current[mob.id].flashUntil);
     if (isGnoll) {
       drawMobSprite(ctx, mob, mobSprite, sx, GNOLL_FW, GNOLL_FH, flash, GNOLL_DEST);
+    } else if (isShaman) {
+      drawMobSprite(ctx, mob, mobSprite, sx, SHAMAN_FW, SHAMAN_FH, flash, SHAMAN_DEST, 1, shamanRow * SHAMAN_FH);
     } else if (isSnake) {
       drawMobSprite(ctx, mob, mobSprite, sx, SNAKE_FW, SNAKE_FH, flash, SNAKE_DEST);
     } else if (isSkeleton) {
@@ -406,6 +465,8 @@ export function drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef,
       drawMobSprite(ctx, mob, mobSprite, sx, SWARM_FW, SWARM_FH, flash, SWARM_DEST);
     } else if (isDM100) {
       drawMobSprite(ctx, mob, mobSprite, sx, DM100_FW, DM100_FH, flash, DM100_DEST);
+    } else if (isDM200) {
+      drawMobSprite(ctx, mob, mobSprite, sx, DM200_FW, DM200_FH, flash, DM200_DEST);
     } else if (isGuard) {
       drawMobSprite(ctx, mob, mobSprite, sx, GUARD_FW, GUARD_FH, flash, GUARD_DEST);
     } else if (isGoo) {
@@ -436,6 +497,9 @@ export function drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef,
       drawMobSprite(ctx, mob, mobSprite, sx, WARLOCK_FW, WARLOCK_FH, flash, WARLOCK_DEST);
     } else if (isGolem) {
       drawMobSprite(ctx, mob, mobSprite, sx, GOLEM_FW, GOLEM_FH, flash, GOLEM_DEST);
+    } else if (isSpinner) {
+      // Spinner: 16x16 frames, standard rendering, sent to back (drawn first).
+      drawMobSprite(ctx, mob, mobSprite, sx, FRAME_W, FRAME_H, flash);
     } else if (isYog) {
       drawMobSprite(ctx, mob, mobSprite, sx, YOG_FW, YOG_FH, flash, YOG_DEST);
     } else if (isFist) {
@@ -443,8 +507,10 @@ export function drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef,
       drawMobSprite(ctx, mob, mobSprite, sx, FIST_FW, FIST_FH, flash, FIST_DEST, 1, fistRow * FIST_FH);
     } else if (isEye) {
       drawMobSprite(ctx, mob, mobSprite, sx, EYE_FW, EYE_FH, flash, EYE_DEST);
-    } else if (isRipper) {
+    } else if (isRipper || isRipperDemon) {
       drawMobSprite(ctx, mob, mobSprite, sx, RIPPER_FW, RIPPER_FH, flash, RIPPER_DEST);
+    } else if (isSuccubus) {
+      drawMobSprite(ctx, mob, mobSprite, sx, SUCCUBUS_FW, SUCCUBUS_FH, flash, SUCCUBUS_DEST);
     } else if (isPylon) {
       drawMobSprite(ctx, mob, mobSprite, sx, PYLON_FW, PYLON_FH, flash, PYLON_DEST);
     } else if (isTengu) {
@@ -461,6 +527,22 @@ export function drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef,
       drawMobSprite(ctx, mob, mobSprite, sx, IMP_FW, IMP_FH, flash, IMP_DEST);
     } else if (isRatKing) {
       drawMobSprite(ctx, mob, mobSprite, sx, RATKING_FW, RATKING_FH, flash, RATKING_DEST);
+    } else if (isGhost) {
+      // Ghost: additive blending for translucent glow (SPD Blending.setLightMode)
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      ctx.globalAlpha = 0.85;
+      drawMobSprite(ctx, mob, mobSprite, sx, GHOST_FW, GHOST_FH, flash, GHOST_DEST);
+      ctx.restore();
+    } else if (isFetidRat) {
+      // Fetid Rat: rat.png row 2 (16x15 frames, sy = 2 * FRAME_H = 30)
+      drawMobSprite(ctx, mob, mobSprite, sx, FRAME_W, FRAME_H, flash, null, 1, 2 * FRAME_H);
+    } else if (isGnollTrickster) {
+      // Gnoll Trickster: gnoll.png row 2 (12x15 frames, sy = 2 * GNOLL_FH = 30)
+      drawMobSprite(ctx, mob, mobSprite, sx, GNOLL_FW, GNOLL_FH, flash, GNOLL_DEST, 1, 2 * GNOLL_FH);
+    } else if (isGreatCrab) {
+      // Great Crab: crab.png row 2 (16x16 frames, sy = 2 * FRAME_H = 32)
+      drawMobSprite(ctx, mob, mobSprite, sx, FRAME_W, FRAME_H, flash, null, 1, 2 * FRAME_H);
     } else {
       drawMobSprite(ctx, mob, mobSprite, sx,
         isScorpio ? SCORPIO_FW : FRAME_W,
@@ -555,9 +637,19 @@ export function drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef,
     const isTenguDeath = mob.name === 'Tengu';
     const isDM300Death = mob.name === 'DM-300';
     const isBruteDeath = mob.name === 'Brute' || mob.name === 'Armored Brute';
+    const isFetidRatDeath = mob.name === 'Fetid Rat';
+    const isGnollTricksterDeath = mob.name === 'Gnoll Trickster';
+    const isShamanDeath = mob.name === 'Red Shaman' || mob.name === 'Blue Shaman' || mob.name === 'Purple Shaman';
+    const isGreatCrabDeath = mob.name === 'Great Crab';
+    const isEvilEyeDeath = mob.name === 'Evil Eye' || mob.name === 'Yog Eye';
+    const isDM200Death = mob.name === 'DM-200' || mob.name === 'DM-201';
+    const isSpinnerDeath = mob.name === 'Spinner';
+    const isSuccubusDeath = mob.name === 'Succubus';
+    const isWarlockDeath = mob.name === 'Warlock' || mob.name === 'DK Warlock';
+    const isRipperDeath = mob.name === 'Yog Ripper' || mob.name === 'Ripper Demon';
     // Gnoll: die frames [8,9,10] over 250ms, then a 3s alpha fade (SPD AlphaTweener).
     // Snake: die frames [11,12,13] over 300ms, then a 3s alpha fade.
-    const deathDuration = isScorpioDeath ? 417 : isGooDeath ? 300 : isRatDeath ? 400 : (isCrabDeath || isHermitCrabDeath) ? 333 : (isSlimeDeath || isCausticSlimeDeath) ? 400 : isSnakeDeath ? 3300 : isSkeletonDeath ? 332 : isThiefDeath ? 500 : isBanditDeath ? 500 : isSwarmDeath ? 333 : isDM100Death ? 498 : isGuardDeath ? 500 : isNecromancerDeath ? 400 : isTenguDeath ? 1000 : isDM300Death ? 1000 : isBruteDeath ? 250 : 3250;
+    const deathDuration = isScorpioDeath ? 417 : isGooDeath ? 300 : isRatDeath ? 400 : (isCrabDeath || isHermitCrabDeath) ? 333 : (isSlimeDeath || isCausticSlimeDeath) ? 400 : isSnakeDeath ? 3300 : isSkeletonDeath ? 332 : isThiefDeath ? 500 : isBanditDeath ? 500 : isSwarmDeath ? 333 : isDM100Death ? 498 : isGuardDeath ? 500 : isNecromancerDeath ? 400 : isTenguDeath ? 1000 : isDM300Death ? 1000 : isBruteDeath ? 250 : isFetidRatDeath ? 400 : isGnollTricksterDeath ? 3250 : isGreatCrabDeath ? 400 : isEvilEyeDeath ? 375 : isDM200Death ? 375 : isSpinnerDeath ? 332 : isSuccubusDeath ? 100 : isWarlockDeath ? 335 : isRipperDeath ? 333 : isShamanDeath ? 375 : 3250;
     if (elapsed > deathDuration) { delete dyingMobsRef.current[id]; return; }
     if (!visionRef.current.visible.has(`${Math.round(mob.renderPos.x)},${Math.round(mob.renderPos.y)}`)) return;
     if (isScorpioDeath) {
@@ -621,6 +713,56 @@ export function drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef,
       const fi = Math.min(Math.floor(elapsed / 83), 2);
       const sx = [8, 9, 10][fi] * BRUTE_FW;
       drawMobSprite(ctx, mob, assetImages.brute, sx, BRUTE_FW, BRUTE_FH, false, BRUTE_DEST, 1, sy);
+    } else if (isFetidRatDeath) {
+      // Fetid Rat death: [8,9,10,11] @ 10fps (~100ms/frame, ~400ms total).
+      const fi = Math.min(Math.floor(elapsed / 100), 3);
+      const sx = [8, 9, 10, 11][fi] * FRAME_W;
+      drawMobSprite(ctx, mob, assetImages.rat, sx, FRAME_W, FRAME_H, false, null, 1, 2 * FRAME_H);
+    } else if (isGnollTricksterDeath) {
+      // Gnoll Trickster death: [8,9,10] @ 12fps (~83ms/frame), then fade over 3s.
+      const fi = Math.min(Math.floor(elapsed / 83), 2);
+      const sx = [8, 9, 10][fi] * GNOLL_FW;
+      const alpha = elapsed <= 250 ? 1 : Math.max(0, 1 - (elapsed - 250) / 3000);
+      drawMobSprite(ctx, mob, assetImages.gnoll, sx, GNOLL_FW, GNOLL_FH, false, GNOLL_DEST, alpha, 2 * GNOLL_FH);
+    } else if (isGreatCrabDeath) {
+      // Great Crab death: [8,9,10,11] @ 10fps (~100ms/frame, ~400ms total).
+      const fi = Math.min(Math.floor(elapsed / 100), 3);
+      const sx = [8, 9, 10, 11][fi] * FRAME_W;
+      drawMobSprite(ctx, mob, assetImages.crab, sx, FRAME_W, FRAME_H, false, null, 1, 2 * FRAME_H);
+    } else if (isSuccubusDeath) {
+      // Succubus death: single frame 12 (SPD SuccubusSprite die = [12] @ 10fps).
+      drawMobSprite(ctx, mob, assetImages.succubus, 12 * SUCCUBUS_FW, SUCCUBUS_FW, SUCCUBUS_FH, false, SUCCUBUS_DEST);
+    } else if (isWarlockDeath) {
+      // Warlock death: [0,7,8,8,9,10] @ 15fps (~67ms/frame, ~335ms total per SPD WarlockSprite).
+      const fi = Math.min(Math.floor(elapsed / 67), 4);
+      const sx = [0, 7, 8, 8, 9, 10][fi] * WARLOCK_FW;
+      drawMobSprite(ctx, mob, assetImages.warlock, sx, WARLOCK_FW, WARLOCK_FH, false, WARLOCK_DEST);
+    } else if (isRipperDeath) {
+      // Ripper death: [1,13,14,15,16] @ 15fps (~67ms/frame, ~333ms total per SPD RipperSprite).
+      const fi = Math.min(Math.floor(elapsed / 67), 4);
+      const sx = [1, 13, 14, 15, 16][fi] * RIPPER_FW;
+      drawMobSprite(ctx, mob, assetImages.ripper, sx, RIPPER_FW, RIPPER_FH, false, RIPPER_DEST);
+    } else if (isEvilEyeDeath) {
+      // Eye death: [7,8,9] @ 8fps (~125ms/frame, ~375ms total per SPD EyeSprite).
+      const fi = Math.min(Math.floor(elapsed / 125), 2);
+      const sx = [7, 8, 9][fi] * EYE_FW;
+      drawMobSprite(ctx, mob, assetImages.eye, sx, EYE_FW, EYE_FH, false, EYE_DEST);
+    } else if (isDM200Death) {
+      // DM-200/201 death: [9,10,11] @ 8fps (~125ms/frame, ~375ms total per SPD DM200Sprite).
+      const fi = Math.min(Math.floor(elapsed / 125), 2);
+      const sx = [9, 10, 11][fi] * DM200_FW;
+      drawMobSprite(ctx, mob, assetImages.dm200, sx, DM200_FW, DM200_FH, false, DM200_DEST);
+    } else if (isSpinnerDeath) {
+      // Spinner death: [6,7,8,9] @ 12fps (~83ms/frame, ~332ms total per SPD SpinnerSprite).
+      const fi = Math.min(Math.floor(elapsed / 83), 3);
+      const sx = [6, 7, 8, 9][fi] * FRAME_W;
+      drawMobSprite(ctx, mob, assetImages.spinner, sx, FRAME_W, FRAME_H, false);
+    } else if (isShamanDeath) {
+      // Shaman death: [8,9,10] @ 12fps (~83ms/frame, ~375ms total per SPD ShamanSprite).
+      const fi = Math.min(Math.floor(elapsed / 83), 2);
+      const sx = [8, 9, 10][fi] * SHAMAN_FW;
+      const shamanRow = mob.name === 'Red Shaman' ? 0 : mob.name === 'Blue Shaman' ? SHAMAN_FH : 2 * SHAMAN_FH;
+      drawMobSprite(ctx, mob, assetImages.shaman, sx, SHAMAN_FW, SHAMAN_FH, false, SHAMAN_DEST, 1, shamanRow);
     } else {
       // Gnoll death: [8,9,10] @ 83ms, then hold frame 10 and fade alpha 1->0 over 3s.
       const fi = Math.min(Math.floor(elapsed / 83), 2);

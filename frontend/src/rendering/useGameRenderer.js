@@ -4,6 +4,7 @@ import { DEST_TILE_SIZE } from './sewers/constants';
 import { buildWaterClipPath, drawWaterBackground, getWaterTextureForDepth } from './sewers/draw';
 import { drawGrid, drawGridCaps } from './draw/grid';
 import { drawCustomTiles, drawCustomWalls } from './draw/customTiles';
+import { drawTorches } from './draw/torches';
 import { drawTerrainFeatures } from './draw/terrainFeatures';
 import { drawItems } from './draw/items';
 import { drawMobs } from './draw/mobs';
@@ -26,6 +27,7 @@ import { advanceAndDrawScreenShake } from './draw/screenShake';
 import { advanceAndDrawBeams } from './draw/beam';
 import { advanceAndDrawBlobAreas, advanceAndDrawFireParticles } from './draw/blobArea';
 import { advanceAndDrawSinkDrips } from './draw/sinkDrip';
+import { advanceAndDrawFloorFade } from './floorTransition';
 import { drawCharHealth } from './draw/charHealth';
 import { drawTargetHealthIndicator } from './draw/targetHealthIndicator';
 import { drawTargetedCell } from './draw/targetedCell';
@@ -43,6 +45,7 @@ export default function useGameRenderer({
   trapsRef,
   customTilesRef,
   customWallsRef,
+  torchesRef,
   mobAnimRef,
   dyingMobsRef,
   playerAnimRef,
@@ -74,6 +77,7 @@ export default function useGameRenderer({
   screenShakeRef,
   beamRef,
   blobAreasRef,
+  floorFadeRef,
 }) {
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -204,6 +208,7 @@ export default function useGameRenderer({
       drawTargetHealthIndicator(ctx, { entitiesRef, visionRef, selectedEnemyIdRef });
       drawPlayers(ctx, { entitiesRef, visionRef, assetImages, playerAnimRef, myPlayerId });
       drawCustomWalls(ctx, { customWalls: customWallsRef.current, assetImages, visionRef });
+      drawTorches(ctx, { torches: torchesRef.current, assetImages, visionRef });
       advanceAndDrawStaffAmbient(ctx, staffAmbientRef, entitiesRef, visionRef, myPlayerId);
       drawGridCaps(ctx, { grid, depth, assetImages, visionRef });
       drawTargetedCell(ctx, { hoveredCellRef, assetImages });
@@ -230,6 +235,9 @@ export default function useGameRenderer({
         ctx.fillStyle = `rgba(255,255,255,${alpha})`;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
       }
+
+      // Floor transition fade (black-out/hold/black-in overlay).
+      advanceAndDrawFloorFade(ctx, canvas, { fadeRef: floorFadeRef });
 
       // Vision loss: when the local player is dead, dim the screen but keep the
       // world visible so they can still spectate (alpha ramps 0 -> 0.55 over 2s).

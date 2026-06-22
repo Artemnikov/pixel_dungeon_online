@@ -103,6 +103,52 @@ class ItemsMixin:
             "old_wand_id": wand_id,
         }, floor_id=player.floor_id, source_player_id=player.id)
 
+    def equip_ghost_item(self, player_id: str, rose_id: str, slot: str,
+                         item_id: Optional[str] = None):
+        from app.engine.entities.base import Armor, DriedRose, MeleeWeapon
+        player = self.players.get(player_id)
+        if not player or not player.is_alive or player.is_downed:
+            return
+        rose = player.belongings.get_item(rose_id)
+        if not isinstance(rose, DriedRose) or not rose.has_ghost():
+            return
+
+        if item_id is None:
+            if slot == "weapon" and rose.weapon:
+                player.belongings.backpack.collect(rose.weapon)
+                rose.weapon = None
+            elif slot == "armor" and rose.armor:
+                player.belongings.backpack.collect(rose.armor)
+                rose.armor = None
+            return
+
+        item = player.belongings.get_item(item_id)
+        if item is None:
+            return
+
+        if slot == "weapon":
+            if not isinstance(item, MeleeWeapon):
+                return
+            if item.cursed:
+                return
+            if item.strength_requirement > rose.ghost_strength():
+                return
+            player.belongings.backpack.detach(item.id)
+            if rose.weapon:
+                player.belongings.backpack.collect(rose.weapon)
+            rose.weapon = item
+        elif slot == "armor":
+            if not isinstance(item, Armor):
+                return
+            if item.cursed:
+                return
+            if item.strength_requirement > rose.ghost_strength():
+                return
+            player.belongings.backpack.detach(item.id)
+            if rose.armor:
+                player.belongings.backpack.collect(rose.armor)
+            rose.armor = item
+
     def identify_kind(self, item):
         # Reveal a potion/scroll kind for the whole party (co-op shared knowledge).
         self.identified_kinds.add(item.kind)

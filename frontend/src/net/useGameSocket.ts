@@ -100,6 +100,7 @@ export default function useGameSocket({
   onGhostGearOpen,
   onBossSlain,
   onPlayerDeath,
+  onLoreNeeded,
 }: HookProps) {
   const depthRef = useRef(1);
 
@@ -261,7 +262,7 @@ export default function useGameSocket({
         if (deferredApplyPending) return;
 
         const floorChangeEvent = data.events?.find(
-          ev => FLOOR_CHANGE_EVENT_TYPES.has(ev.type) && ev.data.player === myPlayerIdRef.current,
+          ev => FLOOR_CHANGE_EVENT_TYPES.has(ev.type) && (ev as { data: { player: string } }).data.player === myPlayerIdRef.current,
         );
 
         if (!floorChangeEvent) {
@@ -275,19 +276,32 @@ export default function useGameSocket({
         // Stairs/chasm floor change: fade out, then swap grid+position+camera while
         // the screen is fully black, then let the fade play back in. Input is gated
         // client-side for the whole fade window via isFloorFadeActive(floorFadeRef).
+        // If this is first descent into a new region, show lore text before the fade.
         const direction = floorChangeEvent.type === 'STAIRS_UP' ? 'up' : 'down';
-        if (floorFadeRef) startFloorFade(floorFadeRef, direction);
         const initToApply = pendingInit;
         pendingInit = null;
         const newPos = data.players.find(p => p.id === myPlayerIdRef.current)?.pos;
         deferredApplyPending = true;
 
-        setTimeout(() => {
-          deferredApplyPending = false;
-          if (initToApply) applyInit(initToApply);
-          applyStateUpdate(data);
-          if (newPos) snapCameraForFloorChange(direction, newPos);
-        }, FLOOR_FADE_OUT_MS);
+        const finishTransition = () => {
+          if (floorFadeRef) startFloorFade(floorFadeRef, direction);
+          setTimeout(() => {
+            deferredApplyPending = false;
+            if (initToApply) applyInit(initToApply);
+            applyStateUpdate(data);
+            if (newPos) snapCameraForFloorChange(direction, newPos);
+          }, FLOOR_FADE_OUT_MS);
+        };
+
+        const needsLore = floorChangeEvent.type === 'STAIRS_DOWN'
+          && floorChangeEvent.data.first_visit
+          && [6, 11, 16, 21].includes(data.depth);
+
+        if (needsLore && onLoreNeeded) {
+          onLoreNeeded(data.depth, finishTransition);
+        } else {
+          finishTransition();
+        }
       };
     }
 

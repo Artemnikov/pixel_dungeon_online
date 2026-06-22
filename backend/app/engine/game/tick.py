@@ -25,17 +25,21 @@ from typing import List, Optional, Type
 
 from app.engine.dungeon.generator import TileType
 from app.engine.entities.base import (
-    ChargrilledMeat, Difficulty, Effect, Faction, FrozenCarpaccio, is_immune, MysteryMeat, Player, Position, Wand,
+    ChargrilledMeat, Difficulty, Effect, Faction, FrozenCarpaccio, Gold, is_immune, MysteryMeat, Player, Position, Wand,
 )
 from app.engine.entities.buffs import add_buff, get_buff, has_buff, process_buffs, remove_buff
 from app.engine.entities.scroll_predicates import player_inventory_items
 from app.engine.game.blobs import tick_blob_areas
 from app.engine.entities.mobs import (
-    Rat, Goo, DwarfKing,
+    Rat, Goo, DwarfKing, Eye,
     YogDzewa, BurningFist, SoiledFist, RottingFist, RustedFist, BrightFist, DarkFist,
     DemonSpawner, Pylon, DM300,
     Wraith, TormentedSpirit, Bee, EbonyMimic, MobEntity,
-    Necromancer, Tengu, MirrorImage,
+    Necromancer, Tengu, MirrorImage, GhostHeroMob,
+    RedShaman, BlueShaman, PurpleShaman,
+    Warlock,
+    Spinner,
+    DM200,
 )
 from app.engine.game.constants import (
     AUTO_MOVE_INTERVAL,
@@ -257,6 +261,11 @@ class TickMixin:
                     continue
 
                 if mob.faction == Faction.PLAYER:
+                    if isinstance(mob, GhostHeroMob):
+                        owner = self.players.get(mob.owner_id)
+                        self._refresh_ghost_hero_stats(mob, owner, floor, floor_id)
+                        if not mob.is_alive:
+                            continue
                     if isinstance(mob, MirrorImage):
                         owner = self.players.get(mob.owner_id)
                         self._refresh_mirror_image_stats(mob, owner, floor, floor_id)
@@ -309,6 +318,26 @@ class TickMixin:
 
                 if isinstance(mob, Tengu):
                     if self._update_tengu(mob, floor, floor_id):
+                        continue
+
+                if isinstance(mob, Eye):
+                    if self._update_eye(mob, floor, floor_id):
+                        continue
+
+                if isinstance(mob, (RedShaman, BlueShaman, PurpleShaman)):
+                    if self._update_shaman(mob, floor, floor_id):
+                        continue
+
+                if isinstance(mob, Warlock):
+                    if self._update_warlock(mob, floor, floor_id):
+                        continue
+
+                if isinstance(mob, Spinner):
+                    if self._update_spinner(mob, floor, floor_id):
+                        continue
+
+                if isinstance(mob, DM200):
+                    if self._update_dm200(mob, floor, floor_id):
                         continue
 
                 move_times = getattr(self, "_mob_move_times", None)
@@ -381,6 +410,8 @@ class TickMixin:
                                              distance=self._view_distance(target_player))):
                     mob.fight_started = True
                     self.add_event("GOO_FIGHT_STARTED", {"mob": mob.id}, floor_id=floor_id)
+                    self.qualified_for_boss_challenge = True
+                    self._goo_seal_entrance(floor, floor_id)
 
                 dist = self._get_distance(mob.pos, target_player.pos) if target_player else float("inf")
                 atk_range = getattr(mob, "attack_range", 1)
@@ -503,7 +534,35 @@ class TickMixin:
             return None
         return step
 
+    def _refresh_ghost_hero_stats(self, mob, owner, floor: FloorState, floor_id: int) -> None:
+        from app.engine.entities.base import DriedRose
+        if owner is None or not owner.is_alive or owner.floor_id != floor_id:
+            mob.is_alive = False
+            mob.hp = 0
+            floor.mobs.pop(mob.id, None)
+            self.add_event("DEATH", {"target": mob.id}, floor_id=floor_id)
+            return
+
+        rose: Optional[DriedRose] = None
+        for item in owner.belongings.all_items():
+            if isinstance(item, DriedRose):
+                rose = item
+                break
+
+        mhp = 20 if rose is None else 20 + 8 * rose.level
+        mob.max_hp = mhp
+        mob.hp = min(mob.hp, mhp)
+        mob.defense_skill = owner.lvl + 4
+        mob.attack_skill = owner.lvl + 9
+        if rose and rose.weapon:
+            mob.damage_min = rose.weapon.damage_min
+            mob.damage_max = rose.weapon.damage_max
+        else:
+            mob.damage_min = 0
+            mob.damage_max = 5
+
     def _update_shadow_ally(self, ally, floor: FloorState, floor_id: int):
+        from app.engine.entities.mobs import GhostHeroMob
         move_times = getattr(self, "_ally_move_times", None)
         if move_times is None:
             move_times = self._ally_move_times = {}
@@ -513,6 +572,39 @@ class TickMixin:
 
         enemies = [m for m in floor.mobs.values()
                    if m.is_alive and m.faction != Faction.PLAYER]
+
+        # If GhostHeroMob has a direct position, prioritize it
+        if isinstance(ally, GhostHeroMob) and ally.direct_x is not None:
+            dx, dy = ally.direct_x, ally.direct_y
+            # Find nearest enemy to the direct position
+            target = None
+            best = 999
+            for m in enemies:
+                d = self._get_distance(Position(x=dx, y=dy), m.pos)
+                if d < best and self._is_in_los(ally.pos, m.pos, floor_id=floor_id):
+                    best, target = d, m
+            if target is not None and best <= 1:
+                move_times[ally.id] = now
+                ally.last_attack_time = now - ally.attack_cooldown
+                adx = (target.pos.x > ally.pos.x) - (target.pos.x < ally.pos.x)
+                ady = (target.pos.y > ally.pos.y) - (target.pos.y < ally.pos.y)
+                self.move_entity(ally.id, adx, ady)
+                return
+            if ally.pos.x != dx or ally.pos.y != dy:
+                move_times[ally.id] = now
+                step = self._get_next_step_to(ally.pos, Position(x=dx, y=dy), floor_id=floor_id, flying=getattr(ally, "flying", False))
+                if step:
+                    self.move_entity(ally.id, step[0], step[1])
+                return
+            # Already at direct position, defend it (attack adjacent enemies)
+            if target is not None and best <= ally.attack_range:
+                move_times[ally.id] = now
+                ally.last_attack_time = now - ally.attack_cooldown
+                adx = (target.pos.x > ally.pos.x) - (target.pos.x < ally.pos.x)
+                ady = (target.pos.y > ally.pos.y) - (target.pos.y < ally.pos.y)
+                self.move_entity(ally.id, adx, ady)
+            return
+
         target = None
         best = 999
         for m in enemies:
@@ -582,8 +674,11 @@ class TickMixin:
                         )
                         self.add_event("DEATH", {"target": mob.id}, floor_id=floor_id)
                         self.handle_mob_death(mob, floor, floor_id)
-                        for item in roll_drops(mob, self.drop_counters, mob.pos.x, mob.pos.y, players=list(self._players_on_floor(floor_id))):
+                        drops = roll_drops(mob, self.drop_counters, mob.pos.x, mob.pos.y, players=list(self._players_on_floor(floor_id)))
+                        for item in drops:
                             floor.items[item.id] = item
+                        if any(isinstance(d, Gold) for d in drops):
+                            self.add_event("GOLD_DROP", {"x": mob.pos.x, "y": mob.pos.y}, floor_id=floor_id)
                     if mob.bleed_turns <= 0:
                         mob.bleed_amount = 0
 
@@ -650,8 +745,11 @@ class TickMixin:
                 )
                 self.add_event("DEATH", {"target": mob.id}, floor_id=floor_id)
                 self.handle_mob_death(mob, floor, floor_id)
-                for item in roll_drops(mob, self.drop_counters, mob.pos.x, mob.pos.y, players=list(self._players_on_floor(floor_id))):
+                drops = roll_drops(mob, self.drop_counters, mob.pos.x, mob.pos.y, players=list(self._players_on_floor(floor_id)))
+                for item in drops:
                     floor.items[item.id] = item
+                if any(isinstance(d, Gold) for d in drops):
+                    self.add_event("GOLD_DROP", {"x": mob.pos.x, "y": mob.pos.y}, floor_id=floor_id)
 
     def _burn_player_inventory(self, player: Player, floor_id: int):
         player.burning_total_seconds += 1.0
@@ -754,6 +852,7 @@ class TickMixin:
         "marked": "marked",
         "shocked": "shocked",
         "bleeding": "bleeding",
+        "poison": "poisoned",
         "poisoned": "poisoned",
         "bless": "hearts",
         "charm": "hearts",
@@ -805,6 +904,11 @@ class TickMixin:
             effects.append(Effect(
                 key="fury", name="Fury", icon=5,
                 remaining=float(player.fury_turns_remaining), duration=10.0,
+            ))
+        if player.locked_floor_left is not None:
+            effects.append(Effect(
+                key="locked_floor", name="Locked Floor", icon=35,
+                remaining=max(0.0, min(50.0, player.locked_floor_left)), duration=50.0,
             ))
         player.active_effects = effects
 
@@ -914,6 +1018,10 @@ class TickMixin:
         if floor is None or not floor.rooms:
             return
         if not self._is_in_entrance_room(floor, player.pos.x, player.pos.y):
+            return
+        # SPD Regeneration.regenOn(): LockedFloor (sealed boss arena) pauses
+        # passive regen once its timer runs out.
+        if player.locked_floor_left is not None and player.locked_floor_left < 1:
             return
         if player.hp <= 0 or player.hp >= player.get_total_max_hp():
             player._regen_cooldown = 0

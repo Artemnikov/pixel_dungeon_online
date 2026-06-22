@@ -39,10 +39,12 @@ export default function useModalState() {
   // Socket callbacks for useGameSocket
   const onShopOpen = ({ npc, stock, gold: shopGold }) => setShopWindow({ npc, stock, gold: shopGold });
   const onImpDialogue = ({ npc, text, can_claim, tokens }) => setImpWindow({ npc, text, canClaim: can_claim, tokens });
+  const [ghostGearData, setGhostGearData] = useState(null);
   const onGhostDialogue = ({ npc, text, can_claim, weapon, armor }) =>
     setGhostWindow({ npc, text, canClaim: can_claim, weapon, armor });
   const onImbueWand = (data) => setImbueWandData(data);
   const onScrollSelectTarget = (data) => setScrollPickerData(data);
+  const onGhostGearOpen = (data) => setGhostGearData(data);
   const [chasmPrompt, setChasmPrompt] = useState(null);
   const onChasmPrompt = (data) => setChasmPrompt(data);
 
@@ -53,6 +55,7 @@ export default function useModalState() {
     shopWindow, setShopWindow,
     impWindow, setImpWindow,
     ghostWindow, setGhostWindow,
+    ghostGearData, setGhostGearData,
     scrollPickerData, setScrollPickerData,
     imbueWandData, setImbueWandData,
     showItemBrowser, setShowItemBrowser,
@@ -73,6 +76,7 @@ export default function useModalState() {
     onGhostDialogue,
     onImbueWand,
     onScrollSelectTarget,
+    onGhostGearOpen,
     chasmPrompt, setChasmPrompt,
     onChasmPrompt,
   };

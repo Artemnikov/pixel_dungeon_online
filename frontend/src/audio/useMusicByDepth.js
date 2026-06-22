@@ -46,7 +46,7 @@ function buildPlaylist(tracks) {
   return q;
 }
 
-export default function useMusicByDepth({ enabled, menu, depth, bossFightActive, bossBleeding, tense, amuletObtained, musicRef }) {
+export default function useMusicByDepth({ enabled, menu, depth, bossFightActive, bossBleeding, bossLurking, tense, amuletObtained, musicRef }) {
   const playlist = useRef([]);
   const fadeTimer = useRef(null);
   const volSub = useRef(null);
@@ -78,6 +78,10 @@ export default function useMusicByDepth({ enabled, menu, depth, bossFightActive,
       musicId = `boss:${t}`;
       track = t;
       loop = true;
+    } else if (bossLurking && isBossFloor) {
+      // SPD SewerBossLevel.playLevelMusic(): ambient track silenced while
+      // the boss is alive but hasn't been engaged yet.
+      musicId = 'silence';
     } else {
       musicId = `play:${depth}`;
       genPlaylist = true;
@@ -167,5 +171,5 @@ export default function useMusicByDepth({ enabled, menu, depth, bossFightActive,
       musicRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [enabled, menu, depth, bossFightActive, bossBleeding, tense, amuletObtained]);
+  }, [enabled, menu, depth, bossFightActive, bossBleeding, bossLurking, tense, amuletObtained]);
 }

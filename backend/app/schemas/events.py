@@ -127,6 +127,12 @@ class PickupData(_EventData):
 class DropData(_EventData):
     player: str
     item: str
+    item_name: str
+
+
+class GoldDropData(_EventData):
+    x: int
+    y: int
 
 
 class CollectDewData(_EventData):
@@ -319,6 +325,30 @@ class MirrorImageData(_EventData):
     clones: List[str]
 
 
+class GhostSummonData(_EventData):
+    player: str
+    ghost_id: str
+    x: int
+    y: int
+
+
+class GhostDirectData(_EventData):
+    player: str
+    ghost_id: str
+    x: int
+    y: int
+
+
+class GhostGearOpenData(_EventData):
+    player: str
+    rose_id: str
+    ghost_id: str
+    ghost_hp: int
+    ghost_max_hp: int
+    weapon: Optional[dict] = None
+    armor: Optional[dict] = None
+
+
 class ScrollSelectTargetData(_EventData):
     player: str
     scroll_id: str
@@ -378,6 +408,20 @@ class SpellSpriteData(_EventData):
     index: int
 
 
+class EyeChargeData(_EventData):
+    mob: str
+    target_x: int
+    target_y: int
+
+
+class EyeDeathRayData(_EventData):
+    mob: str
+    source_x: int
+    source_y: int
+    target_x: int
+    target_y: int
+
+
 # event "type" -> payload model. Used by the opt-in dev validation hook.
 EVENT_MODELS = {
     "ATTACK": AttackData,
@@ -397,6 +441,7 @@ EVENT_MODELS = {
     "DROP": DropData,
     "COLLECT_DEW": CollectDewData,
     "PICKUP_GOLD": PickupGoldData,
+    "GOLD_DROP": GoldDropData,
     "PICKUP_KEY": PickupKeyData,
     "SHOP_OPEN": ShopOpenData,
     "SHOP_BUY": ShopBuyData,
@@ -426,6 +471,9 @@ EVENT_MODELS = {
     "IMP_REWARD": ImpRewardData,
     "GHOST_DIALOGUE": GhostDialogueData,
     "GHOST_REWARD": GhostRewardData,
+    "GHOST_SUMMON": GhostSummonData,
+    "GHOST_DIRECT": GhostDirectData,
+    "GHOST_GEAR_OPEN": GhostGearOpenData,
     "SCROLL_SELECT_TARGET": ScrollSelectTargetData,
     "TELEPORT": TeleportData,
     "MIRROR_IMAGE": MirrorImageData,
@@ -439,4 +487,6 @@ EVENT_MODELS = {
     "SACRIFICIAL_FIRE": SacrificialFireData,
     "LEAF_BURST": LeafBurstData,
     "SPELL_SPRITE": SpellSpriteData,
+    "EYE_CHARGE": EyeChargeData,
+    "EYE_DEATH_RAY": EyeDeathRayData,
 }

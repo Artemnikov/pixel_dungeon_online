@@ -343,7 +343,7 @@ export default function StatusPane({ myStats, depth, exitPos, isAdmin, onSearch,
   }, [t]);
 
   const floorNumbers = [];
-  for (let i = 1; i <= 50; i++) floorNumbers.push(i);
+  for (let i = 1; i <= 26; i++) floorNumbers.push(i);
 
   return (
     <div className="top-left-hud">

@@ -85,3 +85,16 @@ class FloorAccessMixin:
 
     def _players_on_floor(self, floor_id: int) -> List[Player]:
         return [p for p in self.players.values() if p.floor_id == floor_id]
+
+    def _boss_lurking_on_floor(self, floor_id: int) -> bool:
+        """True while a sealed-arena boss (Goo, DM300, Dwarf King, Yog-Dzewa)
+        is alive on the floor but hasn't been engaged yet (SPD
+        SewerBossLevel.playLevelMusic(): ambient track silenced while the
+        boss lives, even before notice())."""
+        floor = self.floors.get(floor_id)
+        if floor is None:
+            return False
+        return any(
+            m.is_alive and getattr(m, "fight_started", True) is False
+            for m in floor.mobs.values()
+        )

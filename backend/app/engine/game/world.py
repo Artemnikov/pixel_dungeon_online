@@ -153,7 +153,7 @@ class WorldInteractionMixin:
         must drop no matter how Goo died (melee or bleed) so progression can't
         soft-lock."""
         from app.engine.entities.base import DwarfToken
-        from app.engine.entities.mobs import DM300, Golem, Goo, Monk, Necromancer, Pylon, Tengu, YogDzewa
+        from app.engine.entities.mobs import DM300, Golem, Goo, Monk, Necromancer, Pylon, Skeleton, Tengu, YogDzewa
 
         # Imp.Quest.process(): once the quest is given (and not yet
         # completed), killing a Monk (alternative) or Golem (!alternative)
@@ -181,6 +181,10 @@ class WorldInteractionMixin:
                 if isinstance(other, DM300):
                     other.supercharged = False
                     break
+
+        # Skeleton explosion: play bones sound on death (SPD Skeleton.die)
+        if isinstance(mob, Skeleton):
+            self.add_event("PLAY_SOUND", {"sound": "BONES"}, floor_id=floor_id)
 
         # GhostHeroMob death: clear ghost_id on the owner's DriedRose so
         # the rose can be recharged and re-summoned.
@@ -239,6 +243,10 @@ class WorldInteractionMixin:
         floor.items[key.id] = key
         self.add_event("PLAY_SOUND", {"sound": "BOSS"}, floor_id=floor_id)
         self.add_event("BOSS_SLAIN", {"mob": mob.id, "depth": floor_id, "badge_image": 15}, floor_id=floor_id)
+        self._goo_unseal_entrance(floor, floor_id)
+        self.boss_scores[0] += 1000
+        if self.qualified_for_boss_challenge:
+            self.add_event("GOO_BADGE_QUALIFIED", {}, floor_id=floor_id)
     def search(self, player_id: str):
         player = self.players.get(player_id)
         if not player:

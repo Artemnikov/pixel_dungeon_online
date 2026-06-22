@@ -14,16 +14,15 @@
 #
 """Floor generation and content spawning for GameInstance.
 
-Generates each depth's layout using SPD-parity generation (sewers floors 1-5)
-or the legacy generator (prison+), then populates it with mobs, items, traps.
+Generates each depth's layout using SPD-parity generation, then populates it
+with mobs, items, traps.
 """
 
 import random
 import uuid
-import zlib
 from typing import List, Tuple, Type
 
-from app.engine.dungeon.generator import DungeonGenerator, TileType
+from app.engine.dungeon.generator import TileType
 from app.engine.dungeon.dungeon_seed import seed_for_depth
 from app.engine.entities.base import (
     Armor,
@@ -74,8 +73,9 @@ from app.engine.entities.mobs import (
     Skeleton, Thief, DM100, Guard, Necromancer,
 )
 from app.engine.game.constants import MAP_HEIGHT, MAP_WIDTH, MAX_FLOOR_ID, SEWERS_MAX_FLOOR, PRISON_MAX_FLOOR
-from app.engine.game.floor_state import FloorState
 from app.engine.game.spd_adapter import gen_level_to_floor_state
+from app.engine.dungeon.spd_levelgen.run_state import is_boss_level
+from app.engine.game.floor_state import FloorState
 
 
 class GenerationMixin:
@@ -83,10 +83,7 @@ class GenerationMixin:
         depth = max(1, min(MAX_FLOOR_ID, depth))
         self.depth = depth
 
-        if depth <= 26:
-            floor = self._generate_floor_spd(depth)
-        else:
-            floor = self._generate_floor_legacy(depth)
+        floor = self._generate_floor_spd(depth)
 
         self.floors[depth] = floor
         return floor
@@ -96,7 +93,6 @@ class GenerationMixin:
         from app.engine.dungeon.spd_levelgen.boss_level import build_boss_floor
         from app.engine.dungeon.spd_levelgen.last_level import build_last_level
         from app.engine.dungeon.spd_levelgen.regular_level import build_floor
-        from app.engine.dungeon.spd_levelgen.run_state import is_boss_level
 
         floor_seed = seed_for_depth(self.master_seed, depth, 0)
         rng = SPDRandom()
@@ -119,29 +115,6 @@ class GenerationMixin:
                     mob.hp = 120
                     mob.max_hp = 120
 
-        return floor
-
-    def _generate_floor_legacy(self, depth: int) -> FloorState:
-        # Only reachable for depth > 25 (see generate_floor's dispatch above),
-        # so this never produces an SPD-faithful sewers/prison/boss layout --
-        # depths 1-25 always take the _generate_floor_spd path instead.
-        floor_seed = zlib.crc32(f"{self.game_id}:{depth}".encode("utf-8"))
-        generator = DungeonGenerator(MAP_WIDTH, MAP_HEIGHT, seed=floor_seed)
-        grid, rooms = generator.generate(10 + depth, 4, 8 + (depth // 10))
-        region = "prison" if depth <= PRISON_MAX_FLOOR else "legacy"
-        floor = FloorState(
-            floor_id=depth,
-            grid=grid,
-            rooms=rooms,
-            mobs={},
-            items={},
-            region=region,
-            entrance_pos=rooms[0].center if rooms else None,
-            exit_pos=rooms[-1].center if rooms else None,
-        )
-
-        floor.rebuild_flags()
-        self._spawn_content(floor)
         return floor
 
     def _is_in_safe_room(self, floor: FloorState, x: int, y: int) -> bool:

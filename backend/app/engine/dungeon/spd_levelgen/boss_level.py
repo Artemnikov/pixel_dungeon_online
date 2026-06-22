@@ -551,6 +551,12 @@ class SewerBossExitRoom(StandardRoom):
 
         Painter.set(level, c, terrain.LOCKED_EXIT)
 
+        # SewerBossLevel.addVisuals(): lit torches flanking the exit (a
+        # flame + light visual, not a terrain tile -- tracked separately so
+        # the frontend can render its own flame VFX at these positions).
+        level.torches.append((c.x - 1, c.y))
+        level.torches.append((c.x + 1, c.y))
+
         # SewerExit decorative floor tiles (3x3, idx 21-24 from sewer_boss.png)
         level.custom_tiles.append({
             "texture": "sewer_boss",
@@ -683,7 +689,7 @@ class CavesBossExitRoom(StandardRoom):
         Painter.fill(level, self, terrain.WALL)
         Painter.fill(level, self, 1, terrain.EMPTY)
         c = self.center(rng)
-        Painter.set(level, c, terrain.LOCKED_EXIT)
+        Painter.set(level, c, terrain.EXIT)
         for door in self.connected.values():
             door.set(DoorType.REGULAR)
 
@@ -823,7 +829,7 @@ class CityBossExitRoom(StandardRoom):
         Painter.fill(level, self, terrain.WALL)
         Painter.fill(level, self, 1, terrain.EMPTY)
         c = self.center(rng)
-        Painter.set(level, c, terrain.LOCKED_EXIT)
+        Painter.set(level, c, terrain.EXIT)
         for door in self.connected.values():
             door.set(DoorType.REGULAR)
 

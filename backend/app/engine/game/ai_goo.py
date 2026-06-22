@@ -85,10 +85,55 @@ class GooAIMixin:
             return
         goo.hp = min(goo.max_hp, goo.hp + goo.heal_inc)
         goo.heal_cooldown = GOO_WATER_HEAL_INTERVAL
+        self.qualified_for_boss_challenge = False
+        # SPD Goo.act(): water-healing removes time from the hero's LockedFloor.
+        removed = goo.heal_inc if "stronger_bosses" in self.challenges else goo.heal_inc * 1.5
+        for player in self._players_on_floor(floor_id):
+            if player.locked_floor_left is not None:
+                player.locked_floor_left -= removed
         self.add_event("HEAL", {"target": goo.id, "amount": goo.heal_inc,
                                 "x": goo.pos.x, "y": goo.pos.y}, floor_id=floor_id)
         if "stronger_bosses" in self.challenges:
             goo.heal_inc = min(3, goo.heal_inc + 1)
+
+    def _goo_seal_entrance(self, floor: FloorState, floor_id: int):
+        # SPD SewerBossLevel.seal(): turns the entrance into water so the
+        # hero can't take the stairs back up while the fight is active.
+        if floor.entrance_pos is None:
+            return
+        ex, ey = floor.entrance_pos
+        if floor.grid[ey][ex] != TileType.STAIRS_UP:
+            return
+        floor.grid[ey][ex] = TileType.FLOOR_WATER
+        floor.rebuild_flags()
+        self.add_event("MAP_PATCH", {"tiles": [{"x": ex, "y": ey, "tile": TileType.FLOOR_WATER}]},
+                       floor_id=floor_id)
+        # SPD Buff.affect(hero, LockedFloor.class): 50 turns, 20 with stronger_bosses.
+        left = 20.0 if "stronger_bosses" in self.challenges else 50.0
+        for player in self._players_on_floor(floor_id):
+            player.locked_floor_left = left
+
+    def _goo_unseal_entrance(self, floor: FloorState, floor_id: int):
+        # SPD SewerBossLevel.unseal(): restores the entrance once Goo dies.
+        if floor.entrance_pos is None:
+            return
+        ex, ey = floor.entrance_pos
+        if floor.grid[ey][ex] != TileType.FLOOR_WATER:
+            return
+        floor.grid[ey][ex] = TileType.STAIRS_UP
+        floor.rebuild_flags()
+        self.add_event("MAP_PATCH", {"tiles": [{"x": ex, "y": ey, "tile": TileType.STAIRS_UP}]},
+                       floor_id=floor_id)
+        for player in self._players_on_floor(floor_id):
+            player.locked_floor_left = None
+
+    def _goo_add_locked_floor_time(self, floor_id: int, player, dmg: int):
+        # SPD Goo.damage(): boss damage taken extends the hero's LockedFloor
+        # timer (capped at 50), keeping it topped up during an active fight.
+        if player is None or player.locked_floor_left is None or dmg <= 0:
+            return
+        added = dmg if "stronger_bosses" in self.challenges else dmg * 1.5
+        player.locked_floor_left = min(50.0, player.locked_floor_left + added)
 
     def _goo_threatened_tiles(self, goo: Goo, floor_id: int):
         tiles = []
@@ -118,6 +163,10 @@ class GooAIMixin:
 
     def _goo_release_charge(self, goo: Goo, target, floor_id: int):
         self.add_event("GOO_CHARGE", {"mob": goo.id, "tiles": []}, floor_id=floor_id)
+        # SPD Goo.damageRoll()/attack(): completing a pumped charge against
+        # the hero always costs score and disqualifies the badge, hit or miss.
+        self.boss_scores[0] -= 100
+        self.qualified_for_boss_challenge = False
         acu = random.random() * goo.attack_skill * 2
         df = random.random() * target.get_effective_defense_skill()
         if acu < df:

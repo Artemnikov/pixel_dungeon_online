@@ -302,7 +302,13 @@ export interface PickupEvent {
 
 export interface DropEvent {
   type: 'DROP';
-  data: { player: string; item: string };
+  data: { player: string; item: string; item_name: string };
+}
+
+/** Gold dropped on ground by mob death — triggers coin particles. */
+export interface GoldDropEvent {
+  type: 'GOLD_DROP';
+  data: { x: number; y: number };
 }
 
 /** Waterskin auto-collects a Dewdrop underfoot (mirrors Waterskin.collect()). */
@@ -615,6 +621,18 @@ export interface TenguFightStartedEvent {
   data: { mob: string };
 }
 
+/** Evil Eye begins charging its death gaze. */
+export interface EyeChargeEvent {
+  type: 'EYE_CHARGE';
+  data: { mob: string; target_x: number; target_y: number };
+}
+
+/** Evil Eye fires its death gaze beam. */
+export interface EyeDeathRayEvent {
+  type: 'EYE_DEATH_RAY';
+  data: { mob: string; source_x: number; source_y: number; target_x: number; target_y: number };
+}
+
 /** Necromancer zaps a cell — summon, heal, or buff its NecroSkeleton (mirrors NecromancerSprite.zap). */
 export interface ZapSummonEvent {
   type: 'ZAP_SUMMON';
@@ -728,6 +746,7 @@ export type GameEvent =
   | ChasmPromptEvent
   | PickupEvent
   | DropEvent
+  | GoldDropEvent
   | CollectDewEvent
   | PickupGoldEvent
   | PickupKeyEvent
@@ -776,6 +795,8 @@ export type GameEvent =
   | YogPhaseChangeEvent
   | YogFinalPhaseEvent
   | TenguFightStartedEvent
+  | EyeChargeEvent
+  | EyeDeathRayEvent
   | ZapSummonEvent
   | NecroSummonEvent
   | TenguJumpEvent

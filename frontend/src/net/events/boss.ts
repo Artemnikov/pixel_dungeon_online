@@ -2,11 +2,12 @@ import { TILE_SIZE } from '../../constants';
 import AudioManager from '../../audio/AudioManager';
 import { spawnDust, spawnCritSparkle } from '../../rendering/draw/particles';
 import { spawnFloatingText } from '../../rendering/draw/floatingText';
+import { spawnBeam } from '../../rendering/draw/beam';
 import type { GameEvent } from '../../types/contract';
 import type { HandlerCtx } from '../types';
 
 export function handleBossEvents(event: GameEvent, ctx: HandlerCtx): boolean {
-  const { mobAnimRef, particlesRef, floatingTextRef, warnedTilesRef, visionRef } = ctx;
+  const { mobAnimRef, particlesRef, floatingTextRef, warnedTilesRef, visionRef, beamRef } = ctx;
 
   if (event.type === 'GOO_CHARGE') {
     const now = performance.now();
@@ -135,6 +136,31 @@ export function handleBossEvents(event: GameEvent, ctx: HandlerCtx): boolean {
         const cy = y * TILE_SIZE + TILE_SIZE / 2;
         spawnCritSparkle(particlesRef, cx, cy, 8, color);
       }
+    }
+    return true;
+  }
+
+  if (event.type === 'EYE_CHARGE') {
+    const now = performance.now();
+    if (mobAnimRef.current) {
+      if (!mobAnimRef.current[event.data.mob]) mobAnimRef.current[event.data.mob] = {};
+      mobAnimRef.current[event.data.mob].chargeUntil = now + 1000;
+      mobAnimRef.current[event.data.mob].attackUntil = 0;
+    }
+    if (visionRef?.current?.visible?.has(`${event.data.target_x},${event.data.target_y}`)) {
+      AudioManager.play('CHARGEUP');
+    }
+    return true;
+  }
+
+  if (event.type === 'EYE_DEATH_RAY') {
+    const sx = event.data.source_x * TILE_SIZE + TILE_SIZE / 2;
+    const sy = event.data.source_y * TILE_SIZE + TILE_SIZE / 2;
+    const tx = event.data.target_x * TILE_SIZE + TILE_SIZE / 2;
+    const ty = event.data.target_y * TILE_SIZE + TILE_SIZE / 2;
+    if (beamRef) spawnBeam(beamRef, sx, sy, tx, ty, 'death_ray');
+    if (visionRef?.current?.visible?.has(`${event.data.source_x},${event.data.source_y}`)) {
+      AudioManager.play('RAY');
     }
     return true;
   }

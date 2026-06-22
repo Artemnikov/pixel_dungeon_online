@@ -43,6 +43,7 @@ export interface AnimState {
   operateUntil?: number;
   readUntil?: number;
   pumpUntil?: number;
+  chargeUntil?: number;
 }
 
 export interface Projectile {
@@ -145,6 +146,7 @@ export interface HookProps {
   surpriseRef?: Ref<unknown[]>;
   selectedEnemyIdRef?: Ref<string | null>;
   floorFadeRef?: Ref<unknown>;
+  onLoreNeeded?: (depth: number, finishTransition: () => void) => void;
   cameraLerpRef?: Ref<{ x: number; y: number }>;
   isCameraDetachedRef?: Ref<boolean>;
   setGrid: Dispatch<SetStateAction<number[][]>>;

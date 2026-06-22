@@ -45,7 +45,7 @@ from app.engine.entities.base import (
     is_immune,
 )
 from app.engine.entities.buffs import add_buff, has_buff, remove_buff
-from app.engine.entities.mobs import DM300, Wraith
+from app.engine.entities.mobs import DM300, Goo, Wraith
 from app.engine.entities.subclasses import Talent
 from app.engine.systems.combat import resolve_melee_attack, resolve_ranged_attack
 from app.engine.systems.loot import roll_drops
@@ -285,6 +285,8 @@ class MovementCombatMixin:
                         self.add_event("PLAY_SOUND", {"sound": "HIT_BODY"}, floor_id=floor_id, source_player_id=target_entity.id)
                         if target_entity.hp / target_entity.get_total_max_hp() <= 0.3:
                             self.add_event("PLAY_SOUND", {"sound": "HEALTH_WARN"}, player_id=target_entity.id)
+                    if isinstance(target_entity, Goo) and isinstance(entity, Player):
+                        self._goo_add_locked_floor_time(floor_id, entity, dmg)
 
                 self._maybe_trigger_dm300_supercharge(target_entity, floor, floor_id, entity.pos)
 
@@ -324,6 +326,8 @@ class MovementCombatMixin:
                         drops = roll_drops(target_entity, self.drop_counters, target_entity.pos.x, target_entity.pos.y, players=list(self._players_on_floor(floor_id)))
                         for item in drops:
                             floor.items[item.id] = item
+                        if any(isinstance(d, Gold) for d in drops):
+                            self.add_event("GOLD_DROP", {"x": target_entity.pos.x, "y": target_entity.pos.y}, floor_id=floor_id)
             return
 
         tile = floor.grid[new_y][new_x]
@@ -631,6 +635,8 @@ class MovementCombatMixin:
                     self.add_event("PLAY_SOUND", {"sound": "HIT_BODY"}, floor_id=floor_id, source_player_id=target_entity.id)
                     if target_entity.hp / target_entity.get_total_max_hp() <= 0.3:
                         self.add_event("PLAY_SOUND", {"sound": "HEALTH_WARN"}, player_id=target_entity.id)
+                if isinstance(target_entity, Goo):
+                    self._goo_add_locked_floor_time(floor_id, player, damage_dealt)
 
                 # WandOfLightning chain arc to nearby enemies
                 if damage_dealt > 0 and target_entity.is_alive and isinstance(effective_wand, WandOfLightning):
@@ -683,6 +689,8 @@ class MovementCombatMixin:
                     drops = roll_drops(target_entity, self.drop_counters, target_entity.pos.x, target_entity.pos.y, players=list(self._players_on_floor(floor_id)))
                     for d in drops:
                         floor.items[d.id] = d
+                    if any(isinstance(d, Gold) for d in drops):
+                        self.add_event("GOLD_DROP", {"x": target_entity.pos.x, "y": target_entity.pos.y}, floor_id=floor_id)
 
         if is_wand or is_staff:
             wand_item = staff_wand if is_staff else item

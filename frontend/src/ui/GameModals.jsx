@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import WndBag from './WndBag';
 import WndUseItem from './WndUseItem';
@@ -5,6 +6,7 @@ import RightClickMenu from './RightClickMenu';
 import WndShop from './WndShop';
 import WndImp from './WndImp';
 import WndSadGhost from './WndSadGhost';
+import WndGhostGear from './WndGhostGear';
 import WndChasmJump from './WndChasmJump';
 import WndQuickBag from './WndQuickBag';
 import RadialMenu from './RadialMenu';
@@ -24,12 +26,14 @@ export default function GameModals({
   send, handleToolbarClick,
 }) {
   const { t } = useTranslation();
+  const [ghostEquipSlot, setGhostEquipSlot] = useState(null);
   const {
     useItemTarget, setUseItemTarget,
     ctxMenu, setCtxMenu,
     shopWindow, setShopWindow,
     impWindow, setImpWindow,
     ghostWindow, setGhostWindow,
+    ghostGearData, setGhostGearData,
     chasmPrompt, setChasmPrompt,
     showQuickBag, setShowQuickBag,
     radialOpen, setRadialOpen,
@@ -104,6 +108,20 @@ export default function GameModals({
         />
       )}
 
+      {ghostGearData && !ghostEquipSlot && (
+        <WndGhostGear
+          ghostHp={ghostGearData.ghost_hp}
+          ghostMaxHp={ghostGearData.ghost_max_hp}
+          weapon={ghostGearData.weapon}
+          armor={ghostGearData.armor}
+          onEquip={(slot) => setGhostEquipSlot(slot)}
+          onUnequip={(slot) => {
+            send({ type: 'EQUIP_GHOST_ITEM', rose_id: ghostGearData.rose_id, slot });
+          }}
+          onClose={() => setGhostGearData(null)}
+        />
+      )}
+
       {chasmPrompt && (
         <WndChasmJump
           onConfirm={() => {
@@ -111,6 +129,29 @@ export default function GameModals({
             setChasmPrompt(null);
           }}
           onDecline={() => setChasmPrompt(null)}
+        />
+      )}
+
+      {ghostGearData && ghostEquipSlot && (
+        <WndBag
+          belongings={belongings}
+          gold={gold}
+          energy={energy}
+          strength={strength}
+          selectMode
+          itemFilter={(item) => item.type === ghostEquipSlot}
+          title={t(ghostEquipSlot === 'weapon' ? 'ghostGear.selectWeapon' : 'ghostGear.selectArmor')}
+          onSelectItem={(item) => {
+            send({
+              type: 'EQUIP_GHOST_ITEM',
+              rose_id: ghostGearData.rose_id,
+              slot: ghostEquipSlot,
+              item_id: item.id,
+            });
+            setGhostEquipSlot(null);
+            setGhostGearData(null);
+          }}
+          onClose={() => setGhostEquipSlot(null)}
         />
       )}
 

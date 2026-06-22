@@ -146,6 +146,9 @@
     "open": "Open",
     "affix": "Affix",
     "stealth": "Stealth",
+    "ghostGear": "Equipment",
+    "summon": "Summon",
+    "direct": "Direct",
     "quickslot": "Quickslot"
   },
   "slot": {
@@ -603,6 +606,16 @@
     "uncurse": "Choose an item to uncurse",
     "transmute": "Choose an item to transmute",
     "quickslot": "Quickslot an item"
+  },
+  "ghostGear": {
+    "title": "Ghost Equipment",
+    "weapon": "Weapon",
+    "armor": "Armor",
+    "none": "None",
+    "equip": "Equip",
+    "remove": "Remove",
+    "selectWeapon": "Choose a weapon for the ghost",
+    "selectArmor": "Choose armor for the ghost"
   },
   "admin": {
     "giveItem": "Give Item",

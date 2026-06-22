@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { TILE_SIZE, MIN_ZOOM, MAX_ZOOM } from '../constants';
+import { isFloorFadeActive } from '../rendering/floorTransition';
 import { resolveTapAction } from './resolveTap';
 
 export default function useCanvasControls({
@@ -21,6 +22,7 @@ export default function useCanvasControls({
   entitiesRef,
   myPlayerIdRef,
   hoveredCellRef,
+  floorFadeRef,
 }) {
   const dragStartRef = useRef({ x: 0, y: 0 });
   const dragStartPanRef = useRef({ x: 0, y: 0 });
@@ -36,6 +38,7 @@ export default function useCanvasControls({
     if (!canvas) return;
 
     const onMouseDown = (e) => {
+      if (isFloorFadeActive(floorFadeRef)) return;
       dragStartRef.current = { x: e.clientX, y: e.clientY };
       if (isCameraDetachedRef.current) {
         const rect = canvas.getBoundingClientRect();
@@ -101,6 +104,7 @@ export default function useCanvasControls({
     };
 
     const onTouchStart = (e) => {
+      if (isFloorFadeActive(floorFadeRef)) return;
       if (e.touches.length === 2) {
         isPinchingRef.current = true;
         const t1 = e.touches[0], t2 = e.touches[1];
@@ -195,6 +199,7 @@ export default function useCanvasControls({
       isPinchingRef.current = false;
       if (hasDraggedRef.current || e.changedTouches.length === 0) return;
       if (socketRef.current?.readyState !== WebSocket.OPEN) return;
+      if (isFloorFadeActive(floorFadeRef)) return;
 
       const t = e.changedTouches[0];
       const rect = canvas.getBoundingClientRect();
@@ -242,7 +247,7 @@ export default function useCanvasControls({
       canvas.removeEventListener('touchmove', onTouchMove);
       canvas.removeEventListener('touchend', onTouchEnd);
     };
-  }, [enabled, canvasRef, socketRef, panOffsetRef, zoomRef, cameraLerpRef, isDraggingRef, isRefocusingRef, isPinchingRef, isCameraDetachedRef, detachedCameraRef, targetingModeRef, onTargetTapRef, examineModeRef, onExamineTapRef, entitiesRef, myPlayerIdRef, hoveredCellRef]);
+  }, [enabled, canvasRef, socketRef, panOffsetRef, zoomRef, cameraLerpRef, isDraggingRef, isRefocusingRef, isPinchingRef, isCameraDetachedRef, detachedCameraRef, targetingModeRef, onTargetTapRef, examineModeRef, onExamineTapRef, entitiesRef, myPlayerIdRef, hoveredCellRef, floorFadeRef]);
 
   return { hasDraggedRef };
 }

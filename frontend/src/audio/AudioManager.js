@@ -22,6 +22,7 @@ import trapSound from '../assets/sounds/trap.mp3';
 import chargeupSound from '../assets/pixel-dungeon/audio/chargeup.mp3';
 import burningSound from '../assets/pixel-dungeon/audio/burning.mp3';
 import bossSound from '../assets/pixel-dungeon/audio/boss.mp3';
+import ghostSound from '../assets/pixel-dungeon/audio/ghost.mp3';
 import alertSound from '../assets/pixel-dungeon/audio/alert.mp3';
 import unlockSound from '../assets/sounds/unlock.mp3';
 import readSound from '../assets/sounds/read.mp3';
@@ -37,6 +38,7 @@ import teleportSound from '../assets/sounds/teleport.mp3';
 import meldSound from '../assets/sounds/meld.mp3';
 import gasSound from '../assets/sounds/gas.mp3';
 import shatterSound from '../assets/sounds/shatter.mp3';
+import bonesSound from '../assets/sounds/bones.mp3';
 import { effectiveSfxVolume } from '../menu/menuSettings';
 
 class AudioManager {
@@ -76,6 +78,7 @@ class AudioManager {
         this.loadSound('CHARGEUP', chargeupSound);
         this.loadSound('BURNING', burningSound);
         this.loadSound('BOSS', bossSound);
+        this.loadSound('GHOST', ghostSound);
         this.loadSound('ALERT', alertSound);
         this.loadSound('UNLOCK', unlockSound);
         this.loadSound('READ', readSound);
@@ -91,6 +94,7 @@ class AudioManager {
         this.loadSound('MELD', meldSound);
         this.loadSound('GAS', gasSound);
         this.loadSound('SHATTER', shatterSound);
+        this.loadSound('BONES', bonesSound);
 
         const doorSounds = import.meta.glob('../assets/sounds/door_open.mp3', { eager: true, query: '?url' });
         const doorUrl = doorSounds['../assets/sounds/door_open.mp3']?.default;
@@ -171,9 +175,10 @@ class AudioManager {
                 this.playTone(60, 'sine', 0.6, 0.2, 0.15);
                 this.playNoise(0.3, 0.15, 'lowpass', 200);
                 break;
-            case 'BONES':
-                this.playNoise(0.2, 0.15, 'highpass', 3000);
-                this.playTone(400, 'triangle', 0.1, 0.1);
+            case 'CHARMS':
+                this.playTone(660, 'sine', 0.15, 0.15);
+                this.playTone(880, 'sine', 0.15, 0.15, 0.08);
+                this.playTone(1100, 'sine', 0.12, 0.2, 0.16);
                 break;
             case 'LOCKED':
                 this.playTone(250, 'square', 0.08, 0.12);

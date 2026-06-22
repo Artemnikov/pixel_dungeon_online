@@ -2,8 +2,8 @@ import { TILE_SIZE } from '../../constants';
 import AudioManager from '../../audio/AudioManager';
 import { spawnFlameBurst } from '../../rendering/draw/flameParticle';
 import { spawnElmo } from '../../rendering/draw/elmoParticle';
-import { spawnEnergy } from '../../rendering/draw/particles';
-import { spawnWhiteSplash, spawnSewerBarrelBurst, spawnLeafForRegion } from '../../rendering/draw/particles';
+import { spawnWhiteSplash, spawnSewerBarrelBurst, spawnLeafForRegion, spawnEnergy, spawnBoneRattle, spawnCoin } from '../../rendering/draw/particles';
+import { spawnScreenShake } from '../../rendering/draw/screenShake';
 import { BACKEND_TILE } from '../../rendering/sewers/constants';
 import { regionForDepth } from '../../rendering/regions';
 import { spawnStateParticles } from '../../rendering/draw/states';
@@ -13,7 +13,7 @@ import type { GameEvent } from '../../types/contract';
 import type { HandlerCtx } from '../types';
 
 export function handleWorldEvents(event: GameEvent, ctx: HandlerCtx): boolean {
-  const { particlesRef, visionRef, stateEffectsRef, spellSpriteEffectsRef, blobAreasRef, setGrid, gridRef, depth } = ctx;
+  const { particlesRef, visionRef, stateEffectsRef, spellSpriteEffectsRef, blobAreasRef, setGrid, gridRef, depth, screenShakeRef } = ctx;
 
   if (event.type === 'CHASM_PROMPT') {
     ctx.onChasmPrompt?.(event.data);
@@ -105,11 +105,40 @@ export function handleWorldEvents(event: GameEvent, ctx: HandlerCtx): boolean {
     return true;
   }
 
+  if (event.type === 'OPEN_CHEST' && particlesRef && visionRef) {
+    const { x, y, chest_type } = event.data;
+    if (visionRef.current?.visible?.has(`${x},${y}`)) {
+      const cx = x * TILE_SIZE + TILE_SIZE / 2;
+      const cy = y * TILE_SIZE + TILE_SIZE / 2;
+      if (chest_type === 'TOMB') {
+        spawnScreenShake(screenShakeRef, 1, 500);
+        spawnWhiteSplash(particlesRef, cx, cy, 6);
+      } else if (chest_type === 'SKELETON' || chest_type === 'REMAINS') {
+        spawnBoneRattle(particlesRef, cx, cy);
+        spawnWhiteSplash(particlesRef, cx, cy, 4);
+      } else {
+        spawnWhiteSplash(particlesRef, cx, cy, 4);
+      }
+    }
+    return true;
+  }
+
   if (event.type === 'LEAF_BURST' && particlesRef) {
     const { x, y } = event.data;
     if (!visionRef || visionRef.current?.visible?.has(`${x},${y}`)) {
       const region = regionForDepth(depth || 1);
       spawnLeafForRegion(particlesRef, x * TILE_SIZE + TILE_SIZE / 2, y * TILE_SIZE + TILE_SIZE / 2, 4, region);
+    }
+    return true;
+  }
+
+  if (event.type === 'GOLD_DROP' && particlesRef && visionRef) {
+    const { x, y } = event.data;
+    if (visionRef.current?.visible?.has(`${x},${y}`)) {
+      const cx = x * TILE_SIZE + TILE_SIZE / 2;
+      const cy = y * TILE_SIZE + TILE_SIZE / 2;
+      spawnCoin(particlesRef, cx, cy);
+      AudioManager.play('GOLD');
     }
     return true;
   }

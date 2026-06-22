@@ -198,6 +198,13 @@ class ChooseImbueWand(_ClientMessageBase):
     wand_id: str
 
 
+class EquipGhostItem(_ClientMessageBase):
+    type: Literal["EQUIP_GHOST_ITEM"]
+    rose_id: str
+    slot: Literal["weapon", "armor"]
+    item_id: Optional[str] = None  # None = unequip
+
+
 class SelectScrollTarget(_ClientMessageBase):
     type: Literal["SELECT_SCROLL_TARGET"]
     scroll_id: str
@@ -259,6 +266,7 @@ ClientMessage = Annotated[
         GhostClaimReward,
         SelectScrollTarget,
         ChooseImbueWand,
+        EquipGhostItem,
         Resume,
         PickupFloor,
         Attack,

@@ -282,9 +282,11 @@ class Action:
     WEAR = "WEAR"        # TengusMask: choose subclass
     ALCHEMIZE = "ALCHEMIZE"  # GooBlob + HealthPotion at an Alchemy Pot -> Elixir of Aquatic Rejuvenation
     IMBUE = "IMBUE"      # MagesStaff: imbue a wand into the staff
+    SUMMON = "SUMMON"    # DriedRose: summon the ghost ally
+    DIRECT = "DIRECT"    # DriedRose: direct the ghost ally to a target
 
 # Actions that require the player to pick a target cell before resolving.
-TARGETED_ACTIONS = {Action.THROW, Action.ZAP}
+TARGETED_ACTIONS = {Action.THROW, Action.ZAP, Action.DIRECT}
 
 
 def _new_id() -> str:
@@ -1484,6 +1486,65 @@ class CloakOfShadows(Artifact):
         self.charge_cap = min(self.charge_cap + 1, self.level_cap)
 
 
+class DriedRose(Artifact):
+    kind: Literal["dried_rose"] = "dried_rose"
+    name: str = "Dried Rose"
+    type: str = "artifact"
+    unique: bool = True
+    charge: int = 100
+    charge_cap: int = 100
+    level_cap: ClassVar[int] = 10
+    exp: int = 0
+    ghost_id: Optional[str] = None
+    weapon: Optional["MeleeWeapon"] = None
+    armor: Optional["Armor"] = None
+    dropped_petals: int = 0
+    DESC: ClassVar[str] = "A dried rose that holds the spirit of a fallen warrior. Equip and charge it to summon the ghost as an ally."
+
+    def actions(self, player: Optional["Player"] = None) -> List[str]:
+        base = super().actions(player)
+        if player is None:
+            return base
+        equipped = player.belongings.is_equipped(self.id)
+        can_summon = (
+            equipped
+            and self.charge >= self.charge_cap
+            and not self.cursed
+            and self.has_no_ghost()
+        )
+        if can_summon:
+            return [Action.SUMMON] + base
+        if self.has_ghost():
+            return [Action.DIRECT, "GHOST_GEAR"] + base
+        return base
+
+    def default_action(self) -> Optional[str]:
+        return Action.DIRECT if self.has_ghost() else Action.SUMMON
+
+    def has_ghost(self) -> bool:
+        return self.ghost_id is not None
+
+    def has_no_ghost(self) -> bool:
+        return self.ghost_id is None
+
+    def ghost_strength(self) -> int:
+        return 13 + self.level // 2
+
+    def on_upgrade(self) -> None:
+        self.charge_cap = min(self.charge_cap + 1, self.level_cap)
+
+
+class Petal(ItemBase):
+    kind: Literal["petal"] = "petal"
+    name: str = "Petal"
+    type: str = "misc"
+    category: ClassVar[str] = ItemCategory.MISC
+    stackable: ClassVar[bool] = True
+    level_known: bool = True
+    cursed_known: bool = True
+    DESC: ClassVar[str] = "A dried rose petal. It can upgrade a Dried Rose artifact."
+
+
 class ScrollOfRage(Scroll):
     kind: Literal["scroll_of_rage"] = "scroll_of_rage"
     name: str = "Scroll of Rage"
@@ -1954,7 +2015,7 @@ class PotionBandolier(Bag):
 AnyItem = Annotated[
     Union[
         MeleeWeapon, Dagger, WornShortsword, Bow, Staff, MissileWeapon,
-        Armor, Ring, Artifact, BrokenSeal, CloakOfShadows,
+        Armor, Ring, Artifact, BrokenSeal, CloakOfShadows, DriedRose,
         DamageWand,
         WandOfMagicMissile, WandOfFireblast, WandOfFrost, WandOfLightning,
         WandOfDisintegration, WandOfPrismaticLight, WandOfBlastWave,
@@ -1977,7 +2038,7 @@ AnyItem = Annotated[
         Key,
         TenguMask, KingsCrown,
         Seed, Dewdrop, Waterskin, Amulet, Stone, Boomerang, ThrowableDagger, Throwable,
-        GooBlob, DwarfToken,
+        GooBlob, DwarfToken, Petal,
         Chest,
         VelvetPouch, ScrollHolder, MagicalHolster, PotionBandolier, Bag,
     ],
