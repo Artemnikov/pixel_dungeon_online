@@ -244,16 +244,19 @@ def test_confirm_chasm_fall_applies_damage_cripple_and_bleed():
     assert player.bleed_turns > 0
 
 
-def test_confirm_chasm_fall_emits_damage_and_screen_shake_events():
+def test_confirm_chasm_fall_emits_damage_screen_shake_and_falling_sound():
     game, floor, player = make_chasm_fall_game()
     player.pending_chasm_fall = (3, 2)
 
     game.confirm_chasm_fall(player.id, 3, 2)
 
-    events = [e["type"] for e in game.flush_events()]
-    assert "DAMAGE" in events
-    assert "SCREEN_SHAKE" in events
-    assert "PLAY_SOUND" in events
+    events = game.flush_events()
+    event_types = [e["type"] for e in events]
+    assert "DAMAGE" in event_types
+    assert "SCREEN_SHAKE" in event_types
+    sounds = [e["data"]["sound"] for e in events if e["type"] == "PLAY_SOUND"]
+    # Mirrors SPD Chasm.heroFall(): Sample.INSTANCE.play(Assets.Sounds.FALLING).
+    assert "FALLING" in sounds
 
 
 def test_confirm_chasm_fall_rejected_at_max_floor_id():

@@ -317,7 +317,7 @@ class PlayersMixin:
 
         self.add_event("DAMAGE", {"target": player.id, "amount": dealt}, floor_id=floor_id)
         self.add_event("SCREEN_SHAKE", {"intensity": 4, "duration_ms": 300}, floor_id=floor_id)
-        self.add_event("PLAY_SOUND", {"sound": "STAIRS_DOWN"}, floor_id=floor_id, player_id=player.id)
+        self.add_event("PLAY_SOUND", {"sound": "FALLING"}, floor_id=floor_id, player_id=player.id)
 
         target_floor = self._get_or_create_floor(floor_id + 1)
         landing = self._random_fall_landing_cell(target_floor)

@@ -14,6 +14,7 @@ import secretSound from '../assets/sounds/secret.mp3';
 import waterStepSound from '../assets/sounds/water.mp3';
 import grassStepSound from '../assets/sounds/grass.mp3';
 import descendSound from '../assets/pixel-dungeon/audio/descend.mp3';
+import fallingSound from '../assets/pixel-dungeon/audio/falling.mp3';
 import drinkSound from '../assets/sounds/drink.mp3';
 import throwSound from '../assets/sounds/miss.mp3';
 import levelUpSound from '../assets/sounds/levelup.mp3';
@@ -68,6 +69,7 @@ class AudioManager {
         this.loadSound('DEATH', deathSound);
         this.loadSound('SECRET', secretSound);
         this.loadSound('STAIRS_DOWN', descendSound);
+        this.loadSound('FALLING', fallingSound);
         this.loadSound('DRINK', drinkSound);
         this.loadSound('LEVELUP', levelUpSound);
         this.loadSound('TRAP', trapSound);
