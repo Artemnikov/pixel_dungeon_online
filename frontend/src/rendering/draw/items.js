@@ -1,4 +1,4 @@
-import { TILE_SIZE, TILE_SCALE } from '../../constants';
+import { TILE_SIZE, TILE_SCALE, ENTITY_LIFT } from '../../constants';
 import { coordsForItem } from '../sprites';
 import { itemRects } from '../spriteRects';
 import { centeredItemCrop } from '../itemCrop';
@@ -39,7 +39,7 @@ export function drawItems(ctx, { entitiesRef, visionRef, assetImages }) {
     ctx.beginPath();
     ctx.arc(
       item.pos.x * TILE_SIZE + TILE_SIZE / 2,
-      drawY * TILE_SIZE + TILE_SIZE / 2,
+      drawY * TILE_SIZE + TILE_SIZE / 2 - ENTITY_LIFT,
       TILE_SIZE * 0.4, 0, Math.PI * 2
     );
     ctx.fill();
@@ -58,14 +58,14 @@ export function drawItems(ctx, { entitiesRef, visionRef, assetImages }) {
         sw,
         sh,
         item.pos.x * TILE_SIZE + offsetX,
-        drawY * TILE_SIZE + offsetY,
+        drawY * TILE_SIZE + offsetY - ENTITY_LIFT,
         dw,
         dh
       );
     } else {
       ctx.fillStyle = item.type === 'weapon' ? '#f1c40f' : '#9b59b6';
       ctx.beginPath();
-      ctx.arc(item.pos.x * TILE_SIZE + TILE_SIZE / 2, drawY * TILE_SIZE + TILE_SIZE / 2, 6, 0, Math.PI * 2);
+      ctx.arc(item.pos.x * TILE_SIZE + TILE_SIZE / 2, drawY * TILE_SIZE + TILE_SIZE / 2 - ENTITY_LIFT, 6, 0, Math.PI * 2);
       ctx.fill();
     }
   });

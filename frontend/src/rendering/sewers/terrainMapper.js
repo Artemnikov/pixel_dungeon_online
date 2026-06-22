@@ -77,9 +77,12 @@ export const getSewerTerrainInstructions = (grid, x, y, tile, openDoors = new Se
   }
 
   if (tile === BACKEND_TILE.DOOR.id || tile === BACKEND_TILE.OPEN_DOOR.id || tile === BACKEND_TILE.LOCKED_DOOR.id || tile === BACKEND_TILE.LOCKED_EXIT.id || tile === BACKEND_TILE.CRYSTAL_DOOR.id) {
-    // Side door: when the cell above is a wall AND at least one side is open,
-    // the door is set into a vertical wall and uses the dedicated side-door
-    // body sprite. Mirrors SPD DungeonTileSheet.getRaisedDoorTile.
+    // Side door: when the cell above is a wall, the door is set into a
+    // vertical wall and always uses the side-door body sprite, regardless of
+    // open/closed/locked state — SPD's getRaisedDoorTile has no open-state
+    // branch here. The open/closed visual instead comes entirely from the
+    // wall cap above (DOOR_SIDEWAYS vs nothing) and the overhang cap on this
+    // same cell (DOOR_SIDEWAYS_OVERHANG vs _CLOSED), both in wallMapper.js.
     if (isSidewaysDoor(grid, x, y, getTile)) {
       return [{ srcIndex: WALL_INDEX.RAISED_DOOR_SIDEWAYS, quadrant: QUADRANT.FULL }];
     }

@@ -210,7 +210,7 @@ export default function useGameRenderer({
       drawCustomWalls(ctx, { customWalls: customWallsRef.current, assetImages, visionRef });
       drawTorches(ctx, { torches: torchesRef.current, assetImages, visionRef });
       advanceAndDrawStaffAmbient(ctx, staffAmbientRef, entitiesRef, visionRef, myPlayerId);
-      drawGridCaps(ctx, { grid, depth, assetImages, visionRef });
+      drawGridCaps(ctx, { grid, depth, assetImages, visionRef, openDoorsRef });
       drawTargetedCell(ctx, { hoveredCellRef, assetImages });
       advanceAndDrawCheckedCells(ctx, { ref: searchEffectsRef });
       advanceAndDrawParticles(ctx, { particlesRef });

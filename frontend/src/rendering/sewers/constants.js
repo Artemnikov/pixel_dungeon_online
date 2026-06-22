@@ -234,14 +234,12 @@ export const isDoorTile = (tile) =>
   tile === BACKEND_TILE.LOCKED_EXIT.id ||
   tile === BACKEND_TILE.CRYSTAL_DOOR.id;
 
-// A door cell is "sideways" (set into a vertical wall, body sprite facing
-// the player from the side) only when the cell above is a wall AND at least
-// one side is open. A door walled in on both sides too (e.g. the Goo boss
-// arena's locked-exit pedestal alcove) is front-facing despite the wall
-// above it. `getTile(grid, x, y)` must handle out-of-bounds cells.
+// Mirrors SPD DungeonTileSheet.getRaisedDoorTile: a door cell is "sideways"
+// when the cell above is wallStitcheable (any wall-like tile), regardless of
+// the cells to the left or right. A door walled-in on both sides (e.g. the
+// Goo boss arena's locked-exit pedestal alcove) is still a side door in SPD.
 export const isSidewaysDoor = (grid, x, y, getTile) =>
-  isWallStitcheable(getTile(grid, x, y - 1)) &&
-  (!isWallStitcheable(getTile(grid, x - 1, y)) || !isWallStitcheable(getTile(grid, x + 1, y)));
+  isWallStitcheable(getTile(grid, x, y - 1));
 
 export const isWaterTile = (tile) => tile === BACKEND_TILE.FLOOR_WATER.id;
 

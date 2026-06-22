@@ -65,7 +65,7 @@ test('top-facing door (walls L+R, floor above) renders the regular door sprite',
   const instructions = getSewerTerrainInstructions(grid, 1, 1, BACKEND_TILE.DOOR.id);
 
   assert.equal(instructions.length, 1);
-  assert.equal(instructions[0].srcIndex, BACKEND_TILE.DOOR.atlasIndex);
+  assert.equal(instructions[0].srcIndex, WALL_INDEX.RAISED_DOOR);
 });
 
 test('side door (wall above) renders the RAISED_DOOR_SIDEWAYS body sprite', () => {
@@ -85,6 +85,17 @@ test('side locked door also uses RAISED_DOOR_SIDEWAYS body (state shown via over
   grid[2][1] = BACKEND_TILE.WALL.id;
 
   const instructions = getSewerTerrainInstructions(grid, 1, 1, BACKEND_TILE.LOCKED_DOOR.id);
+
+  assert.equal(instructions.length, 1);
+  assert.equal(instructions[0].srcIndex, WALL_INDEX.RAISED_DOOR_SIDEWAYS);
+});
+
+test('open side door still renders RAISED_DOOR_SIDEWAYS body (open state shown via wall caps, not this sprite)', () => {
+  const grid = gridOfIds(BACKEND_TILE.FLOOR.id);
+  grid[0][1] = BACKEND_TILE.WALL.id;
+  grid[2][1] = BACKEND_TILE.WALL.id;
+
+  const instructions = getSewerTerrainInstructions(grid, 1, 1, BACKEND_TILE.OPEN_DOOR.id, new Set(['1,1']));
 
   assert.equal(instructions.length, 1);
   assert.equal(instructions[0].srcIndex, WALL_INDEX.RAISED_DOOR_SIDEWAYS);

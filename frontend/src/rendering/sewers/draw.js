@@ -21,7 +21,7 @@ import {
   WATER_SCROLL_PX_PER_SEC,
 } from './constants.js';
 import { getSewerTerrainInstructions } from './terrainMapper.js';
-import { getSewerCap, getSewerDoorCap, getSewerWallInstructions } from './wallMapper.js';
+import { getSewerCap, getSewerWallInstructions } from './wallMapper.js';
 
 const HALF_SOURCE = SOURCE_TILE_SIZE / 2;
 const HALF_DEST = DEST_TILE_SIZE / 2;
@@ -183,13 +183,11 @@ export const drawWaterBackground = (ctx, waterTex, clipPath, bounds, nowMs) => {
 // Two-pass render adapted from SPD's terrain + walls tilemaps:
 //   base = RAISED_WALL face (wall above floor) or WALL_INTERNAL (wall surrounded
 //          by walls), OR the normal terrain (floor/grass/water/door) for
-//          non-wall cells, PLUS all door caps (DOOR_OVERHANG, DOOR_SIDEWAYS,
-//          DOOR_SIDEWAYS_OVERHANG*). Drawn before entities — chars never
-//          obscured by doors.
-//   cap  = WALL_OVERHANG / WALL_INTERNAL drawn AFTER entities so chars are
-//          partially obscured by the wall top, same z-order as SPD's
-//          DungeonWallsTilemap which is added after the mobs group in
-//          GameScene. Door caps deliberately live in the base pass.
+//          non-wall cells. Drawn before entities.
+//   cap  = WALL_OVERHANG / WALL_INTERNAL / door caps drawn AFTER entities so
+//          chars are partially obscured by wall tops and door overhangs, same
+//          z-order as SPD's DungeonWallsTilemap which is added after the mobs
+//          group in GameScene.
 
 export const drawSewerTileBase = (ctx, atlasImage, grid, x, y, tile, openDoors = new Set()) => {
   const isWall = tile === BACKEND_TILE.WALL.id
@@ -199,11 +197,6 @@ export const drawSewerTileBase = (ctx, atlasImage, grid, x, y, tile, openDoors =
   const instructions = isWall
     ? getSewerWallInstructions(grid, x, y)
     : getSewerTerrainInstructions(grid, x, y, tile, openDoors);
-
-  const doorCap = getSewerDoorCap(grid, x, y, tile, openDoors);
-  if (doorCap != null) {
-    instructions.push({ srcIndex: doorCap, quadrant: QUADRANT.FULL });
-  }
 
   const isWater = tile === BACKEND_TILE.FLOOR_WATER.id;
   if (instructions.length === 0 && !isWater) return false;
@@ -225,8 +218,8 @@ export const drawSewerTileBase = (ctx, atlasImage, grid, x, y, tile, openDoors =
   return true;
 };
 
-export const drawSewerTileCap = (ctx, atlasImage, grid, x, y, tile) => {
-  const cap = getSewerCap(grid, x, y, tile);
+export const drawSewerTileCap = (ctx, atlasImage, grid, x, y, tile, openDoors) => {
+  const cap = getSewerCap(grid, x, y, tile, openDoors);
   if (cap == null) return false;
   drawInstructions(ctx, atlasImage, [{ srcIndex: cap, quadrant: QUADRANT.FULL }], x, y);
   return true;

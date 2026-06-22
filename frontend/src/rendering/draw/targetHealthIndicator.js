@@ -7,7 +7,7 @@
 // Port of SPD's TargetHealthIndicator.java + CharHealthIndicator.java.
 // 1px-tall bar, 4/6 of tile width, centered above the sprite.
 
-import { TILE_SIZE } from '../../constants';
+import { TILE_SIZE, ENTITY_LIFT } from '../../constants';
 
 const INDICATOR_HEIGHT = 2;
 const BAR_WIDTH_FRAC = 4 / 6; // 4/6 of tile width (matches CharHealthIndicator)
@@ -25,7 +25,7 @@ export function drawTargetHealthIndicator(ctx, { entitiesRef, visionRef, selecte
   if (visible && !visible.has(`${mx},${my}`)) return;
 
   const x = mob.renderPos.x * TILE_SIZE;
-  const y = mob.renderPos.y * TILE_SIZE;
+  const y = mob.renderPos.y * TILE_SIZE - ENTITY_LIFT;
 
   const hp = mob.hp || 0;
   const maxHp = mob.max_hp || 1;

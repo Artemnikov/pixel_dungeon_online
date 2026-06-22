@@ -47,7 +47,6 @@ import {
   WALL_INDEX,
   hashCell,
   isDoorTile,
-  isSidewaysDoor,
   isWallStitcheable,
   isWallTile,
 } from './constants.js';
@@ -166,25 +165,25 @@ export const getDoorSidewaysOverhang = (grid, x, y, tile, openDoors) => {
 };
 
 /**
- * Wall-only cap (WALL_INTERNAL / WALL_OVERHANG). Drawn AFTER entities so
- * walls partially obscure characters, mirroring the upper portion of SPD's
- * DungeonWallsTilemap. Door-related caps live in `getSewerDoorCap` and
- * render in the base pass — characters are never obscured by doors.
+ * Wall and door cap (WALL_INTERNAL / WALL_OVERHANG / DOOR_*). Drawn AFTER
+ * entities so walls and door overhangs partially obscure characters, mirroring
+ * the upper portion of SPD's DungeonWallsTilemap.
+ * Door overhangs were moved from the base pass to here (SPD's native order).
  */
-export const getSewerCap = (grid, x, y, tile) => {
-  const below = getTile(grid, x, y + 1);
+export const getSewerCap = (grid, x, y, tile, openDoors) => {
+  const doorCap = getSewerDoorCap(grid, x, y, tile, openDoors);
+  if (doorCap != null) return doorCap;
 
+  const below = getTile(grid, x, y + 1);
   if (!isWallStitcheable(below)) return null;
   if (isWallTile(tile)) return getInternalWallTop(grid, x, y, tile);
-  if (isDoorTile(tile)) return null;
   return getWallOverhang(grid, x, y);
 };
 
 /**
- * Door-only cap. Drawn in the base pass (BEFORE entities), so a character
- * standing on a door cell or in the floor cell above a door always renders
- * on top of the door art. `openDoors` is a Set of "x,y" strings of doors
- * currently in the open state.
+ * Door-only cap. Drawn AFTER entities so door overhangs partially obscure
+ * characters, mirroring SPD's DungeonWallsTilemap z-order (SPD-native).
+ * `openDoors` is a Set of "x,y" strings of doors currently in the open state.
  */
 export const getSewerDoorCap = (grid, x, y, tile, openDoors) => {
   const below = getTile(grid, x, y + 1);
@@ -196,14 +195,19 @@ export const getSewerDoorCap = (grid, x, y, tile, openDoors) => {
   }
 
   if (isDoorTile(below)) {
-    if (isWallTile(tile) && isSidewaysDoor(grid, x, y + 1, getTile)) {
-      // Wall above a sideways door — vertical-wall cap with doorway.
-      return below === BACKEND_TILE.LOCKED_DOOR.id || below === BACKEND_TILE.LOCKED_EXIT.id || below === BACKEND_TILE.CRYSTAL_DOOR.id
-        ? WALL_INDEX.DOOR_SIDEWAYS_LOCKED
-        : WALL_INDEX.DOOR_SIDEWAYS;
-    }
-    // Floor above a top-facing door — the door-top cap sprite.
     const isOpen = below === BACKEND_TILE.OPEN_DOOR.id || openDoors?.has(`${x},${y + 1}`);
+
+    if (isWallTile(tile)) {
+      // Wall above a door — SPD Block A: unconditional DOOR_SIDEWAYS
+      // for closed/locked doors (no side-wall check). NULL_TILE for open
+      // doors so the open doorway is unobstructed.
+      if (isOpen) return null;
+      if (below === BACKEND_TILE.LOCKED_DOOR.id || below === BACKEND_TILE.LOCKED_EXIT.id || below === BACKEND_TILE.CRYSTAL_DOOR.id)
+        return WALL_INDEX.DOOR_SIDEWAYS_LOCKED;
+      return WALL_INDEX.DOOR_SIDEWAYS;
+    }
+
+    // Floor above a top-facing door — the door-top cap sprite.
     return isOpen ? WALL_INDEX.DOOR_OVERHANG_OPEN : WALL_INDEX.DOOR_OVERHANG;
   }
 

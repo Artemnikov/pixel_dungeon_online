@@ -1,4 +1,4 @@
-import { TILE_SIZE } from '../../constants';
+import { TILE_SIZE, ENTITY_LIFT } from '../../constants';
 import { setLightMode } from './blending';
 
 const AMBIENT_COLOR = '#ffffff';
@@ -24,7 +24,7 @@ export function advanceAndDrawStaffAmbient(ctx, ref, entitiesRef, visionRef, myP
         if (p.is_downed) continue;
         if (p.belongings?.weapon?.kind === 'staff' && (id === myPlayerId || visionRef?.current?.visible?.has(`${Math.round(p.renderPos.x)},${Math.round(p.renderPos.y)}`))) {
           const cx = p.renderPos.x * TILE_SIZE + TILE_SIZE / 2;
-          const cy = p.renderPos.y * TILE_SIZE + TILE_SIZE / 2;
+          const cy = p.renderPos.y * TILE_SIZE + TILE_SIZE / 2 - ENTITY_LIFT;
           // 1-2 particles per tick around the weapon side
           const count = 1 + Math.floor(Math.random() * 2);
           for (let i = 0; i < count; i++) {

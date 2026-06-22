@@ -1,4 +1,4 @@
-import { TILE_SIZE } from '../../constants';
+import { TILE_SIZE, ENTITY_LIFT } from '../../constants';
 import {
   FRAME_W,
   FRAME_H,
@@ -200,7 +200,7 @@ export function drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef,
     // Rogue's Shadow Clone: a translucent dark copy of the rogue hero sprite.
     if (mob.type === 'shadow_clone' && assetImages.rogue) {
       const cx = mob.renderPos.x * TILE_SIZE;
-      const cy = mob.renderPos.y * TILE_SIZE;
+      const cy = mob.renderPos.y * TILE_SIZE - ENTITY_LIFT;
       const fw = 12;
       const dw = fw * (TILE_SIZE / 16);
       const off = (TILE_SIZE - dw) / 2;
@@ -232,7 +232,7 @@ export function drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef,
 
       if (cloneSprite) {
         const cx = mob.renderPos.x * TILE_SIZE;
-        const cy = mob.renderPos.y * TILE_SIZE;
+        const cy = mob.renderPos.y * TILE_SIZE - ENTITY_LIFT;
         const fw = 12;
         const dw = fw * (TILE_SIZE / 16);
         const off = (TILE_SIZE - dw) / 2;
@@ -551,7 +551,7 @@ export function drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef,
     }
 
     const x = mob.renderPos.x * TILE_SIZE;
-    const y = mob.renderPos.y * TILE_SIZE;
+    const y = mob.renderPos.y * TILE_SIZE - ENTITY_LIFT;
 
     // Sleeping indicator: SPD's EmoIcon.Sleep (Icons.SLEEP, icons.png 7,88 9x8)
     // floats above sleeping mobs, gently pulsing between scale 1 and 1.2

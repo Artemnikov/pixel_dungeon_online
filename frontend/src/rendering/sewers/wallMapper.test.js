@@ -145,31 +145,31 @@ test('getSewerCap — floor with floor below returns null', () => {
   assert.equal(getSewerCap(grid, 1, 1, F), null);
 });
 
-test('getSewerCap — floor with door below returns null (door caps live in base pass)', () => {
+test('getSewerCap — floor with door below returns DOOR_OVERHANG', () => {
   const grid = g(
     [F, F, F],
     [F, F, F],
     [F, D, F],
   );
-  assert.equal(getSewerCap(grid, 1, 1, F), null);
+  assert.equal(getSewerCap(grid, 1, 1, F, new Set()), WALL_INDEX.DOOR_OVERHANG);
 });
 
-test('getSewerCap — side-door cell with wall below returns null (door caps live in base pass)', () => {
+test('getSewerCap — side-door cell with wall below returns DOOR_SIDEWAYS_OVERHANG_CLOSED', () => {
   const grid = g(
     [W, W, W],
     [F, D, F],
     [W, W, W],
   );
-  assert.equal(getSewerCap(grid, 1, 1, D), null);
+  assert.equal(getSewerCap(grid, 1, 1, D, new Set()), WALL_INDEX.DOOR_SIDEWAYS_OVERHANG_CLOSED);
 });
 
-test('getSewerCap — wall above a door returns null (door caps live in base pass)', () => {
+test('getSewerCap — wall above a door returns DOOR_SIDEWAYS_LOCKED', () => {
   const grid = g(
     [W, W, W],
     [W, W, W],
     [W, LD, W],
   );
-  assert.equal(getSewerCap(grid, 1, 1, W), null);
+  assert.equal(getSewerCap(grid, 1, 1, W, new Set()), WALL_INDEX.DOOR_SIDEWAYS_LOCKED);
 });
 
 test('getSewerDoorCap — floor with closed door below returns DOOR_OVERHANG', () => {
@@ -258,11 +258,9 @@ test('getSewerDoorCap — wall above a closed side-door (floor on both sides) re
   );
 });
 
-test('getSewerDoorCap — wall above a locked door walled in on both sides (alcove) returns DOOR_OVERHANG', () => {
-  // Mirrors the Goo boss arena's locked-exit pedestal: walls on both sides
-  // and above the door, so the door renders front-facing (RAISED_DOOR_LOCKED)
-  // rather than as a side-door body — the cell above gets the regular
-  // door-overhang cap, not a sideways one.
+test('getSewerDoorCap — wall above a locked door walled in on both sides (alcove) returns DOOR_SIDEWAYS_LOCKED', () => {
+  // Mirrors SPD Block A: any closed/locked door below a wall gets the side
+  // door wall cap unconditionally, regardless of side-wall state.
   const grid = g(
     [W, W, W],
     [W, W, W],
@@ -270,7 +268,7 @@ test('getSewerDoorCap — wall above a locked door walled in on both sides (alco
   );
   assert.equal(
     getSewerDoorCap(grid, 1, 1, W, new Set()),
-    WALL_INDEX.DOOR_OVERHANG,
+    WALL_INDEX.DOOR_SIDEWAYS_LOCKED,
   );
 });
 
