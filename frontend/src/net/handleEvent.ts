@@ -9,7 +9,12 @@ import type { HandlerCtx } from './types';
 
 export function handleEvent(event: GameEvent, ctx: HandlerCtx): void {
   if (event.type === 'PLAY_SOUND') {
-    AudioManager.play(event.data.sound, event.data.rate ?? 1.0);
+    const audible = !event.data.x || !event.data.y
+      || ctx.myPlayerIdRef.current === null
+      || ctx.visionRef?.current?.visible?.has(`${event.data.x},${event.data.y}`);
+    if (audible) {
+      AudioManager.play(event.data.sound, event.data.rate ?? 1.0);
+    }
     return;
   }
 

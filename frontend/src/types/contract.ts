@@ -220,7 +220,7 @@ export interface RangedAttackEvent {
 
 export interface PlaySoundEvent {
   type: 'PLAY_SOUND';
-  data: { sound: string; rate?: number };
+  data: { sound: string; rate?: number; x?: number; y?: number };
 }
 
 export interface ShockingProcEvent {

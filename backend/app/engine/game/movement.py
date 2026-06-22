@@ -403,11 +403,11 @@ class MovementCombatMixin:
         result = press_cell(floor, (entity.pos.x, entity.pos.y), entity)
         if result["tile_changed"]:
             self.add_event("MAP_PATCH", {"tiles": [{"x": entity.pos.x, "y": entity.pos.y, "tile": floor.grid[entity.pos.y][entity.pos.x]}]}, floor_id=floor_id)
-            self.add_event("PLAY_SOUND", {"sound": "STEP_GRASS"}, floor_id=floor_id, source_player_id=entity.id if isinstance(entity, Player) else None)
+            self.add_event("PLAY_SOUND", {"sound": "STEP_GRASS", "x": entity.pos.x, "y": entity.pos.y}, floor_id=floor_id, source_player_id=entity.id if isinstance(entity, Player) else None)
             # HighGrass.trample()'s CellEmitter.get(pos).burst(LeafParticle.LEVEL_SPECIFIC, 4)
             self.add_event("LEAF_BURST", {"x": entity.pos.x, "y": entity.pos.y}, floor_id=floor_id)
         if result["triggered_plant"]:
-            self.add_event("PLAY_SOUND", {"sound": "PLANT_TRIGGER"}, floor_id=floor_id, source_player_id=entity.id if isinstance(entity, Player) else None)
+            self.add_event("PLAY_SOUND", {"sound": "PLANT_TRIGGER", "x": entity.pos.x, "y": entity.pos.y}, floor_id=floor_id, source_player_id=entity.id if isinstance(entity, Player) else None)
 
         if isinstance(entity, Player):
             self.add_event("MOVE", {"entity": entity_id, "x": entity.pos.x, "y": entity.pos.y}, floor_id=floor_id)
