@@ -63,6 +63,10 @@ TILE_FLAGS = {
     # not a permanent wall. Burns to EMBERS via the generic flammable-tile path
     # in blobs.py (no per-tile override needed, same as the Java default).
     TileType.BARRICADE:       FLAMABLE | SOLID | LOS_BLOCKING,
+    # SPD Terrain.java: flags[CHASM] = AVOID | PIT. Not PASSABLE (normal
+    # pathfinding/AI route around it like a wall) and not LOS_BLOCKING (you
+    # can see across/down an open pit).
+    TileType.CHASM:           AVOID | PIT,
 }
 
 

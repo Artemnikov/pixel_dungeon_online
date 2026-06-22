@@ -25,6 +25,10 @@ class TileType:
     FURROWED_GRASS = 30
     CRYSTAL_DOOR = 31
     BARRICADE = 32
+    # SPD Terrain.CHASM: AVOID | PIT, not PASSABLE — see terrain_flags.py.
+    # A deliberate step onto it (movement.py's move_entity) triggers a
+    # confirm-prompt + fall-through instead of the normal move.
+    CHASM = 33
 
 
 class RoomKind:

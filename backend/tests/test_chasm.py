@@ -1,0 +1,45 @@
+import sys, os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+
+from app.engine.dungeon.constants import TileType
+from app.engine.dungeon.terrain_flags import build_flag_maps
+from app.engine.manager import GameInstance
+
+
+def test_chasm_tile_is_avoid_and_pit_not_passable():
+    grid = [[TileType.CHASM for _ in range(3)] for _ in range(3)]
+    flags = build_flag_maps(grid)
+    # Border cells are forced solid/impassable regardless of tile id (see
+    # build_flag_maps Pass 2), so only the center cell reflects CHASM's own
+    # flags.
+    assert flags.avoid[1][1] is True
+    assert flags.pit[1][1] is True
+    assert flags.passable[1][1] is False
+    assert flags.solid[1][1] is False
+    assert flags.los_blocking[1][1] is False
+
+
+def test_floor_10_post_tengu_reveal_has_real_chasm_not_wall():
+    from app.engine.entities.base import Position
+    from app.engine.entities.mobs import Tengu
+    from app.engine.dungeon.spd_levelgen import prison_boss_layout as layout
+
+    game = GameInstance("test-chasm-floor10")
+    game.players = {}
+    floor = game.generate_floor(10)
+    player = game.add_player("p1", "Hero")
+    player.floor_id = 10
+    player.pos = Position(x=layout.TENGU_CELL_CENTER.x, y=layout.TENGU_CELL.top + 2)
+
+    game._update_prison_boss(floor, 10)  # -> FIGHT_START
+    tengu = next(m for m in floor.mobs.values() if isinstance(m, Tengu))
+    tengu.hp = tengu.max_hp // 2
+    game._update_prison_boss(floor, 10)  # -> FIGHT_PAUSE
+    player.pos = Position(x=layout.START_HALLWAY.left + 2, y=layout.START_HALLWAY.top)
+    game._update_prison_boss(floor, 10)  # -> FIGHT_ARENA
+    del floor.mobs[tengu.id]  # simulate Tengu's death/removal
+    game._update_prison_boss(floor, 10)  # -> WON
+
+    assert floor.tengu_state == "WON"
+    chasm_cells = sum(1 for row in floor.grid for cell in row if cell == TileType.CHASM)
+    assert chasm_cells > 0, "endMap's C cells must render as real chasm, not WALL"

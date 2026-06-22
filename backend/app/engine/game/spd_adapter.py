@@ -125,7 +125,7 @@ from app.engine.dungeon.spd_levelgen.generator import RolledItem
 
 # SPD terrain constant -> remake TileType
 _SPD_TO_TILE = {
-    spd_terrain.CHASM: TileType.WALL,
+    spd_terrain.CHASM: TileType.CHASM,
     spd_terrain.EMPTY: TileType.FLOOR,
     spd_terrain.GRASS: TileType.FLOOR_GRASS,
     spd_terrain.EMPTY_WELL: TileType.FLOOR,
@@ -570,6 +570,7 @@ def gen_level_to_floor_state(gen_level: GenLevel, depth: int) -> FloorState:
         yog_pos=getattr(gen_level, 'yog_pos', None),
         custom_tiles=list(getattr(gen_level, 'custom_tiles', [])),
         custom_walls=list(getattr(gen_level, 'custom_walls', [])),
+        torches=list(getattr(gen_level, 'torches', [])),
         alchemy_pots=alchemy_pots,
         entrance_pos=entrance_pos,
         exit_pos=exit_pos,
