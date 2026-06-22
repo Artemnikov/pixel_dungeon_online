@@ -43,6 +43,7 @@ export interface AnimState {
   operateUntil?: number;
   readUntil?: number;
   pumpUntil?: number;
+  chargeUntil?: number;
 }
 
 export interface Projectile {
@@ -122,6 +123,7 @@ export interface HookProps {
   trapsRef: Ref<TrapInfo[]>;
   customTilesRef: Ref<CustomTileLayer[]>;
   customWallsRef: Ref<CustomTileLayer[]>;
+  torchesRef: Ref<[number, number][]>;
   mobAnimRef: Ref<Record<string, AnimState>>;
   dyingMobsRef: Ref<Record<string, DyingMob>>;
   playerAnimRef: Ref<Record<string, AnimState>>;
@@ -143,6 +145,10 @@ export interface HookProps {
   wasDownedRef: Ref<boolean | undefined>;
   surpriseRef?: Ref<unknown[]>;
   selectedEnemyIdRef?: Ref<string | null>;
+  floorFadeRef?: Ref<unknown>;
+  onLoreNeeded?: (depth: number, finishTransition: () => void) => void;
+  cameraLerpRef?: Ref<{ x: number; y: number }>;
+  isCameraDetachedRef?: Ref<boolean>;
   setGrid: Dispatch<SetStateAction<number[][]>>;
   setDepth: (depth: number) => void;
   setMyPlayerId: (id: string) => void;
@@ -153,6 +159,8 @@ export interface HookProps {
   setBossInfo?: (info: { name: string; hp: number; maxHp: number; shield?: number; effects?: { key?: string; name?: string; icon?: number; remaining?: number; duration?: number }[] } | null) => void;
   setGold?: (gold: number) => void;
   setEnergy?: (energy: number) => void;
+  setHasAmulet?: (hasAmulet: boolean) => void;
+  setBossLurking?: (bossLurking: boolean) => void;
   setExitPos?: (pos: [number, number] | null) => void;
   setBelongings?: (belongings: Player['belongings'] | null) => void;
   setQuickslot?: (quickslot: Player['quickslot'] | null) => void;
@@ -165,6 +173,7 @@ export interface HookProps {
   onMetamorphOptions?: (data: { old_talent: string; options: string[] }) => void;
   onGooFightStarted?: (data: { mob: string }) => void;
   onTenguFightStarted?: (data: { mob: string }) => void;
+  onChasmPrompt?: (data: { x: number; y: number }) => void;
   onDM300FightStarted?: (data: { mob: string }) => void;
   onDwarfKingFightStarted?: (data: { mob: string }) => void;
   onDwarfKingPhase2?: (data: { mob: string }) => void;
@@ -172,7 +181,15 @@ export interface HookProps {
   onYogFinalPhase?: (data: { mob: string }) => void;
   onShopOpen?: (data: { npc: string; stock: SerializedItem[]; gold: number }) => void;
   onImpDialogue?: (data: { npc: string; text: string; can_claim: boolean; tokens?: number | null }) => void;
+  onGhostQuestGiven?: () => void;
+  onGhostQuestComplete?: () => void;
+  onGhostDialogue?: (data: { npc: string; text: string; can_claim: boolean; weapon?: SerializedItem | null; armor?: SerializedItem | null }) => void;
   onScrollSelectTarget?: (data: { player: string; scroll_id: string; scroll_kind: string; candidates: string[] }) => void;
+  onGhostGearOpen?: (data: {
+    player: string; rose_id: string; ghost_id: string;
+    ghost_hp: number; ghost_max_hp: number;
+    weapon?: Record<string, unknown> | null; armor?: Record<string, unknown> | null;
+  }) => void;
   onBossSlain?: (data: { mob: string; depth: number; badge_image: number }) => void;
   onPlayerDeath?: (data: { score_breakdown?: { kills: number; floors: number; gold: number }; can_resurrect?: boolean; victory?: boolean }) => void;
 }
@@ -215,6 +232,7 @@ export type HandlerCtx = Pick<
   onMetamorphOptions?: HookProps['onMetamorphOptions'];
   onGooFightStarted?: HookProps['onGooFightStarted'];
   onTenguFightStarted?: HookProps['onTenguFightStarted'];
+  onChasmPrompt?: HookProps['onChasmPrompt'];
   onDM300FightStarted?: HookProps['onDM300FightStarted'];
   onDwarfKingFightStarted?: HookProps['onDwarfKingFightStarted'];
   onDwarfKingPhase2?: HookProps['onDwarfKingPhase2'];
@@ -222,9 +240,14 @@ export type HandlerCtx = Pick<
   onYogFinalPhase?: HookProps['onYogFinalPhase'];
   onShopOpen?: HookProps['onShopOpen'];
   onImpDialogue?: HookProps['onImpDialogue'];
+  onGhostDialogue?: HookProps['onGhostDialogue'];
+  onGhostQuestGiven?: HookProps['onGhostQuestGiven'];
+  onGhostQuestComplete?: HookProps['onGhostQuestComplete'];
   onScrollSelectTarget?: HookProps['onScrollSelectTarget'];
+  onGhostGearOpen?: HookProps['onGhostGearOpen'];
   onBossSlain?: HookProps['onBossSlain'];
   onPlayerDeath?: HookProps['onPlayerDeath'];
+  depth?: number;
 };
 
 export type SyncCtx = Pick<

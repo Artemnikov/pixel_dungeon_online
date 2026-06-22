@@ -35,6 +35,8 @@ class InitMessage(_Envelope):
     height: int
     traps: List[Dict[str, Any]]
     custom_tiles: List[Dict[str, Any]] = []
+    custom_walls: List[Dict[str, Any]] = []
+    torches: List[Tuple[int, int]] = []
     # Only set on the very first INIT after connecting; omitted on floor change.
     player_id: Optional[str] = None
     entrance_pos: Optional[Tuple[int, int]] = None
@@ -52,4 +54,6 @@ class StateUpdateMessage(_Envelope):
     traps: List[Dict[str, Any]]
     gold: int
     energy: int
+    has_amulet: bool
+    boss_lurking: bool
     events: List[Any]

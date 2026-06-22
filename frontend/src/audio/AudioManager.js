@@ -14,6 +14,7 @@ import secretSound from '../assets/sounds/secret.mp3';
 import waterStepSound from '../assets/sounds/water.mp3';
 import grassStepSound from '../assets/sounds/grass.mp3';
 import descendSound from '../assets/pixel-dungeon/audio/descend.mp3';
+import fallingSound from '../assets/pixel-dungeon/audio/falling.mp3';
 import drinkSound from '../assets/sounds/drink.mp3';
 import throwSound from '../assets/sounds/miss.mp3';
 import levelUpSound from '../assets/sounds/levelup.mp3';
@@ -21,6 +22,7 @@ import trapSound from '../assets/sounds/trap.mp3';
 import chargeupSound from '../assets/pixel-dungeon/audio/chargeup.mp3';
 import burningSound from '../assets/pixel-dungeon/audio/burning.mp3';
 import bossSound from '../assets/pixel-dungeon/audio/boss.mp3';
+import ghostSound from '../assets/pixel-dungeon/audio/ghost.mp3';
 import alertSound from '../assets/pixel-dungeon/audio/alert.mp3';
 import unlockSound from '../assets/sounds/unlock.mp3';
 import readSound from '../assets/sounds/read.mp3';
@@ -36,6 +38,7 @@ import teleportSound from '../assets/sounds/teleport.mp3';
 import meldSound from '../assets/sounds/meld.mp3';
 import gasSound from '../assets/sounds/gas.mp3';
 import shatterSound from '../assets/sounds/shatter.mp3';
+import bonesSound from '../assets/sounds/bones.mp3';
 import { effectiveSfxVolume } from '../menu/menuSettings';
 
 class AudioManager {
@@ -68,12 +71,14 @@ class AudioManager {
         this.loadSound('DEATH', deathSound);
         this.loadSound('SECRET', secretSound);
         this.loadSound('STAIRS_DOWN', descendSound);
+        this.loadSound('FALLING', fallingSound);
         this.loadSound('DRINK', drinkSound);
         this.loadSound('LEVELUP', levelUpSound);
         this.loadSound('TRAP', trapSound);
         this.loadSound('CHARGEUP', chargeupSound);
         this.loadSound('BURNING', burningSound);
         this.loadSound('BOSS', bossSound);
+        this.loadSound('GHOST', ghostSound);
         this.loadSound('ALERT', alertSound);
         this.loadSound('UNLOCK', unlockSound);
         this.loadSound('READ', readSound);
@@ -89,6 +94,7 @@ class AudioManager {
         this.loadSound('MELD', meldSound);
         this.loadSound('GAS', gasSound);
         this.loadSound('SHATTER', shatterSound);
+        this.loadSound('BONES', bonesSound);
 
         const doorSounds = import.meta.glob('../assets/sounds/door_open.mp3', { eager: true, query: '?url' });
         const doorUrl = doorSounds['../assets/sounds/door_open.mp3']?.default;
@@ -163,6 +169,20 @@ class AudioManager {
             case 'DOOR_OPEN':
                 this.playTone(300, 'triangle', 0.15, 0.2);
                 this.playTone(200, 'triangle', 0.25, 0.15, 0.1);
+                break;
+            case 'TOMB':
+                this.playTone(80, 'sine', 0.6, 0.3);
+                this.playTone(60, 'sine', 0.6, 0.2, 0.15);
+                this.playNoise(0.3, 0.15, 'lowpass', 200);
+                break;
+            case 'CHARMS':
+                this.playTone(660, 'sine', 0.15, 0.15);
+                this.playTone(880, 'sine', 0.15, 0.15, 0.08);
+                this.playTone(1100, 'sine', 0.12, 0.2, 0.16);
+                break;
+            case 'LOCKED':
+                this.playTone(250, 'square', 0.08, 0.12);
+                this.playTone(200, 'square', 0.08, 0.08, 0.06);
                 break;
             default:
                 // console.log(`Sound not found: ${soundName}`);

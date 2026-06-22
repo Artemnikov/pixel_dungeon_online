@@ -143,6 +143,10 @@ def _apply_post_dr_multipliers(raw_damage: int, attacker: "Entity", defender: "E
     if defender.has_buff("death_mark"):
         effective = int(effective * 1.25)
 
+    # Degrade: reduces equipment effectiveness (15% less damage dealt).
+    if attacker.has_buff("degrade"):
+        effective = int(effective * 0.85)
+
     return effective
 
 
@@ -217,8 +221,14 @@ def resolve_melee_attack(
     elif getattr(attacker, "is_admin", False):
         result["hit"] = True
     else:
-        acu_roll = random.random() * attacker.attack_skill
-        def_roll = random.random() * defender.get_effective_defense_skill()
+        atk_acc = attacker.attack_skill
+        if attacker.has_buff("hex"):
+            atk_acc = int(atk_acc * 0.75)
+        def_ev = defender.get_effective_defense_skill()
+        if defender.has_buff("hex"):
+            def_ev = int(def_ev * 0.75)
+        acu_roll = random.random() * atk_acc
+        def_roll = random.random() * def_ev
         if acu_roll < def_roll:
             result["missed"] = True
             result["defense_verb"] = defender.defense_verb
@@ -285,6 +295,10 @@ def resolve_melee_attack(
 
     if hasattr(attacker, "attack_proc") and actual_damage > 0:
         attacker.attack_proc(defender)
+        pending = getattr(attacker, "_pending_sound", None)
+        if pending:
+            add_event("PLAY_SOUND", {"sound": pending}, floor_id=getattr(attacker, "floor_id", 0))
+            attacker._pending_sound = None
 
     # Other weapon enchants/curses (vampiric, blocking, elastic, shocking,
     # sacrificial, displacing, annoying, unstable).
@@ -371,11 +385,16 @@ def resolve_ranged_attack(
         result["hit"] = True
     else:
         attack_skill = attacker.attack_skill
+        if attacker.has_buff("hex"):
+            attack_skill = int(attack_skill * 0.75)
         proj_momentum = getattr(attacker, "subclass_info", None) and attacker.subclass_info.talent_info.level("projectile_momentum")
         if proj_momentum and getattr(attacker, "freerun_seconds", 0) > 0:
             attack_skill *= 1 + proj_momentum / 2
+        def_ev = defender.get_effective_defense_skill()
+        if defender.has_buff("hex"):
+            def_ev = int(def_ev * 0.75)
         acu_roll = random.random() * attack_skill
-        def_roll = random.random() * defender.get_effective_defense_skill()
+        def_roll = random.random() * def_ev
         if acu_roll < def_roll:
             result["missed"] = True
             result["defense_verb"] = defender.defense_verb
@@ -417,5 +436,9 @@ def resolve_ranged_attack(
 
     if hasattr(attacker, "attack_proc") and actual_damage > 0:
         attacker.attack_proc(defender)
+        pending = getattr(attacker, "_pending_sound", None)
+        if pending:
+            add_event("PLAY_SOUND", {"sound": pending}, floor_id=getattr(attacker, "floor_id", 0))
+            attacker._pending_sound = None
 
     return result

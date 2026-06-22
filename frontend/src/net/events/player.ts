@@ -233,6 +233,14 @@ export function handlePlayerEvents(event: GameEvent, ctx: HandlerCtx): boolean {
     return true;
   }
 
+  if (event.type === 'DROP' && event.data.player === myPlayerIdRef.current) {
+    AudioManager.play('PICKUP');
+    addGameLog(`You drop the ${event.data.item_name}`, 'neutral');
+    const me = entitiesRef.current?.players?.[myPlayerIdRef.current];
+    if (me && floatingTextRef) spawnFloatingText(floatingTextRef, me.renderPos.x * TILE_SIZE + TILE_SIZE / 2, me.renderPos.y * TILE_SIZE, `${event.data.item_name}`, '#ffffff', 18);
+    return true;
+  }
+
   if (event.type === 'PICKUP' && event.data.player === myPlayerIdRef.current) {
     AudioManager.play('PICKUP');
     addGameLog(`You picked up ${event.data.item}`, 'positive');

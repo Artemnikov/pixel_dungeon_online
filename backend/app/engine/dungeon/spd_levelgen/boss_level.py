@@ -551,6 +551,12 @@ class SewerBossExitRoom(StandardRoom):
 
         Painter.set(level, c, terrain.LOCKED_EXIT)
 
+        # SewerBossLevel.addVisuals(): lit torches flanking the exit (a
+        # flame + light visual, not a terrain tile -- tracked separately so
+        # the frontend can render its own flame VFX at these positions).
+        level.torches.append((c.x - 1, c.y))
+        level.torches.append((c.x + 1, c.y))
+
         # SewerExit decorative floor tiles (3x3, idx 21-24 from sewer_boss.png)
         level.custom_tiles.append({
             "texture": "sewer_boss",
@@ -607,21 +613,22 @@ class RatKingRoom(SecretRoom):
         door = door_x + door_y * level.width()
 
         for i in range(self.left + 1, self.right):
-            self._add_chest(level, (self.top + 1) * level.width() + i, door)
-            self._add_chest(level, (self.bottom - 1) * level.width() + i, door)
+            self._add_chest(rng, level, (self.top + 1) * level.width() + i, door)
+            self._add_chest(rng, level, (self.bottom - 1) * level.width() + i, door)
 
         for i in range(self.top + 2, self.bottom - 1):
-            self._add_chest(level, i * level.width() + self.left + 1, door)
-            self._add_chest(level, i * level.width() + self.right - 1, door)
+            self._add_chest(rng, level, i * level.width() + self.left + 1, door)
+            self._add_chest(rng, level, i * level.width() + self.right - 1, door)
 
         king_pos = level.point_to_cell(self.random(rng, 2))
         level.mobs.append(GenMob(cls_name="RatKing", pos=king_pos))
 
     @staticmethod
-    def _add_chest(level: GenLevel, pos: int, door: int) -> None:
+    def _add_chest(rng: SPDRandom, level: GenLevel, pos: int, door: int) -> None:
         if (pos == door - 1 or pos == door + 1
                 or pos == door - level.width() or pos == door + level.width()):
             return
+        rng.IntRange(10, 25)  # new Gold(Random.IntRange(10, 25)) -- RNG-call parity
         level.drop(frozenset({"Gold", "CHEST"}), pos).type = "CHEST"
 
 
@@ -682,7 +689,7 @@ class CavesBossExitRoom(StandardRoom):
         Painter.fill(level, self, terrain.WALL)
         Painter.fill(level, self, 1, terrain.EMPTY)
         c = self.center(rng)
-        Painter.set(level, c, terrain.LOCKED_EXIT)
+        Painter.set(level, c, terrain.EXIT)
         for door in self.connected.values():
             door.set(DoorType.REGULAR)
 
@@ -822,7 +829,7 @@ class CityBossExitRoom(StandardRoom):
         Painter.fill(level, self, terrain.WALL)
         Painter.fill(level, self, 1, terrain.EMPTY)
         c = self.center(rng)
-        Painter.set(level, c, terrain.LOCKED_EXIT)
+        Painter.set(level, c, terrain.EXIT)
         for door in self.connected.values():
             door.set(DoorType.REGULAR)
 

@@ -48,6 +48,6 @@ class DemonSpawnerAIMixin:
             floor.mobs[new_mob.id] = new_mob
             self.add_event("MOB_SPAWN", {"mob": new_mob.id, "cls": "RipperDemon"}, floor_id=floor_id)
 
-            spawner.spawn_cooldown += 60
+            spawner.spawn_cooldown += 90
             if floor.floor_id > 21:
-                spawner.spawn_cooldown -= min(20, int((floor.floor_id - 21) * 6.67))
+                spawner.spawn_cooldown -= min(30, int((floor.floor_id - 21) * 10))

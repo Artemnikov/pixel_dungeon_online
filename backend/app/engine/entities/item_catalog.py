@@ -21,6 +21,7 @@ Backs the admin "give item" debug tool (`GET /api/items/catalog` and the
 from typing import Callable, List, Optional, TypedDict
 
 from app.engine.entities.base import (
+    Amulet,
     Armor,
     Artifact,
     Bag,
@@ -30,6 +31,7 @@ from app.engine.entities.base import (
     BrokenSeal,
     ChargrilledMeat,
     CloakOfShadows,
+    DriedRose,
     Dagger,
     Dewdrop,
     DwarfToken,
@@ -37,6 +39,7 @@ from app.engine.entities.base import (
     Food,
     FuryPotion,
     GooBlob,
+    Petal,
     Gold,
     HealthPotion,
     ItemBase,
@@ -128,6 +131,7 @@ _CATALOG: List[tuple] = [
     ("artifact", "Artifact", "artifact", lambda: Artifact(name="Artifact")),
     ("broken_seal", "Broken Seal", "artifact", lambda: BrokenSeal()),
     ("cloak_of_shadows", "Cloak of Shadows", "artifact", lambda: CloakOfShadows()),
+    ("dried_rose", "Dried Rose", "artifact", lambda: DriedRose()),
     ("wand", "Wand", "wand", lambda: Wand(name="Wand")),
     ("wand_magic_missile", "Wand of Magic Missile", "wand", lambda: WandOfMagicMissile()),
     ("wand_fireblast", "Wand of Fireblast", "wand", lambda: WandOfFireblast()),
@@ -198,9 +202,11 @@ _CATALOG: List[tuple] = [
     ("throwable_dagger", "Throwable Dagger", "misc", lambda: ThrowableDagger()),
     ("throwable", "Throwable", "misc", lambda: Throwable(name="Throwable")),
     ("goo_blob", "Goo Blob", "misc", lambda: GooBlob()),
+    ("petal", "Petal", "misc", lambda: Petal()),
     ("dwarf_token", "Dwarf Token", "misc", lambda: DwarfToken()),
     ("tengu_mask", "Tengu's Mask", "misc", lambda: TenguMask()),
     ("kings_crown", "King's Crown", "misc", lambda: KingsCrown()),
+    ("amulet", "Amulet of Yendor", "misc", lambda: Amulet()),
 
     # Containers
     ("velvet_pouch", "Velvet Pouch", "container", lambda: VelvetPouch()),

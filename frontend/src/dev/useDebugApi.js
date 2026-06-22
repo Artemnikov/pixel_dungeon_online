@@ -8,8 +8,8 @@ const TILE_NAMES = Object.fromEntries(
 const ASCII = {
   0: ' ', 2: '.', 3: '+', 4: '<', 5: '>',
   6: '.', 7: '~', 8: '.', 9: '"', 10: 'L',
-  11: '#', 12: '#', 13: '#', 14: '#', 15: '#',
-  16: '#', 17: '#', 18: '.', 19: '"', 20: '#',
+  11: '#', 12: '#', 13: '#', 14: '#', 15: '%',
+  16: '%', 17: '#', 18: '.', 19: '"', 20: '#',
 };
 
 export default function useDebugApi({
@@ -98,7 +98,7 @@ export default function useDebugApi({
 
       help: () => [
         'tiles()    2D array of tile ids',
-        'ascii()    ASCII map with entities (# wall, . floor, ~ water, " grass, + door, < > stairs, @ me, P player, m mob)',
+        'ascii()    ASCII map with entities (# wall, % region-deco, . floor, ~ water, " grass, + door, < > stairs, @ me, P player, m mob)',
         'entities() { players, mobs }',
         'at(x,y)    tile + entities at cell',
         'vision()   visible/discovered counts',

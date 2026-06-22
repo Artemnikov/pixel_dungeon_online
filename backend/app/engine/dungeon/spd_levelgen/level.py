@@ -142,6 +142,13 @@ class GenLevel:
         # Custom wall overlay tilemaps rendered above characters, e.g.
         # SewerExitOverhang arch above the boss exit. Same format as custom_tiles.
         self.custom_walls: list[dict] = []
+        # SPD's Torch Emitter+Halo positions (e.g. SewerBossLevel.addVisuals()) --
+        # purely cosmetic flame VFX, not a terrain tile.
+        self.torches: list[tuple[int, int]] = []
+        # Which Builder shape produced this floor's room graph ("loop" or
+        # "figure_eight") -- set by build_floor, surfaced via generation_meta
+        # for layout-dependent debug/test assertions.
+        self.layout_kind: str = "loop"
 
     def width(self) -> int:
         return self._width
@@ -229,12 +236,6 @@ class GenLevel:
         self.traps[pos] = trap
         return trap
 
-    def _unique_terrain_cell(self, tile_id: int) -> int:
-        for cell, value in enumerate(self.map):
-            if value == tile_id:
-                return cell
-        raise ValueError(f"no terrain id {tile_id} found on the painted map")
-
     def entrance(self) -> int:
         """Port of Level.entrance() -- the cell EntranceRoom painted ENTRANCE/
         ENTRANCE_SP onto (LevelTransition.cell(), scanned directly since
@@ -246,8 +247,15 @@ class GenLevel:
         raise ValueError("no ENTRANCE/ENTRANCE_SP tile found on the painted map")
 
     def exit(self) -> int:
-        """Port of Level.exit() -- the cell ExitRoom painted EXIT onto."""
-        return self._unique_terrain_cell(terrain.EXIT)
+        """Port of Level.exit() -- the cell the exit's LevelTransition sits
+        on. Java tracks this via the transitions list, independent of
+        terrain; regular floors paint Terrain.EXIT there, but boss floors
+        (SewerBossExitRoom et al.) paint Terrain.LOCKED_EXIT instead, so
+        scanning for EXIT alone misses every boss floor's exit cell."""
+        for cell, value in enumerate(self.map):
+            if value == terrain.EXIT or value == terrain.LOCKED_EXIT:
+                return cell
+        raise ValueError("no EXIT/LOCKED_EXIT tile found on the painted map")
 
     def room(self, pos: int) -> Optional[Room]:
         """Port of RegularLevel.room(int) -- linear search over `rooms`."""

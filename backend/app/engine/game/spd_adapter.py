@@ -23,7 +23,9 @@ from app.engine.dungeon.spd_levelgen.traps import Trap as SpdTrap
 from app.engine.dungeon.spd_levelgen.traps import BurningTrap, BlazingTrap
 from app.engine.dungeon.generator import TileType
 from app.engine.entities.base import (
+    Amulet,
     Armor,
+    Chest,
     Dewdrop,
     EntityType,
     Food,
@@ -42,6 +44,7 @@ from app.engine.entities.base import (
 )
 from app.engine.entities.item_catalog import FLOOR_SCROLL_KINDS, TRANSMUTE_GROUPS, make_catalog_item
 from app.engine.entities.weapon_defs import WEP_TIER_ORDER
+from app.engine.entities.quest_bosses import FetidRat, Ghost, GnollTrickster, GreatCrab
 from app.engine.entities.mobs import (
     AcidicScorpio,
     AlbinoRat,
@@ -122,7 +125,7 @@ from app.engine.dungeon.spd_levelgen.generator import RolledItem
 
 # SPD terrain constant -> remake TileType
 _SPD_TO_TILE = {
-    spd_terrain.CHASM: TileType.WALL,
+    spd_terrain.CHASM: TileType.CHASM,
     spd_terrain.EMPTY: TileType.FLOOR,
     spd_terrain.GRASS: TileType.FLOOR_GRASS,
     spd_terrain.EMPTY_WELL: TileType.FLOOR,
@@ -135,10 +138,10 @@ _SPD_TO_TILE = {
     spd_terrain.EMBERS: TileType.EMBERS,
     spd_terrain.LOCKED_DOOR: TileType.LOCKED_DOOR,
     spd_terrain.HERO_LKD_DR: TileType.LOCKED_DOOR,
-    spd_terrain.CRYSTAL_DOOR: TileType.LOCKED_DOOR,
+    spd_terrain.CRYSTAL_DOOR: TileType.CRYSTAL_DOOR,
     spd_terrain.PEDESTAL: TileType.FLOOR,
     spd_terrain.WALL_DECO: TileType.WALL_DECO,
-    spd_terrain.BARRICADE: TileType.WALL,
+    spd_terrain.BARRICADE: TileType.BARRICADE,
     spd_terrain.EMPTY_SP: TileType.FLOOR,
     spd_terrain.HIGH_GRASS: TileType.HIGH_GRASS,
     spd_terrain.FURROWED_GRASS: TileType.FURROWED_GRASS,
@@ -147,7 +150,7 @@ _SPD_TO_TILE = {
     spd_terrain.TRAP: TileType.TRAP,
     spd_terrain.INACTIVE_TRAP: TileType.INACTIVE_TRAP,
     spd_terrain.EMPTY_DECO: TileType.EMPTY_DECO,
-    spd_terrain.LOCKED_EXIT: TileType.LOCKED_DOOR,
+    spd_terrain.LOCKED_EXIT: TileType.LOCKED_EXIT,
     spd_terrain.UNLOCKED_EXIT: TileType.FLOOR,
     spd_terrain.WELL: TileType.FLOOR,
     spd_terrain.BOOKSHELF: TileType.WALL,
@@ -156,8 +159,8 @@ _SPD_TO_TILE = {
     spd_terrain.CUSTOM_DECO_EMPTY: TileType.EMPTY_DECO,
     spd_terrain.STATUE: TileType.WALL,
     spd_terrain.STATUE_SP: TileType.WALL,
-    spd_terrain.REGION_DECO: TileType.WALL_DECO,
-    spd_terrain.REGION_DECO_ALT: TileType.WALL_DECO,
+    spd_terrain.REGION_DECO: TileType.REGION_DECO,
+    spd_terrain.REGION_DECO_ALT: TileType.REGION_DECO_ALT,
     spd_terrain.MINE_CRYSTAL: TileType.WALL,
     spd_terrain.MINE_BOULDER: TileType.WALL,
     spd_terrain.WATER: TileType.FLOOR_WATER,
@@ -245,6 +248,11 @@ _MOB_CLASSES: Dict[str, type[MobEntity]] = {
     "RatKing": RatKing,
     "Shopkeeper": Shopkeeper,
     "Imp": Imp,
+    # Sewers Ghost quest (depths 2-4)
+    "Ghost": Ghost,
+    "FetidRat": FetidRat,
+    "GnollTrickster": GnollTrickster,
+    "GreatCrab": GreatCrab,
 }
 
 # Trap class (SPD) -> remake TrapType
@@ -285,8 +293,10 @@ def _convert_room(spd_room) -> LegacyRoom:
     w = spd_room.right - spd_room.left - 1
     h = spd_room.bottom - spd_room.top - 1
     kind = RoomKind.STANDARD
-    from app.engine.dungeon.spd_levelgen.room_types import SpecialRoom
-    if isinstance(spd_room, SpecialRoom):
+    from app.engine.dungeon.spd_levelgen.room_types import SecretRoom, SpecialRoom
+    if isinstance(spd_room, SecretRoom):
+        kind = RoomKind.HIDDEN
+    elif isinstance(spd_room, SpecialRoom):
         kind = RoomKind.SPECIAL
     return LegacyRoom(
         x=spd_room.left + 1,
@@ -296,6 +306,13 @@ def _convert_room(spd_room) -> LegacyRoom:
         kind=kind,
         room_id=id(spd_room) & 0xFFFF,
     )
+
+
+def _room_ids_by_kind(rooms: List[LegacyRoom]) -> Dict[str, List[int]]:
+    by_kind: Dict[str, List[int]] = {RoomKind.STANDARD: [], RoomKind.SPECIAL: [], RoomKind.HIDDEN: []}
+    for room in rooms:
+        by_kind.setdefault(room.kind, []).append(room.room_id)
+    return by_kind
 
 
 def _spawn_mob(gen_mob: GenMob, width: int) -> MobEntity:
@@ -324,6 +341,31 @@ def _spawn_item(heap_items: list, cell_x: int, cell_y: int) -> Item:
         if isinstance(item, frozenset):
             return _descriptor_to_item(item, cell_x, cell_y)
     return Gold(id=str(uuid.uuid4()), pos=Position(x=cell_x, y=cell_y))
+
+
+_CHEST_TYPE_NAMES = {
+    "CHEST": "Chest",
+    "LOCKED_CHEST": "Locked Chest",
+    "CRYSTAL_CHEST": "Crystal Chest",
+    "TOMB": "Tomb",
+    "SKELETON": "Skeleton",
+    "REMAINS": "Remains",
+}
+
+
+def _spawn_chest(heap, cell_x: int, cell_y: int) -> Optional[Chest]:
+    chest_type = getattr(heap, "type", "HEAP")
+    name = _CHEST_TYPE_NAMES.get(chest_type)
+    if name is None:
+        return None
+    contents = [_spawn_item([item], cell_x, cell_y) for item in getattr(heap, "items", [])]
+    return Chest(
+        id=str(uuid.uuid4()),
+        name=name,
+        pos=Position(x=cell_x, y=cell_y),
+        chest_type=chest_type,
+        contents=contents,
+    )
 
 
 def _make_melee_weapon(tier_category: str, item_index: int, level: int, iid: str, pos: Position) -> Item:
@@ -378,6 +420,7 @@ _DESCRIPTOR_ITEM_MAP = {
     "IronKey": lambda iid, pos: Key(id=iid, pos=pos, name="Iron Key", key_id="iron"),
     "GoldenKey": lambda iid, pos: Key(id=iid, pos=pos, name="Golden Key", key_id="golden"),
     "CrystalKey": lambda iid, pos: Key(id=iid, pos=pos, name="Crystal Key", key_id="crystal"),
+    "Amulet": lambda iid, pos: Amulet(id=iid, pos=pos, name="Amulet of Yendor"),
     "GuidePage": lambda iid, pos: Scroll(id=iid, pos=pos, name="Guide Page"),
     "DocumentPage": lambda iid, pos: Scroll(id=iid, pos=pos, name="Document Page"),
     "Food": lambda iid, pos: Food(id=iid, pos=pos, name="Food"),
@@ -444,19 +487,25 @@ def gen_level_to_floor_state(gen_level: GenLevel, depth: int) -> FloorState:
             row.append(_convert_tile(spd_val))
         grid.append(row)
 
-    rooms = [_convert_room(r) for r in gen_level.rooms if hasattr(r, 'left')]
+    from app.engine.dungeon.spd_levelgen.connection_rooms import ConnectionRoom
+    rooms = [_convert_room(r) for r in gen_level.rooms
+             if hasattr(r, 'left') and not isinstance(r, ConnectionRoom)]
 
     mobs: Dict[str, MobEntity] = {}
     for gen_mob in gen_level.mobs:
         if isinstance(gen_mob, GenMob):
             mob = _spawn_mob(gen_mob, w)
             mobs[mob.id] = mob
+            # Ghost quest (sewers depths 2-4): remember the live mob id so
+            # world.py's interaction/reward handlers can find it by identity.
+            if gen_mob.cls_name == "Ghost" and gen_level.run_state is not None:
+                gen_level.run_state.ghost_quest.ghost_id = mob.id
 
     items: Dict[str, Item] = {}
     for cell, heap in gen_level.heaps.items():
         x = cell % w
         y = cell // w
-        item = _spawn_item(heap.items, x, y)
+        item = _spawn_chest(heap, x, y) or _spawn_item(heap.items, x, y)
         items[item.id] = item
 
     # Extract items from mimics (not yet implemented as entities) so keys
@@ -512,6 +561,8 @@ def gen_level_to_floor_state(gen_level: GenLevel, depth: int) -> FloorState:
         generation_meta={
             "seed": str(getattr(gen_level, '_seed', '')),
             "spd_generated": True,
+            "layout_kind": getattr(gen_level, 'layout_kind', 'loop'),
+            "room_ids_by_kind": _room_ids_by_kind(rooms),
             **({"imp_shop_room": gen_level.imp_shop_room, "imp_shop_spawned": False}
                if hasattr(gen_level, 'imp_shop_room') else {}),
         },
@@ -519,6 +570,7 @@ def gen_level_to_floor_state(gen_level: GenLevel, depth: int) -> FloorState:
         yog_pos=getattr(gen_level, 'yog_pos', None),
         custom_tiles=list(getattr(gen_level, 'custom_tiles', [])),
         custom_walls=list(getattr(gen_level, 'custom_walls', [])),
+        torches=list(getattr(gen_level, 'torches', [])),
         alchemy_pots=alchemy_pots,
         entrance_pos=entrance_pos,
         exit_pos=exit_pos,

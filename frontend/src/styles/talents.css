@@ -1,0 +1,347 @@
+/* === SPD-Style Talent Pane === */
+.talent-overlay {
+  position: fixed; inset: 0; z-index: 400;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(0, 0, 0, 0.6);
+}
+.talent-pane {
+  background: #393b35;
+  border: 2px solid #7b8073;
+  border-radius: 10px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6), inset 0 0 0 2px #555950;
+  width: 460px;
+  max-width: 94vw;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
+  font-family: 'Courier New', Courier, monospace;
+}
+.talent-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border-bottom: 2px solid #555950;
+  flex-wrap: wrap;
+}
+.talent-title {
+  margin: 0;
+  color: #ffe070;
+  font-size: 18px;
+  font-weight: bold;
+}
+.talent-loading, .talent-error {
+  padding: 40px 16px;
+  text-align: center;
+  color: #aaa;
+  font-size: 14px;
+}
+.talent-error {
+  color: #ff6b6b;
+}
+.talent-level-badge {
+  color: #aaa;
+  font-size: 11px;
+  background: #1a1a22;
+  padding: 2px 6px;
+  border-radius: 3px;
+  border: 1px solid #333;
+}
+.talent-badge {
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  text-transform: capitalize;
+  cursor: default;
+}
+.talent-badge.subclass-badge {
+  color: #88ccff;
+  background: #1a2a3a;
+  border: 1px solid #3a6a8a;
+}
+.talent-badge.ability-badge {
+  color: #88ff88;
+  background: #1a2a1a;
+  border: 1px solid #3a6a3a;
+}
+.talent-action-btn {
+  font-size: 11px;
+  font-family: inherit;
+  padding: 3px 10px;
+  border: 1px solid #88ccff;
+  border-radius: 4px;
+  background: #1a2a3a;
+  color: #88ccff;
+  cursor: pointer;
+}
+.talent-action-btn:hover {
+  background: #2a3a4a;
+}
+.talent-pts-badge {
+  margin-left: auto;
+  display: flex;
+  gap: 4px;
+}
+.talent-tier-pts {
+  background: #2a4a2a;
+  color: #66dd66;
+  font-size: 10px;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+.admin-level-btn {
+  font-size: 11px;
+  font-family: inherit;
+  padding: 3px 10px;
+  border: 1px solid #ffd700;
+  border-radius: 4px;
+  background: #3a2a1a;
+  color: #ffd700;
+  cursor: pointer;
+}
+.admin-level-btn:hover {
+  background: #4a3a2a;
+}
+.talent-close {
+  background: none;
+  border: none;
+  color: #888;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 0 4px;
+  line-height: 1;
+}
+.talent-close:hover { color: #fff; }
+.talent-body {
+  overflow-y: auto;
+  padding: 8px 14px 14px;
+  display: flex;
+  flex-direction: column;
+}
+.talent-body::-webkit-scrollbar {
+  width: 6px;
+}
+.talent-body::-webkit-scrollbar-track {
+  background: transparent;
+}
+.talent-body::-webkit-scrollbar-thumb {
+  background: rgba(123, 128, 115, 0.5);
+  border-radius: 3px;
+}
+
+/* Admin item browser */
+.item-browser-pane {
+  width: 360px;
+}
+.item-browser-search {
+  padding: 10px 14px 0;
+}
+.item-browser-search input {
+  width: 100%;
+  box-sizing: border-box;
+  font-family: inherit;
+  font-size: 13px;
+  padding: 6px 10px;
+  border: 1px solid #7b8073;
+  border-radius: 4px;
+  background: #2c2e29;
+  color: #eee;
+}
+.item-browser-list {
+  max-height: 60vh;
+}
+.item-browser-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.item-browser-row:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+.item-browser-name {
+  flex: 1;
+  color: #eee;
+  font-size: 13px;
+}
+.item-browser-category {
+  color: #888;
+  font-size: 11px;
+  text-transform: uppercase;
+}
+.item-browser-empty {
+  padding: 20px;
+  text-align: center;
+  color: #888;
+}
+
+/* SPD-style tier pane */
+.tier-pane {
+  padding: 4px 0 8px;
+}
+.tier-pane-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+  height: 16px;
+}
+.tier-title {
+  color: #ffff44;
+  font-size: 18px;
+  font-weight: bold;
+  line-height: 16px;
+}
+.tier-stars {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  height: 16px;
+}
+.tier-star {
+  width: 14px;
+  height: 14px;
+  background-size: 14px 14px;
+  flex-shrink: 0;
+}
+.tier-star.available {
+  filter: brightness(1);
+}
+.tier-star.spent {
+  filter: brightness(0.75);
+}
+.tier-star.locked {
+  filter: brightness(0);
+}
+.tier-pts-badge {
+  color: #66dd66;
+  font-size: 10px;
+  background: #1a2a1a;
+  padding: 1px 5px;
+  border-radius: 3px;
+  border: 1px solid #2a4a2a;
+  line-height: 14px;
+}
+.tier-random-btn {
+  margin-left: auto;
+  width: 16px;
+  height: 16px;
+  background: none;
+  border: 1px solid #555;
+  border-radius: 3px;
+  color: #aaa;
+  font-size: 12px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  font-family: inherit;
+  line-height: 1;
+  flex-shrink: 0;
+}
+.tier-random-btn:hover {
+  background: #2a2a35;
+  color: #fff;
+}
+.tier-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.tier-separator {
+  height: 1px;
+  background: #000;
+  margin: 2px 0;
+  width: 100%;
+}
+.tier-pane-blocker {
+  background: #1a1a22;
+  padding: 24px 16px;
+  text-align: center;
+  min-height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.tier-pane-blocker-text {
+  color: #666;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+/* Talent buttons (SPD-style: 40x52 @2x) */
+.talent-btn {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: filter 0.1s;
+}
+.talent-btn:hover {
+  filter: brightness(1.3);
+}
+.talent-btn.locked {
+  cursor: default;
+}
+.talent-btn.pressed {
+  filter: brightness(1.5);
+}
+.talent-btn.locked:hover {
+  filter: none;
+}
+.talent-btn.locked.pressed {
+  filter: none;
+}
+
+/* Metamorph target glow */
+.talent-btn.metamorph-target {
+  box-shadow: 0 0 8px 3px rgba(255, 200, 50, 0.7);
+  animation: metamorph-pulse 1s ease-in-out infinite;
+}
+.talent-btn.metamorph-target:hover {
+  box-shadow: 0 0 12px 5px rgba(255, 200, 50, 1);
+}
+@keyframes metamorph-pulse {
+  0%, 100% { box-shadow: 0 0 8px 3px rgba(255, 200, 50, 0.7); }
+  50% { box-shadow: 0 0 8px 3px rgba(255, 200, 50, 0.3); }
+}
+.talent-metamorph-hint {
+  font-size: 11px;
+  color: #ffcc33;
+  margin-left: 8px;
+  font-style: italic;
+}
+
+/* Upgrade particle burst */
+.talent-burst {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10;
+  overflow: visible;
+}
+.talent-star-particle {
+  position: absolute;
+  width: 6px;
+  height: 6px;
+  background: #ffff88;
+  clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+  left: 18px;
+  top: 24px;
+  animation: talent-star-fly 0.4s ease-out forwards;
+  animation-delay: var(--delay);
+}
+@keyframes talent-star-fly {
+  0% { transform: translate(0, 0) scale(1); opacity: 1; }
+  100% { transform: translate(var(--dx), var(--dy)) scale(0.3); opacity: 0; }
+}
+
+/* Talent icon inside buttons */
+.talent-icon {
+  flex-shrink: 0;
+}

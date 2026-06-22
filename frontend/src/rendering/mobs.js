@@ -23,6 +23,11 @@ export const SCORPIO_FW = 17;
 export const GNOLL_FW = 12;
 export const GNOLL_FH = 15;
 
+// Shaman: 12x15 frames, same layout as Gnoll. Three variants stacked in shaman.png:
+//   Red = row 0, Blue = row 1, Purple = row 2 (15px per row).
+export const SHAMAN_FW = 12;
+export const SHAMAN_FH = 15;
+
 // Snake uses 12x11 frames. In-tile placement: 24x22 @ +4,+5 (centered in 32x32).
 export const SNAKE_FW = 12;
 export const SNAKE_FH = 11;
@@ -40,6 +45,10 @@ export const THIEF_DEST = { dx: 4, dy: 3, dw: 24, dh: 26 };
 export const DM100_FW = 16;
 export const DM100_FH = 14;
 export const DM100_DEST = { dx: 0, dy: 2, dw: 32, dh: 28 };
+
+export const DM200_FW = 21;
+export const DM200_FH = 18;
+export const DM200_DEST = { dx: -5, dy: -4, dw: 42, dh: 36 };
 
 export const GUARD_FW = 12;
 export const GUARD_FH = 16;
@@ -152,6 +161,16 @@ export const RATKING_FW = 16;
 export const RATKING_FH = 17;
 export const RATKING_DEST = { dx: 0, dy: -2, dw: 32, dh: 34 };
 
+// Ghost NPC: 14x15 frames (GhostSprite TextureFilm(texture, 14, 15)), ghost.png.
+// 128x16 sheet; 8 frames (0-7). Centered/bottom-aligned in 32px tile, scaled 2x -> 28x30 @ +2,+2.
+export const GHOST_FW = 14;
+export const GHOST_FH = 15;
+export const GHOST_DEST = { dx: 2, dy: 2, dw: 28, dh: 30 };
+
+export const SUCCUBUS_FW = 12;
+export const SUCCUBUS_FH = 15;
+export const SUCCUBUS_DEST = { dx: 4, dy: 2, dw: 24, dh: 30 };
+
 const isEntityMoving = (mob) =>
   mob.targetPos &&
   (Math.abs(mob.targetPos.x - mob.renderPos.x) > 0.05 ||
@@ -192,6 +211,47 @@ export const getGnollFrame = (mob, mobAnim, now) => {
     return [4, 5, 6, 7][Math.floor(now / 83) % 4] * GNOLL_FW;
   }
   return [0, 0, 0, 1, 0, 0, 1, 1][Math.floor(now / 500) % 8] * GNOLL_FW;
+};
+
+// Shaman: 12x15 frames, same frame layout as Gnoll. Three variants selected via sy row offset
+// in draw (Red=0, Blue=SHAMAN_FH, Purple=2*SHAMAN_FH).
+// SPD ShamanSprite:
+//   idle    2fps loop  [0,0,0,1,0,0,1,1]
+//   run    12fps loop  [4,5,6,7]
+//   attack 12fps once  [2,3,0]
+//   die    12fps once  [8,9,10]    (death handled in draw/mobs.js)
+export const getShamanFrame = (mob, mobAnim, now) => {
+  const anim = mobAnim[mob.id] || {};
+  const isAttacking = anim.attackUntil && now < anim.attackUntil;
+  if (isAttacking) {
+    const elapsed = now - (anim.attackUntil - 250);
+    const fi = Math.min(Math.floor(elapsed / 83), 2);
+    return [2, 3, 0][fi] * SHAMAN_FW;
+  }
+  if (isEntityMoving(mob)) {
+    return [4, 5, 6, 7][Math.floor(now / 83) % 4] * SHAMAN_FW;
+  }
+  return [0, 0, 0, 1, 0, 0, 1, 1][Math.floor(now / 500) % 8] * SHAMAN_FW;
+};
+
+// Gnoll Trickster: gnoll.png row 2 (12x15 frames), frame offset c=42 per
+// GnollTricksterSprite.java:
+//   idle    2fps loop  [0,0,0,1]
+//   run    12fps loop  [2,3,4,5]    (different from Gnoll's [4,5,6,7])
+//   attack 12fps once  [6,7,0]
+//   die    12fps once  [8,9,10]     (death handled in draw/mobs.js)
+export const getGnollTricksterFrame = (mob, mobAnim, now) => {
+  const anim = mobAnim[mob.id] || {};
+  const isAttacking = anim.attackUntil && now < anim.attackUntil;
+  if (isAttacking) {
+    const elapsed = now - (anim.attackUntil - 250);
+    const fi = Math.min(Math.floor(elapsed / 83), 2);
+    return [6, 7, 0][fi] * GNOLL_FW;
+  }
+  if (isEntityMoving(mob)) {
+    return [2, 3, 4, 5][Math.floor(now / 83) % 4] * GNOLL_FW;
+  }
+  return [0, 0, 0, 1][Math.floor(now / 500) % 4] * GNOLL_FW;
 };
 
 export const getScorpioFrame = (mob, mobAnim, now) => {
@@ -266,6 +326,26 @@ export const getDM100Frame = (mob, mobAnim, now) => {
   return [0, 1][Math.floor(now / 1000) % 2] * DM100_FW;
 };
 
+// DM-200 / DM-201: SPD DM200Sprite frame layout
+//   idle    10fps loop   [0,1]
+//   run     10fps loop   [2,3]
+//   attack  15fps once    [4,5,6]
+//   zap     15fps loop    [7,8,8,7]
+//   die     8fps once     [9,10,11]    (death handled in draw/mobs.js)
+//   sheet: 21x18 frames, separate from DM100's 16x14.
+export const getDM200Frame = (mob, mobAnim, now) => {
+  const anim = mobAnim[mob.id] || {};
+  if (anim.attackUntil && now < anim.attackUntil) {
+    const elapsed = now - (anim.attackUntil - 200);
+    const fi = Math.min(Math.floor(elapsed / 67), 2);
+    return [4, 5, 6][fi] * DM200_FW;
+  }
+  if (isEntityMoving(mob)) {
+    return [2, 3][Math.floor(now / 100) % 2] * DM200_FW;
+  }
+  return [0, 1][Math.floor(now / 100) % 2] * DM200_FW;
+};
+
 export const getGuardFrame = (mob, mobAnim, now) => {
   const anim = mobAnim[mob.id] || {};
   const isAttacking = anim.attackUntil && now < anim.attackUntil;
@@ -304,6 +384,25 @@ export const getRatFrame = (mob, mobAnim, now) => {
   }
   if (isEntityMoving(mob)) {
     return [6, 7, 8, 9, 10][Math.floor(now / 100) % 5] * FRAME_W;
+  }
+  return [0, 0, 0, 1][Math.floor(now / 500) % 4] * FRAME_W;
+};
+
+// Fetid Rat: rat.png row 2 (16x15 frames), frame offset c=32 per FetidRatSprite.java:
+//   idle    2fps loop  [0,0,0,1]
+//   run    10fps loop  [2,3,4,5]    (different from Rat's [6,7,8,9,10])
+//   attack 15fps once  [6,7,0]      ~200ms (shorter than Rat's 5-frame)
+//   die    10fps once  [8,9,10,11]  (death handled in draw/mobs.js)
+export const getFetidRatFrame = (mob, mobAnim, now) => {
+  const anim = mobAnim[mob.id] || {};
+  const isAttacking = anim.attackUntil && now < anim.attackUntil;
+  if (isAttacking) {
+    const elapsed = now - (anim.attackUntil - 200);
+    const fi = Math.min(Math.floor(elapsed / 67), 2);
+    return [6, 7, 0][fi] * FRAME_W;
+  }
+  if (isEntityMoving(mob)) {
+    return [2, 3, 4, 5][Math.floor(now / 100) % 4] * FRAME_W;
   }
   return [0, 0, 0, 1][Math.floor(now / 500) % 4] * FRAME_W;
 };
@@ -364,6 +463,25 @@ export const getHermitCrabFrame = (mob, mobAnim, now) => {
   return [0, 1, 0, 2][Math.floor(now / 200) % 4] * FRAME_W;
 };
 
+// Great Crab: crab.png row 2 (16x16 frames), frame offset c=32 per GreatCrabSprite.java:
+//   idle    5fps loop  [0,0,0,1]
+//   run    15fps loop  [2,3,4,5]    (different from Crab's [3,4,5,6])
+//   attack 12fps once  [6,7,4,6,0]  ~400ms (5-frame sequence)
+//   die    10fps once  [8,9,10,11]  (death handled in draw/mobs.js)
+export const getGreatCrabFrame = (mob, mobAnim, now) => {
+  const anim = mobAnim[mob.id] || {};
+  const isAttacking = anim.attackUntil && now < anim.attackUntil;
+  if (isAttacking) {
+    const elapsed = now - (anim.attackUntil - 400);
+    const fi = Math.min(Math.floor(elapsed / 80), 4);
+    return [6, 7, 4, 6, 0][fi] * FRAME_W;
+  }
+  if (isEntityMoving(mob)) {
+    return [2, 3, 4, 5][Math.floor(now / 67) % 4] * FRAME_W;
+  }
+  return [0, 0, 0, 1][Math.floor(now / 200) % 4] * FRAME_W;
+};
+
 // Faithful to original SPD SnakeSprite (12x11 frames, row 0):
 //   idle   10fps loop  0(x15), 1(x10), 2, 3, 2, 1(x2) = 30 frames, 3s loop
 //   run     8fps loop  [4,5,6,7] = 4 frames, 0.5s loop
@@ -409,12 +527,41 @@ export const getGhoulFrame = (mob, mobAnim, now) =>
 export const getMonkFrame = (mob, mobAnim, now) =>
   [0, 1][Math.floor(now / 300) % 2] * MONK_FW;
 
-export const getWarlockFrame = (mob, mobAnim, now) =>
-  [0, 1][Math.floor(now / 300) % 2] * WARLOCK_FW;
+export const getWarlockFrame = (mob, mobAnim, now) => {
+  const anim = mobAnim[mob.id] || {};
+  if (anim.attackUntil && now < anim.attackUntil) {
+    const elapsed = now - (anim.attackUntil - 250);
+    const fi = Math.min(Math.floor(elapsed / 83), 2);
+    return [0, 5, 6][fi] * WARLOCK_FW;
+  }
+  if (isEntityMoving(mob)) {
+    return [0, 2, 3, 4][Math.floor(now / 67) % 4] * WARLOCK_FW;
+  }
+  return [0, 0, 0, 1, 0, 0, 1, 1][Math.floor(now / 500) % 8] * WARLOCK_FW;
+};
 
 // DK Golem: heavy, slow 2-frame idle.
 export const getGolemFrame = (mob, mobAnim, now) =>
   [0, 1][Math.floor(now / 500) % 2] * GOLEM_FW;
+
+// Spinner (Cave Spider): SPD SpinnerSprite frame layout
+//   idle    10fps loop   [0,0,0,0,0,1,0,1]
+//   run     15fps loop   [0,2,0,3]
+//   attack  12fps once    [0,4,5,0]
+//   die     12fps once    [6,7,8,9]    (death handled in draw/mobs.js)
+//   renderShadow=false, sent to back (see draw/mobs.js)
+export const getSpinnerFrame = (mob, mobAnim, now) => {
+  const anim = mobAnim[mob.id] || {};
+  if (anim.attackUntil && now < anim.attackUntil) {
+    const elapsed = now - (anim.attackUntil - 250);
+    const fi = Math.min(Math.floor(elapsed / 83), 3);
+    return [0, 4, 5, 0][fi] * FRAME_W;
+  }
+  if (isEntityMoving(mob)) {
+    return [0, 2, 0, 3][Math.floor(now / 67) % 4] * FRAME_W;
+  }
+  return [0, 0, 0, 0, 0, 1, 0, 1][Math.floor(now / 100) % 8] * FRAME_W;
+};
 
 // Yog-Dzewa: slow pulsing idle loop.
 export const getYogFrame = (mob, mobAnim, now) =>
@@ -424,9 +571,29 @@ export const getYogFrame = (mob, mobAnim, now) =>
 export const getFistFrame = (mob, mobAnim, now) =>
   [0, 1][Math.floor(now / 250) % 2] * FIST_FW;
 
-// Yog Eye: 2-frame idle loop.
-export const getEyeFrame = (mob, mobAnim, now) =>
-  [0, 1][Math.floor(now / 300) % 2] * EYE_FW;
+// Evil Eye / Yog Eye: SPD EyeSprite frame layout
+//   idle    8fps loop   [0,1,2]
+//   charging 12fps loop  [3,4]
+//   run     12fps loop   [5,6]
+//   attack  8fps once    [4,3]
+//   die     8fps once    [7,8,9]    (death handled in draw/mobs.js)
+export const getEyeFrame = (mob, mobAnim, now) => {
+  const anim = mobAnim[mob.id] || {};
+  const isCharging = anim.chargeUntil && now < anim.chargeUntil;
+  const isAttacking = anim.attackUntil && now < anim.attackUntil;
+  if (isAttacking) {
+    const elapsed = now - (anim.attackUntil - 250);
+    const fi = Math.min(Math.floor(elapsed / 125), 1);
+    return [4, 3][fi] * EYE_FW;
+  }
+  if (isCharging) {
+    return [3, 4][Math.floor(now / 83) % 2] * EYE_FW;
+  }
+  if (isEntityMoving(mob)) {
+    return [5, 6][Math.floor(now / 83) % 2] * EYE_FW;
+  }
+  return [0, 0, 0, 1, 2, 2, 2, 1][Math.floor(now / 125) % 8] * EYE_FW;
+};
 
 // Yog Ripper: 2-frame idle loop.
 export const getRipperFrame = (mob, mobAnim, now) =>
@@ -532,6 +699,44 @@ export const getImpFrame = (mob, mobAnim, now) =>
 //   idle 2fps loop [0,0,0,1]
 export const getRatKingFrame = (mob, mobAnim, now) =>
   [0, 0, 0, 1][Math.floor(now / 500) % 4] * RATKING_FW;
+
+// Faithful to original SPD GhostSprite (14x15 frames, ghost.png):
+//   idle    5fps loop  [0,1]
+//   run    10fps loop  [0,1]
+//   attack 10fps once  [2,3,0]    ~300ms
+//   die     8fps once  [4,5,6,7]  ~500ms (death handled in draw/mobs.js)
+export const getGhostFrame = (mob, mobAnim, now) => {
+  const anim = mobAnim[mob.id] || {};
+  const isAttacking = anim.attackUntil && now < anim.attackUntil;
+  if (isAttacking) {
+    const elapsed = now - (anim.attackUntil - 300);
+    const fi = Math.min(Math.floor(elapsed / 100), 2);
+    return [2, 3, 0][fi] * GHOST_FW;
+  }
+  if (isEntityMoving(mob)) {
+    return [0, 1][Math.floor(now / 100) % 2] * GHOST_FW;
+  }
+  return [0, 1][Math.floor(now / 200) % 2] * GHOST_FW;
+};
+
+// Faithful to original SPD SuccubusSprite (12x15 frames, succubus.png):
+//   idle     8fps loop  [0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,2,2,2,2,1]
+//   run     15fps loop  [3,4,5,6,7,8]
+//   attack  12fps once  [9,10,11]
+//   die     10fps once  [12]
+export const getSuccubusFrame = (mob, mobAnim, now) => {
+  const anim = mobAnim[mob.id] || {};
+  const isAttacking = anim.attackUntil && now < anim.attackUntil;
+  if (isAttacking) {
+    const elapsed = now - (anim.attackUntil - 250);
+    const fi = Math.min(Math.floor(elapsed / 83), 2);
+    return [9, 10, 11][fi] * SUCCUBUS_FW;
+  }
+  if (isEntityMoving(mob)) {
+    return [3, 4, 5, 6, 7, 8][Math.floor(now / 67) % 6] * SUCCUBUS_FW;
+  }
+  return [0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,2,2,2,2,1][Math.floor(now / 125) % 20] * SUCCUBUS_FW;
+};
 
 // dest (optional): in-tile placement {dx,dy,dw,dh} for sprites whose native frame is not a
 // full 32x32 tile (e.g. gnoll's 12x15 -> 24x30 @ +4,+2). Omitted = legacy full-tile draw.

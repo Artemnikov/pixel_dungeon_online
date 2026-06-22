@@ -674,18 +674,40 @@ class Shaman(MobEntity):
     attack_range: int = 4
     exp: int = 8
     max_lvl: int = 16
+    view_distance: int = 8
+
+    wand_drop_count: int = 0
+
+    loot_table: List[DropEntry] = [
+        DropEntry(item_kind="wand", chance=0.03, max_global=0),
+    ]
 
 
 class RedShaman(Shaman):
     name: str = "Red Shaman"
+    bolt_type: str = "shaman_red"
+
+    def attack_proc(self, target: "Entity") -> None:
+        if random.random() < 0.5:
+            target.add_buff("weakness", duration=10.0, level=1)
 
 
 class BlueShaman(Shaman):
     name: str = "Blue Shaman"
+    bolt_type: str = "shaman_blue"
+
+    def attack_proc(self, target: "Entity") -> None:
+        if random.random() < 0.5:
+            target.add_buff("vulnerable", duration=15.0, level=1)
 
 
 class PurpleShaman(Shaman):
     name: str = "Purple Shaman"
+    bolt_type: str = "shaman_purple"
+
+    def attack_proc(self, target: "Entity") -> None:
+        if random.random() < 0.5:
+            target.add_buff("hex", duration=10.0, level=1)
 
 
 class Spinner(MobEntity):
@@ -700,9 +722,17 @@ class Spinner(MobEntity):
     dr_max: int = 6
     exp: int = 9
     max_lvl: int = 17
+    bolt_type: str = "magic_missile"
+    immunities: List[str] = ["root"]
+    resistances: List[str] = ["poison"]
     loot_table: List[DropEntry] = [
         DropEntry(item_kind="mystery_meat", chance=0.125, max_global=0),
     ]
+
+    def attack_proc(self, target: "Entity") -> None:
+        if random.random() < 0.5:
+            target.add_buff("poison", duration=8.0, level=1, stack_mode="extend")
+            self.ai_state = "fleeing"
 
 
 class DM200(MobEntity):
@@ -715,9 +745,13 @@ class DM200(MobEntity):
     damage_max: int = 25
     dr_min: int = 0
     dr_max: int = 8
+    attack_range: int = 8
+    bolt_type: str = "toxic_gas"
+    vent_cooldown: int = 0
     exp: int = 9
     max_lvl: int = 17
-    properties: List[str] = ["INORGANIC"]
+    properties: List[str] = ["INORGANIC", "LARGE"]
+    immunities: List[str] = ["poison"]
     loot_table: List[DropEntry] = [
         DropEntry(item_kind="weapon", chance=0.2, max_global=0),
     ]
@@ -725,7 +759,8 @@ class DM200(MobEntity):
 
 class DM201(DM200):
     name: str = "DM-201"
-    properties: List[str] = ["INORGANIC", "ELECTRIC"]
+    properties: List[str] = ["INORGANIC", "ELECTRIC", "LARGE"]
+    bolt_type: str = "toxic_gas"
 
 
 # ---------------------------------------------------------------------------
@@ -792,12 +827,17 @@ class Warlock(MobEntity):
     dr_min: int = 0
     dr_max: int = 8
     attack_range: int = 5
+    bolt_type: str = "shadow"
     exp: int = 11
     max_lvl: int = 21
     properties: List[str] = ["UNDEAD"]
     loot_table: List[DropEntry] = [
         DropEntry(item_kind="potion", chance=0.5, max_global=0),
     ]
+
+    def attack_proc(self, target: "Entity") -> None:
+        if random.random() < 0.5:
+            target.add_buff("degrade", duration=30.0, level=1)
 
 
 class Monk(MobEntity):
@@ -853,7 +893,7 @@ class Succubus(MobEntity):
     name: str = "Succubus"
     hp: int = 80
     max_hp: int = 80
-    attack_skill: int = 25
+    attack_skill: int = 40
     defense_skill: int = 25
     damage_min: int = 25
     damage_max: int = 30
@@ -867,6 +907,19 @@ class Succubus(MobEntity):
     loot_table: List[DropEntry] = [
         DropEntry(item_kind="scroll", chance=0.33, max_global=0),
     ]
+
+    def attack_proc(self, target):
+        if target.has_buff("charm"):
+            dmg = random.randint(self.damage_min, self.damage_max)
+            shield = (self.hp - self.max_hp) + (5 + dmg)
+            if shield > 0:
+                self.hp = self.max_hp
+                self.add_shield("succubus_charm", shield, priority=1, decay=5)
+            else:
+                self.hp = min(self.max_hp, self.hp + 5 + dmg)
+        elif random.random() < 0.33:
+            target.add_buff("charm", duration=2.5, source_id=self.id)
+        self._pending_sound = "CHARMS"
 
 
 class Eye(MobEntity):
@@ -887,6 +940,17 @@ class Eye(MobEntity):
     loot_table: List[DropEntry] = [
         DropEntry(item_kind="health_potion", chance=1.0, max_global=0),
     ]
+    beam_target_id: str = ""
+    beam_cooldown: float = 0.0  # ticks remaining until next beam
+    beam_charged: bool = False
+    charge_ticks: int = 0  # ticks remaining in charge-up (0 = ready to fire)
+    charge_target_x: int = 0  # snapshot of target position when charge began
+    charge_target_y: int = 0
+
+    def defense_proc(self, damage: int, attacker, floor_mobs: dict, tile_x: int, tile_y: int) -> int:
+        if self.beam_charged:
+            damage = max(1, damage // 4)
+        return damage
 
 
 class Scorpio(MobEntity):
@@ -917,7 +981,7 @@ class RipperDemon(MobEntity):
     name: str = "Ripper Demon"
     hp: int = 60
     max_hp: int = 60
-    attack_skill: int = 22
+    attack_skill: int = 30
     defense_skill: int = 22
     damage_min: int = 15
     damage_max: int = 25
@@ -927,7 +991,8 @@ class RipperDemon(MobEntity):
     max_lvl: int = -2
     flying: bool = True
     view_distance: int = 6
-    properties: List[str] = ["DEMONIC"]
+    attack_cooldown: float = 1.5
+    properties: List[str] = ["DEMONIC", "UNDEAD"]
 
 
 # ---------------------------------------------------------------------------
@@ -1183,8 +1248,10 @@ class YogDzewa(MobEntity):
     phase: int = 0
     fist_ids: List[str] = Field(default_factory=list)  # currently-alive spawned fist instance IDs
     fist_order: List[str] = Field(default_factory=list)  # ordered fist class names yet to be spawned
-    ability_cooldown: float = 10.0
-    summon_cooldown: float = 10.0
+    # Tick-scaled (x20 at 20Hz, ~10s) initial cooldowns -- see _TICKS_PER_TURN
+    # in ai_yog_dzewa.py for why these aren't the raw SPD turn-count minimums.
+    ability_cooldown: float = 200.0
+    summon_cooldown: float = 200.0
     fight_started: bool = False
 
     def defense_proc(self, damage: int, attacker, floor_mobs: dict, tile_x: int, tile_y: int) -> int:
@@ -1218,6 +1285,13 @@ class _YogFistMixin(BaseModel):
     paired_fist_id: str = ""
     yog_id: str = ""
     view_distance: int = 6
+    # YogFist.java:77 sets `state = HUNTING` in the instance initializer --
+    # fists know where the hero is immediately, skipping the generic
+    # idle/sleeping/wandering detection rolls (tick.py). Without this, a
+    # freshly-spawned fist never moves away from its spawn point next to
+    # Yog, staying permanently inside FIST_INVINCIBILITY_RADIUS and making
+    # Yog permanently invulnerable.
+    ai_state: str = "hunting"
 
     def defense_proc(self, damage: int, attacker, floor_mobs: dict, tile_x: int, tile_y: int) -> int:
         if _is_fist_near_yog(self, floor_mobs):
@@ -1563,6 +1637,28 @@ class Imp(MobEntity):
 
     def get_effective_defense_skill(self) -> int:
         return 10 ** 9
+
+
+class GhostHeroMob(MobEntity):
+    """Ghost of Sir Archibald summoned by the Dried Rose (DriedRose.GhostHero).
+    Player-faction ally that auto-attacks enemies and follows the owner.
+    Stats are refreshed each tick from the owner's level.
+    """
+    type: str = "ghost_hero"
+    name: str = "Ghost Hero"
+    hp: int = 20
+    max_hp: int = 20
+    faction: str = Faction.PLAYER
+    flying: bool = True
+    ai_state: str = "hunting"
+    owner_id: str = ""
+    attack_range: int = 1
+    direct_x: Optional[int] = None
+    direct_y: Optional[int] = None
+    immunities: List[str] = Field(default_factory=lambda: [
+        "corrosive_gas", "burning", "ally_buff",
+    ])
+    properties: List[str] = Field(default_factory=lambda: ["UNDEAD", "INORGANIC"])
 
 
 class MirrorImage(MobEntity):

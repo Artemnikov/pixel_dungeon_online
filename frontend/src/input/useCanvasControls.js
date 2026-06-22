@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { TILE_SIZE, MIN_ZOOM, MAX_ZOOM } from '../constants';
+import { isFloorFadeActive } from '../rendering/floorTransition';
 import { resolveTapAction } from './resolveTap';
 
 export default function useCanvasControls({
@@ -12,6 +13,8 @@ export default function useCanvasControls({
   isDraggingRef,
   isRefocusingRef,
   isPinchingRef,
+  isCameraDetachedRef,
+  detachedCameraRef,
   targetingModeRef,
   onTargetTapRef,
   examineModeRef,
@@ -19,6 +22,7 @@ export default function useCanvasControls({
   entitiesRef,
   myPlayerIdRef,
   hoveredCellRef,
+  floorFadeRef,
 }) {
   const dragStartRef = useRef({ x: 0, y: 0 });
   const dragStartPanRef = useRef({ x: 0, y: 0 });
@@ -34,11 +38,28 @@ export default function useCanvasControls({
     if (!canvas) return;
 
     const onMouseDown = (e) => {
+      if (isFloorFadeActive(floorFadeRef)) return;
       dragStartRef.current = { x: e.clientX, y: e.clientY };
-      dragStartPanRef.current = { ...panOffsetRef.current };
+      if (isCameraDetachedRef.current) {
+        const rect = canvas.getBoundingClientRect();
+        const myPlayer = entitiesRef.current?.players?.[myPlayerIdRef.current];
+        if (myPlayer) {
+          const lw = rect.width, lh = rect.height;
+          const effectivePan = {
+            x: cameraLerpRef.current.x - (myPlayer.renderPos.x * TILE_SIZE - lw / 2 + TILE_SIZE / 2),
+            y: cameraLerpRef.current.y - (myPlayer.renderPos.y * TILE_SIZE - lh / 2 + TILE_SIZE / 2),
+          };
+          dragStartPanRef.current = effectivePan;
+          panOffsetRef.current = effectivePan;
+        }
+      } else {
+        dragStartPanRef.current = { ...panOffsetRef.current };
+      }
       isDraggingRef.current = true;
       hasDraggedRef.current = false;
       isRefocusingRef.current = false;
+      isCameraDetachedRef.current = true;
+      detachedCameraRef.current = { ...cameraLerpRef.current };
     };
 
     const onMouseMove = (e) => {
@@ -66,7 +87,7 @@ export default function useCanvasControls({
       };
     };
 
-    const onMouseUp = () => { isDraggingRef.current = false; hasDraggedRef.current = false; };
+    const onMouseUp = () => { isDraggingRef.current = false; };
 
     const onWheel = (e) => {
       e.preventDefault();
@@ -83,6 +104,7 @@ export default function useCanvasControls({
     };
 
     const onTouchStart = (e) => {
+      if (isFloorFadeActive(floorFadeRef)) return;
       if (e.touches.length === 2) {
         isPinchingRef.current = true;
         const t1 = e.touches[0], t2 = e.touches[1];
@@ -100,10 +122,26 @@ export default function useCanvasControls({
         isPinchingRef.current = false;
         const t = e.touches[0];
         dragStartRef.current = { x: t.clientX, y: t.clientY };
-        dragStartPanRef.current = { ...panOffsetRef.current };
+        if (isCameraDetachedRef.current) {
+          const rect = canvas.getBoundingClientRect();
+          const myPlayer = entitiesRef.current?.players?.[myPlayerIdRef.current];
+          if (myPlayer) {
+            const lw = rect.width, lh = rect.height;
+            const effectivePan = {
+              x: cameraLerpRef.current.x - (myPlayer.renderPos.x * TILE_SIZE - lw / 2 + TILE_SIZE / 2),
+              y: cameraLerpRef.current.y - (myPlayer.renderPos.y * TILE_SIZE - lh / 2 + TILE_SIZE / 2),
+            };
+            dragStartPanRef.current = effectivePan;
+            panOffsetRef.current = effectivePan;
+          }
+        } else {
+          dragStartPanRef.current = { ...panOffsetRef.current };
+        }
         isDraggingRef.current = true;
         hasDraggedRef.current = false;
         isRefocusingRef.current = false;
+        isCameraDetachedRef.current = true;
+        detachedCameraRef.current = { ...cameraLerpRef.current };
       }
     };
 
@@ -161,6 +199,7 @@ export default function useCanvasControls({
       isPinchingRef.current = false;
       if (hasDraggedRef.current || e.changedTouches.length === 0) return;
       if (socketRef.current?.readyState !== WebSocket.OPEN) return;
+      if (isFloorFadeActive(floorFadeRef)) return;
 
       const t = e.changedTouches[0];
       const rect = canvas.getBoundingClientRect();
@@ -208,7 +247,7 @@ export default function useCanvasControls({
       canvas.removeEventListener('touchmove', onTouchMove);
       canvas.removeEventListener('touchend', onTouchEnd);
     };
-  }, [enabled, canvasRef, socketRef, panOffsetRef, zoomRef, cameraLerpRef, isDraggingRef, isRefocusingRef, isPinchingRef, targetingModeRef, onTargetTapRef, examineModeRef, onExamineTapRef, entitiesRef, myPlayerIdRef, hoveredCellRef]);
+  }, [enabled, canvasRef, socketRef, panOffsetRef, zoomRef, cameraLerpRef, isDraggingRef, isRefocusingRef, isPinchingRef, isCameraDetachedRef, detachedCameraRef, targetingModeRef, onTargetTapRef, examineModeRef, onExamineTapRef, entitiesRef, myPlayerIdRef, hoveredCellRef, floorFadeRef]);
 
   return { hasDraggedRef };
 }

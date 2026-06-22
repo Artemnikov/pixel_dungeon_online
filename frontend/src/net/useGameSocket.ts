@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { getWsBaseUrl } from '../config/urls';
 import { sendMessage } from './send';
 import { syncState } from './syncState';
@@ -36,6 +36,7 @@ export default function useGameSocket({
   trapsRef,
   customTilesRef,
   customWallsRef,
+  torchesRef,
   mobAnimRef,
   dyingMobsRef,
   playerAnimRef,
@@ -59,6 +60,7 @@ export default function useGameSocket({
   wasDownedRef,
   floorFadeRef,
   cameraLerpRef,
+  isCameraDetachedRef,
   setGrid,
   setDepth,
   setMyPlayerId,
@@ -69,6 +71,8 @@ export default function useGameSocket({
   setBossInfo,
   setGold,
   setEnergy,
+  setHasAmulet,
+  setBossLurking,
   setExitPos,
   setBelongings,
   setQuickslot,
@@ -81,6 +85,7 @@ export default function useGameSocket({
   onMetamorphOptions,
   onGooFightStarted,
   onTenguFightStarted,
+  onChasmPrompt,
   onDM300FightStarted,
   onDwarfKingFightStarted,
   onDwarfKingPhase2,
@@ -88,10 +93,17 @@ export default function useGameSocket({
   onYogFinalPhase,
   onShopOpen,
   onImpDialogue,
+  onGhostDialogue,
+  onGhostQuestGiven,
+  onGhostQuestComplete,
   onScrollSelectTarget,
+  onGhostGearOpen,
   onBossSlain,
   onPlayerDeath,
+  onLoreNeeded,
 }: HookProps) {
+  const depthRef = useRef(1);
+
   useEffect(() => {
     if (!enabled) return;
 
@@ -169,7 +181,8 @@ export default function useGameSocket({
         trapsRef.current = data.traps || [];
         customTilesRef.current = data.custom_tiles || [];
         customWallsRef.current = data.custom_walls || [];
-        if (typeof data.depth === 'number') setDepth(data.depth);
+        torchesRef.current = data.torches || [];
+        if (typeof data.depth === 'number') { setDepth(data.depth); depthRef.current = data.depth; }
         if (data.player_id) {
           setMyPlayerId(data.player_id);
           myPlayerIdRef.current = data.player_id;
@@ -179,10 +192,12 @@ export default function useGameSocket({
       };
 
       const applyStateUpdate = (data: StateUpdateMessage) => {
-        if (typeof data.depth === 'number') setDepth(data.depth);
+        if (typeof data.depth === 'number') { setDepth(data.depth); depthRef.current = data.depth; }
         if (data.difficulty) setDifficulty(data.difficulty);
         if (typeof data.gold === 'number' && setGold) setGold(data.gold);
         if (typeof data.energy === 'number' && setEnergy) setEnergy(data.energy);
+        if (typeof data.has_amulet === 'boolean' && setHasAmulet) setHasAmulet(data.has_amulet);
+        if (typeof data.boss_lurking === 'boolean' && setBossLurking) setBossLurking(data.boss_lurking);
 
         syncState(data, {
           myPlayerIdRef, gridRef, entitiesRef, visionRef, openDoorsRef, trapsRef,
@@ -199,9 +214,10 @@ export default function useGameSocket({
           surpriseRef, selectedEnemyIdRef, beamRef, blobAreasRef,
           onLevelUp, onSubclassChoiceAvailable, onArmorAbilityChoiceAvailable,
           onImbueWandChoiceAvailable, onTalentUpgraded,
-          onMetamorphOpen, onMetamorphOptions, onGooFightStarted, onTenguFightStarted,
+          onMetamorphOpen, onMetamorphOptions, onGooFightStarted, onTenguFightStarted, onChasmPrompt,
           onDM300FightStarted, onDwarfKingFightStarted, onDwarfKingPhase2, onYogFightStarted, onYogFinalPhase,
-          onShopOpen, onImpDialogue, onScrollSelectTarget, onBossSlain, onPlayerDeath,
+          onShopOpen, onImpDialogue, onGhostDialogue, onGhostQuestGiven, onGhostQuestComplete, onScrollSelectTarget, onGhostGearOpen, onBossSlain, onPlayerDeath,
+          depth: depthRef.current,
         };
 
         if (data.events) {
@@ -215,6 +231,7 @@ export default function useGameSocket({
       // existing CAMERA_LERP exponential settle in useGameRenderer pulls it back onto
       // the player next frame, reading as "drop down" / "rise up" into view.
       const snapCameraForFloorChange = (direction: 'down' | 'up', newPos: { x: number; y: number }) => {
+        if (isCameraDetachedRef) isCameraDetachedRef.current = false;
         if (!cameraLerpRef?.current) return;
         const me = entitiesRef.current.players[myPlayerIdRef.current ?? ''];
         const oldPos = me?.renderPos ?? newPos;
@@ -245,13 +262,13 @@ export default function useGameSocket({
         if (deferredApplyPending) return;
 
         const floorChangeEvent = data.events?.find(
-          ev => FLOOR_CHANGE_EVENT_TYPES.has(ev.type) && ev.data.player === myPlayerIdRef.current,
+          ev => FLOOR_CHANGE_EVENT_TYPES.has(ev.type) && (ev as { data: { player: string } }).data.player === myPlayerIdRef.current,
         );
 
         if (!floorChangeEvent) {
           // Steady state (most ticks), or a non-stairs depth change (admin teleport,
           // resurrect, etc.) — apply any stashed INIT immediately, no fade.
-          if (pendingInit) { applyInit(pendingInit); pendingInit = null; }
+          if (pendingInit) { if (isCameraDetachedRef) isCameraDetachedRef.current = false; applyInit(pendingInit); pendingInit = null; }
           applyStateUpdate(data);
           return;
         }
@@ -259,19 +276,32 @@ export default function useGameSocket({
         // Stairs/chasm floor change: fade out, then swap grid+position+camera while
         // the screen is fully black, then let the fade play back in. Input is gated
         // client-side for the whole fade window via isFloorFadeActive(floorFadeRef).
+        // If this is first descent into a new region, show lore text before the fade.
         const direction = floorChangeEvent.type === 'STAIRS_UP' ? 'up' : 'down';
-        if (floorFadeRef) startFloorFade(floorFadeRef, direction);
         const initToApply = pendingInit;
         pendingInit = null;
         const newPos = data.players.find(p => p.id === myPlayerIdRef.current)?.pos;
         deferredApplyPending = true;
 
-        setTimeout(() => {
-          deferredApplyPending = false;
-          if (initToApply) applyInit(initToApply);
-          applyStateUpdate(data);
-          if (newPos) snapCameraForFloorChange(direction, newPos);
-        }, FLOOR_FADE_OUT_MS);
+        const finishTransition = () => {
+          if (floorFadeRef) startFloorFade(floorFadeRef, direction);
+          setTimeout(() => {
+            deferredApplyPending = false;
+            if (initToApply) applyInit(initToApply);
+            applyStateUpdate(data);
+            if (newPos) snapCameraForFloorChange(direction, newPos);
+          }, FLOOR_FADE_OUT_MS);
+        };
+
+        const needsLore = floorChangeEvent.type === 'STAIRS_DOWN'
+          && floorChangeEvent.data.first_visit
+          && [6, 11, 16, 21].includes(data.depth);
+
+        if (needsLore && onLoreNeeded) {
+          onLoreNeeded(data.depth, finishTransition);
+        } else {
+          finishTransition();
+        }
       };
     }
 

@@ -18,16 +18,86 @@ Reveals hidden doors/traps around a searching player, consumes keys to open
 locked doors, and resolves trap triggers when a player steps onto one.
 """
 
+import random
+import time
 import uuid
-from typing import List
+from typing import List, Optional, Tuple
 
 from app.engine.dungeon.generator import TileType
-from app.engine.entities.base import CharacterClass, Key, Player, Position
+from app.engine.entities.base import (
+    Armor, CharacterClass, Item, Key, Player, Position, make_named_melee_weapon,
+)
 from app.engine.entities.base import DwarfToken
 from app.engine.entities.mobs import Imp, Shopkeeper
+from app.engine.entities.quest_bosses import FetidRat, Ghost, GnollTrickster, GreatCrab
+from app.engine.entities.weapon_defs import WEP_TIER_ORDER
 from app.engine.game.floor_state import FloorState
+from app.engine.game.constants import KEY_TIME_TO_UNLOCK
 
 _FIRE_CARDINALS = [(0, -1), (1, 0), (0, 1), (-1, 0)]
+
+# Ghost.java messages_en.properties (actors.mobs.npcs.ghost.*) -- markup
+# (_italics_) stripped, the DriedRose lost-item hook in the reward text
+# dropped (separate unimplemented quest).
+_GHOST_INTRO_TEXT = {
+    1: ("Hello {name}... Once I was like you - strong and confident... But I was slain by a foul "
+        "beast... I can't leave this place... Not until I have my revenge... Slay the fetid rat, "
+        "that has taken my life...\n\nIt stalks this floor... Spreading filth everywhere... "
+        "Beware its cloud of stink and corrosive bite, the acid dissolves in water..."),
+    2: ("Hello {name}... Once I was like you - strong and confident... But I was slain by a devious "
+        "foe... I can't leave this place... Not until I have my revenge... Slay the gnoll trickster, "
+        "that has taken my life...\n\nIt is not like the other gnolls... It hides and uses thrown "
+        "weapons... Beware its poisonous and incendiary darts, don't attack from a distance..."),
+    3: ("Hello {name}... Once I was like you - strong and confident... But I was slain by an ancient "
+        "creature... I can't leave this place... Not until I have my revenge... Slay the great crab, "
+        "that has taken my life...\n\nIt is unnaturally old... With a massive single claw and a "
+        "thick shell... Beware its claw, you must surprise the crab or it will block with it..."),
+}
+_GHOST_REMINDER_TEXT = {
+    1: "Please... Help me... Slay the abomination...\n\nFight it near water... Avoid the stench...",
+    2: "Please... Help me... Slay the trickster...\n\nDon't let it hit you... Get near to it...",
+    3: "Please... Help me... Slay the Crustacean...\n\nIt will always block... When it sees you coming...",
+}
+_GHOST_REWARD_TEXT = (
+    "Please take one of these items, they are useless to me now... "
+    "Maybe they will help you in your journey..."
+)
+_GHOST_BOSS_CLASSES = {1: FetidRat, 2: GnollTrickster, 3: GreatCrab}
+_GHOST_ARMOR_NAMES = {2: "Leather Armor", 3: "Mail Armor", 4: "Scale Armor", 5: "Plate Armor"}
+_GHOST_ARMOR_STR_REQ = {2: 12, 3: 14, 4: 16, 5: 18}
+
+
+def _random_free_cell(floor: FloorState) -> Optional[Tuple[int, int]]:
+    """Mirrors Dungeon.level.randomRespawnCell(Char) in spirit (a passable,
+    non-solid, unoccupied cell) without the full FOV-exclusion machinery --
+    plain retry sampling is good enough for a one-off quest-boss spawn."""
+    if not floor.flags:
+        return None
+    occupied = {(m.pos.x, m.pos.y) for m in floor.mobs.values() if m.is_alive}
+    for _ in range(60):
+        x = random.randint(0, floor.width - 1)
+        y = random.randint(0, floor.height - 1)
+        if floor.flags.passable[y][x] and not floor.flags.solid[y][x] and (x, y) not in occupied:
+            return (x, y)
+    return None
+
+
+def _make_ghost_reward_item(quest, choice: str) -> Optional[Item]:
+    """Materializes the weapon/armor GhostQuestState rolled at spawn time --
+    deferred until claim so the hidden reward never leaks early."""
+    if choice == "weapon" and quest.weapon_tier_category is not None:
+        name = WEP_TIER_ORDER[quest.weapon_tier_category][quest.weapon_item_index]
+        return make_named_melee_weapon(
+            name, level=quest.item_level, level_known=True, cursed=False, id=str(uuid.uuid4()),
+        )
+    if choice == "armor" and quest.armor_tier is not None:
+        tier = quest.armor_tier
+        return Armor(
+            id=str(uuid.uuid4()), name=_GHOST_ARMOR_NAMES[tier], tier=tier,
+            strength_requirement=_GHOST_ARMOR_STR_REQ[tier],
+            level=quest.item_level, level_known=True, cursed=False,
+        )
+    return None
 
 
 def _spawn_trap_fire(floor: FloorState, cx: int, cy: int, radius: int, strength: int) -> None:
@@ -83,7 +153,7 @@ class WorldInteractionMixin:
         must drop no matter how Goo died (melee or bleed) so progression can't
         soft-lock."""
         from app.engine.entities.base import DwarfToken
-        from app.engine.entities.mobs import DM300, Golem, Goo, Monk, Necromancer, Pylon, Tengu
+        from app.engine.entities.mobs import DM300, Golem, Goo, Monk, Necromancer, Pylon, Skeleton, Tengu, YogDzewa
 
         # Imp.Quest.process(): once the quest is given (and not yet
         # completed), killing a Monk (alternative) or Golem (!alternative)
@@ -95,6 +165,14 @@ class WorldInteractionMixin:
                 token = DwarfToken(id=str(uuid.uuid4()), pos=Position(x=mob.pos.x, y=mob.pos.y))
                 floor.items[token.id] = token
 
+        # Ghost.Quest.process(): called directly from each quest-boss's
+        # die() override in the original (FetidRat/GnollTrickster/GreatCrab),
+        # gated by depth == the floor the quest was given on.
+        ghost_quest = self.run_state.ghost_quest
+        if ghost_quest.boss_id and mob.id == ghost_quest.boss_id and ghost_quest.process(floor_id):
+            self.add_event("MESSAGE", {"text": "Thank you... come find me..."}, floor_id=floor_id)
+            self.add_event("PLAY_SOUND", {"sound": "GHOST"}, floor_id=floor_id)
+
         # CavesBossLevel.eliminatePylon -> DM300.loseSupercharge: when an
         # activated Pylon dies, DM300 becomes vulnerable again. No
         # chain-activation of another pylon.
@@ -103,6 +181,22 @@ class WorldInteractionMixin:
                 if isinstance(other, DM300):
                     other.supercharged = False
                     break
+
+        # Skeleton explosion: play bones sound on death (SPD Skeleton.die)
+        if isinstance(mob, Skeleton):
+            self.add_event("PLAY_SOUND", {"sound": "BONES"}, floor_id=floor_id)
+
+        # GhostHeroMob death: clear ghost_id on the owner's DriedRose so
+        # the rose can be recharged and re-summoned.
+        from app.engine.entities.base import DriedRose
+        from app.engine.entities.mobs import GhostHeroMob
+        if isinstance(mob, GhostHeroMob) and mob.owner_id:
+            owner = self.players.get(mob.owner_id)
+            if owner:
+                for item in owner.belongings.all_items():
+                    if isinstance(item, DriedRose) and item.ghost_id == mob.id:
+                        item.ghost_id = None
+                        break
 
         # Necromancer.die(): kill the linked NecroSkeleton (mob.die already
         # zeroed its HP); emit DEATH so the frontend plays its death animation.
@@ -117,6 +211,20 @@ class WorldInteractionMixin:
             if self.qualified_for_boss_challenge:
                 self.add_event("TENGU_BADGE_QUALIFIED", {}, floor_id=floor_id)
             self.add_event("BOSS_SLAIN", {"mob": mob.id, "depth": floor_id, "badge_image": 48}, floor_id=floor_id)
+            return
+
+        if isinstance(mob, YogDzewa):
+            key_id = next(iter(floor.locked_doors.values()), "goo_door")
+            if not any(isinstance(i, Key) and getattr(i, "key_id", None) == key_id
+                       for i in floor.items.values()):
+                key = Key(
+                    id=str(uuid.uuid4()),
+                    name="Worn Key",
+                    pos=Position(x=mob.pos.x, y=mob.pos.y),
+                    key_id=key_id,
+                )
+                floor.items[key.id] = key
+            self.add_event("PLAY_SOUND", {"sound": "BOSS"}, floor_id=floor_id)
             return
 
         if not isinstance(mob, Goo):
@@ -135,6 +243,10 @@ class WorldInteractionMixin:
         floor.items[key.id] = key
         self.add_event("PLAY_SOUND", {"sound": "BOSS"}, floor_id=floor_id)
         self.add_event("BOSS_SLAIN", {"mob": mob.id, "depth": floor_id, "badge_image": 15}, floor_id=floor_id)
+        self._goo_unseal_entrance(floor, floor_id)
+        self.boss_scores[0] += 1000
+        if self.qualified_for_boss_challenge:
+            self.add_event("GOO_BADGE_QUALIFIED", {}, floor_id=floor_id)
     def search(self, player_id: str):
         player = self.players.get(player_id)
         if not player:
@@ -213,12 +325,17 @@ class WorldInteractionMixin:
             return False
 
         if not player.remove_key(key_id, floor.floor_id):
+            self.add_event("LOCKED", {"player": player.id, "x": x, "y": y}, floor_id=player.floor_id)
             return False
 
         floor.locked_doors.pop((x, y), None)
-        # The boss-arena exit (SPD's LOCKED_EXIT -> UNLOCKED_EXIT) becomes the
-        # level's stairs down once unlocked, not a regular door.
-        new_tile = TileType.STAIRS_DOWN if key_id == "goo_door" else TileType.DOOR
+        tile = floor.grid[y][x]
+        if tile == TileType.LOCKED_EXIT or key_id == "goo_door":
+            new_tile = TileType.STAIRS_DOWN
+        elif tile == TileType.CRYSTAL_DOOR:
+            new_tile = TileType.FLOOR
+        else:
+            new_tile = TileType.DOOR
         floor.grid[y][x] = new_tile
         # Tile mutated from LOCKED_DOOR to DOOR/STAIRS_DOWN — refresh flag maps
         # so LOS/pathfinding sees the door as passable now.
@@ -226,6 +343,11 @@ class WorldInteractionMixin:
 
         self.add_event("MAP_PATCH", {"tiles": [{"x": x, "y": y, "tile": new_tile}]}, floor_id=player.floor_id)
         self.add_event("UNLOCK", {"player": player.id, "x": x, "y": y}, floor_id=player.floor_id)
+        if tile == TileType.CRYSTAL_DOOR:
+            self.add_event("PLAY_SOUND", {"sound": "TELEPORT"}, floor_id=player.floor_id)
+        else:
+            self.add_event("PLAY_SOUND", {"sound": "UNLOCK"}, floor_id=player.floor_id)
+        player.action_until = max(player.action_until, time.time() + KEY_TIME_TO_UNLOCK)
         return True
 
     def _trigger_trap_if_needed(self, floor: FloorState, player: Player, floor_id: int):
@@ -376,6 +498,51 @@ class WorldInteractionMixin:
                         },
                         player_id=player_id,
                     )
+
+        elif isinstance(npc, Ghost):
+            quest = self.run_state.ghost_quest
+            if not quest.given:
+                boss_cls = _GHOST_BOSS_CLASSES[quest.quest_type]
+                boss_pos = _random_free_cell(floor)
+                if boss_pos is None:
+                    return
+                boss = boss_cls(id=str(uuid.uuid4()), pos=Position(x=boss_pos[0], y=boss_pos[1]))
+                floor.mobs[boss.id] = boss
+                quest.given = True
+                quest.boss_id = boss.id
+                self.add_event(
+                    "GHOST_DIALOGUE",
+                    {
+                        "player": player.id, "npc": npc_id,
+                        "text": _GHOST_INTRO_TEXT[quest.quest_type].format(name=player.name),
+                        "can_claim": False,
+                    },
+                    player_id=player_id,
+                )
+            elif not quest.processed:
+                self.add_event(
+                    "GHOST_DIALOGUE",
+                    {
+                        "player": player.id, "npc": npc_id,
+                        "text": _GHOST_REMINDER_TEXT[quest.quest_type],
+                        "can_claim": False,
+                    },
+                    player_id=player_id,
+                )
+            else:
+                weapon = _make_ghost_reward_item(quest, "weapon")
+                armor = _make_ghost_reward_item(quest, "armor")
+                self.add_event(
+                    "GHOST_DIALOGUE",
+                    {
+                        "player": player.id, "npc": npc_id,
+                        "text": _GHOST_REWARD_TEXT,
+                        "can_claim": True,
+                        "weapon": self._serialize_floor_item(weapon) if weapon else None,
+                        "armor": self._serialize_floor_item(armor) if armor else None,
+                    },
+                    player_id=player_id,
+                )
 
     def shop_buy(self, player_id: str, npc_id: str, item_id: str) -> None:
         player = self.players.get(player_id)
@@ -575,3 +742,41 @@ class WorldInteractionMixin:
         floor20 = self.floors.get(20)
         if floor20 is not None:
             self._spawn_imp_shop(floor20)
+
+    # -- Ghost quest (sewers depths 2-4) --------------------------------------
+
+    def ghost_claim_reward(self, player_id: str, npc_id: str, choice: str) -> None:
+        player = self.players.get(player_id)
+        if not player:
+            return
+        floor = self._get_or_create_floor(player.floor_id)
+        npc = floor.mobs.get(npc_id)
+        if npc is None or not isinstance(npc, Ghost):
+            return
+        if max(abs(npc.pos.x - player.pos.x), abs(npc.pos.y - player.pos.y)) > 1:
+            return
+
+        quest = self.run_state.ghost_quest
+        if not quest.given or not quest.processed:
+            return
+
+        reward = _make_ghost_reward_item(quest, choice)
+        if reward is None:
+            return
+
+        if not player.add_to_inventory(reward):
+            reward.pos = Position(x=npc.pos.x, y=npc.pos.y)
+            floor.items[reward.id] = reward
+
+        # WndSadGhost.selectReward(): the ghost says farewell and despawns
+        # once the player picks a reward.
+        del floor.mobs[npc.id]
+        quest.weapon_tier_category = None
+        quest.armor_tier = None
+
+        self.add_event("DEATH", {"target": npc.id}, floor_id=player.floor_id)
+        self.add_event(
+            "GHOST_REWARD",
+            {"player": player.id, "npc": npc_id, "item": reward.id},
+            player_id=player_id,
+        )

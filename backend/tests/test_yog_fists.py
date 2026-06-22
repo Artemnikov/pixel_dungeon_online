@@ -311,3 +311,19 @@ def test_soiled_fist_takes_reduced_damage():
     dealt = fist.take_damage(100)
     assert dealt == 75
     assert fist.hp == 225
+
+
+# ---------------------------------------------------------------------------
+# Fists must start HUNTING (YogFist.java:77 `state = HUNTING` in the
+# instance initializer) -- otherwise they spawn "idle", never notice the
+# player from range, never move away from Yog, and stay permanently inside
+# FIST_INVINCIBILITY_RADIUS, making Yog permanently invulnerable (the
+# generic per-mob detection rolls in tick.py only run for "idle"/"sleeping"/
+# "wandering" states, and a stationary mob within radius 4 of its own spawn
+# point never breaks isNearYog()).
+# ---------------------------------------------------------------------------
+
+def test_fists_spawn_already_hunting():
+    for cls in (BurningFist, SoiledFist, RottingFist, RustedFist, BrightFist, DarkFist):
+        fist = cls(id="f1", pos=Position(x=0, y=0), faction=Faction.DUNGEON)
+        assert fist.ai_state == "hunting", f"{cls.__name__} must spawn hunting, got {fist.ai_state!r}"

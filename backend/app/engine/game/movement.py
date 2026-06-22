@@ -20,13 +20,16 @@ unlocking, traps and stair traversal) and ranged/thrown/wand attacks.
 
 import random
 import time
+import uuid
 from typing import Optional
 
 from app.engine.dungeon.generator import TileType
 from app.engine.entities.base import (
+    Amulet,
     Dewdrop,
     Faction,
     Gold,
+    Chest,
     Key,
     Mob as MobEntity,
     MissileWeapon,
@@ -42,11 +45,11 @@ from app.engine.entities.base import (
     is_immune,
 )
 from app.engine.entities.buffs import add_buff, has_buff, remove_buff
-from app.engine.entities.mobs import DM300
+from app.engine.entities.mobs import DM300, Goo, Wraith
 from app.engine.entities.subclasses import Talent
 from app.engine.systems.combat import resolve_melee_attack, resolve_ranged_attack
 from app.engine.systems.loot import roll_drops
-from app.engine.game.constants import MAX_FLOOR_ID
+from app.engine.game.constants import KEY_TIME_TO_UNLOCK, MAX_FLOOR_ID
 from app.engine.game.terrain_effects import press_cell
 
 
@@ -55,6 +58,92 @@ def _effective_wand_damage(w) -> int:
 
 
 class MovementCombatMixin:
+    def _spend_unlock_action(self, player: Player) -> None:
+        player.action_until = max(player.action_until, time.time() + KEY_TIME_TO_UNLOCK)
+
+    def _items_at(self, floor, x: int, y: int):
+        return [item for item in floor.items.values() if item.pos and item.pos.x == x and item.pos.y == y]
+
+    def _find_room_containing(self, floor, x: int, y: int):
+        for room in floor.rooms:
+            if room.x <= x < room.x + room.width and room.y <= y < room.y + room.height:
+                return room
+        return None
+
+    def _spawn_wraiths_around(self, floor, floor_id: int, player: Player) -> None:
+        positions = []
+        for dy in (-1, 0, 1):
+            for dx in (-1, 0, 1):
+                if dx == 0 and dy == 0:
+                    continue
+                x, y = player.pos.x + dx, player.pos.y + dy
+                if not (0 <= x < floor.width and 0 <= y < floor.height):
+                    continue
+                if not floor.flags or not floor.flags.passable[y][x]:
+                    continue
+                if any(m.is_alive and m.pos.x == x and m.pos.y == y for m in floor.mobs.values()):
+                    continue
+                if any(p.is_alive and p.pos.x == x and p.pos.y == y for p in self._players_on_floor(floor_id)):
+                    continue
+                positions.append((x, y))
+        for x, y in positions[:4]:
+            wid = str(uuid.uuid4())
+            wraith = Wraith(id=wid, type="mob", pos=Position(x=x, y=y), faction=Faction.DUNGEON)
+            attack = 10 + floor_id
+            wraith.floor_level = floor_id
+            wraith.attack_skill = attack
+            wraith.defense_skill = attack * 5
+            wraith.damage_min = 1 + floor_id // 2
+            wraith.damage_max = 2 + floor_id
+            floor.mobs[wid] = wraith
+            self.add_event("SPAWN_MOB", {"mob": wraith.model_dump()}, floor_id=floor_id)
+
+    def _drop_chest_contents(self, floor, chest: Chest, x: int, y: int) -> None:
+        for contained in chest.contents:
+            item = contained.model_copy(deep=True)
+            item.id = str(uuid.uuid4())
+            item.pos = Position(x=x, y=y)
+            floor.items[item.id] = item
+
+    def _shatter_other_crystal_chests(self, floor, floor_id: int, chest: Chest) -> None:
+        if chest.pos is None:
+            return
+        room = self._find_room_containing(floor, chest.pos.x, chest.pos.y)
+        if room is None:
+            return
+        for item_id, item in list(floor.items.items()):
+            if item_id == chest.id or not isinstance(item, Chest) or item.chest_type != "CRYSTAL_CHEST" or item.pos is None:
+                continue
+            if room.x <= item.pos.x < room.x + room.width and room.y <= item.pos.y < room.y + room.height:
+                del floor.items[item_id]
+                self.add_event("CRYSTAL_CHEST_SHATTER", {"x": item.pos.x, "y": item.pos.y}, floor_id=floor_id)
+
+    def _try_open_chest(self, player: Player, floor, floor_id: int, chest: Chest) -> bool:
+        if chest.pos is None:
+            return False
+        if chest.chest_type == "LOCKED_CHEST" and not player.remove_key("golden", floor_id):
+            self.add_event("LOCKED", {"player": player.id, "x": chest.pos.x, "y": chest.pos.y}, floor_id=floor_id)
+            return False
+        if chest.chest_type == "CRYSTAL_CHEST" and not player.remove_key("crystal", floor_id):
+            self.add_event("LOCKED", {"player": player.id, "x": chest.pos.x, "y": chest.pos.y}, floor_id=floor_id)
+            return False
+
+        self._spend_unlock_action(player)
+        x, y = chest.pos.x, chest.pos.y
+        floor.items.pop(chest.id, None)
+        if chest.chest_type == "CRYSTAL_CHEST":
+            self._shatter_other_crystal_chests(floor, floor_id, chest)
+        if chest.chest_type == "TOMB":
+            self.add_event("PLAY_SOUND", {"sound": "TOMB"}, floor_id=floor_id)
+            self._spawn_wraiths_around(floor, floor_id, player)
+        elif chest.chest_type in ("SKELETON", "REMAINS"):
+            self.add_event("PLAY_SOUND", {"sound": "BONES"}, floor_id=floor_id)
+        else:
+            self.add_event("PLAY_SOUND", {"sound": "UNLOCK"}, floor_id=floor_id)
+        self._drop_chest_contents(floor, chest, x, y)
+        self.add_event("OPEN_CHEST", {"player": player.id, "x": x, "y": y, "chest_type": chest.chest_type}, floor_id=floor_id)
+        return True
+
     def set_move_intent(self, entity_id: str, dx: int, dy: int):
         """Set/clear a player's held keyboard direction. The update tick paces the
         actual stepping at AUTO_MOVE_INTERVAL."""
@@ -81,6 +170,9 @@ class MovementCombatMixin:
 
         floor = self._get_or_create_floor(floor_id)
 
+        if isinstance(entity, Player) and time.time() < entity.action_until:
+            return
+
         if isinstance(entity, Player) and entity.is_downed:
             return
 
@@ -89,6 +181,11 @@ class MovementCombatMixin:
 
         if not (0 <= new_x < floor.width and 0 <= new_y < floor.height):
             return
+
+        # Any movement attempt cancels a stale chasm-fall confirmation prompt
+        # (the player did something else instead of confirming).
+        if isinstance(entity, Player):
+            entity.pending_chasm_fall = None
 
         # Diagonal moves past a wall corner are allowed, matching SPD's PathFinder
         # (it only checks the destination cell's passability, not the orthogonal cells).
@@ -188,6 +285,8 @@ class MovementCombatMixin:
                         self.add_event("PLAY_SOUND", {"sound": "HIT_BODY"}, floor_id=floor_id, source_player_id=target_entity.id)
                         if target_entity.hp / target_entity.get_total_max_hp() <= 0.3:
                             self.add_event("PLAY_SOUND", {"sound": "HEALTH_WARN"}, player_id=target_entity.id)
+                    if isinstance(target_entity, Goo) and isinstance(entity, Player):
+                        self._goo_add_locked_floor_time(floor_id, entity, dmg)
 
                 self._maybe_trigger_dm300_supercharge(target_entity, floor, floor_id, entity.pos)
 
@@ -227,15 +326,31 @@ class MovementCombatMixin:
                         drops = roll_drops(target_entity, self.drop_counters, target_entity.pos.x, target_entity.pos.y, players=list(self._players_on_floor(floor_id)))
                         for item in drops:
                             floor.items[item.id] = item
+                        if any(isinstance(d, Gold) for d in drops):
+                            self.add_event("GOLD_DROP", {"x": target_entity.pos.x, "y": target_entity.pos.y}, floor_id=floor_id)
             return
 
         tile = floor.grid[new_y][new_x]
-        if tile == TileType.LOCKED_DOOR:
+        if tile in (TileType.LOCKED_DOOR, TileType.CRYSTAL_DOOR, TileType.LOCKED_EXIT):
             if not isinstance(entity, Player):
                 return
-            if not self._try_unlock_locked_door(entity, floor, new_x, new_y):
+            self._try_unlock_locked_door(entity, floor, new_x, new_y)
+            return
+
+        if isinstance(entity, Player):
+            chest = next((item for item in self._items_at(floor, new_x, new_y) if isinstance(item, Chest)), None)
+            if chest is not None:
+                self._try_open_chest(entity, floor, floor_id, chest)
                 return
-            tile = floor.grid[new_y][new_x]
+
+        if tile == TileType.CHASM:
+            # Mobs never voluntarily step into a chasm (AI pathing already
+            # avoids it via AVOID/PIT — see vision.py); this only guards
+            # against an entity somehow ending up adjacent regardless.
+            if isinstance(entity, Player) and floor_id < MAX_FLOOR_ID:
+                entity.pending_chasm_fall = (new_x, new_y)
+                self.add_event("CHASM_PROMPT", {"x": new_x, "y": new_y}, floor_id=floor_id, player_id=entity.id)
+            return
 
         if not floor.flags or not floor.flags.passable[new_y][new_x]:
             return
@@ -289,6 +404,8 @@ class MovementCombatMixin:
         if result["tile_changed"]:
             self.add_event("MAP_PATCH", {"tiles": [{"x": entity.pos.x, "y": entity.pos.y, "tile": floor.grid[entity.pos.y][entity.pos.x]}]}, floor_id=floor_id)
             self.add_event("PLAY_SOUND", {"sound": "STEP_GRASS"}, floor_id=floor_id, source_player_id=entity.id if isinstance(entity, Player) else None)
+            # HighGrass.trample()'s CellEmitter.get(pos).burst(LeafParticle.LEVEL_SPECIFIC, 4)
+            self.add_event("LEAF_BURST", {"x": entity.pos.x, "y": entity.pos.y}, floor_id=floor_id)
         if result["triggered_plant"]:
             self.add_event("PLAY_SOUND", {"sound": "PLANT_TRIGGER"}, floor_id=floor_id, source_player_id=entity.id if isinstance(entity, Player) else None)
 
@@ -347,6 +464,16 @@ class MovementCombatMixin:
         if isinstance(entity, Player) and tile == TileType.STAIRS_UP and entity.floor_id > 1:
             self._move_player_to_floor(entity, entity.floor_id - 1, TileType.STAIRS_DOWN)
             self.add_event("STAIRS_UP", {"player": entity_id}, player_id=entity_id)
+
+        if isinstance(entity, Player) and tile == TileType.STAIRS_UP and entity.floor_id == 1:
+            if any(isinstance(it, Amulet) for it in entity.belongings.all_items()):
+                self._complete_victory(entity, floor, floor_id)
+            else:
+                self.add_event(
+                    "MESSAGE",
+                    {"text": "You can't leave yet, the rest of the dungeon awaits below!"},
+                    player_id=entity_id,
+                )
 
     def _maybe_trigger_dm300_supercharge(self, target: "MobEntity", floor, floor_id: int, near_pos: Position):
         """Trigger DM300 pylon activation if target is DM300 with pending activation."""
@@ -508,6 +635,8 @@ class MovementCombatMixin:
                     self.add_event("PLAY_SOUND", {"sound": "HIT_BODY"}, floor_id=floor_id, source_player_id=target_entity.id)
                     if target_entity.hp / target_entity.get_total_max_hp() <= 0.3:
                         self.add_event("PLAY_SOUND", {"sound": "HEALTH_WARN"}, player_id=target_entity.id)
+                if isinstance(target_entity, Goo):
+                    self._goo_add_locked_floor_time(floor_id, player, damage_dealt)
 
                 # WandOfLightning chain arc to nearby enemies
                 if damage_dealt > 0 and target_entity.is_alive and isinstance(effective_wand, WandOfLightning):
@@ -560,6 +689,8 @@ class MovementCombatMixin:
                     drops = roll_drops(target_entity, self.drop_counters, target_entity.pos.x, target_entity.pos.y, players=list(self._players_on_floor(floor_id)))
                     for d in drops:
                         floor.items[d.id] = d
+                    if any(isinstance(d, Gold) for d in drops):
+                        self.add_event("GOLD_DROP", {"x": target_entity.pos.x, "y": target_entity.pos.y}, floor_id=floor_id)
 
         if is_wand or is_staff:
             wand_item = staff_wand if is_staff else item

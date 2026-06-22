@@ -186,10 +186,23 @@ class ImpClaimReward(_ClientMessageBase):
     npc_id: str
 
 
+class GhostClaimReward(_ClientMessageBase):
+    type: Literal["GHOST_CLAIM_REWARD"]
+    npc_id: str
+    choice: Literal["weapon", "armor"]
+
+
 class ChooseImbueWand(_ClientMessageBase):
     type: Literal["CHOOSE_IMBUE_WAND"]
     staff_id: str
     wand_id: str
+
+
+class EquipGhostItem(_ClientMessageBase):
+    type: Literal["EQUIP_GHOST_ITEM"]
+    rose_id: str
+    slot: Literal["weapon", "armor"]
+    item_id: Optional[str] = None  # None = unequip
 
 
 class SelectScrollTarget(_ClientMessageBase):
@@ -209,6 +222,12 @@ class PickupFloor(_ClientMessageBase):
 class Attack(_ClientMessageBase):
     type: Literal["ATTACK"]
     target_id: str
+
+
+class ConfirmChasmFall(_ClientMessageBase):
+    type: Literal["CONFIRM_CHASM_FALL"]
+    x: int
+    y: int
 
 
 ClientMessage = Annotated[
@@ -244,11 +263,14 @@ ClientMessage = Annotated[
         ShopBuy,
         ShopSell,
         ImpClaimReward,
+        GhostClaimReward,
         SelectScrollTarget,
         ChooseImbueWand,
+        EquipGhostItem,
         Resume,
         PickupFloor,
         Attack,
+        ConfirmChasmFall,
     ],
     Field(discriminator="type"),
 ]

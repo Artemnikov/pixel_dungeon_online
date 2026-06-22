@@ -1,0 +1,127 @@
+.connection-log {
+  pointer-events: auto;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 4px;
+  border-radius: 4px;
+}
+
+/* Reconnect status banner shown while the socket is dropped/retrying. */
+.reconnect-banner {
+  position: fixed;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  padding: 6px 16px;
+  background: rgba(120, 20, 20, 0.92);
+  color: #fff;
+  font-size: 13px;
+  font-weight: bold;
+  font-family: 'Courier New', Courier, monospace;
+  border: 1px solid #000;
+  border-top: none;
+  border-radius: 0 0 6px 6px;
+  pointer-events: none;
+}
+
+/* --- DangerIndicator — SPD's skull + enemy count tag --- */
+.danger-indicator {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: rgba(15, 12, 10, 0.7);
+  border: 1px solid #c03838;
+  border-radius: 4px;
+  cursor: pointer;
+  pointer-events: auto;
+  user-select: none;
+}
+.danger-indicator:hover {
+  background: rgba(40, 20, 20, 0.85);
+}
+.danger-indicator__count {
+  font: 12px monospace;
+  color: #c03838;
+  font-weight: bold;
+}
+
+/* --- Side tags — stacked indicator tags on right edge --- */
+.side-tags {
+  position: fixed;
+  right: max(6px, env(safe-area-inset-right));
+  bottom: 50%;
+  z-index: 46;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  pointer-events: none;
+}
+.side-tag {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  background: rgba(15, 12, 10, 0.7);
+  border: 1px solid #666;
+  border-radius: 4px;
+  cursor: pointer;
+  pointer-events: auto;
+  user-select: none;
+}
+.side-tag:hover { background: rgba(30, 25, 20, 0.85); }
+.side-tag__label { font: 12px monospace; color: #ccc; font-weight: bold; max-width: 80px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.side-tag--loot { border-color: #185898; }
+.side-tag--loot:hover { background: rgba(10, 20, 40, 0.85); }
+.side-tag--resume { border-color: #888; }
+.side-tag--attack { border-color: #c03838; }
+.side-tag--attack:hover { background: rgba(40, 10, 10, 0.85); }
+.side-tag--action { border-color: #8855cc; }
+
+/* --- GameLog — SPD's bottom-left message log --- */
+.game-log {
+  position: fixed;
+  left: max(6px, env(safe-area-inset-left));
+  bottom: max(6px, env(safe-area-inset-bottom));
+  z-index: 45;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  pointer-events: none;
+  max-width: min(360px, 50vw);
+}
+.game-log__line {
+  font: 11px monospace;
+  text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.8);
+  line-height: 1.3;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.toast-overlay {
+  position: fixed;
+  left: 50%;
+  bottom: 80px;
+  transform: translateX(-50%);
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  pointer-events: none;
+}
+.toast-overlay__item {
+  background: rgba(0, 0, 0, 0.75);
+  color: #ffffcc;
+  font: 13px monospace;
+  padding: 5px 12px;
+  border-radius: 4px;
+  text-shadow: 1px 1px 0 rgba(0, 0, 0, 0.9);
+  transition: opacity 0.5s ease;
+  opacity: 1;
+}
+.toast-overlay__item--fade {
+  opacity: 0;
+}

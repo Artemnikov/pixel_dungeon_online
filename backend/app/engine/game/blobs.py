@@ -10,6 +10,17 @@ from app.engine.game.floor_state import FloorState
 _FIRE_IGNITE_STRENGTH = 4
 _FIRE_CARDINALS = [(0, -1), (1, 0), (0, 1), (-1, 0)]
 
+# Per-tile burnout destination override. Mirrors SewerLevel.destroy()
+# (SewerLevel.java:196-208): REGION_DECO -> WATER, REGION_DECO_ALT -> EMPTY_SP.
+# The remake has no distinct "special floor" tile (EMPTY_SP already collapses
+# to FLOOR elsewhere in spd_adapter._SPD_TO_TILE), so REGION_DECO_ALT's
+# destination is FLOOR for consistency. Every other flamable tile keeps
+# burning to EMBERS (the default).
+_BURN_RESULT = {
+    TileType.REGION_DECO: TileType.FLOOR_WATER,
+    TileType.REGION_DECO_ALT: TileType.FLOOR,
+}
+
 
 def _merge_same_type_blobs(floor: FloorState, btype: str) -> None:
     same = [(bid, b) for bid, b in floor.blob_areas.items() if b.get("type") == btype]
@@ -66,7 +77,7 @@ def _evolve_fire_blob(
     spread_targets: Dict[Tuple[int, int], int] = {}
     observe = False
     burned = False
-    destroyed_tiles: List[Tuple[int, int]] = []
+    destroyed_tiles: List[Tuple[int, int, int]] = []
 
     for cx, cy in list(cells):
         tile = floor.grid[cy][cx]
@@ -78,8 +89,9 @@ def _evolve_fire_blob(
 
         if vol <= 0:
             if flamable:
-                floor.grid[cy][cx] = TileType.EMBERS
-                destroyed_tiles.append((cx, cy))
+                new_tile = _BURN_RESULT.get(tile, TileType.EMBERS)
+                floor.grid[cy][cx] = new_tile
+                destroyed_tiles.append((cx, cy, new_tile))
                 observe = True
             continue
 
@@ -114,25 +126,22 @@ def _evolve_fire_blob(
         new_cells.add(cell)
         new_volume[cell] = vol
 
+    if observe:
+        floor.rebuild_flags()
+        patches = [{"x": cx, "y": cy, "tile": tile}
+                   for cx, cy, tile in destroyed_tiles]
+        if patches:
+            events.append({"type": "MAP_PATCH", "data": {"tiles": patches}})
+
     if new_cells:
         blob["cells"] = new_cells
         blob["volume"] = new_volume
+        cell_list = [(c[0], c[1], new_volume.get(c, 1)) for c in new_cells]
+        events.append({"type": "BLOB_UPDATE", "data": {"id": blob_id, "type": "fire", "cells": cell_list}})
     else:
         del floor.blob_areas[blob_id]
         events.append({"type": "BLOB_DEPLETED", "data": {"id": blob_id}})
-        if observe:
-            floor.rebuild_flags()
         return
-
-    cell_list = [(c[0], c[1], new_volume.get(c, 1)) for c in new_cells]
-    events.append({"type": "BLOB_UPDATE", "data": {"id": blob_id, "type": "fire", "cells": cell_list}})
-
-    if observe:
-        floor.rebuild_flags()
-        patches = [{"x": cx, "y": cy, "tile": TileType.EMBERS}
-                   for cx, cy in destroyed_tiles]
-        if patches:
-            events.append({"type": "MAP_PATCH", "data": {"tiles": patches}})
     if burned:
         events.append({"type": "PLAY_SOUND", "data": {"sound": "BURNING"}})
 

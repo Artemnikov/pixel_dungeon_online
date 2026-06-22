@@ -1,0 +1,112 @@
+/* --- Choice overlays (Subclass, Armor Ability) — SPD-style --- */
+.choice-overlay {
+  position: fixed; inset: 0; z-index: 450;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(0, 0, 0, 0.7);
+}
+.choice-modal {
+  background: #1e1e24;
+  border: 2px solid #4a4a55;
+  border-radius: 12px;
+  width: 440px;
+  max-width: 94vw;
+  padding: 0;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.8);
+  font-family: 'Courier New', Courier, monospace;
+  overflow: hidden;
+}
+.choice-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 20px;
+  background: #2a2a35;
+  border-bottom: 2px solid #3a3a44;
+}
+.choice-header-icon {
+  font-size: 20px;
+}
+.choice-header-title {
+  color: #ffe070;
+  font-size: 16px;
+  font-weight: bold;
+}
+.choice-subtitle {
+  margin: 12px 20px 16px;
+  color: #999;
+  font-size: 12px;
+  text-align: center;
+}
+.choice-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 0 14px;
+}
+.choice-list-item {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.choice-list-btn {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 14px;
+  background: #16161c;
+  border: 1px solid #3a3a44;
+  border-radius: 4px;
+  cursor: pointer;
+  text-align: left;
+  font-family: inherit;
+  transition: background 0.1s;
+}
+.choice-list-btn:hover {
+  background: #22222a;
+  border-color: #555;
+}
+.choice-list-name {
+  color: #e0e0e8;
+  font-size: 13px;
+  font-weight: bold;
+}
+.choice-list-desc {
+  color: #999;
+  font-size: 11px;
+}
+.choice-info-btn {
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  background: #1a1a22;
+  border: 1px solid #3a3a44;
+  border-radius: 4px;
+  color: #88ccff;
+  font-size: 13px;
+  cursor: pointer;
+  font-family: inherit;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.choice-info-btn:hover {
+  background: #2a2a35;
+  border-color: #88ccff;
+}
+.choice-skip {
+  display: block;
+  margin: 14px auto 14px;
+  padding: 6px 14px;
+  background: none;
+  border: 1px solid #555;
+  border-radius: 4px;
+  color: #777;
+  font-size: 11px;
+  font-family: inherit;
+  cursor: pointer;
+}
+.choice-skip:hover {
+  color: #aaa;
+  border-color: #777;
+}

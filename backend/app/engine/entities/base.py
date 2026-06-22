@@ -282,9 +282,11 @@ class Action:
     WEAR = "WEAR"        # TengusMask: choose subclass
     ALCHEMIZE = "ALCHEMIZE"  # GooBlob + HealthPotion at an Alchemy Pot -> Elixir of Aquatic Rejuvenation
     IMBUE = "IMBUE"      # MagesStaff: imbue a wand into the staff
+    SUMMON = "SUMMON"    # DriedRose: summon the ghost ally
+    DIRECT = "DIRECT"    # DriedRose: direct the ghost ally to a target
 
 # Actions that require the player to pick a target cell before resolving.
-TARGETED_ACTIONS = {Action.THROW, Action.ZAP}
+TARGETED_ACTIONS = {Action.THROW, Action.ZAP, Action.DIRECT}
 
 
 def _new_id() -> str:
@@ -1484,6 +1486,65 @@ class CloakOfShadows(Artifact):
         self.charge_cap = min(self.charge_cap + 1, self.level_cap)
 
 
+class DriedRose(Artifact):
+    kind: Literal["dried_rose"] = "dried_rose"
+    name: str = "Dried Rose"
+    type: str = "artifact"
+    unique: bool = True
+    charge: int = 100
+    charge_cap: int = 100
+    level_cap: ClassVar[int] = 10
+    exp: int = 0
+    ghost_id: Optional[str] = None
+    weapon: Optional["MeleeWeapon"] = None
+    armor: Optional["Armor"] = None
+    dropped_petals: int = 0
+    DESC: ClassVar[str] = "A dried rose that holds the spirit of a fallen warrior. Equip and charge it to summon the ghost as an ally."
+
+    def actions(self, player: Optional["Player"] = None) -> List[str]:
+        base = super().actions(player)
+        if player is None:
+            return base
+        equipped = player.belongings.is_equipped(self.id)
+        can_summon = (
+            equipped
+            and self.charge >= self.charge_cap
+            and not self.cursed
+            and self.has_no_ghost()
+        )
+        if can_summon:
+            return [Action.SUMMON] + base
+        if self.has_ghost():
+            return [Action.DIRECT, "GHOST_GEAR"] + base
+        return base
+
+    def default_action(self) -> Optional[str]:
+        return Action.DIRECT if self.has_ghost() else Action.SUMMON
+
+    def has_ghost(self) -> bool:
+        return self.ghost_id is not None
+
+    def has_no_ghost(self) -> bool:
+        return self.ghost_id is None
+
+    def ghost_strength(self) -> int:
+        return 13 + self.level // 2
+
+    def on_upgrade(self) -> None:
+        self.charge_cap = min(self.charge_cap + 1, self.level_cap)
+
+
+class Petal(ItemBase):
+    kind: Literal["petal"] = "petal"
+    name: str = "Petal"
+    type: str = "misc"
+    category: ClassVar[str] = ItemCategory.MISC
+    stackable: ClassVar[bool] = True
+    level_known: bool = True
+    cursed_known: bool = True
+    DESC: ClassVar[str] = "A dried rose petal. It can upgrade a Dried Rose artifact."
+
+
 class ScrollOfRage(Scroll):
     kind: Literal["scroll_of_rage"] = "scroll_of_rage"
     name: str = "Scroll of Rage"
@@ -1686,6 +1747,16 @@ class Waterskin(ItemBase):
         return [f"It contains {self.volume}/{self.MAX_VOLUME} drops of dew."]
 
 
+class Amulet(ItemBase):
+    kind: Literal["amulet"] = "amulet"
+    name: str = "Amulet of Yendor"
+    type: str = "amulet"
+    category: ClassVar[str] = ItemCategory.MISC
+    stackable: ClassVar[bool] = False
+    unique: bool = True
+    DESC: ClassVar[str] = "The legendary Amulet of Yendor. Carry it to the surface to win."
+
+
 class Berry(Food):
     kind: Literal["berry"] = "berry"
     name: str = "Berry"
@@ -1768,6 +1839,15 @@ class Scenery(ItemBase):
     kind: Literal["scenery"] = "scenery"
     type: str = "scenery"
     category: ClassVar[str] = ItemCategory.SCENERY
+
+
+class Chest(ItemBase):
+    kind: Literal["chest"] = "chest"
+    type: str = "chest"
+    category: ClassVar[str] = ItemCategory.SCENERY
+    chest_type: str = "CHEST"
+    opened: bool = False
+    contents: List["AnyItem"] = Field(default_factory=list)
 
 
 class Bag(ItemBase):
@@ -1935,7 +2015,7 @@ class PotionBandolier(Bag):
 AnyItem = Annotated[
     Union[
         MeleeWeapon, Dagger, WornShortsword, Bow, Staff, MissileWeapon,
-        Armor, Ring, Artifact, BrokenSeal, CloakOfShadows,
+        Armor, Ring, Artifact, BrokenSeal, CloakOfShadows, DriedRose,
         DamageWand,
         WandOfMagicMissile, WandOfFireblast, WandOfFrost, WandOfLightning,
         WandOfDisintegration, WandOfPrismaticLight, WandOfBlastWave,
@@ -1957,8 +2037,9 @@ AnyItem = Annotated[
         MysteryMeat, FrozenCarpaccio, Berry, SmallRation, Ration, Pasty, ChargrilledMeat, Food,
         Key,
         TenguMask, KingsCrown,
-        Seed, Dewdrop, Waterskin, Stone, Boomerang, ThrowableDagger, Throwable,
-        GooBlob, DwarfToken,
+        Seed, Dewdrop, Waterskin, Amulet, Stone, Boomerang, ThrowableDagger, Throwable,
+        GooBlob, DwarfToken, Petal,
+        Chest,
         VelvetPouch, ScrollHolder, MagicalHolster, PotionBandolier, Bag,
     ],
     Field(discriminator="kind"),
@@ -2167,10 +2248,20 @@ class Player(Entity):
     # Elixir of Aquatic Rejuvenation healing pool (SPD AquaHealing buff): heals
     # max(1, maxHP/50) per turn while standing in water, until exhausted.
     aqua_heal_left: float = 0.0
+    # SPD LockedFloor buff: present while a sealed boss arena (e.g. Goo's) is
+    # active. None when absent; while set, passive regen is paused once it
+    # drops below 1 — boss damage taken adds time (capped 50), boss healing
+    # removes it. Can go negative; only cleared explicitly on unseal.
+    locked_floor_left: Optional[float] = None
+    # Set by movement.py's move_entity when a player's deliberate step lands
+    # on a CHASM tile; cleared unconditionally on every other move_entity
+    # call for that player, or once confirm_chasm_fall consumes it.
+    pending_chasm_fall: Optional[Tuple[int, int]] = None
     path_queue: List[Tuple[int, int]] = []
     path_blocked_ticks: int = 0
     move_intent: Optional[Tuple[int, int]] = None
     last_auto_move_time: float = 0.0
+    action_until: float = 0.0
     # Hold Fast (warrior T3): ticks since the player last moved.
     stationary_ticks: int = 0
     is_admin: bool = False

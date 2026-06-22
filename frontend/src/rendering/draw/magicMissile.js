@@ -20,6 +20,7 @@ export const MISSILE_TYPES = {
   shaman_purple: { color: '#BB33FF', size: 2, life: 600, trailCount: 3, arcHeight: 1.5, colorEnd: '#5E1A80' },
   elmo:          { color: '#22EE66', size: 5, life: 600, trailCount: 5, arcHeight: 1.0, driftY: -1.2 },
   poison:        { color: '#8844AA', size: 3, life: 600, trailCount: 3, arcHeight: 1.5, colorEnd: '#44AA44' },
+  toxic_gas:     { color: '#44BB44', size: 5, life: 800, trailCount: 5, arcHeight: 1.5, colorEnd: '#88FF44', driftY: -0.5 },
   light_missile: { color: '#FFFF40', size: 4, life: 400, trailCount: 4, arcHeight: 1.5 },
 };
 

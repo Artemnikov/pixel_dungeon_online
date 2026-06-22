@@ -229,6 +229,8 @@ def build_floor(rng: SPDRandom, depth: int, run_state: RunState) -> Tuple[GenLev
         if rooms is not None:
             break
 
+    level.layout_kind = "figure_eight" if isinstance(builder, FigureEightBuilder) else "loop"
+
     painter = _painter(rng, depth, feeling)
     painter.paint(rng, level, rooms)
 
@@ -246,7 +248,7 @@ def build_floor(rng: SPDRandom, depth: int, run_state: RunState) -> Tuple[GenLev
     level.room_exit = next(r for r in rooms if r.is_exit())
     level.build_flag_maps()
 
-    create_mobs(rng, level)
+    create_mobs(rng, level, run_state)
     create_items(rng, level, run_state)
 
     return level, rooms
@@ -336,28 +338,21 @@ def _place_mob(rng: SPDRandom, level: GenLevel, mob: GenMob, room_to_spawn: Room
     return tries >= 0
 
 
-def _ghost_quest_spawn(rng: SPDRandom, level: GenLevel) -> None:
-    """Port of Ghost.Quest.spawn() — consumes the exact RNG calls to maintain
-    sequence parity (SewerLevel.createMobs() calls this before super). Only
-    relevant on depths 2-4 (sewers non-boss); depth ≤ 1 and boss levels skip."""
-    depth = level.depth
-    if depth <= 1:
-        return
-    roll = rng.IntMax(max(1, 5 - depth))
-    if roll != 0:
-        return
-    exit_room = level.room_exit
-    rng.IntRange(exit_room.left + 1, exit_room.right - 1)
-    rng.IntRange(exit_room.top + 1, exit_room.bottom - 1)
-    rng.chances((0, 0, 10, 6, 3, 1))
-    rng.chances((0, 0, 10, 6, 3, 1))
-    rng.Long()
+def _ghost_quest_spawn(rng: SPDRandom, level: GenLevel, run_state: RunState) -> None:
+    """Port of SewerLevel.createMobs()'s `Ghost.Quest.spawn(this, roomExit)`
+    call (delegates the actual roll/placement/reward-roll to GhostQuestState,
+    which also returns the GenMob to add). Only relevant on depths 2-4
+    (sewers non-boss); depth <= 1 and boss levels never call create_mobs at
+    all (boss floors use boss_level.py's separate pipeline)."""
+    mob = run_state.ghost_quest.maybe_spawn(rng, level)
+    if mob is not None:
+        level.mobs.append(mob)
 
 
-def create_mobs(rng: SPDRandom, level: GenLevel) -> None:
+def create_mobs(rng: SPDRandom, level: GenLevel, run_state: RunState) -> None:
     """Port of RegularLevel.createMobs (RegularLevel.java:220-326)."""
     depth = level.depth
-    _ghost_quest_spawn(rng, level)
+    _ghost_quest_spawn(rng, level, run_state)
     mobs_to_spawn = 8 if depth == 1 else _mob_limit(rng, depth, level.feeling)
 
     std_rooms: List[Room] = []

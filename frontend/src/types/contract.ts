@@ -290,6 +290,11 @@ export interface MapPatchEvent {
   data: { tiles: TilePatch[] };
 }
 
+export interface ChasmPromptEvent {
+  type: 'CHASM_PROMPT';
+  data: { x: number; y: number };
+}
+
 export interface PickupEvent {
   type: 'PICKUP';
   data: { player: string; item: string };
@@ -297,7 +302,13 @@ export interface PickupEvent {
 
 export interface DropEvent {
   type: 'DROP';
-  data: { player: string; item: string };
+  data: { player: string; item: string; item_name: string };
+}
+
+/** Gold dropped on ground by mob death — triggers coin particles. */
+export interface GoldDropEvent {
+  type: 'GOLD_DROP';
+  data: { x: number; y: number };
 }
 
 /** Waterskin auto-collects a Dewdrop underfoot (mirrors Waterskin.collect()). */
@@ -348,6 +359,41 @@ export interface ImpRewardEvent {
   data: { player: string; npc: string; item: string };
 }
 
+/** Ghost NPC dialogue (quest offer / reminder / reward-ready). */
+export interface GhostDialogueEvent {
+  type: 'GHOST_DIALOGUE';
+  data: {
+    player: string; npc: string; text: string; can_claim: boolean;
+    weapon?: SerializedItem | null; armor?: SerializedItem | null;
+  };
+}
+
+/** Player claimed the Ghost's quest reward (weapon or armor); the Ghost despawns. */
+export interface GhostRewardEvent {
+  type: 'GHOST_REWARD';
+  data: { player: string; npc: string; item: string };
+}
+
+export interface GhostSummonEvent {
+  type: 'GHOST_SUMMON';
+  data: { player: string; ghost_id: string; x: number; y: number };
+}
+
+export interface GhostDirectEvent {
+  type: 'GHOST_DIRECT';
+  data: { player: string; ghost_id: string; x: number; y: number };
+}
+
+export interface GhostGearOpenEvent {
+  type: 'GHOST_GEAR_OPEN';
+  data: {
+    player: string; rose_id: string; ghost_id: string;
+    ghost_hp: number; ghost_max_hp: number;
+    weapon?: Record<string, unknown> | null;
+    armor?: Record<string, unknown> | null;
+  };
+}
+
 export interface StairsDownEvent {
   type: 'STAIRS_DOWN';
   data: { player: string; first_visit: boolean };
@@ -366,6 +412,26 @@ export interface ReviveEvent {
 export interface UnlockEvent {
   type: 'UNLOCK';
   data: { player: string; x: number; y: number };
+}
+
+export interface LockedEvent {
+  type: 'LOCKED';
+  data: { player: string; x: number; y: number };
+}
+
+export interface OpenChestEvent {
+  type: 'OPEN_CHEST';
+  data: { player: string; x: number; y: number; chest_type: string };
+}
+
+export interface CrystalChestShatterEvent {
+  type: 'CRYSTAL_CHEST_SHATTER';
+  data: { x: number; y: number };
+}
+
+export interface SpawnMobEvent {
+  type: 'SPAWN_MOB';
+  data: { mob: Record<string, unknown> };
 }
 
 export interface LevelUpEvent {
@@ -555,6 +621,18 @@ export interface TenguFightStartedEvent {
   data: { mob: string };
 }
 
+/** Evil Eye begins charging its death gaze. */
+export interface EyeChargeEvent {
+  type: 'EYE_CHARGE';
+  data: { mob: string; target_x: number; target_y: number };
+}
+
+/** Evil Eye fires its death gaze beam. */
+export interface EyeDeathRayEvent {
+  type: 'EYE_DEATH_RAY';
+  data: { mob: string; source_x: number; source_y: number; target_x: number; target_y: number };
+}
+
 /** Necromancer zaps a cell — summon, heal, or buff its NecroSkeleton (mirrors NecromancerSprite.zap). */
 export interface ZapSummonEvent {
   type: 'ZAP_SUMMON';
@@ -645,6 +723,12 @@ export interface FlameBurstEvent {
   data: { x: number; y: number };
 }
 
+/** Grass terrain changed (trampled/regrown) — region-colored leaf particles. */
+export interface LeafBurstEvent {
+  type: 'LEAF_BURST';
+  data: { x: number; y: number };
+}
+
 export type GameEvent =
   | AttackEvent
   | MissEvent
@@ -659,8 +743,10 @@ export type GameEvent =
   | DrinkEvent
   | ReadEvent
   | MapPatchEvent
+  | ChasmPromptEvent
   | PickupEvent
   | DropEvent
+  | GoldDropEvent
   | CollectDewEvent
   | PickupGoldEvent
   | PickupKeyEvent
@@ -669,6 +755,11 @@ export type GameEvent =
   | ShopSellEvent
   | ImpDialogueEvent
   | ImpRewardEvent
+  | GhostDialogueEvent
+  | GhostRewardEvent
+  | GhostSummonEvent
+  | GhostDirectEvent
+  | GhostGearOpenEvent
   | StairsDownEvent
   | StairsUpEvent
   | ReviveEvent
@@ -704,6 +795,8 @@ export type GameEvent =
   | YogPhaseChangeEvent
   | YogFinalPhaseEvent
   | TenguFightStartedEvent
+  | EyeChargeEvent
+  | EyeDeathRayEvent
   | ZapSummonEvent
   | NecroSummonEvent
   | TenguJumpEvent
@@ -725,7 +818,12 @@ export type GameEvent =
   | InfernoActivatedEvent
   | SacrificialFireEvent
   | FlameBurstEvent
-  | SpellSpriteEvent;
+  | LeafBurstEvent
+  | SpellSpriteEvent
+  | LockedEvent
+  | OpenChestEvent
+  | CrystalChestShatterEvent
+  | SpawnMobEvent;
 
 export type GameEventType = GameEvent['type'];
 
@@ -743,6 +841,8 @@ export interface InitMessage {
   custom_tiles?: CustomTileLayer[];
   /** Custom wall overlays rendered above characters (e.g. SewerExitOverhang). */
   custom_walls?: CustomTileLayer[];
+  /** Cosmetic flame VFX positions (SPD's Torch Emitter+Halo), e.g. flanking Goo's boss exit. */
+  torches?: [number, number][];
   /** Only present on the very first INIT after connecting. */
   player_id?: string;
 }
@@ -770,6 +870,8 @@ export interface StateUpdateMessage {
   traps: TrapInfo[];
   gold: number;
   energy: number;
+  has_amulet: boolean;
+  boss_lurking: boolean;
   events: GameEvent[];
   /**
    * Read defensively by the client but not currently forwarded in STATE_UPDATE;
@@ -816,6 +918,7 @@ export type ClientMessage =
   | { type: 'TRIGGER_BERSERK' }
   | { type: 'PREPARATION_STRIKE'; target_x: number; target_y: number }
   | { type: 'CHOOSE_IMBUE_WAND'; staff_id: string; wand_id: string }
+  | { type: 'EQUIP_GHOST_ITEM'; rose_id: string; slot: 'weapon' | 'armor'; item_id?: string }
   | { type: 'METAMORPH_CHOOSE'; talent: string }
   | { type: 'METAMORPH_REPLACE'; old_talent: string; new_talent: string }
   | { type: 'ADMIN_TELEPORT'; target_floor: number }
@@ -825,4 +928,5 @@ export type ClientMessage =
   | { type: 'SHOP_BUY'; npc_id: string; item_id: string }
   | { type: 'SHOP_SELL'; item_id: string }
   | { type: 'IMP_CLAIM_REWARD'; npc_id: string }
-  | { type: 'SELECT_SCROLL_TARGET'; scroll_id: string; item_id: string };
+  | { type: 'SELECT_SCROLL_TARGET'; scroll_id: string; item_id: string }
+  | { type: 'CONFIRM_CHASM_FALL'; x: number; y: number };

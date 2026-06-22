@@ -11,6 +11,9 @@ export const ACTION_KEYS = {
   OPEN: 'action.open',
   AFFIX: 'action.affix',
   STEALTH: 'action.stealth',
+  GHOST_GEAR: 'action.ghostGear',
+  SUMMON: 'action.summon',
+  DIRECT: 'action.direct',
 };
 
 export const actionLabel = (a, t) => {

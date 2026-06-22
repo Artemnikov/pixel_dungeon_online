@@ -127,6 +127,12 @@ class PickupData(_EventData):
 class DropData(_EventData):
     player: str
     item: str
+    item_name: str
+
+
+class GoldDropData(_EventData):
+    x: int
+    y: int
 
 
 class CollectDewData(_EventData):
@@ -265,6 +271,15 @@ class TenguBadgeQualifiedData(_EventData):
     pass  # no required payload
 
 
+class GooBadgeQualifiedData(_EventData):
+    pass  # no required payload
+
+
+class ChasmPromptData(_EventData):
+    x: int
+    y: int
+
+
 class MessageData(_EventData):
     text: str
     color: Optional[str] = None
@@ -284,6 +299,21 @@ class ImpRewardData(_EventData):
     item: str
 
 
+class GhostDialogueData(_EventData):
+    player: str
+    npc: str
+    text: str
+    can_claim: bool
+    weapon: Optional[dict] = None
+    armor: Optional[dict] = None
+
+
+class GhostRewardData(_EventData):
+    player: str
+    npc: str
+    item: str
+
+
 class TeleportData(_EventData):
     player: str
     x: int
@@ -293,6 +323,30 @@ class TeleportData(_EventData):
 class MirrorImageData(_EventData):
     player: str
     clones: List[str]
+
+
+class GhostSummonData(_EventData):
+    player: str
+    ghost_id: str
+    x: int
+    y: int
+
+
+class GhostDirectData(_EventData):
+    player: str
+    ghost_id: str
+    x: int
+    y: int
+
+
+class GhostGearOpenData(_EventData):
+    player: str
+    rose_id: str
+    ghost_id: str
+    ghost_hp: int
+    ghost_max_hp: int
+    weapon: Optional[dict] = None
+    armor: Optional[dict] = None
 
 
 class ScrollSelectTargetData(_EventData):
@@ -343,10 +397,29 @@ class SacrificialFireData(_EventData):
     y: int
 
 
+class LeafBurstData(_EventData):
+    x: int
+    y: int
+
+
 class SpellSpriteData(_EventData):
     x: int
     y: int
     index: int
+
+
+class EyeChargeData(_EventData):
+    mob: str
+    target_x: int
+    target_y: int
+
+
+class EyeDeathRayData(_EventData):
+    mob: str
+    source_x: int
+    source_y: int
+    target_x: int
+    target_y: int
 
 
 # event "type" -> payload model. Used by the opt-in dev validation hook.
@@ -368,6 +441,7 @@ EVENT_MODELS = {
     "DROP": DropData,
     "COLLECT_DEW": CollectDewData,
     "PICKUP_GOLD": PickupGoldData,
+    "GOLD_DROP": GoldDropData,
     "PICKUP_KEY": PickupKeyData,
     "SHOP_OPEN": ShopOpenData,
     "SHOP_BUY": ShopBuyData,
@@ -391,8 +465,15 @@ EVENT_MODELS = {
     "TALENT_METAMORPHED": TalentMetamorphData,
     "BOSS_SLAIN": BossSlainData,
     "TENGU_BADGE_QUALIFIED": TenguBadgeQualifiedData,
+    "GOO_BADGE_QUALIFIED": GooBadgeQualifiedData,
+    "CHASM_PROMPT": ChasmPromptData,
     "IMP_DIALOGUE": ImpDialogueData,
     "IMP_REWARD": ImpRewardData,
+    "GHOST_DIALOGUE": GhostDialogueData,
+    "GHOST_REWARD": GhostRewardData,
+    "GHOST_SUMMON": GhostSummonData,
+    "GHOST_DIRECT": GhostDirectData,
+    "GHOST_GEAR_OPEN": GhostGearOpenData,
     "SCROLL_SELECT_TARGET": ScrollSelectTargetData,
     "TELEPORT": TeleportData,
     "MIRROR_IMAGE": MirrorImageData,
@@ -404,5 +485,8 @@ EVENT_MODELS = {
     "FIRE_IMBUE_ACTIVATED": FireImbueActivatedData,
     "INFERNO_ACTIVATED": InfernoActivatedData,
     "SACRIFICIAL_FIRE": SacrificialFireData,
+    "LEAF_BURST": LeafBurstData,
     "SPELL_SPRITE": SpellSpriteData,
+    "EYE_CHARGE": EyeChargeData,
+    "EYE_DEATH_RAY": EyeDeathRayData,
 }

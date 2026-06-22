@@ -14,16 +14,15 @@
 #
 """Floor generation and content spawning for GameInstance.
 
-Generates each depth's layout using SPD-parity generation (sewers floors 1-5)
-or the legacy generator (prison+), then populates it with mobs, items, traps.
+Generates each depth's layout using SPD-parity generation, then populates it
+with mobs, items, traps.
 """
 
 import random
 import uuid
-import zlib
 from typing import List, Tuple, Type
 
-from app.engine.dungeon.generator import DungeonGenerator, SewersProfile, TileType
+from app.engine.dungeon.generator import TileType
 from app.engine.dungeon.dungeon_seed import seed_for_depth
 from app.engine.entities.base import (
     Armor,
@@ -74,8 +73,9 @@ from app.engine.entities.mobs import (
     Skeleton, Thief, DM100, Guard, Necromancer,
 )
 from app.engine.game.constants import MAP_HEIGHT, MAP_WIDTH, MAX_FLOOR_ID, SEWERS_MAX_FLOOR, PRISON_MAX_FLOOR
-from app.engine.game.floor_state import FloorState
 from app.engine.game.spd_adapter import gen_level_to_floor_state
+from app.engine.dungeon.spd_levelgen.run_state import is_boss_level
+from app.engine.game.floor_state import FloorState
 
 
 class GenerationMixin:
@@ -83,10 +83,7 @@ class GenerationMixin:
         depth = max(1, min(MAX_FLOOR_ID, depth))
         self.depth = depth
 
-        if depth <= 25:
-            floor = self._generate_floor_spd(depth)
-        else:
-            floor = self._generate_floor_legacy(depth)
+        floor = self._generate_floor_spd(depth)
 
         self.floors[depth] = floor
         return floor
@@ -94,13 +91,15 @@ class GenerationMixin:
     def _generate_floor_spd(self, depth: int) -> FloorState:
         from app.engine.dungeon.spd_random import SPDRandom
         from app.engine.dungeon.spd_levelgen.boss_level import build_boss_floor
+        from app.engine.dungeon.spd_levelgen.last_level import build_last_level
         from app.engine.dungeon.spd_levelgen.regular_level import build_floor
-        from app.engine.dungeon.spd_levelgen.run_state import is_boss_level
 
         floor_seed = seed_for_depth(self.master_seed, depth, 0)
         rng = SPDRandom()
         rng.push_generator(floor_seed)
-        if is_boss_level(depth):
+        if depth == 26:
+            gen_level, _rooms = build_last_level(rng, depth, self.run_state)
+        elif is_boss_level(depth):
             gen_level, _rooms = build_boss_floor(rng, depth, self.run_state)
         else:
             gen_level, _rooms = build_floor(rng, depth, self.run_state)
@@ -116,77 +115,6 @@ class GenerationMixin:
                     mob.hp = 120
                     mob.max_hp = 120
 
-        return floor
-
-    def _generate_floor_legacy(self, depth: int) -> FloorState:
-        floor_seed = zlib.crc32(f"{self.game_id}:{depth}".encode("utf-8"))
-        generator = DungeonGenerator(MAP_WIDTH, MAP_HEIGHT, seed=floor_seed)
-        floor: FloorState
-        if depth <= SEWERS_MAX_FLOOR:
-            sewers_result = generator.generate_sewers(SewersProfile(depth=depth))
-            rooms = sewers_result.rooms
-            entrance_pos = rooms[0].center if rooms else None
-            exit_pos = rooms[-1].center if rooms else None
-            floor = FloorState(
-                floor_id=depth,
-                grid=sewers_result.grid,
-                rooms=rooms,
-                mobs={},
-                items={},
-                region=sewers_result.metadata.region,
-                hidden_doors=dict(sewers_result.metadata.hidden_doors),
-                locked_doors=dict(sewers_result.metadata.locked_doors),
-                traps=dict(sewers_result.metadata.traps),
-                key_spawns=dict(sewers_result.metadata.key_spawns),
-                generation_meta={
-                    "layout_kind": sewers_result.metadata.layout_kind,
-                    "room_ids_by_kind": sewers_result.metadata.room_ids_by_kind,
-                    "room_connections": sewers_result.metadata.room_connections,
-                    "start_room_id": sewers_result.metadata.start_room_id,
-                    "end_room_id": sewers_result.metadata.end_room_id,
-                    "seed": sewers_result.metadata.seed,
-                },
-                entrance_pos=entrance_pos,
-                exit_pos=exit_pos,
-            )
-        elif depth == 5:
-            grid, rooms = generator.generate_boss_floor()
-            floor = FloorState(
-                floor_id=depth,
-                grid=grid,
-                rooms=rooms,
-                mobs={},
-                items={},
-                region="sewers",
-                locked_doors=dict(getattr(generator, "boss_locked_doors", {})),
-            )
-        elif depth <= PRISON_MAX_FLOOR:
-            grid, rooms = generator.generate(10 + depth, 4, 8 + (depth // 10))
-            floor = FloorState(
-                floor_id=depth,
-                grid=grid,
-                rooms=rooms,
-                mobs={},
-                items={},
-                region="prison",
-                entrance_pos=rooms[0].center if rooms else None,
-                exit_pos=rooms[-1].center if rooms else None,
-            )
-        else:
-            grid, rooms = generator.generate(10 + depth, 4, 8 + (depth // 10))
-            floor = FloorState(
-                floor_id=depth,
-                grid=grid,
-                rooms=rooms,
-                mobs={},
-                items={},
-                region="legacy",
-                entrance_pos=rooms[0].center if rooms else None,
-                exit_pos=rooms[-1].center if rooms else None,
-            )
-
-        floor.rebuild_flags()
-        self._spawn_content(floor)
         return floor
 
     def _is_in_safe_room(self, floor: FloorState, x: int, y: int) -> bool:

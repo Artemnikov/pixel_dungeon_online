@@ -84,6 +84,9 @@ export const ITEM_SPRITES = {
   "Mail Armor":       [2, 11],
   "Rogue's Cloak":    [7, 11],  // ARMOR_ROGUE (ARMOR+7)
 
+  "Dried Rose":       [4, 16],  // ARTIFACT_ROSE1
+  "Petal":            [6, 1],   // PETAL (UNCOLLECTIBLE+4)
+
   // Wands / rings / artifacts (section bases, generic first entry)
   // Row 13: 13 individual wand sprites (WANDS = xy(1,14) = idx 208, cells 0..12)
   "Wand of Magic Missile":   [0, 13],  // WAND_MAGIC_MISSILE
@@ -138,6 +141,14 @@ export const ITEM_SPRITES = {
   // Misc
   "Tengu's Mask":     [11, 3],  // MASK (MISC_CONSUMABLE+11 = idx 59 = col 11, row 3 in items.png)
   "Goo Blob":         [7, 29],  // BLOB (QUEST+7, QUEST = xy(1,30) = idx 464)
+  "King's Crown":     [12, 3],  // CROWN (MISC_CONSUMABLE+12 = idx 60 = col 12, row 3)
+  "Chest":            [4, 2],   // CHEST (CONTAINER+0 = xy(5,3) = idx 36)
+  "Crystal Chest":    [6, 2],   // CRYSTAL_CHEST (CONTAINER+2 = idx 38)
+  "Locked Chest":     [5, 2],   // LOCKED_CHEST (CONTAINER+1 = idx 37)
+  "Tomb":             [2, 2],   // TOMB (CONTAINER+? = xy(3,3) = idx 34)
+  "Grave":            [0, 2],   // BONES sprite — player death grave marker
+  "Skeleton":         [0, 2],   // SKELETON (CONTAINER+? = xy(1,3) = idx 32)
+  "Remains":          [1, 2],   // REMAINS (CONTAINER+? = xy(2,3) = idx 33)
   "Gold":             [2, 1],   // GOLD (UNCOLLECTIBLE+0 = xy(3,2) = idx 18)
   "Dewdrop":          [5, 1],   // DEWDROP (UNCOLLECTIBLE+3 = idx 21)
   "Waterskin":        [0, 30],  // WATERSKIN = BAGS+0 = xy(1,31) -> idx 480 -> col0,row30
@@ -145,6 +156,7 @@ export const ITEM_SPRITES = {
   "Crystal Key":      [9, 3],   // CRYSTAL_KEY (MISC_CONSUMABLE+9 = idx 57)
   "Rusty Key":        [7, 3],   // IRON_KEY (MISC_CONSUMABLE+7 = idx 55)
   "Key":              [7, 3],
+  "Amulet of Yendor": [14, 4],  // AMULET = MISC_CONSUMABLE+13 = xy(1,4)+13 = idx 78 -> col14,row4
 
   // Default fallback (SOMETHING "?" placeholder, idx 0)
   "default":          [0, 0],
@@ -180,6 +192,7 @@ export const getItemSpriteCoords = (itemName, itemType) => {
   if (itemType === 'gold')      return [2, 1];
   if (itemType === 'seed')      return [3, 24];  // SEED_SUNGRASS
   if (itemType === 'dewdrop')   return [5, 1];   // DEWDROP
+  if (itemType === 'grave')     return [0, 2];   // BONES
   return ITEM_SPRITES["default"];
 };
 

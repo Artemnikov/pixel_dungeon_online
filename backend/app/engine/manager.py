@@ -52,8 +52,13 @@ from app.engine.game.ai_demon_spawner import DemonSpawnerAIMixin
 from app.engine.game.ai_pylon import PylonAIMixin
 from app.engine.game.ai_dm300 import DM300AIMixin
 from app.engine.game.ai_necromancer import NecromancerAIMixin
+from app.engine.game.ai_eye import EyeAIMixin
 from app.engine.game.ai_tengu import TenguAIMixin
 from app.engine.game.ai_mirror_image import MirrorImageMixin
+from app.engine.game.ai_shaman import ShamanAIMixin
+from app.engine.game.ai_warlock import WarlockAIMixin
+from app.engine.game.ai_spinner import SpinnerAIMixin
+from app.engine.game.ai_dm200 import DM200AIMixin
 from app.engine.game.tick import TickMixin
 from app.engine.game.vision import VisionMixin
 from app.engine.game.world import WorldInteractionMixin
@@ -69,6 +74,7 @@ class GameInstance(
     ItemsMixin,
     PrisonBossMixin,
     GooAIMixin,
+    EyeAIMixin,
     DwarfKingAIMixin,
     YogDzewaAIMixin,
     DemonSpawnerAIMixin,
@@ -77,6 +83,10 @@ class GameInstance(
     NecromancerAIMixin,
     TenguAIMixin,
     MirrorImageMixin,
+    ShamanAIMixin,
+    WarlockAIMixin,
+    SpinnerAIMixin,
+    DM200AIMixin,
     TickMixin,
     ArmorAbilitiesMixin,
     TalentsMixin,

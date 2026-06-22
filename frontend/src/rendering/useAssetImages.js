@@ -48,15 +48,21 @@ import fistsSprite from '../assets/pixel-dungeon/sprites/yog_fists.png';
 import eyeSprite from '../assets/pixel-dungeon/sprites/eye.png';
 import ripperSprite from '../assets/pixel-dungeon/sprites/ripper.png';
 import spawnerSprite from '../assets/pixel-dungeon/sprites/spawner.png';
+import succubusSprite from '../assets/pixel-dungeon/sprites/succubus.png';
 import pylonSprite from '../assets/pixel-dungeon/sprites/pylon.png';
 import tenguSprite from '../assets/pixel-dungeon/sprites/tengu.png';
 import dm300Sprite from '../assets/pixel-dungeon/sprites/dm300.png';
 import bruteSprite from '../assets/pixel-dungeon/sprites/brute.png';
 import swarmSprite from '../assets/pixel-dungeon/sprites/swarm.png';
+import ghostSprite from '../assets/pixel-dungeon/sprites/ghost.png';
+import spinnerSprite from '../assets/pixel-dungeon/sprites/spinner.png';
+import dm200Sprite from '../assets/pixel-dungeon/sprites/dm200.png';
+import shamanSprite from '../assets/pixel-dungeon/sprites/shaman.png';
 import iconsSprite from '../assets/pixel-dungeon/interfaces/icons.png';
 import spellIconsSprite from '../assets/pixel-dungeon/effects/spell_icons.png';
 import effectsSprite from '../assets/pixel-dungeon/effects/effects.png';
 import specksSprite from '../assets/pixel-dungeon/effects/specks.png';
+import fireballSprite from '../assets/pixel-dungeon/effects/fireball-short.png';
 
 export default function useAssetImages() {
   const [assetImages, setAssetImages] = useState({
@@ -77,6 +83,7 @@ export default function useAssetImages() {
     huntress: null,
     items: null,
     rat: null,
+    ghost: null,
     crab: null,
     slime: null,
     snake: null,
@@ -107,15 +114,20 @@ export default function useAssetImages() {
     eye: null,
     ripper: null,
     spawner: null,
+    succubus: null,
     pylon: null,
     tengu: null,
     dm300: null,
     brute: null,
+    spinner: null,
+    dm200: null,
+    shaman: null,
     swarm: null,
     icons: null,
     spellIcons: null,
     effects: null,
     specks: null,
+    fireball: null,
   });
 
   useEffect(() => {
@@ -176,6 +188,7 @@ export default function useAssetImages() {
     loadImage(huntressSprite, 'huntress');
     loadImage(itemsSprite, 'items');
     loadImage(ratSprite, 'rat');
+    loadImage(ghostSprite, 'ghost');
     loadImage(crabSprite, 'crab');
     loadImage(slimeSprite, 'slime');
     loadImage(snakeSprite, 'snake');
@@ -206,15 +219,20 @@ export default function useAssetImages() {
     loadImage(eyeSprite, 'eye');
     loadImage(ripperSprite, 'ripper');
     loadImage(spawnerSprite, 'spawner');
+    loadImage(succubusSprite, 'succubus');
     loadImage(pylonSprite, 'pylon');
     loadImage(tenguSprite, 'tengu');
     loadImage(dm300Sprite, 'dm300');
     loadImage(bruteSprite, 'brute');
+    loadImage(spinnerSprite, 'spinner');
+    loadImage(dm200Sprite, 'dm200');
+    loadImage(shamanSprite, 'shaman');
     loadImage(swarmSprite, 'swarm');
     loadImage(iconsSprite, 'icons');
     loadImage(spellIconsSprite, 'spellIcons');
     loadImage(effectsSprite, 'effects');
     loadImage(specksSprite, 'specks');
+    loadImage(fireballSprite, 'fireball');
   }, []);
 
   return assetImages;

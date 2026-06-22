@@ -1,0 +1,212 @@
+/* --- Key display — small icon+count row for keys held on this floor --- */
+.key-display {
+  position: fixed;
+  top: max(8px, env(safe-area-inset-top));
+  left: max(8px, env(safe-area-inset-left));
+  z-index: 45;
+  display: flex;
+  gap: 4px;
+  pointer-events: none;
+}
+.key-display__pill {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: rgba(15, 12, 10, 0.7);
+  border: 1px solid #666;
+  border-radius: 4px;
+}
+
+.boss-health-bar {
+  position: absolute;
+  top: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(420px, 70vw);
+  z-index: 40;
+  text-align: center;
+  pointer-events: none;
+}
+
+.boss-health-bar__box {
+  background: rgba(15, 12, 10, 0.78);
+  border: 1px solid #6a6a6a;
+  border-radius: 4px;
+  padding: 6px 12px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+}
+
+.boss-health-bar__name {
+  font: 14px monospace;
+  color: #e0c0a0;
+  text-shadow: 1px 1px 0 #000;
+  margin-bottom: 4px;
+  letter-spacing: 1px;
+}
+
+.boss-health-bar__track {
+  position: relative;
+  width: 100%;
+  height: 10px;
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid #4a4a4a;
+  border-radius: 2px;
+  overflow: hidden;
+}
+.boss-health-bar__bg {
+  position: absolute;
+  top: 0; left: 0;
+  height: 100%;
+  background: #cc0000;
+}
+.boss-health-bar__shield {
+  position: absolute;
+  top: 0; left: 0;
+  height: 100%;
+  background: #ffffff;
+  transition: width 0.2s ease-out;
+}
+.boss-health-bar__fill {
+  position: absolute;
+  top: 0; left: 0;
+  height: 100%;
+  background: #00ee00;
+  transition: width 0.2s ease-out;
+}
+.boss-health-bar__hp-text {
+  font: 10px monospace;
+  color: #fff;
+  text-shadow: 1px 1px 0 #000;
+  text-align: center;
+  margin-top: 2px;
+  opacity: 0.8;
+}
+.boss-health-bar__buffs {
+  display: flex;
+  justify-content: center;
+  gap: 2px;
+  margin-top: 4px;
+}
+.boss-health-bar__buff {
+  font: 8px monospace;
+  color: #aaa;
+  background: rgba(0,0,0,0.4);
+  padding: 1px 3px;
+  border-radius: 2px;
+}
+
+/* Top Left HUD */
+.top-left-hud {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  display: flex;
+  flex-direction: column-reverse;
+  gap: 4px;
+  z-index: 100;
+}
+
+.status-pane-canvas {
+  image-rendering: pixelated;
+  display: block;
+}
+
+.status-pane-footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-left: 4px;
+  position: relative;
+}
+
+.status-floor-label {
+  color: #d8d8d8;
+  font-size: 12px;
+  font-weight: bold;
+  letter-spacing: 0.3px;
+  text-shadow: 1px 1px 1px #000;
+  text-transform: lowercase;
+}
+
+.status-floor-label--admin {
+  cursor: pointer;
+  user-select: none;
+}
+.status-floor-label--admin:hover {
+  color: #fff;
+}
+
+.floor-picker {
+  position: absolute;
+  bottom: 100%;
+  top: auto;
+  left: 0;
+  background: #1a1a2e;
+  border: 1px solid #5b6f56;
+  border-radius: 4px;
+  max-height: 240px;
+  overflow-y: auto;
+  z-index: 200;
+  min-width: 48px;
+  scrollbar-width: thin;
+  scrollbar-color: #5b6f56 #1a1a2e;
+}
+.floor-picker__item {
+  padding: 3px 10px;
+  color: #b8b8b8;
+  font-size: 12px;
+  cursor: pointer;
+  text-align: center;
+  font-weight: bold;
+  text-shadow: 1px 1px 1px #000;
+}
+.floor-picker__item:hover {
+  background: #2a2a4e;
+  color: #fff;
+}
+.floor-picker__item--current {
+  color: #d8d8d8;
+  background: #2a2a3e;
+}
+
+.search-btn {
+  width: fit-content;
+  padding: 4px 8px;
+  border: 1px solid #5b6f56;
+  background: #203321;
+  color: #cde6c2;
+  border-radius: 4px;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.search-btn:hover {
+  background: #2b452d;
+}
+
+/* Desktop layout (interfaceSize === 2) */
+.desktop-hud-bottom {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  right: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  pointer-events: none;
+  z-index: 100;
+}
+
+.desktop-hud-left {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  pointer-events: auto;
+}
+
+.desktop-hud-right {
+  pointer-events: auto;
+}

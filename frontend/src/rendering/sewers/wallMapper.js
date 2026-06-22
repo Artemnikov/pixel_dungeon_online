@@ -151,7 +151,7 @@ export const getDoorSidewaysOverhang = (grid, x, y, tile, openDoors) => {
   const leftBelow = getTile(grid, x - 1, y + 1);
 
   let base;
-  if (tile === BACKEND_TILE.LOCKED_DOOR.id) {
+  if (tile === BACKEND_TILE.LOCKED_DOOR.id || tile === BACKEND_TILE.LOCKED_EXIT.id || tile === BACKEND_TILE.CRYSTAL_DOOR.id) {
     base = WALL_INDEX.DOOR_SIDEWAYS_OVERHANG_LOCKED;
   } else if (tile === BACKEND_TILE.OPEN_DOOR.id || openDoors?.has(`${x},${y}`)) {
     base = WALL_INDEX.DOOR_SIDEWAYS_OVERHANG;
@@ -198,7 +198,7 @@ export const getSewerDoorCap = (grid, x, y, tile, openDoors) => {
   if (isDoorTile(below)) {
     if (isWallTile(tile) && isSidewaysDoor(grid, x, y + 1, getTile)) {
       // Wall above a sideways door — vertical-wall cap with doorway.
-      return below === BACKEND_TILE.LOCKED_DOOR.id
+      return below === BACKEND_TILE.LOCKED_DOOR.id || below === BACKEND_TILE.LOCKED_EXIT.id || below === BACKEND_TILE.CRYSTAL_DOOR.id
         ? WALL_INDEX.DOOR_SIDEWAYS_LOCKED
         : WALL_INDEX.DOOR_SIDEWAYS;
     }

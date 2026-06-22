@@ -34,6 +34,6 @@ class DM300AIMixin:
                 dx, dy = target_player.pos.x - mob.pos.x, target_player.pos.y - mob.pos.y
                 self.move_entity(mob.id, dx, dy)
         elif self._is_in_los(mob.pos, target_player.pos, floor_id=floor_id):
-            step = self._get_next_step_to(mob.pos, target_player.pos, floor_id=floor_id)
+            step = self._get_next_step_to(mob.pos, target_player.pos, floor_id=floor_id, flying=mob.flying)
             if step:
                 self.move_entity(mob.id, step[0], step[1])

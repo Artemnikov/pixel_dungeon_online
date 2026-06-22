@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import './App.css';
+import './styles/index.css';
 
 import CharacterSelection from './CharacterSelection';
 import MainMenu from './menu/MainMenu';
@@ -16,6 +16,9 @@ import useGameSocket from './net/useGameSocket';
 import useKeyboardControls from './input/useKeyboardControls';
 import useCanvasControls from './input/useCanvasControls';
 import { resolveTapAction } from './input/resolveTap';
+import { isFloorFadeActive } from './rendering/floorTransition';
+import LoreOverlay from './ui/LoreOverlay';
+import { getLoreForDepth } from './game/loreTexts';
 import useDebugApi from './dev/useDebugApi';
 
 import useModalState from './game/useModalState';
@@ -74,12 +77,28 @@ function App() {
   const [, setCamera] = useState({ x: 0, y: 0 });
   const [gold, setGold] = useState(0);
   const [energy, setEnergy] = useState(0);
+  const [hasAmulet, setHasAmulet] = useState(false);
+  const [bossLurking, setBossLurking] = useState(false);
   const [exitPos, setExitPos] = useState(null);
   const [scoreBreakdown, setScoreBreakdown] = useState(null);
   const [canResurrect, setCanResurrect] = useState(false);
   const [isVictory, setIsVictory] = useState(false);
+  const [ghostQuestGiven, setGhostQuestGiven] = useState(false);
   const [showBossSlainBanner, setShowBossSlainBanner] = useState(false);
   const [bossSlainData, setBossSlainData] = useState(null);
+  const [loreOverlay, setLoreOverlay] = useState(null);
+  const loreFinishRef = useRef(null);
+
+  const handleLoreNeeded = useCallback((depth, finishTransition) => {
+    loreFinishRef.current = finishTransition;
+    setLoreOverlay(getLoreForDepth(depth));
+  }, []);
+
+  const handleLoreDismiss = () => {
+    loreFinishRef.current?.();
+    loreFinishRef.current = null;
+    setLoreOverlay(null);
+  };
 
   // --- shared refs ---
   const canvasRef = useRef(null);
@@ -97,6 +116,8 @@ function App() {
   const isDraggingRef = useRef(false);
   const isRefocusingRef = useRef(false);
   const isPinchingRef = useRef(false);
+  const isCameraDetachedRef = useRef(false);
+  const detachedCameraRef = useRef({ x: 0, y: 0 });
   const wasDownedRef = useRef(false);
   const mobAnimRef = useRef({});
   const dyingMobsRef = useRef({});
@@ -123,7 +144,9 @@ function App() {
   const trapsRef = useRef([]);
   const customTilesRef = useRef([]);
   const customWallsRef = useRef([]);
+  const torchesRef = useRef([]);
   const depthRef = useRef(1);
+  const floorFadeRef = useRef(null);
 
   useEffect(() => { depthRef.current = depth; }, [depth]);
 
@@ -188,7 +211,7 @@ function App() {
   });
   useAudioUnlock();
   const assetImages = useAssetImages();
-  useMusicByDepth({ enabled: true, menu: gameState !== 'PLAYING', depth, bossFightActive: bossFightActive && !!bossInfo, bossBleeding, tense: false, amuletObtained: false, musicRef });
+  useMusicByDepth({ enabled: true, menu: gameState !== 'PLAYING', depth, bossFightActive: bossFightActive && !!bossInfo, bossBleeding, bossLurking, tense: ghostQuestGiven && depth <= 5, amuletObtained: hasAmulet, musicRef });
 
   const { sendSelectScrollTarget } = useGameSocket({
     enabled: gameState === 'PLAYING',
@@ -196,11 +219,13 @@ function App() {
     setConnectionStatus,
     socketRef, gridRef, myPlayerIdRef, entitiesRef,
     visionRef, openDoorsRef, projectilesRef,
-    trapsRef, customTilesRef, customWallsRef,
+    trapsRef, customTilesRef, customWallsRef, torchesRef,
     mobAnimRef, dyingMobsRef, playerAnimRef, particlesRef, searchEffectsRef, floatingTextRef, screenFlashRef, screenShakeRef, wasDownedRef, warnedTilesRef, transmuteEffectsRef, flareEffectsRef, spellSpriteEffectsRef, lightningRef, shieldHaloRef, stateEffectsRef, magicMissileRef, staffAmbientRef, surpriseRef, selectedEnemyIdRef, beamRef, blobAreasRef,
+    cameraLerpRef, isCameraDetachedRef, floorFadeRef,
     setGrid, setDepth, setMyPlayerId, setInventory,
     setEquippedItems, setMyStats, setDifficulty, setBossInfo,
-    setGold, setEnergy, setExitPos, setBelongings, setQuickslot,
+    setGold, setEnergy, setHasAmulet, setBossLurking, setExitPos, setBelongings, setQuickslot,
+    onLoreNeeded: handleLoreNeeded,
     onLevelUp: talent.onLevelUp,
     onSubclassChoiceAvailable: talent.onSubclassChoiceAvailable,
     onArmorAbilityChoiceAvailable: talent.onArmorAbilityChoiceAvailable,
@@ -215,8 +240,13 @@ function App() {
     onMetamorphOptions: talent.onMetamorphOptions,
     onShopOpen: modals.onShopOpen,
     onImpDialogue: modals.onImpDialogue,
+    onGhostDialogue: modals.onGhostDialogue,
+    onChasmPrompt: modals.onChasmPrompt,
+    onGhostQuestGiven: () => setGhostQuestGiven(true),
+    onGhostQuestComplete: () => setGhostQuestGiven(false),
     onImbueWandChoiceAvailable: modals.onImbueWand,
     onScrollSelectTarget: modals.onScrollSelectTarget,
+    onGhostGearOpen: modals.onGhostGearOpen,
     onTalentUpgraded: talent.onTalentUpgraded,
     onBossSlain: (data) => {
       setBossSlainData(data);
@@ -247,26 +277,29 @@ function App() {
     canvasRef, socketRef,
     panOffsetRef, zoomRef, cameraLerpRef,
     isDraggingRef, isRefocusingRef, isPinchingRef,
+    isCameraDetachedRef, detachedCameraRef,
     targetingModeRef: targeting.targetingModeRef,
     onTargetTapRef: targeting.onTargetTapRef,
     examineModeRef: targeting.examineModeRef,
     onExamineTapRef: targeting.onExamineTapRef,
     entitiesRef, myPlayerIdRef,
     hoveredCellRef,
+    floorFadeRef,
   });
 
   useGameRenderer({
-    canvasRef, grid, myPlayerId, depth, assetImages,
+    canvasRef, grid, myPlayerId, depth, assetImages, floorFadeRef,
     entitiesRef, visionRef, openDoorsRef, projectilesRef,
-    trapsRef, customTilesRef, customWallsRef,
+    trapsRef, customTilesRef, customWallsRef, torchesRef,
     mobAnimRef, dyingMobsRef, playerAnimRef, particlesRef, searchEffectsRef, floatingTextRef, screenFlashRef, screenShakeRef, myPlayerIdRef, warnedTilesRef, transmuteEffectsRef, flareEffectsRef, spellSpriteEffectsRef, lightningRef, shieldHaloRef, stateEffectsRef, magicMissileRef, staffAmbientRef, surpriseRef, selectedEnemyIdRef, hoveredCellRef, beamRef, blobAreasRef,
     panOffsetRef, cameraLerpRef, zoomRef,
     isRefocusingRef, isDraggingRef,
+    isCameraDetachedRef, detachedCameraRef,
     setCamera,
   });
 
   // --- item action dispatch ---
-  const TARGETED_ACTIONS = ['THROW', 'ZAP'];
+  const TARGETED_ACTIONS = ['THROW', 'ZAP', 'DIRECT'];
 
   const equipItem = (itemId) => send({ type: 'EQUIP_ITEM', item_id: itemId });
 
@@ -411,6 +444,7 @@ function App() {
     setBossInfo(null);
     setBossFightActive(false);
     setBossBleeding(false);
+    setBossLurking(false);
     setShowBossSlainBanner(false);
     setBossSlainData(null);
     setInventory([]);
@@ -432,7 +466,7 @@ function App() {
     handleToolbarClick, handleToolbarDoubleClick,
     onExamineOrReveal: targeting.handleExamineOrReveal, onCancelModes: handleEscape,
     triggerWait: () => send({ type: 'WAIT' }),
-    isRefocusingRef, isDraggingRef,
+    isRefocusingRef, isDraggingRef, floorFadeRef,
     quickslot, itemsById,
     onRadialSelect: modals.handleRadialSelect,
     gameMenuOpenRef: modals.gameMenuOpenRef,
@@ -445,6 +479,7 @@ function App() {
   });
 
   const handleCanvasClick = (e) => {
+    if (isFloorFadeActive(floorFadeRef)) return;
     if (hasDraggedRef.current) return;
     if (!canvasRef.current) return;
 
@@ -452,7 +487,7 @@ function App() {
     const clickX = e.clientX - rect.left;
     const clickY = e.clientY - rect.top;
 
-    const cw = canvasRef.current.width, ch = canvasRef.current.height;
+    const cw = rect.width, ch = rect.height;
     const z = zoomRef.current;
     const worldX = (clickX - cw / 2) / z + cameraLerpRef.current.x + cw / 2;
     const worldY = (clickY - ch / 2) / z + cameraLerpRef.current.y + ch / 2;
@@ -608,6 +643,7 @@ function App() {
               };
               panOffsetRef.current = { x: 0, y: 0 };
               isRefocusingRef.current = false;
+              isCameraDetachedRef.current = false;
             }}
           />
         </SideTags>
@@ -749,6 +785,10 @@ function App() {
           itemCatalog={modals.itemCatalog}
           send={send}
         />
+
+        {loreOverlay && (
+          <LoreOverlay title={loreOverlay.title} body={loreOverlay.body} onContinue={handleLoreDismiss} />
+        )}
 
         <GameOverlay
           gameMenuOpen={modals.gameMenuOpen}

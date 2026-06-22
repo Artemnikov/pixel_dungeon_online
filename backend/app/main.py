@@ -98,6 +98,8 @@ class ConnectionManager:
             height=state["height"],
             traps=state.get("traps", []),
             custom_tiles=state.get("custom_tiles", []),
+            custom_walls=state.get("custom_walls", []),
+            torches=state.get("torches", []),
             entrance_pos=getattr(floor, 'entrance_pos', None),
             exit_pos=getattr(floor, 'exit_pos', None),
         )
@@ -188,6 +190,8 @@ class ConnectionManager:
                             height=state["height"],
                             traps=state.get("traps", []),
                             custom_tiles=state.get("custom_tiles", []),
+                            custom_walls=state.get("custom_walls", []),
+                            torches=state.get("torches", []),
                             entrance_pos=getattr(floor, 'entrance_pos', None),
                             exit_pos=getattr(floor, 'exit_pos', None),
                         )
@@ -197,6 +201,12 @@ class ConnectionManager:
                     player_obj = game.players.get(player_id)
                     gold = player_obj.gold if player_obj else 0
                     energy = player_obj.energy if player_obj else 0
+                    from app.engine.entities.base import Amulet
+                    has_amulet = (
+                        any(isinstance(it, Amulet) for it in player_obj.belongings.all_items())
+                        if player_obj else False
+                    )
+                    boss_lurking = game._boss_lurking_on_floor(player_floor)
 
                     update = StateUpdateMessage(
                         depth=player_floor,
@@ -208,6 +218,8 @@ class ConnectionManager:
                         traps=state.get("traps", []),
                         gold=gold,
                         energy=energy,
+                        has_amulet=has_amulet,
+                        boss_lurking=boss_lurking,
                         events=game.filter_events_for_player(events, player_id),
                     )
                     await connection.send_json(update.model_dump(exclude_none=True))
@@ -472,6 +484,11 @@ async def game_websocket(websocket: WebSocket, game_id: str, class_type: str = "
             elif isinstance(message, msg.ChooseImbueWand):
                 game.imbue_wand(player_id, message.staff_id, message.wand_id)
 
+            elif isinstance(message, msg.EquipGhostItem):
+                game.equip_ghost_item(
+                    player_id, message.rose_id, message.slot, message.item_id,
+                )
+
             elif isinstance(message, msg.ChangeDifficulty):
                 game.change_difficulty(message.difficulty)
 
@@ -484,6 +501,9 @@ async def game_websocket(websocket: WebSocket, game_id: str, class_type: str = "
                         dx = mob.pos.x - player.pos.x
                         dy = mob.pos.y - player.pos.y
                         game.move_entity(player_id, dx, dy)
+
+            elif isinstance(message, msg.ConfirmChasmFall):
+                game.confirm_chasm_fall(player_id, message.x, message.y)
 
             elif isinstance(message, msg.RangedAttack):
                 game.perform_ranged_attack(
@@ -544,6 +564,9 @@ async def game_websocket(websocket: WebSocket, game_id: str, class_type: str = "
 
             elif isinstance(message, msg.ImpClaimReward):
                 game.imp_claim_reward(player_id, message.npc_id)
+
+            elif isinstance(message, msg.GhostClaimReward):
+                game.ghost_claim_reward(player_id, message.npc_id, message.choice)
 
     except WebSocketDisconnect:
         # Keep the hero alive for the reconnect grace window (see reaper); the
