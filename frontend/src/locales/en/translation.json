@@ -189,6 +189,19 @@
     "boomerang": "Boomerang",
     "throwable_dagger": "Throwable Dagger",
     "stone": "Stone",
+    "wand_of_magic_missile": "Wand of Magic Missile",
+    "wand_of_fireblast": "Wand of Fireblast",
+    "wand_of_frost": "Wand of Frost",
+    "wand_of_lightning": "Wand of Lightning",
+    "wand_of_disintegration": "Wand of Disintegration",
+    "wand_of_prismatic_light": "Wand of Prismatic Light",
+    "wand_of_blast_wave": "Wand of Blast Wave",
+    "wand_of_transfusion": "Wand of Transfusion",
+    "wand_of_corrosion": "Wand of Corrosion",
+    "wand_of_corruption": "Wand of Corruption",
+    "wand_of_regrowth": "Wand of Regrowth",
+    "wand_of_warding": "Wand of Warding",
+    "wand_of_living_earth": "Wand of Living Earth",
     "health_potion": "Health Potion",
     "reviving_potion": "Reviving Potion",
     "fury_potion": "Potion of Fury",
@@ -223,6 +236,7 @@
     "small_ration": "Small Ration",
     "ration": "Ration",
     "pasty": "Pasty",
+    "frozen_carpaccio": "Frozen Carpaccio",
     "dewdrop": "Dewdrop",
     "waterskin": "Waterskin",
     "goo_blob": "Goo Blob",
@@ -231,6 +245,9 @@
     "kings_crown": "King's Crown",
     "broken_seal": "Broken Seal",
     "cloak_of_shadows": "Cloak of Shadows",
+    "dried_rose": "Dried Rose",
+    "petal": "Petal",
+    "amulet": "Amulet of Yendor",
     "velvet_pouch": "Velvet Pouch",
     "scroll_holder": "Scroll Holder",
     "magical_holster": "Magical Holster",
@@ -272,7 +289,8 @@
     "cloth_armor": "Cloth Armor",
     "mages_staff": "Mage's Staff",
     "pickaxe": "Pickaxe",
-    "throwing_knife": "Throwing Knife"
+    "throwing_knife": "Throwing Knife",
+    "chest": "Chest"
   },
   "mob": {
     "rat": "Rat",
@@ -350,7 +368,8 @@
     "rat_king": "Rat King",
     "shopkeeper": "Shopkeeper",
     "imp": "Imp",
-    "mirror_image": "Mirror Image"
+    "mirror_image": "Mirror Image",
+    "ghost_hero": "Ghost Hero"
   },
   "talent": {
     "title": "Talents",
