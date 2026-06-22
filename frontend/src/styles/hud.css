@@ -187,27 +187,3 @@
 .search-btn:hover {
   background: #2b452d;
 }
-
-/* Desktop layout (interfaceSize === 2) */
-.desktop-hud-bottom {
-  position: absolute;
-  bottom: 8px;
-  left: 8px;
-  right: 8px;
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  pointer-events: none;
-  z-index: 100;
-}
-
-.desktop-hud-left {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  pointer-events: auto;
-}
-
-.desktop-hud-right {
-  pointer-events: auto;
-}
