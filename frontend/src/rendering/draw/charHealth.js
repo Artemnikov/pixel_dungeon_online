@@ -7,7 +7,7 @@
 // Port of SPD's CharHealthIndicator.java.
 // 2px-tall bar, 4/6 of tile width, centered above each mob sprite.
 
-import { TILE_SIZE } from '../../constants';
+import { TILE_SIZE, ENTITY_LIFT } from '../../constants';
 
 const INDICATOR_HEIGHT = 2;
 const BAR_WIDTH_FRAC = 4 / 6; // 4/6 of tile width
@@ -32,7 +32,7 @@ export function drawCharHealth(ctx, { entitiesRef, visionRef }) {
     if (visible && !visible.has(`${mx},${my}`)) return;
 
     const x = mob.renderPos.x * TILE_SIZE;
-    const y = mob.renderPos.y * TILE_SIZE;
+    const y = mob.renderPos.y * TILE_SIZE - ENTITY_LIFT;
 
     const total = Math.max(hp + shield, maxHp);
     const hpPct = hp / total;

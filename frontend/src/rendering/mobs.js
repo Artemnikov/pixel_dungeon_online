@@ -12,7 +12,7 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 // See the GNU General Public License for more details.
 //
-import { TILE_SIZE, TILE_SCALE } from '../constants';
+import { TILE_SIZE, TILE_SCALE, ENTITY_LIFT } from '../constants';
 import { drawWhiteSilhouette } from './draw/flash';
 
 export const FRAME_W = TILE_SIZE / TILE_SCALE;
@@ -743,7 +743,7 @@ export const getSuccubusFrame = (mob, mobAnim, now) => {
 // alpha (optional): 0..1 used for the death fade-out.
 export const drawMobSprite = (ctx, mob, sprite, sx, fw = FRAME_W, fh = FRAME_H, flash = false, dest = null, alpha = 1, sy = 0, brightness = 1) => {
   const x = mob.renderPos.x * TILE_SIZE;
-  const y = mob.renderPos.y * TILE_SIZE;
+  const y = mob.renderPos.y * TILE_SIZE - ENTITY_LIFT;
   const dx = dest ? dest.dx : 0;
   const dy = dest ? dest.dy : 0;
   const dw = dest ? dest.dw : TILE_SIZE;

@@ -376,9 +376,11 @@ class MovementCombatMixin:
         # Door enter/leave tile mutation: stepping onto a closed DOOR opens it;
         # leaving an open door closes it (if no other entity is on it).
         door_changed = False
+        door_patches = []
         if floor.grid[entity.pos.y][entity.pos.x] == TileType.DOOR:
             floor.grid[entity.pos.y][entity.pos.x] = TileType.OPEN_DOOR
             door_changed = True
+            door_patches.append({"x": entity.pos.x, "y": entity.pos.y, "tile": TileType.OPEN_DOOR})
         if floor.grid[old_y][old_x] == TileType.OPEN_DOOR:
             has_entity = any(
                 p.pos.x == old_x and p.pos.y == old_y
@@ -392,9 +394,14 @@ class MovementCombatMixin:
             if not has_entity:
                 floor.grid[old_y][old_x] = TileType.DOOR
                 door_changed = True
+                door_patches.append({"x": old_x, "y": old_y, "tile": TileType.DOOR})
 
         if door_changed:
             floor.rebuild_flags()
+            # StateUpdateMessage doesn't carry the grid (only INIT does, on
+            # floor change) — clients only learn about this tile flip via a
+            # MAP_PATCH event, same mechanism as unlocking/grass-trample.
+            self.add_event("MAP_PATCH", {"tiles": door_patches}, floor_id=floor_id)
 
         # Position changed: door mutation may have changed flags and FOV.
         self._invalidate_fov_cache()
@@ -403,11 +410,11 @@ class MovementCombatMixin:
         result = press_cell(floor, (entity.pos.x, entity.pos.y), entity)
         if result["tile_changed"]:
             self.add_event("MAP_PATCH", {"tiles": [{"x": entity.pos.x, "y": entity.pos.y, "tile": floor.grid[entity.pos.y][entity.pos.x]}]}, floor_id=floor_id)
-            self.add_event("PLAY_SOUND", {"sound": "STEP_GRASS"}, floor_id=floor_id, source_player_id=entity.id if isinstance(entity, Player) else None)
+            self.add_event("PLAY_SOUND", {"sound": "STEP_GRASS", "x": entity.pos.x, "y": entity.pos.y}, floor_id=floor_id, source_player_id=entity.id if isinstance(entity, Player) else None)
             # HighGrass.trample()'s CellEmitter.get(pos).burst(LeafParticle.LEVEL_SPECIFIC, 4)
             self.add_event("LEAF_BURST", {"x": entity.pos.x, "y": entity.pos.y}, floor_id=floor_id)
         if result["triggered_plant"]:
-            self.add_event("PLAY_SOUND", {"sound": "PLANT_TRIGGER"}, floor_id=floor_id, source_player_id=entity.id if isinstance(entity, Player) else None)
+            self.add_event("PLAY_SOUND", {"sound": "PLANT_TRIGGER", "x": entity.pos.x, "y": entity.pos.y}, floor_id=floor_id, source_player_id=entity.id if isinstance(entity, Player) else None)
 
         if isinstance(entity, Player):
             self.add_event("MOVE", {"entity": entity_id, "x": entity.pos.x, "y": entity.pos.y}, floor_id=floor_id)

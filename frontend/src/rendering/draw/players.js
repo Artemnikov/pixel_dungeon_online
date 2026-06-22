@@ -1,4 +1,4 @@
-import { TILE_SIZE, TILE_SCALE, PLAYER_ATTACK_DURATION, PLAYER_OPERATE_DURATION, PLAYER_READ_DURATION } from '../../constants';
+import { TILE_SIZE, TILE_SCALE, ENTITY_LIFT, PLAYER_ATTACK_DURATION, PLAYER_OPERATE_DURATION, PLAYER_READ_DURATION } from '../../constants';
 import { drawWhiteSilhouette } from './flash';
 import { drawShieldHalo } from './shieldHalo';
 
@@ -8,7 +8,7 @@ export function drawPlayers(ctx, { entitiesRef, visionRef, assetImages, playerAn
     if (!isPlayerVisible) return;
 
     const x = player.renderPos.x * TILE_SIZE;
-    const y = player.renderPos.y * TILE_SIZE;
+    const y = player.renderPos.y * TILE_SIZE - ENTITY_LIFT;
 
     let playerSprite = assetImages.warrior;
     if (player.class_type === 'mage' && assetImages.mage) playerSprite = assetImages.mage;

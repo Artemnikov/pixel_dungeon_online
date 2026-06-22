@@ -8,6 +8,7 @@ import logging
 import os
 from typing import List, Optional
 
+from app.engine.entities.base import Position
 from app.schemas.events import EVENT_MODELS
 
 logger = logging.getLogger(__name__)
@@ -68,6 +69,15 @@ class EventsMixin:
                 source_player = self.players.get(source_player_id)
                 if source_player and source_player.floor_id == player.floor_id:
                     if not self._is_in_los(player.pos, source_player.pos, floor_id=player.floor_id):
+                        continue
+
+            # LOS check: events with explicit x/y position (e.g. mob-step sounds)
+            # are only audible to players who can see that cell
+            if source_player_id is None:
+                ev_data = event.get("data", {})
+                sx, sy = ev_data.get("x"), ev_data.get("y")
+                if sx is not None and sy is not None:
+                    if not self._is_in_los(player.pos, Position(x=sx, y=sy), floor_id=player.floor_id):
                         continue
 
             filtered.append({k: v for k, v in event.items() if not k.startswith("_")})

@@ -76,6 +76,9 @@ class RangedAttackData(_EventData):
 
 class PlaySoundData(_EventData):
     sound: str
+    rate: Optional[float] = None
+    x: Optional[int] = None
+    y: Optional[int] = None
 
 
 class SearchData(_EventData):
