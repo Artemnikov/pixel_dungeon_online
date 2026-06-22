@@ -2187,6 +2187,15 @@ class Player(Entity):
     # Elixir of Aquatic Rejuvenation healing pool (SPD AquaHealing buff): heals
     # max(1, maxHP/50) per turn while standing in water, until exhausted.
     aqua_heal_left: float = 0.0
+    # SPD LockedFloor buff: present while a sealed boss arena (e.g. Goo's) is
+    # active. None when absent; while set, passive regen is paused once it
+    # drops below 1 — boss damage taken adds time (capped 50), boss healing
+    # removes it. Can go negative; only cleared explicitly on unseal.
+    locked_floor_left: Optional[float] = None
+    # Set by movement.py's move_entity when a player's deliberate step lands
+    # on a CHASM tile; cleared unconditionally on every other move_entity
+    # call for that player, or once confirm_chasm_fall consumes it.
+    pending_chasm_fall: Optional[Tuple[int, int]] = None
     path_queue: List[Tuple[int, int]] = []
     path_blocked_ticks: int = 0
     move_intent: Optional[Tuple[int, int]] = None

@@ -265,6 +265,15 @@ class TenguBadgeQualifiedData(_EventData):
     pass  # no required payload
 
 
+class GooBadgeQualifiedData(_EventData):
+    pass  # no required payload
+
+
+class ChasmPromptData(_EventData):
+    x: int
+    y: int
+
+
 class MessageData(_EventData):
     text: str
     color: Optional[str] = None
@@ -411,6 +420,8 @@ EVENT_MODELS = {
     "TALENT_METAMORPHED": TalentMetamorphData,
     "BOSS_SLAIN": BossSlainData,
     "TENGU_BADGE_QUALIFIED": TenguBadgeQualifiedData,
+    "GOO_BADGE_QUALIFIED": GooBadgeQualifiedData,
+    "CHASM_PROMPT": ChasmPromptData,
     "IMP_DIALOGUE": ImpDialogueData,
     "IMP_REWARD": ImpRewardData,
     "GHOST_DIALOGUE": GhostDialogueData,

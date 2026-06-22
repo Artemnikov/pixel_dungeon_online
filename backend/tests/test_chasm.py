@@ -43,3 +43,16 @@ def test_floor_10_post_tengu_reveal_has_real_chasm_not_wall():
     assert floor.tengu_state == "WON"
     chasm_cells = sum(1 for row in floor.grid for cell in row if cell == TileType.CHASM)
     assert chasm_cells > 0, "endMap's C cells must render as real chasm, not WALL"
+
+
+def test_player_has_pending_chasm_fall_field_defaulting_to_none():
+    from app.engine.entities.base import Player, Position, Faction
+    player = Player(id="p1", name="Hero", pos=Position(x=0, y=0), hp=20, max_hp=20, faction=Faction.PLAYER)
+    assert player.pending_chasm_fall is None
+
+
+def test_chasm_prompt_event_is_registered():
+    from app.schemas.events import EVENT_MODELS
+    assert "CHASM_PROMPT" in EVENT_MODELS
+    model = EVENT_MODELS["CHASM_PROMPT"](x=5, y=7)
+    assert model.x == 5 and model.y == 7
