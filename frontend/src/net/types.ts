@@ -122,6 +122,7 @@ export interface HookProps {
   trapsRef: Ref<TrapInfo[]>;
   customTilesRef: Ref<CustomTileLayer[]>;
   customWallsRef: Ref<CustomTileLayer[]>;
+  torchesRef: Ref<[number, number][]>;
   mobAnimRef: Ref<Record<string, AnimState>>;
   dyingMobsRef: Ref<Record<string, DyingMob>>;
   playerAnimRef: Ref<Record<string, AnimState>>;
@@ -157,6 +158,7 @@ export interface HookProps {
   setGold?: (gold: number) => void;
   setEnergy?: (energy: number) => void;
   setHasAmulet?: (hasAmulet: boolean) => void;
+  setBossLurking?: (bossLurking: boolean) => void;
   setExitPos?: (pos: [number, number] | null) => void;
   setBelongings?: (belongings: Player['belongings'] | null) => void;
   setQuickslot?: (quickslot: Player['quickslot'] | null) => void;
@@ -169,6 +171,7 @@ export interface HookProps {
   onMetamorphOptions?: (data: { old_talent: string; options: string[] }) => void;
   onGooFightStarted?: (data: { mob: string }) => void;
   onTenguFightStarted?: (data: { mob: string }) => void;
+  onChasmPrompt?: (data: { x: number; y: number }) => void;
   onDM300FightStarted?: (data: { mob: string }) => void;
   onDwarfKingFightStarted?: (data: { mob: string }) => void;
   onDwarfKingPhase2?: (data: { mob: string }) => void;
@@ -227,6 +230,7 @@ export type HandlerCtx = Pick<
   onMetamorphOptions?: HookProps['onMetamorphOptions'];
   onGooFightStarted?: HookProps['onGooFightStarted'];
   onTenguFightStarted?: HookProps['onTenguFightStarted'];
+  onChasmPrompt?: HookProps['onChasmPrompt'];
   onDM300FightStarted?: HookProps['onDM300FightStarted'];
   onDwarfKingFightStarted?: HookProps['onDwarfKingFightStarted'];
   onDwarfKingPhase2?: HookProps['onDwarfKingPhase2'];

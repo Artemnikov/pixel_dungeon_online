@@ -247,3 +247,46 @@
 .wnd-resurrect__btn--yes:hover { background: rgba(76,175,80,0.2); }
 .wnd-resurrect__btn--no { border-color: #e74c3c; color: #e74c3c; }
 .wnd-resurrect__btn--no:hover { background: rgba(231,76,60,0.2); }
+
+/* --- WndChasmJump --- */
+.wnd-chasm-jump-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 55;
+  background: rgba(0,0,0,0.6);
+}
+.wnd-chasm-jump {
+  background: #1a1a2e;
+  border: 2px solid #888;
+  padding: 24px 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  max-width: 320px;
+  text-align: center;
+}
+.wnd-chasm-jump__title {
+  font: bold 20px monospace;
+  color: #ffffcc;
+}
+.wnd-chasm-jump__desc {
+  font: 13px monospace;
+  color: #ccc;
+}
+.wnd-chasm-jump__actions { display: flex; gap: 12px; }
+.wnd-chasm-jump__btn {
+  font: 14px monospace;
+  padding: 6px 20px;
+  border: 1px solid #888;
+  cursor: pointer;
+  background: rgba(0,0,0,0.5);
+  color: #fff;
+}
+.wnd-chasm-jump__btn--yes { border-color: #4caf50; color: #4caf50; }
+.wnd-chasm-jump__btn--yes:hover { background: rgba(76,175,80,0.2); }
+.wnd-chasm-jump__btn--no { border-color: #e74c3c; color: #e74c3c; }
+.wnd-chasm-jump__btn--no:hover { background: rgba(231,76,60,0.2); }

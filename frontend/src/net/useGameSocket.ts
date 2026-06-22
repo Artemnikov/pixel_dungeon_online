@@ -36,6 +36,7 @@ export default function useGameSocket({
   trapsRef,
   customTilesRef,
   customWallsRef,
+  torchesRef,
   mobAnimRef,
   dyingMobsRef,
   playerAnimRef,
@@ -71,6 +72,7 @@ export default function useGameSocket({
   setGold,
   setEnergy,
   setHasAmulet,
+  setBossLurking,
   setExitPos,
   setBelongings,
   setQuickslot,
@@ -83,6 +85,7 @@ export default function useGameSocket({
   onMetamorphOptions,
   onGooFightStarted,
   onTenguFightStarted,
+  onChasmPrompt,
   onDM300FightStarted,
   onDwarfKingFightStarted,
   onDwarfKingPhase2,
@@ -177,6 +180,7 @@ export default function useGameSocket({
         trapsRef.current = data.traps || [];
         customTilesRef.current = data.custom_tiles || [];
         customWallsRef.current = data.custom_walls || [];
+        torchesRef.current = data.torches || [];
         if (typeof data.depth === 'number') { setDepth(data.depth); depthRef.current = data.depth; }
         if (data.player_id) {
           setMyPlayerId(data.player_id);
@@ -192,6 +196,7 @@ export default function useGameSocket({
         if (typeof data.gold === 'number' && setGold) setGold(data.gold);
         if (typeof data.energy === 'number' && setEnergy) setEnergy(data.energy);
         if (typeof data.has_amulet === 'boolean' && setHasAmulet) setHasAmulet(data.has_amulet);
+        if (typeof data.boss_lurking === 'boolean' && setBossLurking) setBossLurking(data.boss_lurking);
 
         syncState(data, {
           myPlayerIdRef, gridRef, entitiesRef, visionRef, openDoorsRef, trapsRef,
@@ -208,7 +213,7 @@ export default function useGameSocket({
           surpriseRef, selectedEnemyIdRef, beamRef, blobAreasRef,
           onLevelUp, onSubclassChoiceAvailable, onArmorAbilityChoiceAvailable,
           onImbueWandChoiceAvailable, onTalentUpgraded,
-          onMetamorphOpen, onMetamorphOptions, onGooFightStarted, onTenguFightStarted,
+          onMetamorphOpen, onMetamorphOptions, onGooFightStarted, onTenguFightStarted, onChasmPrompt,
           onDM300FightStarted, onDwarfKingFightStarted, onDwarfKingPhase2, onYogFightStarted, onYogFinalPhase,
           onShopOpen, onImpDialogue, onGhostDialogue, onGhostQuestGiven, onGhostQuestComplete, onScrollSelectTarget, onGhostGearOpen, onBossSlain, onPlayerDeath,
           depth: depthRef.current,

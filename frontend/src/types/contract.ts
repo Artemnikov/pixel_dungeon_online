@@ -290,6 +290,11 @@ export interface MapPatchEvent {
   data: { tiles: TilePatch[] };
 }
 
+export interface ChasmPromptEvent {
+  type: 'CHASM_PROMPT';
+  data: { x: number; y: number };
+}
+
 export interface PickupEvent {
   type: 'PICKUP';
   data: { player: string; item: string };
@@ -720,6 +725,7 @@ export type GameEvent =
   | DrinkEvent
   | ReadEvent
   | MapPatchEvent
+  | ChasmPromptEvent
   | PickupEvent
   | DropEvent
   | CollectDewEvent
@@ -814,6 +820,8 @@ export interface InitMessage {
   custom_tiles?: CustomTileLayer[];
   /** Custom wall overlays rendered above characters (e.g. SewerExitOverhang). */
   custom_walls?: CustomTileLayer[];
+  /** Cosmetic flame VFX positions (SPD's Torch Emitter+Halo), e.g. flanking Goo's boss exit. */
+  torches?: [number, number][];
   /** Only present on the very first INIT after connecting. */
   player_id?: string;
 }
@@ -842,6 +850,7 @@ export interface StateUpdateMessage {
   gold: number;
   energy: number;
   has_amulet: boolean;
+  boss_lurking: boolean;
   events: GameEvent[];
   /**
    * Read defensively by the client but not currently forwarded in STATE_UPDATE;
@@ -898,4 +907,5 @@ export type ClientMessage =
   | { type: 'SHOP_BUY'; npc_id: string; item_id: string }
   | { type: 'SHOP_SELL'; item_id: string }
   | { type: 'IMP_CLAIM_REWARD'; npc_id: string }
-  | { type: 'SELECT_SCROLL_TARGET'; scroll_id: string; item_id: string };
+  | { type: 'SELECT_SCROLL_TARGET'; scroll_id: string; item_id: string }
+  | { type: 'CONFIRM_CHASM_FALL'; x: number; y: number };

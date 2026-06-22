@@ -43,6 +43,8 @@ export default function useModalState() {
     setGhostWindow({ npc, text, canClaim: can_claim, weapon, armor });
   const onImbueWand = (data) => setImbueWandData(data);
   const onScrollSelectTarget = (data) => setScrollPickerData(data);
+  const [chasmPrompt, setChasmPrompt] = useState(null);
+  const onChasmPrompt = (data) => setChasmPrompt(data);
 
   return {
     showInventory, setShowInventory,
@@ -71,5 +73,7 @@ export default function useModalState() {
     onGhostDialogue,
     onImbueWand,
     onScrollSelectTarget,
+    chasmPrompt, setChasmPrompt,
+    onChasmPrompt,
   };
 }

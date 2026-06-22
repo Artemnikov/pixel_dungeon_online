@@ -15,6 +15,11 @@ import type { HandlerCtx } from '../types';
 export function handleWorldEvents(event: GameEvent, ctx: HandlerCtx): boolean {
   const { particlesRef, visionRef, stateEffectsRef, spellSpriteEffectsRef, blobAreasRef, setGrid, gridRef, depth } = ctx;
 
+  if (event.type === 'CHASM_PROMPT') {
+    ctx.onChasmPrompt?.(event.data);
+    return true;
+  }
+
   if (event.type === 'BLOB_UPDATE') {
     const { id, type, cells } = event.data;
     if (blobAreasRef) updateBlobArea(blobAreasRef, id, type, cells);

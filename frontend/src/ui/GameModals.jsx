@@ -5,6 +5,7 @@ import RightClickMenu from './RightClickMenu';
 import WndShop from './WndShop';
 import WndImp from './WndImp';
 import WndSadGhost from './WndSadGhost';
+import WndChasmJump from './WndChasmJump';
 import WndQuickBag from './WndQuickBag';
 import RadialMenu from './RadialMenu';
 
@@ -29,6 +30,7 @@ export default function GameModals({
     shopWindow, setShopWindow,
     impWindow, setImpWindow,
     ghostWindow, setGhostWindow,
+    chasmPrompt, setChasmPrompt,
     showQuickBag, setShowQuickBag,
     radialOpen, setRadialOpen,
     quickslotPicker, setQuickslotPicker,
@@ -99,6 +101,16 @@ export default function GameModals({
             setGhostWindow(null);
           }}
           onClose={() => setGhostWindow(null)}
+        />
+      )}
+
+      {chasmPrompt && (
+        <WndChasmJump
+          onConfirm={() => {
+            send({ type: 'CONFIRM_CHASM_FALL', x: chasmPrompt.x, y: chasmPrompt.y });
+            setChasmPrompt(null);
+          }}
+          onDecline={() => setChasmPrompt(null)}
         />
       )}
 
