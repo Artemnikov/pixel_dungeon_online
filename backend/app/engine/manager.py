@@ -100,7 +100,6 @@ class GameInstance(
 
         self.players: Dict[str, Player] = {}
         self.floors: Dict[int, FloorState] = {}
-        self.floor_cache: Dict[int, bytes] = {}
         self.events: List[dict] = []
 
         # Per-tick shadowcasting caches. Open doors depend on occupancy, which

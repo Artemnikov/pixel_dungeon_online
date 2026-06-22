@@ -108,16 +108,13 @@ class TickMixin:
         self._invalidate_fov_cache()
 
         dt = 0.05
-        active_ids = self.active_floor_ids
-
         for player in self.players.values():
             removed = process_buffs(player.buffs, dt)
             if "invisibility" in removed or "shadows" in removed:
                 player.invisible = max(0, player.invisible - 1)
             if "endure_tracker" in removed:
                 self._finalize_endure(player)
-        for floor_id in active_ids:
-            floor = self.floors[floor_id]
+        for floor in self.floors.values():
             for mob in floor.mobs.values():
                 if mob.is_alive:
                     removed = process_buffs(mob.buffs, dt)
@@ -126,14 +123,12 @@ class TickMixin:
                     if "terror" in removed and mob.ai_state == "fleeing":
                         mob.ai_state = "hunting"
 
-        if active_ids:
-            active_floors = {fid: self.floors[fid] for fid in active_ids}
-            blob_events = tick_blob_areas(active_floors, self.players)
-            for ev in blob_events:
-                self.add_event(ev["type"], ev["data"])
+        blob_events = tick_blob_areas(self.floors, self.players)
+        for ev in blob_events:
+            self.add_event(ev["type"], ev["data"])
 
-        for floor_id in active_ids:
-            self._tick_tengu_blobs(self.floors[floor_id], floor_id)
+        for floor_id, floor in self.floors.items():
+            self._tick_tengu_blobs(floor, floor_id)
 
         self._emit_state_effects()
 
@@ -251,8 +246,7 @@ class TickMixin:
                     player.has_fury = False
                     player.fury_turns_remaining = 0
 
-        for floor_id in active_ids:
-            floor = self.floors[floor_id]
+        for floor_id, floor in self.floors.items():
             active_players = [p for p in self._players_on_floor(floor_id) if p.is_alive and not p.is_downed]
             if not active_players:
                 continue
@@ -490,8 +484,6 @@ class TickMixin:
                         if step:
                             move_times[mob.id] = now
                             self.move_entity(mob.id, *step)
-
-        self._evict_empty_floors()
 
     def _pick_wander_step(self, mob, floor: FloorState, floor_id: int, now: float):
         """Step toward a wander waypoint, pausing briefly between waypoints.
@@ -846,8 +838,7 @@ class TickMixin:
             if not player.is_alive:
                 continue
             self._check_state_buff(player, player.pos.x, player.pos.y, player.floor_id)
-        for floor_id in self.active_floor_ids:
-            floor = self.floors[floor_id]
+        for floor_id, floor in self.floors.items():
             for mob in floor.mobs.values():
                 if not mob.is_alive:
                     continue
