@@ -29,6 +29,7 @@ const FRAME_H = 15;
 
 const BUFF_SIZE = 7;
 const BUFF_COLS = 18;
+const MAX_BUFFS = 14; // matches SPD's BuffIndicator.maxBuffs default
 
 const FLASH_RATE = Math.PI * 1.5;
 const WARNING_COLORS = ['#660000', '#cc0000', '#660000'];
@@ -256,7 +257,7 @@ export default function StatusPane({ myStats, depth, exitPos, isAdmin, onSearch,
 
         const buffsSheet = imgs.buffs;
         if (buffsSheet?.complete && buffsSheet?.naturalWidth > 0) {
-          effects.forEach((eff, i) => {
+          effects.slice(0, MAX_BUFFS).forEach((eff, i) => {
             const idx = eff.icon ?? 0;
             const col = idx % BUFF_COLS;
             const row = Math.floor(idx / BUFF_COLS);
