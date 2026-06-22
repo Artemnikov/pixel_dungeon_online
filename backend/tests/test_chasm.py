@@ -56,3 +56,71 @@ def test_chasm_prompt_event_is_registered():
     assert "CHASM_PROMPT" in EVENT_MODELS
     model = EVENT_MODELS["CHASM_PROMPT"](x=5, y=7)
     assert model.x == 5 and model.y == 7
+
+
+def test_player_step_onto_chasm_prompts_instead_of_moving():
+    game = GameInstance("test-chasm-prompt")
+    floor = game._get_or_create_floor(game.depth)
+    floor.grid = [[TileType.FLOOR for _ in range(5)] for _ in range(5)]
+    floor.grid[2][3] = TileType.CHASM
+    floor.rebuild_flags()
+    player = game.add_player("p1", "Hero")
+    player.pos.x, player.pos.y = 2, 2
+
+    game.move_entity(player.id, 1, 0)
+
+    assert (player.pos.x, player.pos.y) == (2, 2), "player must not move onto the chasm tile"
+    assert player.pending_chasm_fall == (3, 2)
+    events = game.flush_events()
+    prompts = [e for e in events if e["type"] == "CHASM_PROMPT"]
+    assert len(prompts) == 1
+    assert prompts[0]["data"] == {"x": 3, "y": 2}
+
+
+def test_mob_step_onto_chasm_is_a_no_op():
+    from app.engine.entities.base import Mob as MobEntity, Faction, Position
+    game = GameInstance("test-chasm-mob-noop")
+    floor = game._get_or_create_floor(game.depth)
+    floor.grid = [[TileType.FLOOR for _ in range(5)] for _ in range(5)]
+    floor.grid[2][3] = TileType.CHASM
+    floor.rebuild_flags()
+    floor.mobs = {}
+    mob = MobEntity(id="m1", name="Rat", pos=Position(x=2, y=2), hp=10, max_hp=10, faction=Faction.DUNGEON)
+    floor.mobs[mob.id] = mob
+
+    game.move_entity(mob.id, 1, 0)
+
+    assert (mob.pos.x, mob.pos.y) == (2, 2)
+    assert game.flush_events() == []
+
+
+def test_any_other_move_clears_a_stale_pending_chasm_fall():
+    game = GameInstance("test-chasm-clear-stale")
+    floor = game._get_or_create_floor(game.depth)
+    floor.grid = [[TileType.FLOOR for _ in range(5)] for _ in range(5)]
+    floor.rebuild_flags()
+    player = game.add_player("p1", "Hero")
+    player.pos.x, player.pos.y = 2, 2
+    player.pending_chasm_fall = (99, 99)
+
+    game.move_entity(player.id, 1, 0)
+
+    assert player.pending_chasm_fall is None
+
+
+def test_chasm_step_at_max_floor_id_is_a_silent_no_op():
+    from app.engine.game.constants import MAX_FLOOR_ID
+    game = GameInstance("test-chasm-last-floor")
+    floor = game._get_or_create_floor(game.depth)
+    floor.grid = [[TileType.FLOOR for _ in range(5)] for _ in range(5)]
+    floor.grid[2][3] = TileType.CHASM
+    floor.rebuild_flags()
+    player = game.add_player("p1", "Hero")
+    player.pos.x, player.pos.y = 2, 2
+    player.floor_id = MAX_FLOOR_ID
+
+    game.move_entity(player.id, 1, 0)
+
+    assert (player.pos.x, player.pos.y) == (2, 2)
+    assert player.pending_chasm_fall is None
+    assert game.flush_events() == []

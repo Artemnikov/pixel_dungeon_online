@@ -182,6 +182,11 @@ class MovementCombatMixin:
         if not (0 <= new_x < floor.width and 0 <= new_y < floor.height):
             return
 
+        # Any movement attempt cancels a stale chasm-fall confirmation prompt
+        # (the player did something else instead of confirming).
+        if isinstance(entity, Player):
+            entity.pending_chasm_fall = None
+
         # Diagonal moves past a wall corner are allowed, matching SPD's PathFinder
         # (it only checks the destination cell's passability, not the orthogonal cells).
 
@@ -333,6 +338,15 @@ class MovementCombatMixin:
             if chest is not None:
                 self._try_open_chest(entity, floor, floor_id, chest)
                 return
+
+        if tile == TileType.CHASM:
+            # Mobs never voluntarily step into a chasm (AI pathing already
+            # avoids it via AVOID/PIT — see vision.py); this only guards
+            # against an entity somehow ending up adjacent regardless.
+            if isinstance(entity, Player) and floor_id < MAX_FLOOR_ID:
+                entity.pending_chasm_fall = (new_x, new_y)
+                self.add_event("CHASM_PROMPT", {"x": new_x, "y": new_y}, floor_id=floor_id, player_id=entity.id)
+            return
 
         if not floor.flags or not floor.flags.passable[new_y][new_x]:
             return
