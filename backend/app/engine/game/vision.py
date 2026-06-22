@@ -178,7 +178,7 @@ class VisionMixin:
         fov = self._fov_from(p1, floor, distance, viewer_id=viewer_id)
         return fov[p2.y * floor.width + p2.x]
 
-    def _get_next_step_to(self, start: Position, target: Position, floor_id: Optional[int] = None) -> Optional[tuple]:
+    def _get_next_step_to(self, start: Position, target: Position, floor_id: Optional[int] = None, flying: bool = False) -> Optional[tuple]:
         floor = self._get_or_create_floor(floor_id or self.depth)
 
         queue = [(start.x, start.y, [])]
@@ -198,7 +198,7 @@ class VisionMixin:
                     0 <= nx < floor.width
                     and 0 <= ny < floor.height
                     and floor.flags
-                    and floor.flags.passable[ny][nx]
+                    and (floor.flags.passable[ny][nx] or (flying and floor.flags.avoid[ny][nx]))
                     and (nx, ny) not in visited
                 ):
                     if dx != 0 and dy != 0:
@@ -234,7 +234,10 @@ class VisionMixin:
                     0 <= nx < floor.width
                     and 0 <= ny < floor.height
                     and floor.flags
-                    and floor.flags.passable[ny][nx]
+                    and (
+                        floor.flags.passable[ny][nx]
+                        or (floor.grid[ny][nx] == TileType.CHASM and (nx, ny) == (target.x, target.y))
+                    )
                     and (nx, ny) not in visited
                 ):
                     # Diagonal corner-cut allowed (SPD-faithful): no orthogonal check.

@@ -425,7 +425,7 @@ class TickMixin:
                         self.move_entity(mob.id, dx, dy)
                     elif target_player and self._is_in_los(mob.pos, target_player.pos, floor_id=floor_id):
                         if can_move:
-                            step = self._get_next_step_to(mob.pos, target_player.pos, floor_id=floor_id)
+                            step = self._get_next_step_to(mob.pos, target_player.pos, floor_id=floor_id, flying=mob.flying)
                             if step and (dist > atk_range or not any(
                                 m.is_alive and m.pos.x == mob.pos.x + step[0] and m.pos.y == mob.pos.y + step[1]
                                 for m in floor.mobs.values() if m.id != mob.id
@@ -444,7 +444,7 @@ class TickMixin:
                         self.move_entity(mob.id, dx, dy)
                     elif target_player and dist < 20:
                         if can_move:
-                            step = self._get_next_step_to(mob.pos, target_player.pos, floor_id=floor_id)
+                            step = self._get_next_step_to(mob.pos, target_player.pos, floor_id=floor_id, flying=mob.flying)
                             if step:
                                 move_times[mob.id] = now
                                 self.move_entity(mob.id, step[0], step[1])
@@ -496,7 +496,7 @@ class TickMixin:
             if dest is None:
                 return None
 
-        step = self._get_next_step_to(mob.pos, Position(x=dest[0], y=dest[1]), floor_id=floor_id)
+        step = self._get_next_step_to(mob.pos, Position(x=dest[0], y=dest[1]), floor_id=floor_id, flying=mob.flying)
         if step is None:
             targets.pop(mob.id, None)
             pauses[mob.id] = now + random.uniform(0.5, 1.0)
@@ -528,7 +528,7 @@ class TickMixin:
                 ady = (target.pos.y > ally.pos.y) - (target.pos.y < ally.pos.y)
                 self.move_entity(ally.id, adx, ady)
             else:
-                step = self._get_next_step_to(ally.pos, target.pos, floor_id=floor_id)
+                step = self._get_next_step_to(ally.pos, target.pos, floor_id=floor_id, flying=getattr(ally, "flying", False))
                 if step:
                     self.move_entity(ally.id, step[0], step[1])
             return
@@ -537,7 +537,7 @@ class TickMixin:
         if owner is not None and owner.floor_id == floor_id:
             if self._get_distance(ally.pos, owner.pos) > 1:
                 move_times[ally.id] = now
-                step = self._get_next_step_to(ally.pos, owner.pos, floor_id=floor_id)
+                step = self._get_next_step_to(ally.pos, owner.pos, floor_id=floor_id, flying=getattr(ally, "flying", False))
                 if step:
                     self.move_entity(ally.id, step[0], step[1])
 
