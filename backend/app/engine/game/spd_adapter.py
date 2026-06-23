@@ -42,6 +42,7 @@ from app.engine.entities.base import (
     Wand,
     Weapon,
 )
+from app.engine.dungeon.spd_levelgen.run_state import SCROLL_DEFAULT_PROBS_TOTAL
 from app.engine.entities.item_catalog import FLOOR_SCROLL_KINDS, TRANSMUTE_GROUPS, make_catalog_item
 from app.engine.entities.weapon_defs import WEP_TIER_ORDER
 from app.engine.entities.quest_bosses import FetidRat, Ghost, GnollTrickster, GreatCrab
@@ -259,8 +260,38 @@ _MOB_CLASSES: Dict[str, type[MobEntity]] = {
 _SPD_TRAP_TYPE: Dict[type[SpdTrap], str] = {}
 
 
+# SPD Generator.java SCROLL.classes order → remake scroll kind
+_SPD_SCROLL_INDEX_TO_KIND = {
+    0: "scroll_of_upgrade",
+    1: "scroll_of_identify",
+    2: "scroll_of_remove_curse",
+    3: "scroll_of_mirror_image",
+    4: "scroll_of_recharging",
+    5: "scroll_of_teleportation",
+    6: "scroll_of_lullaby",
+    7: "scroll_of_magic_mapping",
+    8: "scroll_of_rage",
+    9: "scroll_of_retribution",
+    10: "scroll_of_terror",
+    11: "scroll_of_transmutation",
+}
+# Remake-only scrolls not in SPD (e.g. scroll_of_metamorphosis) get a small
+# fixed weight so they remain possible but rare in floor loot.
+_NON_SPD_SCROLL_WEIGHT = 0.5
+
 def _random_scroll(iid: str, pos: Position) -> Item:
-    kind = _random.choice(FLOOR_SCROLL_KINDS)
+    pool = []
+    weights = []
+    for idx, kind in _SPD_SCROLL_INDEX_TO_KIND.items():
+        w = SCROLL_DEFAULT_PROBS_TOTAL[idx]
+        if w > 0:
+            pool.append(kind)
+            weights.append(w)
+    for kind in FLOOR_SCROLL_KINDS:
+        if kind not in pool:
+            pool.append(kind)
+            weights.append(_NON_SPD_SCROLL_WEIGHT)
+    kind = _random.choices(pool, weights=weights, k=1)[0]
     item = make_catalog_item(kind)
     item.id = iid
     item.pos = pos

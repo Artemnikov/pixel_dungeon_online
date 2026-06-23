@@ -2264,6 +2264,10 @@ class Mob(Entity):
     # to arm the windup once per engagement); see GameInstance.update_tick.
     aggro_windup: float = 1.0
     engaged: bool = False
+    # Last known position of the mob's target. When the target goes invisible,
+    # the mob moves toward this position before degrading to wandering (mirrors
+    # SPD's HUNTING state where the mob paths to the last-seen cell).
+    last_known_target_pos: Optional[Position] = None
     # Summoned ally (e.g. Rogue's Shadow Clone): the owning player's id and the
     # remaining real-time lifespan in seconds (0 = permanent until killed).
     owner_id: Optional[str] = None

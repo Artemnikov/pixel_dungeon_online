@@ -145,6 +145,14 @@ def action_drink(game, player, item, tx=None, ty=None) -> None:
         if removed is not None and player.belongings.get_item(item.id) is None:
             player.quickslot.convert_to_placeholder(removed)
         game.add_event("DRINK", {"player": player.id, "type": "mind_vision"}, floor_id=player.floor_id, source_player_id=player.id)
+    elif effect == "invisibility":
+        # SPD Invisibility: 20-turn buff. Attacking breaks invisibility (see
+        # combat._dispel_stealth). Reference-counted on Entity.invisible.
+        player.add_buff("invisibility", duration=20.0)
+        removed = player.belongings.backpack.detach(item.id)
+        if removed is not None and player.belongings.get_item(item.id) is None:
+            player.quickslot.convert_to_placeholder(removed)
+        game.add_event("DRINK", {"player": player.id, "type": "invisibility"}, floor_id=player.floor_id, source_player_id=player.id)
     elif effect == "liquid_flame":
         dmg = max(1, player.hp // 3)
         player.take_damage(dmg)

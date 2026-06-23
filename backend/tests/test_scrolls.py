@@ -1,4 +1,4 @@
-from app.engine.entities.base import ScrollOfTeleportation, ScrollOfRecharging, ScrollOfLullaby, ScrollOfTerror, ScrollOfRage, ScrollOfRetribution, ScrollOfIdentify, ScrollOfRemoveCurse, ScrollOfTransmutation, ScrollOfMirrorImage, ScrollOfMagicMapping, ScrollOfMetamorphosis, ScrollOfUpgrade, Wand, Position, Mob, Faction, HealthPotion, Seed, Dagger, Gold, is_immune
+from app.engine.entities.base import ScrollOfTeleportation, ScrollOfRecharging, ScrollOfLullaby, ScrollOfTerror, ScrollOfRage, ScrollOfRetribution, ScrollOfIdentify, ScrollOfRemoveCurse, ScrollOfTransmutation, ScrollOfMirrorImage, ScrollOfMagicMapping, ScrollOfMetamorphosis, ScrollOfUpgrade, Wand, Position, Mob, Faction, HealthPotion, PotionOfLiquidFlame, Seed, Dagger, Gold, is_immune
 from app.engine.entities.mobs import Tengu, MirrorImage
 from app.engine.entities.scroll_actions import action_read
 from app.engine.entities.scroll_predicates import player_inventory_items
@@ -43,7 +43,7 @@ def test_scroll_of_teleportation_moves_player_to_passable_unoccupied_cell():
     assert teleport_events[0]["data"]["y"] == p.pos.y
 
 
-def test_scroll_of_recharging_fully_refills_wands_and_grants_buff():
+def test_scroll_of_recharging_grants_regen_buff():
     g = GameInstance("t")
     p = _player(g)
 
@@ -55,7 +55,7 @@ def test_scroll_of_recharging_fully_refills_wands_and_grants_buff():
 
     action_read(g, p, scroll)
 
-    assert wand.charges == wand.max_charges
+    assert wand.charges == 0  # SPD: no instant refill, only regen-speed buff
     assert p.has_buff("recharging")
 
 
@@ -70,16 +70,14 @@ def test_recharging_buff_regenerates_wand_charges_over_time():
     p.belongings.backpack.items.append(scroll)
 
     action_read(g, p, scroll)
-    assert wand.charges == wand.max_charges  # instant full refill
+    assert wand.charges == 0  # SPD: no instant refill
 
-    # Drain it back down to test the regen-over-time path.
-    wand.charges = 0
-
-    # 8 seconds / 0.05s per tick = 160 ticks.
-    for _ in range(161):
+    # With 3x recharging rate: 1st charge takes ~12.3s, 2nd takes ~13.5s more.
+    # 700 ticks = 35s → enough for 2 charges.
+    for _ in range(700):
         g.update_tick()
 
-    assert wand.charges == 1
+    assert wand.charges == 2
 
 
 def test_scroll_of_lullaby_drowses_mobs_in_fov_and_eventually_sleeps_them():
@@ -231,9 +229,10 @@ def test_scroll_of_rage_sets_amok_and_hunting_on_fov_mobs():
     assert near_mob.ai_state == "hunting"
     assert near_mob.has_buff("amok")
 
-    # include_allies=True -> ally (Faction.PLAYER) mob in FOV is also affected.
+    # SPD: all mobs (including allies) are beckoned to player, but allies
+    # are NOT amok'd (include_allies=False by default for amok).
     assert ally_mob.ai_state == "hunting"
-    assert ally_mob.has_buff("amok")
+    assert not ally_mob.has_buff("amok")
 
     # Out of FOV mob: beckoned (hunting) but no amok.
     assert far_mob.ai_state == "hunting"
@@ -291,9 +290,13 @@ def test_scroll_of_identify_excludes_already_identified_kind():
     g = GameInstance("t")
     p = _player(g)
 
-    potion = HealthPotion(id="potion1")
-    p.belongings.backpack.collect(potion)
-    g.identified_kinds.add(potion.kind)
+    known_potion = HealthPotion(id="potion1")
+    p.belongings.backpack.collect(known_potion)
+    g.identified_kinds.add(known_potion.kind)
+
+    # A second potion of a different kind, unidentified, ensures ≥1 candidate.
+    unknown_potion = PotionOfLiquidFlame(id="potion2", level_known=False, cursed_known=False)
+    p.belongings.backpack.collect(unknown_potion)
 
     _detach_starter_scroll(p)
     scroll = ScrollOfIdentify(id="scroll1")
@@ -303,7 +306,7 @@ def test_scroll_of_identify_excludes_already_identified_kind():
 
     select_events = [e for e in g.events if e["type"] == "SCROLL_SELECT_TARGET"]
     assert len(select_events) == 1
-    assert potion.id not in select_events[0]["data"]["candidates"]
+    assert known_potion.id not in select_events[0]["data"]["candidates"]
 
 
 def test_scroll_of_identify_select_target_reveals_kind():
@@ -354,11 +357,10 @@ def test_scroll_of_identify_no_candidates_does_not_consume_scroll():
     action_read(g, p, scroll)
 
     select_events = [e for e in g.events if e["type"] == "SCROLL_SELECT_TARGET"]
-    assert len(select_events) == 0
-    read_events = [e for e in g.events if e["type"] == "READ"]
-    assert len(read_events) == 1
+    assert len(select_events) == 1  # dialog always opens (SPD)
+    assert select_events[0]["data"]["candidates"] == []
 
-    assert p.belongings.get_item(scroll.id) is not None
+    assert p.belongings.get_item(scroll.id) is not None  # not consumed (already identified)
 
 
 # --- Scroll of Remove Curse -------------------------------------------------------
@@ -389,13 +391,14 @@ def test_scroll_of_remove_curse_lists_cursed_item_as_candidate():
     assert weapon.cursed_known is True
 
 
-def test_scroll_of_remove_curse_lists_suspect_item_as_candidate():
+def test_scroll_of_remove_curse_lists_cursed_weapon_enchant_as_candidate():
     g = GameInstance("t")
     p = _player(g)
 
     weapon = Dagger(id="weapon1")
     weapon.cursed = False
-    weapon.cursed_known = False
+    weapon.cursed_known = True
+    weapon.enchantment = "annoying"
     p.belongings.backpack.collect(weapon)
 
     scroll = ScrollOfRemoveCurse(id="scroll1")
@@ -475,22 +478,17 @@ def test_scroll_of_remove_curse_ignores_non_equipable_categories():
 
 
 def test_scroll_of_remove_curse_no_candidates_does_not_consume_scroll():
-    from app.engine.entities.scroll_predicates import UPGRADABLE_CATEGORIES
-
     g = GameInstance("t")
     p = _player(g)
 
-    # Mark every equipable item the player owns as known-uncursed with no
-    # curse enchants, so none qualify as a Remove Curse candidate.
-    for it in player_inventory_items(p):
-        if it.category in UPGRADABLE_CATEGORIES:
-            it.cursed = False
-            it.cursed_known = True
-            enchantment = getattr(it, "enchantment", None)
-            if isinstance(enchantment, str):
-                it.enchantment = None
-            elif hasattr(enchantment, "type"):
-                it.enchantment.type = "none"
+    # Strip all equipable items so none qualify as a Remove Curse candidate.
+    p.belongings.weapon = None
+    p.belongings.armor = None
+    p.belongings.artifact = None
+    if p.belongings.ring is not None:
+        p.belongings.ring = None
+    if p.belongings.misc is not None:
+        p.belongings.misc = None
 
     scroll = ScrollOfRemoveCurse(id="scroll1")
     p.belongings.backpack.collect(scroll)
@@ -498,9 +496,11 @@ def test_scroll_of_remove_curse_no_candidates_does_not_consume_scroll():
     action_read(g, p, scroll)
 
     select_events = [e for e in g.events if e["type"] == "SCROLL_SELECT_TARGET"]
-    assert len(select_events) == 0
-    read_events = [e for e in g.events if e["type"] == "READ"]
-    assert len(read_events) == 1
+    assert len(select_events) == 1  # dialog always opens
+    assert select_events[0]["data"]["candidates"] == []
+
+    # Scroll was unidentified → consumed immediately (SPD).
+    assert p.belongings.get_item(scroll.id) is None
 
 
 # --- Scroll of Transmutation -------------------------------------------------------
@@ -715,11 +715,11 @@ def test_scroll_of_transmutation_no_candidates_does_not_consume_scroll():
     action_read(g, p, scroll)
 
     select_events = [e for e in g.events if e["type"] == "SCROLL_SELECT_TARGET"]
-    assert len(select_events) == 0
-    read_events = [e for e in g.events if e["type"] == "READ"]
-    assert len(read_events) == 1
+    assert len(select_events) == 1  # dialog always opens
+    assert select_events[0]["data"]["candidates"] == []
 
-    assert p.belongings.get_item(scroll.id) is not None
+    # Scroll was unidentified → consumed immediately (SPD).
+    assert p.belongings.get_item(scroll.id) is None
 
 
 def test_scroll_of_mirror_image_spawns_two_invisible_player_allies():
@@ -874,11 +874,17 @@ def test_scroll_of_magic_mapping_populates_mapped_tiles_in_state():
     action_read(g, p, scroll)
 
     state = g.get_state(p.id)
-    assert len(state["mapped_tiles"]) == floor.width * floor.height
+    mapped = state["mapped_tiles"]
+    # SPD: only discoverable tiles (non-{VOID, WALL, WALL_DECO}) are mapped.
+    assert len(mapped) > 0
+    assert len(mapped) < floor.width * floor.height  # not every tile
+    for x, y in mapped:
+        t = floor.grid[y][x]
+        assert t not in (0, 1, 17)  # not VOID, WALL, or WALL_DECO
 
 
 def test_inscribed_stealth_not_granted_when_predicate_scroll_has_no_candidates():
-    """Bug 1 fix: stealth buff must not proc when no valid targets exist."""
+    """Stealth procs when scroll is read (always opens dialog)."""
     from app.engine.entities.subclasses import Talent
 
     g = GameInstance("t")
@@ -900,18 +906,19 @@ def test_inscribed_stealth_not_granted_when_predicate_scroll_has_no_candidates()
     action_read(g, p, scroll)
 
     select_events = [e for e in g.events if e["type"] == "SCROLL_SELECT_TARGET"]
-    assert len(select_events) == 0
-    assert not p.has_buff("invisibility"), "stealth must not proc when scroll fizzles"
-    # Scroll is NOT consumed.
+    assert len(select_events) == 1  # dialog always opens
+    assert scroll.kind in g.identified_kinds
+    # Stealth procs because the scroll was read (dialog opened).
+    assert p.has_buff("invisibility")
+    # Scroll is NOT consumed (was already identified).
     assert p.belongings.get_item(scroll.id) is not None
 
 
 def test_predicate_scroll_not_identified_when_no_candidates():
-    """Bug 2 fix: reading a PREDICATE scroll with no targets must not reveal its kind."""
+    """Reading an unidentified predicate scroll reveals its kind (SPD), even with no candidates."""
     g = GameInstance("t")
     p = _player(g)
 
-    # Strip inventory to only non-upgradable items.
     p.belongings.weapon = None
     p.belongings.armor = None
     p.belongings.artifact = None
@@ -925,12 +932,12 @@ def test_predicate_scroll_not_identified_when_no_candidates():
     action_read(g, p, scroll)
 
     select_events = [e for e in g.events if e["type"] == "SCROLL_SELECT_TARGET"]
-    assert len(select_events) == 0
-    assert scroll.kind not in g.identified_kinds, "scroll kind must not be revealed on fizzle"
+    assert len(select_events) == 1  # dialog always opens
+    assert scroll.kind in g.identified_kinds, "scroll kind is revealed on read (SPD)"
 
 
-def test_predicate_scroll_identified_only_when_candidates_exist():
-    """Bug 2 fix: kind is revealed at action_read when candidates exist, not on fizzle."""
+def test_predicate_scroll_identified_when_candidates_exist():
+    """Reading with valid candidates reveals kind immediately."""
     g = GameInstance("t")
     p = _player(g)
 
@@ -942,7 +949,6 @@ def test_predicate_scroll_identified_only_when_candidates_exist():
 
     select_events = [e for e in g.events if e["type"] == "SCROLL_SELECT_TARGET"]
     assert len(select_events) == 1
-    # Kind is revealed as soon as valid targets are confirmed — not deferred to apply.
     assert scroll.kind in g.identified_kinds
 
 

@@ -994,6 +994,8 @@ export interface MeleeWeapon {
   acc_factor?: number;
   dr_bonus_base?: number;
   dr_bonus_per_lvl?: number;
+  hit_sound?: string;
+  hit_sound_pitch?: number;
   tier?: number;
 }
 export interface Dagger {
@@ -1021,6 +1023,8 @@ export interface Dagger {
   acc_factor?: number;
   dr_bonus_base?: number;
   dr_bonus_per_lvl?: number;
+  hit_sound?: string;
+  hit_sound_pitch?: number;
   tier?: number;
 }
 export interface WornShortsword {
@@ -1048,6 +1052,8 @@ export interface WornShortsword {
   acc_factor?: number;
   dr_bonus_base?: number;
   dr_bonus_per_lvl?: number;
+  hit_sound?: string;
+  hit_sound_pitch?: number;
   tier?: number;
 }
 export interface Bow {
@@ -1075,6 +1081,8 @@ export interface Bow {
   acc_factor?: number;
   dr_bonus_base?: number;
   dr_bonus_per_lvl?: number;
+  hit_sound?: string;
+  hit_sound_pitch?: number;
 }
 export interface SpiritBow {
   kind?: "spirit_bow";
@@ -1101,8 +1109,9 @@ export interface SpiritBow {
   acc_factor?: number;
   dr_bonus_base?: number;
   dr_bonus_per_lvl?: number;
-  bones?: boolean;
   hit_sound?: string;
+  hit_sound_pitch?: number;
+  bones?: boolean;
 }
 export interface Staff {
   kind?: "staff";
@@ -1129,12 +1138,12 @@ export interface Staff {
   acc_factor?: number;
   dr_bonus_base?: number;
   dr_bonus_per_lvl?: number;
+  hit_sound?: string;
+  hit_sound_pitch?: number;
   tier?: number;
   magic_damage?: number;
   imbued_wand?: Wand | null;
   bones?: boolean;
-  hit_sound?: string;
-  hit_sound_pitch?: number;
   charges: number;
   max_charges: number;
 }
@@ -1189,6 +1198,8 @@ export interface MissileWeapon {
   acc_factor?: number;
   dr_bonus_base?: number;
   dr_bonus_per_lvl?: number;
+  hit_sound?: string;
+  hit_sound_pitch?: number;
   tier?: number;
 }
 export interface Armor {
@@ -3192,6 +3203,7 @@ export interface Mob {
   attack_range?: number;
   aggro_windup?: number;
   engaged?: boolean;
+  last_known_target_pos?: Position | null;
   owner_id?: string | null;
   summon_lifespan?: number;
 }

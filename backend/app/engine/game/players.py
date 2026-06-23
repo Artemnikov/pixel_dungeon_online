@@ -137,6 +137,8 @@ class PlayersMixin:
                 quantity=3,
             )
             belongings.backpack.collect(knives)
+            class_starting_quickslots.append((0, belongings.artifact))
+            class_starting_quickslots.append((1, knives))
 
         elif class_type == CharacterClass.HUNTRESS:
             # SPD HeroClass.initHuntress(): Gloves (display "studded gloves")
@@ -202,7 +204,8 @@ class PlayersMixin:
         # slot 2 for throwing knives, etc.), then Waterskin to slot 1.
         for slot_idx, item in class_starting_quickslots:
             player.quickslot.set_slot(slot_idx, item)
-        player.quickslot.set_slot(1, waterskin)
+        waterskin_slot = 2 if class_type == CharacterClass.ROGUE else 1
+        player.quickslot.set_slot(waterskin_slot, waterskin)
 
         # HeroClass.initWarrior(): the BrokenSeal starts affixed to the cloth
         # armor (not in any equip slot), providing shielding on low HP.

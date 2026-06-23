@@ -205,6 +205,12 @@ class MovementCombatMixin:
                     break
 
         if target_entity:
+            # Mirrors SPD's enemyInFOV check (Mob.java:252): a mob cannot
+            # perceive an invisible player, so it treats the tile as blocked
+            # rather than attacking.
+            if isinstance(entity, MobEntity) and isinstance(target_entity, Player) and target_entity.invisible > 0:
+                return
+
             if (
                 isinstance(entity, Player)
                 and isinstance(target_entity, Player)
@@ -273,11 +279,15 @@ class MovementCombatMixin:
                 pitch_jitter = random.uniform(0.87, 1.15)
                 if isinstance(entity, Player):
                     weapon = getattr(getattr(entity, "belongings", None), "weapon", None)
-                    sound = "HIT_STRONG" if result.get("crit") else "HIT_SLASH"
-                    rate = pitch_jitter
-                    if weapon and getattr(weapon, "hit_sound", None):
+                    if result.get("crit"):
+                        sound = "HIT_STRONG"
+                        rate = pitch_jitter
+                    elif weapon and getattr(weapon, "hit_sound", None):
                         sound = weapon.hit_sound
                         rate = pitch_jitter * getattr(weapon, "hit_sound_pitch", 1.0)
+                    else:
+                        sound = "HIT_SLASH"
+                        rate = pitch_jitter
                     self.add_event("PLAY_SOUND", {"sound": sound, "rate": rate}, floor_id=floor_id, source_player_id=entity.id)
                 else:
                     # Mob melee: broadcast HIT_BODY from the mob's position so
@@ -654,7 +664,7 @@ class MovementCombatMixin:
                         "source_x": player.pos.x,
                         "source_y": player.pos.y,
                     }, floor_id=floor_id)
-                    self.add_event("PLAY_SOUND", {"sound": "HIT_ARROW"}, floor_id=floor_id, source_player_id=player.id)
+                    self.add_event("PLAY_SOUND", {"sound": "HIT_STRONG" if result.get("crit") else "HIT_ARROW"}, floor_id=floor_id, source_player_id=player.id)
                 if result.get("grim_proc"):
                     self.add_event("PLAY_SOUND", {"sound": "HIT_STRONG"}, floor_id=floor_id, source_player_id=player.id)
 

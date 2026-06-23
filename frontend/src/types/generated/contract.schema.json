@@ -2785,6 +2785,14 @@
         "dr_bonus_per_lvl": {
           "default": 0,
           "type": "integer"
+        },
+        "hit_sound": {
+          "default": "HIT_BODY",
+          "type": "string"
+        },
+        "hit_sound_pitch": {
+          "default": 1.0,
+          "type": "number"
         }
       },
       "type": "object"
@@ -3628,6 +3636,14 @@
         "dr_bonus_per_lvl": {
           "default": 0,
           "type": "integer"
+        },
+        "hit_sound": {
+          "default": "HIT_STAB",
+          "type": "string"
+        },
+        "hit_sound_pitch": {
+          "default": 1.1,
+          "type": "number"
         },
         "tier": {
           "default": 1,
@@ -5295,6 +5311,14 @@
           "default": 0,
           "type": "integer"
         },
+        "hit_sound": {
+          "default": "HIT_BODY",
+          "type": "string"
+        },
+        "hit_sound_pitch": {
+          "default": 1.0,
+          "type": "number"
+        },
         "tier": {
           "default": 1,
           "type": "integer"
@@ -5423,6 +5447,14 @@
         "dr_bonus_per_lvl": {
           "default": 0,
           "type": "integer"
+        },
+        "hit_sound": {
+          "default": "HIT_BODY",
+          "type": "string"
+        },
+        "hit_sound_pitch": {
+          "default": 1.0,
+          "type": "number"
         },
         "tier": {
           "default": 1,
@@ -5635,6 +5667,17 @@
         "engaged": {
           "default": false,
           "type": "boolean"
+        },
+        "last_known_target_pos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Position"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "owner_id": {
           "anyOf": [
@@ -10657,7 +10700,7 @@
           "default": null
         },
         "projectile_type": {
-          "default": "arrow",
+          "default": "spirit_arrow",
           "type": "string"
         },
         "surprise_damage_floor": {
@@ -10676,13 +10719,17 @@
           "default": 0,
           "type": "integer"
         },
-        "bones": {
-          "default": false,
-          "type": "boolean"
-        },
         "hit_sound": {
           "default": "HIT_ARROW",
           "type": "string"
+        },
+        "hit_sound_pitch": {
+          "default": 1.0,
+          "type": "number"
+        },
+        "bones": {
+          "default": false,
+          "type": "boolean"
         }
       },
       "type": "object"
@@ -10800,6 +10847,14 @@
           "default": 0,
           "type": "integer"
         },
+        "hit_sound": {
+          "default": "HIT_BODY",
+          "type": "string"
+        },
+        "hit_sound_pitch": {
+          "default": 1.1,
+          "type": "number"
+        },
         "tier": {
           "default": 1,
           "type": "integer"
@@ -10822,14 +10877,6 @@
         "bones": {
           "default": false,
           "type": "boolean"
-        },
-        "hit_sound": {
-          "default": "HIT_BODY",
-          "type": "string"
-        },
-        "hit_sound_pitch": {
-          "default": 1.1,
-          "type": "number"
         },
         "charges": {
           "readOnly": true,
@@ -13546,6 +13593,14 @@
         "dr_bonus_per_lvl": {
           "default": 0,
           "type": "integer"
+        },
+        "hit_sound": {
+          "default": "HIT_SLASH",
+          "type": "string"
+        },
+        "hit_sound_pitch": {
+          "default": 1.1,
+          "type": "number"
         },
         "tier": {
           "default": 1,

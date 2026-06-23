@@ -121,6 +121,8 @@ class TickMixin:
             for mob in floor.mobs.values():
                 if mob.is_alive:
                     removed = process_buffs(mob.buffs, dt)
+                    if "invisibility" in removed or "shadows" in removed:
+                        mob.invisible = max(0, mob.invisible - 1)
                     if "drowsy" in removed and mob.ai_state in ("idle", "wandering"):
                         mob.ai_state = "sleeping"
                     if "terror" in removed and mob.ai_state == "fleeing":
@@ -418,6 +420,21 @@ class TickMixin:
                     self.qualified_for_boss_challenge = True
                     self._goo_seal_entrance(floor, floor_id)
 
+                # Track last known position while target is visible (mirrors
+                # SPD HUNTING: mob remembers where it last saw the player).
+                if target_player is not None:
+                    mob.last_known_target_pos = Position(x=target_player.pos.x, y=target_player.pos.y)
+
+                # If target lost (e.g. player went invisible), move toward the
+                # last known position before degrading to wandering.
+                search_pos = None
+                if target_player is None and mob.ai_state == "hunting" and mob.last_known_target_pos is not None:
+                    search_pos = mob.last_known_target_pos
+                    if self._get_distance(mob.pos, search_pos) <= 1:
+                        mob.last_known_target_pos = None
+                        mob.ai_state = "wandering"
+                        search_pos = None
+
                 dist = self._get_distance(mob.pos, target_player.pos) if target_player else float("inf")
                 atk_range = getattr(mob, "attack_range", 1)
                 is_passive = getattr(mob, "ai_state", "") == "passive"
@@ -449,6 +466,14 @@ class TickMixin:
                     if target_player and dist <= atk_range:
                         dx, dy = target_player.pos.x - mob.pos.x, target_player.pos.y - mob.pos.y
                         self.move_entity(mob.id, dx, dy)
+                    elif search_pos and can_move:
+                        step = self._get_next_step_to(mob.pos, search_pos, floor_id=floor_id, flying=mob.flying)
+                        if step:
+                            move_times[mob.id] = now
+                            self.move_entity(mob.id, step[0], step[1])
+                        else:
+                            mob.last_known_target_pos = None
+                            mob.ai_state = "wandering"
                     elif can_move:
                         step = self._pick_wander_step(mob, floor, floor_id, now)
                         if step:
@@ -468,6 +493,14 @@ class TickMixin:
                             )):
                                 move_times[mob.id] = now
                                 self.move_entity(mob.id, step[0], step[1])
+                    elif search_pos and can_move:
+                        step = self._get_next_step_to(mob.pos, search_pos, floor_id=floor_id, flying=mob.flying)
+                        if step:
+                            move_times[mob.id] = now
+                            self.move_entity(mob.id, step[0], step[1])
+                        else:
+                            mob.last_known_target_pos = None
+                            mob.ai_state = "wandering"
                     elif can_move:
                         step = self._pick_wander_step(mob, floor, floor_id, now)
                         if step:
@@ -484,6 +517,14 @@ class TickMixin:
                             if step:
                                 move_times[mob.id] = now
                                 self.move_entity(mob.id, step[0], step[1])
+                    elif search_pos and can_move:
+                        step = self._get_next_step_to(mob.pos, search_pos, floor_id=floor_id, flying=mob.flying)
+                        if step:
+                            move_times[mob.id] = now
+                            self.move_entity(mob.id, step[0], step[1])
+                        else:
+                            mob.last_known_target_pos = None
+                            mob.ai_state = "wandering"
                     elif can_move:
                         step = self._pick_wander_step(mob, floor, floor_id, now)
                         if step:
@@ -917,6 +958,16 @@ class TickMixin:
             effects.append(Effect(
                 key="locked_floor", name="Locked Floor", icon=35,
                 remaining=max(0.0, min(50.0, player.locked_floor_left)), duration=50.0,
+            ))
+        invis_buff = get_buff(player.buffs, "invisibility")
+        if invis_buff is not None:
+            effects.append(Effect(
+                key="invisibility", name="Invisible", icon=12,
+                remaining=invis_buff.remaining, duration=20.0,
+            ))
+        elif get_buff(player.buffs, "shadows") is not None:
+            effects.append(Effect(
+                key="invisibility", name="Invisible", icon=12,
             ))
         player.active_effects = effects
 

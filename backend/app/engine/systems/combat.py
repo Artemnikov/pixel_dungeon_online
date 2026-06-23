@@ -36,16 +36,15 @@ def _preparation(attacker: "Entity", defender: "Entity") -> Optional[dict]:
 
 
 def _dispel_stealth(attacker: "Entity") -> None:
-    """Attacking breaks stealth: clear invisibility, the cloak's sustained
-    stealth flag, and Preparation."""
+    """Attacking breaks invisibility: clear the invisibility buffs and the
+    cloak's sustained stealth flag. Preparation (Assassin) is NOT cleared
+    here — it persists across stealth windows per design."""
     if getattr(attacker, "invisible", 0) > 0:
         attacker.invisible = 0
     attacker.remove_buff("invisibility")
     attacker.remove_buff("shadows")
     if getattr(attacker, "cloak_stealth_active", False):
         attacker.cloak_stealth_active = False
-    if hasattr(attacker, "prep_seconds"):
-        attacker.prep_seconds = 0.0
 
 
 def _roll_damage(attacker: "Entity", result: dict, prep: Optional[dict] = None) -> int:

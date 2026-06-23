@@ -60,8 +60,14 @@ def _maybe_proc_inscribed_stealth(game, player) -> None:
 
 def _teleport_player(game, player) -> None:
     """SPD ScrollOfTeleportation: move the player to a random passable,
-    unoccupied cell on their current floor, preferring cells outside their
-    current FOV. Breaks "rooted" on success."""
+    unoccupied cell on their current floor.
+
+    Prefers unlocked SpecialRoom interiors (teleportPreferringUnseen).
+    Falls back to any passable cell, preferring out-of-FOV.
+    Auto-discovers secret doors adjacent to destination when using special room path.
+    Breaks "rooted" on success."""
+    from app.engine.dungeon.constants import RoomKind
+
     floor = game._get_or_create_floor(player.floor_id)
 
     occupied = {(m.pos.x, m.pos.y) for m in floor.mobs.values() if m.is_alive}
@@ -71,42 +77,104 @@ def _teleport_player(game, player) -> None:
         if p.floor_id == player.floor_id and p.is_alive
     }
 
-    candidates = []
-    for y in range(floor.height):
-        for x in range(floor.width):
-            if floor.flags and floor.flags.passable[y][x] and (x, y) not in occupied:
-                candidates.append((x, y))
-
-    if not candidates:
-        return
-
     visible = set(game.get_visible_tiles(
         player.pos, radius=game._view_distance(player), floor_id=player.floor_id,
         viewer_id=player.id))
-    out_of_fov = [c for c in candidates if c not in visible]
-    pool = out_of_fov if out_of_fov else candidates
+
+    used_special_path = False
+    pool: list = []
+
+    # Step 1: prefer unlocked SpecialRoom interiors (SPD teleportPreferringUnseen)
+    special_cells = []
+    for room in floor.rooms:
+        if room.kind != RoomKind.SPECIAL:
+            continue
+        locked = False
+        for ry in range(max(0, room.y - 1), min(floor.height, room.y + room.height + 1)):
+            for rx in range(max(0, room.x - 1), min(floor.width, room.x + room.width + 1)):
+                t = floor.grid[ry][rx]
+                if t in (TileType.LOCKED_DOOR, TileType.CRYSTAL_DOOR, TileType.BARRICADE):
+                    locked = True
+                    break
+            if locked:
+                break
+        if locked:
+            continue
+        for ry in range(room.y, room.y + room.height):
+            for rx in range(room.x, room.x + room.width):
+                if (rx, ry) not in occupied and floor.flags and floor.flags.passable[ry][rx]:
+                    special_cells.append((rx, ry))
+
+    if special_cells:
+        used_special_path = True
+        out_of_fov = [c for c in special_cells if c not in visible]
+        pool = out_of_fov if out_of_fov else special_cells
+
+    # Step 2: fallback — any passable unoccupied cell, prefer out-of-FOV
+    if not pool:
+        for y in range(floor.height):
+            for x in range(floor.width):
+                if floor.flags and floor.flags.passable[y][x] and (x, y) not in occupied:
+                    pool.append((x, y))
+        if pool:
+            out_of_fov = [c for c in pool if c not in visible]
+            pool = out_of_fov if out_of_fov else pool
+
+    if not pool:
+        return
 
     from_x, from_y = player.pos.x, player.pos.y
     tx, ty = random.choice(pool)
     player.pos = Position(x=tx, y=ty)
     player.remove_buff("rooted")
 
-    game.add_event("TELEPORT", {"player": player.id, "from_x": from_x, "from_y": from_y, "x": tx, "y": ty}, floor_id=player.floor_id)
+    # Secret door auto-discovery (SPD: check neighbor cells for secret doors
+    # when teleporting into a special room)
+    secret_positions = []
+    if used_special_path:
+        for dx, dy in ((-1, 0), (1, 0), (0, -1), (0, 1), (-1, -1), (1, -1), (-1, 1), (1, 1)):
+            nx, ny = tx + dx, ty + dy
+            if (nx, ny) in floor.hidden_doors:
+                actual_tile = floor.hidden_doors.pop((nx, ny))
+                floor.grid[ny][nx] = actual_tile
+                secret_positions.append({"x": nx, "y": ny})
+        if secret_positions:
+            floor.rebuild_flags()
+            game.add_event("MAP_PATCH", {"tiles": secret_positions}, floor_id=player.floor_id)
+            game.add_event("PLAY_SOUND", {"sound": "SECRET"}, player_id=player.id)
+
+    game.add_event("TELEPORT", {
+        "player": player.id, "from_x": from_x, "from_y": from_y, "x": tx, "y": ty,
+    }, floor_id=player.floor_id)
 
 
 def action_read(game, player, item, tx=None, ty=None) -> None:
     effect = getattr(item, "kind", "")
     _extra_event_data: dict = {}
 
+    # SPD reading blocks: blindness, magic immunity, cursed book (scroll base).
+    if player.has_buff("blindness"):
+        game.add_event("READ", {"player": player.id, "item": item.id, "blocked": "blinded"}, floor_id=player.floor_id)
+        return
+    if player.has_buff("magic_immune"):
+        game.add_event("READ", {"player": player.id, "item": item.id, "blocked": "no_magic"}, floor_id=player.floor_id)
+        return
+
     if effect in PREDICATE:
-        # Identify and proc stealth only if there are valid targets — no free
-        # identification or stealth buff when the scroll fizzles (no candidates).
         candidates = [it.id for it in player_inventory_items(player) if it.id != item.id and PREDICATE[effect](it, game)]
-        if not candidates:
-            game.add_event("READ", {"player": player.id, "item": item.id}, floor_id=player.floor_id)
-            return
+        was_unidentified = item.kind not in game.identified_kinds
         game.identify_kind(item)
         _maybe_proc_inscribed_stealth(game, player)
+        if was_unidentified:
+            # SPD: reading an unidentified scroll consumes it immediately,
+            # before the target-selection dialog even opens.
+            removed = player.belongings.backpack.detach(item.id)
+            if removed is not None and player.belongings.get_item(item.id) is None:
+                player.quickslot.convert_to_placeholder(removed)
+        # Store the scroll kind so select_scroll_target can still apply the
+        # effect even when the scroll was already consumed (unidentified path).
+        player._pending_scroll_kind = effect
+        player._pending_scroll_id = item.id
         game.add_event(
             "SCROLL_SELECT_TARGET",
             {"player": player.id, "scroll_id": item.id, "scroll_kind": effect, "candidates": candidates},
@@ -125,9 +193,8 @@ def action_read(game, player, item, tx=None, ty=None) -> None:
             if mob.is_alive:
                 mob.ai_state = "hunting"
                 beckoned_ids.append(mob.id)
-        # amok: only FOV mobs. include_allies=True is intentional for multiplayer
-        # (SPD spares Char.Alignment.ALLY, but clones/images amok-ing is the desired chaos here).
-        for mob in game._mobs_in_fov(player, floor, player.floor_id, include_allies=True):
+        # amok: FOV mobs only, excludes allies (matches SPD ScrollOfRage).
+        for mob in game._mobs_in_fov(player, floor, player.floor_id):
             mob.add_buff("amok", duration=5, source_id=player.id)
         removed = player.belongings.backpack.detach(item.id)
         if removed is not None and player.belongings.get_item(item.id) is None:
@@ -173,9 +240,6 @@ def action_read(game, player, item, tx=None, ty=None) -> None:
             player.quickslot.convert_to_placeholder(removed)
         _teleport_player(game, player)
     elif effect == "scroll_of_recharging":
-        for wand in player_inventory_items(player):
-            if isinstance(wand, Wand):
-                wand.charges = wand.max_charges
         player.add_buff("recharging", duration=30.0)
         removed = player.belongings.backpack.detach(item.id)
         if removed is not None and player.belongings.get_item(item.id) is None:
@@ -203,16 +267,25 @@ def action_read(game, player, item, tx=None, ty=None) -> None:
             player.quickslot.convert_to_placeholder(removed)
     elif effect == "scroll_of_magic_mapping":
         floor = game._get_or_create_floor(player.floor_id)
+        # SPD: only mark discoverable cells (non-wall/void/deco) as mapped.
         floor.mapped = True
-        floor.mapped_tiles = [(x, y) for y in range(floor.height) for x in range(floor.width)]
+        NON_DISCOVERABLE = {TileType.VOID, TileType.WALL, TileType.WALL_DECO}
+        floor.mapped_tiles = [
+            (x, y) for y in range(floor.height) for x in range(floor.width)
+            if floor.grid[y][x] not in NON_DISCOVERABLE
+        ]
         patches = []
-        discover_positions = []
+        fov_discover_positions = []
         found_secret = False
+        visible = set(game.get_visible_tiles(
+            player.pos, radius=game._view_distance(player), floor_id=player.floor_id,
+            viewer_id=player.id))
         for (tx, ty), actual_tile in list(floor.hidden_doors.items()):
             floor.hidden_doors.pop((tx, ty))
             floor.grid[ty][tx] = actual_tile
             patches.append({"x": tx, "y": ty, "tile": actual_tile})
-            discover_positions.append({"x": tx, "y": ty})
+            if (tx, ty) in visible:
+                fov_discover_positions.append({"x": tx, "y": ty})
             found_secret = True
         for (tx, ty), trap in floor.traps.items():
             if trap.hidden:
@@ -221,7 +294,8 @@ def action_read(game, player, item, tx=None, ty=None) -> None:
                 if floor.grid[ty][tx] == TileType.SECRET_TRAP:
                     floor.grid[ty][tx] = TileType.TRAP
                     patches.append({"x": tx, "y": ty, "tile": TileType.TRAP})
-                discover_positions.append({"x": tx, "y": ty})
+                if (tx, ty) in visible:
+                    fov_discover_positions.append({"x": tx, "y": ty})
         if patches:
             floor.rebuild_flags()
             game.add_event("MAP_PATCH", {"tiles": patches}, floor_id=player.floor_id)
@@ -230,8 +304,8 @@ def action_read(game, player, item, tx=None, ty=None) -> None:
         removed = player.belongings.backpack.detach(item.id)
         if removed is not None and player.belongings.get_item(item.id) is None:
             player.quickslot.convert_to_placeholder(removed)
-        if discover_positions:
-            _extra_event_data["discover_positions"] = discover_positions
+        if fov_discover_positions:
+            _extra_event_data["discover_positions"] = fov_discover_positions
     elif effect == "scroll_of_mirror_image":
         floor = game._get_or_create_floor(player.floor_id)
         clone_ids = game._spawn_mirror_images(player, floor, player.floor_id)
@@ -269,7 +343,14 @@ def action_read(game, player, item, tx=None, ty=None) -> None:
 
 
 def _apply_upgrade_target(game, player, target_item) -> None:
-    from app.engine.entities.base import Staff
+    from app.engine.entities.base import Staff, KindOfWeapon, Armor as ArmorCls
+    # Pre-upgrade state tracking (SPD: curse enchant vs plain curse distinction)
+    had_cursed_enchant = False
+    if isinstance(target_item, KindOfWeapon) and target_item.enchantment:
+        had_cursed_enchant = target_item.enchantment in CURSES
+    if isinstance(target_item, ArmorCls):
+        had_cursed_enchant = target_item.enchantment.type in CURSES
+
     if isinstance(target_item, Staff):
         target_item.upgrade()
     else:
@@ -277,6 +358,9 @@ def _apply_upgrade_target(game, player, target_item) -> None:
     target_item.level_known = True
     target_item.cursed = False
     target_item.cursed_known = True
+
+    # SPD: Degrade.detach(curUser, Degrade.class)
+    player.remove_buff("degrade")
 
 
 def _apply_identify(game, player, target_item) -> None:
@@ -348,16 +432,25 @@ def _apply_transmutation(game, player, target_item):
     return new_item
 
 
-def _apply_remove_curse(game, player, target_item) -> None:
+def _apply_remove_curse(game, player, target_item) -> bool:
+    """Returns True if any curse was actually removed (SPD: `procced`)."""
+    procced = False
+    if target_item.cursed:
+        procced = True
     target_item.cursed = False
     target_item.cursed_known = True
     enchantment = getattr(target_item, "enchantment", None)
     if isinstance(enchantment, str) and enchantment in CURSES:
         target_item.enchantment = None
+        procced = True
     elif hasattr(enchantment, "type") and enchantment.type in CURSES:
         target_item.enchantment = ArmorEnchantment()
+        procced = True
     if isinstance(target_item, Wand):
         target_item.level_known = True
+    # SPD: Degrade.detach(curUser, Degrade.class) + updateHT(false) for Ring of Might
+    player.remove_buff("degrade")
+    return procced
 
 
 # scroll `kind` -> apply function, called once a target has been chosen.
@@ -397,4 +490,7 @@ def apply_scroll_target(game, player, scroll_item, target_item) -> None:
     if scroll_item.kind == "scroll_of_upgrade" and was_cursed:
         # SPD emits ShadowParticle.UP when an upgrade removes a curse from an item.
         read_data["shadow_particles"] = True
+    if scroll_item.kind == "scroll_of_remove_curse":
+        # SPD: GLog for cleansed/not_cleansed distinction.
+        read_data["cleansed"] = bool(new_item_result)
     game.add_event("READ", read_data, floor_id=player.floor_id)

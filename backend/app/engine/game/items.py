@@ -73,7 +73,12 @@ class ItemsMixin:
             return
         scroll = player.belongings.get_item(scroll_id)
         if scroll is None:
-            return
+            # Scroll may have been pre-consumed (unidentified path). Use pending state.
+            kind = getattr(player, "_pending_scroll_kind", None)
+            scroll_id_ = getattr(player, "_pending_scroll_id", None)
+            if kind is None or scroll_id_ != scroll_id:
+                return
+            scroll = type("_PendingScroll", (), {"id": scroll_id, "kind": kind})()
         predicate = PREDICATE.get(scroll.kind)
         if predicate is None:
             return
@@ -81,6 +86,8 @@ class ItemsMixin:
         if target is None or not predicate(target, self):
             return
         scroll_actions.apply_scroll_target(self, player, scroll, target)
+        player._pending_scroll_kind = None
+        player._pending_scroll_id = None
 
     def imbue_wand(self, player_id: str, staff_id: str, wand_id: str):
         """Handle imbue wand choice from IMBUE_WAND_CHOICE_AVAILABLE dialog."""
