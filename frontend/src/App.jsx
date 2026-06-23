@@ -688,7 +688,7 @@ function App() {
           </div>
         )}
 
-        <BossHealthBar boss={bossInfo} bleeding={bossBleeding} />
+        <BossHealthBar boss={bossInfo} bleeding={bossBleeding} interfaceSize={interfaceSize} />
         <KeyDisplay keys={myStats.keys} depth={depth} />
 
         <SideTags>

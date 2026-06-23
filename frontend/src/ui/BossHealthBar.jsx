@@ -15,6 +15,11 @@ const HP_SRC = { x: 0, y: 46, w: 96, h: 9 };
 const SHIELD_SRC = { x: 0, y: 55, w: 96, h: 9 };
 const SKULL_ICON_SRC = { x: 64, y: 0, w: 6, h: 6 };
 
+const SMALL_BAR_SRC = { x: 0, y: 0, w: 64, h: 16 };
+const SMALL_HP_SRC = { x: 71, y: 0, w: 47, h: 4 };
+const SMALL_SHIELD_SRC = { x: 71, y: 5, w: 47, h: 4 };
+const SMALL_LEFT_PANE_W = 16;
+
 const BUFF_SIZE = 7;
 const BUFF_COLS = 18;
 const MAX_BUFFS = 6;
@@ -31,10 +36,11 @@ function bossScale() {
   return Math.min(3, Math.max(2, Math.floor(window.innerWidth / 160)));
 }
 
-export default function BossHealthBar({ boss, bleeding }) {
+export default function BossHealthBar({ boss, bleeding, interfaceSize }) {
   const canvasRef = useRef(null);
   const bossRef = useRef(boss);
   const bleedingRef = useRef(bleeding);
+  const isLargeRef = useRef((interfaceSize || 0) > 0);
   const bossHpRef = useRef(null);
   const buffsSheetRef = useRef(null);
   const spriteRef = useRef(null);
@@ -44,6 +50,7 @@ export default function BossHealthBar({ boss, bleeding }) {
 
   useEffect(() => { bossRef.current = boss; }, [boss]);
   useEffect(() => { bleedingRef.current = bleeding; }, [bleeding]);
+  useEffect(() => { isLargeRef.current = (interfaceSize || 0) > 0; }, [interfaceSize]);
 
   useEffect(() => {
     const loadImg = (src) => new Promise(resolve => {
@@ -92,6 +99,7 @@ export default function BossHealthBar({ boss, bleeding }) {
       const b = bossRef.current;
       const bossHp = bossHpRef.current;
       const isBleeding = bleedingRef.current;
+      const isLarge = isLargeRef.current;
 
       if (!b || !bossHp) { raf = requestAnimationFrame(t => draw(t, now)); return; }
 
@@ -109,35 +117,63 @@ export default function BossHealthBar({ boss, bleeding }) {
       ctx.save();
       ctx.scale(DPR, DPR);
 
+      const barW = isLarge ? BAR_SRC.w : SMALL_BAR_SRC.w;
+      const barH = isLarge ? BAR_SRC.h : SMALL_BAR_SRC.h;
+      const hpFillX = isLarge ? 30 : SMALL_LEFT_PANE_W;
+      const paneSize = isLarge ? 30 : SMALL_LEFT_PANE_W;
+
       ctx.drawImage(bossHp,
-        BAR_SRC.x, BAR_SRC.y, BAR_SRC.w, BAR_SRC.h,
-        0, 0, BAR_SRC.w * s, BAR_SRC.h * s);
+        isLarge ? BAR_SRC.x : SMALL_BAR_SRC.x,
+        isLarge ? BAR_SRC.y : SMALL_BAR_SRC.y,
+        isLarge ? BAR_SRC.w : SMALL_BAR_SRC.w,
+        isLarge ? BAR_SRC.h : SMALL_BAR_SRC.h,
+        0, 0, barW * s, barH * s);
 
       if (drawShieldPct > 0) {
-        ctx.drawImage(bossHp,
-          SHIELD_SRC.x, SHIELD_SRC.y, SHIELD_SRC.w, SHIELD_SRC.h,
-          30 * s, 2 * s, SHIELD_SRC.w * drawShieldPct * s, SHIELD_SRC.h * s);
+        if (isLarge) {
+          ctx.drawImage(bossHp,
+            SHIELD_SRC.x, SHIELD_SRC.y, SHIELD_SRC.w, SHIELD_SRC.h,
+            hpFillX * s, 2 * s, SHIELD_SRC.w * drawShieldPct * s, SHIELD_SRC.h * s);
+        } else {
+          ctx.drawImage(bossHp,
+            SMALL_SHIELD_SRC.x, SMALL_SHIELD_SRC.y, SMALL_SHIELD_SRC.w, SMALL_SHIELD_SRC.h,
+            hpFillX * s, 3 * s, SMALL_SHIELD_SRC.w * drawShieldPct * s, SMALL_SHIELD_SRC.h * s);
+        }
       }
 
       if (healthPct > 0) {
-        ctx.drawImage(bossHp,
-          HP_SRC.x, HP_SRC.y, HP_SRC.w, HP_SRC.h,
-          30 * s, 2 * s, HP_SRC.w * healthPct * s, HP_SRC.h * s);
+        if (isLarge) {
+          ctx.drawImage(bossHp,
+            HP_SRC.x, HP_SRC.y, HP_SRC.w, HP_SRC.h,
+            hpFillX * s, 2 * s, HP_SRC.w * healthPct * s, HP_SRC.h * s);
+        } else {
+          ctx.drawImage(bossHp,
+            SMALL_HP_SRC.x, SMALL_HP_SRC.y, SMALL_HP_SRC.w, SMALL_HP_SRC.h,
+            hpFillX * s, 3 * s, SMALL_HP_SRC.w * healthPct * s, SMALL_HP_SRC.h * s);
+        }
       }
 
-      ctx.font = `${5 * s}px monospace`;
+      if (isLarge) {
+        ctx.font = `${5 * s}px monospace`;
+        ctx.textAlign = 'center';
+      } else {
+        ctx.font = `${2.5 * s}px monospace`;
+        ctx.textAlign = 'left';
+      }
       ctx.textBaseline = 'middle';
-      ctx.textAlign = 'center';
       ctx.globalAlpha = 0.6;
       ctx.fillStyle = '#ffffff';
       const hpText = shieldAmt > 0 ? `${hp}+${shieldAmt}/${maxHp}` : `${hp}/${maxHp}`;
-      ctx.fillText(hpText, (30 + 48) * s, (2 + 4.5) * s);
+      if (isLarge) {
+        ctx.fillText(hpText, (hpFillX + 48) * s, (2 + 4.5) * s);
+      } else {
+        ctx.fillText(hpText, (hpFillX + 1) * s, (3 + 2) * s);
+      }
       ctx.globalAlpha = 1;
 
       const spriteImg = spriteRef.current;
       const sInfo = spriteInfoRef.current;
-      const paneSize = 30 * s;
-      if (spriteImg && sInfo) {
+      if (isLarge && spriteImg && sInfo) {
         const sw = sInfo.fw * s;
         const sh = sInfo.fh * s;
         const sx = (paneSize - sw) / 2;
@@ -153,18 +189,25 @@ export default function BossHealthBar({ boss, bleeding }) {
           ctx.drawImage(spriteImg, 0, 0, sInfo.fw, sInfo.fh, sx, sy, sw, sh);
         }
       } else {
+        const iconW = 6 * s;
+        const iconH = 6 * s;
+        const skullX = (paneSize - 6) / 2 * s;
+        const skullY = (paneSize - 6) / 2 * s;
         ctx.drawImage(bossHp,
           SKULL_ICON_SRC.x, SKULL_ICON_SRC.y, SKULL_ICON_SRC.w, SKULL_ICON_SRC.h,
-          (30 - 6) / 2 * s, (30 - 6) / 2 * s, 6 * s, 6 * s);
+          skullX, skullY, iconW, iconH);
         if (isBleeding) {
-          ctx.fillStyle = 'rgba(204, 0, 0, 0.3)';
-          ctx.fillRect((30 - 6) / 2 * s, (30 - 6) / 2 * s, 6 * s, 6 * s);
+          ctx.save();
+          ctx.globalCompositeOperation = 'source-atop';
+          ctx.fillStyle = `rgba(204, 0, 0, ${isLarge ? 0.3 : 0.6})`;
+          ctx.fillRect(skullX, skullY, iconW, iconH);
+          ctx.restore();
         }
       }
 
       if (isBleeding) {
-        const cx = 15 * s;
-        const cy = 15 * s;
+        const cx = isLarge ? 15 * s : 8 * s;
+        const cy = isLarge ? 15 * s : 8 * s;
         if (Math.random() < 0.3) {
           const ang = Math.random() * Math.PI * 2;
           const spd = 10 + Math.random() * 20;
@@ -201,8 +244,8 @@ export default function BossHealthBar({ boss, bleeding }) {
           const row = Math.floor(idx / BUFF_COLS);
           const bw = BUFF_SIZE * s;
           const bh = BUFF_SIZE * s;
-          const bx = (31 + i * (BUFF_SIZE + 1)) * s;
-          const by = (BAR_SRC.h - 10) * s;
+          const bx = (hpFillX + 1 + i * (BUFF_SIZE + 1)) * s;
+          const by = isLarge ? (BAR_SRC.h - 10) * s : (SMALL_BAR_SRC.h - 8) * s;
           ctx.globalAlpha = 0.85;
           ctx.drawImage(buffsSheet,
             col * BUFF_SIZE, row * BUFF_SIZE, BUFF_SIZE, BUFF_SIZE,
@@ -232,13 +275,17 @@ export default function BossHealthBar({ boss, bleeding }) {
 
   if (!boss) return null;
 
+  const isLarge = (interfaceSize || 0) > 0;
+  const barW = isLarge ? BAR_SRC.w : SMALL_BAR_SRC.w;
+  const barH = isLarge ? BAR_SRC.h : SMALL_BAR_SRC.h;
+
   return (
     <div className="boss-health-bar">
       <canvas
         ref={canvasRef}
-        width={BAR_SRC.w * bossScale() * DPR}
-        height={BAR_SRC.h * bossScale() * DPR}
-        style={{ width: BAR_SRC.w * bossScale(), height: BAR_SRC.h * bossScale() }}
+        width={barW * bossScale() * DPR}
+        height={barH * bossScale() * DPR}
+        style={{ width: barW * bossScale(), height: barH * bossScale() }}
       />
     </div>
   );

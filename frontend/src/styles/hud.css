@@ -33,12 +33,18 @@
 /* Top Left HUD */
 .top-left-hud {
   position: fixed;
-  bottom: 0;
+  top: 0;
   left: 0;
   display: flex;
-  flex-direction: column-reverse;
+  flex-direction: column;
   gap: 4px;
   z-index: 100;
+}
+
+.desktop-mode .top-left-hud {
+  top: auto;
+  bottom: 0;
+  flex-direction: column-reverse;
 }
 
 .status-pane-canvas {
