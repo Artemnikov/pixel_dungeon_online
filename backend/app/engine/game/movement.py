@@ -267,14 +267,22 @@ class MovementCombatMixin:
                     "crit": result.get("crit", False),
                     "grim_proc": result.get("grim_proc", False),
                 }, floor_id=floor_id)
+                # SPD Char.java:509 plays hitSound(Random.Float(0.87f, 1.15f)),
+                # then KindOfWeapon multiplies by hitSoundPitch. Mobs use the
+                # default HIT/HIT_BODY at pitch 1.0 (no mob overrides hitSound).
+                pitch_jitter = random.uniform(0.87, 1.15)
                 if isinstance(entity, Player):
                     weapon = getattr(getattr(entity, "belongings", None), "weapon", None)
                     sound = "HIT_STRONG" if result.get("crit") else "HIT_SLASH"
-                    rate = 1.0
+                    rate = pitch_jitter
                     if weapon and getattr(weapon, "hit_sound", None):
                         sound = weapon.hit_sound
-                        rate = getattr(weapon, "hit_sound_pitch", 1.0)
+                        rate = pitch_jitter * getattr(weapon, "hit_sound_pitch", 1.0)
                     self.add_event("PLAY_SOUND", {"sound": sound, "rate": rate}, floor_id=floor_id, source_player_id=entity.id)
+                else:
+                    # Mob melee: broadcast HIT_BODY from the mob's position so
+                    # every player who can see it hears the hit.
+                    self.add_event("PLAY_SOUND", {"sound": "HIT_BODY", "rate": pitch_jitter, "x": entity.pos.x, "y": entity.pos.y}, floor_id=floor_id)
                 if dmg > 0:
                     self.add_event("DAMAGE", {
                         "target": target_entity.id,
@@ -283,8 +291,11 @@ class MovementCombatMixin:
                     }, floor_id=floor_id)
                     if result.get("grim_proc"):
                         self.add_event("PLAY_SOUND", {"sound": "HIT_STRONG"}, floor_id=floor_id, source_player_id=entity.id)
-                    if isinstance(target_entity, Player):
+                    if isinstance(target_entity, Player) and isinstance(entity, Player):
+                        # Friendly-fire only: mob-on-player hits are already
+                        # covered by the broadcast HIT_BODY above.
                         self.add_event("PLAY_SOUND", {"sound": "HIT_BODY"}, floor_id=floor_id, source_player_id=target_entity.id)
+                    if isinstance(target_entity, Player):
                         if target_entity.hp / target_entity.get_total_max_hp() <= 0.3:
                             self.add_event("PLAY_SOUND", {"sound": "HEALTH_WARN"}, player_id=target_entity.id)
                     if isinstance(target_entity, Goo) and isinstance(entity, Player):

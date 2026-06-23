@@ -39,47 +39,52 @@ class WeaponDef(NamedTuple):
     reach: int = 1
     dr_bonus_base: int = 0
     dr_bonus_per_lvl: int = 0
+    # Sound + pitch mirroring SPD's per-weapon hitSound/hitSoundPitch
+    # (set in each melee weapon class's instance initializer). Defaults match
+    # KindOfWeapon's SPD defaults of HIT / 1.0.
+    hit_sound: str = "HIT_BODY"
+    hit_sound_pitch: float = 1.0
 
 
 WEAPON_DEFS: Dict[str, WeaponDef] = {
     # Tier 1 (str_req=10)
-    "Gloves": WeaponDef(tier=1, str_req=10, max0=5, max_per_lvl=1, dly_factor=0.5),
-    "Rapier": WeaponDef(tier=1, str_req=10, max0=8, max_per_lvl=2, dr_bonus_base=1),
-    "Cudgel": WeaponDef(tier=1, str_req=10, max0=8, max_per_lvl=2, acc_factor=1.40),
+    "Gloves": WeaponDef(tier=1, str_req=10, max0=5, max_per_lvl=1, dly_factor=0.5, hit_sound_pitch=1.3),
+    "Rapier": WeaponDef(tier=1, str_req=10, max0=8, max_per_lvl=2, dr_bonus_base=1, hit_sound="HIT_SLASH", hit_sound_pitch=1.3),
+    "Cudgel": WeaponDef(tier=1, str_req=10, max0=8, max_per_lvl=2, acc_factor=1.40, hit_sound="HIT_CRUSH", hit_sound_pitch=1.2),
 
     # Tier 2 (str_req=12)
-    "Shortsword": WeaponDef(tier=2, str_req=12, max0=12, max_per_lvl=3),
-    "Hand Axe": WeaponDef(tier=2, str_req=12, max0=12, max_per_lvl=3, acc_factor=1.32),
-    "Spear": WeaponDef(tier=2, str_req=12, max0=20, max_per_lvl=4, dly_factor=1.5, reach=2),
-    "Quarterstaff": WeaponDef(tier=2, str_req=12, max0=12, max_per_lvl=3, dr_bonus_base=2),
-    "Dirk": WeaponDef(tier=2, str_req=12, max0=12, max_per_lvl=3),
-    "Sickle": WeaponDef(tier=2, str_req=12, max0=20, max_per_lvl=3, acc_factor=0.68),
+    "Shortsword": WeaponDef(tier=2, str_req=12, max0=12, max_per_lvl=3, hit_sound="HIT_SLASH", hit_sound_pitch=1.1),
+    "Hand Axe": WeaponDef(tier=2, str_req=12, max0=12, max_per_lvl=3, acc_factor=1.32, hit_sound="HIT_SLASH"),
+    "Spear": WeaponDef(tier=2, str_req=12, max0=20, max_per_lvl=4, dly_factor=1.5, reach=2, hit_sound="HIT_STAB", hit_sound_pitch=0.9),
+    "Quarterstaff": WeaponDef(tier=2, str_req=12, max0=12, max_per_lvl=3, dr_bonus_base=2, hit_sound="HIT_CRUSH"),
+    "Dirk": WeaponDef(tier=2, str_req=12, max0=12, max_per_lvl=3, hit_sound="HIT_STAB"),
+    "Sickle": WeaponDef(tier=2, str_req=12, max0=20, max_per_lvl=3, acc_factor=0.68, hit_sound="HIT_SLASH"),
 
     # Tier 3 (str_req=14)
-    "Sword": WeaponDef(tier=3, str_req=14, max0=16, max_per_lvl=4),
-    "Mace": WeaponDef(tier=3, str_req=14, max0=16, max_per_lvl=4, acc_factor=1.28),
-    "Scimitar": WeaponDef(tier=3, str_req=14, max0=16, max_per_lvl=4, dly_factor=0.8),
+    "Sword": WeaponDef(tier=3, str_req=14, max0=16, max_per_lvl=4, hit_sound="HIT_SLASH"),
+    "Mace": WeaponDef(tier=3, str_req=14, max0=16, max_per_lvl=4, acc_factor=1.28, hit_sound="HIT_CRUSH"),
+    "Scimitar": WeaponDef(tier=3, str_req=14, max0=16, max_per_lvl=4, dly_factor=0.8, hit_sound="HIT_SLASH", hit_sound_pitch=1.2),
     "Round Shield": WeaponDef(tier=3, str_req=14, max0=12, max_per_lvl=2, dr_bonus_base=4, dr_bonus_per_lvl=1),
-    "Sai": WeaponDef(tier=3, str_req=14, max0=10, max_per_lvl=2, dly_factor=0.5),
-    "Whip": WeaponDef(tier=3, str_req=14, max0=15, max_per_lvl=3, reach=3),
+    "Sai": WeaponDef(tier=3, str_req=14, max0=10, max_per_lvl=2, dly_factor=0.5, hit_sound="HIT_STAB", hit_sound_pitch=1.3),
+    "Whip": WeaponDef(tier=3, str_req=14, max0=15, max_per_lvl=3, reach=3, hit_sound_pitch=1.1),
 
     # Tier 4 (str_req=16)
-    "Longsword": WeaponDef(tier=4, str_req=16, max0=20, max_per_lvl=5),
-    "Battle Axe": WeaponDef(tier=4, str_req=16, max0=20, max_per_lvl=5, acc_factor=1.24),
-    "Flail": WeaponDef(tier=4, str_req=16, max0=35, max_per_lvl=8, acc_factor=0.8),
-    "Runic Blade": WeaponDef(tier=4, str_req=16, max0=20, max_per_lvl=6),
-    "Assassin's Blade": WeaponDef(tier=4, str_req=16, max0=20, max_per_lvl=5),
+    "Longsword": WeaponDef(tier=4, str_req=16, max0=20, max_per_lvl=5, hit_sound="HIT_SLASH"),
+    "Battle Axe": WeaponDef(tier=4, str_req=16, max0=20, max_per_lvl=5, acc_factor=1.24, hit_sound="HIT_SLASH", hit_sound_pitch=0.9),
+    "Flail": WeaponDef(tier=4, str_req=16, max0=35, max_per_lvl=8, acc_factor=0.8, hit_sound="HIT_CRUSH", hit_sound_pitch=0.8),
+    "Runic Blade": WeaponDef(tier=4, str_req=16, max0=20, max_per_lvl=6, hit_sound="HIT_SLASH"),
+    "Assassin's Blade": WeaponDef(tier=4, str_req=16, max0=20, max_per_lvl=5, hit_sound="HIT_STAB", hit_sound_pitch=0.9),
     "Crossbow": WeaponDef(tier=4, str_req=16, max0=20, max_per_lvl=4),
-    "Katana": WeaponDef(tier=4, str_req=16, max0=20, max_per_lvl=5, dr_bonus_base=3),
+    "Katana": WeaponDef(tier=4, str_req=16, max0=20, max_per_lvl=5, dr_bonus_base=3, hit_sound="HIT_SLASH", hit_sound_pitch=1.1),
 
     # Tier 5 (str_req=18 except Greataxe=20)
-    "Greatsword": WeaponDef(tier=5, str_req=18, max0=24, max_per_lvl=6),
-    "War Hammer": WeaponDef(tier=5, str_req=18, max0=24, max_per_lvl=6, acc_factor=1.20),
-    "Glaive": WeaponDef(tier=5, str_req=18, max0=40, max_per_lvl=8, dly_factor=1.5, reach=2),
-    "Greataxe": WeaponDef(tier=5, str_req=20, max0=45, max_per_lvl=6),
+    "Greatsword": WeaponDef(tier=5, str_req=18, max0=24, max_per_lvl=6, hit_sound="HIT_SLASH"),
+    "War Hammer": WeaponDef(tier=5, str_req=18, max0=24, max_per_lvl=6, acc_factor=1.20, hit_sound="HIT_CRUSH"),
+    "Glaive": WeaponDef(tier=5, str_req=18, max0=40, max_per_lvl=8, dly_factor=1.5, reach=2, hit_sound="HIT_SLASH", hit_sound_pitch=0.8),
+    "Greataxe": WeaponDef(tier=5, str_req=20, max0=45, max_per_lvl=6, hit_sound="HIT_SLASH"),
     "Greatshield": WeaponDef(tier=5, str_req=18, max0=18, max_per_lvl=3, dr_bonus_base=6, dr_bonus_per_lvl=2),
-    "Gauntlet": WeaponDef(tier=5, str_req=18, max0=15, max_per_lvl=3, dly_factor=0.5),
-    "War Scythe": WeaponDef(tier=5, str_req=18, max0=40, max_per_lvl=6, acc_factor=0.8),
+    "Gauntlet": WeaponDef(tier=5, str_req=18, max0=15, max_per_lvl=3, dly_factor=0.5, hit_sound="HIT_CRUSH", hit_sound_pitch=1.2),
+    "War Scythe": WeaponDef(tier=5, str_req=18, max0=40, max_per_lvl=6, acc_factor=0.8, hit_sound="HIT_SLASH", hit_sound_pitch=0.9),
 }
 
 

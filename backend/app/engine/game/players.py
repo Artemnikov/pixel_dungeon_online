@@ -49,6 +49,7 @@ from app.engine.entities.base import (
     Waterskin,
     Weapon,
     WornShortsword,
+    make_named_melee_weapon,
 )
 from app.engine.entities.buffs import add_buff
 from app.engine.entities.item_catalog import make_catalog_item
@@ -138,9 +139,10 @@ class PlayersMixin:
             belongings.backpack.collect(knives)
 
         elif class_type == CharacterClass.HUNTRESS:
-            belongings.weapon = Dagger(
-                id=str(uuid.uuid4()),
-            )
+            # SPD HeroClass.initHuntress(): Gloves (display "studded gloves")
+            # + Spirit Bow (quickslot). No armor in SPD, but the remake gives
+            # Cloth Armor for parity with other starting kits.
+            belongings.weapon = make_named_melee_weapon("Gloves", id=str(uuid.uuid4()))
             belongings.armor = Armor(
                 id=str(uuid.uuid4()),
                 name="Cloth Armor",

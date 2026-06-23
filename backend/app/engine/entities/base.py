@@ -443,6 +443,10 @@ class KindOfWeapon(EquipableItem):
     # Flat DR bonus while wielded: dr_bonus_base + dr_bonus_per_lvl * level
     dr_bonus_base: int = 0
     dr_bonus_per_lvl: int = 0
+    # Sound + pitch played on a successful melee hit (mirrors SPD's
+    # KindOfWeapon.hitSound / hitSoundPitch). Defaults match SPD's HIT / 1.0.
+    hit_sound: str = "HIT_BODY"
+    hit_sound_pitch: float = 1.0
 
     def buffed_lvl(self) -> int:
         # SPD's weapon.buffedLvl(): proc formulas never see a negative
@@ -495,6 +499,8 @@ class Dagger(MeleeWeapon):
     attack_cooldown: float = 0.84
     strength_requirement: int = 9
     surprise_damage_floor: float = 0.75
+    hit_sound: str = "HIT_STAB"
+    hit_sound_pitch: float = 1.1
     DESC: ClassVar[str] = "A quick dagger. Surprise attacks deal more consistent damage."
 
     def dmg_max(self, lvl: int = 0) -> int:
@@ -506,6 +512,8 @@ class WornShortsword(MeleeWeapon):
     name: str = "Worn Shortsword"
     attack_cooldown: float = 1.2
     strength_requirement: int = 10
+    hit_sound: str = "HIT_SLASH"
+    hit_sound_pitch: float = 1.1
     DESC: ClassVar[str] = "A basic shortsword, somewhat the worse for wear. All warriors start with one."
 
 
@@ -522,6 +530,7 @@ def make_named_melee_weapon(name: str, level: int = 0, **kwargs) -> MeleeWeapon:
         strength_requirement=defn.str_req, attack_cooldown=defn.dly_factor,
         range=defn.reach, acc_factor=defn.acc_factor,
         dr_bonus_base=defn.dr_bonus_base, dr_bonus_per_lvl=defn.dr_bonus_per_lvl,
+        hit_sound=defn.hit_sound, hit_sound_pitch=defn.hit_sound_pitch,
         **kwargs,
     )
 
