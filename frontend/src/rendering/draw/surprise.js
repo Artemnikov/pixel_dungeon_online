@@ -33,7 +33,7 @@ export function advanceAndDrawSurprises(ctx, { surpriseRef }) {
   const entries = surpriseRef.current;
   for (let i = entries.length - 1; i >= 0; i--) {
     const e = entries[i];
-    const elapsed = now - e.startTime;
+    const elapsed = performance.now() - e.startTime;
 
     if (elapsed > LIFESPAN) {
       entries.splice(i, 1);
