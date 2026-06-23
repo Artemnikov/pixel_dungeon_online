@@ -1,18 +1,47 @@
+import { useState } from 'react';
 import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import AudioManager from '../audio/AudioManager';
 import ItemIcon from './ItemIcon';
+import WndTradeItem from './WndTradeItem';
 import { entityDisplayName } from './useEntityName';
 
 export default function WndShop({ npcId, stock, gold, backpackItems, onBuy, onSell, onClose }) {
   const { t } = useTranslation();
+  const [sellTarget, setSellTarget] = useState(null);
+  const [buyTarget, setBuyTarget] = useState(null);
   useEffect(() => {
+    if (sellTarget || buyTarget) return;
     const onKey = (e) => { if (e.key === 'Escape') onClose(); };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [onClose]);
+  }, [onClose, sellTarget, buyTarget]);
 
   const sellable = (backpackItems || []).filter(i => (i.value || 0) > 0 && i.kind !== 'gold');
+
+  if (sellTarget) {
+    return (
+      <WndTradeItem
+        item={sellTarget}
+        mode="sell"
+        price={sellTarget.value || 0}
+        onConfirm={() => { onSell(sellTarget.id); setSellTarget(null); }}
+        onCancel={() => setSellTarget(null)}
+      />
+    );
+  }
+
+  if (buyTarget) {
+    return (
+      <WndTradeItem
+        item={buyTarget}
+        mode="buy"
+        price={buyTarget.value || 0}
+        onConfirm={() => { onBuy(npcId, buyTarget.id); setBuyTarget(null); }}
+        onCancel={() => setBuyTarget(null)}
+      />
+    );
+  }
 
   return (
     <div className="wnd-overlay wnd-shop-overlay" onClick={onClose}>
@@ -38,7 +67,7 @@ export default function WndShop({ npcId, stock, gold, backpackItems, onBuy, onSe
                   key={item.id}
                   className="wnd-shop-row"
                   disabled={(gold ?? 0) < (item.value || 0)}
-                  onClick={() => { AudioManager.play('CLICK'); onBuy(npcId, item.id); }}
+                  onClick={() => { AudioManager.play('CLICK'); setBuyTarget(item); }}
                 >
                   <ItemIcon item={item} size={28} />
                   <span className="wnd-shop-name">{entityDisplayName(item, t)}</span>
@@ -55,7 +84,7 @@ export default function WndShop({ npcId, stock, gold, backpackItems, onBuy, onSe
                 <button
                   key={item.id}
                   className="wnd-shop-row"
-                  onClick={() => { AudioManager.play('CLICK'); onSell(item.id); }}
+                  onClick={() => { AudioManager.play('CLICK'); setSellTarget(item); }}
                 >
                   <ItemIcon item={item} size={28} />
                   <span className="wnd-shop-name">{entityDisplayName(item, t)}</span>

@@ -11,8 +11,6 @@ import warriorSheet from '../assets/pixel-dungeon/sprites/warrior.png';
 import mageSheet from '../assets/pixel-dungeon/sprites/mage.png';
 import rogueSheet from '../assets/pixel-dungeon/sprites/rogue.png';
 import huntressSheet from '../assets/pixel-dungeon/sprites/huntress.png';
-
-const SCALE = 3;
 const PANE_W = 160;
 const PANE_H = 39;
 
@@ -29,6 +27,7 @@ const FRAME_H = 15;
 
 const BUFF_SIZE = 7;
 const BUFF_COLS = 18;
+const MAX_BUFFS = 14; // matches SPD's BuffIndicator.maxBuffs default
 
 const FLASH_RATE = Math.PI * 1.5;
 const WARNING_COLORS = ['#660000', '#cc0000', '#660000'];
@@ -53,7 +52,8 @@ function lerpColor(t, colors) {
   return `rgb(${r},${g},${bl})`;
 }
 
-export default function StatusPane({ myStats, depth, exitPos, isAdmin, onSearch, hasTalentPoints, onOpenTalents, onTeleport, isBusy }) {
+export default function StatusPane({ myStats, depth, exitPos, isAdmin, onSearch, hasTalentPoints, onOpenTalents, onTeleport, isBusy, onBuffClick, interfaceSize }) {
+  const SCALE = interfaceSize > 0 ? 3 : 2;
   const { t } = useTranslation();
   const [showFloorPicker, setShowFloorPicker] = useState(false);
   const canvasRef = useRef(null);
@@ -122,8 +122,10 @@ export default function StatusPane({ myStats, depth, exitPos, isAdmin, onSearch,
         const hp = Math.max(0, Math.ceil(s.hp ?? 0));
         const shield = Math.max(0, Math.floor(s.shield ?? 0));
         const maxHp = Math.max(1, s.maxHp ?? 1);
-        const hpPct = Math.min(1, hp / maxHp);
-        const shieldPct = Math.min(1, (hp + shield) / maxHp);
+        const rawHpPct = Math.min(1, hp / maxHp);
+        const rawShieldPct = Math.min(1, (hp + shield) / maxHp);
+        const hpPct = rawHpPct;
+        const drawShieldPct = rawShieldPct;
         const exp = s.exp ?? 0;
         const maxExp = Math.max(1, s.maxExp ?? 10);
         const expPct = Math.min(1, exp / maxExp);
@@ -156,12 +158,12 @@ export default function StatusPane({ myStats, depth, exitPos, isAdmin, onSearch,
 
         const statusImg = imgs.status;
         if (statusImg?.complete && statusImg?.naturalWidth > 0) {
-          ctx.drawImage(statusImg,
-            0, BG_Y, BG_FIXED_W, PANE_H,
-            0, 0, BG_FIXED_W * SCALE, PANE_H * SCALE);
-          ctx.drawImage(statusImg,
-            BG_FIXED_W, BG_Y, BG_STRETCH_W, PANE_H,
-            BG_FIXED_W * SCALE, 0, (PANE_W - BG_FIXED_W) * SCALE, PANE_H * SCALE);
+          const leftW = BG_FIXED_W * SCALE;
+          const rightW = 4 * SCALE;
+          const stretchW = (PANE_W - BG_FIXED_W - 4) * SCALE;
+          ctx.drawImage(statusImg, 0, BG_Y, BG_FIXED_W, PANE_H, 0, 0, leftW, PANE_H * SCALE);
+          ctx.drawImage(statusImg, 33, BG_Y, 4, PANE_H, leftW, 0, stretchW, PANE_H * SCALE);
+          ctx.drawImage(statusImg, 37, BG_Y, 4, PANE_H, leftW + stretchW, 0, rightW, PANE_H * SCALE);
         }
 
         ctx.fillStyle = '#161616';
@@ -178,7 +180,7 @@ export default function StatusPane({ myStats, depth, exitPos, isAdmin, onSearch,
             ac.fillStyle = 'rgba(0,0,0,0.5)';
             ac.fillRect(0, 0, FRAME_W, FRAME_H);
             ac.globalCompositeOperation = 'source-over';
-          } else if (hpPct < 0.334) {
+          } else if (rawHpPct < 0.334) {
             warningRef.current = (warningRef.current + dt * 5 * (0.4 - hpPct)) % 1;
             ac.globalCompositeOperation = 'source-atop';
             ac.fillStyle = lerpColor(warningRef.current, WARNING_COLORS);
@@ -256,7 +258,7 @@ export default function StatusPane({ myStats, depth, exitPos, isAdmin, onSearch,
 
         const buffsSheet = imgs.buffs;
         if (buffsSheet?.complete && buffsSheet?.naturalWidth > 0) {
-          effects.forEach((eff, i) => {
+          effects.slice(0, MAX_BUFFS).forEach((eff, i) => {
             const idx = eff.icon ?? 0;
             const col = idx % BUFF_COLS;
             const row = Math.floor(idx / BUFF_COLS);
@@ -283,10 +285,10 @@ export default function StatusPane({ myStats, depth, exitPos, isAdmin, onSearch,
         }
 
         if (statusImg?.complete && statusImg?.naturalWidth > 0) {
-          if (shieldPct > 0) {
+          if (drawShieldPct > 0) {
             ctx.drawImage(statusImg,
               HP_SHIELD.x, HP_SHIELD.y, HP_SHIELD.w, HP_SHIELD.h,
-              30 * SCALE, 19 * SCALE, HP_SHIELD.w * shieldPct * SCALE, HP_SHIELD.h * SCALE);
+              30 * SCALE, 19 * SCALE, HP_SHIELD.w * drawShieldPct * SCALE, HP_SHIELD.h * SCALE);
           }
           if (hpPct > 0) {
             ctx.drawImage(statusImg,
@@ -332,7 +334,7 @@ export default function StatusPane({ myStats, depth, exitPos, isAdmin, onSearch,
           ctx.globalAlpha = 1;
         }
         ctx.restore();
-      } catch (err) {
+      } catch {
         ctx?.restore();
       }
       raf = requestAnimationFrame(draw);
@@ -340,7 +342,7 @@ export default function StatusPane({ myStats, depth, exitPos, isAdmin, onSearch,
 
     raf = requestAnimationFrame(draw);
     return () => cancelAnimationFrame(raf);
-  }, [t]);
+  }, [t, isBusy, SCALE]);
 
   const floorNumbers = [];
   for (let i = 1; i <= 26; i++) floorNumbers.push(i);
@@ -398,6 +400,20 @@ export default function StatusPane({ myStats, depth, exitPos, isAdmin, onSearch,
           if (x >= ax && x < ax + aw && y >= ay && y < ay + ah) {
             AudioManager.play('CLICK');
             onOpenTalents?.();
+            return;
+          }
+          // Buff icon hit test — icons are at y=0, x = (31 + i*(BUFF_SIZE+1))*SCALE
+          const effects = statsRef.current?.effects || [];
+          for (let i = 0; i < Math.min(effects.length, MAX_BUFFS); i++) {
+            const bx = (31 + i * (BUFF_SIZE + 1)) * SCALE;
+            const by = 0;
+            const bw = BUFF_SIZE * SCALE;
+            const bh = BUFF_SIZE * SCALE;
+            if (x >= bx && x < bx + bw && y >= by && y < by + bh) {
+              AudioManager.play('CLICK');
+              onBuffClick?.(effects[i]);
+              return;
+            }
           }
         }}
       />

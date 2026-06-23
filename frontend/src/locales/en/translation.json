@@ -100,11 +100,35 @@
     "maxed": "MAXED",
     "locked": "Locked",
     "close": "Close",
+    "cancel": "Cancel",
     "quickslot": "Quickslot",
     "quickUse": "Quick-use",
+    "clearQuickslot": "Clear slot",
     "chooseItem": "Choose an item",
     "chooseWandToImbue": "Choose a wand to imbue",
-    "assignQuickslot": "Assign Quickslot"
+    "assignQuickslot": "Assign Quickslot",
+    "examineTitle": "Examine",
+    "attackStat": "Attack",
+    "defenseStat": "Defense",
+    "damageStat": "Damage",
+    "drStat": "Armor",
+    "expStat": "EXP",
+    "hpStat": "HP",
+    "strengthReq": "Requires {{str}} strength",
+    "wandCharges": "Charges: {{charges}}/{{max}}",
+    "artifactCharge": "Charge: {{charge}}/{{cap}}",
+    "cursed": "Cursed",
+    "cursedUnknown": "Unknown curse",
+    "tier": "Tier {{tier}}",
+    "charges": "Charges",
+    "level": "Level {{level}}",
+    "buffs": "Buffs",
+    "inventory": "Inventory",
+    "stats": "Stats",
+    "talents": "Talents",
+    "badges": "Badges",
+    "belongings": "Belongings",
+    "heroInfo": "Hero Info"
   },
   "game": {
     "menu": "Menu",
@@ -133,6 +157,56 @@
     "newsEmptyTitle": "No news right now.",
     "newsEmptySub": "Check back later for updates and announcements."
   },
+  "score": {
+    "title": "Score Breakdown",
+    "total": "Total Score",
+    "winMultiplier": "Win Multiplier",
+    "challengeMultiplier": "Challenge Multiplier",
+    "progress": {
+      "title": "Progression",
+      "desc": "Based on maximum depth and hero level."
+    },
+    "treasure": {
+      "title": "Treasure",
+      "desc": "Based on gold collected and held item value."
+    },
+    "explore": {
+      "title": "Exploration",
+      "desc": "Based on floors explored. Reduced by missing items or hidden doors."
+    },
+    "bosses": {
+      "title": "Bosses",
+      "desc": "Based on bosses defeated. Reduced by standing in avoidable attacks."
+    },
+    "quests": {
+      "title": "Quests",
+      "desc": "Based on quests completed."
+    }
+  },
+  "journal": {
+    "title": "Journal",
+    "guide": "Guide",
+    "catalog": "Catalog",
+    "story": "Story",
+    "guideText": "The dungeon is divided into 5 regions, each with a boss. Defeat bosses to progress deeper. Find the Amulet of Yendor on floor 26 and return to the surface to win.",
+    "catalogEmpty": "Item catalog tracking is not yet available in the online version.",
+    "sewers": "Sewers",
+    "prison": "Prison",
+    "caves": "Caves",
+    "city": "Dwarven City",
+    "halls": "Demon Halls",
+    "sewersStory": "The sewers beneath the city are infested with rats, gnolls, and slimes. Goo, a conglomerate of vile substances, guards the way down.",
+    "prisonStory": "The abandoned prison is home to skeletons, thieves, and guards. Tengu, the enigmatic assassin, awaits in the depths.",
+    "cavesStory": "The caves are filled with bats, gnoll brutes, and shamans. DM-300, an ancient dwarven defense machine, guards the passage.",
+    "cityStory": "The dwarven city is ruled by the undead King of Dwarves. Monks, golems, and warlocks patrol the halls.",
+    "hallsStory": "The demon halls are the domain of Yog-Dzewa. Evil Eyes, scorpios, and ripper demons stalk the darkness."
+  },
+  "challenges": {
+    "title": "Challenges",
+    "intro": "Challenges make the game harder. They are set at character selection and cannot be changed mid-run.",
+    "stronger_bosses": "Badder bosses",
+    "stronger_bosses_desc": "Bosses are much tougher with this challenge!\n\n_Goo:_ +20% health, heals faster in water, pumps up in 1 turn\n_Tengu:_ +25% health, deadlier traps, more frequent abilities\n_DM-300:_ +33% health, 3 pylons, stronger abilities\n_Dwarf King:_ +50% health, stronger minions\n_Yog-Dzewa:_ Two fists at once, +60% laser damage"
+  },
   "action": {
     "equip": "Equip",
     "unequip": "Unequip",
@@ -149,6 +223,8 @@
     "ghostGear": "Equipment",
     "summon": "Summon",
     "direct": "Direct",
+    "wear": "Choose",
+    "alchemize": "Alchemize",
     "quickslot": "Quickslot"
   },
   "slot": {
@@ -164,17 +240,69 @@
     "wall": "Wall",
     "floor": "Floor",
     "openDoor": "Open door",
-    "stairsUp": "Stairs up",
-    "stairsDown": "Stairs down",
+    "closedDoor": "Closed door",
+    "stairsUp": "Depth entrance",
+    "stairsDown": "Depth exit",
     "woodenFloor": "Wooden floor",
     "water": "Water",
     "cobbledFloor": "Cobbled floor",
     "grass": "Grass",
     "lockedDoor": "Locked door",
+    "lockedExit": "Locked depth exit",
+    "unlockedExit": "Unlocked depth exit",
     "highGrass": "High grass",
-    "furrowedGrass": "Furrowed grass",
+    "furrowedGrass": "Furrowed vegetation",
+    "embers": "Embers",
+    "barricade": "Barricade",
+    "statue": "Statue",
+    "inactiveTrap": "Triggered trap",
+    "bookshelf": "Bookshelf",
+    "alchemy": "Alchemy pot",
+    "well": "Well",
+    "emptyWell": "Empty well",
+    "pedestal": "Pedestal",
+    "crystalDoor": "Crystal door",
     "darkness": "Darkness",
-    "item": "Item"
+    "item": "Item",
+    "desc": {
+      "chasm": "You can't see the bottom.",
+      "water": "In case of burning step into the water to extinguish the fire.",
+      "stairsUp": "Stairs lead up to the upper depth.",
+      "stairsDown": "Stairs lead down to the lower depth.",
+      "lockedDoor": "This door is locked, you need a matching key to unlock it.",
+      "lockedExit": "Heavy bars block the stairs leading down.",
+      "highGrass": "Dense vegetation blocks the view.",
+      "embers": "Embers cover the floor.",
+      "barricade": "The wooden barricade is firmly set but has dried over the years. Might it burn?",
+      "inactiveTrap": "The trap has been triggered before and it's not dangerous anymore.",
+      "statue": "Someone wanted to adorn this place, but failed, obviously.",
+      "alchemy": "This pot is filled with magical water. Items can be mixed into the pot to create something new!",
+      "emptyWell": "The well has run dry.",
+      "crystalDoor": "This locked door is made of magical crystal. You can see through, but you'll need a crystal key to open it."
+    }
+  },
+  "trap": {
+    "worn_dart": "Worn dart trap",
+    "tengu_dart": "Dart trap",
+    "burning_trap": "Burning trap",
+    "blazing_trap": "Blazing trap",
+    "inactive": "This trap is inactive and no longer dangerous.",
+    "desc": {
+      "worn_dart": "A small dart launcher. The mechanism looks worn, but it can still fire a dart at anything that steps on it.",
+      "tengu_dart": "A concealed dart trap. Tengu has rigged this part of the floor with poisoned darts.",
+      "burning_trap": "A trap that ignites a burst of flame when triggered.",
+      "blazing_trap": "A trap that unleashes a roaring blaze when triggered."
+    }
+  },
+  "buff": {
+    "desc": {
+      "regen": "A magical remedy is causing wounds to close and flesh to knit. Every turn health will steadily regenerate until the healing effect expires.",
+      "aqua_rejuv": "A murky elixir that heals you whenever you stand in water.",
+      "berserk": "You are fueled by rage. Berserk grants greatly increased damage and shielding, but it fades quickly.",
+      "endure": "You are bracing for impact. Endure reduces incoming damage and banks the absorbed damage for your next strike.",
+      "fury": "You are angry, enemies won't like you when you're angry. A great rage burns within you, increasing the damage you deal with physical attacks by 50%.",
+      "locked_floor": "The floor is sealed by dark magic. You cannot regenerate health while the seal is active. Damage the boss to weaken the seal."
+    }
   },
   "entity": {
     "you": "You",
@@ -369,7 +497,50 @@
     "shopkeeper": "Shopkeeper",
     "imp": "Imp",
     "mirror_image": "Mirror Image",
-    "ghost_hero": "Ghost Hero"
+    "ghost_hero": "Ghost Hero",
+    "desc": {
+      "rat": "Marsupial rats are aggressive but rather weak denizens of the sewers. They have a nasty bite, but are only life threatening in large numbers.",
+      "snake": "These oversized serpents are capable of quickly slithering around blows, making them quite hard to hit. Magical attacks or surprise attacks are capable of catching them off-guard however.",
+      "gnoll": "Gnolls are hyena-like humanoids. They dwell in sewers and dungeons, venturing up to raid the surface from time to time. Gnoll scouts are regular members of their pack, they are not as strong as brutes and not as intelligent as shamans.",
+      "swarm": "The deadly swarm of flies buzzes angrily. Every non-magical attack will split it into two smaller but equally dangerous swarms.",
+      "crab": "These huge crabs are at the top of the food chain in the sewers. They are extremely fast and their thick carapace can withstand heavy blows.",
+      "slime": "Slimes are strange, slightly magical creatures with a rubbery outer body and a liquid core. The city sewers provide them with an ample supply of water and nutrients.",
+      "albino_rat": "This is a rare breed of marsupial rat, with pure white fur and jagged teeth.",
+      "gnoll_exile": "This grey-furred gnoll has a large mark on its shoulder, denoting it as an exile. Gnolls are usually exiled from their society for ignoring orders or breaking laws.",
+      "hermit_crab": "For one reason or another, this sewer crab has decided to wear the broken upper part of a barrel on its head! The extra weight has slown it down to regular speed, but has also granted it considerably more defence.",
+      "caustic_slime": "This slime seems to have been tainted by the dark magic emanating from below. It has lost its usual green color, and drips with caustic ooze.",
+      "goo": "Little is known about The Goo. It's quite possible that it is not even a creature, but rather a conglomerate of vile substances from the sewers that somehow gained basic intelligence.",
+      "tengu": "A famous and enigmatic assassin, named for the mask grafted to his face. He will try to use traps, deceptive magic, and precise attacks to eliminate the only thing stopping his escape: you.",
+      "skeleton": "Skeletons are composed of the bones of unlucky adventurers and inhabitants of the prison, animated by emanations of evil magic from the depths below.",
+      "thief": "Though these inmates roam free of their cells, this place is still their prison. Over time, this place has taken their minds as well as their freedom.",
+      "guard": "Once keepers of the prison, these guards have long since become no different than the inmates. They carry chains around their hip, possibly used to pull in enemies to close range.",
+      "necromancer": "These apprentice dark mages have flocked to the prison, as it is the perfect place to practise their evil craft. Killing the necromancer will also kill the skeleton it summons.",
+      "bat": "These brisk and tenacious inhabitants of the caves are much more dangerous than they seem. They replenish their health with each successful attack.",
+      "brute": "Brutes are the largest, strongest, and toughest of all gnolls. When mortally wounded, they go berserk, gaining temporary shielding and a large boost to damage.",
+      "armored_brute": "The most senior gnoll brutes often wear powerful armor to show their status. The armor makes these brutes much more resilient to physical damage.",
+      "shaman": "Gnoll shamans are intelligent gnolls who use battle spells to compensate for their lack of might.",
+      "spinner": "These greenish furry cave spiders try to avoid direct combat. Instead they prefer to wait in the distance while their victim struggles in their excreted cobweb.",
+      "ghoul": "As dwarven society slowly began to collapse, those who were weak or who resisted were bent to the king's will. When a ghoul is defeated, it will rise again after a few turns as long as another ghoul is nearby.",
+      "warlock": "These warlocks possess powerful disruptive magic, and are able to temporarily hinder the upgrade magic applied to your equipment.",
+      "monk": "These monks are fanatics who have devoted themselves to protecting their king through physical might. When focused, monks will parry the next physical attack used against them.",
+      "senior": "This monk has mastered the art of hand-to-hand combat, and is able to gain focus while moving much more quickly than regular monks.",
+      "golem": "Golems are an attempt to correct the previous flaws in dwarven machinery via the dwarves newfound use of magic. They can teleport between rooms.",
+      "succubus": "Succubi are shapeshifting demons that manipulate the minds of their prey. They may temporarily charm their enemy when they attack.",
+      "eye": "Evil Eyes are floating balls of pent up demonic energy. After building energy for a short time an Evil Eye will unleash a devastating beam called the deathgaze.",
+      "scorpio": "These huge arachnid-like demonic creatures avoid close combat, preferring to fire crippling serrated spikes from long distances.",
+      "acidic_scorpio": "These huge arachnid-like demonic creatures avoid close combat, preferring to fire crippling serrated spikes from long distances. This one appears to be dripping with corrosive ooze.",
+      "ripper_demon": "These horrific creatures are the result of the many dwarven corpses in this region being put to use by demonic forces. They are capable of leaping great distances to quickly reach targets.",
+      "bandit": "An elite thief, distinguished by their more opulent purple robe. In addition to stealing from you, crazed bandits will briefly blind, cripple, and poison you!",
+      "wraith": "A wraith is a vengeful spirit of a sinner, whose grave or tomb was disturbed. Being an ethereal entity, it is very hard to hit with a regular weapon.",
+      "piranha": "These carnivorous fish are bred specifically to protect flooded areas. Their bite is deadly, so it's best to avoid confronting them directly.",
+      "phantom_piranha": "Phantom piranhas are a rare breed of piranha with magical abilities and eerie translucent bodies. They are capable of teleporting as they are being attacked.",
+      "mimic": "Mimics are magical creatures which can take any shape they wish. In dungeons they almost always choose a shape of a treasure chest, in order to lure in unsuspecting adventurers.",
+      "golden_mimic": "Golden mimics are tougher mimics which try to attract the strongest adventurers. They have better loot, but are also much stronger than regular mimics.",
+      "ebony_mimic": "Ebony mimics are stealthy mimics with the ability to make themselves almost invisible. Their surprise bite is devastating.",
+      "statue": "You would think that it's just another one of this dungeon's inanimate statues, but its red glowing eyes give it away.",
+      "armored_statue": "It seems to be in great condition because of the armor it's wearing, it might be very hard to kill.",
+      "bee": "Despite their small size, golden bees tend to protect their home fiercely. This one is very mad, better keep your distance."
+    }
   },
   "talent": {
     "title": "Talents",
@@ -604,7 +775,9 @@
     "buy": "Buy",
     "sell": "Sell",
     "nothingForSale": "Nothing for sale",
-    "nothingToSell": "Nothing to sell"
+    "nothingToSell": "Nothing to sell",
+    "sellConfirm": "Sell for {{price}} gold",
+    "buyConfirm": "Buy for {{price}} gold"
   },
   "imp": {
     "title": "Imp",

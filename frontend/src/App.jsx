@@ -7,7 +7,7 @@ import MainMenu from './menu/MainMenu';
 import cursorMouseUrl from './assets/cursors/cursor_mouse.png';
 import cursorControllerUrl from './assets/cursors/cursor_controller.png';
 
-import { TILE_SIZE, MAX_DPR } from './constants';
+import { TILE_SIZE, TILE_SCALE, MIN_ZOOM, MAX_DPR } from './constants';
 import useAudioUnlock from './audio/useAudioUnlock';
 import useMusicByDepth from './audio/useMusicByDepth';
 import useAssetImages from './rendering/useAssetImages';
@@ -42,6 +42,37 @@ import GameModals from './ui/GameModals';
 import TalentLayer from './ui/TalentLayer';
 import GameOverlay from './ui/GameOverlay';
 import BossSlainBanner from './ui/BossSlainBanner';
+import WndInfoBuff from './ui/WndInfoBuff';
+import WndHero from './ui/WndHero';
+
+// Live viewport position of an inspect-popup anchor (a world tile, or a mob we follow
+// by its renderPos). Returns { left, top, below } or null when the popup should hide
+// (mob gone/out of view, or the anchor panned off the visible canvas).
+function inspectScreenPos(canvas, cam, zoom, anchor, mobs, visible) {
+  if (!canvas || !anchor) return null;
+  let wx, wyTop, wyBottom;
+  if (anchor.type === 'mob') {
+    const mob = mobs[anchor.id];
+    if (!mob) return null;
+    const mx = Math.round(mob.renderPos.x), my = Math.round(mob.renderPos.y);
+    if (!visible.has(`${mx},${my}`)) return null;
+    wx = (mob.renderPos.x + 0.5) * TILE_SIZE;
+    wyTop = mob.renderPos.y * TILE_SIZE;
+    wyBottom = (mob.renderPos.y + 1) * TILE_SIZE;
+  } else {
+    wx = (anchor.x + 0.5) * TILE_SIZE;
+    wyTop = anchor.y * TILE_SIZE;
+    wyBottom = (anchor.y + 1) * TILE_SIZE;
+  }
+  const rect = canvas.getBoundingClientRect();
+  const cw = rect.width, ch = rect.height;
+  const left = rect.left + (wx - cam.x - cw / 2) * zoom + cw / 2;
+  const topY = rect.top + (wyTop - cam.y - ch / 2) * zoom + ch / 2;
+  const bottomY = rect.top + (wyBottom - cam.y - ch / 2) * zoom + ch / 2;
+  if (left < rect.left || left > rect.right || bottomY < rect.top || topY > rect.bottom) return null;
+  const below = topY < rect.top + 70;
+  return { left, top: below ? bottomY + 6 : topY - 6, below };
+}
 
 function App() {
   const { t } = useTranslation();
@@ -87,6 +118,8 @@ function App() {
   const [showBossSlainBanner, setShowBossSlainBanner] = useState(false);
   const [bossSlainData, setBossSlainData] = useState(null);
   const [loreOverlay, setLoreOverlay] = useState(null);
+  const [inspectBuff, setInspectBuff] = useState(null);
+  const [showHeroInfo, setShowHeroInfo] = useState(false);
   const loreFinishRef = useRef(null);
 
   const handleLoreNeeded = useCallback((depth, finishTransition) => {
@@ -112,7 +145,12 @@ function App() {
   const musicRef = useRef(null);
   const panOffsetRef = useRef({ x: 0, y: 0 });
   const cameraLerpRef = useRef({ x: 0, y: 0 });
-  const zoomRef = useRef(1.0);
+  const TILE_SCREEN = TILE_SIZE * TILE_SCALE; // 64px per tile at zoom=1
+  const zoomRef = useRef(
+    window.innerWidth < TILE_SCREEN * 10
+      ? Math.max(MIN_ZOOM, window.innerWidth / (TILE_SCREEN * 10))
+      : 1.0
+  );
   const isDraggingRef = useRef(false);
   const isRefocusingRef = useRef(false);
   const isPinchingRef = useRef(false);
@@ -147,6 +185,8 @@ function App() {
   const torchesRef = useRef([]);
   const depthRef = useRef(1);
   const floorFadeRef = useRef(null);
+  const inspectPopupRef = useRef(null);
+  const inspectSubRef = useRef(null);
 
   useEffect(() => { depthRef.current = depth; }, [depth]);
 
@@ -199,9 +239,8 @@ function App() {
   const modals = useModalState();
   const talent = useTalentFlow({ gameState, selectedClass, myStats, send });
   const targeting = useTargetingExamine({
-    canvasRef, cameraLerpRef, zoomRef,
     entitiesRef, visionRef, myPlayerIdRef, gridRef,
-    equippedItems, send,
+    equippedItems, send, trapsRef,
   });
 
   // --- infra hooks ---
@@ -414,7 +453,9 @@ function App() {
   }
 
   const handleEscape = () => {
-    if (targeting.examineModeRef.current || targeting.targetingModeRef.current) {
+    if (showHeroInfo) {
+      setShowHeroInfo(false);
+    } else if (targeting.examineModeRef.current || targeting.targetingModeRef.current) {
       targeting.setExamineMode(false);
       targeting.setTargetingMode(false);
       targeting.clearInspect();
@@ -522,10 +563,59 @@ function App() {
   // accesses on a hook return that contains refs.
   const {
     targetingMode, examineMode, inspectInfo,
-    inspectPopupRef, inspectSubRef,
     handleExamineOrReveal,
     sendUseAbility, sendUseComboMove, sendPrepStrike,
   } = targeting;
+
+  // Drive the inspect popup every frame: reposition from live camera, update mob HP,
+  // hide off-screen, auto-dismiss after 3s of no activity.
+  const clearInspectRef = useRef(targeting.clearInspect);
+  clearInspectRef.current = targeting.clearInspect;
+  useEffect(() => {
+    if (!inspectInfo) return;
+    const anchor = inspectInfo.anchor;
+    const DISMISS_MS = 3000;
+    let raf;
+    let lastSub;
+    let lastActive = 0;
+    let ticked = false;
+    const tick = () => {
+      const now = performance.now();
+      if (!ticked) { lastActive = now; ticked = true; }
+      let sub = inspectInfo.sub;
+      if (anchor.type === 'mob') {
+        const mob = entitiesRef.current.mobs[anchor.id];
+        if (!mob) { clearInspectRef.current(); return; }
+        sub = mob.hp != null && mob.max_hp != null ? `HP ${mob.hp}/${mob.max_hp}` : null;
+      }
+      if (sub !== lastSub) { lastSub = sub; lastActive = now; }
+      if (now - lastActive > DISMISS_MS) { clearInspectRef.current(); return; }
+
+      const el = inspectPopupRef.current;
+      if (el) {
+        const pos = inspectScreenPos(
+          canvasRef.current, cameraLerpRef.current, zoomRef.current,
+          anchor, entitiesRef.current.mobs, visionRef.current.visible,
+        );
+        if (pos) {
+          el.style.display = '';
+          el.style.left = `${pos.left}px`;
+          el.style.top = `${pos.top}px`;
+          el.style.transform = pos.below ? 'translate(-50%, 0)' : 'translate(-50%, -100%)';
+          const subEl = inspectSubRef.current;
+          if (subEl) {
+            subEl.textContent = sub || '';
+            subEl.style.display = sub ? '' : 'none';
+          }
+        } else {
+          el.style.display = 'none';
+        }
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [inspectInfo]);
 
   // --- screen flow ---
   if (gameState === 'WELCOME') {
@@ -598,7 +688,7 @@ function App() {
           </div>
         )}
 
-        <BossHealthBar boss={bossInfo} />
+        <BossHealthBar boss={bossInfo} bleeding={bossBleeding} />
         <KeyDisplay keys={myStats.keys} depth={depth} />
 
         <SideTags>
@@ -650,14 +740,16 @@ function App() {
 
         <StatusPane
           myStats={myStats}
+          interfaceSize={interfaceSize}
           depth={depth}
           exitPos={exitPos}
           isAdmin={myStats.isAdmin}
           onSearch={handleExamineOrReveal}
           hasTalentPoints={Object.values(talent.talentPoints || {}).some(p => p > 0)}
-          onOpenTalents={() => talent.setShowTalentPane(v => !v)}
+          onOpenTalents={() => setShowHeroInfo(true)}
           onTeleport={(floor) => send({ type: 'ADMIN_TELEPORT', target_floor: floor })}
           isBusy={isBusy}
+          onBuffClick={(buff) => setInspectBuff(buff)}
         />
 
         <div className="canvas-wrapper" ref={wrapperRef}>
@@ -675,30 +767,28 @@ function App() {
           <div
             ref={inspectPopupRef}
             className="inspect-popup"
-            style={{
-              position: 'fixed',
-              left: 0,
-              top: 0,
-              display: 'none',
-              transform: 'translate(-50%, -100%)',
-              background: 'rgba(0, 0, 0, 0.85)',
-              border: '1px solid #6a6a6a',
-              borderRadius: 3,
-              padding: '3px 7px',
-              color: '#ffffff',
-              font: '11px monospace',
-              lineHeight: 1.25,
-              whiteSpace: 'nowrap',
-              textAlign: 'center',
-              pointerEvents: 'none',
-              zIndex: 60,
-            }}
+            style={{ display: 'none' }}
           >
-            <div style={{ fontWeight: 'bold' }}>{inspectInfo.name}</div>
-            {/* Uncontrolled (no React child) so the rAF loop can update the live HP text
-                without React clobbering it on the next per-frame re-render. */}
-            <div ref={inspectSubRef} style={{ color: '#bdbdbd', display: 'none' }} />
+            <span className="inspect-popup-name">{inspectInfo.name}</span>
+            <span className="inspect-popup-sub" ref={inspectSubRef} style={{ display: 'none' }} />
           </div>
+        )}
+
+        {inspectBuff && (
+          <WndInfoBuff
+            buff={inspectBuff}
+            onClose={() => setInspectBuff(null)}
+          />
+        )}
+
+        {showHeroInfo && (
+          <WndHero
+            myStats={myStats}
+            depth={depth}
+            gold={gold}
+            onOpenTalents={() => talent.setShowTalentPane(true)}
+            onClose={() => setShowHeroInfo(false)}
+          />
         )}
 
         <GameHud
@@ -812,6 +902,7 @@ function App() {
           onResurrect={() => send({ type: 'RESURRECT' })}
           onNewGame={() => { resetForRestart(); setGameState('SELECT'); }}
           onMenu={() => { resetForRestart(); setGameState('WELCOME'); }}
+          challenges={challenges}
         />
       </div>
     </>

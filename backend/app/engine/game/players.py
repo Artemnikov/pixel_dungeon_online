@@ -391,11 +391,7 @@ class PlayersMixin:
 
         self.add_event("DEATH", {
             "target": player.id,
-            "score_breakdown": {
-                "kills": player.kills_count,
-                "floors": player.floors_explored,
-                "gold": player.gold,
-            },
+            "score_breakdown": self._score_breakdown(player, victory=False),
             "can_resurrect": False,
             "victory": False,
         }, floor_id=floor_id)
@@ -411,11 +407,34 @@ class PlayersMixin:
 
         self.add_event("DEATH", {
             "target": player.id,
-            "score_breakdown": {
-                "kills": player.kills_count,
-                "floors": player.floors_explored,
-                "gold": player.gold,
-            },
+            "score_breakdown": self._score_breakdown(player, victory=True),
             "can_resurrect": False,
             "victory": True,
         }, floor_id=floor_id)
+
+    def _score_breakdown(self, player: Player, victory: bool) -> dict:
+        # SPD WndScoreBreakdown: progress + treasure + explore + boss + quest.
+        # Each category is capped; multipliers apply for win/challenges.
+        progress = min(50000, player.floors_explored * 1500 + (player.level - 1) * 2000)
+        treasure = min(20000, player.gold * 20)
+        explore = min(20000, player.floors_explored * 800)
+        boss_total = sum(self.boss_scores.values())
+        boss = min(15000, boss_total)
+        quest = min(10000, 0)  # quest tracking not yet implemented
+        win_mult = 1.5 if victory else 1.0
+        chal_mult = 1.25 if "stronger_bosses" in self.challenges else 1.0
+        total = int((progress + treasure + explore + boss + quest) * win_mult * chal_mult)
+        return {
+            "kills": player.kills_count,
+            "floors": player.floors_explored,
+            "gold": player.gold,
+            "progress_score": progress,
+            "treasure_score": treasure,
+            "explore_score": explore,
+            "boss_score": boss,
+            "quest_score": quest,
+            "win_multiplier": win_mult if victory else None,
+            "challenge_multiplier": chal_mult if chal_mult > 1 else None,
+            "total_score": total,
+            "victory": victory,
+        }

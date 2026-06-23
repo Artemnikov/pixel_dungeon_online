@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import AudioManager from '../audio/AudioManager';
 import WndBag from './WndBag';
 import WndUseItem from './WndUseItem';
 import RightClickMenu from './RightClickMenu';
@@ -186,6 +187,18 @@ export default function GameModals({
             setQuickslotPicker(null);
           }}
           onClose={() => setQuickslotPicker(null)}
+          extraFooter={toolbarItems[quickslotPicker] ? (
+            <button
+              className="wnd-bag-clear-btn"
+              onClick={() => {
+                AudioManager.play('CLICK');
+                send({ type: 'SET_QUICKSLOT', index: quickslotPicker });
+                setQuickslotPicker(null);
+              }}
+            >
+              {t('ui.clearQuickslot')}
+            </button>
+          ) : null}
         />
       )}
 

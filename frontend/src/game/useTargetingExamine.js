@@ -1,43 +1,11 @@
 import { useState, useRef, useEffect } from 'react';
-import { TILE_SIZE } from '../constants';
 import { describeCell } from '../input/describeCell';
 
 const TARGETED_ABILITIES = ['heroic_leap', 'smoke_bomb', 'death_mark'];
 
-// Live viewport position of an inspect-popup anchor (a world tile, or a mob we follow
-// by its renderPos). Returns { left, top, below } or null when the popup should hide
-// (mob gone/out of view, or the anchor panned off the visible canvas). Pure so it can
-// be called from the per-frame rAF loop without reading refs during render.
-function inspectScreenPos(canvas, cam, zoom, anchor, mobs, visible) {
-  if (!canvas || !anchor) return null;
-  let wx, wyTop, wyBottom;
-  if (anchor.type === 'mob') {
-    const mob = mobs[anchor.id];
-    if (!mob) return null;
-    const mx = Math.round(mob.renderPos.x), my = Math.round(mob.renderPos.y);
-    if (!visible.has(`${mx},${my}`)) return null;
-    wx = (mob.renderPos.x + 0.5) * TILE_SIZE;
-    wyTop = mob.renderPos.y * TILE_SIZE;
-    wyBottom = (mob.renderPos.y + 1) * TILE_SIZE;
-  } else {
-    wx = (anchor.x + 0.5) * TILE_SIZE;
-    wyTop = anchor.y * TILE_SIZE;
-    wyBottom = (anchor.y + 1) * TILE_SIZE;
-  }
-  const rect = canvas.getBoundingClientRect();
-  const cw = rect.width, ch = rect.height;
-  const left = rect.left + (wx - cam.x - cw / 2) * zoom + cw / 2;
-  const topY = rect.top + (wyTop - cam.y - ch / 2) * zoom + ch / 2;
-  const bottomY = rect.top + (wyBottom - cam.y - ch / 2) * zoom + ch / 2;
-  if (left < rect.left || left > rect.right || bottomY < rect.top || topY > rect.bottom) return null;
-  const below = topY < rect.top + 70;
-  return { left, top: below ? bottomY + 6 : topY - 6, below };
-}
-
 export default function useTargetingExamine({
-  canvasRef, cameraLerpRef, zoomRef,
   entitiesRef, visionRef, myPlayerIdRef, gridRef,
-  equippedItems, send,
+  equippedItems, send, trapsRef,
 }) {
   const [targetingMode, setTargetingMode] = useState(false);
   const [examineMode, setExamineMode] = useState(false);
@@ -47,8 +15,6 @@ export default function useTargetingExamine({
   const examineModeRef = useRef(false);
   const onTargetTapRef = useRef(null);
   const onExamineTapRef = useRef(null);
-  const inspectPopupRef = useRef(null);
-  const inspectSubRef = useRef(null);
 
   useEffect(() => { targetingModeRef.current = targetingMode; }, [targetingMode]);
   useEffect(() => { examineModeRef.current = examineMode; }, [examineMode]);
@@ -90,10 +56,18 @@ export default function useTargetingExamine({
     const info = describeCell({
       tileX, tileY, gridRef, entitiesRef, visionRef,
       myPlayerId: myPlayerIdRef.current,
+      trapsRef,
     });
     setExamineMode(false);
     if (!info) { clearInspect(); return; }
-    setInspectInfo({ name: info.name, sub: info.sub, anchor: info.anchor });
+    // Keep the legacy name/sub for the inline popup fallback, plus the full
+    // structured payload so WndInfoCell can dispatch to the right info window.
+    setInspectInfo({
+      name: info.name,
+      sub: info.sub,
+      anchor: info.anchor,
+      cellInfo: info,
+    });
   };
 
   const handleExamineOrReveal = () => {
@@ -110,53 +84,19 @@ export default function useTargetingExamine({
   useEffect(() => { onTargetTapRef.current = resolveTargetingTap; });
   useEffect(() => { onExamineTapRef.current = resolveExamineTap; });
 
-  // While a popup is open, drive it every frame: reposition from the live camera + anchor
-  // (so it sticks to its tile/mob), refresh a mob's HP, and handle auto-dismiss.
+  // Auto-dismiss the inspect modal if its anchor mob dies or leaves vision.
   useEffect(() => {
-    if (!inspectInfo) return;
-    const anchor = inspectInfo.anchor;
-    const DISMISS_MS = 3000;
-    let raf;
-    let lastSub;
-    let lastActive = null;
-    const tick = () => {
-      const now = performance.now();
-      if (lastActive == null) lastActive = now;
-
-      let sub = inspectInfo.sub;
-      if (anchor.type === 'mob') {
-        const mob = entitiesRef.current.mobs[anchor.id];
-        if (!mob) { setInspectInfo(null); return; }
-        sub = mob.hp != null && mob.max_hp != null ? `HP ${mob.hp}/${mob.max_hp}` : null;
-      }
-      if (sub !== lastSub) { lastSub = sub; lastActive = now; }
-      if (now - lastActive > DISMISS_MS) { setInspectInfo(null); return; }
-
-      const el = inspectPopupRef.current;
-      if (el) {
-        const pos = inspectScreenPos(
-          canvasRef.current, cameraLerpRef.current, zoomRef.current,
-          anchor, entitiesRef.current.mobs, visionRef.current.visible,
-        );
-        if (pos) {
-          el.style.display = '';
-          el.style.left = `${pos.left}px`;
-          el.style.top = `${pos.top}px`;
-          el.style.transform = pos.below ? 'translate(-50%, 0)' : 'translate(-50%, -100%)';
-          const subEl = inspectSubRef.current;
-          if (subEl) {
-            subEl.textContent = sub || '';
-            subEl.style.display = sub ? '' : 'none';
-          }
-        } else {
-          el.style.display = 'none';
-        }
-      }
-      raf = requestAnimationFrame(tick);
+    if (!inspectInfo || inspectInfo.anchor?.type !== 'mob') return;
+    const id = inspectInfo.anchor.id;
+    const check = () => {
+      const mob = entitiesRef.current.mobs[id];
+      if (!mob) { setInspectInfo(null); return; }
+      const mx = Math.round(mob.renderPos.x), my = Math.round(mob.renderPos.y);
+      if (!visionRef.current.visible.has(`${mx},${my}`)) setInspectInfo(null);
     };
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
-  }, [inspectInfo]); // eslint-disable-line react-hooks/exhaustive-deps -- canvasRef/cameraLerpRef/zoomRef/entitiesRef/visionRef are stable React refs
+    const iv = setInterval(check, 200);
+    return () => clearInterval(iv);
+  }, [inspectInfo]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const sendUseAbility = (ability) => {
     if (TARGETED_ABILITIES.includes(ability)) {
@@ -184,8 +124,6 @@ export default function useTargetingExamine({
     examineModeRef,
     onTargetTapRef,
     onExamineTapRef,
-    inspectPopupRef,
-    inspectSubRef,
     clearInspect,
     resolveTargetingTap,
     resolveExamineTap,
