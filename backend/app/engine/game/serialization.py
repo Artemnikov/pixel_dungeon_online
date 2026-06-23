@@ -171,6 +171,9 @@ class SerializationMixin:
     def _serialize_floor_item(self, item) -> dict:
         d = item.model_dump()
         d["value"] = item.value(identified=item.kind in self.identified_kinds)
+        # SPD's Heap.info(): show the item's flavour text + stats in examine.
+        # Floor items have no owning player context, so pass None.
+        d["description"] = item.description(None)
         lk = item_locale_key(item)
         if lk:
             d["locale_key"] = lk

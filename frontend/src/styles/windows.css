@@ -1,3 +1,27 @@
+/* --- Inspect popup — one-line above the inspected cell/mob --- */
+.inspect-popup {
+  position: fixed;
+  z-index: 60;
+  pointer-events: none;
+  background: rgba(0, 0, 0, 0.85);
+  border: 1px solid #6a6a6a;
+  border-radius: 3px;
+  padding: 3px 7px;
+  color: #ffffff;
+  font: 11px monospace;
+  line-height: 1.25;
+  white-space: nowrap;
+  text-align: center;
+}
+.inspect-popup-name {
+  display: inline;
+}
+.inspect-popup-sub {
+  display: inline;
+  color: #aab;
+  margin-left: 6px;
+}
+
 /* --- Item info popup (WndUseItem) --- */
 .wnd-overlay {
   position: fixed; inset: 0; z-index: 200;
@@ -203,6 +227,280 @@
   position: fixed; inset: 0; z-index: 500;
   display: flex; align-items: center; justify-content: center;
   background: rgba(0, 0, 0, 0.5);
+}
+
+/* --- WndInfo* card (cell/mob/item/trap/plant/buff) --- */
+.wnd-info-card {
+  background: #26252b;
+  border: 2px solid #4a4a55;
+  border-radius: 10px;
+  padding: 18px;
+  width: 320px;
+  max-width: 92vw;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.7);
+  font-family: 'Courier New', Courier, monospace;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.wnd-info-title {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+.wnd-info-title__icon {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.wnd-info-title__icon > * { imageRendering: pixelated; }
+.wnd-info-title__text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex: 1;
+  min-width: 0;
+}
+.wnd-info-title__sub {
+  color: #88a;
+  font-size: 11px;
+}
+.wnd-info-desc {
+  color: #bbb;
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+.wnd-info-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border-top: 1px solid #3a3a44;
+  padding-top: 10px;
+}
+.wnd-info-stat-row {
+  color: #ccc;
+  font-size: 12px;
+}
+.wnd-info-hpbar {
+  position: relative;
+  width: 100%;
+  height: 14px;
+  background: #1a1a1a;
+  border: 1px solid #444;
+  border-radius: 2px;
+  overflow: hidden;
+}
+.wnd-info-hpbar-fill {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, #5f5, #2c2);
+  transition: width 0.1s linear;
+}
+.wnd-info-hpbar-label {
+  position: relative;
+  display: block;
+  text-align: center;
+  font-size: 10px;
+  color: #fff;
+  text-shadow: 0 0 2px #000;
+  line-height: 14px;
+}
+.wnd-info-buffs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 3px;
+}
+.wnd-info-buff {
+  image-rendering: pixelated;
+  flex-shrink: 0;
+}
+
+/* --- WndHero (tabbed hero info) --- */
+.wnd-hero {
+  background: #26252b;
+  border: 2px solid #4a4a55;
+  border-radius: 10px;
+  padding: 16px;
+  width: 380px;
+  max-width: 92vw;
+  max-height: 85vh;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.7);
+  font-family: 'Courier New', Courier, monospace;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.wnd-hero-tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 2px solid #4a4a55;
+  padding-bottom: 8px;
+}
+.wnd-hero-tab-btn {
+  flex: 1;
+  padding: 6px 8px;
+  background: #1a1a22;
+  border: 1px solid #333;
+  border-radius: 4px 4px 0 0;
+  color: #888;
+  font-family: inherit;
+  font-size: 11px;
+  cursor: var(--cursor-mouse, pointer);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+.wnd-hero-tab-btn.active {
+  background: #3a3a44;
+  color: #ffe070;
+  border-color: #ffe070;
+}
+.wnd-hero-tab-icon { font-size: 14px; }
+.wnd-hero-content {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 200px;
+}
+.wnd-hero-tab {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.wnd-hero-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.wnd-hero-stat-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  padding: 2px 0;
+  border-bottom: 1px solid #333;
+}
+.wnd-hero-stat-label { color: #999; }
+.wnd-hero-stat-value { color: #ffe070; }
+.wnd-hero-buff {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+  font-size: 12px;
+  color: #ccc;
+  cursor: var(--cursor-mouse, pointer);
+}
+.wnd-hero-buff:hover { color: #ffe070; }
+
+/* --- WndScoreBreakdown --- */
+.wnd-score-categories {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.wnd-score-cat {
+  border-bottom: 1px solid #333;
+  padding-bottom: 6px;
+}
+.wnd-score-cat-header {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+}
+.wnd-score-cat-label { color: #ccc; font-weight: bold; }
+.wnd-score-cat-value { color: #ffe070; }
+.wnd-score-cat-desc {
+  color: #888;
+  font-size: 11px;
+  margin-top: 2px;
+}
+.wnd-score-mults {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 0;
+  border-top: 1px solid #444;
+}
+.wnd-score-total {
+  display: flex;
+  justify-content: space-between;
+  font-size: 15px;
+  font-weight: bold;
+  color: #ffe070;
+  border-top: 2px solid #555;
+  padding-top: 10px;
+  margin-top: 4px;
+}
+
+/* --- WndJournal --- */
+.wnd-journal-tab {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.wnd-journal-depths {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.wnd-journal-depth-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #ccc;
+  padding: 3px 0;
+  border-bottom: 1px solid #333;
+}
+.wnd-journal-story-region {
+  padding: 8px 0;
+  border-bottom: 1px solid #333;
+}
+.wnd-journal-story-region.visited .wnd-journal-story-name { color: #ffe070; }
+.wnd-journal-story-name {
+  font-size: 14px;
+  font-weight: bold;
+  color: #666;
+  margin-bottom: 4px;
+}
+.wnd-journal-story-desc {
+  font-size: 12px;
+  color: #999;
+  line-height: 1.5;
+}
+
+/* --- WndChallenges --- */
+.wnd-challenge {
+  padding: 8px 0;
+  border-bottom: 1px solid #333;
+}
+.wnd-challenge.active .wnd-challenge-name { color: #e74c3c; }
+.wnd-challenge-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+.wnd-challenge-name {
+  font-size: 13px;
+  font-weight: bold;
+  color: #888;
+}
+.wnd-challenge-status {
+  font-size: 11px;
+  color: #555;
+}
+.wnd-challenge-status.on { color: #e74c3c; }
+.wnd-challenge-desc {
+  font-size: 11px;
+  color: #999;
+  line-height: 1.5;
+  white-space: pre-wrap;
 }
 
 /* --- WndResurrect --- */

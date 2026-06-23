@@ -8,12 +8,14 @@ export default function GameOverlay({
   isDowned, playerName, classType, level, depth, gold,
   subclass, armorAbility, talentLevels, talentDefs, inventory,
   selectedClass, scoreBreakdown, canResurrect, isVictory, onResurrect,
-  onNewGame, onMenu,
+  onNewGame, onMenu, challenges,
 }) {
   return (
     <>
       {gameMenuOpen && (
         <GameMenu
+          depth={depth}
+          challenges={challenges}
           onClose={onCloseMenu}
           onLeaveGame={onLeaveGame}
         />

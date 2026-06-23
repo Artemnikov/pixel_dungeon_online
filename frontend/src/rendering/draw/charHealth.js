@@ -1,16 +1,11 @@
-// SPDX-License-Identifier: GPL-3.0-or-later
-// Copyright (C) 2026 ArtemNikov
-//
-// Adapted from Shattered Pixel Dungeon (C) 2014-2024 Evan Debenheim
-//
-// CharHealthIndicator: mini HP bars above all visible mobs where hp < max_hp.
-// Port of SPD's CharHealthIndicator.java.
-// 2px-tall bar, 4/6 of tile width, centered above each mob sprite.
-
 import { TILE_SIZE, ENTITY_LIFT } from '../../constants';
 
-const INDICATOR_HEIGHT = 2;
-const BAR_WIDTH_FRAC = 4 / 6; // 4/6 of tile width
+const INDICATOR_HEIGHT = 1; // SPD CharHealthIndicator: 1px tall
+const BAR_WIDTH_FRAC = 4 / 6; // centered, 4/6 of tile width
+
+function pixelRound(value, pixelWidth) {
+  return Math.ceil(value * pixelWidth) / pixelWidth;
+}
 
 export function drawCharHealth(ctx, { entitiesRef, visionRef }) {
   const mobs = entitiesRef.current.mobs;
@@ -23,10 +18,8 @@ export function drawCharHealth(ctx, { entitiesRef, visionRef }) {
     const maxHp = mob.max_hp || 1;
     const shield = (mob.shields || []).reduce((sum, s) => sum + (s.amount || 0), 0);
 
-    // Skip if at full health and no shield
     if (hp >= maxHp && shield === 0) return;
 
-    // Check visibility
     const mx = Math.round(mob.renderPos.x);
     const my = Math.round(mob.renderPos.y);
     if (visible && !visible.has(`${mx},${my}`)) return;
@@ -34,26 +27,24 @@ export function drawCharHealth(ctx, { entitiesRef, visionRef }) {
     const x = mob.renderPos.x * TILE_SIZE;
     const y = mob.renderPos.y * TILE_SIZE - ENTITY_LIFT;
 
-    const total = Math.max(hp + shield, maxHp);
-    const hpPct = hp / total;
-    const shieldPct = (hp + shield) / total;
+    let healthPct = hp / maxHp;
+    let shieldPct = Math.min(1, (hp + shield) / maxHp);
 
     const barW = TILE_SIZE * BAR_WIDTH_FRAC;
     const barX = x + (TILE_SIZE - barW) / 2;
     const barY = y - 8;
 
-    // Red background for full bar
+    const pxW = barW;
+
     ctx.fillStyle = '#cc0000';
     ctx.fillRect(barX, barY, barW, INDICATOR_HEIGHT);
 
-    // White shield overlay
-    if (shieldPct > hpPct) {
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(barX, barY, barW * shieldPct, INDICATOR_HEIGHT);
-    }
+    const shldW = barW * pixelRound(shieldPct, pxW);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(barX, barY, shldW, INDICATOR_HEIGHT);
 
-    // Green HP fill
+    const hpW = barW * pixelRound(healthPct, pxW);
     ctx.fillStyle = '#00ee00';
-    ctx.fillRect(barX, barY, barW * hpPct, INDICATOR_HEIGHT);
+    ctx.fillRect(barX, barY, hpW, INDICATOR_HEIGHT);
   });
 }

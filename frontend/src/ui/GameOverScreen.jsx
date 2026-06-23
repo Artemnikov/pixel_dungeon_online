@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import RankingsPane from './RankingsPane';
+import WndScoreBreakdown from './WndScoreBreakdown';
 
 export default function GameOverScreen({
   playerName,
@@ -20,6 +21,7 @@ export default function GameOverScreen({
   const { t } = useTranslation();
   const [shown, setShown] = useState(false);
   const [showRankings, setShowRankings] = useState(false);
+  const [showScoreBreakdown, setShowScoreBreakdown] = useState(false);
 
   useEffect(() => {
     const id = requestAnimationFrame(() => setShown(true));
@@ -63,7 +65,7 @@ export default function GameOverScreen({
           {t('game.youDied')}
         </div>
         {scoreBreakdown && (
-          <div className="game-over-score">
+          <div className="game-over-score" style={{ pointerEvents: 'auto' }}>
             <div className="game-over-score__row">
               <span>{t('game.score.kills', 'Enemies slain')}</span>
               <span>{scoreBreakdown.kills}</span>
@@ -76,9 +78,25 @@ export default function GameOverScreen({
               <span>{t('game.score.gold', 'Gold collected')}</span>
               <span>{scoreBreakdown.gold}</span>
             </div>
+            {scoreBreakdown.total_score != null && (
+              <button
+                className="wnd-close-btn"
+                style={{ marginTop: '8px', width: '100%' }}
+                onClick={() => setShowScoreBreakdown(true)}
+              >
+                {t('score.title')}
+              </button>
+            )}
           </div>
         )}
       </div>
+
+      {showScoreBreakdown && (
+        <WndScoreBreakdown
+          scoreBreakdown={scoreBreakdown}
+          onClose={() => setShowScoreBreakdown(false)}
+        />
+      )}
 
       {showRankings && (
         <RankingsPane

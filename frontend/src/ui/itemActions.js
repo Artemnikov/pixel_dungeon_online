@@ -14,6 +14,8 @@ export const ACTION_KEYS = {
   GHOST_GEAR: 'action.ghostGear',
   SUMMON: 'action.summon',
   DIRECT: 'action.direct',
+  WEAR: 'action.wear',
+  ALCHEMIZE: 'action.alchemize',
 };
 
 export const actionLabel = (a, t) => {

@@ -22,7 +22,8 @@ import { itemRects } from '../rendering/spriteRects';
 import { centeredItemCrop } from '../rendering/itemCrop';
 import { MAX_DPR } from '../constants';
 
-const S = 2;
+const S_DESKTOP = 2;
+const S_MOBILE = 2.5;
 
 const BTN_INVENTORY = { x: 0, y: 0, w: 24, h: 26, iconX: 160, iconY: 0, iconW: 16, iconH: 16 };
 const BTN_WAIT      = { x: 24, y: 0, w: 20, h: 26, iconX: 176, iconY: 0, iconW: 16, iconH: 16 };
@@ -58,6 +59,8 @@ export default function Toolbar({
   onSlotContextMenu,
   onSwap,
 }) {
+  const S = interfaceSize > 0 ? S_DESKTOP : S_MOBILE;
+  const isMobile = interfaceSize === 0;
   const canvasRef = useRef(null);
   const areasRef = useRef(makeButtonAreas());
   const imgsRef = useRef({ toolbar: null, items: null, icons: null });
@@ -95,15 +98,17 @@ export default function Toolbar({
     zoomRef.current = baseDprRef.current / rawDPR;
     const zoomScale = zoomRef.current;
 
-    const quickslotsToShow = 4 +
-      (canvasWidth > 152 * S ? 1 : 0) +
-      (canvasWidth > 170 * S ? 1 : 0);
+    const quickslotsToShow = isMobile
+      ? 4
+      : 4 + (canvasWidth > 152 * S ? 1 : 0) + (canvasWidth > 170 * S ? 1 : 0);
 
-    const startingSlot = quickSwapper && quickslotsToShow < 6
-      ? (swappedQuickslots ? 3 : 0) : 0;
-    const endingSlot = quickSwapper && quickslotsToShow < 6
-      ? startingSlot + 2 : Math.min(startingSlot + quickslotsToShow - 1, 5);
-    const showSwap = quickSwapper && quickslotsToShow < 6;
+    const startingSlot = isMobile
+      ? 0
+      : (quickSwapper && quickslotsToShow < 6 ? (swappedQuickslots ? 3 : 0) : 0);
+    const endingSlot = isMobile
+      ? 3
+      : (quickSwapper && quickslotsToShow < 6 ? startingSlot + 2 : Math.min(startingSlot + quickslotsToShow - 1, 5));
+    const showSwap = !isMobile && quickSwapper && quickslotsToShow < 6;
 
     const btnW = BTN_INVENTORY.w + TOOL_PAD;
 
@@ -412,7 +417,7 @@ export default function Toolbar({
 
       areasRef.current = areas;
     }
-  }, [mode, interfaceSize, flipToolbar, quickSwapper, swappedQuickslots, canvasWidth, items, equippedItems, targetingMode]);
+  }, [mode, interfaceSize, S, isMobile, flipToolbar, quickSwapper, swappedQuickslots, canvasWidth, items, equippedItems, targetingMode]);
 
   const handlePointerDown = (e) => {
     if (e.pointerType !== 'touch') return;

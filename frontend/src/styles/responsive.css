@@ -20,6 +20,17 @@
     top: auto;
   }
 
+  .boss-health-bar {
+    top: max(44px, env(safe-area-inset-top));
+  }
+
+  .game-log {
+    left: max(6px, env(safe-area-inset-left));
+    bottom: 130px;
+    max-width: min(240px, 60vw);
+    z-index: 46;
+  }
+
   .toolbar-item-name {
     display: none;
   }

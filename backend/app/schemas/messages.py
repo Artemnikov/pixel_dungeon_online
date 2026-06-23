@@ -56,7 +56,7 @@ class ExecuteItemAction(_ClientMessageBase):
 class SetQuickslot(_ClientMessageBase):
     type: Literal["SET_QUICKSLOT"]
     index: int
-    item_id: str
+    item_id: Optional[str] = None
 
 
 class UseQuickslot(_ClientMessageBase):

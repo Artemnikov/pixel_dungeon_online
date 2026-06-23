@@ -8,7 +8,7 @@ identification of potion/scroll kinds.
 from typing import Optional
 
 from app.engine.entities import item_actions, scroll_actions
-from app.engine.entities.base import Position, Wand
+from app.engine.entities.base import Position, QuickSlotEntry, Wand
 from app.engine.entities.scroll_predicates import PREDICATE
 
 
@@ -28,9 +28,13 @@ class ItemsMixin:
         if handler is not None:
             handler(self, player, item, target_x, target_y)
 
-    def set_quickslot(self, player_id: str, index: int, item_id: str):
+    def set_quickslot(self, player_id: str, index: int, item_id: Optional[str]):
         player = self.players.get(player_id)
         if not player:
+            return
+        if item_id is None:
+            if 0 <= index < len(player.quickslot.slots):
+                player.quickslot.slots[index] = QuickSlotEntry()
             return
         item = player.belongings.get_item(item_id)
         if item is not None:
