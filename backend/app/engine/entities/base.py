@@ -414,6 +414,12 @@ class EquipableItem(ItemBase):
     def default_action(self) -> Optional[str]:
         return Action.EQUIP
 
+    def on_equip(self, player: "Player") -> None:
+        """Hook called after the item is placed in an equip slot (SPD activate)."""
+
+    def on_unequip(self, player: "Player") -> None:
+        """Hook called before the item is removed from an equip slot (SPD doUnequip)."""
+
     def _info_lines(self, player: Optional["Player"] = None) -> List[str]:
         lines: List[str] = []
         req = f"It requires {self.strength_requirement} points of strength."
@@ -800,7 +806,22 @@ class Ring(KindofMisc):
     kind: Literal["ring"] = "ring"
     type: str = "ring"
     category: ClassVar[str] = ItemCategory.RING
+    # Identifies which RingBuff subclass this ring grants (e.g. "accuracy",
+    # "haste"). Used by ring_bonus() to find matching rings across both slots.
+    buff_class: Optional[str] = None
+    # Per-run gem appearance (SPD ItemStatusHandler): assigned by serialization
+    # layer. Unidentified rings display as "Ring of {gem}".
+    gem: str = "garnet"
+    # SPD: rings ID via hero XP while equipped. Starts at 1.0; decremented by
+    # levelPercent per hero level gained. At <=0 the ring auto-identifies.
+    levels_to_id: float = 1.0
     DESC: ClassVar[str] = "A magical ring that grants a passive bonus while worn."
+
+    def upgrade(self) -> "Ring":
+        self.level += 1
+        if _random.randint(0, 2) == 0:
+            self.cursed = False
+        return self
 
     def value(self, identified: bool = False) -> int:
         return _charm_value(self.level, self.level_known, self.cursed, self.cursed_known)
@@ -2070,10 +2091,17 @@ class PotionBandolier(Bag):
 # Keyed by `kind`, so member order is irrelevant and nested items serialize as
 # their concrete type. Server never validates inbound items, so this exists only
 # for clean outbound dumps + a stable client contract.
+from app.engine.entities.rings import (
+    RingOfAccuracy, RingOfEvasion, RingOfHaste, RingOfFuror,
+    RingOfMight, RingOfTenacity, RingOfEnergy, RingOfArcana, RingOfSharpshooting,
+)  # noqa: E402
+
 AnyItem = Annotated[
     Union[
         MeleeWeapon, Dagger, WornShortsword, Bow, SpiritBow, Staff, MissileWeapon,
-        Armor, Ring, Artifact, BrokenSeal, CloakOfShadows, DriedRose,
+        Armor, Ring, RingOfAccuracy, RingOfEvasion, RingOfHaste, RingOfFuror,
+        RingOfMight, RingOfTenacity, RingOfEnergy, RingOfArcana, RingOfSharpshooting,
+        Artifact, BrokenSeal, CloakOfShadows, DriedRose,
         DamageWand,
         WandOfMagicMissile, WandOfFireblast, WandOfFrost, WandOfLightning,
         WandOfDisintegration, WandOfPrismaticLight, WandOfBlastWave,
@@ -2499,11 +2527,14 @@ class Player(Entity):
         return 0.0
 
     def get_effective_strength(self) -> int:
-        """Strongman (warrior T3): effective STR = STR * (1 + 0.03 + 0.05*pts)."""
+        """Strongman (warrior T3): effective STR = STR * (1 + 0.03 + 0.05*pts).
+        Ring of Might: +ring_bonus (unbuffed)."""
         base = self.strength
         sm = self.subclass_info.talent_info.level(Talent.STRONGMAN)
         if sm > 0:
             base += int(base * (0.03 + 0.05 * sm))
+        from app.engine.entities.rings import might_str_bonus
+        base += might_str_bonus(self)
         return base
 
     def get_berserk_shield_amount(self) -> int:
@@ -2579,6 +2610,8 @@ class Player(Entity):
         ea = self.subclass_info.talent_info.level(Talent.EVASIVE_ARMOR)
         if ea > 0 and self.freerun_seconds > 0:
             base += self.level // 2 + excess_str * ea
+        from app.engine.entities.rings import evasion_multiplier
+        base = int(base * evasion_multiplier(self))
         return base
 
     def set_heal(self, amount: float, percent_per_tick: float, flat_per_tick: float):
@@ -2597,7 +2630,8 @@ class Player(Entity):
         return base
 
     def get_total_max_hp(self) -> int:
-        return self.max_hp
+        from app.engine.entities.rings import might_ht_multiplier
+        return int(self.max_hp * might_ht_multiplier(self))
 
     def add_to_inventory(self, item: ItemBase) -> bool:
         ok = self.belongings.backpack.collect(item)
@@ -2638,9 +2672,11 @@ class Player(Entity):
             return False
         self.belongings.backpack.detach_all(item_id)
         prev = getattr(self.belongings, slot)
-        setattr(self.belongings, slot, item)
         if prev is not None:
+            prev.on_unequip(self)
             self.belongings.backpack.collect(prev)
+        setattr(self.belongings, slot, item)
+        item.on_equip(self)
         return True
 
     def unequip_item(self, item_id: str) -> bool:
@@ -2651,6 +2687,7 @@ class Player(Entity):
                     return False  # cursed gear can't be removed (SPD)
                 if not self.belongings.backpack.can_hold(cur):
                     return False
+                cur.on_unequip(self)
                 setattr(self.belongings, slot, None)
                 self.belongings.backpack.collect(cur)
                 return True
@@ -2715,9 +2752,22 @@ class Player(Entity):
             self.attack_skill += 1
             self.defense_skill += 1
             leveled_up = True
+            self._try_id_rings()
         if self.level >= self.MAX_LEVEL:
             self.experience = 0
         return leveled_up
+
+    def _try_id_rings(self) -> None:
+        """SPD Ring.onHeroGainExp: decrement levelsToID by 1.0 per hero level
+        for each equipped un-identified ring. Auto-identifies at <=0."""
+        for slot in ("ring", "misc"):
+            ring = getattr(self.belongings, slot, None)
+            if not isinstance(ring, Ring) or ring.is_identified():
+                continue
+            ring.levels_to_id -= 1.0
+            if ring.levels_to_id <= 0:
+                ring.level_known = True
+                ring.cursed_known = True
 
 
 # Legacy aliases — keep existing imports/constructors working during migration.

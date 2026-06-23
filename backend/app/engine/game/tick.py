@@ -153,6 +153,8 @@ class TickMixin:
             move_interval = AUTO_MOVE_INTERVAL
             if player.invisible > 0 and player.subclass_info.talent_info.level("speedy_stealth") >= 3:
                 move_interval /= 2
+            from app.engine.entities.rings import haste_multiplier
+            move_interval /= haste_multiplier(player)
 
             if player.move_intent:
                 now = time.time()
@@ -1105,6 +1107,8 @@ class TickMixin:
         imbued_wand = weapon.imbued_wand if isinstance(weapon, StaffCls) else None
 
         rate_mult = RECHARGING_REGEN_MULTIPLIER if player.has_buff("recharging") else 1.0
+        from app.engine.entities.rings import energy_wand_multiplier
+        rate_mult *= energy_wand_multiplier(player)
 
         for item in player_inventory_items(player):
             if item is imbued_wand:

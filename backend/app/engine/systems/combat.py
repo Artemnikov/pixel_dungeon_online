@@ -226,6 +226,9 @@ def resolve_melee_attack(
         def_ev = defender.get_effective_defense_skill()
         if defender.has_buff("hex"):
             def_ev = int(def_ev * 0.75)
+        if hasattr(attacker, "belongings"):
+            from app.engine.entities.rings import accuracy_multiplier
+            atk_acc = int(atk_acc * accuracy_multiplier(attacker))
         acu_roll = random.random() * atk_acc
         def_roll = random.random() * def_ev
         if acu_roll < def_roll:
@@ -276,6 +279,9 @@ def resolve_melee_attack(
         effective_damage = int(effective_damage * prep["dmg_mult"])
     if getattr(attacker, "is_admin", False):
         effective_damage *= 4
+    if hasattr(defender, "belongings"):
+        from app.engine.entities.rings import tenacity_multiplier
+        effective_damage = int(effective_damage * tenacity_multiplier(defender))
 
     hp_before = defender.hp
     actual_damage = defender.take_damage(max(0, effective_damage))
@@ -408,6 +414,9 @@ def resolve_ranged_attack(
     proj_momentum = getattr(attacker, "subclass_info", None) and attacker.subclass_info.talent_info.level("projectile_momentum")
     if proj_momentum and getattr(attacker, "freerun_seconds", 0) > 0:
         dmg_roll = round(dmg_roll * (1 + 0.15 * proj_momentum))
+    if hasattr(attacker, "belongings"):
+        from app.engine.entities.rings import sharpshooting_damage_bonus
+        dmg_roll += sharpshooting_damage_bonus(attacker)
     dr_roll = random.randint(defender.get_dr_min(), defender.get_dr_max())
     raw_damage = max(0, dmg_roll - dr_roll)
 

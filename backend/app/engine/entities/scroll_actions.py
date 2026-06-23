@@ -343,7 +343,7 @@ def action_read(game, player, item, tx=None, ty=None) -> None:
 
 
 def _apply_upgrade_target(game, player, target_item) -> None:
-    from app.engine.entities.base import Staff, KindOfWeapon, Armor as ArmorCls
+    from app.engine.entities.base import Staff, KindOfWeapon, Armor as ArmorCls, Ring as RingCls
     # Pre-upgrade state tracking (SPD: curse enchant vs plain curse distinction)
     had_cursed_enchant = False
     if isinstance(target_item, KindOfWeapon) and target_item.enchantment:
@@ -352,6 +352,8 @@ def _apply_upgrade_target(game, player, target_item) -> None:
         had_cursed_enchant = target_item.enchantment.type in CURSES
 
     if isinstance(target_item, Staff):
+        target_item.upgrade()
+    elif isinstance(target_item, RingCls):
         target_item.upgrade()
     else:
         target_item.level += 1

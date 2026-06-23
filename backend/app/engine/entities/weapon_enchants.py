@@ -188,7 +188,8 @@ def _is_hostile(a: "Entity", b: "Entity") -> bool:
 def _proc_vampiric(attacker, defender, weapon, raw_damage, actual_damage, hp_before, result, floor_mobs, tile_x, tile_y, floor, **kwargs):
     if not _is_hostile(attacker, defender):
         return
-    chance = vampiric_chance(missing_hp_pct(attacker)) + enraged_catalyst_bonus(attacker)
+    arcana_mult = kwargs.get("arcana_mult", 1.0)
+    chance = (vampiric_chance(missing_hp_pct(attacker)) + enraged_catalyst_bonus(attacker)) * arcana_mult
     if random.random() < chance:
         heal = round(actual_damage * 0.5 * striking_wave_multiplier(attacker))
         if heal > 0:
@@ -197,13 +198,15 @@ def _proc_vampiric(attacker, defender, weapon, raw_damage, actual_damage, hp_bef
 
 def _proc_blocking(attacker, defender, weapon, raw_damage, actual_damage, hp_before, result, floor_mobs, tile_x, tile_y, floor, **kwargs):
     lvl = weapon.buffed_lvl()
-    if random.random() < blocking_chance(lvl) + enraged_catalyst_bonus(attacker):
+    arcana_mult = kwargs.get("arcana_mult", 1.0)
+    if random.random() < (blocking_chance(lvl) + enraged_catalyst_bonus(attacker)) * arcana_mult:
         attacker.add_shield("block", round((2 + lvl) * striking_wave_multiplier(attacker)), priority=0)
 
 
 def _proc_elastic(attacker, defender, weapon, raw_damage, actual_damage, hp_before, result, floor_mobs, tile_x, tile_y, floor, **kwargs):
     lvl = weapon.buffed_lvl()
-    if random.random() >= elastic_chance(lvl) + enraged_catalyst_bonus(attacker):
+    arcana_mult = kwargs.get("arcana_mult", 1.0)
+    if random.random() >= (elastic_chance(lvl) + enraged_catalyst_bonus(attacker)) * arcana_mult:
         return
     if "IMMOVABLE" in getattr(defender, "properties", []):
         return
@@ -226,8 +229,9 @@ def _proc_elastic(attacker, defender, weapon, raw_damage, actual_damage, hp_befo
     defender.pos.x, defender.pos.y = x, y
 
 
-def _proc_shocking(attacker, defender, weapon, raw_damage, actual_damage, hp_before, result, floor_mobs, tile_x, tile_y, floor, add_event=None):
-    if random.random() >= SHOCKING_CHANCE + enraged_catalyst_bonus(attacker):
+def _proc_shocking(attacker, defender, weapon, raw_damage, actual_damage, hp_before, result, floor_mobs, tile_x, tile_y, floor, add_event=None, **kwargs):
+    arcana_mult = kwargs.get("arcana_mult", 1.0)
+    if random.random() >= (SHOCKING_CHANCE + enraged_catalyst_bonus(attacker)) * arcana_mult:
         return
     lvl = weapon.buffed_lvl()
     chain_targets = []
@@ -255,7 +259,8 @@ def _proc_shocking(attacker, defender, weapon, raw_damage, actual_damage, hp_bef
 
 
 def _proc_sacrificial(attacker, defender, weapon, raw_damage, actual_damage, hp_before, result, floor_mobs, tile_x, tile_y, floor, **kwargs):
-    if random.random() >= CURSE_PROC_CHANCE["sacrificial"] + enraged_catalyst_bonus(attacker):
+    arcana_mult = kwargs.get("arcana_mult", 1.0)
+    if random.random() >= (CURSE_PROC_CHANCE["sacrificial"] + enraged_catalyst_bonus(attacker)) * arcana_mult:
         return
     cost = round(missing_hp_pct(attacker) ** 2 * attacker.max_hp / 8 * random.random())
     if cost > 0:
@@ -263,7 +268,8 @@ def _proc_sacrificial(attacker, defender, weapon, raw_damage, actual_damage, hp_
 
 
 def _proc_displacing(attacker, defender, weapon, raw_damage, actual_damage, hp_before, result, floor_mobs, tile_x, tile_y, floor, **kwargs):
-    if random.random() >= CURSE_PROC_CHANCE["displacing"] + enraged_catalyst_bonus(attacker):
+    arcana_mult = kwargs.get("arcana_mult", 1.0)
+    if random.random() >= (CURSE_PROC_CHANCE["displacing"] + enraged_catalyst_bonus(attacker)) * arcana_mult:
         return
     if "IMMOVABLE" in getattr(defender, "properties", []):
         return
@@ -280,7 +286,8 @@ def _proc_displacing(attacker, defender, weapon, raw_damage, actual_damage, hp_b
 
 
 def _proc_annoying(attacker, defender, weapon, raw_damage, actual_damage, hp_before, result, floor_mobs, tile_x, tile_y, floor, **kwargs):
-    if random.random() >= CURSE_PROC_CHANCE["annoying"] + enraged_catalyst_bonus(attacker):
+    arcana_mult = kwargs.get("arcana_mult", 1.0)
+    if random.random() >= (CURSE_PROC_CHANCE["annoying"] + enraged_catalyst_bonus(attacker)) * arcana_mult:
         return
     for mob in floor_mobs.values():
         if not mob.is_alive:
@@ -325,7 +332,11 @@ def apply_enchant_proc(
     and Projecting are handled separately in combat.py (see plan §3)."""
     handler = _PROC_HANDLERS.get(name)
     if handler is not None:
-        handler(attacker, defender, weapon, raw_damage, actual_damage, hp_before, result, floor_mobs, tile_x, tile_y, floor, add_event=add_event)
+        arcana_mult = 1.0
+        if hasattr(attacker, "belongings"):
+            from app.engine.entities.rings import arcana_multiplier
+            arcana_mult = arcana_multiplier(attacker)
+        handler(attacker, defender, weapon, raw_damage, actual_damage, hp_before, result, floor_mobs, tile_x, tile_y, floor, add_event=add_event, arcana_mult=arcana_mult)
 
 
 def polarized_roll() -> float:

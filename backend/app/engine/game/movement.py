@@ -236,6 +236,9 @@ class MovementCombatMixin:
                 cooldown = entity.attack_cooldown
                 if isinstance(entity, Player) and entity.equipped_weapon:
                     cooldown = entity.equipped_weapon.attack_cooldown
+                if isinstance(entity, Player):
+                    from app.engine.entities.rings import furor_multiplier
+                    cooldown /= furor_multiplier(entity)
 
                 if current_time - entity.last_attack_time < cooldown:
                     return
@@ -550,6 +553,8 @@ class MovementCombatMixin:
         cooldown = 1.0
         if is_weapon:
             cooldown = item.attack_cooldown
+        from app.engine.entities.rings import furor_multiplier
+        cooldown /= furor_multiplier(player)
 
         if (current_time - player.last_attack_time) < cooldown:
             return None

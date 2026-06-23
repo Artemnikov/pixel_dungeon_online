@@ -117,6 +117,15 @@ export interface Player {
     | MissileWeapon
     | Armor
     | Ring
+    | RingOfAccuracy
+    | RingOfEvasion
+    | RingOfHaste
+    | RingOfFuror
+    | RingOfMight
+    | RingOfTenacity
+    | RingOfEnergy
+    | RingOfArcana
+    | RingOfSharpshooting
     | Artifact
     | BrokenSeal
     | CloakOfShadows
@@ -207,6 +216,15 @@ export interface Player {
         | MissileWeapon
         | Armor
         | Ring
+        | RingOfAccuracy
+        | RingOfEvasion
+        | RingOfHaste
+        | RingOfFuror
+        | RingOfMight
+        | RingOfTenacity
+        | RingOfEnergy
+        | RingOfArcana
+        | RingOfSharpshooting
         | Artifact
         | BrokenSeal
         | CloakOfShadows
@@ -298,6 +316,15 @@ export interface Player {
         | MissileWeapon
         | Armor
         | Ring
+        | RingOfAccuracy
+        | RingOfEvasion
+        | RingOfHaste
+        | RingOfFuror
+        | RingOfMight
+        | RingOfTenacity
+        | RingOfEnergy
+        | RingOfArcana
+        | RingOfSharpshooting
         | Artifact
         | BrokenSeal
         | CloakOfShadows
@@ -418,6 +445,15 @@ export interface Belongings {
         | MissileWeapon
         | Armor
         | Ring
+        | RingOfAccuracy
+        | RingOfEvasion
+        | RingOfHaste
+        | RingOfFuror
+        | RingOfMight
+        | RingOfTenacity
+        | RingOfEnergy
+        | RingOfArcana
+        | RingOfSharpshooting
         | Artifact
         | BrokenSeal
         | CloakOfShadows
@@ -509,6 +545,15 @@ export interface Belongings {
         | MissileWeapon
         | Armor
         | Ring
+        | RingOfAccuracy
+        | RingOfEvasion
+        | RingOfHaste
+        | RingOfFuror
+        | RingOfMight
+        | RingOfTenacity
+        | RingOfEnergy
+        | RingOfArcana
+        | RingOfSharpshooting
         | Artifact
         | BrokenSeal
         | CloakOfShadows
@@ -600,6 +645,15 @@ export interface Belongings {
         | MissileWeapon
         | Armor
         | Ring
+        | RingOfAccuracy
+        | RingOfEvasion
+        | RingOfHaste
+        | RingOfFuror
+        | RingOfMight
+        | RingOfTenacity
+        | RingOfEnergy
+        | RingOfArcana
+        | RingOfSharpshooting
         | Artifact
         | BrokenSeal
         | CloakOfShadows
@@ -691,6 +745,15 @@ export interface Belongings {
         | MissileWeapon
         | Armor
         | Ring
+        | RingOfAccuracy
+        | RingOfEvasion
+        | RingOfHaste
+        | RingOfFuror
+        | RingOfMight
+        | RingOfTenacity
+        | RingOfEnergy
+        | RingOfArcana
+        | RingOfSharpshooting
         | Artifact
         | BrokenSeal
         | CloakOfShadows
@@ -782,6 +845,15 @@ export interface Belongings {
         | MissileWeapon
         | Armor
         | Ring
+        | RingOfAccuracy
+        | RingOfEvasion
+        | RingOfHaste
+        | RingOfFuror
+        | RingOfMight
+        | RingOfTenacity
+        | RingOfEnergy
+        | RingOfArcana
+        | RingOfSharpshooting
         | Artifact
         | BrokenSeal
         | CloakOfShadows
@@ -889,6 +961,15 @@ export interface Bag {
     | MissileWeapon
     | Armor
     | Ring
+    | RingOfAccuracy
+    | RingOfEvasion
+    | RingOfHaste
+    | RingOfFuror
+    | RingOfMight
+    | RingOfTenacity
+    | RingOfEnergy
+    | RingOfArcana
+    | RingOfSharpshooting
     | Artifact
     | BrokenSeal
     | CloakOfShadows
@@ -1241,6 +1322,189 @@ export interface Ring {
   for_sale?: boolean;
   seen?: boolean;
   strength_requirement?: number;
+  buff_class?: string | null;
+  gem?: string;
+  levels_to_id?: number;
+}
+export interface RingOfAccuracy {
+  kind?: "ring_accuracy";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  strength_requirement?: number;
+  buff_class?: string;
+  gem?: string;
+  levels_to_id?: number;
+}
+export interface RingOfEvasion {
+  kind?: "ring_evasion";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  strength_requirement?: number;
+  buff_class?: string;
+  gem?: string;
+  levels_to_id?: number;
+}
+export interface RingOfHaste {
+  kind?: "ring_haste";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  strength_requirement?: number;
+  buff_class?: string;
+  gem?: string;
+  levels_to_id?: number;
+}
+export interface RingOfFuror {
+  kind?: "ring_furor";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  strength_requirement?: number;
+  buff_class?: string;
+  gem?: string;
+  levels_to_id?: number;
+}
+export interface RingOfMight {
+  kind?: "ring_might";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  strength_requirement?: number;
+  buff_class?: string;
+  gem?: string;
+  levels_to_id?: number;
+}
+export interface RingOfTenacity {
+  kind?: "ring_tenacity";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  strength_requirement?: number;
+  buff_class?: string;
+  gem?: string;
+  levels_to_id?: number;
+}
+export interface RingOfEnergy {
+  kind?: "ring_energy";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  strength_requirement?: number;
+  buff_class?: string;
+  gem?: string;
+  levels_to_id?: number;
+}
+export interface RingOfArcana {
+  kind?: "ring_arcana";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  strength_requirement?: number;
+  buff_class?: string;
+  gem?: string;
+  levels_to_id?: number;
+}
+export interface RingOfSharpshooting {
+  kind?: "ring_sharpshooting";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  strength_requirement?: number;
+  buff_class?: string;
+  gem?: string;
+  levels_to_id?: number;
 }
 export interface Artifact {
   kind?: "artifact";
@@ -2612,6 +2876,15 @@ export interface Chest {
     | MissileWeapon
     | Armor
     | Ring
+    | RingOfAccuracy
+    | RingOfEvasion
+    | RingOfHaste
+    | RingOfFuror
+    | RingOfMight
+    | RingOfTenacity
+    | RingOfEnergy
+    | RingOfArcana
+    | RingOfSharpshooting
     | Artifact
     | BrokenSeal
     | CloakOfShadows
@@ -2718,6 +2991,15 @@ export interface VelvetPouch {
     | MissileWeapon
     | Armor
     | Ring
+    | RingOfAccuracy
+    | RingOfEvasion
+    | RingOfHaste
+    | RingOfFuror
+    | RingOfMight
+    | RingOfTenacity
+    | RingOfEnergy
+    | RingOfArcana
+    | RingOfSharpshooting
     | Artifact
     | BrokenSeal
     | CloakOfShadows
@@ -2824,6 +3106,15 @@ export interface ScrollHolder {
     | MissileWeapon
     | Armor
     | Ring
+    | RingOfAccuracy
+    | RingOfEvasion
+    | RingOfHaste
+    | RingOfFuror
+    | RingOfMight
+    | RingOfTenacity
+    | RingOfEnergy
+    | RingOfArcana
+    | RingOfSharpshooting
     | Artifact
     | BrokenSeal
     | CloakOfShadows
@@ -2930,6 +3221,15 @@ export interface MagicalHolster {
     | MissileWeapon
     | Armor
     | Ring
+    | RingOfAccuracy
+    | RingOfEvasion
+    | RingOfHaste
+    | RingOfFuror
+    | RingOfMight
+    | RingOfTenacity
+    | RingOfEnergy
+    | RingOfArcana
+    | RingOfSharpshooting
     | Artifact
     | BrokenSeal
     | CloakOfShadows
@@ -3036,6 +3336,15 @@ export interface PotionBandolier {
     | MissileWeapon
     | Armor
     | Ring
+    | RingOfAccuracy
+    | RingOfEvasion
+    | RingOfHaste
+    | RingOfFuror
+    | RingOfMight
+    | RingOfTenacity
+    | RingOfEnergy
+    | RingOfArcana
+    | RingOfSharpshooting
     | Artifact
     | BrokenSeal
     | CloakOfShadows
