@@ -47,7 +47,7 @@ from app.engine.game.constants import (
     NO_RESPAWN_FLOORS,
     OOZE_TICK_INTERVAL,
     PASSIVE_REGEN_INTERVAL,
-    RECHARGING_REGEN_INTERVAL,
+    RECHARGING_REGEN_MULTIPLIER,
     PATH_BLOCKED_GIVE_UP_TICKS,
     RESPAWN_TURNS,
     ROOM_HEAL_AMOUNT,
@@ -183,7 +183,6 @@ class TickMixin:
             self._apply_room_heal_tick(player)
             self._apply_passive_regen(player)
             self._tick_passive_wand_recharge(player, dt)
-            self._tick_recharging(player, dt)
 
             if player.armor_charge < 100:
                 player.armor_charge = min(100, player.armor_charge + 2)
@@ -241,7 +240,7 @@ class TickMixin:
             if player.berserk_cooldown > 0:
                 player.berserk_cooldown -= 1
 
-            self._apply_hunger_tick(player)
+            # self._apply_hunger_tick(player)  # disabled per request
 
             if hf_tick:
                 player.decay_shields()
@@ -1046,12 +1045,15 @@ class TickMixin:
     def _tick_passive_wand_recharge(self, player: Player, dt: float):
         """Passive wand recharge:
         - Normal wands: SPD formula (10 + 40 * 0.875^missing)
-        - Staff-imbued wands: +1 charge every 2s (SPD MagesStaff style)."""
+        - Staff-imbued wands: +1 charge every 2s (SPD MagesStaff style).
+        - Recharging buff (Scroll of Recharging): multiplier on regen speed."""
         from app.engine.entities.base import Staff as StaffCls
         weapon = getattr(player, "belongings", None)
         if weapon is not None:
             weapon = weapon.weapon
         imbued_wand = weapon.imbued_wand if isinstance(weapon, StaffCls) else None
+
+        rate_mult = RECHARGING_REGEN_MULTIPLIER if player.has_buff("recharging") else 1.0
 
         for item in player_inventory_items(player):
             if item is imbued_wand:
@@ -1059,25 +1061,12 @@ class TickMixin:
             if isinstance(item, Wand) and item.charges < item.max_charges and not item.cursed:
                 missing = item.max_charges - item.charges
                 turns_to_charge = 10.0 + 40.0 * (0.875 ** missing)
-                item.gain_charge(dt / turns_to_charge)
+                item.gain_charge(dt / turns_to_charge * rate_mult)
         # Staff-imbued wand recharge: +1 charge every 2s, scaled by the
         # wand's recharge_scale (set to 0.75 by MagesStaff imbuing).
         if imbued_wand is not None:
             w = imbued_wand
             if w.charges < w.max_charges and not w.cursed:
-                w.gain_charge(dt / (2.0 * w.recharge_scale))
+                w.gain_charge(dt / (2.0 * w.recharge_scale) * rate_mult)
 
-    def _tick_recharging(self, player: Player, dt: float):
-        """Scroll of Recharging aftereffect: while the "recharging" buff is
-        active, slowly regenerate one charge on the first under-max wand
-        roughly every RECHARGING_REGEN_INTERVAL seconds."""
-        if not player.has_buff("recharging"):
-            player._recharging_accum = 0.0
-            return
-        player._recharging_accum += dt
-        while player._recharging_accum >= RECHARGING_REGEN_INTERVAL:
-            player._recharging_accum -= RECHARGING_REGEN_INTERVAL
-            for item in player_inventory_items(player):
-                if isinstance(item, Wand) and item.charges < item.max_charges:
-                    item.charges += 1
-                    break
+
