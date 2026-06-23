@@ -8,3 +8,5 @@ debug_map.txt
 .opencode
 .superpowers
 shattered-pixel-dungeon
+.pytest_cache
+.claude
