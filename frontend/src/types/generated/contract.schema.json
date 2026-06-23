@@ -1,5 +1,74 @@
 {
   "$defs": {
+    "Amulet": {
+      "properties": {
+        "kind": {
+          "const": "amulet",
+          "default": "amulet",
+          "type": "string"
+        },
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "name": {
+          "default": "Amulet of Yendor",
+          "type": "string"
+        },
+        "type": {
+          "default": "amulet",
+          "type": "string"
+        },
+        "pos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Position"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "quantity": {
+          "default": 1,
+          "type": "integer"
+        },
+        "level": {
+          "default": 0,
+          "type": "integer"
+        },
+        "level_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "unique": {
+          "default": true,
+          "type": "boolean"
+        },
+        "kept_though_lost": {
+          "default": false,
+          "type": "boolean"
+        },
+        "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
     "Armor": {
       "properties": {
         "kind": {
@@ -251,6 +320,7 @@
           "items": {
             "discriminator": {
               "mapping": {
+                "amulet": "#/$defs/Amulet",
                 "armor": "#/$defs/Armor",
                 "artifact": "#/$defs/Artifact",
                 "bag": "#/$defs/Bag",
@@ -259,10 +329,12 @@
                 "bow": "#/$defs/Bow",
                 "broken_seal": "#/$defs/BrokenSeal",
                 "chargrilled_meat": "#/$defs/ChargrilledMeat",
+                "chest": "#/$defs/Chest",
                 "cloak_of_shadows": "#/$defs/CloakOfShadows",
                 "dagger": "#/$defs/Dagger",
                 "damage_wand": "#/$defs/DamageWand",
                 "dewdrop": "#/$defs/Dewdrop",
+                "dried_rose": "#/$defs/DriedRose",
                 "dwarf_token": "#/$defs/DwarfToken",
                 "elixir_aqua_rejuv": "#/$defs/ElixirOfAquaticRejuvenation",
                 "food": "#/$defs/Food",
@@ -278,6 +350,7 @@
                 "missile_weapon": "#/$defs/MissileWeapon",
                 "mystery_meat": "#/$defs/MysteryMeat",
                 "pasty": "#/$defs/Pasty",
+                "petal": "#/$defs/Petal",
                 "potion": "#/$defs/Potion",
                 "potion_bandolier": "#/$defs/PotionBandolier",
                 "potion_of_experience": "#/$defs/PotionOfExperience",
@@ -311,6 +384,7 @@
                 "scroll_of_upgrade": "#/$defs/ScrollOfUpgrade",
                 "seed": "#/$defs/Seed",
                 "small_ration": "#/$defs/SmallRation",
+                "spirit_bow": "#/$defs/SpiritBow",
                 "staff": "#/$defs/Staff",
                 "stone": "#/$defs/Stone",
                 "tengu_mask": "#/$defs/TenguMask",
@@ -350,6 +424,9 @@
                 "$ref": "#/$defs/Bow"
               },
               {
+                "$ref": "#/$defs/SpiritBow"
+              },
+              {
                 "$ref": "#/$defs/Staff"
               },
               {
@@ -369,6 +446,9 @@
               },
               {
                 "$ref": "#/$defs/CloakOfShadows"
+              },
+              {
+                "$ref": "#/$defs/DriedRose"
               },
               {
                 "$ref": "#/$defs/DamageWand"
@@ -551,6 +631,9 @@
                 "$ref": "#/$defs/Waterskin"
               },
               {
+                "$ref": "#/$defs/Amulet"
+              },
+              {
                 "$ref": "#/$defs/Stone"
               },
               {
@@ -567,6 +650,12 @@
               },
               {
                 "$ref": "#/$defs/DwarfToken"
+              },
+              {
+                "$ref": "#/$defs/Petal"
+              },
+              {
+                "$ref": "#/$defs/Chest"
               },
               {
                 "$ref": "#/$defs/VelvetPouch"
@@ -603,6 +692,7 @@
             {
               "discriminator": {
                 "mapping": {
+                  "amulet": "#/$defs/Amulet",
                   "armor": "#/$defs/Armor",
                   "artifact": "#/$defs/Artifact",
                   "bag": "#/$defs/Bag",
@@ -611,10 +701,12 @@
                   "bow": "#/$defs/Bow",
                   "broken_seal": "#/$defs/BrokenSeal",
                   "chargrilled_meat": "#/$defs/ChargrilledMeat",
+                  "chest": "#/$defs/Chest",
                   "cloak_of_shadows": "#/$defs/CloakOfShadows",
                   "dagger": "#/$defs/Dagger",
                   "damage_wand": "#/$defs/DamageWand",
                   "dewdrop": "#/$defs/Dewdrop",
+                  "dried_rose": "#/$defs/DriedRose",
                   "dwarf_token": "#/$defs/DwarfToken",
                   "elixir_aqua_rejuv": "#/$defs/ElixirOfAquaticRejuvenation",
                   "food": "#/$defs/Food",
@@ -630,6 +722,7 @@
                   "missile_weapon": "#/$defs/MissileWeapon",
                   "mystery_meat": "#/$defs/MysteryMeat",
                   "pasty": "#/$defs/Pasty",
+                  "petal": "#/$defs/Petal",
                   "potion": "#/$defs/Potion",
                   "potion_bandolier": "#/$defs/PotionBandolier",
                   "potion_of_experience": "#/$defs/PotionOfExperience",
@@ -663,6 +756,7 @@
                   "scroll_of_upgrade": "#/$defs/ScrollOfUpgrade",
                   "seed": "#/$defs/Seed",
                   "small_ration": "#/$defs/SmallRation",
+                  "spirit_bow": "#/$defs/SpiritBow",
                   "staff": "#/$defs/Staff",
                   "stone": "#/$defs/Stone",
                   "tengu_mask": "#/$defs/TenguMask",
@@ -702,6 +796,9 @@
                   "$ref": "#/$defs/Bow"
                 },
                 {
+                  "$ref": "#/$defs/SpiritBow"
+                },
+                {
                   "$ref": "#/$defs/Staff"
                 },
                 {
@@ -721,6 +818,9 @@
                 },
                 {
                   "$ref": "#/$defs/CloakOfShadows"
+                },
+                {
+                  "$ref": "#/$defs/DriedRose"
                 },
                 {
                   "$ref": "#/$defs/DamageWand"
@@ -903,6 +1003,9 @@
                   "$ref": "#/$defs/Waterskin"
                 },
                 {
+                  "$ref": "#/$defs/Amulet"
+                },
+                {
                   "$ref": "#/$defs/Stone"
                 },
                 {
@@ -919,6 +1022,12 @@
                 },
                 {
                   "$ref": "#/$defs/DwarfToken"
+                },
+                {
+                  "$ref": "#/$defs/Petal"
+                },
+                {
+                  "$ref": "#/$defs/Chest"
                 },
                 {
                   "$ref": "#/$defs/VelvetPouch"
@@ -948,6 +1057,7 @@
             {
               "discriminator": {
                 "mapping": {
+                  "amulet": "#/$defs/Amulet",
                   "armor": "#/$defs/Armor",
                   "artifact": "#/$defs/Artifact",
                   "bag": "#/$defs/Bag",
@@ -956,10 +1066,12 @@
                   "bow": "#/$defs/Bow",
                   "broken_seal": "#/$defs/BrokenSeal",
                   "chargrilled_meat": "#/$defs/ChargrilledMeat",
+                  "chest": "#/$defs/Chest",
                   "cloak_of_shadows": "#/$defs/CloakOfShadows",
                   "dagger": "#/$defs/Dagger",
                   "damage_wand": "#/$defs/DamageWand",
                   "dewdrop": "#/$defs/Dewdrop",
+                  "dried_rose": "#/$defs/DriedRose",
                   "dwarf_token": "#/$defs/DwarfToken",
                   "elixir_aqua_rejuv": "#/$defs/ElixirOfAquaticRejuvenation",
                   "food": "#/$defs/Food",
@@ -975,6 +1087,7 @@
                   "missile_weapon": "#/$defs/MissileWeapon",
                   "mystery_meat": "#/$defs/MysteryMeat",
                   "pasty": "#/$defs/Pasty",
+                  "petal": "#/$defs/Petal",
                   "potion": "#/$defs/Potion",
                   "potion_bandolier": "#/$defs/PotionBandolier",
                   "potion_of_experience": "#/$defs/PotionOfExperience",
@@ -1008,6 +1121,7 @@
                   "scroll_of_upgrade": "#/$defs/ScrollOfUpgrade",
                   "seed": "#/$defs/Seed",
                   "small_ration": "#/$defs/SmallRation",
+                  "spirit_bow": "#/$defs/SpiritBow",
                   "staff": "#/$defs/Staff",
                   "stone": "#/$defs/Stone",
                   "tengu_mask": "#/$defs/TenguMask",
@@ -1047,6 +1161,9 @@
                   "$ref": "#/$defs/Bow"
                 },
                 {
+                  "$ref": "#/$defs/SpiritBow"
+                },
+                {
                   "$ref": "#/$defs/Staff"
                 },
                 {
@@ -1066,6 +1183,9 @@
                 },
                 {
                   "$ref": "#/$defs/CloakOfShadows"
+                },
+                {
+                  "$ref": "#/$defs/DriedRose"
                 },
                 {
                   "$ref": "#/$defs/DamageWand"
@@ -1248,6 +1368,9 @@
                   "$ref": "#/$defs/Waterskin"
                 },
                 {
+                  "$ref": "#/$defs/Amulet"
+                },
+                {
                   "$ref": "#/$defs/Stone"
                 },
                 {
@@ -1264,6 +1387,12 @@
                 },
                 {
                   "$ref": "#/$defs/DwarfToken"
+                },
+                {
+                  "$ref": "#/$defs/Petal"
+                },
+                {
+                  "$ref": "#/$defs/Chest"
                 },
                 {
                   "$ref": "#/$defs/VelvetPouch"
@@ -1293,6 +1422,7 @@
             {
               "discriminator": {
                 "mapping": {
+                  "amulet": "#/$defs/Amulet",
                   "armor": "#/$defs/Armor",
                   "artifact": "#/$defs/Artifact",
                   "bag": "#/$defs/Bag",
@@ -1301,10 +1431,12 @@
                   "bow": "#/$defs/Bow",
                   "broken_seal": "#/$defs/BrokenSeal",
                   "chargrilled_meat": "#/$defs/ChargrilledMeat",
+                  "chest": "#/$defs/Chest",
                   "cloak_of_shadows": "#/$defs/CloakOfShadows",
                   "dagger": "#/$defs/Dagger",
                   "damage_wand": "#/$defs/DamageWand",
                   "dewdrop": "#/$defs/Dewdrop",
+                  "dried_rose": "#/$defs/DriedRose",
                   "dwarf_token": "#/$defs/DwarfToken",
                   "elixir_aqua_rejuv": "#/$defs/ElixirOfAquaticRejuvenation",
                   "food": "#/$defs/Food",
@@ -1320,6 +1452,7 @@
                   "missile_weapon": "#/$defs/MissileWeapon",
                   "mystery_meat": "#/$defs/MysteryMeat",
                   "pasty": "#/$defs/Pasty",
+                  "petal": "#/$defs/Petal",
                   "potion": "#/$defs/Potion",
                   "potion_bandolier": "#/$defs/PotionBandolier",
                   "potion_of_experience": "#/$defs/PotionOfExperience",
@@ -1353,6 +1486,7 @@
                   "scroll_of_upgrade": "#/$defs/ScrollOfUpgrade",
                   "seed": "#/$defs/Seed",
                   "small_ration": "#/$defs/SmallRation",
+                  "spirit_bow": "#/$defs/SpiritBow",
                   "staff": "#/$defs/Staff",
                   "stone": "#/$defs/Stone",
                   "tengu_mask": "#/$defs/TenguMask",
@@ -1392,6 +1526,9 @@
                   "$ref": "#/$defs/Bow"
                 },
                 {
+                  "$ref": "#/$defs/SpiritBow"
+                },
+                {
                   "$ref": "#/$defs/Staff"
                 },
                 {
@@ -1411,6 +1548,9 @@
                 },
                 {
                   "$ref": "#/$defs/CloakOfShadows"
+                },
+                {
+                  "$ref": "#/$defs/DriedRose"
                 },
                 {
                   "$ref": "#/$defs/DamageWand"
@@ -1593,6 +1733,9 @@
                   "$ref": "#/$defs/Waterskin"
                 },
                 {
+                  "$ref": "#/$defs/Amulet"
+                },
+                {
                   "$ref": "#/$defs/Stone"
                 },
                 {
@@ -1609,6 +1752,12 @@
                 },
                 {
                   "$ref": "#/$defs/DwarfToken"
+                },
+                {
+                  "$ref": "#/$defs/Petal"
+                },
+                {
+                  "$ref": "#/$defs/Chest"
                 },
                 {
                   "$ref": "#/$defs/VelvetPouch"
@@ -1638,6 +1787,7 @@
             {
               "discriminator": {
                 "mapping": {
+                  "amulet": "#/$defs/Amulet",
                   "armor": "#/$defs/Armor",
                   "artifact": "#/$defs/Artifact",
                   "bag": "#/$defs/Bag",
@@ -1646,10 +1796,12 @@
                   "bow": "#/$defs/Bow",
                   "broken_seal": "#/$defs/BrokenSeal",
                   "chargrilled_meat": "#/$defs/ChargrilledMeat",
+                  "chest": "#/$defs/Chest",
                   "cloak_of_shadows": "#/$defs/CloakOfShadows",
                   "dagger": "#/$defs/Dagger",
                   "damage_wand": "#/$defs/DamageWand",
                   "dewdrop": "#/$defs/Dewdrop",
+                  "dried_rose": "#/$defs/DriedRose",
                   "dwarf_token": "#/$defs/DwarfToken",
                   "elixir_aqua_rejuv": "#/$defs/ElixirOfAquaticRejuvenation",
                   "food": "#/$defs/Food",
@@ -1665,6 +1817,7 @@
                   "missile_weapon": "#/$defs/MissileWeapon",
                   "mystery_meat": "#/$defs/MysteryMeat",
                   "pasty": "#/$defs/Pasty",
+                  "petal": "#/$defs/Petal",
                   "potion": "#/$defs/Potion",
                   "potion_bandolier": "#/$defs/PotionBandolier",
                   "potion_of_experience": "#/$defs/PotionOfExperience",
@@ -1698,6 +1851,7 @@
                   "scroll_of_upgrade": "#/$defs/ScrollOfUpgrade",
                   "seed": "#/$defs/Seed",
                   "small_ration": "#/$defs/SmallRation",
+                  "spirit_bow": "#/$defs/SpiritBow",
                   "staff": "#/$defs/Staff",
                   "stone": "#/$defs/Stone",
                   "tengu_mask": "#/$defs/TenguMask",
@@ -1737,6 +1891,9 @@
                   "$ref": "#/$defs/Bow"
                 },
                 {
+                  "$ref": "#/$defs/SpiritBow"
+                },
+                {
                   "$ref": "#/$defs/Staff"
                 },
                 {
@@ -1756,6 +1913,9 @@
                 },
                 {
                   "$ref": "#/$defs/CloakOfShadows"
+                },
+                {
+                  "$ref": "#/$defs/DriedRose"
                 },
                 {
                   "$ref": "#/$defs/DamageWand"
@@ -1938,6 +2098,9 @@
                   "$ref": "#/$defs/Waterskin"
                 },
                 {
+                  "$ref": "#/$defs/Amulet"
+                },
+                {
                   "$ref": "#/$defs/Stone"
                 },
                 {
@@ -1954,6 +2117,12 @@
                 },
                 {
                   "$ref": "#/$defs/DwarfToken"
+                },
+                {
+                  "$ref": "#/$defs/Petal"
+                },
+                {
+                  "$ref": "#/$defs/Chest"
                 },
                 {
                   "$ref": "#/$defs/VelvetPouch"
@@ -1983,6 +2152,7 @@
             {
               "discriminator": {
                 "mapping": {
+                  "amulet": "#/$defs/Amulet",
                   "armor": "#/$defs/Armor",
                   "artifact": "#/$defs/Artifact",
                   "bag": "#/$defs/Bag",
@@ -1991,10 +2161,12 @@
                   "bow": "#/$defs/Bow",
                   "broken_seal": "#/$defs/BrokenSeal",
                   "chargrilled_meat": "#/$defs/ChargrilledMeat",
+                  "chest": "#/$defs/Chest",
                   "cloak_of_shadows": "#/$defs/CloakOfShadows",
                   "dagger": "#/$defs/Dagger",
                   "damage_wand": "#/$defs/DamageWand",
                   "dewdrop": "#/$defs/Dewdrop",
+                  "dried_rose": "#/$defs/DriedRose",
                   "dwarf_token": "#/$defs/DwarfToken",
                   "elixir_aqua_rejuv": "#/$defs/ElixirOfAquaticRejuvenation",
                   "food": "#/$defs/Food",
@@ -2010,6 +2182,7 @@
                   "missile_weapon": "#/$defs/MissileWeapon",
                   "mystery_meat": "#/$defs/MysteryMeat",
                   "pasty": "#/$defs/Pasty",
+                  "petal": "#/$defs/Petal",
                   "potion": "#/$defs/Potion",
                   "potion_bandolier": "#/$defs/PotionBandolier",
                   "potion_of_experience": "#/$defs/PotionOfExperience",
@@ -2043,6 +2216,7 @@
                   "scroll_of_upgrade": "#/$defs/ScrollOfUpgrade",
                   "seed": "#/$defs/Seed",
                   "small_ration": "#/$defs/SmallRation",
+                  "spirit_bow": "#/$defs/SpiritBow",
                   "staff": "#/$defs/Staff",
                   "stone": "#/$defs/Stone",
                   "tengu_mask": "#/$defs/TenguMask",
@@ -2082,6 +2256,9 @@
                   "$ref": "#/$defs/Bow"
                 },
                 {
+                  "$ref": "#/$defs/SpiritBow"
+                },
+                {
                   "$ref": "#/$defs/Staff"
                 },
                 {
@@ -2101,6 +2278,9 @@
                 },
                 {
                   "$ref": "#/$defs/CloakOfShadows"
+                },
+                {
+                  "$ref": "#/$defs/DriedRose"
                 },
                 {
                   "$ref": "#/$defs/DamageWand"
@@ -2283,6 +2463,9 @@
                   "$ref": "#/$defs/Waterskin"
                 },
                 {
+                  "$ref": "#/$defs/Amulet"
+                },
+                {
                   "$ref": "#/$defs/Stone"
                 },
                 {
@@ -2299,6 +2482,12 @@
                 },
                 {
                   "$ref": "#/$defs/DwarfToken"
+                },
+                {
+                  "$ref": "#/$defs/Petal"
+                },
+                {
+                  "$ref": "#/$defs/Chest"
                 },
                 {
                   "$ref": "#/$defs/VelvetPouch"
@@ -2796,6 +2985,445 @@
       },
       "type": "object"
     },
+    "Chest": {
+      "properties": {
+        "kind": {
+          "const": "chest",
+          "default": "chest",
+          "type": "string"
+        },
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "default": "chest",
+          "type": "string"
+        },
+        "pos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Position"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "quantity": {
+          "default": 1,
+          "type": "integer"
+        },
+        "level": {
+          "default": 0,
+          "type": "integer"
+        },
+        "level_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "unique": {
+          "default": false,
+          "type": "boolean"
+        },
+        "kept_though_lost": {
+          "default": false,
+          "type": "boolean"
+        },
+        "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        },
+        "chest_type": {
+          "default": "CHEST",
+          "type": "string"
+        },
+        "opened": {
+          "default": false,
+          "type": "boolean"
+        },
+        "contents": {
+          "items": {
+            "discriminator": {
+              "mapping": {
+                "amulet": "#/$defs/Amulet",
+                "armor": "#/$defs/Armor",
+                "artifact": "#/$defs/Artifact",
+                "bag": "#/$defs/Bag",
+                "berry": "#/$defs/Berry",
+                "boomerang": "#/$defs/Boomerang",
+                "bow": "#/$defs/Bow",
+                "broken_seal": "#/$defs/BrokenSeal",
+                "chargrilled_meat": "#/$defs/ChargrilledMeat",
+                "chest": "#/$defs/Chest",
+                "cloak_of_shadows": "#/$defs/CloakOfShadows",
+                "dagger": "#/$defs/Dagger",
+                "damage_wand": "#/$defs/DamageWand",
+                "dewdrop": "#/$defs/Dewdrop",
+                "dried_rose": "#/$defs/DriedRose",
+                "dwarf_token": "#/$defs/DwarfToken",
+                "elixir_aqua_rejuv": "#/$defs/ElixirOfAquaticRejuvenation",
+                "food": "#/$defs/Food",
+                "frozen_carpaccio": "#/$defs/FrozenCarpaccio",
+                "fury_potion": "#/$defs/FuryPotion",
+                "gold": "#/$defs/Gold",
+                "goo_blob": "#/$defs/GooBlob",
+                "health_potion": "#/$defs/HealthPotion",
+                "key": "#/$defs/Key",
+                "kings_crown": "#/$defs/KingsCrown",
+                "magical_holster": "#/$defs/MagicalHolster",
+                "melee_weapon": "#/$defs/MeleeWeapon",
+                "missile_weapon": "#/$defs/MissileWeapon",
+                "mystery_meat": "#/$defs/MysteryMeat",
+                "pasty": "#/$defs/Pasty",
+                "petal": "#/$defs/Petal",
+                "potion": "#/$defs/Potion",
+                "potion_bandolier": "#/$defs/PotionBandolier",
+                "potion_of_experience": "#/$defs/PotionOfExperience",
+                "potion_of_frost": "#/$defs/PotionOfFrost",
+                "potion_of_haste": "#/$defs/PotionOfHaste",
+                "potion_of_invisibility": "#/$defs/PotionOfInvisibility",
+                "potion_of_levitation": "#/$defs/PotionOfLevitation",
+                "potion_of_liquid_flame": "#/$defs/PotionOfLiquidFlame",
+                "potion_of_mind_vision": "#/$defs/PotionOfMindVision",
+                "potion_of_paralytic_gas": "#/$defs/PotionOfParalyticGas",
+                "potion_of_purity": "#/$defs/PotionOfPurity",
+                "potion_of_strength": "#/$defs/PotionOfStrength",
+                "potion_of_toxic_gas": "#/$defs/PotionOfToxicGas",
+                "ration": "#/$defs/Ration",
+                "reviving_potion": "#/$defs/RevivingPotion",
+                "ring": "#/$defs/Ring",
+                "scroll": "#/$defs/Scroll",
+                "scroll_holder": "#/$defs/ScrollHolder",
+                "scroll_of_identify": "#/$defs/ScrollOfIdentify",
+                "scroll_of_lullaby": "#/$defs/ScrollOfLullaby",
+                "scroll_of_magic_mapping": "#/$defs/ScrollOfMagicMapping",
+                "scroll_of_metamorphosis": "#/$defs/ScrollOfMetamorphosis",
+                "scroll_of_mirror_image": "#/$defs/ScrollOfMirrorImage",
+                "scroll_of_rage": "#/$defs/ScrollOfRage",
+                "scroll_of_recharging": "#/$defs/ScrollOfRecharging",
+                "scroll_of_remove_curse": "#/$defs/ScrollOfRemoveCurse",
+                "scroll_of_retribution": "#/$defs/ScrollOfRetribution",
+                "scroll_of_teleportation": "#/$defs/ScrollOfTeleportation",
+                "scroll_of_terror": "#/$defs/ScrollOfTerror",
+                "scroll_of_transmutation": "#/$defs/ScrollOfTransmutation",
+                "scroll_of_upgrade": "#/$defs/ScrollOfUpgrade",
+                "seed": "#/$defs/Seed",
+                "small_ration": "#/$defs/SmallRation",
+                "spirit_bow": "#/$defs/SpiritBow",
+                "staff": "#/$defs/Staff",
+                "stone": "#/$defs/Stone",
+                "tengu_mask": "#/$defs/TenguMask",
+                "throwable": "#/$defs/Throwable",
+                "throwable_dagger": "#/$defs/ThrowableDagger",
+                "velvet_pouch": "#/$defs/VelvetPouch",
+                "wand": "#/$defs/Wand",
+                "wand_blast_wave": "#/$defs/WandOfBlastWave",
+                "wand_corrosion": "#/$defs/WandOfCorrosion",
+                "wand_corruption": "#/$defs/WandOfCorruption",
+                "wand_disintegration": "#/$defs/WandOfDisintegration",
+                "wand_fireblast": "#/$defs/WandOfFireblast",
+                "wand_frost": "#/$defs/WandOfFrost",
+                "wand_lightning": "#/$defs/WandOfLightning",
+                "wand_living_earth": "#/$defs/WandOfLivingEarth",
+                "wand_magic_missile": "#/$defs/WandOfMagicMissile",
+                "wand_prismatic_light": "#/$defs/WandOfPrismaticLight",
+                "wand_regrowth": "#/$defs/WandOfRegrowth",
+                "wand_transfusion": "#/$defs/WandOfTransfusion",
+                "wand_warding": "#/$defs/WandOfWarding",
+                "waterskin": "#/$defs/Waterskin",
+                "worn_shortsword": "#/$defs/WornShortsword"
+              },
+              "propertyName": "kind"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/$defs/MeleeWeapon"
+              },
+              {
+                "$ref": "#/$defs/Dagger"
+              },
+              {
+                "$ref": "#/$defs/WornShortsword"
+              },
+              {
+                "$ref": "#/$defs/Bow"
+              },
+              {
+                "$ref": "#/$defs/SpiritBow"
+              },
+              {
+                "$ref": "#/$defs/Staff"
+              },
+              {
+                "$ref": "#/$defs/MissileWeapon"
+              },
+              {
+                "$ref": "#/$defs/Armor"
+              },
+              {
+                "$ref": "#/$defs/Ring"
+              },
+              {
+                "$ref": "#/$defs/Artifact"
+              },
+              {
+                "$ref": "#/$defs/BrokenSeal"
+              },
+              {
+                "$ref": "#/$defs/CloakOfShadows"
+              },
+              {
+                "$ref": "#/$defs/DriedRose"
+              },
+              {
+                "$ref": "#/$defs/DamageWand"
+              },
+              {
+                "$ref": "#/$defs/WandOfMagicMissile"
+              },
+              {
+                "$ref": "#/$defs/WandOfFireblast"
+              },
+              {
+                "$ref": "#/$defs/WandOfFrost"
+              },
+              {
+                "$ref": "#/$defs/WandOfLightning"
+              },
+              {
+                "$ref": "#/$defs/WandOfDisintegration"
+              },
+              {
+                "$ref": "#/$defs/WandOfPrismaticLight"
+              },
+              {
+                "$ref": "#/$defs/WandOfBlastWave"
+              },
+              {
+                "$ref": "#/$defs/WandOfTransfusion"
+              },
+              {
+                "$ref": "#/$defs/WandOfCorrosion"
+              },
+              {
+                "$ref": "#/$defs/WandOfCorruption"
+              },
+              {
+                "$ref": "#/$defs/WandOfRegrowth"
+              },
+              {
+                "$ref": "#/$defs/WandOfWarding"
+              },
+              {
+                "$ref": "#/$defs/WandOfLivingEarth"
+              },
+              {
+                "$ref": "#/$defs/Wand"
+              },
+              {
+                "$ref": "#/$defs/HealthPotion"
+              },
+              {
+                "$ref": "#/$defs/RevivingPotion"
+              },
+              {
+                "$ref": "#/$defs/FuryPotion"
+              },
+              {
+                "$ref": "#/$defs/PotionOfStrength"
+              },
+              {
+                "$ref": "#/$defs/PotionOfHaste"
+              },
+              {
+                "$ref": "#/$defs/PotionOfInvisibility"
+              },
+              {
+                "$ref": "#/$defs/PotionOfLevitation"
+              },
+              {
+                "$ref": "#/$defs/PotionOfMindVision"
+              },
+              {
+                "$ref": "#/$defs/PotionOfFrost"
+              },
+              {
+                "$ref": "#/$defs/PotionOfLiquidFlame"
+              },
+              {
+                "$ref": "#/$defs/PotionOfToxicGas"
+              },
+              {
+                "$ref": "#/$defs/PotionOfParalyticGas"
+              },
+              {
+                "$ref": "#/$defs/PotionOfPurity"
+              },
+              {
+                "$ref": "#/$defs/PotionOfExperience"
+              },
+              {
+                "$ref": "#/$defs/ElixirOfAquaticRejuvenation"
+              },
+              {
+                "$ref": "#/$defs/Potion"
+              },
+              {
+                "$ref": "#/$defs/ScrollOfRage"
+              },
+              {
+                "$ref": "#/$defs/ScrollOfMetamorphosis"
+              },
+              {
+                "$ref": "#/$defs/ScrollOfUpgrade"
+              },
+              {
+                "$ref": "#/$defs/ScrollOfIdentify"
+              },
+              {
+                "$ref": "#/$defs/ScrollOfMagicMapping"
+              },
+              {
+                "$ref": "#/$defs/ScrollOfTeleportation"
+              },
+              {
+                "$ref": "#/$defs/ScrollOfRemoveCurse"
+              },
+              {
+                "$ref": "#/$defs/ScrollOfRecharging"
+              },
+              {
+                "$ref": "#/$defs/ScrollOfLullaby"
+              },
+              {
+                "$ref": "#/$defs/ScrollOfTerror"
+              },
+              {
+                "$ref": "#/$defs/ScrollOfMirrorImage"
+              },
+              {
+                "$ref": "#/$defs/ScrollOfRetribution"
+              },
+              {
+                "$ref": "#/$defs/ScrollOfTransmutation"
+              },
+              {
+                "$ref": "#/$defs/Scroll"
+              },
+              {
+                "$ref": "#/$defs/Gold"
+              },
+              {
+                "$ref": "#/$defs/MysteryMeat"
+              },
+              {
+                "$ref": "#/$defs/FrozenCarpaccio"
+              },
+              {
+                "$ref": "#/$defs/Berry"
+              },
+              {
+                "$ref": "#/$defs/SmallRation"
+              },
+              {
+                "$ref": "#/$defs/Ration"
+              },
+              {
+                "$ref": "#/$defs/Pasty"
+              },
+              {
+                "$ref": "#/$defs/ChargrilledMeat"
+              },
+              {
+                "$ref": "#/$defs/Food"
+              },
+              {
+                "$ref": "#/$defs/Key"
+              },
+              {
+                "$ref": "#/$defs/TenguMask"
+              },
+              {
+                "$ref": "#/$defs/KingsCrown"
+              },
+              {
+                "$ref": "#/$defs/Seed"
+              },
+              {
+                "$ref": "#/$defs/Dewdrop"
+              },
+              {
+                "$ref": "#/$defs/Waterskin"
+              },
+              {
+                "$ref": "#/$defs/Amulet"
+              },
+              {
+                "$ref": "#/$defs/Stone"
+              },
+              {
+                "$ref": "#/$defs/Boomerang"
+              },
+              {
+                "$ref": "#/$defs/ThrowableDagger"
+              },
+              {
+                "$ref": "#/$defs/Throwable"
+              },
+              {
+                "$ref": "#/$defs/GooBlob"
+              },
+              {
+                "$ref": "#/$defs/DwarfToken"
+              },
+              {
+                "$ref": "#/$defs/Petal"
+              },
+              {
+                "$ref": "#/$defs/Chest"
+              },
+              {
+                "$ref": "#/$defs/VelvetPouch"
+              },
+              {
+                "$ref": "#/$defs/ScrollHolder"
+              },
+              {
+                "$ref": "#/$defs/MagicalHolster"
+              },
+              {
+                "$ref": "#/$defs/PotionBandolier"
+              },
+              {
+                "$ref": "#/$defs/Bag"
+              }
+            ]
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "name"
+      ],
+      "type": "object"
+    },
     "CloakOfShadows": {
       "properties": {
         "kind": {
@@ -3199,6 +3827,128 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
+    "DriedRose": {
+      "properties": {
+        "kind": {
+          "const": "dried_rose",
+          "default": "dried_rose",
+          "type": "string"
+        },
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "name": {
+          "default": "Dried Rose",
+          "type": "string"
+        },
+        "type": {
+          "default": "artifact",
+          "type": "string"
+        },
+        "pos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Position"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "quantity": {
+          "default": 1,
+          "type": "integer"
+        },
+        "level": {
+          "default": 0,
+          "type": "integer"
+        },
+        "level_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "unique": {
+          "default": true,
+          "type": "boolean"
+        },
+        "kept_though_lost": {
+          "default": false,
+          "type": "boolean"
+        },
+        "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        },
+        "strength_requirement": {
+          "default": 10,
+          "type": "integer"
+        },
+        "charge": {
+          "default": 100,
+          "type": "integer"
+        },
+        "charge_cap": {
+          "default": 100,
+          "type": "integer"
+        },
+        "exp": {
+          "default": 0,
+          "type": "integer"
+        },
+        "ghost_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "weapon": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/MeleeWeapon"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "armor": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Armor"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "dropped_petals": {
+          "default": 0,
+          "type": "integer"
         }
       },
       "type": "object"
@@ -4067,6 +4817,7 @@
           "items": {
             "discriminator": {
               "mapping": {
+                "amulet": "#/$defs/Amulet",
                 "armor": "#/$defs/Armor",
                 "artifact": "#/$defs/Artifact",
                 "bag": "#/$defs/Bag",
@@ -4075,10 +4826,12 @@
                 "bow": "#/$defs/Bow",
                 "broken_seal": "#/$defs/BrokenSeal",
                 "chargrilled_meat": "#/$defs/ChargrilledMeat",
+                "chest": "#/$defs/Chest",
                 "cloak_of_shadows": "#/$defs/CloakOfShadows",
                 "dagger": "#/$defs/Dagger",
                 "damage_wand": "#/$defs/DamageWand",
                 "dewdrop": "#/$defs/Dewdrop",
+                "dried_rose": "#/$defs/DriedRose",
                 "dwarf_token": "#/$defs/DwarfToken",
                 "elixir_aqua_rejuv": "#/$defs/ElixirOfAquaticRejuvenation",
                 "food": "#/$defs/Food",
@@ -4094,6 +4847,7 @@
                 "missile_weapon": "#/$defs/MissileWeapon",
                 "mystery_meat": "#/$defs/MysteryMeat",
                 "pasty": "#/$defs/Pasty",
+                "petal": "#/$defs/Petal",
                 "potion": "#/$defs/Potion",
                 "potion_bandolier": "#/$defs/PotionBandolier",
                 "potion_of_experience": "#/$defs/PotionOfExperience",
@@ -4127,6 +4881,7 @@
                 "scroll_of_upgrade": "#/$defs/ScrollOfUpgrade",
                 "seed": "#/$defs/Seed",
                 "small_ration": "#/$defs/SmallRation",
+                "spirit_bow": "#/$defs/SpiritBow",
                 "staff": "#/$defs/Staff",
                 "stone": "#/$defs/Stone",
                 "tengu_mask": "#/$defs/TenguMask",
@@ -4166,6 +4921,9 @@
                 "$ref": "#/$defs/Bow"
               },
               {
+                "$ref": "#/$defs/SpiritBow"
+              },
+              {
                 "$ref": "#/$defs/Staff"
               },
               {
@@ -4185,6 +4943,9 @@
               },
               {
                 "$ref": "#/$defs/CloakOfShadows"
+              },
+              {
+                "$ref": "#/$defs/DriedRose"
               },
               {
                 "$ref": "#/$defs/DamageWand"
@@ -4367,6 +5128,9 @@
                 "$ref": "#/$defs/Waterskin"
               },
               {
+                "$ref": "#/$defs/Amulet"
+              },
+              {
                 "$ref": "#/$defs/Stone"
               },
               {
@@ -4383,6 +5147,12 @@
               },
               {
                 "$ref": "#/$defs/DwarfToken"
+              },
+              {
+                "$ref": "#/$defs/Petal"
+              },
+              {
+                "$ref": "#/$defs/Chest"
               },
               {
                 "$ref": "#/$defs/VelvetPouch"
@@ -5037,6 +5807,75 @@
       },
       "type": "object"
     },
+    "Petal": {
+      "properties": {
+        "kind": {
+          "const": "petal",
+          "default": "petal",
+          "type": "string"
+        },
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "name": {
+          "default": "Petal",
+          "type": "string"
+        },
+        "type": {
+          "default": "misc",
+          "type": "string"
+        },
+        "pos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Position"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "quantity": {
+          "default": 1,
+          "type": "integer"
+        },
+        "level": {
+          "default": 0,
+          "type": "integer"
+        },
+        "level_known": {
+          "default": true,
+          "type": "boolean"
+        },
+        "cursed": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed_known": {
+          "default": true,
+          "type": "boolean"
+        },
+        "unique": {
+          "default": false,
+          "type": "boolean"
+        },
+        "kept_though_lost": {
+          "default": false,
+          "type": "boolean"
+        },
+        "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
     "Player": {
       "properties": {
         "id": {
@@ -5280,6 +6119,38 @@
           "default": 0.0,
           "type": "number"
         },
+        "locked_floor_left": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "pending_chasm_fall": {
+          "anyOf": [
+            {
+              "maxItems": 2,
+              "minItems": 2,
+              "prefixItems": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "integer"
+                }
+              ],
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "path_queue": {
           "default": [],
           "items": {
@@ -5323,6 +6194,10 @@
           "default": null
         },
         "last_auto_move_time": {
+          "default": 0.0,
+          "type": "number"
+        },
+        "action_until": {
           "default": 0.0,
           "type": "number"
         },
@@ -5429,6 +6304,7 @@
           "items": {
             "discriminator": {
               "mapping": {
+                "amulet": "#/$defs/Amulet",
                 "armor": "#/$defs/Armor",
                 "artifact": "#/$defs/Artifact",
                 "bag": "#/$defs/Bag",
@@ -5437,10 +6313,12 @@
                 "bow": "#/$defs/Bow",
                 "broken_seal": "#/$defs/BrokenSeal",
                 "chargrilled_meat": "#/$defs/ChargrilledMeat",
+                "chest": "#/$defs/Chest",
                 "cloak_of_shadows": "#/$defs/CloakOfShadows",
                 "dagger": "#/$defs/Dagger",
                 "damage_wand": "#/$defs/DamageWand",
                 "dewdrop": "#/$defs/Dewdrop",
+                "dried_rose": "#/$defs/DriedRose",
                 "dwarf_token": "#/$defs/DwarfToken",
                 "elixir_aqua_rejuv": "#/$defs/ElixirOfAquaticRejuvenation",
                 "food": "#/$defs/Food",
@@ -5456,6 +6334,7 @@
                 "missile_weapon": "#/$defs/MissileWeapon",
                 "mystery_meat": "#/$defs/MysteryMeat",
                 "pasty": "#/$defs/Pasty",
+                "petal": "#/$defs/Petal",
                 "potion": "#/$defs/Potion",
                 "potion_bandolier": "#/$defs/PotionBandolier",
                 "potion_of_experience": "#/$defs/PotionOfExperience",
@@ -5489,6 +6368,7 @@
                 "scroll_of_upgrade": "#/$defs/ScrollOfUpgrade",
                 "seed": "#/$defs/Seed",
                 "small_ration": "#/$defs/SmallRation",
+                "spirit_bow": "#/$defs/SpiritBow",
                 "staff": "#/$defs/Staff",
                 "stone": "#/$defs/Stone",
                 "tengu_mask": "#/$defs/TenguMask",
@@ -5528,6 +6408,9 @@
                 "$ref": "#/$defs/Bow"
               },
               {
+                "$ref": "#/$defs/SpiritBow"
+              },
+              {
                 "$ref": "#/$defs/Staff"
               },
               {
@@ -5547,6 +6430,9 @@
               },
               {
                 "$ref": "#/$defs/CloakOfShadows"
+              },
+              {
+                "$ref": "#/$defs/DriedRose"
               },
               {
                 "$ref": "#/$defs/DamageWand"
@@ -5729,6 +6615,9 @@
                 "$ref": "#/$defs/Waterskin"
               },
               {
+                "$ref": "#/$defs/Amulet"
+              },
+              {
                 "$ref": "#/$defs/Stone"
               },
               {
@@ -5745,6 +6634,12 @@
               },
               {
                 "$ref": "#/$defs/DwarfToken"
+              },
+              {
+                "$ref": "#/$defs/Petal"
+              },
+              {
+                "$ref": "#/$defs/Chest"
               },
               {
                 "$ref": "#/$defs/VelvetPouch"
@@ -5771,6 +6666,7 @@
             {
               "discriminator": {
                 "mapping": {
+                  "amulet": "#/$defs/Amulet",
                   "armor": "#/$defs/Armor",
                   "artifact": "#/$defs/Artifact",
                   "bag": "#/$defs/Bag",
@@ -5779,10 +6675,12 @@
                   "bow": "#/$defs/Bow",
                   "broken_seal": "#/$defs/BrokenSeal",
                   "chargrilled_meat": "#/$defs/ChargrilledMeat",
+                  "chest": "#/$defs/Chest",
                   "cloak_of_shadows": "#/$defs/CloakOfShadows",
                   "dagger": "#/$defs/Dagger",
                   "damage_wand": "#/$defs/DamageWand",
                   "dewdrop": "#/$defs/Dewdrop",
+                  "dried_rose": "#/$defs/DriedRose",
                   "dwarf_token": "#/$defs/DwarfToken",
                   "elixir_aqua_rejuv": "#/$defs/ElixirOfAquaticRejuvenation",
                   "food": "#/$defs/Food",
@@ -5798,6 +6696,7 @@
                   "missile_weapon": "#/$defs/MissileWeapon",
                   "mystery_meat": "#/$defs/MysteryMeat",
                   "pasty": "#/$defs/Pasty",
+                  "petal": "#/$defs/Petal",
                   "potion": "#/$defs/Potion",
                   "potion_bandolier": "#/$defs/PotionBandolier",
                   "potion_of_experience": "#/$defs/PotionOfExperience",
@@ -5831,6 +6730,7 @@
                   "scroll_of_upgrade": "#/$defs/ScrollOfUpgrade",
                   "seed": "#/$defs/Seed",
                   "small_ration": "#/$defs/SmallRation",
+                  "spirit_bow": "#/$defs/SpiritBow",
                   "staff": "#/$defs/Staff",
                   "stone": "#/$defs/Stone",
                   "tengu_mask": "#/$defs/TenguMask",
@@ -5870,6 +6770,9 @@
                   "$ref": "#/$defs/Bow"
                 },
                 {
+                  "$ref": "#/$defs/SpiritBow"
+                },
+                {
                   "$ref": "#/$defs/Staff"
                 },
                 {
@@ -5889,6 +6792,9 @@
                 },
                 {
                   "$ref": "#/$defs/CloakOfShadows"
+                },
+                {
+                  "$ref": "#/$defs/DriedRose"
                 },
                 {
                   "$ref": "#/$defs/DamageWand"
@@ -6071,6 +6977,9 @@
                   "$ref": "#/$defs/Waterskin"
                 },
                 {
+                  "$ref": "#/$defs/Amulet"
+                },
+                {
                   "$ref": "#/$defs/Stone"
                 },
                 {
@@ -6087,6 +6996,12 @@
                 },
                 {
                   "$ref": "#/$defs/DwarfToken"
+                },
+                {
+                  "$ref": "#/$defs/Petal"
+                },
+                {
+                  "$ref": "#/$defs/Chest"
                 },
                 {
                   "$ref": "#/$defs/VelvetPouch"
@@ -6116,6 +7031,7 @@
             {
               "discriminator": {
                 "mapping": {
+                  "amulet": "#/$defs/Amulet",
                   "armor": "#/$defs/Armor",
                   "artifact": "#/$defs/Artifact",
                   "bag": "#/$defs/Bag",
@@ -6124,10 +7040,12 @@
                   "bow": "#/$defs/Bow",
                   "broken_seal": "#/$defs/BrokenSeal",
                   "chargrilled_meat": "#/$defs/ChargrilledMeat",
+                  "chest": "#/$defs/Chest",
                   "cloak_of_shadows": "#/$defs/CloakOfShadows",
                   "dagger": "#/$defs/Dagger",
                   "damage_wand": "#/$defs/DamageWand",
                   "dewdrop": "#/$defs/Dewdrop",
+                  "dried_rose": "#/$defs/DriedRose",
                   "dwarf_token": "#/$defs/DwarfToken",
                   "elixir_aqua_rejuv": "#/$defs/ElixirOfAquaticRejuvenation",
                   "food": "#/$defs/Food",
@@ -6143,6 +7061,7 @@
                   "missile_weapon": "#/$defs/MissileWeapon",
                   "mystery_meat": "#/$defs/MysteryMeat",
                   "pasty": "#/$defs/Pasty",
+                  "petal": "#/$defs/Petal",
                   "potion": "#/$defs/Potion",
                   "potion_bandolier": "#/$defs/PotionBandolier",
                   "potion_of_experience": "#/$defs/PotionOfExperience",
@@ -6176,6 +7095,7 @@
                   "scroll_of_upgrade": "#/$defs/ScrollOfUpgrade",
                   "seed": "#/$defs/Seed",
                   "small_ration": "#/$defs/SmallRation",
+                  "spirit_bow": "#/$defs/SpiritBow",
                   "staff": "#/$defs/Staff",
                   "stone": "#/$defs/Stone",
                   "tengu_mask": "#/$defs/TenguMask",
@@ -6215,6 +7135,9 @@
                   "$ref": "#/$defs/Bow"
                 },
                 {
+                  "$ref": "#/$defs/SpiritBow"
+                },
+                {
                   "$ref": "#/$defs/Staff"
                 },
                 {
@@ -6234,6 +7157,9 @@
                 },
                 {
                   "$ref": "#/$defs/CloakOfShadows"
+                },
+                {
+                  "$ref": "#/$defs/DriedRose"
                 },
                 {
                   "$ref": "#/$defs/DamageWand"
@@ -6416,6 +7342,9 @@
                   "$ref": "#/$defs/Waterskin"
                 },
                 {
+                  "$ref": "#/$defs/Amulet"
+                },
+                {
                   "$ref": "#/$defs/Stone"
                 },
                 {
@@ -6432,6 +7361,12 @@
                 },
                 {
                   "$ref": "#/$defs/DwarfToken"
+                },
+                {
+                  "$ref": "#/$defs/Petal"
+                },
+                {
+                  "$ref": "#/$defs/Chest"
                 },
                 {
                   "$ref": "#/$defs/VelvetPouch"
@@ -6633,6 +7568,7 @@
           "items": {
             "discriminator": {
               "mapping": {
+                "amulet": "#/$defs/Amulet",
                 "armor": "#/$defs/Armor",
                 "artifact": "#/$defs/Artifact",
                 "bag": "#/$defs/Bag",
@@ -6641,10 +7577,12 @@
                 "bow": "#/$defs/Bow",
                 "broken_seal": "#/$defs/BrokenSeal",
                 "chargrilled_meat": "#/$defs/ChargrilledMeat",
+                "chest": "#/$defs/Chest",
                 "cloak_of_shadows": "#/$defs/CloakOfShadows",
                 "dagger": "#/$defs/Dagger",
                 "damage_wand": "#/$defs/DamageWand",
                 "dewdrop": "#/$defs/Dewdrop",
+                "dried_rose": "#/$defs/DriedRose",
                 "dwarf_token": "#/$defs/DwarfToken",
                 "elixir_aqua_rejuv": "#/$defs/ElixirOfAquaticRejuvenation",
                 "food": "#/$defs/Food",
@@ -6660,6 +7598,7 @@
                 "missile_weapon": "#/$defs/MissileWeapon",
                 "mystery_meat": "#/$defs/MysteryMeat",
                 "pasty": "#/$defs/Pasty",
+                "petal": "#/$defs/Petal",
                 "potion": "#/$defs/Potion",
                 "potion_bandolier": "#/$defs/PotionBandolier",
                 "potion_of_experience": "#/$defs/PotionOfExperience",
@@ -6693,6 +7632,7 @@
                 "scroll_of_upgrade": "#/$defs/ScrollOfUpgrade",
                 "seed": "#/$defs/Seed",
                 "small_ration": "#/$defs/SmallRation",
+                "spirit_bow": "#/$defs/SpiritBow",
                 "staff": "#/$defs/Staff",
                 "stone": "#/$defs/Stone",
                 "tengu_mask": "#/$defs/TenguMask",
@@ -6732,6 +7672,9 @@
                 "$ref": "#/$defs/Bow"
               },
               {
+                "$ref": "#/$defs/SpiritBow"
+              },
+              {
                 "$ref": "#/$defs/Staff"
               },
               {
@@ -6751,6 +7694,9 @@
               },
               {
                 "$ref": "#/$defs/CloakOfShadows"
+              },
+              {
+                "$ref": "#/$defs/DriedRose"
               },
               {
                 "$ref": "#/$defs/DamageWand"
@@ -6933,6 +7879,9 @@
                 "$ref": "#/$defs/Waterskin"
               },
               {
+                "$ref": "#/$defs/Amulet"
+              },
+              {
                 "$ref": "#/$defs/Stone"
               },
               {
@@ -6949,6 +7898,12 @@
               },
               {
                 "$ref": "#/$defs/DwarfToken"
+              },
+              {
+                "$ref": "#/$defs/Petal"
+              },
+              {
+                "$ref": "#/$defs/Chest"
               },
               {
                 "$ref": "#/$defs/VelvetPouch"
@@ -8183,6 +9138,7 @@
           "items": {
             "discriminator": {
               "mapping": {
+                "amulet": "#/$defs/Amulet",
                 "armor": "#/$defs/Armor",
                 "artifact": "#/$defs/Artifact",
                 "bag": "#/$defs/Bag",
@@ -8191,10 +9147,12 @@
                 "bow": "#/$defs/Bow",
                 "broken_seal": "#/$defs/BrokenSeal",
                 "chargrilled_meat": "#/$defs/ChargrilledMeat",
+                "chest": "#/$defs/Chest",
                 "cloak_of_shadows": "#/$defs/CloakOfShadows",
                 "dagger": "#/$defs/Dagger",
                 "damage_wand": "#/$defs/DamageWand",
                 "dewdrop": "#/$defs/Dewdrop",
+                "dried_rose": "#/$defs/DriedRose",
                 "dwarf_token": "#/$defs/DwarfToken",
                 "elixir_aqua_rejuv": "#/$defs/ElixirOfAquaticRejuvenation",
                 "food": "#/$defs/Food",
@@ -8210,6 +9168,7 @@
                 "missile_weapon": "#/$defs/MissileWeapon",
                 "mystery_meat": "#/$defs/MysteryMeat",
                 "pasty": "#/$defs/Pasty",
+                "petal": "#/$defs/Petal",
                 "potion": "#/$defs/Potion",
                 "potion_bandolier": "#/$defs/PotionBandolier",
                 "potion_of_experience": "#/$defs/PotionOfExperience",
@@ -8243,6 +9202,7 @@
                 "scroll_of_upgrade": "#/$defs/ScrollOfUpgrade",
                 "seed": "#/$defs/Seed",
                 "small_ration": "#/$defs/SmallRation",
+                "spirit_bow": "#/$defs/SpiritBow",
                 "staff": "#/$defs/Staff",
                 "stone": "#/$defs/Stone",
                 "tengu_mask": "#/$defs/TenguMask",
@@ -8282,6 +9242,9 @@
                 "$ref": "#/$defs/Bow"
               },
               {
+                "$ref": "#/$defs/SpiritBow"
+              },
+              {
                 "$ref": "#/$defs/Staff"
               },
               {
@@ -8301,6 +9264,9 @@
               },
               {
                 "$ref": "#/$defs/CloakOfShadows"
+              },
+              {
+                "$ref": "#/$defs/DriedRose"
               },
               {
                 "$ref": "#/$defs/DamageWand"
@@ -8483,6 +9449,9 @@
                 "$ref": "#/$defs/Waterskin"
               },
               {
+                "$ref": "#/$defs/Amulet"
+              },
+              {
                 "$ref": "#/$defs/Stone"
               },
               {
@@ -8499,6 +9468,12 @@
               },
               {
                 "$ref": "#/$defs/DwarfToken"
+              },
+              {
+                "$ref": "#/$defs/Petal"
+              },
+              {
+                "$ref": "#/$defs/Chest"
               },
               {
                 "$ref": "#/$defs/VelvetPouch"
@@ -9588,6 +10563,130 @@
       },
       "type": "object"
     },
+    "SpiritBow": {
+      "properties": {
+        "kind": {
+          "const": "spirit_bow",
+          "default": "spirit_bow",
+          "type": "string"
+        },
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "name": {
+          "default": "Spirit Bow",
+          "type": "string"
+        },
+        "type": {
+          "default": "weapon",
+          "type": "string"
+        },
+        "pos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Position"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "quantity": {
+          "default": 1,
+          "type": "integer"
+        },
+        "level": {
+          "default": 0,
+          "type": "integer"
+        },
+        "level_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "unique": {
+          "default": true,
+          "type": "boolean"
+        },
+        "kept_though_lost": {
+          "default": false,
+          "type": "boolean"
+        },
+        "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        },
+        "strength_requirement": {
+          "default": 10,
+          "type": "integer"
+        },
+        "damage": {
+          "default": 1,
+          "type": "integer"
+        },
+        "range": {
+          "default": 6,
+          "type": "integer"
+        },
+        "attack_cooldown": {
+          "default": 1.0,
+          "type": "number"
+        },
+        "enchantment": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "projectile_type": {
+          "default": "arrow",
+          "type": "string"
+        },
+        "surprise_damage_floor": {
+          "default": 0.0,
+          "type": "number"
+        },
+        "acc_factor": {
+          "default": 1.0,
+          "type": "number"
+        },
+        "dr_bonus_base": {
+          "default": 0,
+          "type": "integer"
+        },
+        "dr_bonus_per_lvl": {
+          "default": 0,
+          "type": "integer"
+        },
+        "bones": {
+          "default": false,
+          "type": "boolean"
+        },
+        "hit_sound": {
+          "default": "HIT_ARROW",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
     "Staff": {
       "properties": {
         "kind": {
@@ -10195,6 +11294,7 @@
           "items": {
             "discriminator": {
               "mapping": {
+                "amulet": "#/$defs/Amulet",
                 "armor": "#/$defs/Armor",
                 "artifact": "#/$defs/Artifact",
                 "bag": "#/$defs/Bag",
@@ -10203,10 +11303,12 @@
                 "bow": "#/$defs/Bow",
                 "broken_seal": "#/$defs/BrokenSeal",
                 "chargrilled_meat": "#/$defs/ChargrilledMeat",
+                "chest": "#/$defs/Chest",
                 "cloak_of_shadows": "#/$defs/CloakOfShadows",
                 "dagger": "#/$defs/Dagger",
                 "damage_wand": "#/$defs/DamageWand",
                 "dewdrop": "#/$defs/Dewdrop",
+                "dried_rose": "#/$defs/DriedRose",
                 "dwarf_token": "#/$defs/DwarfToken",
                 "elixir_aqua_rejuv": "#/$defs/ElixirOfAquaticRejuvenation",
                 "food": "#/$defs/Food",
@@ -10222,6 +11324,7 @@
                 "missile_weapon": "#/$defs/MissileWeapon",
                 "mystery_meat": "#/$defs/MysteryMeat",
                 "pasty": "#/$defs/Pasty",
+                "petal": "#/$defs/Petal",
                 "potion": "#/$defs/Potion",
                 "potion_bandolier": "#/$defs/PotionBandolier",
                 "potion_of_experience": "#/$defs/PotionOfExperience",
@@ -10255,6 +11358,7 @@
                 "scroll_of_upgrade": "#/$defs/ScrollOfUpgrade",
                 "seed": "#/$defs/Seed",
                 "small_ration": "#/$defs/SmallRation",
+                "spirit_bow": "#/$defs/SpiritBow",
                 "staff": "#/$defs/Staff",
                 "stone": "#/$defs/Stone",
                 "tengu_mask": "#/$defs/TenguMask",
@@ -10294,6 +11398,9 @@
                 "$ref": "#/$defs/Bow"
               },
               {
+                "$ref": "#/$defs/SpiritBow"
+              },
+              {
                 "$ref": "#/$defs/Staff"
               },
               {
@@ -10313,6 +11420,9 @@
               },
               {
                 "$ref": "#/$defs/CloakOfShadows"
+              },
+              {
+                "$ref": "#/$defs/DriedRose"
               },
               {
                 "$ref": "#/$defs/DamageWand"
@@ -10495,6 +11605,9 @@
                 "$ref": "#/$defs/Waterskin"
               },
               {
+                "$ref": "#/$defs/Amulet"
+              },
+              {
                 "$ref": "#/$defs/Stone"
               },
               {
@@ -10511,6 +11624,12 @@
               },
               {
                 "$ref": "#/$defs/DwarfToken"
+              },
+              {
+                "$ref": "#/$defs/Petal"
+              },
+              {
+                "$ref": "#/$defs/Chest"
               },
               {
                 "$ref": "#/$defs/VelvetPouch"

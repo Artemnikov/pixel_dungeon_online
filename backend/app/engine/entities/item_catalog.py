@@ -29,6 +29,7 @@ from app.engine.entities.base import (
     Boomerang,
     Bow,
     BrokenSeal,
+    SpiritBow,
     ChargrilledMeat,
     CloakOfShadows,
     DriedRose,
@@ -122,6 +123,7 @@ _CATALOG: List[tuple] = [
     ("dagger", "Dagger", "weapon", lambda: Dagger()),
     ("worn_shortsword", "Worn Shortsword", "weapon", lambda: WornShortsword()),
     ("bow", "Bow", "weapon", lambda: Bow()),
+    ("spirit_bow", "Spirit Bow", "weapon", lambda: SpiritBow()),
     ("staff", "Staff", "weapon", lambda: Staff()),
     ("missile_weapon", "Throwing Knife", "weapon", lambda: MissileWeapon(name="Throwing Knife", tier=1)),
 

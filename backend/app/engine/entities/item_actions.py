@@ -29,7 +29,7 @@ from typing import Optional
 
 from app.engine.dungeon.constants import TileType
 from app.engine.entities.base import (
-    Action, Position, Potion, Seed, Wand,
+    Action, Position, Potion, Seed, Wand, SpiritBow,
     GooBlob, HealthPotion, ElixirOfAquaticRejuvenation, Waterskin,
 )
 from app.engine.entities.scroll_actions import action_read
@@ -277,6 +277,12 @@ def action_plant(game, player, item, tx=None, ty=None) -> None:
     floor.rebuild_flags()
 
 
+def action_shoot(game, player, item, tx=None, ty=None) -> None:
+    if tx is None or ty is None:
+        return
+    game.perform_ranged_attack(player.id, item.id, tx, ty)
+
+
 def action_throw(game, player, item, tx=None, ty=None) -> None:
     if tx is None or ty is None:
         return
@@ -505,6 +511,7 @@ ITEM_ACTION_DISPATCH = {
     Action.READ: action_read,
     Action.THROW: action_throw,
     Action.ZAP: action_zap,
+    Action.SHOOT: action_shoot,
     Action.AFFIX: action_affix,
     Action.STEALTH: action_stealth,
     Action.SUMMON: action_summon,

@@ -26,6 +26,7 @@ from typing import Optional
 from app.engine.dungeon.generator import TileType
 from app.engine.entities.base import (
     Amulet,
+    Bow,
     Dewdrop,
     Faction,
     Gold,
@@ -36,6 +37,7 @@ from app.engine.entities.base import (
     Player,
     Position,
     RevivingPotion,
+    SpiritBow,
     Staff,
     Throwable,
     Wand,
@@ -460,6 +462,8 @@ class MovementCombatMixin:
                 if entity.add_to_inventory(item):
                     del floor.items[i_id]
                     self.add_event("PICKUP", {"player": entity.id, "item": item.name}, floor_id=floor_id)
+                    if entity.is_admin and item.type in ("potion", "scroll"):
+                        self.identify_kind(item)
 
             self._trigger_trap_if_needed(floor, entity, floor_id)
 
@@ -503,9 +507,10 @@ class MovementCombatMixin:
             return None
 
         is_throwable = isinstance(item, Throwable)
-        is_weapon = isinstance(item, Weapon)
+        is_weapon = isinstance(item, (Weapon, Bow, SpiritBow))
         is_wand = isinstance(item, Wand)
         is_staff = isinstance(item, Staff)
+        is_bow = isinstance(item, (Bow, SpiritBow))
 
         # Staff zap: delegate to imbued wand for charge/damage checks
         staff_wand = item.imbued_wand if is_staff else None
@@ -529,12 +534,12 @@ class MovementCombatMixin:
             return None
 
         dist = abs(player.pos.x - target_x) + abs(player.pos.y - target_y)
-        max_range = item.get_reach() if hasattr(item, "get_reach") else getattr(item, "range", 5)
-        if dist > max_range:
-            return None
-
-        if not self._is_in_los(player.pos, Position(x=target_x, y=target_y), floor_id=floor_id):
-            return None
+        if not is_bow:
+            max_range = item.get_reach() if hasattr(item, "get_reach") else getattr(item, "range", 5)
+            if dist > max_range:
+                return None
+            if not self._is_in_los(player.pos, Position(x=target_x, y=target_y), floor_id=floor_id):
+                return None
 
         player.last_attack_time = current_time
         player._last_action = "ranged"
@@ -569,10 +574,12 @@ class MovementCombatMixin:
             "target_hp_ratio": target_hp_ratio,
             "sound": getattr(effective_wand or item, "wand_sound", None),
             "is_wand": is_wand or is_staff,
+            "is_bow": is_bow,
         }
         # Thrown inventory items fly as their own sprite (not a generic dart).
-        # Wands keep the magic_bolt projectile.
-        if not is_wand:
+        # Wands keep the magic_bolt projectile. Bows are not thrown — they fire
+        # arrows, so the bow item itself is not serialized as the projectile.
+        if not is_wand and not is_bow:
             ranged_event_data["item"] = self._serialize_floor_item(item)
         self.add_event(
             "RANGED_ATTACK",
@@ -582,8 +589,10 @@ class MovementCombatMixin:
 
         damage_dealt = 0
         if target_entity and player.faction != target_entity.faction:
-            # Staff/wand zap: override damage with the effective wand's damage.
-            if effective_wand is not None:
+            if isinstance(item, SpiritBow):
+                atk_min = item.dmg_min(player.level)
+                atk_max = item.dmg_max(player.level)
+            elif effective_wand is not None:
                 atk_min = atk_max = _effective_wand_damage(effective_wand)
             elif is_weapon:
                 if player.belongings.weapon and item.id == player.belongings.weapon.id:
@@ -735,7 +744,7 @@ class MovementCombatMixin:
                 es_talent = player.talent_info.level("empowered_strike")
                 if es_talent > 0:
                     player.add_buff("empowered_strike_tracker", duration=10.0, level=es_talent)
-        else:
+        elif not is_bow:
             removed = player.belongings.backpack.detach(item.id)
             if removed is not None and player.belongings.get_item(item.id) is None:
                 player.quickslot.convert_to_placeholder(removed)

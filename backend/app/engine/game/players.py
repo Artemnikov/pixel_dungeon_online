@@ -40,6 +40,7 @@ from app.engine.entities.base import (
     Ration,
     ScrollOfIdentify,
     ScrollOfUpgrade,
+    SpiritBow,
     Staff,
     Stone,
     ThrowableDagger,
@@ -137,14 +138,20 @@ class PlayersMixin:
             belongings.backpack.collect(knives)
 
         elif class_type == CharacterClass.HUNTRESS:
-            belongings.weapon = Bow(
+            belongings.weapon = Dagger(
                 id=str(uuid.uuid4()),
-                name="Spirit Bow",
-                damage=2,
-                strength_requirement=10,
-                attack_cooldown=3.5,
             )
-            class_starting_quickslots.append((0, belongings.weapon))
+            belongings.armor = Armor(
+                id=str(uuid.uuid4()),
+                name="Cloth Armor",
+                tier=1,
+                strength_requirement=10,
+            )
+            spirit_bow = SpiritBow(
+                id=str(uuid.uuid4()),
+            )
+            belongings.backpack.collect(spirit_bow)
+            class_starting_quickslots.append((0, spirit_bow))
 
         # HeroClass.initHero(): every hero starts with a ration of food, a
         # Velvet Pouch (for seeds/stones), and a Waterskin in the backpack.

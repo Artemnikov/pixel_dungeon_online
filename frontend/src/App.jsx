@@ -338,7 +338,7 @@ function App() {
   });
 
   // --- item action dispatch ---
-  const TARGETED_ACTIONS = ['THROW', 'ZAP', 'DIRECT'];
+  const TARGETED_ACTIONS = ['THROW', 'ZAP', 'DIRECT', 'SHOOT'];
 
   const equipItem = (itemId) => send({ type: 'EQUIP_ITEM', item_id: itemId });
 
@@ -372,6 +372,10 @@ function App() {
         } else if (item.default_action) {
           executeItemAction(item.id, item.default_action);
         }
+        return;
+      }
+      if (item.default_action && TARGETED_ACTIONS.includes(item.default_action)) {
+        executeItemAction(item.id, item.default_action);
         return;
       }
       const isEquipped = equippedItems.weapon && equippedItems.weapon.id === item.id;
@@ -429,7 +433,9 @@ function App() {
     if (nearestMob) {
       const tx = Math.round(nearestMob.renderPos.x);
       const ty = Math.round(nearestMob.renderPos.y);
-      if (isThrowable) {
+      if (item.default_action && TARGETED_ACTIONS.includes(item.default_action)) {
+        send({ type: 'EXECUTE_ITEM_ACTION', item_id: item.id, action: item.default_action, target_x: tx, target_y: ty });
+      } else if (isThrowable) {
         send({ type: 'EXECUTE_ITEM_ACTION', item_id: item.id, action: 'THROW', target_x: tx, target_y: ty });
       } else {
         send({ type: 'RANGED_ATTACK', item_id: item.id, target_x: tx, target_y: ty });

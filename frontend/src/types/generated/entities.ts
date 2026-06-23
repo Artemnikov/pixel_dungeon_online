@@ -75,10 +75,13 @@ export interface Player {
   heal_cooldown?: number;
   room_heal_cooldown?: number;
   aqua_heal_left?: number;
+  locked_floor_left?: number | null;
+  pending_chasm_fall?: [unknown, unknown] | null;
   path_queue?: [unknown, unknown][];
   path_blocked_ticks?: number;
   move_intent?: [unknown, unknown] | null;
   last_auto_move_time?: number;
+  action_until?: number;
   stationary_ticks?: number;
   is_admin?: boolean;
   subclass_info?: SubclassInfo;
@@ -109,6 +112,7 @@ export interface Player {
     | Dagger
     | WornShortsword
     | Bow
+    | SpiritBow
     | Staff
     | MissileWeapon
     | Armor
@@ -116,6 +120,7 @@ export interface Player {
     | Artifact
     | BrokenSeal
     | CloakOfShadows
+    | DriedRose
     | DamageWand
     | WandOfMagicMissile
     | WandOfFireblast
@@ -176,12 +181,15 @@ export interface Player {
     | Seed
     | Dewdrop
     | Waterskin
+    | Amulet
     | Stone
     | Boomerang
     | ThrowableDagger
     | Throwable
     | GooBlob
     | DwarfToken
+    | Petal
+    | Chest
     | VelvetPouch
     | ScrollHolder
     | MagicalHolster
@@ -194,6 +202,7 @@ export interface Player {
         | Dagger
         | WornShortsword
         | Bow
+        | SpiritBow
         | Staff
         | MissileWeapon
         | Armor
@@ -201,6 +210,7 @@ export interface Player {
         | Artifact
         | BrokenSeal
         | CloakOfShadows
+        | DriedRose
         | DamageWand
         | WandOfMagicMissile
         | WandOfFireblast
@@ -261,12 +271,15 @@ export interface Player {
         | Seed
         | Dewdrop
         | Waterskin
+        | Amulet
         | Stone
         | Boomerang
         | ThrowableDagger
         | Throwable
         | GooBlob
         | DwarfToken
+        | Petal
+        | Chest
         | VelvetPouch
         | ScrollHolder
         | MagicalHolster
@@ -280,6 +293,7 @@ export interface Player {
         | Dagger
         | WornShortsword
         | Bow
+        | SpiritBow
         | Staff
         | MissileWeapon
         | Armor
@@ -287,6 +301,7 @@ export interface Player {
         | Artifact
         | BrokenSeal
         | CloakOfShadows
+        | DriedRose
         | DamageWand
         | WandOfMagicMissile
         | WandOfFireblast
@@ -347,12 +362,15 @@ export interface Player {
         | Seed
         | Dewdrop
         | Waterskin
+        | Amulet
         | Stone
         | Boomerang
         | ThrowableDagger
         | Throwable
         | GooBlob
         | DwarfToken
+        | Petal
+        | Chest
         | VelvetPouch
         | ScrollHolder
         | MagicalHolster
@@ -395,6 +413,7 @@ export interface Belongings {
         | Dagger
         | WornShortsword
         | Bow
+        | SpiritBow
         | Staff
         | MissileWeapon
         | Armor
@@ -402,6 +421,7 @@ export interface Belongings {
         | Artifact
         | BrokenSeal
         | CloakOfShadows
+        | DriedRose
         | DamageWand
         | WandOfMagicMissile
         | WandOfFireblast
@@ -462,12 +482,15 @@ export interface Belongings {
         | Seed
         | Dewdrop
         | Waterskin
+        | Amulet
         | Stone
         | Boomerang
         | ThrowableDagger
         | Throwable
         | GooBlob
         | DwarfToken
+        | Petal
+        | Chest
         | VelvetPouch
         | ScrollHolder
         | MagicalHolster
@@ -481,6 +504,7 @@ export interface Belongings {
         | Dagger
         | WornShortsword
         | Bow
+        | SpiritBow
         | Staff
         | MissileWeapon
         | Armor
@@ -488,6 +512,7 @@ export interface Belongings {
         | Artifact
         | BrokenSeal
         | CloakOfShadows
+        | DriedRose
         | DamageWand
         | WandOfMagicMissile
         | WandOfFireblast
@@ -548,12 +573,15 @@ export interface Belongings {
         | Seed
         | Dewdrop
         | Waterskin
+        | Amulet
         | Stone
         | Boomerang
         | ThrowableDagger
         | Throwable
         | GooBlob
         | DwarfToken
+        | Petal
+        | Chest
         | VelvetPouch
         | ScrollHolder
         | MagicalHolster
@@ -567,6 +595,7 @@ export interface Belongings {
         | Dagger
         | WornShortsword
         | Bow
+        | SpiritBow
         | Staff
         | MissileWeapon
         | Armor
@@ -574,6 +603,7 @@ export interface Belongings {
         | Artifact
         | BrokenSeal
         | CloakOfShadows
+        | DriedRose
         | DamageWand
         | WandOfMagicMissile
         | WandOfFireblast
@@ -634,12 +664,15 @@ export interface Belongings {
         | Seed
         | Dewdrop
         | Waterskin
+        | Amulet
         | Stone
         | Boomerang
         | ThrowableDagger
         | Throwable
         | GooBlob
         | DwarfToken
+        | Petal
+        | Chest
         | VelvetPouch
         | ScrollHolder
         | MagicalHolster
@@ -653,6 +686,7 @@ export interface Belongings {
         | Dagger
         | WornShortsword
         | Bow
+        | SpiritBow
         | Staff
         | MissileWeapon
         | Armor
@@ -660,6 +694,7 @@ export interface Belongings {
         | Artifact
         | BrokenSeal
         | CloakOfShadows
+        | DriedRose
         | DamageWand
         | WandOfMagicMissile
         | WandOfFireblast
@@ -720,12 +755,15 @@ export interface Belongings {
         | Seed
         | Dewdrop
         | Waterskin
+        | Amulet
         | Stone
         | Boomerang
         | ThrowableDagger
         | Throwable
         | GooBlob
         | DwarfToken
+        | Petal
+        | Chest
         | VelvetPouch
         | ScrollHolder
         | MagicalHolster
@@ -739,6 +777,7 @@ export interface Belongings {
         | Dagger
         | WornShortsword
         | Bow
+        | SpiritBow
         | Staff
         | MissileWeapon
         | Armor
@@ -746,6 +785,7 @@ export interface Belongings {
         | Artifact
         | BrokenSeal
         | CloakOfShadows
+        | DriedRose
         | DamageWand
         | WandOfMagicMissile
         | WandOfFireblast
@@ -806,12 +846,15 @@ export interface Belongings {
         | Seed
         | Dewdrop
         | Waterskin
+        | Amulet
         | Stone
         | Boomerang
         | ThrowableDagger
         | Throwable
         | GooBlob
         | DwarfToken
+        | Petal
+        | Chest
         | VelvetPouch
         | ScrollHolder
         | MagicalHolster
@@ -841,6 +884,7 @@ export interface Bag {
     | Dagger
     | WornShortsword
     | Bow
+    | SpiritBow
     | Staff
     | MissileWeapon
     | Armor
@@ -848,6 +892,7 @@ export interface Bag {
     | Artifact
     | BrokenSeal
     | CloakOfShadows
+    | DriedRose
     | DamageWand
     | WandOfMagicMissile
     | WandOfFireblast
@@ -908,12 +953,15 @@ export interface Bag {
     | Seed
     | Dewdrop
     | Waterskin
+    | Amulet
     | Stone
     | Boomerang
     | ThrowableDagger
     | Throwable
     | GooBlob
     | DwarfToken
+    | Petal
+    | Chest
     | VelvetPouch
     | ScrollHolder
     | MagicalHolster
@@ -1027,6 +1075,34 @@ export interface Bow {
   acc_factor?: number;
   dr_bonus_base?: number;
   dr_bonus_per_lvl?: number;
+}
+export interface SpiritBow {
+  kind?: "spirit_bow";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  strength_requirement?: number;
+  damage?: number;
+  range?: number;
+  attack_cooldown?: number;
+  enchantment?: string | null;
+  projectile_type?: string;
+  surprise_damage_floor?: number;
+  acc_factor?: number;
+  dr_bonus_base?: number;
+  dr_bonus_per_lvl?: number;
+  bones?: boolean;
+  hit_sound?: string;
 }
 export interface Staff {
   kind?: "staff";
@@ -1212,6 +1288,30 @@ export interface CloakOfShadows {
   charge?: number;
   charge_cap?: number;
   exp?: number;
+}
+export interface DriedRose {
+  kind?: "dried_rose";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  strength_requirement?: number;
+  charge?: number;
+  charge_cap?: number;
+  exp?: number;
+  ghost_id?: string | null;
+  weapon?: MeleeWeapon | null;
+  armor?: Armor | null;
+  dropped_petals?: number;
 }
 /**
  * Base for wands that deal direct damage to a target.
@@ -2330,6 +2430,22 @@ export interface Waterskin {
   seen?: boolean;
   volume?: number;
 }
+export interface Amulet {
+  kind?: "amulet";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+}
 export interface Stone {
   kind?: "stone";
   id?: string;
@@ -2442,8 +2558,8 @@ export interface DwarfToken {
   for_sale?: boolean;
   seen?: boolean;
 }
-export interface VelvetPouch {
-  kind?: "velvet_pouch";
+export interface Petal {
+  kind?: "petal";
   id?: string;
   name?: string;
   type?: string;
@@ -2457,12 +2573,30 @@ export interface VelvetPouch {
   kept_though_lost?: boolean;
   for_sale?: boolean;
   seen?: boolean;
-  capacity?: number;
-  items?: (
+}
+export interface Chest {
+  kind?: "chest";
+  id?: string;
+  name: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  chest_type?: string;
+  opened?: boolean;
+  contents?: (
     | MeleeWeapon
     | Dagger
     | WornShortsword
     | Bow
+    | SpiritBow
     | Staff
     | MissileWeapon
     | Armor
@@ -2470,6 +2604,7 @@ export interface VelvetPouch {
     | Artifact
     | BrokenSeal
     | CloakOfShadows
+    | DriedRose
     | DamageWand
     | WandOfMagicMissile
     | WandOfFireblast
@@ -2530,12 +2665,121 @@ export interface VelvetPouch {
     | Seed
     | Dewdrop
     | Waterskin
+    | Amulet
     | Stone
     | Boomerang
     | ThrowableDagger
     | Throwable
     | GooBlob
     | DwarfToken
+    | Petal
+    | Chest
+    | VelvetPouch
+    | ScrollHolder
+    | MagicalHolster
+    | PotionBandolier
+    | Bag
+  )[];
+}
+export interface VelvetPouch {
+  kind?: "velvet_pouch";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  capacity?: number;
+  items?: (
+    | MeleeWeapon
+    | Dagger
+    | WornShortsword
+    | Bow
+    | SpiritBow
+    | Staff
+    | MissileWeapon
+    | Armor
+    | Ring
+    | Artifact
+    | BrokenSeal
+    | CloakOfShadows
+    | DriedRose
+    | DamageWand
+    | WandOfMagicMissile
+    | WandOfFireblast
+    | WandOfFrost
+    | WandOfLightning
+    | WandOfDisintegration
+    | WandOfPrismaticLight
+    | WandOfBlastWave
+    | WandOfTransfusion
+    | WandOfCorrosion
+    | WandOfCorruption
+    | WandOfRegrowth
+    | WandOfWarding
+    | WandOfLivingEarth
+    | Wand
+    | HealthPotion
+    | RevivingPotion
+    | FuryPotion
+    | PotionOfStrength
+    | PotionOfHaste
+    | PotionOfInvisibility
+    | PotionOfLevitation
+    | PotionOfMindVision
+    | PotionOfFrost
+    | PotionOfLiquidFlame
+    | PotionOfToxicGas
+    | PotionOfParalyticGas
+    | PotionOfPurity
+    | PotionOfExperience
+    | ElixirOfAquaticRejuvenation
+    | Potion
+    | ScrollOfRage
+    | ScrollOfMetamorphosis
+    | ScrollOfUpgrade
+    | ScrollOfIdentify
+    | ScrollOfMagicMapping
+    | ScrollOfTeleportation
+    | ScrollOfRemoveCurse
+    | ScrollOfRecharging
+    | ScrollOfLullaby
+    | ScrollOfTerror
+    | ScrollOfMirrorImage
+    | ScrollOfRetribution
+    | ScrollOfTransmutation
+    | Scroll
+    | Gold
+    | MysteryMeat
+    | FrozenCarpaccio
+    | Berry
+    | SmallRation
+    | Ration
+    | Pasty
+    | ChargrilledMeat
+    | Food
+    | Key
+    | TenguMask
+    | KingsCrown
+    | Seed
+    | Dewdrop
+    | Waterskin
+    | Amulet
+    | Stone
+    | Boomerang
+    | ThrowableDagger
+    | Throwable
+    | GooBlob
+    | DwarfToken
+    | Petal
+    | Chest
     | VelvetPouch
     | ScrollHolder
     | MagicalHolster
@@ -2564,6 +2808,7 @@ export interface ScrollHolder {
     | Dagger
     | WornShortsword
     | Bow
+    | SpiritBow
     | Staff
     | MissileWeapon
     | Armor
@@ -2571,6 +2816,7 @@ export interface ScrollHolder {
     | Artifact
     | BrokenSeal
     | CloakOfShadows
+    | DriedRose
     | DamageWand
     | WandOfMagicMissile
     | WandOfFireblast
@@ -2631,12 +2877,15 @@ export interface ScrollHolder {
     | Seed
     | Dewdrop
     | Waterskin
+    | Amulet
     | Stone
     | Boomerang
     | ThrowableDagger
     | Throwable
     | GooBlob
     | DwarfToken
+    | Petal
+    | Chest
     | VelvetPouch
     | ScrollHolder
     | MagicalHolster
@@ -2665,6 +2914,7 @@ export interface MagicalHolster {
     | Dagger
     | WornShortsword
     | Bow
+    | SpiritBow
     | Staff
     | MissileWeapon
     | Armor
@@ -2672,6 +2922,7 @@ export interface MagicalHolster {
     | Artifact
     | BrokenSeal
     | CloakOfShadows
+    | DriedRose
     | DamageWand
     | WandOfMagicMissile
     | WandOfFireblast
@@ -2732,12 +2983,15 @@ export interface MagicalHolster {
     | Seed
     | Dewdrop
     | Waterskin
+    | Amulet
     | Stone
     | Boomerang
     | ThrowableDagger
     | Throwable
     | GooBlob
     | DwarfToken
+    | Petal
+    | Chest
     | VelvetPouch
     | ScrollHolder
     | MagicalHolster
@@ -2766,6 +3020,7 @@ export interface PotionBandolier {
     | Dagger
     | WornShortsword
     | Bow
+    | SpiritBow
     | Staff
     | MissileWeapon
     | Armor
@@ -2773,6 +3028,7 @@ export interface PotionBandolier {
     | Artifact
     | BrokenSeal
     | CloakOfShadows
+    | DriedRose
     | DamageWand
     | WandOfMagicMissile
     | WandOfFireblast
@@ -2833,12 +3089,15 @@ export interface PotionBandolier {
     | Seed
     | Dewdrop
     | Waterskin
+    | Amulet
     | Stone
     | Boomerang
     | ThrowableDagger
     | Throwable
     | GooBlob
     | DwarfToken
+    | Petal
+    | Chest
     | VelvetPouch
     | ScrollHolder
     | MagicalHolster

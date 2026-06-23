@@ -213,6 +213,7 @@ export interface RangedAttackEvent {
     target_hp_ratio?: number;
     sound?: string;
     is_wand?: boolean;
+    is_bow?: boolean;
     /** Serialized thrown item, present for thrown inventory items (not wands). */
     item?: SerializedItem;
   };

@@ -393,7 +393,8 @@ def resolve_ranged_attack(
         def_ev = defender.get_effective_defense_skill()
         if defender.has_buff("hex"):
             def_ev = int(def_ev * 0.75)
-        acu_roll = random.random() * attack_skill
+        acc_mult = getattr(item, "acc_factor", 1.0)
+        acu_roll = random.random() * attack_skill * acc_mult
         def_roll = random.random() * def_ev
         if acu_roll < def_roll:
             result["missed"] = True

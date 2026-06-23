@@ -96,6 +96,8 @@ export function handleCombatEvents(event: GameEvent, ctx: HandlerCtx): boolean {
     } else if (MAGIC_PROJECTILES.has(projType)) {
       if (audible) AudioManager.play(event.data.sound ?? 'ATTACK_MAGIC');
       spawnMagicMissile(magicMissileRef, startX, startY, targetX, targetY, projType);
+    } else if (event.data.is_bow) {
+      if (audible) AudioManager.play('ATTACK_BOW');
     } else if (thrownItem) {
       if (audible) AudioManager.play('THROW');
     } else {

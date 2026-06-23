@@ -284,9 +284,10 @@ class Action:
     IMBUE = "IMBUE"      # MagesStaff: imbue a wand into the staff
     SUMMON = "SUMMON"    # DriedRose: summon the ghost ally
     DIRECT = "DIRECT"    # DriedRose: direct the ghost ally to a target
+    SHOOT = "SHOOT"      # SpiritBow: fire an arrow
 
 # Actions that require the player to pick a target cell before resolving.
-TARGETED_ACTIONS = {Action.THROW, Action.ZAP, Action.DIRECT}
+TARGETED_ACTIONS = {Action.THROW, Action.ZAP, Action.DIRECT, Action.SHOOT}
 
 
 def _new_id() -> str:
@@ -531,6 +532,54 @@ class Bow(KindOfWeapon):
     range: int = 6
     projectile_type: str = "arrow"
     DESC: ClassVar[str] = "A ranged weapon that fires arrows at distant foes. Equip it, then target an enemy to shoot."
+
+
+class SpiritBow(KindOfWeapon):
+    kind: Literal["spirit_bow"] = "spirit_bow"
+    name: str = "Spirit Bow"
+    unique: bool = True
+    bones: bool = False
+    range: int = 6
+    projectile_type: str = "spirit_arrow"
+    attack_cooldown: float = 1.0
+    acc_factor: float = 1.0
+    strength_requirement: int = 10
+    hit_sound: str = "HIT_ARROW"
+    DESC: ClassVar[str] = "The spirit bow of the Huntress. Its magic arrows grow stronger as you delve deeper."
+
+    def actions(self, player: Optional["Player"] = None) -> List[str]:
+        return [Action.SHOOT, Action.DROP, Action.INFO]
+
+    def default_action(self) -> Optional[str]:
+        return Action.SHOOT
+
+    def uses_targeting(self, action: str) -> bool:
+        return action == Action.SHOOT
+
+    def dmg_min(self, hero_level: int) -> int:
+        return 1 + hero_level // 5
+
+    def dmg_max(self, hero_level: int) -> int:
+        return 6 + int(hero_level / 2.5)
+
+    def is_upgradable(self) -> bool:
+        return False
+
+    def get_reach(self) -> int:
+        bonus = 1 if self.enchantment == "projecting" else 0
+        return self.range + bonus
+
+    def _info_lines(self, player: Optional["Player"] = None) -> List[str]:
+        lines = []
+        if player is not None:
+            hero_lvl = player.level
+            lines.append(f"Deals {self.dmg_min(hero_lvl)}-{self.dmg_max(hero_lvl)} magic damage.")
+        else:
+            lines.append("Deals magic damage that scales with the wielder.")
+        return lines
+
+    def value(self, identified: bool = False) -> int:
+        return 0
 
 
 class Staff(MeleeWeapon):
@@ -1602,7 +1651,7 @@ class ScrollOfRemoveCurse(Scroll):
 class ScrollOfRecharging(Scroll):
     kind: Literal["scroll_of_recharging"] = "scroll_of_recharging"
     name: str = "Scroll of Recharging"
-    DESC: ClassVar[str] = "Reading this scroll fully recharges your wands."
+    DESC: ClassVar[str] = "Reading this scroll temporarily speeds up the recharge rate of your wands."
 
 
 class ScrollOfLullaby(Scroll):
@@ -2014,7 +2063,7 @@ class PotionBandolier(Bag):
 # for clean outbound dumps + a stable client contract.
 AnyItem = Annotated[
     Union[
-        MeleeWeapon, Dagger, WornShortsword, Bow, Staff, MissileWeapon,
+        MeleeWeapon, Dagger, WornShortsword, Bow, SpiritBow, Staff, MissileWeapon,
         Armor, Ring, Artifact, BrokenSeal, CloakOfShadows, DriedRose,
         DamageWand,
         WandOfMagicMissile, WandOfFireblast, WandOfFrost, WandOfLightning,
@@ -2329,10 +2378,6 @@ class Player(Entity):
     momentum_stacks: int = 0
     _momentum_decay_accum: float = 0.0
     freerun_seconds: float = 0.0
-    # Scroll of Recharging: while the "recharging" buff is active, accumulates
-    # real seconds toward the next wand charge gained (see tick.py).
-    _recharging_accum: float = 0.0
-
     @property
     def talent_info(self):
         return self.subclass_info.talent_info
