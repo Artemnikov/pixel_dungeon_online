@@ -1,10 +1,34 @@
 import AudioManager from '../audio/AudioManager';
+import { INVIS_ALPHA } from '../constants';
 import type { StateUpdateMessage, SerializedItem } from '../types/contract';
 import type { SyncCtx, RenderPlayer, RenderMob } from './types';
 
 interface DropBounce {
   startTime: number;
   startY: number;
+}
+
+type Fadeable = {
+  invisible?: number;
+  fadeAlpha?: number;
+  fadeStartAlpha?: number;
+  fadeTargetAlpha?: number;
+  fadeStartTime?: number | null;
+};
+
+function applyInvisFade(entity: Fadeable, newInvis: number): void {
+  const prev = entity.invisible || 0;
+  const next = newInvis || 0;
+  if (prev === 0 && next > 0) {
+    entity.fadeStartAlpha = entity.fadeAlpha ?? 1;
+    entity.fadeTargetAlpha = INVIS_ALPHA;
+    entity.fadeStartTime = performance.now();
+  } else if (prev > 0 && next === 0) {
+    entity.fadeStartAlpha = entity.fadeAlpha ?? INVIS_ALPHA;
+    entity.fadeTargetAlpha = 1;
+    entity.fadeStartTime = performance.now();
+  }
+  entity.invisible = next;
 }
 
 export function syncState(data: StateUpdateMessage, ctx: SyncCtx): void {
@@ -66,6 +90,8 @@ export function syncState(data: StateUpdateMessage, ctx: SyncCtx): void {
         facing: 'RIGHT',
         flipX: false,
         deathStart: p.is_downed ? performance.now() : null,
+        fadeAlpha: (p.invisible || 0) > 0 ? INVIS_ALPHA : 1,
+        fadeStartTime: null,
       } as RenderPlayer;
     } else {
       const existing = entitiesRef.current.players[p.id];
@@ -90,6 +116,7 @@ export function syncState(data: StateUpdateMessage, ctx: SyncCtx): void {
       existing.hp = p.hp;
       existing.max_hp = p.max_hp;
       existing.equipped_wearable = p.equipped_wearable;
+      applyInvisFade(existing, p.invisible || 0);
       if (p.is_downed && !existing.is_downed) {
         existing.deathStart = performance.now();
         const localPlayer = p.id === myPlayerIdRef.current;
@@ -128,6 +155,8 @@ export function syncState(data: StateUpdateMessage, ctx: SyncCtx): void {
         animStartPos: { x: m.pos.x, y: m.pos.y },
         animStartTime: null,
         facing: 'RIGHT',
+        fadeAlpha: (m.invisible || 0) > 0 ? INVIS_ALPHA : 1,
+        fadeStartTime: null,
       } as RenderMob;
     } else {
       const existing = entitiesRef.current.mobs[m.id];
@@ -143,6 +172,7 @@ export function syncState(data: StateUpdateMessage, ctx: SyncCtx): void {
       }
       existing.hp = m.hp;
       existing.ai_state = m.ai_state;
+      applyInvisFade(existing, m.invisible || 0);
     }
   });
 

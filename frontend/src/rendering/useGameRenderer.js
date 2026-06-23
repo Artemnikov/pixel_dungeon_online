@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { TILE_SIZE, MOVE_DURATION, CAMERA_LERP } from '../constants';
+import { TILE_SIZE, MOVE_DURATION, CAMERA_LERP, FADE_DURATION } from '../constants';
 import { DEST_TILE_SIZE } from './sewers/constants';
 import { buildWaterClipPath, drawWaterBackground, getWaterTextureForDepth } from './sewers/draw';
 import { drawGrid, drawGridCaps } from './draw/grid';
@@ -109,6 +109,11 @@ export default function useGameRenderer({
           const t = Math.min((now - entity.animStartTime) / MOVE_DURATION, 1.0);
           entity.renderPos.x = entity.animStartPos.x + (entity.targetPos.x - entity.animStartPos.x) * t;
           entity.renderPos.y = entity.animStartPos.y + (entity.targetPos.y - entity.animStartPos.y) * t;
+        }
+        if (entity.fadeStartTime != null && entity.fadeStartAlpha != null && entity.fadeTargetAlpha != null) {
+          const ft = Math.min((now - entity.fadeStartTime) / FADE_DURATION, 1.0);
+          entity.fadeAlpha = entity.fadeStartAlpha + (entity.fadeTargetAlpha - entity.fadeStartAlpha) * ft;
+          if (ft >= 1.0) entity.fadeStartTime = null;
         }
       });
     };

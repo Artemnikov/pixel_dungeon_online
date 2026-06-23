@@ -24,6 +24,10 @@ export interface RenderPlayer extends Player {
   facing: string;
   flipX: boolean;
   deathStart: number | null;
+  fadeAlpha?: number;
+  fadeStartAlpha?: number;
+  fadeTargetAlpha?: number;
+  fadeStartTime?: number | null;
 }
 
 export interface RenderMob extends Mob {
@@ -33,6 +37,10 @@ export interface RenderMob extends Mob {
   targetPos?: RenderVec;
   facing: string;
   flipX?: boolean;
+  fadeAlpha?: number;
+  fadeStartAlpha?: number;
+  fadeTargetAlpha?: number;
+  fadeStartTime?: number | null;
 }
 
 export type DyingMob = RenderMob & { deathStart: number };
