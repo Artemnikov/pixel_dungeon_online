@@ -144,6 +144,7 @@ class PlayersMixin:
                 strength_requirement=10,
                 attack_cooldown=3.5,
             )
+            class_starting_quickslots.append((0, belongings.weapon))
 
         # HeroClass.initHero(): every hero starts with a ration of food, a
         # Velvet Pouch (for seeds/stones), and a Waterskin in the backpack.
