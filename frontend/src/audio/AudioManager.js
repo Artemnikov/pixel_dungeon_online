@@ -39,7 +39,7 @@ import meldSound from '../assets/sounds/meld.mp3';
 import gasSound from '../assets/sounds/gas.mp3';
 import shatterSound from '../assets/sounds/shatter.mp3';
 import bonesSound from '../assets/sounds/bones.mp3';
-import { effectiveSfxVolume } from '../menu/menuSettings';
+import { effectiveSfxVolume, subscribe } from '../menu/menuSettings';
 
 class AudioManager {
     constructor() {
@@ -52,6 +52,8 @@ class AudioManager {
         this.masterGain = this.audioCtx.createGain();
         this.masterGain.gain.value = effectiveSfxVolume();
         this.masterGain.connect(this.audioCtx.destination);
+
+        subscribe(() => { this.masterGain.gain.value = effectiveSfxVolume(); });
 
         this.loadSound('ATTACK_BOW', atkBowSound);
         this.loadSound('THROW', throwSound);
