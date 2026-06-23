@@ -212,8 +212,8 @@
 .inv-level.up { color: #44ff44; }
 .inv-level.down { color: #ff4444; }
 .inv-curse { position: absolute; bottom: 1px; left: 2px; font-size: 10px; color: #c060ff; text-shadow: 1px 1px 0 #000; }
-/* SPD ItemSlot type-glyph: small icon on identified consumables, centre-right. */
-.inv-glyph { position: absolute; right: 2px; top: 50%; transform: translateY(-50%); background-repeat: no-repeat; pointer-events: none; }
+/* SPD ItemSlot type-glyph: small icon on identified consumables, top-right. */
+.inv-glyph { position: absolute; right: 2px; top: 2px; background-repeat: no-repeat; pointer-events: none; }
 
 /* Docked inventory panel sits directly below the toolbar */
 .hud-bottom .inv-pane { width: 360px; max-width: 96vw; padding: 12px; }

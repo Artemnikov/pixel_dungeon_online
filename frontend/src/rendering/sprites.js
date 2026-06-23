@@ -237,6 +237,22 @@ export const coordsForItem = (item) => {
 // add entries as more real subtypes land.
 export const ITEM_GLYPHS = {
   "Health Potion": [1, 5],  // POTION_HEALING
+
+  // Scroll icons — row 2 in item_icons.png (SPD Icons.SCROLLS row, cols 0-11).
+  // Listed by distinguishing substring; 'getItemGlyphCoords' returns first match.
+  "Magic Mapping":   [7, 2],   // SCROLL_MAGICMAP
+  "Mirror Image":    [3, 2],   // SCROLL_MIRRORIMG
+  "Remove Curse":    [2, 2],   // SCROLL_REMCURSE
+  "Teleportation":   [5, 2],   // SCROLL_TELEPORT
+  "Transmutation":  [11, 2],   // SCROLL_TRANSMUTE
+  "Metamorphosis":  [11, 3],   // SCROLL_METAMORPH (exotic row)
+  "Retribution":     [9, 2],   // SCROLL_RETRIB
+  "Recharging":      [4, 2],   // SCROLL_RECHARGE
+  "Identify":        [1, 2],   // SCROLL_IDENTIFY
+  "Upgrade":         [0, 2],   // SCROLL_UPGRADE
+  "Lullaby":         [6, 2],   // SCROLL_LULLABY
+  "Terror":         [10, 2],   // SCROLL_TERROR
+  "Rage":            [8, 2],   // SCROLL_RAGE
 };
 
 // Glyph cell for an item, or null when it has no type-glyph or isn't identified.
