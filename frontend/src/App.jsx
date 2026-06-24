@@ -123,14 +123,16 @@ function App() {
   const loreFinishRef = useRef(null);
 
   const handleLoreNeeded = useCallback((depth, finishTransition) => {
-    loreFinishRef.current = finishTransition;
-    setLoreOverlay(getLoreForDepth(depth));
+    const lore = getLoreForDepth(depth);
+    loreFinishRef.current = () => {
+      setLoreOverlay(null);
+      finishTransition();
+    };
+    setLoreOverlay({ depth, body: lore.body });
   }, []);
 
   const handleLoreDismiss = () => {
     loreFinishRef.current?.();
-    loreFinishRef.current = null;
-    setLoreOverlay(null);
   };
 
   // --- shared refs ---
@@ -883,7 +885,7 @@ function App() {
         />
 
         {loreOverlay && (
-          <LoreOverlay title={loreOverlay.title} body={loreOverlay.body} onContinue={handleLoreDismiss} />
+          <LoreOverlay key={loreOverlay.depth} depth={loreOverlay.depth} body={loreOverlay.body} onContinue={handleLoreDismiss} />
         )}
 
         <GameOverlay
