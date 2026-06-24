@@ -26,6 +26,7 @@ from app.engine.dungeon.generator import TileType
 from app.engine.entities.base import (
     Amulet,
     Armor,
+    Bag,
     Belongings,
     Bow,
     CharacterClass,
@@ -380,9 +381,13 @@ class PlayersMixin:
         random.shuffle(free_cells)
 
         # Drop everything the hero carried — equipped gear plus the backpack's
-        # top-level items (sub-bags drop whole). Overflow lands on the death tile.
+        # items. Sub-bags drop their contents individually, not the bag itself.
         dropped_items = [s for s in player.belongings.equipped_slots() if s is not None]
-        dropped_items += list(player.belongings.backpack.items)
+        for item in list(player.belongings.backpack.items):
+            if isinstance(item, Bag):
+                dropped_items.extend(item.items)
+            else:
+                dropped_items.append(item)
         for idx, item in enumerate(dropped_items):
             if idx < len(free_cells):
                 cx, cy = free_cells[idx]
