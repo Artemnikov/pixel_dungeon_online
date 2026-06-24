@@ -93,6 +93,8 @@ export interface Player {
   combo_timer?: number;
   clobber_used?: boolean;
   parry_used?: boolean;
+  wealth_tries_to_drop?: number;
+  wealth_drops_to_equip?: number;
   seal_cooldown?: number;
   seal_no_enemy_ticks?: number;
   endure_damage_bonus?: number;
@@ -126,6 +128,9 @@ export interface Player {
     | RingOfEnergy
     | RingOfArcana
     | RingOfSharpshooting
+    | RingOfForce
+    | RingOfElements
+    | RingOfWealth
     | Artifact
     | BrokenSeal
     | CloakOfShadows
@@ -225,6 +230,9 @@ export interface Player {
         | RingOfEnergy
         | RingOfArcana
         | RingOfSharpshooting
+        | RingOfForce
+        | RingOfElements
+        | RingOfWealth
         | Artifact
         | BrokenSeal
         | CloakOfShadows
@@ -325,6 +333,9 @@ export interface Player {
         | RingOfEnergy
         | RingOfArcana
         | RingOfSharpshooting
+        | RingOfForce
+        | RingOfElements
+        | RingOfWealth
         | Artifact
         | BrokenSeal
         | CloakOfShadows
@@ -454,6 +465,9 @@ export interface Belongings {
         | RingOfEnergy
         | RingOfArcana
         | RingOfSharpshooting
+        | RingOfForce
+        | RingOfElements
+        | RingOfWealth
         | Artifact
         | BrokenSeal
         | CloakOfShadows
@@ -554,6 +568,9 @@ export interface Belongings {
         | RingOfEnergy
         | RingOfArcana
         | RingOfSharpshooting
+        | RingOfForce
+        | RingOfElements
+        | RingOfWealth
         | Artifact
         | BrokenSeal
         | CloakOfShadows
@@ -654,6 +671,9 @@ export interface Belongings {
         | RingOfEnergy
         | RingOfArcana
         | RingOfSharpshooting
+        | RingOfForce
+        | RingOfElements
+        | RingOfWealth
         | Artifact
         | BrokenSeal
         | CloakOfShadows
@@ -754,6 +774,9 @@ export interface Belongings {
         | RingOfEnergy
         | RingOfArcana
         | RingOfSharpshooting
+        | RingOfForce
+        | RingOfElements
+        | RingOfWealth
         | Artifact
         | BrokenSeal
         | CloakOfShadows
@@ -854,6 +877,9 @@ export interface Belongings {
         | RingOfEnergy
         | RingOfArcana
         | RingOfSharpshooting
+        | RingOfForce
+        | RingOfElements
+        | RingOfWealth
         | Artifact
         | BrokenSeal
         | CloakOfShadows
@@ -970,6 +996,9 @@ export interface Bag {
     | RingOfEnergy
     | RingOfArcana
     | RingOfSharpshooting
+    | RingOfForce
+    | RingOfElements
+    | RingOfWealth
     | Artifact
     | BrokenSeal
     | CloakOfShadows
@@ -1488,6 +1517,66 @@ export interface RingOfArcana {
 }
 export interface RingOfSharpshooting {
   kind?: "ring_sharpshooting";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  strength_requirement?: number;
+  buff_class?: string;
+  gem?: string;
+  levels_to_id?: number;
+}
+export interface RingOfForce {
+  kind?: "ring_force";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  strength_requirement?: number;
+  buff_class?: string;
+  gem?: string;
+  levels_to_id?: number;
+}
+export interface RingOfElements {
+  kind?: "ring_elements";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  strength_requirement?: number;
+  buff_class?: string;
+  gem?: string;
+  levels_to_id?: number;
+}
+export interface RingOfWealth {
+  kind?: "ring_wealth";
   id?: string;
   name?: string;
   type?: string;
@@ -2885,6 +2974,9 @@ export interface Chest {
     | RingOfEnergy
     | RingOfArcana
     | RingOfSharpshooting
+    | RingOfForce
+    | RingOfElements
+    | RingOfWealth
     | Artifact
     | BrokenSeal
     | CloakOfShadows
@@ -3000,6 +3092,9 @@ export interface VelvetPouch {
     | RingOfEnergy
     | RingOfArcana
     | RingOfSharpshooting
+    | RingOfForce
+    | RingOfElements
+    | RingOfWealth
     | Artifact
     | BrokenSeal
     | CloakOfShadows
@@ -3115,6 +3210,9 @@ export interface ScrollHolder {
     | RingOfEnergy
     | RingOfArcana
     | RingOfSharpshooting
+    | RingOfForce
+    | RingOfElements
+    | RingOfWealth
     | Artifact
     | BrokenSeal
     | CloakOfShadows
@@ -3230,6 +3328,9 @@ export interface MagicalHolster {
     | RingOfEnergy
     | RingOfArcana
     | RingOfSharpshooting
+    | RingOfForce
+    | RingOfElements
+    | RingOfWealth
     | Artifact
     | BrokenSeal
     | CloakOfShadows
@@ -3345,6 +3446,9 @@ export interface PotionBandolier {
     | RingOfEnergy
     | RingOfArcana
     | RingOfSharpshooting
+    | RingOfForce
+    | RingOfElements
+    | RingOfWealth
     | Artifact
     | BrokenSeal
     | CloakOfShadows

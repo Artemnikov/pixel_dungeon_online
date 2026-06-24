@@ -2095,12 +2095,16 @@ from app.engine.entities.rings import (
     RingOfAccuracy, RingOfEvasion, RingOfHaste, RingOfFuror,
     RingOfMight, RingOfTenacity, RingOfEnergy, RingOfArcana, RingOfSharpshooting,
 )  # noqa: E402
+from app.engine.entities.rings_tier3 import (
+    RingOfForce, RingOfElements, RingOfWealth,
+)  # noqa: E402
 
 AnyItem = Annotated[
     Union[
         MeleeWeapon, Dagger, WornShortsword, Bow, SpiritBow, Staff, MissileWeapon,
         Armor, Ring, RingOfAccuracy, RingOfEvasion, RingOfHaste, RingOfFuror,
         RingOfMight, RingOfTenacity, RingOfEnergy, RingOfArcana, RingOfSharpshooting,
+        RingOfForce, RingOfElements, RingOfWealth,
         Artifact, BrokenSeal, CloakOfShadows, DriedRose,
         DamageWand,
         WandOfMagicMissile, WandOfFireblast, WandOfFrost, WandOfLightning,
@@ -2376,6 +2380,10 @@ class Player(Entity):
     clobber_used: bool = False
     parry_used: bool = False
 
+    # Ring of Wealth bonus drop counters (SPD TriesToDrop / DropsToEquip)
+    wealth_tries_to_drop: float = 0.0
+    wealth_drops_to_equip: int = 0
+
     # Broken Seal (all Warriors): cooldown (in ticks) before the seal can
     # trigger its shield again. 150 on trigger, can go negative via Lethal
     # Defense (instant re-trigger once <= 0).
@@ -2510,6 +2518,9 @@ class Player(Entity):
             return w.dmg_min(w.level)
         elif isinstance(w, KindOfWeapon):
             return w.damage
+        from app.engine.entities.rings_tier3 import using_force, force_damage_range
+        if using_force(self):
+            return force_damage_range(self)[0]
         return self.damage_min
 
     def get_damage_max(self) -> int:
@@ -2518,6 +2529,9 @@ class Player(Entity):
             return w.dmg_max(w.level)
         elif isinstance(w, KindOfWeapon):
             return w.damage
+        from app.engine.entities.rings_tier3 import using_force, force_damage_range
+        if using_force(self):
+            return force_damage_range(self)[1]
         return self.damage_max
 
     def get_surprise_damage_floor(self) -> float:

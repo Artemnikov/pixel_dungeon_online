@@ -259,29 +259,6 @@ class RingOfSharpshooting(Ring):
         return lines
 
 
-class RingOfForce(Ring):
-    kind: Literal["ring_force"] = "ring_force"
-    name: str = "Ring of Force"
-    buff_class: str = "force"
-    DESC: ClassVar[str] = (
-        "This ring channels the wearer's strength into unarmed strikes, "
-        "dealing damage as if wielding a weapon."
-    )
-
-    def _info_lines(self, player: Optional["Player"] = None) -> list[str]:
-        lines: list[str] = []
-        if player is not None and self.buff_class:
-            L = ring_buffed_bonus(player, self.buff_class)
-            str_val = player.get_effective_strength()
-            tier = _force_tier(str_val)
-            if L <= 0:
-                tier = 1
-            dmin = max(0, round(tier + L))
-            dmax = max(0, round(5 * (tier + 1) + L * (tier + 1)))
-            lines.append(f"Unarmed damage: {dmin}-{dmax}")
-        return lines
-
-
 # --- effect multipliers (imported by combat/movement/etc.) -------------------
 
 def accuracy_multiplier(player: "Player") -> float:
@@ -346,62 +323,3 @@ def arcana_multiplier(player: "Player") -> float:
 def sharpshooting_damage_bonus(player: "Player") -> int:
     """SPD RingOfSharpshooting: +flat damage to projectiles = buffed bonus."""
     return ring_buffed_bonus(player, "aim")
-
-
-# --- RingOfForce: unarmed combat (SPD RingOfForce.java:73-127) ---------------
-
-def _force_tier(str_val: int) -> float:
-    """SPD RingOfForce.tier(STR): max(1, (STR-8)/2), capped after 5."""
-    tier = max(1, (str_val - 8) / 2)
-    if tier > 5:
-        tier = 5 + (tier - 5) / 2
-    return tier
-
-
-def using_force(player: "Player") -> bool:
-    """True if the player has a Ring of Force equipped (any bonus > 0)."""
-    return ring_buffed_bonus(player, "force") > 0
-
-
-def force_damage_range(player: "Player") -> tuple[int, int]:
-    """SPD RingOfForce.damageRoll: unarmed damage [min, max] based on STR tier
-    and ring level. Cursed (L<=0) forces tier=1."""
-    L = ring_buffed_bonus(player, "force")
-    str_val = player.get_effective_strength()
-    tier = _force_tier(str_val)
-    if L <= 0:
-        tier = 1
-    dmin = max(0, round(tier + L))
-    dmax = max(0, round(5 * (tier + 1) + L * (tier + 1)))
-    return (dmin, dmax)
-
-
-# --- RingOfElements: status resistance (SPD RingOfElements.java:72-98) -------
-
-# Buff types that Ring of Elements resists (SPD RESISTS set + AntiMagic set).
-RESISTS = frozenset({
-    # Direct element buffs
-    "burning", "chill", "frost", "ooze", "paralysis", "poison", "corrosion",
-    # Gas blobs
-    "toxic_gas", "electricity",
-    # AntiMagic set (magical effects)
-    "magical_sleep", "charm", "weakness", "vulnerable", "hex", "degrade",
-})
-
-
-def resist_multiplier(player: "Player", effect_type: str) -> float:
-    """SPD RingOfElements.resist: 0.825^L if effect is resistable, else 1.0."""
-    if effect_type not in RESISTS:
-        return 1.0
-    L = ring_buffed_bonus(player, "resistance")
-    if L <= 0:
-        return 1.0
-    return 0.825 ** L
-
-
-# --- RingOfWealth: drop chance + bonus drops (SPD RingOfWealth.java) ---------
-
-def wealth_drop_multiplier(player: "Player") -> float:
-    """SPD RingOfWealth.dropChanceMultiplier: 1.2^L."""
-    L = ring_buffed_bonus(player, "wealth")
-    return 1.2 ** L

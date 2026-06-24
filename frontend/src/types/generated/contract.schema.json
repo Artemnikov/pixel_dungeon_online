@@ -369,13 +369,16 @@
                 "ring": "#/$defs/Ring",
                 "ring_accuracy": "#/$defs/RingOfAccuracy",
                 "ring_arcana": "#/$defs/RingOfArcana",
+                "ring_elements": "#/$defs/RingOfElements",
                 "ring_energy": "#/$defs/RingOfEnergy",
                 "ring_evasion": "#/$defs/RingOfEvasion",
+                "ring_force": "#/$defs/RingOfForce",
                 "ring_furor": "#/$defs/RingOfFuror",
                 "ring_haste": "#/$defs/RingOfHaste",
                 "ring_might": "#/$defs/RingOfMight",
                 "ring_sharpshooting": "#/$defs/RingOfSharpshooting",
                 "ring_tenacity": "#/$defs/RingOfTenacity",
+                "ring_wealth": "#/$defs/RingOfWealth",
                 "scroll": "#/$defs/Scroll",
                 "scroll_holder": "#/$defs/ScrollHolder",
                 "scroll_of_identify": "#/$defs/ScrollOfIdentify",
@@ -473,6 +476,15 @@
               },
               {
                 "$ref": "#/$defs/RingOfSharpshooting"
+              },
+              {
+                "$ref": "#/$defs/RingOfForce"
+              },
+              {
+                "$ref": "#/$defs/RingOfElements"
+              },
+              {
+                "$ref": "#/$defs/RingOfWealth"
               },
               {
                 "$ref": "#/$defs/Artifact"
@@ -777,13 +789,16 @@
                   "ring": "#/$defs/Ring",
                   "ring_accuracy": "#/$defs/RingOfAccuracy",
                   "ring_arcana": "#/$defs/RingOfArcana",
+                  "ring_elements": "#/$defs/RingOfElements",
                   "ring_energy": "#/$defs/RingOfEnergy",
                   "ring_evasion": "#/$defs/RingOfEvasion",
+                  "ring_force": "#/$defs/RingOfForce",
                   "ring_furor": "#/$defs/RingOfFuror",
                   "ring_haste": "#/$defs/RingOfHaste",
                   "ring_might": "#/$defs/RingOfMight",
                   "ring_sharpshooting": "#/$defs/RingOfSharpshooting",
                   "ring_tenacity": "#/$defs/RingOfTenacity",
+                  "ring_wealth": "#/$defs/RingOfWealth",
                   "scroll": "#/$defs/Scroll",
                   "scroll_holder": "#/$defs/ScrollHolder",
                   "scroll_of_identify": "#/$defs/ScrollOfIdentify",
@@ -881,6 +896,15 @@
                 },
                 {
                   "$ref": "#/$defs/RingOfSharpshooting"
+                },
+                {
+                  "$ref": "#/$defs/RingOfForce"
+                },
+                {
+                  "$ref": "#/$defs/RingOfElements"
+                },
+                {
+                  "$ref": "#/$defs/RingOfWealth"
                 },
                 {
                   "$ref": "#/$defs/Artifact"
@@ -1178,13 +1202,16 @@
                   "ring": "#/$defs/Ring",
                   "ring_accuracy": "#/$defs/RingOfAccuracy",
                   "ring_arcana": "#/$defs/RingOfArcana",
+                  "ring_elements": "#/$defs/RingOfElements",
                   "ring_energy": "#/$defs/RingOfEnergy",
                   "ring_evasion": "#/$defs/RingOfEvasion",
+                  "ring_force": "#/$defs/RingOfForce",
                   "ring_furor": "#/$defs/RingOfFuror",
                   "ring_haste": "#/$defs/RingOfHaste",
                   "ring_might": "#/$defs/RingOfMight",
                   "ring_sharpshooting": "#/$defs/RingOfSharpshooting",
                   "ring_tenacity": "#/$defs/RingOfTenacity",
+                  "ring_wealth": "#/$defs/RingOfWealth",
                   "scroll": "#/$defs/Scroll",
                   "scroll_holder": "#/$defs/ScrollHolder",
                   "scroll_of_identify": "#/$defs/ScrollOfIdentify",
@@ -1282,6 +1309,15 @@
                 },
                 {
                   "$ref": "#/$defs/RingOfSharpshooting"
+                },
+                {
+                  "$ref": "#/$defs/RingOfForce"
+                },
+                {
+                  "$ref": "#/$defs/RingOfElements"
+                },
+                {
+                  "$ref": "#/$defs/RingOfWealth"
                 },
                 {
                   "$ref": "#/$defs/Artifact"
@@ -1579,13 +1615,16 @@
                   "ring": "#/$defs/Ring",
                   "ring_accuracy": "#/$defs/RingOfAccuracy",
                   "ring_arcana": "#/$defs/RingOfArcana",
+                  "ring_elements": "#/$defs/RingOfElements",
                   "ring_energy": "#/$defs/RingOfEnergy",
                   "ring_evasion": "#/$defs/RingOfEvasion",
+                  "ring_force": "#/$defs/RingOfForce",
                   "ring_furor": "#/$defs/RingOfFuror",
                   "ring_haste": "#/$defs/RingOfHaste",
                   "ring_might": "#/$defs/RingOfMight",
                   "ring_sharpshooting": "#/$defs/RingOfSharpshooting",
                   "ring_tenacity": "#/$defs/RingOfTenacity",
+                  "ring_wealth": "#/$defs/RingOfWealth",
                   "scroll": "#/$defs/Scroll",
                   "scroll_holder": "#/$defs/ScrollHolder",
                   "scroll_of_identify": "#/$defs/ScrollOfIdentify",
@@ -1683,6 +1722,15 @@
                 },
                 {
                   "$ref": "#/$defs/RingOfSharpshooting"
+                },
+                {
+                  "$ref": "#/$defs/RingOfForce"
+                },
+                {
+                  "$ref": "#/$defs/RingOfElements"
+                },
+                {
+                  "$ref": "#/$defs/RingOfWealth"
                 },
                 {
                   "$ref": "#/$defs/Artifact"
@@ -1980,13 +2028,16 @@
                   "ring": "#/$defs/Ring",
                   "ring_accuracy": "#/$defs/RingOfAccuracy",
                   "ring_arcana": "#/$defs/RingOfArcana",
+                  "ring_elements": "#/$defs/RingOfElements",
                   "ring_energy": "#/$defs/RingOfEnergy",
                   "ring_evasion": "#/$defs/RingOfEvasion",
+                  "ring_force": "#/$defs/RingOfForce",
                   "ring_furor": "#/$defs/RingOfFuror",
                   "ring_haste": "#/$defs/RingOfHaste",
                   "ring_might": "#/$defs/RingOfMight",
                   "ring_sharpshooting": "#/$defs/RingOfSharpshooting",
                   "ring_tenacity": "#/$defs/RingOfTenacity",
+                  "ring_wealth": "#/$defs/RingOfWealth",
                   "scroll": "#/$defs/Scroll",
                   "scroll_holder": "#/$defs/ScrollHolder",
                   "scroll_of_identify": "#/$defs/ScrollOfIdentify",
@@ -2084,6 +2135,15 @@
                 },
                 {
                   "$ref": "#/$defs/RingOfSharpshooting"
+                },
+                {
+                  "$ref": "#/$defs/RingOfForce"
+                },
+                {
+                  "$ref": "#/$defs/RingOfElements"
+                },
+                {
+                  "$ref": "#/$defs/RingOfWealth"
                 },
                 {
                   "$ref": "#/$defs/Artifact"
@@ -2381,13 +2441,16 @@
                   "ring": "#/$defs/Ring",
                   "ring_accuracy": "#/$defs/RingOfAccuracy",
                   "ring_arcana": "#/$defs/RingOfArcana",
+                  "ring_elements": "#/$defs/RingOfElements",
                   "ring_energy": "#/$defs/RingOfEnergy",
                   "ring_evasion": "#/$defs/RingOfEvasion",
+                  "ring_force": "#/$defs/RingOfForce",
                   "ring_furor": "#/$defs/RingOfFuror",
                   "ring_haste": "#/$defs/RingOfHaste",
                   "ring_might": "#/$defs/RingOfMight",
                   "ring_sharpshooting": "#/$defs/RingOfSharpshooting",
                   "ring_tenacity": "#/$defs/RingOfTenacity",
+                  "ring_wealth": "#/$defs/RingOfWealth",
                   "scroll": "#/$defs/Scroll",
                   "scroll_holder": "#/$defs/ScrollHolder",
                   "scroll_of_identify": "#/$defs/ScrollOfIdentify",
@@ -2485,6 +2548,15 @@
                 },
                 {
                   "$ref": "#/$defs/RingOfSharpshooting"
+                },
+                {
+                  "$ref": "#/$defs/RingOfForce"
+                },
+                {
+                  "$ref": "#/$defs/RingOfElements"
+                },
+                {
+                  "$ref": "#/$defs/RingOfWealth"
                 },
                 {
                   "$ref": "#/$defs/Artifact"
@@ -3335,13 +3407,16 @@
                 "ring": "#/$defs/Ring",
                 "ring_accuracy": "#/$defs/RingOfAccuracy",
                 "ring_arcana": "#/$defs/RingOfArcana",
+                "ring_elements": "#/$defs/RingOfElements",
                 "ring_energy": "#/$defs/RingOfEnergy",
                 "ring_evasion": "#/$defs/RingOfEvasion",
+                "ring_force": "#/$defs/RingOfForce",
                 "ring_furor": "#/$defs/RingOfFuror",
                 "ring_haste": "#/$defs/RingOfHaste",
                 "ring_might": "#/$defs/RingOfMight",
                 "ring_sharpshooting": "#/$defs/RingOfSharpshooting",
                 "ring_tenacity": "#/$defs/RingOfTenacity",
+                "ring_wealth": "#/$defs/RingOfWealth",
                 "scroll": "#/$defs/Scroll",
                 "scroll_holder": "#/$defs/ScrollHolder",
                 "scroll_of_identify": "#/$defs/ScrollOfIdentify",
@@ -3439,6 +3514,15 @@
               },
               {
                 "$ref": "#/$defs/RingOfSharpshooting"
+              },
+              {
+                "$ref": "#/$defs/RingOfForce"
+              },
+              {
+                "$ref": "#/$defs/RingOfElements"
+              },
+              {
+                "$ref": "#/$defs/RingOfWealth"
               },
               {
                 "$ref": "#/$defs/Artifact"
@@ -5134,13 +5218,16 @@
                 "ring": "#/$defs/Ring",
                 "ring_accuracy": "#/$defs/RingOfAccuracy",
                 "ring_arcana": "#/$defs/RingOfArcana",
+                "ring_elements": "#/$defs/RingOfElements",
                 "ring_energy": "#/$defs/RingOfEnergy",
                 "ring_evasion": "#/$defs/RingOfEvasion",
+                "ring_force": "#/$defs/RingOfForce",
                 "ring_furor": "#/$defs/RingOfFuror",
                 "ring_haste": "#/$defs/RingOfHaste",
                 "ring_might": "#/$defs/RingOfMight",
                 "ring_sharpshooting": "#/$defs/RingOfSharpshooting",
                 "ring_tenacity": "#/$defs/RingOfTenacity",
+                "ring_wealth": "#/$defs/RingOfWealth",
                 "scroll": "#/$defs/Scroll",
                 "scroll_holder": "#/$defs/ScrollHolder",
                 "scroll_of_identify": "#/$defs/ScrollOfIdentify",
@@ -5238,6 +5325,15 @@
               },
               {
                 "$ref": "#/$defs/RingOfSharpshooting"
+              },
+              {
+                "$ref": "#/$defs/RingOfForce"
+              },
+              {
+                "$ref": "#/$defs/RingOfElements"
+              },
+              {
+                "$ref": "#/$defs/RingOfWealth"
               },
               {
                 "$ref": "#/$defs/Artifact"
@@ -6575,6 +6671,14 @@
           "default": false,
           "type": "boolean"
         },
+        "wealth_tries_to_drop": {
+          "default": 0.0,
+          "type": "number"
+        },
+        "wealth_drops_to_equip": {
+          "default": 0,
+          "type": "integer"
+        },
         "seal_cooldown": {
           "default": 0,
           "type": "integer"
@@ -6684,13 +6788,16 @@
                 "ring": "#/$defs/Ring",
                 "ring_accuracy": "#/$defs/RingOfAccuracy",
                 "ring_arcana": "#/$defs/RingOfArcana",
+                "ring_elements": "#/$defs/RingOfElements",
                 "ring_energy": "#/$defs/RingOfEnergy",
                 "ring_evasion": "#/$defs/RingOfEvasion",
+                "ring_force": "#/$defs/RingOfForce",
                 "ring_furor": "#/$defs/RingOfFuror",
                 "ring_haste": "#/$defs/RingOfHaste",
                 "ring_might": "#/$defs/RingOfMight",
                 "ring_sharpshooting": "#/$defs/RingOfSharpshooting",
                 "ring_tenacity": "#/$defs/RingOfTenacity",
+                "ring_wealth": "#/$defs/RingOfWealth",
                 "scroll": "#/$defs/Scroll",
                 "scroll_holder": "#/$defs/ScrollHolder",
                 "scroll_of_identify": "#/$defs/ScrollOfIdentify",
@@ -6788,6 +6895,15 @@
               },
               {
                 "$ref": "#/$defs/RingOfSharpshooting"
+              },
+              {
+                "$ref": "#/$defs/RingOfForce"
+              },
+              {
+                "$ref": "#/$defs/RingOfElements"
+              },
+              {
+                "$ref": "#/$defs/RingOfWealth"
               },
               {
                 "$ref": "#/$defs/Artifact"
@@ -7082,13 +7198,16 @@
                   "ring": "#/$defs/Ring",
                   "ring_accuracy": "#/$defs/RingOfAccuracy",
                   "ring_arcana": "#/$defs/RingOfArcana",
+                  "ring_elements": "#/$defs/RingOfElements",
                   "ring_energy": "#/$defs/RingOfEnergy",
                   "ring_evasion": "#/$defs/RingOfEvasion",
+                  "ring_force": "#/$defs/RingOfForce",
                   "ring_furor": "#/$defs/RingOfFuror",
                   "ring_haste": "#/$defs/RingOfHaste",
                   "ring_might": "#/$defs/RingOfMight",
                   "ring_sharpshooting": "#/$defs/RingOfSharpshooting",
                   "ring_tenacity": "#/$defs/RingOfTenacity",
+                  "ring_wealth": "#/$defs/RingOfWealth",
                   "scroll": "#/$defs/Scroll",
                   "scroll_holder": "#/$defs/ScrollHolder",
                   "scroll_of_identify": "#/$defs/ScrollOfIdentify",
@@ -7186,6 +7305,15 @@
                 },
                 {
                   "$ref": "#/$defs/RingOfSharpshooting"
+                },
+                {
+                  "$ref": "#/$defs/RingOfForce"
+                },
+                {
+                  "$ref": "#/$defs/RingOfElements"
+                },
+                {
+                  "$ref": "#/$defs/RingOfWealth"
                 },
                 {
                   "$ref": "#/$defs/Artifact"
@@ -7483,13 +7611,16 @@
                   "ring": "#/$defs/Ring",
                   "ring_accuracy": "#/$defs/RingOfAccuracy",
                   "ring_arcana": "#/$defs/RingOfArcana",
+                  "ring_elements": "#/$defs/RingOfElements",
                   "ring_energy": "#/$defs/RingOfEnergy",
                   "ring_evasion": "#/$defs/RingOfEvasion",
+                  "ring_force": "#/$defs/RingOfForce",
                   "ring_furor": "#/$defs/RingOfFuror",
                   "ring_haste": "#/$defs/RingOfHaste",
                   "ring_might": "#/$defs/RingOfMight",
                   "ring_sharpshooting": "#/$defs/RingOfSharpshooting",
                   "ring_tenacity": "#/$defs/RingOfTenacity",
+                  "ring_wealth": "#/$defs/RingOfWealth",
                   "scroll": "#/$defs/Scroll",
                   "scroll_holder": "#/$defs/ScrollHolder",
                   "scroll_of_identify": "#/$defs/ScrollOfIdentify",
@@ -7587,6 +7718,15 @@
                 },
                 {
                   "$ref": "#/$defs/RingOfSharpshooting"
+                },
+                {
+                  "$ref": "#/$defs/RingOfForce"
+                },
+                {
+                  "$ref": "#/$defs/RingOfElements"
+                },
+                {
+                  "$ref": "#/$defs/RingOfWealth"
                 },
                 {
                   "$ref": "#/$defs/Artifact"
@@ -8056,13 +8196,16 @@
                 "ring": "#/$defs/Ring",
                 "ring_accuracy": "#/$defs/RingOfAccuracy",
                 "ring_arcana": "#/$defs/RingOfArcana",
+                "ring_elements": "#/$defs/RingOfElements",
                 "ring_energy": "#/$defs/RingOfEnergy",
                 "ring_evasion": "#/$defs/RingOfEvasion",
+                "ring_force": "#/$defs/RingOfForce",
                 "ring_furor": "#/$defs/RingOfFuror",
                 "ring_haste": "#/$defs/RingOfHaste",
                 "ring_might": "#/$defs/RingOfMight",
                 "ring_sharpshooting": "#/$defs/RingOfSharpshooting",
                 "ring_tenacity": "#/$defs/RingOfTenacity",
+                "ring_wealth": "#/$defs/RingOfWealth",
                 "scroll": "#/$defs/Scroll",
                 "scroll_holder": "#/$defs/ScrollHolder",
                 "scroll_of_identify": "#/$defs/ScrollOfIdentify",
@@ -8160,6 +8303,15 @@
               },
               {
                 "$ref": "#/$defs/RingOfSharpshooting"
+              },
+              {
+                "$ref": "#/$defs/RingOfForce"
+              },
+              {
+                "$ref": "#/$defs/RingOfElements"
+              },
+              {
+                "$ref": "#/$defs/RingOfWealth"
               },
               {
                 "$ref": "#/$defs/Artifact"
@@ -9657,6 +9809,91 @@
       },
       "type": "object"
     },
+    "RingOfElements": {
+      "properties": {
+        "kind": {
+          "const": "ring_elements",
+          "default": "ring_elements",
+          "type": "string"
+        },
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "name": {
+          "default": "Ring of Elements",
+          "type": "string"
+        },
+        "type": {
+          "default": "ring",
+          "type": "string"
+        },
+        "pos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Position"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "quantity": {
+          "default": 1,
+          "type": "integer"
+        },
+        "level": {
+          "default": 0,
+          "type": "integer"
+        },
+        "level_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "unique": {
+          "default": false,
+          "type": "boolean"
+        },
+        "kept_though_lost": {
+          "default": false,
+          "type": "boolean"
+        },
+        "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        },
+        "strength_requirement": {
+          "default": 10,
+          "type": "integer"
+        },
+        "buff_class": {
+          "default": "resistance",
+          "type": "string"
+        },
+        "gem": {
+          "default": "garnet",
+          "type": "string"
+        },
+        "levels_to_id": {
+          "default": 1.0,
+          "type": "number"
+        }
+      },
+      "type": "object"
+    },
     "RingOfEnergy": {
       "properties": {
         "kind": {
@@ -9814,6 +10051,91 @@
         },
         "buff_class": {
           "default": "evasion",
+          "type": "string"
+        },
+        "gem": {
+          "default": "garnet",
+          "type": "string"
+        },
+        "levels_to_id": {
+          "default": 1.0,
+          "type": "number"
+        }
+      },
+      "type": "object"
+    },
+    "RingOfForce": {
+      "properties": {
+        "kind": {
+          "const": "ring_force",
+          "default": "ring_force",
+          "type": "string"
+        },
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "name": {
+          "default": "Ring of Force",
+          "type": "string"
+        },
+        "type": {
+          "default": "ring",
+          "type": "string"
+        },
+        "pos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Position"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "quantity": {
+          "default": 1,
+          "type": "integer"
+        },
+        "level": {
+          "default": 0,
+          "type": "integer"
+        },
+        "level_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "unique": {
+          "default": false,
+          "type": "boolean"
+        },
+        "kept_though_lost": {
+          "default": false,
+          "type": "boolean"
+        },
+        "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        },
+        "strength_requirement": {
+          "default": 10,
+          "type": "integer"
+        },
+        "buff_class": {
+          "default": "force",
           "type": "string"
         },
         "gem": {
@@ -10252,6 +10574,91 @@
       },
       "type": "object"
     },
+    "RingOfWealth": {
+      "properties": {
+        "kind": {
+          "const": "ring_wealth",
+          "default": "ring_wealth",
+          "type": "string"
+        },
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "name": {
+          "default": "Ring of Wealth",
+          "type": "string"
+        },
+        "type": {
+          "default": "ring",
+          "type": "string"
+        },
+        "pos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Position"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "quantity": {
+          "default": 1,
+          "type": "integer"
+        },
+        "level": {
+          "default": 0,
+          "type": "integer"
+        },
+        "level_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "unique": {
+          "default": false,
+          "type": "boolean"
+        },
+        "kept_though_lost": {
+          "default": false,
+          "type": "boolean"
+        },
+        "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        },
+        "strength_requirement": {
+          "default": 10,
+          "type": "integer"
+        },
+        "buff_class": {
+          "default": "wealth",
+          "type": "string"
+        },
+        "gem": {
+          "default": "garnet",
+          "type": "string"
+        },
+        "levels_to_id": {
+          "default": 1.0,
+          "type": "number"
+        }
+      },
+      "type": "object"
+    },
     "Scroll": {
       "properties": {
         "kind": {
@@ -10446,13 +10853,16 @@
                 "ring": "#/$defs/Ring",
                 "ring_accuracy": "#/$defs/RingOfAccuracy",
                 "ring_arcana": "#/$defs/RingOfArcana",
+                "ring_elements": "#/$defs/RingOfElements",
                 "ring_energy": "#/$defs/RingOfEnergy",
                 "ring_evasion": "#/$defs/RingOfEvasion",
+                "ring_force": "#/$defs/RingOfForce",
                 "ring_furor": "#/$defs/RingOfFuror",
                 "ring_haste": "#/$defs/RingOfHaste",
                 "ring_might": "#/$defs/RingOfMight",
                 "ring_sharpshooting": "#/$defs/RingOfSharpshooting",
                 "ring_tenacity": "#/$defs/RingOfTenacity",
+                "ring_wealth": "#/$defs/RingOfWealth",
                 "scroll": "#/$defs/Scroll",
                 "scroll_holder": "#/$defs/ScrollHolder",
                 "scroll_of_identify": "#/$defs/ScrollOfIdentify",
@@ -10550,6 +10960,15 @@
               },
               {
                 "$ref": "#/$defs/RingOfSharpshooting"
+              },
+              {
+                "$ref": "#/$defs/RingOfForce"
+              },
+              {
+                "$ref": "#/$defs/RingOfElements"
+              },
+              {
+                "$ref": "#/$defs/RingOfWealth"
               },
               {
                 "$ref": "#/$defs/Artifact"
@@ -12642,13 +13061,16 @@
                 "ring": "#/$defs/Ring",
                 "ring_accuracy": "#/$defs/RingOfAccuracy",
                 "ring_arcana": "#/$defs/RingOfArcana",
+                "ring_elements": "#/$defs/RingOfElements",
                 "ring_energy": "#/$defs/RingOfEnergy",
                 "ring_evasion": "#/$defs/RingOfEvasion",
+                "ring_force": "#/$defs/RingOfForce",
                 "ring_furor": "#/$defs/RingOfFuror",
                 "ring_haste": "#/$defs/RingOfHaste",
                 "ring_might": "#/$defs/RingOfMight",
                 "ring_sharpshooting": "#/$defs/RingOfSharpshooting",
                 "ring_tenacity": "#/$defs/RingOfTenacity",
+                "ring_wealth": "#/$defs/RingOfWealth",
                 "scroll": "#/$defs/Scroll",
                 "scroll_holder": "#/$defs/ScrollHolder",
                 "scroll_of_identify": "#/$defs/ScrollOfIdentify",
@@ -12746,6 +13168,15 @@
               },
               {
                 "$ref": "#/$defs/RingOfSharpshooting"
+              },
+              {
+                "$ref": "#/$defs/RingOfForce"
+              },
+              {
+                "$ref": "#/$defs/RingOfElements"
+              },
+              {
+                "$ref": "#/$defs/RingOfWealth"
               },
               {
                 "$ref": "#/$defs/Artifact"

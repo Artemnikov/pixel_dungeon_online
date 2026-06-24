@@ -89,7 +89,40 @@ def roll_drops(
         if wd.max_global > 0:
             drop_counters[wd.item_kind] = drop_counters.get(wd.item_kind, 0) + count
 
+    # Ring of Wealth bonus drops (SPD RingOfWealth.genConsumableDrop)
+    if players:
+        for p in players:
+            from app.engine.entities.rings_tier3 import wealth_drop_multiplier
+            mult = wealth_drop_multiplier(p)
+            if mult > 1.0:
+                bonus = _wealth_bonus_drop(p, death_x, death_y)
+                items.extend(bonus)
+
     return items
+
+
+def _wealth_bonus_drop(player, x: int, y: int) -> List[ItemBase]:
+    """SPD RingOfWealth: accumulated tries → bonus consumable drops."""
+    from app.engine.entities.rings import ring_buffed_bonus
+    L = ring_buffed_bonus(player, "wealth")
+    if L <= 0:
+        return []
+    player.wealth_tries_to_drop += L
+    bonus: List[ItemBase] = []
+    while player.wealth_tries_to_drop >= 3:
+        player.wealth_tries_to_drop -= 3
+        if random.random() < 0.5 + 0.05 * L:
+            item = _random_wealth_consumable()
+            if item:
+                item.id = str(uuid.uuid4())
+                item.pos = Position(x=x, y=y)
+                bonus.append(item)
+    return bonus
+
+
+def _random_wealth_consumable() -> Optional[ItemBase]:
+    kind = random.choice(["seed", "health_potion", "mystery_meat", "potion"])
+    return _make_item(kind)
 
 
 def _weighted_choice(weights: List[float]) -> int:

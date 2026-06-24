@@ -116,6 +116,7 @@ from app.engine.entities.base import (
     Waterskin,
     WornShortsword,
 )
+from app.engine.entities.rings_tier3 import RingOfForce, RingOfElements, RingOfWealth  # noqa: E402
 
 
 class ItemCatalogEntry(TypedDict):
@@ -148,6 +149,9 @@ _CATALOG: List[tuple] = [
     ("ring_energy", "Ring of Energy", "ring", lambda: RingOfEnergy()),
     ("ring_arcana", "Ring of Arcana", "ring", lambda: RingOfArcana()),
     ("ring_sharpshooting", "Ring of Sharpshooting", "ring", lambda: RingOfSharpshooting()),
+    ("ring_force", "Ring of Force", "ring", lambda: RingOfForce()),
+    ("ring_elements", "Ring of Elements", "ring", lambda: RingOfElements()),
+    ("ring_wealth", "Ring of Wealth", "ring", lambda: RingOfWealth()),
     ("artifact", "Artifact", "artifact", lambda: Artifact(name="Artifact")),
     ("broken_seal", "Broken Seal", "artifact", lambda: BrokenSeal()),
     ("cloak_of_shadows", "Cloak of Shadows", "artifact", lambda: CloakOfShadows()),
