@@ -133,6 +133,24 @@ class TickMixin:
             blob_events = tick_blob_areas(active_floors, self.players)
             for ev in blob_events:
                 self.add_event(ev["type"], ev["data"])
+            for ev in blob_events:
+                if ev["type"] == "DEATH" and "target" in ev.get("data", {}):
+                    target_id = ev["data"]["target"]
+                    for fid in active_ids:
+                        f = self.floors[fid]
+                        mob = f.mobs.get(target_id)
+                        if mob is not None and not mob.is_alive:
+                            self.handle_mob_death(mob, f, fid)
+                            drops = roll_drops(mob, self.drop_counters,
+                                               mob.pos.x, mob.pos.y,
+                                               players=list(self._players_on_floor(fid)))
+                            for item in drops:
+                                f.items[item.id] = item
+                            if any(isinstance(d, Gold) for d in drops):
+                                self.add_event("GOLD_DROP",
+                                               {"x": mob.pos.x, "y": mob.pos.y},
+                                               floor_id=fid)
+                            break
 
         for floor_id in active_ids:
             self._tick_tengu_blobs(self.floors[floor_id], floor_id)

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import random
 from typing import Any, Dict, List, Set, Tuple
 
 from app.engine.dungeon.constants import TileType
@@ -20,6 +21,114 @@ _BURN_RESULT = {
     TileType.REGION_DECO: TileType.FLOOR_WATER,
     TileType.REGION_DECO_ALT: TileType.FLOOR,
 }
+
+
+_ELECTRIC_CARDINALS = [(0, -1), (1, 0), (0, 1), (-1, 0)]
+
+
+def _evolve_electricity_blob(
+    floor: FloorState,
+    blob_id: Any,
+    blob: dict,
+    players: Dict[str, Entity],
+    events: List[dict],
+) -> None:
+    cells: Set[Tuple[int, int]] = blob.get("cells", set())
+    volume: Dict[Tuple[int, int], int] = blob.get("volume", {})
+    if not cells:
+        del floor.blob_areas[blob_id]
+        events.append({"type": "BLOB_DEPLETED", "data": {"id": blob_id}})
+        return
+
+    is_wand_blob = blob_id and str(blob_id).startswith("wand_elec_")
+    if is_wand_blob:
+        tick_counter = blob.get("tick_counter", 0) + 1
+        blob["tick_counter"] = tick_counter
+        if tick_counter >= 150:
+            del floor.blob_areas[blob_id]
+            events.append({"type": "BLOB_DEPLETED", "data": {"id": blob_id}})
+            return
+
+    new_cells: Set[Tuple[int, int]] = set()
+    new_volume: Dict[Tuple[int, int], int] = {}
+    spread_targets: Dict[Tuple[int, int], int] = {}
+    damaged = False
+    depth = getattr(floor, "floor_id", 1)
+
+    for cx, cy in list(cells):
+        vol = volume.get((cx, cy), 1)
+        if vol <= 0:
+            continue
+
+        # Apply effect to chars on this cell
+        for p in players.values():
+            if p.floor_id != floor.floor_id or not p.is_alive:
+                continue
+            if p.pos.x == cx and p.pos.y == cy and not is_immune(p, "electricity"):
+                from app.engine.entities.buffs import add_buff
+                add_buff(p.buffs, "paralysis", duration=float(vol), level=1, stack_mode="replace")
+                if vol % (20 if is_wand_blob else 2) == 1:
+                    dmg = round(random.uniform(0, 1) if is_wand_blob else random.uniform(2, 2 + depth / 5.0))
+                    if dmg > 0:
+                        p.take_damage(dmg)
+                        events.append({"type": "DAMAGE", "data": {"target": p.id, "amount": dmg, "shock": True}})
+                        damaged = True
+                # Charge wands in inventory
+                from app.engine.entities.base import Wand
+                for item in list(getattr(p, "belongings", None).all_items() if getattr(p, "belongings", None) else []):
+                    if isinstance(item, Wand) and not item.cursed and item.charges < item.max_charges:
+                        item.gain_charge(0.333)
+
+        for m in list(floor.mobs.values()):
+            if m.is_alive and m.pos.x == cx and m.pos.y == cy and not is_immune(m, "electricity"):
+                from app.engine.entities.buffs import add_buff
+                add_buff(m.buffs, "paralysis", duration=float(vol), level=1, stack_mode="replace")
+                if vol % (20 if is_wand_blob else 2) == 1:
+                    dmg = round(random.uniform(0, 1) if is_wand_blob else random.uniform(2, 2 + depth / 5.0))
+                    if dmg > 0:
+                        taken = m.take_damage(dmg)
+                        events.append({"type": "DAMAGE", "data": {"target": m.id, "amount": taken, "shock": True}})
+                        damaged = True
+                        if not m.is_alive:
+                            m.die(floor_mobs=floor.mobs, tile_x=m.pos.x, tile_y=m.pos.y,
+                                  players=list(players.values()))
+                            events.append({"type": "DEATH", "data": {"target": m.id}})
+
+        # Charge wands on ground
+        for item_id, item in list(floor.items.items()):
+            if item.pos and item.pos.x == cx and item.pos.y == cy:
+                from app.engine.entities.base import Wand
+                if isinstance(item, Wand) and not item.cursed and item.charges < item.max_charges:
+                    item.gain_charge(0.333)
+
+        # Spread first (SPD order: spread with current vol, then decrement)
+        for dx, dy in _ELECTRIC_CARDINALS:
+            nx, ny = cx + dx, cy + dy
+            if 0 <= nx < floor.width and 0 <= ny < floor.height:
+                tile = floor.grid[ny][nx]
+                if tile == TileType.FLOOR_WATER and (nx, ny) not in new_volume and (nx, ny) not in volume:
+                    spread_targets[(nx, ny)] = vol
+        # Decrement volume after spread
+        new_vol = vol - 1
+        if new_vol > 0:
+            new_cells.add((cx, cy))
+            new_volume[(cx, cy)] = new_vol
+
+    for cell, vol in spread_targets.items():
+        new_cells.add(cell)
+        new_volume[cell] = vol
+
+    if new_cells:
+        blob["cells"] = new_cells
+        blob["volume"] = new_volume
+        cell_list = [(c[0], c[1], new_volume.get(c, 1)) for c in new_cells]
+        events.append({"type": "BLOB_UPDATE", "data": {"id": blob_id, "type": "electricity", "cells": cell_list}})
+    else:
+        del floor.blob_areas[blob_id]
+        events.append({"type": "BLOB_DEPLETED", "data": {"id": blob_id}})
+
+    if damaged:
+        events.append({"type": "PLAY_SOUND", "data": {"sound": "LIGHTNING"}})
 
 
 def _merge_same_type_blobs(floor: FloorState, btype: str) -> None:
@@ -152,6 +261,7 @@ def tick_blob_areas(floors: Dict[int, FloorState], players: Dict[str, Entity]) -
     for floor in floors.values():
         _merge_same_type_blobs(floor, "fire")
         _merge_same_type_blobs(floor, "tengu_fire")
+        _merge_same_type_blobs(floor, "electricity")
 
         for blob_id, blob in list(floor.blob_areas.items()):
             btype = blob.get("type", "unknown")
@@ -184,8 +294,11 @@ def tick_blob_areas(floors: Dict[int, FloorState], players: Dict[str, Entity]) -
             if btype == "fire":
                 _evolve_fire_blob(floor, blob_id, blob, players, events)
 
+            elif btype == "electricity":
+                _evolve_electricity_blob(floor, blob_id, blob, players, events)
+
             elif btype in ("toxic_gas", "paralytic_gas", "corrosive_gas", "confusion_gas",
-                           "electricity", "tengu_fire", "tengu_shocker"):
+                           "tengu_fire", "tengu_shocker"):
                 volume = blob.get("volume", {})
                 has_any = False
                 cell_list = []

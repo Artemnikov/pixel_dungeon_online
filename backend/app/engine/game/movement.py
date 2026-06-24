@@ -21,6 +21,7 @@ unlocking, traps and stair traversal) and ranged/thrown/wand attacks.
 import random
 import time
 import uuid
+from collections import deque
 from typing import Optional
 
 from app.engine.dungeon.generator import TileType
@@ -680,33 +681,6 @@ class MovementCombatMixin:
                 if isinstance(target_entity, Goo):
                     self._goo_add_locked_floor_time(floor_id, player, damage_dealt)
 
-                # WandOfLightning chain arc to nearby enemies
-                if damage_dealt > 0 and target_entity.is_alive and isinstance(effective_wand, WandOfLightning):
-                    lvl = effective_wand.buffed_lvl()
-                    chain_range = 3
-                    chain_targets = []
-                    if floor.mobs:
-                        for mob in floor.mobs.values():
-                            if len(chain_targets) >= 2:
-                                break
-                            if not mob.is_alive or mob.id == target_entity.id:
-                                continue
-                            if mob.faction == player.faction:
-                                continue
-                            if max(abs(mob.pos.x - target_x), abs(mob.pos.y - target_y)) > chain_range:
-                                continue
-                            chain_dmg = effective_wand.damage_roll(lvl) // 2
-                            mob.take_damage(max(1, chain_dmg))
-                            chain_targets.append({"id": mob.id, "x": mob.pos.x, "y": mob.pos.y})
-                    if chain_targets:
-                        self.add_event("SHOCKING_PROC", {
-                            "source": player.id,
-                            "defender": target_entity.id,
-                            "defender_x": target_x,
-                            "defender_y": target_y,
-                            "chain_targets": chain_targets,
-                        }, floor_id=floor_id)
-
                 # Improvised Projectiles (warrior T2): non-launcher thrown
                 # items blind the target on hit (50-turn cooldown).
                 ip = player.subclass_info.talent_info.level(Talent.IMPROVISED_PROJECTILES)
@@ -733,6 +707,98 @@ class MovementCombatMixin:
                         floor.items[d.id] = d
                     if any(isinstance(d, Gold) for d in drops):
                         self.add_event("GOLD_DROP", {"x": target_entity.pos.x, "y": target_entity.pos.y}, floor_id=floor_id)
+
+        # WandOfLightning — chain arc from impact tile + water electrification
+        if isinstance(effective_wand, WandOfLightning):
+            lvl = effective_wand.buffed_lvl()
+            affected_ids = set()
+            if target_entity and target_entity.is_alive and damage_dealt > 0:
+                affected_ids.add(target_entity.id)
+            chain_mobs = []
+            is_main_in_water = floor.grid[target_y][target_x] == TileType.FLOOR_WATER
+            has_charge = has_buff(player.buffs, "lightning_charge")
+
+            def _reachable(from_x, from_y, max_dist):
+                visited = {(from_x, from_y)}
+                q = deque([(from_x, from_y, 0)])
+                while q:
+                    x, y, d = q.popleft()
+                    if d >= max_dist:
+                        continue
+                    for dx, dy in [(0, -1), (1, 0), (0, 1), (-1, 0)]:
+                        nx, ny = x + dx, y + dy
+                        if 0 <= nx < floor.width and 0 <= ny < floor.height:
+                            if (nx, ny) not in visited and not floor.flags.solid[ny][nx]:
+                                visited.add((nx, ny))
+                                q.append((nx, ny, d + 1))
+                return visited
+
+            def _wand_find(from_x, from_y):
+                dist = 2 if (0 <= from_y < floor.height and 0 <= from_x < floor.width
+                            and floor.grid[from_y][from_x] == TileType.FLOOR_WATER) else 1
+                if has_charge:
+                    dist += 1
+                reachable = _reachable(from_x, from_y, dist)
+                for m in floor.mobs.values():
+                    if not m.is_alive or m.id in affected_ids:
+                        continue
+                    if m.faction == player.faction:
+                        continue
+                    if (m.pos.x, m.pos.y) not in reachable:
+                        continue
+                    if has_buff(m.buffs, "lightning_charge"):
+                        continue
+                    if m.id == player.id:
+                        continue
+                    affected_ids.add(m.id)
+                    chain_mobs.append(m)
+                    _wand_find(m.pos.x, m.pos.y)
+
+            _wand_find(target_x, target_y)
+
+            if chain_mobs:
+                base_dmg = effective_wand.damage_roll(lvl)
+                mult = 1.0 if is_main_in_water else (0.4 + 0.6 / max(len(chain_mobs) + 1, 1))
+                for m in chain_mobs:
+                    dmg = round(base_dmg * mult)
+                    dr_roll = random.randint(m.get_dr_min(), m.get_dr_max())
+                    actual = m.take_damage(max(1, dmg - dr_roll))
+                    if actual > 0:
+                        self.add_event("DAMAGE", {"target": m.id, "amount": actual, "shock": True}, floor_id=floor_id)
+                        if not m.is_alive:
+                            m.die(floor_mobs=floor.mobs, tile_x=m.pos.x, tile_y=m.pos.y,
+                                  players=list(players.values()))
+                            self.add_event("DEATH", {"target": m.id}, floor_id=floor_id)
+
+            self.add_event("LIGHTNING_ARC", {
+                "source_x": player.pos.x,
+                "source_y": player.pos.y,
+                "target_x": target_x,
+                "target_y": target_y,
+            }, floor_id=floor_id)
+            self.add_event("SHOCKING_PROC", {
+                "source": player.id,
+                "defender": target_entity.id if target_entity else player.id,
+                "defender_x": target_x,
+                "defender_y": target_y,
+                "chain_targets": [{"id": m.id, "x": m.pos.x, "y": m.pos.y} for m in chain_mobs],
+            }, floor_id=floor_id)
+
+            # Electrify water at impact tile
+            if floor.grid[target_y][target_x] == TileType.FLOOR_WATER:
+                blob_id = f"wand_elec_{player.id}"
+                vol = 100
+                cells = {(target_x, target_y)}
+                volume = {(target_x, target_y): vol}
+                existing = floor.blob_areas.get(blob_id)
+                if existing:
+                    cells.update(existing["cells"])
+                    for k, v in existing["volume"].items():
+                        volume[k] = max(volume.get(k, 0), v)
+                floor.blob_areas[blob_id] = {"type": "electricity", "cells": cells, "volume": volume, "tick_counter": 0}
+                cell_list = [(c[0], c[1], volume.get(c, vol)) for c in cells]
+                self.add_event("BLOB_UPDATE", {"id": blob_id, "type": "electricity", "cells": cell_list}, floor_id=floor_id)
+                self.add_event("PLAY_SOUND", {"sound": "LIGHTNING"}, floor_id=floor_id)
 
         if is_wand or is_staff:
             wand_item = staff_wand if is_staff else item

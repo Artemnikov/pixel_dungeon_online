@@ -41,7 +41,10 @@ curses falls back to "not cursed".
 from __future__ import annotations
 
 import random
+from collections import deque
 from typing import TYPE_CHECKING, Callable, Dict, Optional, Tuple
+
+from app.engine.dungeon.generator import TileType
 
 if TYPE_CHECKING:
     from app.engine.entities.base import Entity, KindOfWeapon
@@ -233,21 +236,49 @@ def _proc_shocking(attacker, defender, weapon, raw_damage, actual_damage, hp_bef
     arcana_mult = kwargs.get("arcana_mult", 1.0)
     if random.random() >= (SHOCKING_CHANCE + enraged_catalyst_bonus(attacker)) * arcana_mult:
         return
-    lvl = weapon.buffed_lvl()
+    if not _is_hostile(attacker, defender) or actual_damage <= 0:
+        return
     chain_targets = []
-    hit = 0
-    for mob in floor_mobs.values():
-        if hit >= 2:
-            break
-        if not mob.is_alive or mob.id == defender.id:
-            continue
-        if not _is_hostile(attacker, mob):
-            continue
-        if max(abs(mob.pos.x - defender.pos.x), abs(mob.pos.y - defender.pos.y)) > 2:
-            continue
-        mob.take_damage(round(random.randint(1, 2 + lvl) * striking_wave_multiplier(attacker)))
-        chain_targets.append({"id": mob.id, "x": mob.pos.x, "y": mob.pos.y})
-        hit += 1
+    affected_ids = {defender.id}
+
+    def _reachable(from_x, from_y, max_dist):
+        visited = {(from_x, from_y)}
+        q = deque([(from_x, from_y, 0)])
+        while q:
+            x, y, d = q.popleft()
+            if d >= max_dist:
+                continue
+            for dx, dy in [(0, -1), (1, 0), (0, 1), (-1, 0)]:
+                nx, ny = x + dx, y + dy
+                if 0 <= nx < floor.width and 0 <= ny < floor.height:
+                    if (nx, ny) not in visited and not floor.flags.solid[ny][nx]:
+                        visited.add((nx, ny))
+                        q.append((nx, ny, d + 1))
+        return visited
+
+    def _shock_arc(from_x, from_y, recurse_dist):
+        nonlocal chain_targets
+        reachable = _reachable(from_x, from_y, recurse_dist)
+        for m in (floor_mobs or {}).values():
+            if not m.is_alive or m.id in affected_ids:
+                continue
+            if not _is_hostile(attacker, m):
+                continue
+            if (m.pos.x, m.pos.y) not in reachable:
+                continue
+            affected_ids.add(m.id)
+            dmg = round(actual_damage * 0.5 * striking_wave_multiplier(attacker))
+            if dmg < 1:
+                dmg = 1
+            m.take_damage(dmg)
+            chain_targets.append({"id": m.id, "x": m.pos.x, "y": m.pos.y})
+            # Recurse with reduced range (1 tile, or 2 if target in water and not flying)
+            next_dist = 2 if (floor and hasattr(floor, 'grid')
+                             and floor.grid[m.pos.y][m.pos.x] == TileType.FLOOR_WATER
+                             and "FLYING" not in getattr(m, "properties", [])) else 1
+            _shock_arc(m.pos.x, m.pos.y, next_dist)
+
+    _shock_arc(defender.pos.x, defender.pos.y, 2)
     if chain_targets and add_event:
         add_event("SHOCKING_PROC", {
             "source": attacker.id,

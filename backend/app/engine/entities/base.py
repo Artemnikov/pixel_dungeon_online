@@ -1067,6 +1067,10 @@ class WandOfLightning(DamageWand):
             return
         lvl = max(0, self.level)
         proc_chance = (lvl + 1) / (lvl + 4)
+        # SPD procChanceMultiplier: 2.0 if attacker has EmpoweredStrikeTracker
+        if has_buff(attacker.buffs, "empowered_strike_tracker"):
+            proc_chance *= 2.0
+            remove_buff(attacker.buffs, "empowered_strike_tracker")
         if _random.random() < proc_chance:
             attacker.add_buff("lightning_charge", duration=10.0, level=1)
             if add_event:

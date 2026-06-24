@@ -20,7 +20,7 @@ from app.engine.dungeon.spd_levelgen.level import GenLevel
 from app.engine.dungeon.spd_levelgen.mob_spawner import GenMob
 from app.engine.dungeon.spd_levelgen.room import DoorType
 from app.engine.dungeon.spd_levelgen.traps import Trap as SpdTrap
-from app.engine.dungeon.spd_levelgen.traps import BurningTrap, BlazingTrap
+from app.engine.dungeon.spd_levelgen.traps import BurningTrap, BlazingTrap, ShockingTrap, StormTrap
 from app.engine.dungeon.generator import TileType
 from app.engine.entities.base import (
     Amulet,
@@ -305,6 +305,8 @@ def _register_trap(spd_cls: type[SpdTrap], trap_type: str) -> None:
 _register_trap(type("WornDartTrap", (SpdTrap,), {}), TrapType.WORN_DART)
 _register_trap(BurningTrap, TrapType.BURNING_TRAP)
 _register_trap(BlazingTrap, TrapType.BLAZING_TRAP)
+_register_trap(ShockingTrap, TrapType.SHOCKING_TRAP)
+_register_trap(StormTrap, TrapType.STORM_TRAP)
 
 
 _SPD_TRAP_COLOR = TrapVisual.GREY

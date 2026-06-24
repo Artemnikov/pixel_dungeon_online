@@ -315,6 +315,21 @@ export function handleCombatEvents(event: GameEvent, ctx: HandlerCtx): boolean {
     return true;
   }
 
+  if (event.type === 'LIGHTNING_ARC') {
+    const sx = event.data.source_x * TILE_SIZE + TILE_SIZE / 2;
+    const sy = event.data.source_y * TILE_SIZE + TILE_SIZE / 2;
+    const tx = event.data.target_x * TILE_SIZE + TILE_SIZE / 2;
+    const ty = event.data.target_y * TILE_SIZE + TILE_SIZE / 2;
+    const vis = visionRef?.current?.visible;
+    if (!vis?.has(`${event.data.source_x},${event.data.source_y}`) && !vis?.has(`${event.data.target_x},${event.data.target_y}`)) {
+      return true;
+    }
+    spawnLightning(lightningRef, sx, sy, tx, ty, '#66ccff');
+    spawnSparkMoving(particlesRef, tx, ty, 3);
+    AudioManager.play('LIGHTNING');
+    return true;
+  }
+
   if (event.type === 'SHOCKING_PROC') {
     const dfX = event.data.defender_x * TILE_SIZE + TILE_SIZE / 2;
     const dfY = event.data.defender_y * TILE_SIZE + TILE_SIZE / 2;

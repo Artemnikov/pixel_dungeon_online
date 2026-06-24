@@ -39,6 +39,10 @@ class PylonAIMixin:
             shock_cells.append((pylon.pos.x + ox, pylon.pos.y + oy))
 
         for cx, cy in shock_cells:
+            self.add_event("LIGHTNING_ARC", {
+                "source_x": pylon.pos.x, "source_y": pylon.pos.y,
+                "target_x": cx, "target_y": cy,
+            }, floor_id=floor_id)
             for p in self._players_on_floor(floor_id):
                 if p.is_alive and p.pos.x == cx and p.pos.y == cy:
                     dmg = random.randint(10, 20)
@@ -47,7 +51,7 @@ class PylonAIMixin:
                                               "damage": taken, "surprise": False},
                                    floor_id=floor_id)
                     if taken > 0:
-                        self.add_event("DAMAGE", {"target": p.id, "amount": taken}, floor_id=floor_id)
+                        self.add_event("DAMAGE", {"target": p.id, "amount": taken, "shock": True}, floor_id=floor_id)
             for m in floor.mobs.values():
                 if m.is_alive and m.id != pylon.id and m.pos.x == cx and m.pos.y == cy:
                     dmg = random.randint(10, 20)
@@ -56,7 +60,9 @@ class PylonAIMixin:
                                               "damage": taken, "surprise": False},
                                    floor_id=floor_id)
                     if taken > 0:
-                        self.add_event("DAMAGE", {"target": m.id, "amount": taken}, floor_id=floor_id)
+                        self.add_event("DAMAGE", {"target": m.id, "amount": taken, "shock": True}, floor_id=floor_id)
+
+        self.add_event("PLAY_SOUND", {"sound": "LIGHTNING"}, floor_id=floor_id)
 
         pylon.fire_target_idx = (pylon.fire_target_idx + 1) % 8
         pylon.bolt_cooldown = 1

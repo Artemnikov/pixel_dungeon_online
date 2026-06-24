@@ -35,6 +35,25 @@ from app.engine.game.floor_state import FloorState
 from app.engine.game.constants import KEY_TIME_TO_UNLOCK
 
 _FIRE_CARDINALS = [(0, -1), (1, 0), (0, 1), (-1, 0)]
+_ELECTRIC_CARDINALS = [(0, -1), (1, 0), (0, 1), (-1, 0)]
+
+
+def _electric_reachable_cells(floor: FloorState, cx: int, cy: int, max_dist: int):
+    """BFS returning set of (x,y) reachable within max_dist cardinal steps, avoiding solids."""
+    from collections import deque
+    visited = {(cx, cy)}
+    q = deque([(cx, cy, 0)])
+    while q:
+        x, y, d = q.popleft()
+        if d >= max_dist:
+            continue
+        for dx, dy in _ELECTRIC_CARDINALS:
+            nx, ny = x + dx, y + dy
+            if 0 <= nx < floor.width and 0 <= ny < floor.height:
+                if (nx, ny) not in visited and not floor.flags.solid[ny][nx]:
+                    visited.add((nx, ny))
+                    q.append((nx, ny, d + 1))
+    return visited
 
 # Ghost.java messages_en.properties (actors.mobs.npcs.ghost.*) -- markup
 # (_italics_) stripped, the DriedRose lost-item hook in the reward text
@@ -98,6 +117,28 @@ def _make_ghost_reward_item(quest, choice: str) -> Optional[Item]:
             level=quest.item_level, level_known=True, cursed=False,
         )
     return None
+
+
+def _spawn_trap_electricity(floor: FloorState, cx: int, cy: int, radius: int, strength: int) -> None:
+    """Seed an electricity blob covering all cells within radius.
+    radius=1 uses square (NEIGHBOURS9 matching SPD); radius>1 uses BFS pathfinding."""
+    blob_id = f"electric_trap_{cx}_{cy}"
+    cells = set()
+    volume = {}
+    if radius <= 1:
+        for dy in range(-1, 2):
+            for dx in range(-1, 2):
+                nx, ny = cx + dx, cy + dy
+                if 0 <= nx < floor.width and 0 <= ny < floor.height:
+                    if floor.flags and not floor.flags.solid[ny][nx]:
+                        cells.add((nx, ny))
+                        volume[(nx, ny)] = strength
+    else:
+        for nx, ny in _electric_reachable_cells(floor, cx, cy, radius):
+            cells.add((nx, ny))
+            volume[(nx, ny)] = strength
+    if cells:
+        floor.blob_areas[blob_id] = {"type": "electricity", "cells": cells, "volume": volume}
 
 
 def _spawn_trap_fire(floor: FloorState, cx: int, cy: int, radius: int, strength: int) -> None:
@@ -387,6 +428,16 @@ class WorldInteractionMixin:
             self.add_event("PLAY_SOUND", {"sound": "BURNING"}, floor_id=floor_id)
             damage = 0
             dealt = 0
+        elif trap.trap_type == "shocking_trap":
+            _spawn_trap_electricity(floor, player.pos.x, player.pos.y, 1, 10)
+            self.add_event("PLAY_SOUND", {"sound": "LIGHTNING"}, floor_id=floor_id)
+            damage = 0
+            dealt = 0
+        elif trap.trap_type == "storm_trap":
+            _spawn_trap_electricity(floor, player.pos.x, player.pos.y, 2, 20)
+            self.add_event("PLAY_SOUND", {"sound": "LIGHTNING"}, floor_id=floor_id)
+            damage = 0
+            dealt = 0
         else:
             damage = 2
             dealt = player.take_damage(damage)
@@ -396,7 +447,8 @@ class WorldInteractionMixin:
 
         self.add_event(
             "TRAP_TRIGGERED",
-            {"player": player.id, "trap": trap.trap_type, "damage": dealt},
+            {"player": player.id, "trap": trap.trap_type, "damage": dealt,
+             "x": player.pos.x, "y": player.pos.y},
             floor_id=floor_id,
         )
         if dealt > 0:

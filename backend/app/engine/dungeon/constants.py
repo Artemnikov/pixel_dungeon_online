@@ -42,6 +42,8 @@ class TrapType:
     TENGU_DART = "tengu_dart"  # hidden dart trap in Tengu cell (floor 10 boss)
     BURNING_TRAP = "burning_trap"
     BLAZING_TRAP = "blazing_trap"
+    SHOCKING_TRAP = "shocking_trap"
+    STORM_TRAP = "storm_trap"
 
     # Whether each trap type can be hidden (SECRET_TRAP).
     # False → always placed as visible TRAP terrain.
@@ -51,6 +53,8 @@ class TrapType:
         TENGU_DART: True,  # hidden until revealed by search or trigger
         BURNING_TRAP: True,
         BLAZING_TRAP: True,
+        SHOCKING_TRAP: True,
+        STORM_TRAP: True,
     }
 
 

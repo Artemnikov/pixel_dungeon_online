@@ -11,6 +11,8 @@ import { coordsForKind } from '../../rendering/sprites';
 import { spawnFlare } from '../../rendering/draw/flare';
 import { spawnSpellSprite, SPELL_CHARGE, SPELL_MAP } from '../../rendering/draw/spellSprite';
 import { forceAlertMob } from '../../rendering/draw/mobs';
+import { spawnSparkMoving } from '../../rendering/draw/sparkParticle';
+import { spawnLightning } from '../../rendering/draw/lightning';
 import { addGameLog } from '../../ui/gameLogHelpers';
 import type { GameEvent } from '../../types/contract';
 import type { HandlerCtx } from '../types';
@@ -18,7 +20,7 @@ import type { HandlerCtx } from '../types';
 export function handlePlayerEvents(event: GameEvent, ctx: HandlerCtx): boolean {
   const {
     myPlayerIdRef, entitiesRef, visionRef,
-    playerAnimRef, particlesRef, searchEffectsRef, floatingTextRef,
+    playerAnimRef, particlesRef, searchEffectsRef, floatingTextRef, lightningRef,
     screenFlashRef, transmuteEffectsRef, flareEffectsRef, spellSpriteEffectsRef,
   } = ctx;
 
@@ -201,15 +203,27 @@ export function handlePlayerEvents(event: GameEvent, ctx: HandlerCtx): boolean {
 
   if (event.type === 'TRAP_TRIGGERED') {
     const player = entitiesRef.current.players[event.data.player];
+    const isElectric = event.data.trap === 'shocking_trap' || event.data.trap === 'storm_trap';
     if (event.data.player === myPlayerIdRef.current) {
       addGameLog(`You trigger a ${event.data.trap} trap${event.data.damage ? ` for ${event.data.damage} damage` : ''}`, 'negative');
     }
     if (player) {
       const cx = player.renderPos.x * TILE_SIZE + TILE_SIZE / 2;
       const cy = player.renderPos.y * TILE_SIZE;
-      AudioManager.play('TRAP');
-      if (event.data.damage > 0 && floatingTextRef) spawnFloatingText(floatingTextRef, cx, cy, `-${event.data.damage}`, '#e74c3c');
-      if (particlesRef) spawnDust(particlesRef, cx, cy + TILE_SIZE / 2, 8);
+      if (isElectric) {
+        AudioManager.play('LIGHTNING');
+        if (event.data.x != null && event.data.y != null) {
+          const tx = event.data.x * TILE_SIZE + TILE_SIZE / 2;
+          const ty = event.data.y * TILE_SIZE + TILE_SIZE / 2;
+          spawnLightning(lightningRef, tx, ty, cx, cy, '#66ccff');
+        }
+        if (particlesRef) spawnSparkMoving(particlesRef, cx, cy + TILE_SIZE / 2, 6);
+        if (floatingTextRef) spawnFloatingText(floatingTextRef, cx, cy, 'ZAP!', '#66ccff');
+      } else {
+        AudioManager.play('TRAP');
+        if (event.data.damage > 0 && floatingTextRef) spawnFloatingText(floatingTextRef, cx, cy, `-${event.data.damage}`, '#e74c3c');
+        if (particlesRef) spawnDust(particlesRef, cx, cy + TILE_SIZE / 2, 8);
+      }
     }
     return true;
   }
