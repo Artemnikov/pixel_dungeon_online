@@ -1,13 +1,15 @@
 import { TILE_SIZE } from '../../constants';
 import AudioManager from '../../audio/AudioManager';
 import { spawnDust, spawnCritSparkle } from '../../rendering/draw/particles';
+import { spawnSparkMoving } from '../../rendering/draw/sparkParticle';
 import { spawnFloatingText } from '../../rendering/draw/floatingText';
 import { spawnBeam } from '../../rendering/draw/beam';
+import { spawnScreenShake } from '../../rendering/draw/screenShake';
 import type { GameEvent } from '../../types/contract';
 import type { HandlerCtx } from '../types';
 
 export function handleBossEvents(event: GameEvent, ctx: HandlerCtx): boolean {
-  const { mobAnimRef, particlesRef, floatingTextRef, warnedTilesRef, visionRef, beamRef } = ctx;
+  const { mobAnimRef, particlesRef, floatingTextRef, warnedTilesRef, visionRef, beamRef, screenShakeRef } = ctx;
 
   if (event.type === 'GOO_CHARGE') {
     const now = performance.now();
@@ -161,6 +163,16 @@ export function handleBossEvents(event: GameEvent, ctx: HandlerCtx): boolean {
     if (beamRef) spawnBeam(beamRef, sx, sy, tx, ty, 'death_ray');
     if (visionRef?.current?.visible?.has(`${event.data.source_x},${event.data.source_y}`)) {
       AudioManager.play('RAY');
+    }
+    return true;
+  }
+
+  if (event.type === 'DM300_TRAP_STEP') {
+    if (visionRef?.current?.visible?.has(`${event.data.x},${event.data.y}`)) {
+      const cx = event.data.x * TILE_SIZE + TILE_SIZE / 2;
+      const cy = event.data.y * TILE_SIZE + TILE_SIZE / 2;
+      if (particlesRef) spawnSparkMoving(particlesRef, cx, cy, 8);
+      if (screenShakeRef) spawnScreenShake(screenShakeRef, 8, 200);
     }
     return true;
   }

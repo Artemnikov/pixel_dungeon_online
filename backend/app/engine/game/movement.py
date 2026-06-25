@@ -21,11 +21,13 @@ unlocking, traps and stair traversal) and ranged/thrown/wand attacks.
 import random
 import time
 import uuid
+from collections import deque
 from typing import Optional
 
 from app.engine.dungeon.generator import TileType
 from app.engine.entities.base import (
     Amulet,
+    Bow,
     Dewdrop,
     Faction,
     Gold,
@@ -36,10 +38,13 @@ from app.engine.entities.base import (
     Player,
     Position,
     RevivingPotion,
+    SpiritBow,
     Staff,
     Throwable,
     Wand,
+    WandOfCorrosion,
     WandOfLightning,
+    WandOfMagicMissile,
     Waterskin,
     Weapon,
     is_immune,
@@ -47,14 +52,17 @@ from app.engine.entities.base import (
 from app.engine.entities.buffs import add_buff, has_buff, remove_buff
 from app.engine.entities.mobs import DM300, Goo, Wraith
 from app.engine.entities.subclasses import Talent
+from app.engine.systems.ballistica import ballistica_trace
 from app.engine.systems.combat import resolve_melee_attack, resolve_ranged_attack
 from app.engine.systems.loot import roll_drops
 from app.engine.game.constants import KEY_TIME_TO_UNLOCK, MAX_FLOOR_ID
 from app.engine.game.terrain_effects import press_cell
 
 
-def _effective_wand_damage(w) -> int:
-    return w.damage_roll_buffed() if hasattr(w, 'damage_roll_buffed') else w.damage
+def _effective_wand_damage(w, lvl_bonus: int = 0) -> int:
+    if hasattr(w, 'damage_roll_buffed'):
+        return w.damage_roll_buffed(lvl_bonus=lvl_bonus)
+    return w.damage
 
 
 class MovementCombatMixin:
@@ -203,6 +211,12 @@ class MovementCombatMixin:
                     break
 
         if target_entity:
+            # Mirrors SPD's enemyInFOV check (Mob.java:252): a mob cannot
+            # perceive an invisible player, so it treats the tile as blocked
+            # rather than attacking.
+            if isinstance(entity, MobEntity) and isinstance(target_entity, Player) and target_entity.invisible > 0:
+                return
+
             if (
                 isinstance(entity, Player)
                 and isinstance(target_entity, Player)
@@ -228,6 +242,9 @@ class MovementCombatMixin:
                 cooldown = entity.attack_cooldown
                 if isinstance(entity, Player) and entity.equipped_weapon:
                     cooldown = entity.equipped_weapon.attack_cooldown
+                if isinstance(entity, Player):
+                    from app.engine.entities.rings import furor_multiplier
+                    cooldown /= furor_multiplier(entity)
 
                 if current_time - entity.last_attack_time < cooldown:
                     return
@@ -265,14 +282,26 @@ class MovementCombatMixin:
                     "crit": result.get("crit", False),
                     "grim_proc": result.get("grim_proc", False),
                 }, floor_id=floor_id)
+                # SPD Char.java:509 plays hitSound(Random.Float(0.87f, 1.15f)),
+                # then KindOfWeapon multiplies by hitSoundPitch. Mobs use the
+                # default HIT/HIT_BODY at pitch 1.0 (no mob overrides hitSound).
+                pitch_jitter = random.uniform(0.87, 1.15)
                 if isinstance(entity, Player):
                     weapon = getattr(getattr(entity, "belongings", None), "weapon", None)
-                    sound = "HIT_STRONG" if result.get("crit") else "HIT_SLASH"
-                    rate = 1.0
-                    if weapon and getattr(weapon, "hit_sound", None):
+                    if result.get("crit"):
+                        sound = "HIT_STRONG"
+                        rate = pitch_jitter
+                    elif weapon and getattr(weapon, "hit_sound", None):
                         sound = weapon.hit_sound
-                        rate = getattr(weapon, "hit_sound_pitch", 1.0)
+                        rate = pitch_jitter * getattr(weapon, "hit_sound_pitch", 1.0)
+                    else:
+                        sound = "HIT_SLASH"
+                        rate = pitch_jitter
                     self.add_event("PLAY_SOUND", {"sound": sound, "rate": rate}, floor_id=floor_id, source_player_id=entity.id)
+                else:
+                    # Mob melee: broadcast HIT_BODY from the mob's position so
+                    # every player who can see it hears the hit.
+                    self.add_event("PLAY_SOUND", {"sound": "HIT_BODY", "rate": pitch_jitter, "x": entity.pos.x, "y": entity.pos.y}, floor_id=floor_id)
                 if dmg > 0:
                     self.add_event("DAMAGE", {
                         "target": target_entity.id,
@@ -281,8 +310,11 @@ class MovementCombatMixin:
                     }, floor_id=floor_id)
                     if result.get("grim_proc"):
                         self.add_event("PLAY_SOUND", {"sound": "HIT_STRONG"}, floor_id=floor_id, source_player_id=entity.id)
-                    if isinstance(target_entity, Player):
+                    if isinstance(target_entity, Player) and isinstance(entity, Player):
+                        # Friendly-fire only: mob-on-player hits are already
+                        # covered by the broadcast HIT_BODY above.
                         self.add_event("PLAY_SOUND", {"sound": "HIT_BODY"}, floor_id=floor_id, source_player_id=target_entity.id)
+                    if isinstance(target_entity, Player):
                         if target_entity.hp / target_entity.get_total_max_hp() <= 0.3:
                             self.add_event("PLAY_SOUND", {"sound": "HEALTH_WARN"}, player_id=target_entity.id)
                     if isinstance(target_entity, Goo) and isinstance(entity, Player):
@@ -460,6 +492,8 @@ class MovementCombatMixin:
                 if entity.add_to_inventory(item):
                     del floor.items[i_id]
                     self.add_event("PICKUP", {"player": entity.id, "item": item.name}, floor_id=floor_id)
+                    if entity.is_admin and item.type in ("potion", "scroll"):
+                        self.identify_kind(item)
 
             self._trigger_trap_if_needed(floor, entity, floor_id)
 
@@ -503,9 +537,10 @@ class MovementCombatMixin:
             return None
 
         is_throwable = isinstance(item, Throwable)
-        is_weapon = isinstance(item, Weapon)
+        is_weapon = isinstance(item, (Weapon, Bow, SpiritBow))
         is_wand = isinstance(item, Wand)
         is_staff = isinstance(item, Staff)
+        is_bow = isinstance(item, (Bow, SpiritBow))
 
         # Staff zap: delegate to imbued wand for charge/damage checks
         staff_wand = item.imbued_wand if is_staff else None
@@ -524,17 +559,29 @@ class MovementCombatMixin:
         cooldown = 1.0
         if is_weapon:
             cooldown = item.attack_cooldown
+        from app.engine.entities.rings import furor_multiplier
+        cooldown /= furor_multiplier(player)
 
         if (current_time - player.last_attack_time) < cooldown:
             return None
 
         dist = abs(player.pos.x - target_x) + abs(player.pos.y - target_y)
-        max_range = item.get_reach() if hasattr(item, "get_reach") else getattr(item, "range", 5)
-        if dist > max_range:
-            return None
-
-        if not self._is_in_los(player.pos, Position(x=target_x, y=target_y), floor_id=floor_id):
-            return None
+        if not is_bow:
+            if not is_wand and not is_staff:
+                max_range = item.get_reach() if hasattr(item, "get_reach") else getattr(item, "range", 5)
+                if dist > max_range:
+                    return None
+            if is_wand or is_staff:
+                bfloor = self._get_or_create_floor(floor_id)
+                target_x, target_y = ballistica_trace(
+                    player.pos.x, player.pos.y, target_x, target_y,
+                    bfloor.flags, bfloor.width, bfloor.height,
+                    list(self._players_on_floor(floor_id)),
+                    list(bfloor.mobs.values()),
+                    player.id,
+                )
+            elif not self._is_in_los(player.pos, Position(x=target_x, y=target_y), floor_id=floor_id):
+                return None
 
         player.last_attack_time = current_time
         player._last_action = "ranged"
@@ -569,10 +616,12 @@ class MovementCombatMixin:
             "target_hp_ratio": target_hp_ratio,
             "sound": getattr(effective_wand or item, "wand_sound", None),
             "is_wand": is_wand or is_staff,
+            "is_bow": is_bow,
         }
         # Thrown inventory items fly as their own sprite (not a generic dart).
-        # Wands keep the magic_bolt projectile.
-        if not is_wand:
+        # Wands keep the magic_bolt projectile. Bows are not thrown — they fire
+        # arrows, so the bow item itself is not serialized as the projectile.
+        if not is_wand and not is_bow:
             ranged_event_data["item"] = self._serialize_floor_item(item)
         self.add_event(
             "RANGED_ATTACK",
@@ -582,9 +631,19 @@ class MovementCombatMixin:
 
         damage_dealt = 0
         if target_entity and player.faction != target_entity.faction:
-            # Staff/wand zap: override damage with the effective wand's damage.
-            if effective_wand is not None:
-                atk_min = atk_max = _effective_wand_damage(effective_wand)
+            if isinstance(item, SpiritBow):
+                atk_min = item.dmg_min(player.level)
+                atk_max = item.dmg_max(player.level)
+            elif effective_wand is not None:
+                # Magic Charge: boost non-Magic-Missile wand by +1 level on next use
+                magic_charge_lvl = 0
+                if (
+                    not isinstance(effective_wand, WandOfMagicMissile)
+                    and player.has_buff("magic_charge")
+                ):
+                    magic_charge_lvl = 1
+                    player.remove_buff("magic_charge")
+                atk_min = atk_max = _effective_wand_damage(effective_wand, lvl_bonus=magic_charge_lvl)
             elif is_weapon:
                 if player.belongings.weapon and item.id == player.belongings.weapon.id:
                     atk_min = player.get_damage_min()
@@ -634,7 +693,7 @@ class MovementCombatMixin:
                         "source_x": player.pos.x,
                         "source_y": player.pos.y,
                     }, floor_id=floor_id)
-                    self.add_event("PLAY_SOUND", {"sound": "HIT_ARROW"}, floor_id=floor_id, source_player_id=player.id)
+                    self.add_event("PLAY_SOUND", {"sound": "HIT_STRONG" if result.get("crit") else "HIT_ARROW"}, floor_id=floor_id, source_player_id=player.id)
                 if result.get("grim_proc"):
                     self.add_event("PLAY_SOUND", {"sound": "HIT_STRONG"}, floor_id=floor_id, source_player_id=player.id)
 
@@ -644,33 +703,6 @@ class MovementCombatMixin:
                         self.add_event("PLAY_SOUND", {"sound": "HEALTH_WARN"}, player_id=target_entity.id)
                 if isinstance(target_entity, Goo):
                     self._goo_add_locked_floor_time(floor_id, player, damage_dealt)
-
-                # WandOfLightning chain arc to nearby enemies
-                if damage_dealt > 0 and target_entity.is_alive and isinstance(effective_wand, WandOfLightning):
-                    lvl = effective_wand.buffed_lvl()
-                    chain_range = 3
-                    chain_targets = []
-                    if floor.mobs:
-                        for mob in floor.mobs.values():
-                            if len(chain_targets) >= 2:
-                                break
-                            if not mob.is_alive or mob.id == target_entity.id:
-                                continue
-                            if mob.faction == player.faction:
-                                continue
-                            if max(abs(mob.pos.x - target_x), abs(mob.pos.y - target_y)) > chain_range:
-                                continue
-                            chain_dmg = effective_wand.damage_roll(lvl) // 2
-                            mob.take_damage(max(1, chain_dmg))
-                            chain_targets.append({"id": mob.id, "x": mob.pos.x, "y": mob.pos.y})
-                    if chain_targets:
-                        self.add_event("SHOCKING_PROC", {
-                            "source": player.id,
-                            "defender": target_entity.id,
-                            "defender_x": target_x,
-                            "defender_y": target_y,
-                            "chain_targets": chain_targets,
-                        }, floor_id=floor_id)
 
                 # Improvised Projectiles (warrior T2): non-launcher thrown
                 # items blind the target on hit (50-turn cooldown).
@@ -699,43 +731,165 @@ class MovementCombatMixin:
                     if any(isinstance(d, Gold) for d in drops):
                         self.add_event("GOLD_DROP", {"x": target_entity.pos.x, "y": target_entity.pos.y}, floor_id=floor_id)
 
+        # WandOfLightning — chain arc from impact tile + water electrification
+        if isinstance(effective_wand, WandOfLightning):
+            lvl = effective_wand.buffed_lvl()
+            affected_ids = set()
+            if target_entity and target_entity.is_alive and damage_dealt > 0:
+                affected_ids.add(target_entity.id)
+            chain_mobs = []
+            is_main_in_water = floor.grid[target_y][target_x] == TileType.FLOOR_WATER
+            has_charge = has_buff(player.buffs, "lightning_charge")
+
+            def _reachable(from_x, from_y, max_dist):
+                visited = {(from_x, from_y)}
+                q = deque([(from_x, from_y, 0)])
+                while q:
+                    x, y, d = q.popleft()
+                    if d >= max_dist:
+                        continue
+                    for dx, dy in [(0, -1), (1, 0), (0, 1), (-1, 0)]:
+                        nx, ny = x + dx, y + dy
+                        if 0 <= nx < floor.width and 0 <= ny < floor.height:
+                            if (nx, ny) not in visited and not floor.flags.solid[ny][nx]:
+                                visited.add((nx, ny))
+                                q.append((nx, ny, d + 1))
+                return visited
+
+            def _wand_find(from_x, from_y):
+                dist = 2 if (0 <= from_y < floor.height and 0 <= from_x < floor.width
+                            and floor.grid[from_y][from_x] == TileType.FLOOR_WATER) else 1
+                if has_charge:
+                    dist += 1
+                reachable = _reachable(from_x, from_y, dist)
+                for m in floor.mobs.values():
+                    if not m.is_alive or m.id in affected_ids:
+                        continue
+                    if m.faction == player.faction:
+                        continue
+                    if (m.pos.x, m.pos.y) not in reachable:
+                        continue
+                    if has_buff(m.buffs, "lightning_charge"):
+                        continue
+                    if m.id == player.id:
+                        continue
+                    affected_ids.add(m.id)
+                    chain_mobs.append(m)
+                    _wand_find(m.pos.x, m.pos.y)
+
+            _wand_find(target_x, target_y)
+
+            if chain_mobs:
+                base_dmg = effective_wand.damage_roll(lvl)
+                mult = 1.0 if is_main_in_water else (0.4 + 0.6 / max(len(chain_mobs) + 1, 1))
+                for m in chain_mobs:
+                    dmg = round(base_dmg * mult)
+                    dr_roll = random.randint(m.get_dr_min(), m.get_dr_max())
+                    actual = m.take_damage(max(1, dmg - dr_roll))
+                    if actual > 0:
+                        self.add_event("DAMAGE", {"target": m.id, "amount": actual, "shock": True}, floor_id=floor_id)
+                        if not m.is_alive:
+                            m.die(floor_mobs=floor.mobs, tile_x=m.pos.x, tile_y=m.pos.y,
+                                  players=list(players.values()))
+                            self.add_event("DEATH", {"target": m.id}, floor_id=floor_id)
+
+            self.add_event("LIGHTNING_ARC", {
+                "source_x": player.pos.x,
+                "source_y": player.pos.y,
+                "target_x": target_x,
+                "target_y": target_y,
+            }, floor_id=floor_id)
+            self.add_event("SHOCKING_PROC", {
+                "source": player.id,
+                "defender": target_entity.id if target_entity else player.id,
+                "defender_x": target_x,
+                "defender_y": target_y,
+                "chain_targets": [{"id": m.id, "x": m.pos.x, "y": m.pos.y} for m in chain_mobs],
+            }, floor_id=floor_id)
+
+            # Electrify water at impact tile
+            if floor.grid[target_y][target_x] == TileType.FLOOR_WATER:
+                blob_id = f"wand_elec_{player.id}"
+                vol = 100
+                cells = {(target_x, target_y)}
+                volume = {(target_x, target_y): vol}
+                existing = floor.blob_areas.get(blob_id)
+                if existing:
+                    cells.update(existing["cells"])
+                    for k, v in existing["volume"].items():
+                        volume[k] = max(volume.get(k, 0), v)
+                floor.blob_areas[blob_id] = {"type": "electricity", "cells": cells, "volume": volume, "tick_counter": 0}
+                cell_list = [(c[0], c[1], volume.get(c, vol)) for c in cells]
+                self.add_event("BLOB_UPDATE", {"id": blob_id, "type": "electricity", "cells": cell_list}, floor_id=floor_id)
+                self.add_event("PLAY_SOUND", {"sound": "LIGHTNING"}, floor_id=floor_id)
+
+        # Wand of Corrosion — creates corrosive gas cloud at target (no direct damage)
+        if isinstance(effective_wand, WandOfCorrosion) and not is_staff:
+            lvl = effective_wand.buffed_lvl()
+            strength = 3 + lvl * 2
+            cells = set()
+            volume = {}
+            for dy in (-1, 0, 1):
+                for dx in (-1, 0, 1):
+                    nx, ny = target_x + dx, target_y + dy
+                    if 0 <= nx < floor.width and 0 <= ny < floor.height:
+                        if floor.flags and not floor.flags.solid[ny][nx]:
+                            cells.add((nx, ny))
+                            volume[(nx, ny)] = strength
+            if cells:
+                for bid in list(floor.blob_areas.keys()):
+                    b = floor.blob_areas[bid]
+                    if b.get("type") == "corrosive_gas" and b.get("cells", set()) & cells:
+                        del floor.blob_areas[bid]
+                blob_id = f"wand_corrosion_{target_x}_{target_y}"
+                floor.blob_areas[blob_id] = {
+                    "type": "corrosive_gas", "cells": cells, "volume": volume,
+                }
+                cell_list = [(c[0], c[1], volume.get(c, 1)) for c in cells]
+                self.add_event("BLOB_UPDATE", {"id": blob_id, "type": "corrosive_gas", "cells": cell_list}, floor_id=floor_id)
+                self.add_event("PLAY_SOUND", {"sound": "GAS"}, floor_id=floor_id)
+
+                # Visual DAMAGE event so frontend shows splash after missile flight
+                self.add_event("DAMAGE", {
+                    "target": target_entity.id if target_entity else player.id,
+                    "amount": 0,
+                    "projectile": "corrosion",
+                    "splash_count": lvl // 2 + 2,
+                    "source_x": player.pos.x,
+                    "source_y": player.pos.y,
+                }, floor_id=floor_id)
+
         if is_wand or is_staff:
             wand_item = staff_wand if is_staff else item
             # Wand Preservation (mage T2): chance to not consume charge
             wp = player.talent_info.level("wand_preservation")
             if wp <= 0 or random.random() >= wp * 0.17:
                 wand_item.charges -= 1
-            # Magic Charge (WandOfMagicMissile): upgrade another wand on hit
+            # Magic Charge: buff that boosts next non-Magic-Missile wand by +1 level
             if wand_item.kind == "wand_magic_missile" and damage_dealt > 0:
-                has_other_wand = any(
-                    isinstance(it, Wand) and it.id != wand_item.id
-                    for it in player.belongings.all_items()
-                )
-                if has_other_wand or player.has_buff("magic_charge"):
-                    player.add_buff("magic_charge", duration=4.0, level=wand_item.buffed_lvl(), stack_mode="extend")
+                player.add_buff("magic_charge", duration=4.0, level=wand_item.buffed_lvl(), stack_mode="extend")
             # Shield Battery (mage T2): gain shield on wand zap
             sb = player.talent_info.level("shield_battery")
             if sb > 0:
                 shield_amt = 1 + sb
                 player.add_shield("shield_battery", shield_amt, priority=1, decay=600)
-            # Imbued wand on_hit on ranged zap (battlemage synergy)
-            if damage_dealt > 0 and is_staff and staff_wand:
-                staff_wand.on_hit(
-                    player, target_entity, damage_dealt,
-                    floor_mobs=floor.mobs if target_entity and isinstance(target_entity, MobEntity) else None,
-                    tile_x=target_x, tile_y=target_y,
-                    floor=floor, add_event=lambda t, d, **kw: self.add_event(t, d, **{
-                        "floor_id": floor_id,
-                        "source_player_id": player.id,
-                        **kw,
-                    }),
-                )
+            # Corrosion gas cloud at target when staff imbued with WandOfCorrosion
+            if isinstance(staff_wand, WandOfCorrosion):
+                splash_lvl = staff_wand.buffed_lvl()
+                self.add_event("DAMAGE", {
+                    "target": target_entity.id if target_entity else player.id,
+                    "amount": 0,
+                    "projectile": "corrosion",
+                    "splash_count": splash_lvl // 2 + 2,
+                    "source_x": player.pos.x,
+                    "source_y": player.pos.y,
+                }, floor_id=floor_id)
             # Apply Empowered Strike tracker after zap if applicable
             if is_staff and damage_dealt > 0:
                 es_talent = player.talent_info.level("empowered_strike")
                 if es_talent > 0:
                     player.add_buff("empowered_strike_tracker", duration=10.0, level=es_talent)
-        else:
+        elif not is_bow:
             removed = player.belongings.backpack.detach(item.id)
             if removed is not None and player.belongings.get_item(item.id) is None:
                 player.quickslot.convert_to_placeholder(removed)

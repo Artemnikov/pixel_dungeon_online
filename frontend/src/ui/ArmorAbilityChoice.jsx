@@ -7,10 +7,6 @@ function talentIdToAbility(tid) {
   return tid.replace(/_(talent|ability)$/, '');
 }
 
-function displayName(id) {
-  return id.charAt(0).toUpperCase() + id.slice(1);
-}
-
 export default function ArmorAbilityChoice({ options, onChoose, onSkip, abilitySelectors }) {
   const { t } = useTranslation();
   const [confirm, setConfirm] = useState(null);

@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { TILE_SIZE, MOVE_DURATION, CAMERA_LERP } from '../constants';
+import { TILE_SIZE, MOVE_DURATION, CAMERA_LERP, FADE_DURATION } from '../constants';
 import { DEST_TILE_SIZE } from './sewers/constants';
 import { buildWaterClipPath, drawWaterBackground, getWaterTextureForDepth } from './sewers/draw';
 import { drawGrid, drawGridCaps } from './draw/grid';
@@ -25,7 +25,7 @@ import { advanceAndDrawStateEffects } from './draw/states';
 import { advanceAndDrawSurprises } from './draw/surprise';
 import { advanceAndDrawScreenShake } from './draw/screenShake';
 import { advanceAndDrawBeams } from './draw/beam';
-import { advanceAndDrawBlobAreas, advanceAndDrawFireParticles } from './draw/blobArea';
+import { advanceAndDrawBlobAreas, advanceAndDrawBlobParticles } from './draw/blobArea';
 import { advanceAndDrawSinkDrips } from './draw/sinkDrip';
 import { advanceAndDrawFloorFade } from './floorTransition';
 import { drawCharHealth } from './draw/charHealth';
@@ -109,6 +109,11 @@ export default function useGameRenderer({
           const t = Math.min((now - entity.animStartTime) / MOVE_DURATION, 1.0);
           entity.renderPos.x = entity.animStartPos.x + (entity.targetPos.x - entity.animStartPos.x) * t;
           entity.renderPos.y = entity.animStartPos.y + (entity.targetPos.y - entity.animStartPos.y) * t;
+        }
+        if (entity.fadeStartTime != null && entity.fadeStartAlpha != null && entity.fadeTargetAlpha != null) {
+          const ft = Math.min((now - entity.fadeStartTime) / FADE_DURATION, 1.0);
+          entity.fadeAlpha = entity.fadeStartAlpha + (entity.fadeTargetAlpha - entity.fadeStartAlpha) * ft;
+          if (ft >= 1.0) entity.fadeStartTime = null;
         }
       });
     };
@@ -199,7 +204,7 @@ export default function useGameRenderer({
       drawCustomTiles(ctx, { customTiles: customTilesRef.current, assetImages, visionRef });
       drawTerrainFeatures(ctx, assetImages.terrainFeatures, trapsRef.current, grid, visionRef);
       advanceAndDrawBlobAreas(ctx, { blobAreasRef, visionRef });
-      advanceAndDrawFireParticles(ctx, { blobAreasRef, visionRef, particlesRef });
+      advanceAndDrawBlobParticles(ctx, { blobAreasRef, visionRef, particlesRef });
       advanceAndDrawSinkDrips(ctx, { grid, depth, visionRef, particlesRef });
       if (warnedTilesRef) drawWarnedTiles(ctx, { ref: warnedTilesRef });
       drawItems(ctx, { entitiesRef, visionRef, assetImages });

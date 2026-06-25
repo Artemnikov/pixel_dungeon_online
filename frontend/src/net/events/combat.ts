@@ -1,6 +1,6 @@
 import { TILE_SIZE, PLAYER_ATTACK_DURATION, HIT_CONNECT_DELAY, FLASH_DURATION } from '../../constants';
 import AudioManager from '../../audio/AudioManager';
-import { spawnBlood, spawnCritSparkle, spawnGrimShadow, spawnWhiteSplash } from '../../rendering/draw/particles';
+import { spawnBlood, spawnCorrosionSplash, spawnCritSparkle, spawnGrimShadow, spawnWhiteSplash } from '../../rendering/draw/particles';
 import { spawnSurprise } from '../../rendering/draw/surprise';
 import { spawnFloatingText, TEXT_ICON } from '../../rendering/draw/floatingText';
 import { coordsForItem } from '../../rendering/sprites';
@@ -96,6 +96,8 @@ export function handleCombatEvents(event: GameEvent, ctx: HandlerCtx): boolean {
     } else if (MAGIC_PROJECTILES.has(projType)) {
       if (audible) AudioManager.play(event.data.sound ?? 'ATTACK_MAGIC');
       spawnMagicMissile(magicMissileRef, startX, startY, targetX, targetY, projType);
+    } else if (event.data.is_bow) {
+      if (audible) AudioManager.play('ATTACK_BOW');
     } else if (thrownItem) {
       if (audible) AudioManager.play('THROW');
     } else {
@@ -223,7 +225,7 @@ export function handleCombatEvents(event: GameEvent, ctx: HandlerCtx): boolean {
 
   if (event.type === 'DAMAGE') {
     const tgt = event.data.target;
-    const tgtEntity = entitiesRef.current.mobs[tgt] || entitiesRef.current.players[tgt];
+    const tgtEntity = entitiesRef.current.mobs[tgt] || dyingMobsRef.current[tgt] || entitiesRef.current.players[tgt];
     if (!tgtEntity) return true;
     const isGrim = event.data.grim_proc;
     const isCrit = event.data.crit;
@@ -266,6 +268,9 @@ export function handleCombatEvents(event: GameEvent, ctx: HandlerCtx): boolean {
               break;
             case 'frost':
               spawnWhiteSplash(particlesRef, tc.x, tc.y, 5);
+              break;
+            case 'corrosion':
+              spawnCorrosionSplash(particlesRef, tc.x, tc.y, 5);
               break;
             case 'earth':
             case 'force':
@@ -310,6 +315,21 @@ export function handleCombatEvents(event: GameEvent, ctx: HandlerCtx): boolean {
       if (isGrim && particlesRef) spawnGrimShadow(particlesRef, tc.x, tc.y, 8);
       if (isCrit && floatingTextRef) spawnFloatingText(floatingTextRef, tc.x, tc.y - TILE_SIZE / 2, 'CRIT!', '#ffcc00');
     }, missileDelay);
+    return true;
+  }
+
+  if (event.type === 'LIGHTNING_ARC') {
+    const sx = event.data.source_x * TILE_SIZE + TILE_SIZE / 2;
+    const sy = event.data.source_y * TILE_SIZE + TILE_SIZE / 2;
+    const tx = event.data.target_x * TILE_SIZE + TILE_SIZE / 2;
+    const ty = event.data.target_y * TILE_SIZE + TILE_SIZE / 2;
+    const vis = visionRef?.current?.visible;
+    if (!vis?.has(`${event.data.source_x},${event.data.source_y}`) && !vis?.has(`${event.data.target_x},${event.data.target_y}`)) {
+      return true;
+    }
+    spawnLightning(lightningRef, sx, sy, tx, ty, '#66ccff');
+    spawnSparkMoving(particlesRef, tx, ty, 3);
+    AudioManager.play('LIGHTNING');
     return true;
   }
 

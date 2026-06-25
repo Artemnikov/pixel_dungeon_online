@@ -29,6 +29,7 @@ from app.engine.entities.base import (
     Boomerang,
     Bow,
     BrokenSeal,
+    SpiritBow,
     ChargrilledMeat,
     CloakOfShadows,
     DriedRose,
@@ -66,6 +67,15 @@ from app.engine.entities.base import (
     Ration,
     RevivingPotion,
     Ring,
+    RingOfAccuracy,
+    RingOfEvasion,
+    RingOfHaste,
+    RingOfFuror,
+    RingOfMight,
+    RingOfTenacity,
+    RingOfEnergy,
+    RingOfArcana,
+    RingOfSharpshooting,
     Scroll,
     ScrollHolder,
     ScrollOfIdentify,
@@ -106,6 +116,7 @@ from app.engine.entities.base import (
     Waterskin,
     WornShortsword,
 )
+from app.engine.entities.rings_tier3 import RingOfForce, RingOfElements, RingOfWealth  # noqa: E402
 
 
 class ItemCatalogEntry(TypedDict):
@@ -122,12 +133,25 @@ _CATALOG: List[tuple] = [
     ("dagger", "Dagger", "weapon", lambda: Dagger()),
     ("worn_shortsword", "Worn Shortsword", "weapon", lambda: WornShortsword()),
     ("bow", "Bow", "weapon", lambda: Bow()),
+    ("spirit_bow", "Spirit Bow", "weapon", lambda: SpiritBow()),
     ("staff", "Staff", "weapon", lambda: Staff()),
     ("missile_weapon", "Throwing Knife", "weapon", lambda: MissileWeapon(name="Throwing Knife", tier=1)),
 
     # Armor / accessories
     ("armor", "Leather Armor", "armor", lambda: Armor(name="Leather Armor", tier=1)),
     ("ring", "Ring", "ring", lambda: Ring(name="Ring")),
+    ("ring_accuracy", "Ring of Accuracy", "ring", lambda: RingOfAccuracy()),
+    ("ring_evasion", "Ring of Evasion", "ring", lambda: RingOfEvasion()),
+    ("ring_haste", "Ring of Haste", "ring", lambda: RingOfHaste()),
+    ("ring_furor", "Ring of Furor", "ring", lambda: RingOfFuror()),
+    ("ring_might", "Ring of Might", "ring", lambda: RingOfMight()),
+    ("ring_tenacity", "Ring of Tenacity", "ring", lambda: RingOfTenacity()),
+    ("ring_energy", "Ring of Energy", "ring", lambda: RingOfEnergy()),
+    ("ring_arcana", "Ring of Arcana", "ring", lambda: RingOfArcana()),
+    ("ring_sharpshooting", "Ring of Sharpshooting", "ring", lambda: RingOfSharpshooting()),
+    ("ring_force", "Ring of Force", "ring", lambda: RingOfForce()),
+    ("ring_elements", "Ring of Elements", "ring", lambda: RingOfElements()),
+    ("ring_wealth", "Ring of Wealth", "ring", lambda: RingOfWealth()),
     ("artifact", "Artifact", "artifact", lambda: Artifact(name="Artifact")),
     ("broken_seal", "Broken Seal", "artifact", lambda: BrokenSeal()),
     ("cloak_of_shadows", "Cloak of Shadows", "artifact", lambda: CloakOfShadows()),
@@ -243,7 +267,8 @@ TRANSMUTE_GROUPS: dict = {
     "armor": ["armor"],
     "wand": [kind for kind, _name, category, _factory in _CATALOG
              if category == "wand"],
-    "ring": ["ring"],
+    "ring": ["ring"] + [kind for kind, _name, category, _factory in _CATALOG
+                         if category == "ring" and kind != "ring"],
     "artifact": [kind for kind, _name, category, _factory in _CATALOG
                  if category == "artifact" and kind != "artifact"],
     "potion": [kind for kind, _name, category, _factory in _CATALOG

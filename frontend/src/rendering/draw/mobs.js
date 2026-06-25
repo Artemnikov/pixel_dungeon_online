@@ -450,6 +450,8 @@ export function drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef,
     const isGnollTrickster = mob.name === 'Gnoll Trickster';
     const isGreatCrab = mob.name === 'Great Crab';
     const flash = !!(mobAnimRef.current[mob.id]?.flashUntil && now < mobAnimRef.current[mob.id].flashUntil);
+    ctx.save();
+    if (mob.fadeAlpha != null && mob.fadeAlpha < 1) ctx.globalAlpha = mob.fadeAlpha;
     if (isGnoll) {
       drawMobSprite(ctx, mob, mobSprite, sx, GNOLL_FW, GNOLL_FH, flash, GNOLL_DEST);
     } else if (isShaman) {
@@ -549,6 +551,7 @@ export function drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef,
         isScorpio ? SCORPIO_FW : FRAME_W,
         flash);
     }
+    ctx.restore();
 
     const x = mob.renderPos.x * TILE_SIZE;
     const y = mob.renderPos.y * TILE_SIZE - ENTITY_LIFT;
@@ -593,7 +596,7 @@ export function drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef,
 
     const totalMobShield = (mob.shields || []).reduce((sum, s) => sum + (s.amount || 0), 0);
     if (totalMobShield > 0) {
-      drawShieldHalo(ctx, x + TILE_SIZE / 2, y, totalMobShield);
+      drawShieldHalo(ctx, x + TILE_SIZE / 2, y, totalMobShield, mob.fadeAlpha ?? 1);
     }
 
     // EmoIcons text fallback for states without a sprite icon.

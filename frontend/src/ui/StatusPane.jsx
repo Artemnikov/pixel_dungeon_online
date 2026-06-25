@@ -11,16 +11,20 @@ import warriorSheet from '../assets/pixel-dungeon/sprites/warrior.png';
 import mageSheet from '../assets/pixel-dungeon/sprites/mage.png';
 import rogueSheet from '../assets/pixel-dungeon/sprites/rogue.png';
 import huntressSheet from '../assets/pixel-dungeon/sprites/huntress.png';
-const PANE_W = 160;
-const PANE_H = 39;
+const PANE_W_LARGE = 160;
+const PANE_H_LARGE = 39;
+const PANE_W_SMALL = 82;
+const PANE_H_SMALL = 38;
 
-const BG_FIXED_W  = 33;
-const BG_STRETCH_W = 8;
-const BG_Y        = 64;
+const BG_LARGE = { y: 64, h: 39, left: 33, right: 4, stretchSrcW: 4 };
+const BG_SMALL = { y: 0,  h: 38, left: 32, right: 5, stretchSrcW: 45 };
 
-const HP_FILL   = { x: 0, y: 103, w: 128, h: 9 };
-const HP_SHIELD = { x: 0, y: 112, w: 128, h: 9 };
-const EXP_FILL  = { x: 0, y: 121, w: 128, h: 7 };
+const HP_FILL_LARGE   = { x: 0, y: 103, w: 128, h: 9 };
+const HP_SHIELD_LARGE = { x: 0, y: 112, w: 128, h: 9 };
+const EXP_FILL_LARGE  = { x: 0, y: 121, w: 128, h: 7 };
+const HP_FILL_SMALL   = { x: 0, y: 40, w: 50, h: 4 };
+const HP_SHIELD_SMALL = { x: 0, y: 44, w: 50, h: 4 };
+const EXP_FILL_SMALL  = { x: 0, y: 48, w: 17, h: 4 };
 
 const FRAME_W = 12;
 const FRAME_H = 15;
@@ -53,7 +57,14 @@ function lerpColor(t, colors) {
 }
 
 export default function StatusPane({ myStats, depth, exitPos, isAdmin, onSearch, hasTalentPoints, onOpenTalents, onTeleport, isBusy, onBuffClick, interfaceSize }) {
-  const SCALE = interfaceSize > 0 ? 3 : 2;
+  const isLarge = interfaceSize > 0;
+  const SCALE = isLarge ? 3 : 2;
+  const PANE_W = isLarge ? PANE_W_LARGE : PANE_W_SMALL;
+  const PANE_H = isLarge ? PANE_H_LARGE : PANE_H_SMALL;
+  const hpFill = isLarge ? HP_FILL_LARGE : HP_FILL_SMALL;
+  const hpShield = isLarge ? HP_SHIELD_LARGE : HP_SHIELD_SMALL;
+  const expFill = isLarge ? EXP_FILL_LARGE : EXP_FILL_SMALL;
+  const BG = isLarge ? BG_LARGE : BG_SMALL;
   const { t } = useTranslation();
   const [showFloorPicker, setShowFloorPicker] = useState(false);
   const canvasRef = useRef(null);
@@ -158,12 +169,14 @@ export default function StatusPane({ myStats, depth, exitPos, isAdmin, onSearch,
 
         const statusImg = imgs.status;
         if (statusImg?.complete && statusImg?.naturalWidth > 0) {
-          const leftW = BG_FIXED_W * SCALE;
-          const rightW = 4 * SCALE;
-          const stretchW = (PANE_W - BG_FIXED_W - 4) * SCALE;
-          ctx.drawImage(statusImg, 0, BG_Y, BG_FIXED_W, PANE_H, 0, 0, leftW, PANE_H * SCALE);
-          ctx.drawImage(statusImg, 33, BG_Y, 4, PANE_H, leftW, 0, stretchW, PANE_H * SCALE);
-          ctx.drawImage(statusImg, 37, BG_Y, 4, PANE_H, leftW + stretchW, 0, rightW, PANE_H * SCALE);
+          const leftW = BG.left * SCALE;
+          const rightW = BG.right * SCALE;
+          const stretchW = (PANE_W - BG.left - BG.right) * SCALE;
+          const srcStretchX = BG.left;
+          const srcRightX = BG.left + BG.stretchSrcW;
+          ctx.drawImage(statusImg, 0, BG.y, BG.left, BG.h, 0, 0, leftW, PANE_H * SCALE);
+          ctx.drawImage(statusImg, srcStretchX, BG.y, BG.stretchSrcW, BG.h, leftW, 0, stretchW, PANE_H * SCALE);
+          ctx.drawImage(statusImg, srcRightX, BG.y, BG.right, BG.h, leftW + stretchW, 0, rightW, PANE_H * SCALE);
         }
 
         ctx.fillStyle = '#161616';
@@ -235,17 +248,19 @@ export default function StatusPane({ myStats, depth, exitPos, isAdmin, onSearch,
         ctx.stroke();
         ctx.restore();
 
-        // --- BusyIndicator (rotating dots around avatar when busy) ---
+        // --- BusyIndicator (rotating dots around center when busy) ---
         if (isBusy) {
+          const busyX = isLarge ? (9 + FRAME_W / 2) * SCALE : 6 * SCALE;
+          const busyY = isLarge ? (8 + FRAME_H / 2) * SCALE : 35 * SCALE;
           const angle = nowSec * 3;
           ctx.save();
-          ctx.translate((9 + FRAME_W / 2) * SCALE, (8 + FRAME_H / 2) * SCALE);
+          ctx.translate(busyX, busyY);
           for (let i = 0; i < 4; i++) {
             const a = angle + (i / 4) * Math.PI * 2;
-            const r = 22 * SCALE / 3;
+            const r = isLarge ? 22 * SCALE / 3 : 5 * SCALE;
             const dx = Math.cos(a) * r;
             const dy = Math.sin(a) * r;
-            const dotSize = 1.5 * SCALE / 3;
+            const dotSize = isLarge ? 1.5 * SCALE / 3 : 1.5 * SCALE;
             ctx.fillStyle = '#808080';
             ctx.globalAlpha = 0.3 + 0.7 * (0.5 + 0.5 * Math.sin(a - angle));
             ctx.beginPath();
@@ -263,7 +278,7 @@ export default function StatusPane({ myStats, depth, exitPos, isAdmin, onSearch,
             const col = idx % BUFF_COLS;
             const row = Math.floor(idx / BUFF_COLS);
             const bx = (31 + i * (BUFF_SIZE + 1)) * SCALE;
-            const by = 0;
+            const by = isLarge ? 0 : 8 * SCALE;
             const bw = BUFF_SIZE * SCALE;
             const bh = BUFF_SIZE * SCALE;
             ctx.globalAlpha = 0.85;
@@ -285,40 +300,68 @@ export default function StatusPane({ myStats, depth, exitPos, isAdmin, onSearch,
         }
 
         if (statusImg?.complete && statusImg?.naturalWidth > 0) {
-          if (drawShieldPct > 0) {
-            ctx.drawImage(statusImg,
-              HP_SHIELD.x, HP_SHIELD.y, HP_SHIELD.w, HP_SHIELD.h,
-              30 * SCALE, 19 * SCALE, HP_SHIELD.w * drawShieldPct * SCALE, HP_SHIELD.h * SCALE);
-          }
-          if (hpPct > 0) {
-            ctx.drawImage(statusImg,
-              HP_FILL.x, HP_FILL.y, HP_FILL.w, HP_FILL.h,
-              30 * SCALE, 19 * SCALE, HP_FILL.w * hpPct * SCALE, HP_FILL.h * SCALE);
+          if (isLarge) {
+            if (drawShieldPct > 0) {
+              ctx.drawImage(statusImg,
+                hpShield.x, hpShield.y, hpShield.w, hpShield.h,
+                30 * SCALE, 19 * SCALE, hpShield.w * drawShieldPct * SCALE, hpShield.h * SCALE);
+            }
+            if (hpPct > 0) {
+              ctx.drawImage(statusImg,
+                hpFill.x, hpFill.y, hpFill.w, hpFill.h,
+                30 * SCALE, 19 * SCALE, hpFill.w * hpPct * SCALE, hpFill.h * SCALE);
+            }
+          } else {
+            if (drawShieldPct > 0) {
+              ctx.drawImage(statusImg,
+                hpShield.x, hpShield.y, hpShield.w, hpShield.h,
+                33 * SCALE, 2 * SCALE, hpShield.w * drawShieldPct * SCALE, hpShield.h * SCALE);
+            }
+            if (hpPct > 0) {
+              ctx.drawImage(statusImg,
+                hpFill.x, hpFill.y, hpFill.w, hpFill.h,
+                33 * SCALE, 2 * SCALE, hpFill.w * hpPct * SCALE, hpFill.h * SCALE);
+            }
           }
         }
 
         const hpLabel = shield > 0 ? `${hp}+${shield}/${maxHp}` : `${hp}/${maxHp}`;
-        ctx.font = `${4 * SCALE}px monospace`;
+        ctx.font = `${(isLarge ? 4 : 2.5) * SCALE}px monospace`;
         ctx.textBaseline = 'middle';
-        ctx.textAlign = 'center';
         ctx.globalAlpha = 0.6;
         ctx.fillStyle = '#ffffff';
-        ctx.fillText(hpLabel, (30 + 64) * SCALE, (19 + 4.5) * SCALE);
+        if (isLarge) {
+          ctx.textAlign = 'center';
+          ctx.fillText(hpLabel, (30 + 64) * SCALE, (19 + 4.5) * SCALE);
+        } else {
+          ctx.textAlign = 'left';
+          ctx.fillText(hpLabel, (30 + 1) * SCALE, (2 + 2) * SCALE);
+        }
         ctx.globalAlpha = 1;
 
         if (statusImg?.complete && statusImg?.naturalWidth > 0 && expPct > 0) {
           ctx.drawImage(statusImg,
-            EXP_FILL.x, EXP_FILL.y, EXP_FILL.w, EXP_FILL.h,
-            30 * SCALE, 30 * SCALE, EXP_FILL.w * expPct * SCALE, EXP_FILL.h * SCALE);
+            expFill.x, expFill.y, expFill.w, expFill.h,
+            isLarge ? 30 * SCALE : 2 * SCALE,
+            isLarge ? 30 * SCALE : 30 * SCALE,
+            expFill.w * expPct * SCALE, expFill.h * SCALE);
         }
 
         ctx.globalAlpha = 0.6;
         ctx.fillStyle = '#ffffaa';
-        ctx.fillText(`${exp}/${maxExp}`, (30 + 64) * SCALE, (30 + 3.5) * SCALE);
+        ctx.font = `${(isLarge ? 4 : 2.5) * SCALE}px monospace`;
+        ctx.textAlign = isLarge ? 'center' : 'left';
+        ctx.fillText(`${exp}/${maxExp}`, isLarge ? (30 + 64) * SCALE : (2 + 1) * SCALE, (30 + 3.5) * SCALE);
         ctx.globalAlpha = 1;
 
         ctx.fillStyle = '#ffffaa';
-        ctx.fillText(t('ui.lv', { level }), 15 * SCALE, 34 * SCALE);
+        if (isLarge) {
+          ctx.fillText(t('ui.lv', { level }), 15 * SCALE, 34 * SCALE);
+        } else {
+          ctx.font = `${(isLarge ? 4 : 3) * SCALE}px monospace`;
+          ctx.textAlign = 'center';
+          ctx.fillText(level.toString(), 25.5 * SCALE, 31.5 * SCALE);
+        }
 
         const stars = starsRef.current;
         for (let i = stars.length - 1; i >= 0; i--) {
@@ -342,7 +385,7 @@ export default function StatusPane({ myStats, depth, exitPos, isAdmin, onSearch,
 
     raf = requestAnimationFrame(draw);
     return () => cancelAnimationFrame(raf);
-  }, [t, isBusy, SCALE]);
+  }, [t, isBusy, SCALE, isLarge, PANE_W, PANE_H, hpFill, hpShield, expFill, BG]);
 
   const floorNumbers = [];
   for (let i = 1; i <= 26; i++) floorNumbers.push(i);
@@ -402,11 +445,12 @@ export default function StatusPane({ myStats, depth, exitPos, isAdmin, onSearch,
             onOpenTalents?.();
             return;
           }
-          // Buff icon hit test — icons are at y=0, x = (31 + i*(BUFF_SIZE+1))*SCALE
+          // Buff icon hit test — icons are at y = (isLarge ? 0 : 8*SCALE), x = (31 + i*(BUFF_SIZE+1))*SCALE
           const effects = statsRef.current?.effects || [];
+          const buffsYOffset = isLarge ? 0 : 8 * SCALE;
           for (let i = 0; i < Math.min(effects.length, MAX_BUFFS); i++) {
             const bx = (31 + i * (BUFF_SIZE + 1)) * SCALE;
-            const by = 0;
+            const by = buffsYOffset;
             const bw = BUFF_SIZE * SCALE;
             const bh = BUFF_SIZE * SCALE;
             if (x >= bx && x < bx + bw && y >= by && y < by + bh) {

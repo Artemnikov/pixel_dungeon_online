@@ -22,8 +22,8 @@ export function drawPlayers(ctx, { entitiesRef, visionRef, assetImages, playerAn
     if (playerSprite) {
       ctx.save();
 
-      if (player.invisible > 0) {
-        ctx.globalAlpha = player.id === myPlayerId ? 0.45 : 0.0;
+      if (player.fadeAlpha != null && player.fadeAlpha < 1) {
+        ctx.globalAlpha = player.fadeAlpha;
       }
 
       const RUN_FRAMES    = [2, 3, 4, 5, 6, 7];
@@ -125,7 +125,7 @@ export function drawPlayers(ctx, { entitiesRef, visionRef, assetImages, playerAn
 
     const totalShield = (player.shields || []).reduce((sum, s) => sum + (s.amount || 0), 0);
     if (totalShield > 0) {
-      drawShieldHalo(ctx, x + TILE_SIZE / 2, y, totalShield);
+      drawShieldHalo(ctx, x + TILE_SIZE / 2, y, totalShield, player.fadeAlpha ?? 1);
     }
   });
 }

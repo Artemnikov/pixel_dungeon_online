@@ -34,9 +34,10 @@ HEAL_TICK_INTERVAL = 20
 ROOM_HEAL_AMOUNT = 10
 PASSIVE_REGEN_INTERVAL = 10
 
-# Scroll of Recharging aftereffect: seconds between each +1 wand charge while
-# the "recharging" buff is active.
-RECHARGING_REGEN_INTERVAL = 8.0
+# Scroll of Recharging aftereffect: multiplier applied to passive wand regen
+# rate while the "recharging" buff is active (SPD: Recharging buff speeds up
+# wand charge regeneration for 30 turns).
+RECHARGING_REGEN_MULTIPLIER = 3.0
 
 # Caustic ooze (SPD Ooze): DURATION=20 turns, ~1 dmg/turn vs the depth-5 Goo,
 # washed off by stepping into water. Ticks are throttled so the real-time loop

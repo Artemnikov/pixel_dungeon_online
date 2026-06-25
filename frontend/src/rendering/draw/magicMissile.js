@@ -1,8 +1,10 @@
 import { TILE_SIZE } from '../../constants';
-import { setLightMode, setNormalMode } from './blending';
+import { setLightMode } from './blending';
+
+const MAGIC_MISSILE_SPEED = 400; // px/s (2x SPD's 200px/s for 32px tiles)
 
 export const MISSILE_TYPES = {
-  magic_missile: { color: '#FFFFFF', size: 4, life: 400, trailCount: 4, arcHeight: 1.5 },
+  magic_missile: { color: '#FFFFFF', size: 5, life: 400, trailCount: 10, arcHeight: 0, colorEnd: '#88BBFF' },
   magic_bolt:    { color: '#FFFFFF', size: 4, life: 400, trailCount: 4, arcHeight: 1.5 },
   frost:         { color: '#88CCFF', size: 4, life: 500, trailCount: 4, arcHeight: 1.5 },
   fire:          { color: '#EE7722', size: 4, life: 600, trailCount: 5, arcHeight: 1.0, driftY: -1.2 },
@@ -78,19 +80,32 @@ export function advanceAndDrawMagicMissiles(ctx, magicMissileRef) {
       const py = m.startY + (m.endY - m.startY) * pt - Math.sin(pt * Math.PI) * TILE_SIZE * m.arcHeight + (m.driftY || 0) * (1 - Math.abs(2 * pt - 1)) * TILE_SIZE;
       const alpha = t * (1 - pt) * 0.6;
       const size = m.size * 0.5 + (1 - pt) * m.size * 0.8;
+      const glowColor = m.colorEnd || '#88BBFF';
+      const trailColor = m.rainbow
+        ? RAINBOW_COLORS[Math.floor(p * pt * 10) % RAINBOW_COLORS.length]
+        : m.colorEnd ? lerpColor(m.color, m.colorEnd, pt) : m.color;
+      // Glow aura
+      ctx.globalAlpha = alpha * 0.3;
+      ctx.fillStyle = glowColor;
+      ctx.beginPath();
+      ctx.arc(px, py, size * 2.5, 0, Math.PI * 2);
+      ctx.fill();
+      // Core
       ctx.globalAlpha = alpha;
-      if (m.rainbow) {
-        ctx.fillStyle = RAINBOW_COLORS[Math.floor(p * pt * 10) % RAINBOW_COLORS.length];
-      } else if (m.colorEnd) {
-        ctx.fillStyle = lerpColor(m.color, m.colorEnd, pt);
-      } else {
-        ctx.fillStyle = m.color;
-      }
+      ctx.fillStyle = trailColor;
       ctx.beginPath();
       ctx.arc(px, py, size, 0, Math.PI * 2);
       ctx.fill();
     }
 
+    // Head glow aura
+    ctx.globalAlpha = 0.3;
+    ctx.fillStyle = '#88BBFF';
+    ctx.beginPath();
+    ctx.arc(x, y, headSize * 2.5, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Head core
     ctx.globalAlpha = 1;
     ctx.fillStyle = '#ffffff';
     ctx.beginPath();
@@ -107,12 +122,14 @@ export function advanceAndDrawMagicMissiles(ctx, magicMissileRef) {
 
 export function spawnMagicMissile(missileRef, startX, startY, endX, endY, typeName) {
   const cfg = getType(typeName);
+  const dist = Math.hypot(endX - startX, endY - startY);
+  const duration = Math.max(80, dist / MAGIC_MISSILE_SPEED * 1000);
   const m = {
     startX, startY,
     endX, endY,
     color: cfg.color,
     size: cfg.size,
-    duration: cfg.life,
+    duration,
     trailCount: cfg.trailCount,
     arcHeight: cfg.arcHeight,
     driftY: cfg.driftY,

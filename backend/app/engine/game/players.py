@@ -26,6 +26,7 @@ from app.engine.dungeon.generator import TileType
 from app.engine.entities.base import (
     Amulet,
     Armor,
+    Bag,
     Belongings,
     Bow,
     CharacterClass,
@@ -40,6 +41,7 @@ from app.engine.entities.base import (
     Ration,
     ScrollOfIdentify,
     ScrollOfUpgrade,
+    SpiritBow,
     Staff,
     Stone,
     ThrowableDagger,
@@ -48,6 +50,7 @@ from app.engine.entities.base import (
     Waterskin,
     Weapon,
     WornShortsword,
+    make_named_melee_weapon,
 )
 from app.engine.entities.buffs import add_buff
 from app.engine.entities.item_catalog import make_catalog_item
@@ -135,15 +138,25 @@ class PlayersMixin:
                 quantity=3,
             )
             belongings.backpack.collect(knives)
+            class_starting_quickslots.append((0, belongings.artifact))
+            class_starting_quickslots.append((1, knives))
 
         elif class_type == CharacterClass.HUNTRESS:
-            belongings.weapon = Bow(
+            # SPD HeroClass.initHuntress(): Gloves (display "studded gloves")
+            # + Spirit Bow (quickslot). No armor in SPD, but the remake gives
+            # Cloth Armor for parity with other starting kits.
+            belongings.weapon = make_named_melee_weapon("Gloves", id=str(uuid.uuid4()))
+            belongings.armor = Armor(
                 id=str(uuid.uuid4()),
-                name="Spirit Bow",
-                damage=2,
+                name="Cloth Armor",
+                tier=1,
                 strength_requirement=10,
-                attack_cooldown=3.5,
             )
+            spirit_bow = SpiritBow(
+                id=str(uuid.uuid4()),
+            )
+            belongings.backpack.collect(spirit_bow)
+            class_starting_quickslots.append((0, spirit_bow))
 
         # HeroClass.initHero(): every hero starts with a ration of food, a
         # Velvet Pouch (for seeds/stones), and a Waterskin in the backpack.
@@ -192,7 +205,8 @@ class PlayersMixin:
         # slot 2 for throwing knives, etc.), then Waterskin to slot 1.
         for slot_idx, item in class_starting_quickslots:
             player.quickslot.set_slot(slot_idx, item)
-        player.quickslot.set_slot(1, waterskin)
+        waterskin_slot = 2 if class_type == CharacterClass.ROGUE else 1
+        player.quickslot.set_slot(waterskin_slot, waterskin)
 
         # HeroClass.initWarrior(): the BrokenSeal starts affixed to the cloth
         # armor (not in any equip slot), providing shielding on low HP.
@@ -367,9 +381,13 @@ class PlayersMixin:
         random.shuffle(free_cells)
 
         # Drop everything the hero carried — equipped gear plus the backpack's
-        # top-level items (sub-bags drop whole). Overflow lands on the death tile.
+        # items. Sub-bags drop their contents individually, not the bag itself.
         dropped_items = [s for s in player.belongings.equipped_slots() if s is not None]
-        dropped_items += list(player.belongings.backpack.items)
+        for item in list(player.belongings.backpack.items):
+            if isinstance(item, Bag):
+                dropped_items.extend(item.items)
+            else:
+                dropped_items.append(item)
         for idx, item in enumerate(dropped_items):
             if idx < len(free_cells):
                 cx, cy = free_cells[idx]

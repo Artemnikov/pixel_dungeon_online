@@ -15,9 +15,12 @@
   }
 
   .top-left-hud {
-    bottom: max(0px, env(safe-area-inset-bottom, 0px));
+    top: max(0px, env(safe-area-inset-top, 0px));
     left: 0;
+  }
+  .desktop-mode .top-left-hud {
     top: auto;
+    bottom: max(0px, env(safe-area-inset-bottom, 0px));
   }
 
   .boss-health-bar {

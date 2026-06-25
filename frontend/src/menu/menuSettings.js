@@ -5,8 +5,8 @@
 const KEY = 'opd-settings';
 
 const DEFAULTS = {
-  musicVolume: 0.7,
-  sfxVolume: 0.8,
+  musicVolume: 0.25,
+  sfxVolume: 0.25,
   muted: false,
   bgMotion: true,
 };

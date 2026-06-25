@@ -20,7 +20,15 @@ from app.engine.dungeon.spd_levelgen.level import GenLevel
 from app.engine.dungeon.spd_levelgen.mob_spawner import GenMob
 from app.engine.dungeon.spd_levelgen.room import DoorType
 from app.engine.dungeon.spd_levelgen.traps import Trap as SpdTrap
-from app.engine.dungeon.spd_levelgen.traps import BurningTrap, BlazingTrap
+from app.engine.dungeon.spd_levelgen.traps import (
+    BurningTrap, BlazingTrap, ShockingTrap, StormTrap,
+    ChillingTrap, ToxicTrap, PoisonDartTrap,
+    ConfusionTrap, FlockTrap, SummoningTrap, TeleportationTrap, GatewayTrap,
+    AlarmTrap, OozeTrap, GrippingTrap, GeyserTrap,
+    FrostTrap, CorrosionTrap, RockfallTrap, GuardianTrap, WarpingTrap, PitfallTrap,
+    DisintegrationTrap, FlashingTrap, WeakeningTrap,
+    DisarmingTrap, CursingTrap, DistortionTrap, GrimTrap,
+)
 from app.engine.dungeon.generator import TileType
 from app.engine.entities.base import (
     Amulet,
@@ -42,6 +50,7 @@ from app.engine.entities.base import (
     Wand,
     Weapon,
 )
+from app.engine.dungeon.spd_levelgen.run_state import SCROLL_DEFAULT_PROBS_TOTAL
 from app.engine.entities.item_catalog import FLOOR_SCROLL_KINDS, TRANSMUTE_GROUPS, make_catalog_item
 from app.engine.entities.weapon_defs import WEP_TIER_ORDER
 from app.engine.entities.quest_bosses import FetidRat, Ghost, GnollTrickster, GreatCrab
@@ -259,8 +268,38 @@ _MOB_CLASSES: Dict[str, type[MobEntity]] = {
 _SPD_TRAP_TYPE: Dict[type[SpdTrap], str] = {}
 
 
+# SPD Generator.java SCROLL.classes order → remake scroll kind
+_SPD_SCROLL_INDEX_TO_KIND = {
+    0: "scroll_of_upgrade",
+    1: "scroll_of_identify",
+    2: "scroll_of_remove_curse",
+    3: "scroll_of_mirror_image",
+    4: "scroll_of_recharging",
+    5: "scroll_of_teleportation",
+    6: "scroll_of_lullaby",
+    7: "scroll_of_magic_mapping",
+    8: "scroll_of_rage",
+    9: "scroll_of_retribution",
+    10: "scroll_of_terror",
+    11: "scroll_of_transmutation",
+}
+# Remake-only scrolls not in SPD (e.g. scroll_of_metamorphosis) get a small
+# fixed weight so they remain possible but rare in floor loot.
+_NON_SPD_SCROLL_WEIGHT = 0.5
+
 def _random_scroll(iid: str, pos: Position) -> Item:
-    kind = _random.choice(FLOOR_SCROLL_KINDS)
+    pool = []
+    weights = []
+    for idx, kind in _SPD_SCROLL_INDEX_TO_KIND.items():
+        w = SCROLL_DEFAULT_PROBS_TOTAL[idx]
+        if w > 0:
+            pool.append(kind)
+            weights.append(w)
+    for kind in FLOOR_SCROLL_KINDS:
+        if kind not in pool:
+            pool.append(kind)
+            weights.append(_NON_SPD_SCROLL_WEIGHT)
+    kind = _random.choices(pool, weights=weights, k=1)[0]
     item = make_catalog_item(kind)
     item.id = iid
     item.pos = pos
@@ -274,10 +313,33 @@ def _register_trap(spd_cls: type[SpdTrap], trap_type: str) -> None:
 _register_trap(type("WornDartTrap", (SpdTrap,), {}), TrapType.WORN_DART)
 _register_trap(BurningTrap, TrapType.BURNING_TRAP)
 _register_trap(BlazingTrap, TrapType.BLAZING_TRAP)
-
-
-_SPD_TRAP_COLOR = TrapVisual.GREY
-_SPD_TRAP_SHAPE = TrapVisual.CROSSHAIR
+_register_trap(ShockingTrap, TrapType.SHOCKING_TRAP)
+_register_trap(StormTrap, TrapType.STORM_TRAP)
+_register_trap(ChillingTrap, TrapType.CHILLING_TRAP)
+_register_trap(ToxicTrap, TrapType.TOXIC_TRAP)
+_register_trap(PoisonDartTrap, TrapType.POISON_DART_TRAP)
+_register_trap(ConfusionTrap, TrapType.CONFUSION_TRAP)
+_register_trap(FlockTrap, TrapType.FLOCK_TRAP)
+_register_trap(SummoningTrap, TrapType.SUMMONING_TRAP)
+_register_trap(TeleportationTrap, TrapType.TELEPORTATION_TRAP)
+_register_trap(GatewayTrap, TrapType.GATEWAY_TRAP)
+_register_trap(AlarmTrap, TrapType.ALARM_TRAP)
+_register_trap(OozeTrap, TrapType.OOZE_TRAP)
+_register_trap(GrippingTrap, TrapType.GRIPPING_TRAP)
+_register_trap(GeyserTrap, TrapType.GEYSER_TRAP)
+_register_trap(FrostTrap, TrapType.FROST_TRAP)
+_register_trap(CorrosionTrap, TrapType.CORROSION_TRAP)
+_register_trap(RockfallTrap, TrapType.ROCKFALL_TRAP)
+_register_trap(GuardianTrap, TrapType.GUARDIAN_TRAP)
+_register_trap(WarpingTrap, TrapType.WARPING_TRAP)
+_register_trap(PitfallTrap, TrapType.PITFALL_TRAP)
+_register_trap(DisintegrationTrap, TrapType.DISINTEGRATION_TRAP)
+_register_trap(FlashingTrap, TrapType.FLASHING_TRAP)
+_register_trap(WeakeningTrap, TrapType.WEAKENING_TRAP)
+_register_trap(DisarmingTrap, TrapType.DISARMING_TRAP)
+_register_trap(CursingTrap, TrapType.CURSING_TRAP)
+_register_trap(DistortionTrap, TrapType.DISTORTION_TRAP)
+_register_trap(GrimTrap, TrapType.GRIM_TRAP)
 
 
 def _convert_tile(val: int) -> int:

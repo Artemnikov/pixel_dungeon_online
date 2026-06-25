@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import './styles/index.css';
 
@@ -123,14 +123,16 @@ function App() {
   const loreFinishRef = useRef(null);
 
   const handleLoreNeeded = useCallback((depth, finishTransition) => {
-    loreFinishRef.current = finishTransition;
-    setLoreOverlay(getLoreForDepth(depth));
+    const lore = getLoreForDepth(depth);
+    loreFinishRef.current = () => {
+      setLoreOverlay(null);
+      finishTransition();
+    };
+    setLoreOverlay({ depth, body: lore.body });
   }, []);
 
   const handleLoreDismiss = () => {
     loreFinishRef.current?.();
-    loreFinishRef.current = null;
-    setLoreOverlay(null);
   };
 
   // --- shared refs ---
@@ -300,16 +302,19 @@ function App() {
     },
   });
 
-  const isBusy = useMemo(() => {
-    const me = entitiesRef.current?.players?.[myPlayerIdRef.current];
-    if (!me) return false;
-    const anim = playerAnimRef.current?.[myPlayerIdRef.current];
-    if (!anim) return false;
-    const now = performance.now();
-    return (anim.attackUntil || 0) > now
-      || (anim.operateUntil || 0) > now
-      || (anim.readUntil || 0) > now;
-  }, [myStats]); // re-derive when myStats changes (every frame)
+  const [isBusy, setIsBusy] = useState(false);
+  useEffect(() => {
+    const id = setInterval(() => {
+      const me = entitiesRef.current?.players?.[myPlayerIdRef.current];
+      const anim = playerAnimRef.current?.[myPlayerIdRef.current];
+      setIsBusy(!!me && !!anim && (
+        (anim.attackUntil || 0) > performance.now()
+        || (anim.operateUntil || 0) > performance.now()
+        || (anim.readUntil || 0) > performance.now()
+      ));
+    }, 50);
+    return () => clearInterval(id);
+  }, []);
 
   const { hasDraggedRef } = useCanvasControls({
     enabled: gameState === 'PLAYING',
@@ -338,7 +343,7 @@ function App() {
   });
 
   // --- item action dispatch ---
-  const TARGETED_ACTIONS = ['THROW', 'ZAP', 'DIRECT'];
+  const TARGETED_ACTIONS = ['THROW', 'ZAP', 'DIRECT', 'SHOOT'];
 
   const equipItem = (itemId) => send({ type: 'EQUIP_ITEM', item_id: itemId });
 
@@ -374,6 +379,10 @@ function App() {
         }
         return;
       }
+      if (item.default_action && TARGETED_ACTIONS.includes(item.default_action)) {
+        executeItemAction(item.id, item.default_action);
+        return;
+      }
       const isEquipped = equippedItems.weapon && equippedItems.weapon.id === item.id;
       if (!isEquipped) {
         equipItem(item.id);
@@ -405,9 +414,12 @@ function App() {
   };
 
   const handleToolbarDoubleClick = (item) => {
-    const isRangedWeapon = item && item.type === 'weapon' && item.range && item.range > 1;
-    const isThrowable = item && item.type === 'throwable';
-    if (!isRangedWeapon && !isThrowable) return;
+    if (!item) return;
+    const isTargeted = item.type === 'wand'
+      || item.type === 'throwable'
+      || (item.type === 'weapon' && item.range && item.range > 1)
+      || item.kind === 'staff';
+    if (!isTargeted) return;
 
     const myPlayer = entitiesRef.current.players[myPlayerIdRef.current];
     if (!myPlayer) return;
@@ -429,8 +441,8 @@ function App() {
     if (nearestMob) {
       const tx = Math.round(nearestMob.renderPos.x);
       const ty = Math.round(nearestMob.renderPos.y);
-      if (isThrowable) {
-        send({ type: 'EXECUTE_ITEM_ACTION', item_id: item.id, action: 'THROW', target_x: tx, target_y: ty });
+      if (item.default_action && TARGETED_ACTIONS.includes(item.default_action)) {
+        send({ type: 'EXECUTE_ITEM_ACTION', item_id: item.id, action: item.default_action, target_x: tx, target_y: ty });
       } else {
         send({ type: 'RANGED_ATTACK', item_id: item.id, target_x: tx, target_y: ty });
       }
@@ -569,8 +581,8 @@ function App() {
 
   // Drive the inspect popup every frame: reposition from live camera, update mob HP,
   // hide off-screen, auto-dismiss after 3s of no activity.
-  const clearInspectRef = useRef(targeting.clearInspect);
-  clearInspectRef.current = targeting.clearInspect;
+  const clearInspectRef = useRef(null);
+  useEffect(() => { clearInspectRef.current = targeting.clearInspect; });
   useEffect(() => {
     if (!inspectInfo) return;
     const anchor = inspectInfo.anchor;
@@ -688,7 +700,7 @@ function App() {
           </div>
         )}
 
-        <BossHealthBar boss={bossInfo} bleeding={bossBleeding} />
+        <BossHealthBar boss={bossInfo} bleeding={bossBleeding} interfaceSize={interfaceSize} />
         <KeyDisplay keys={myStats.keys} depth={depth} />
 
         <SideTags>
@@ -877,7 +889,7 @@ function App() {
         />
 
         {loreOverlay && (
-          <LoreOverlay title={loreOverlay.title} body={loreOverlay.body} onContinue={handleLoreDismiss} />
+          <LoreOverlay key={loreOverlay.depth} depth={loreOverlay.depth} body={loreOverlay.body} onContinue={handleLoreDismiss} />
         )}
 
         <GameOverlay

@@ -268,7 +268,18 @@ export default function useGameSocket({
         if (!floorChangeEvent) {
           // Steady state (most ticks), or a non-stairs depth change (admin teleport,
           // resurrect, etc.) — apply any stashed INIT immediately, no fade.
-          if (pendingInit) { if (isCameraDetachedRef) isCameraDetachedRef.current = false; applyInit(pendingInit); pendingInit = null; }
+          if (pendingInit) {
+            const isFirstConnect = !!pendingInit.player_id;
+            const initDepth = pendingInit.depth;
+            if (isCameraDetachedRef) isCameraDetachedRef.current = false;
+            applyInit(pendingInit);
+            pendingInit = null;
+            // First connection to depth 1 = new game. Show lore chain over the
+            // rendered world (Dungeon intro → Sewers intro → game is revealed).
+            if (isFirstConnect && initDepth === 1 && onLoreNeeded) {
+              onLoreNeeded(1, () => {});
+            }
+          }
           applyStateUpdate(data);
           return;
         }
@@ -295,7 +306,7 @@ export default function useGameSocket({
 
         const needsLore = floorChangeEvent.type === 'STAIRS_DOWN'
           && floorChangeEvent.data.first_visit
-          && [6, 11, 16, 21].includes(data.depth);
+          && [1, 6, 11, 16, 21].includes(data.depth);
 
         if (needsLore && onLoreNeeded) {
           onLoreNeeded(data.depth, finishTransition);

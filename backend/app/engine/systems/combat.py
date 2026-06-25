@@ -36,16 +36,15 @@ def _preparation(attacker: "Entity", defender: "Entity") -> Optional[dict]:
 
 
 def _dispel_stealth(attacker: "Entity") -> None:
-    """Attacking breaks stealth: clear invisibility, the cloak's sustained
-    stealth flag, and Preparation."""
+    """Attacking breaks invisibility: clear the invisibility buffs and the
+    cloak's sustained stealth flag. Preparation (Assassin) is NOT cleared
+    here — it persists across stealth windows per design."""
     if getattr(attacker, "invisible", 0) > 0:
         attacker.invisible = 0
     attacker.remove_buff("invisibility")
     attacker.remove_buff("shadows")
     if getattr(attacker, "cloak_stealth_active", False):
         attacker.cloak_stealth_active = False
-    if hasattr(attacker, "prep_seconds"):
-        attacker.prep_seconds = 0.0
 
 
 def _roll_damage(attacker: "Entity", result: dict, prep: Optional[dict] = None) -> int:
@@ -227,6 +226,9 @@ def resolve_melee_attack(
         def_ev = defender.get_effective_defense_skill()
         if defender.has_buff("hex"):
             def_ev = int(def_ev * 0.75)
+        if hasattr(attacker, "belongings"):
+            from app.engine.entities.rings import accuracy_multiplier
+            atk_acc = int(atk_acc * accuracy_multiplier(attacker))
         acu_roll = random.random() * atk_acc
         def_roll = random.random() * def_ev
         if acu_roll < def_roll:
@@ -277,6 +279,9 @@ def resolve_melee_attack(
         effective_damage = int(effective_damage * prep["dmg_mult"])
     if getattr(attacker, "is_admin", False):
         effective_damage *= 4
+    if hasattr(defender, "belongings"):
+        from app.engine.entities.rings import tenacity_multiplier
+        effective_damage = int(effective_damage * tenacity_multiplier(defender))
 
     hp_before = defender.hp
     actual_damage = defender.take_damage(max(0, effective_damage))
@@ -393,7 +398,8 @@ def resolve_ranged_attack(
         def_ev = defender.get_effective_defense_skill()
         if defender.has_buff("hex"):
             def_ev = int(def_ev * 0.75)
-        acu_roll = random.random() * attack_skill
+        acc_mult = getattr(item, "acc_factor", 1.0)
+        acu_roll = random.random() * attack_skill * acc_mult
         def_roll = random.random() * def_ev
         if acu_roll < def_roll:
             result["missed"] = True
@@ -408,6 +414,9 @@ def resolve_ranged_attack(
     proj_momentum = getattr(attacker, "subclass_info", None) and attacker.subclass_info.talent_info.level("projectile_momentum")
     if proj_momentum and getattr(attacker, "freerun_seconds", 0) > 0:
         dmg_roll = round(dmg_roll * (1 + 0.15 * proj_momentum))
+    if hasattr(attacker, "belongings"):
+        from app.engine.entities.rings import sharpshooting_damage_bonus
+        dmg_roll += sharpshooting_damage_bonus(attacker)
     dr_roll = random.randint(defender.get_dr_min(), defender.get_dr_max())
     raw_damage = max(0, dmg_roll - dr_roll)
 

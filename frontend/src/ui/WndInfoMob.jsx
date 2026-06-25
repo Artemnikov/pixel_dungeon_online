@@ -48,7 +48,9 @@ export default function WndInfoMob({ mob }) {
   if (!mob) return null;
 
   const name = mob.locale_key ? t(mob.locale_key, { defaultValue: mob.name }) : mob.name;
+  const totalShield = (mob.shields || []).reduce((sum, s) => sum + (s.amount || s || 0), mob.shield || 0);
   const hpPct = mob.max_hp > 0 ? Math.max(0, Math.min(1, mob.hp / mob.max_hp)) : 0;
+  const shieldPct = mob.max_hp > 0 ? Math.max(0, Math.min(1, (mob.hp + totalShield) / mob.max_hp)) : 0;
 
   const descKey = mob.locale_key
     ? `${mob.locale_key.replace(/^mob\./, 'mob.desc.')}`
@@ -68,8 +70,9 @@ export default function WndInfoMob({ mob }) {
     <div className="wnd-info-card">
       <IconTitle icon={<MobSprite mob={mob} />} title={name} />
       <div className="wnd-info-hpbar">
+        <div className="wnd-info-hpbar-shield" style={{ width: `${shieldPct * 100}%` }} />
         <div className="wnd-info-hpbar-fill" style={{ width: `${hpPct * 100}%` }} />
-        <span className="wnd-info-hpbar-label">{mob.hp}/{mob.max_hp}</span>
+        <span className="wnd-info-hpbar-label">{totalShield > 0 ? `${mob.hp}+${totalShield}/${mob.max_hp}` : `${mob.hp}/${mob.max_hp}`}</span>
       </div>
       {mob.buffs && mob.buffs.length > 0 && <BuffIcons effects={mob.buffs} />}
       <div className="wnd-info-stats">

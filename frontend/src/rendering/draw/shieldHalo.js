@@ -1,10 +1,10 @@
 import { TILE_SIZE } from '../../constants';
 
-export function drawShieldHalo(ctx, cx, cy, shieldTotal) {
+export function drawShieldHalo(ctx, cx, cy, shieldTotal, alphaMultiplier = 1) {
   if (!shieldTotal || shieldTotal <= 0) return;
   const radius = TILE_SIZE * 0.7;
   ctx.save();
-  ctx.globalAlpha = 0.35;
+  ctx.globalAlpha = 0.35 * alphaMultiplier;
   ctx.globalCompositeOperation = 'lighter';
   ctx.strokeStyle = '#bbaacc';
   ctx.lineWidth = 2.5;

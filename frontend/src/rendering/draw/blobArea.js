@@ -1,41 +1,75 @@
 import { TILE_SIZE } from '../../constants';
-import { setLightMode } from './blending';
 import { spawnFlame } from './flameParticle';
 import { spawnElmo } from './elmoParticle';
+import { spawnSparkMoving } from './sparkParticle';
+import { spawnToxicGas, spawnParalyticGas, spawnCorrosiveGas, spawnConfusionGas } from './gasParticle';
 
 const BLOB_COLORS = {
   electricity: { fill: '#4488FF', alpha: 0.2, edge: '#88CCFF' },
-  toxic_gas: { fill: '#00CC33', alpha: 0.3, edge: '#44FF66' },
-  paralytic_gas: { fill: '#9900CC', alpha: 0.3, edge: '#CC44FF' },
-  corrosive_gas: { fill: '#88CC00', alpha: 0.3, edge: '#AAFF00' },
-  confusion_gas: { fill: '#CC6600', alpha: 0.25, edge: '#FFAA00' },
+  toxic_gas: { fill: '#00CC33', alpha: 0.12 },
+  paralytic_gas: { fill: '#9900CC', alpha: 0.12 },
+  corrosive_gas: { fill: '#88CC00', alpha: 0.12 },
+  confusion_gas: { fill: '#CC6600', alpha: 0.10 },
   tengu_shocker: { fill: '#4488FF', alpha: 0.25, edge: '#88CCFF' },
 };
 
 const FIRE_TYPES = new Set(['fire', 'tengu_fire']);
 const FIRE_EMIT_RATE = 25;
 
-let lastFireNow = performance.now();
+const ELECTRIC_TYPES = new Set(['electricity', 'tengu_shocker']);
+const SPARK_EMIT_RATE = 12;
 
-export function advanceAndDrawFireParticles(ctx, { blobAreasRef, visionRef, particlesRef }) {
+const GAS_TYPES = {
+  toxic_gas: spawnToxicGas,
+  paralytic_gas: spawnParalyticGas,
+  corrosive_gas: spawnCorrosiveGas,
+  confusion_gas: spawnConfusionGas,
+};
+const GAS_EMIT_RATE = 80;
+
+let lastNow = null;
+
+export function advanceAndDrawBlobParticles(ctx, { blobAreasRef, visionRef, particlesRef }) {
   if (!blobAreasRef?.current) return;
   const now = performance.now();
-  if (lastFireNow == null) lastFireNow = now;
-  const dt = Math.min((now - lastFireNow) / 1000, 0.05);
-  lastFireNow = now;
+  if (lastNow == null) lastNow = now;
+  const dt = Math.min((now - lastNow) / 1000, 0.05);
+  lastNow = now;
 
   const visible = visionRef?.current?.visible;
   for (const [, area] of Object.entries(blobAreasRef.current)) {
-    if (!FIRE_TYPES.has(area.type)) continue;
-    const isTengu = area.type === 'tengu_fire';
-    const spawnFn = isTengu ? spawnElmo : spawnFlame;
-    for (const [key] of area.cells) {
-      if (visible && !visible.has(key)) continue;
-      if (Math.random() > dt * FIRE_EMIT_RATE) continue;
-      const [x, y] = key.split(',').map(Number);
-      const cx = x * TILE_SIZE + TILE_SIZE / 2;
-      const cy = y * TILE_SIZE + TILE_SIZE / 2;
-      spawnFn(particlesRef, cx, cy, 1);
+    if (FIRE_TYPES.has(area.type)) {
+      const isTengu = area.type === 'tengu_fire';
+      const spawnFn = isTengu ? spawnElmo : spawnFlame;
+      for (const [key] of area.cells) {
+        if (visible && !visible.has(key)) continue;
+        if (Math.random() > dt * FIRE_EMIT_RATE) continue;
+        const [x, y] = key.split(',').map(Number);
+        const cx = x * TILE_SIZE + TILE_SIZE / 2;
+        const cy = y * TILE_SIZE + TILE_SIZE / 2;
+        spawnFn(particlesRef, cx, cy, 1);
+      }
+    }
+    if (ELECTRIC_TYPES.has(area.type)) {
+      for (const [key] of area.cells) {
+        if (visible && !visible.has(key)) continue;
+        if (Math.random() > dt * SPARK_EMIT_RATE) continue;
+        const [x, y] = key.split(',').map(Number);
+        const cx = x * TILE_SIZE + TILE_SIZE / 2;
+        const cy = y * TILE_SIZE + TILE_SIZE / 2;
+        spawnSparkMoving(particlesRef, cx, cy, 1);
+      }
+    }
+    const gasSpawn = GAS_TYPES[area.type];
+    if (gasSpawn) {
+      for (const [key] of area.cells) {
+        if (visible && !visible.has(key)) continue;
+        if (Math.random() > dt * GAS_EMIT_RATE) continue;
+        const [x, y] = key.split(',').map(Number);
+        const cx = x * TILE_SIZE + TILE_SIZE / 2;
+        const cy = y * TILE_SIZE + TILE_SIZE / 2;
+        gasSpawn(particlesRef, cx, cy);
+      }
     }
   }
 }
@@ -69,12 +103,9 @@ export function advanceAndDrawBlobAreas(ctx, { blobAreasRef, visionRef }) {
   if (areas.length === 0) return;
   const visible = visionRef?.current?.visible;
 
-  ctx.save();
-  setLightMode(ctx);
-
   for (const [, area] of areas) {
     const colors = BLOB_COLORS[area.type];
-    if (!colors) continue;
+    if (!colors || ELECTRIC_TYPES.has(area.type)) continue;
 
     for (const [key, intensity] of area.cells) {
       if (visible && !visible.has(key)) continue;
@@ -83,16 +114,11 @@ export function advanceAndDrawBlobAreas(ctx, { blobAreasRef, visionRef }) {
       const py = y * TILE_SIZE;
       const alpha = colors.alpha * Math.min(intensity, 1);
 
+      ctx.save();
       ctx.globalAlpha = alpha;
       ctx.fillStyle = colors.fill;
       ctx.fillRect(px, py, TILE_SIZE, TILE_SIZE);
-
-      ctx.globalAlpha = alpha * 0.6;
-      ctx.strokeStyle = colors.edge;
-      ctx.lineWidth = 1;
-      ctx.strokeRect(px + 1, py + 1, TILE_SIZE - 2, TILE_SIZE - 2);
+      ctx.restore();
     }
   }
-
-  ctx.restore();
 }

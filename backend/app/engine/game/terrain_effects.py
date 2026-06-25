@@ -218,7 +218,7 @@ def _trigger_plant_effect(floor: FloorState, pos: Tuple[int, int], plant, activa
         "earthroot": lambda: activator.add_buff("barkskin", duration=6.0, level=3),
         "firebloom": lambda: _explode_fire(floor, pos),
         "icecap": lambda: _freeze_area(floor, pos),
-        "sorrowmoss": lambda: _create_gas(floor, pos, 4.0),
+        "sorrowmoss": lambda: _create_gas(floor, pos, 4, "toxic_gas"),
         "dreamfoil": lambda: _cure_debuffs(activator),
         "fadeleaf": lambda: _teleport_activator(floor, activator),
     }
@@ -261,8 +261,23 @@ def _freeze_area(floor: FloorState, pos: Tuple[int, int]):
     floor.rebuild_flags()
 
 
-def _create_gas(floor: FloorState, pos: Tuple[int, int], strength: float):
-    pass
+def _create_gas(floor: FloorState, pos: Tuple[int, int], strength: int, gas_type: str = "toxic_gas"):
+    blob_id = f"{gas_type}_{pos[0]}_{pos[1]}"
+    cells = set()
+    volume = {}
+    for dy in (-1, 0, 1):
+        for dx in (-1, 0, 1):
+            nx, ny = pos[0] + dx, pos[1] + dy
+            if 0 <= nx < floor.width and 0 <= ny < floor.height:
+                if floor.flags and not floor.flags.solid[ny][nx]:
+                    cells.add((nx, ny))
+                    volume[(nx, ny)] = strength
+    if cells:
+        for bid in list(floor.blob_areas.keys()):
+            b = floor.blob_areas[bid]
+            if b.get("type") == gas_type and b.get("cells", set()) & cells:
+                del floor.blob_areas[bid]
+        floor.blob_areas[blob_id] = {"type": gas_type, "cells": cells, "volume": volume}
 
 
 def _cure_debuffs(entity: Entity):

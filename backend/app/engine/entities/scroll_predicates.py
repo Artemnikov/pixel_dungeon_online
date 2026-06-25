@@ -62,17 +62,17 @@ def is_unidentified_target(item, game) -> bool:
     Scroll of Identify can reveal (weapon/armor/wand/ring/artifact/potion/scroll)."""
     if item.category not in IDENTIFIABLE_CATEGORIES:
         return False
+    if item.level_known:
+        return False
     return item.kind not in game.identified_kinds
 
 
 def is_cursed_or_suspect(item, game) -> bool:
-    """True if `item` is a weapon/armor/wand/ring/artifact that is known to be
-    cursed, has a curse enchant/glyph, or whose curse status is unknown."""
+    """True if `item` is a weapon/armor/wand/ring/artifact that is cursed or
+    has a curse enchant/glyph — items that actually need cleansing."""
     if item.category not in UPGRADABLE_CATEGORIES:
         return False
     if item.cursed:
-        return True
-    if not item.cursed_known:
         return True
     enchantment = getattr(item, "enchantment", None)
     if isinstance(enchantment, str) and enchantment in CURSES:

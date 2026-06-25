@@ -93,7 +93,9 @@ const CharacterSelection = ({ onSelect }) => {
   const start = () => {
     AudioManager.play('CLICK');
     if (audioRef.current) { audioRef.current.pause(); audioRef.current.currentTime = 0; }
-    new Audio(descendSound).play().catch(() => {});
+    const descendAudio = new Audio(descendSound);
+    descendAudio.volume = effectiveMusicVolume();
+    descendAudio.play().catch(() => {});
     onSelect(selectedClass, difficulty, playerName.trim(), strongerBosses);
   };
 

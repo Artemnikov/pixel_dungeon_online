@@ -75,10 +75,13 @@ export interface Player {
   heal_cooldown?: number;
   room_heal_cooldown?: number;
   aqua_heal_left?: number;
+  locked_floor_left?: number | null;
+  pending_chasm_fall?: [unknown, unknown] | null;
   path_queue?: [unknown, unknown][];
   path_blocked_ticks?: number;
   move_intent?: [unknown, unknown] | null;
   last_auto_move_time?: number;
+  action_until?: number;
   stationary_ticks?: number;
   is_admin?: boolean;
   subclass_info?: SubclassInfo;
@@ -90,6 +93,8 @@ export interface Player {
   combo_timer?: number;
   clobber_used?: boolean;
   parry_used?: boolean;
+  wealth_tries_to_drop?: number;
+  wealth_drops_to_equip?: number;
   seal_cooldown?: number;
   seal_no_enemy_ticks?: number;
   endure_damage_bonus?: number;
@@ -109,13 +114,27 @@ export interface Player {
     | Dagger
     | WornShortsword
     | Bow
+    | SpiritBow
     | Staff
     | MissileWeapon
     | Armor
     | Ring
+    | RingOfAccuracy
+    | RingOfEvasion
+    | RingOfHaste
+    | RingOfFuror
+    | RingOfMight
+    | RingOfTenacity
+    | RingOfEnergy
+    | RingOfArcana
+    | RingOfSharpshooting
+    | RingOfForce
+    | RingOfElements
+    | RingOfWealth
     | Artifact
     | BrokenSeal
     | CloakOfShadows
+    | DriedRose
     | DamageWand
     | WandOfMagicMissile
     | WandOfFireblast
@@ -176,12 +195,15 @@ export interface Player {
     | Seed
     | Dewdrop
     | Waterskin
+    | Amulet
     | Stone
     | Boomerang
     | ThrowableDagger
     | Throwable
     | GooBlob
     | DwarfToken
+    | Petal
+    | Chest
     | VelvetPouch
     | ScrollHolder
     | MagicalHolster
@@ -194,13 +216,27 @@ export interface Player {
         | Dagger
         | WornShortsword
         | Bow
+        | SpiritBow
         | Staff
         | MissileWeapon
         | Armor
         | Ring
+        | RingOfAccuracy
+        | RingOfEvasion
+        | RingOfHaste
+        | RingOfFuror
+        | RingOfMight
+        | RingOfTenacity
+        | RingOfEnergy
+        | RingOfArcana
+        | RingOfSharpshooting
+        | RingOfForce
+        | RingOfElements
+        | RingOfWealth
         | Artifact
         | BrokenSeal
         | CloakOfShadows
+        | DriedRose
         | DamageWand
         | WandOfMagicMissile
         | WandOfFireblast
@@ -261,12 +297,15 @@ export interface Player {
         | Seed
         | Dewdrop
         | Waterskin
+        | Amulet
         | Stone
         | Boomerang
         | ThrowableDagger
         | Throwable
         | GooBlob
         | DwarfToken
+        | Petal
+        | Chest
         | VelvetPouch
         | ScrollHolder
         | MagicalHolster
@@ -280,13 +319,27 @@ export interface Player {
         | Dagger
         | WornShortsword
         | Bow
+        | SpiritBow
         | Staff
         | MissileWeapon
         | Armor
         | Ring
+        | RingOfAccuracy
+        | RingOfEvasion
+        | RingOfHaste
+        | RingOfFuror
+        | RingOfMight
+        | RingOfTenacity
+        | RingOfEnergy
+        | RingOfArcana
+        | RingOfSharpshooting
+        | RingOfForce
+        | RingOfElements
+        | RingOfWealth
         | Artifact
         | BrokenSeal
         | CloakOfShadows
+        | DriedRose
         | DamageWand
         | WandOfMagicMissile
         | WandOfFireblast
@@ -347,12 +400,15 @@ export interface Player {
         | Seed
         | Dewdrop
         | Waterskin
+        | Amulet
         | Stone
         | Boomerang
         | ThrowableDagger
         | Throwable
         | GooBlob
         | DwarfToken
+        | Petal
+        | Chest
         | VelvetPouch
         | ScrollHolder
         | MagicalHolster
@@ -395,13 +451,27 @@ export interface Belongings {
         | Dagger
         | WornShortsword
         | Bow
+        | SpiritBow
         | Staff
         | MissileWeapon
         | Armor
         | Ring
+        | RingOfAccuracy
+        | RingOfEvasion
+        | RingOfHaste
+        | RingOfFuror
+        | RingOfMight
+        | RingOfTenacity
+        | RingOfEnergy
+        | RingOfArcana
+        | RingOfSharpshooting
+        | RingOfForce
+        | RingOfElements
+        | RingOfWealth
         | Artifact
         | BrokenSeal
         | CloakOfShadows
+        | DriedRose
         | DamageWand
         | WandOfMagicMissile
         | WandOfFireblast
@@ -462,12 +532,15 @@ export interface Belongings {
         | Seed
         | Dewdrop
         | Waterskin
+        | Amulet
         | Stone
         | Boomerang
         | ThrowableDagger
         | Throwable
         | GooBlob
         | DwarfToken
+        | Petal
+        | Chest
         | VelvetPouch
         | ScrollHolder
         | MagicalHolster
@@ -481,13 +554,27 @@ export interface Belongings {
         | Dagger
         | WornShortsword
         | Bow
+        | SpiritBow
         | Staff
         | MissileWeapon
         | Armor
         | Ring
+        | RingOfAccuracy
+        | RingOfEvasion
+        | RingOfHaste
+        | RingOfFuror
+        | RingOfMight
+        | RingOfTenacity
+        | RingOfEnergy
+        | RingOfArcana
+        | RingOfSharpshooting
+        | RingOfForce
+        | RingOfElements
+        | RingOfWealth
         | Artifact
         | BrokenSeal
         | CloakOfShadows
+        | DriedRose
         | DamageWand
         | WandOfMagicMissile
         | WandOfFireblast
@@ -548,12 +635,15 @@ export interface Belongings {
         | Seed
         | Dewdrop
         | Waterskin
+        | Amulet
         | Stone
         | Boomerang
         | ThrowableDagger
         | Throwable
         | GooBlob
         | DwarfToken
+        | Petal
+        | Chest
         | VelvetPouch
         | ScrollHolder
         | MagicalHolster
@@ -567,13 +657,27 @@ export interface Belongings {
         | Dagger
         | WornShortsword
         | Bow
+        | SpiritBow
         | Staff
         | MissileWeapon
         | Armor
         | Ring
+        | RingOfAccuracy
+        | RingOfEvasion
+        | RingOfHaste
+        | RingOfFuror
+        | RingOfMight
+        | RingOfTenacity
+        | RingOfEnergy
+        | RingOfArcana
+        | RingOfSharpshooting
+        | RingOfForce
+        | RingOfElements
+        | RingOfWealth
         | Artifact
         | BrokenSeal
         | CloakOfShadows
+        | DriedRose
         | DamageWand
         | WandOfMagicMissile
         | WandOfFireblast
@@ -634,12 +738,15 @@ export interface Belongings {
         | Seed
         | Dewdrop
         | Waterskin
+        | Amulet
         | Stone
         | Boomerang
         | ThrowableDagger
         | Throwable
         | GooBlob
         | DwarfToken
+        | Petal
+        | Chest
         | VelvetPouch
         | ScrollHolder
         | MagicalHolster
@@ -653,13 +760,27 @@ export interface Belongings {
         | Dagger
         | WornShortsword
         | Bow
+        | SpiritBow
         | Staff
         | MissileWeapon
         | Armor
         | Ring
+        | RingOfAccuracy
+        | RingOfEvasion
+        | RingOfHaste
+        | RingOfFuror
+        | RingOfMight
+        | RingOfTenacity
+        | RingOfEnergy
+        | RingOfArcana
+        | RingOfSharpshooting
+        | RingOfForce
+        | RingOfElements
+        | RingOfWealth
         | Artifact
         | BrokenSeal
         | CloakOfShadows
+        | DriedRose
         | DamageWand
         | WandOfMagicMissile
         | WandOfFireblast
@@ -720,12 +841,15 @@ export interface Belongings {
         | Seed
         | Dewdrop
         | Waterskin
+        | Amulet
         | Stone
         | Boomerang
         | ThrowableDagger
         | Throwable
         | GooBlob
         | DwarfToken
+        | Petal
+        | Chest
         | VelvetPouch
         | ScrollHolder
         | MagicalHolster
@@ -739,13 +863,27 @@ export interface Belongings {
         | Dagger
         | WornShortsword
         | Bow
+        | SpiritBow
         | Staff
         | MissileWeapon
         | Armor
         | Ring
+        | RingOfAccuracy
+        | RingOfEvasion
+        | RingOfHaste
+        | RingOfFuror
+        | RingOfMight
+        | RingOfTenacity
+        | RingOfEnergy
+        | RingOfArcana
+        | RingOfSharpshooting
+        | RingOfForce
+        | RingOfElements
+        | RingOfWealth
         | Artifact
         | BrokenSeal
         | CloakOfShadows
+        | DriedRose
         | DamageWand
         | WandOfMagicMissile
         | WandOfFireblast
@@ -806,12 +944,15 @@ export interface Belongings {
         | Seed
         | Dewdrop
         | Waterskin
+        | Amulet
         | Stone
         | Boomerang
         | ThrowableDagger
         | Throwable
         | GooBlob
         | DwarfToken
+        | Petal
+        | Chest
         | VelvetPouch
         | ScrollHolder
         | MagicalHolster
@@ -841,13 +982,27 @@ export interface Bag {
     | Dagger
     | WornShortsword
     | Bow
+    | SpiritBow
     | Staff
     | MissileWeapon
     | Armor
     | Ring
+    | RingOfAccuracy
+    | RingOfEvasion
+    | RingOfHaste
+    | RingOfFuror
+    | RingOfMight
+    | RingOfTenacity
+    | RingOfEnergy
+    | RingOfArcana
+    | RingOfSharpshooting
+    | RingOfForce
+    | RingOfElements
+    | RingOfWealth
     | Artifact
     | BrokenSeal
     | CloakOfShadows
+    | DriedRose
     | DamageWand
     | WandOfMagicMissile
     | WandOfFireblast
@@ -908,12 +1063,15 @@ export interface Bag {
     | Seed
     | Dewdrop
     | Waterskin
+    | Amulet
     | Stone
     | Boomerang
     | ThrowableDagger
     | Throwable
     | GooBlob
     | DwarfToken
+    | Petal
+    | Chest
     | VelvetPouch
     | ScrollHolder
     | MagicalHolster
@@ -946,6 +1104,8 @@ export interface MeleeWeapon {
   acc_factor?: number;
   dr_bonus_base?: number;
   dr_bonus_per_lvl?: number;
+  hit_sound?: string;
+  hit_sound_pitch?: number;
   tier?: number;
 }
 export interface Dagger {
@@ -973,6 +1133,8 @@ export interface Dagger {
   acc_factor?: number;
   dr_bonus_base?: number;
   dr_bonus_per_lvl?: number;
+  hit_sound?: string;
+  hit_sound_pitch?: number;
   tier?: number;
 }
 export interface WornShortsword {
@@ -1000,6 +1162,8 @@ export interface WornShortsword {
   acc_factor?: number;
   dr_bonus_base?: number;
   dr_bonus_per_lvl?: number;
+  hit_sound?: string;
+  hit_sound_pitch?: number;
   tier?: number;
 }
 export interface Bow {
@@ -1027,6 +1191,37 @@ export interface Bow {
   acc_factor?: number;
   dr_bonus_base?: number;
   dr_bonus_per_lvl?: number;
+  hit_sound?: string;
+  hit_sound_pitch?: number;
+}
+export interface SpiritBow {
+  kind?: "spirit_bow";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  strength_requirement?: number;
+  damage?: number;
+  range?: number;
+  attack_cooldown?: number;
+  enchantment?: string | null;
+  projectile_type?: string;
+  surprise_damage_floor?: number;
+  acc_factor?: number;
+  dr_bonus_base?: number;
+  dr_bonus_per_lvl?: number;
+  hit_sound?: string;
+  hit_sound_pitch?: number;
+  bones?: boolean;
 }
 export interface Staff {
   kind?: "staff";
@@ -1053,12 +1248,12 @@ export interface Staff {
   acc_factor?: number;
   dr_bonus_base?: number;
   dr_bonus_per_lvl?: number;
+  hit_sound?: string;
+  hit_sound_pitch?: number;
   tier?: number;
   magic_damage?: number;
   imbued_wand?: Wand | null;
   bones?: boolean;
-  hit_sound?: string;
-  hit_sound_pitch?: number;
   charges: number;
   max_charges: number;
 }
@@ -1113,6 +1308,8 @@ export interface MissileWeapon {
   acc_factor?: number;
   dr_bonus_base?: number;
   dr_bonus_per_lvl?: number;
+  hit_sound?: string;
+  hit_sound_pitch?: number;
   tier?: number;
 }
 export interface Armor {
@@ -1154,6 +1351,249 @@ export interface Ring {
   for_sale?: boolean;
   seen?: boolean;
   strength_requirement?: number;
+  buff_class?: string | null;
+  gem?: string;
+  levels_to_id?: number;
+}
+export interface RingOfAccuracy {
+  kind?: "ring_accuracy";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  strength_requirement?: number;
+  buff_class?: string;
+  gem?: string;
+  levels_to_id?: number;
+}
+export interface RingOfEvasion {
+  kind?: "ring_evasion";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  strength_requirement?: number;
+  buff_class?: string;
+  gem?: string;
+  levels_to_id?: number;
+}
+export interface RingOfHaste {
+  kind?: "ring_haste";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  strength_requirement?: number;
+  buff_class?: string;
+  gem?: string;
+  levels_to_id?: number;
+}
+export interface RingOfFuror {
+  kind?: "ring_furor";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  strength_requirement?: number;
+  buff_class?: string;
+  gem?: string;
+  levels_to_id?: number;
+}
+export interface RingOfMight {
+  kind?: "ring_might";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  strength_requirement?: number;
+  buff_class?: string;
+  gem?: string;
+  levels_to_id?: number;
+}
+export interface RingOfTenacity {
+  kind?: "ring_tenacity";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  strength_requirement?: number;
+  buff_class?: string;
+  gem?: string;
+  levels_to_id?: number;
+}
+export interface RingOfEnergy {
+  kind?: "ring_energy";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  strength_requirement?: number;
+  buff_class?: string;
+  gem?: string;
+  levels_to_id?: number;
+}
+export interface RingOfArcana {
+  kind?: "ring_arcana";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  strength_requirement?: number;
+  buff_class?: string;
+  gem?: string;
+  levels_to_id?: number;
+}
+export interface RingOfSharpshooting {
+  kind?: "ring_sharpshooting";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  strength_requirement?: number;
+  buff_class?: string;
+  gem?: string;
+  levels_to_id?: number;
+}
+export interface RingOfForce {
+  kind?: "ring_force";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  strength_requirement?: number;
+  buff_class?: string;
+  gem?: string;
+  levels_to_id?: number;
+}
+export interface RingOfElements {
+  kind?: "ring_elements";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  strength_requirement?: number;
+  buff_class?: string;
+  gem?: string;
+  levels_to_id?: number;
+}
+export interface RingOfWealth {
+  kind?: "ring_wealth";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  strength_requirement?: number;
+  buff_class?: string;
+  gem?: string;
+  levels_to_id?: number;
 }
 export interface Artifact {
   kind?: "artifact";
@@ -1212,6 +1652,30 @@ export interface CloakOfShadows {
   charge?: number;
   charge_cap?: number;
   exp?: number;
+}
+export interface DriedRose {
+  kind?: "dried_rose";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  strength_requirement?: number;
+  charge?: number;
+  charge_cap?: number;
+  exp?: number;
+  ghost_id?: string | null;
+  weapon?: MeleeWeapon | null;
+  armor?: Armor | null;
+  dropped_petals?: number;
 }
 /**
  * Base for wands that deal direct damage to a target.
@@ -2330,6 +2794,22 @@ export interface Waterskin {
   seen?: boolean;
   volume?: number;
 }
+export interface Amulet {
+  kind?: "amulet";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+}
 export interface Stone {
   kind?: "stone";
   id?: string;
@@ -2442,8 +2922,8 @@ export interface DwarfToken {
   for_sale?: boolean;
   seen?: boolean;
 }
-export interface VelvetPouch {
-  kind?: "velvet_pouch";
+export interface Petal {
+  kind?: "petal";
   id?: string;
   name?: string;
   type?: string;
@@ -2457,19 +2937,50 @@ export interface VelvetPouch {
   kept_though_lost?: boolean;
   for_sale?: boolean;
   seen?: boolean;
-  capacity?: number;
-  items?: (
+}
+export interface Chest {
+  kind?: "chest";
+  id?: string;
+  name: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  chest_type?: string;
+  opened?: boolean;
+  contents?: (
     | MeleeWeapon
     | Dagger
     | WornShortsword
     | Bow
+    | SpiritBow
     | Staff
     | MissileWeapon
     | Armor
     | Ring
+    | RingOfAccuracy
+    | RingOfEvasion
+    | RingOfHaste
+    | RingOfFuror
+    | RingOfMight
+    | RingOfTenacity
+    | RingOfEnergy
+    | RingOfArcana
+    | RingOfSharpshooting
+    | RingOfForce
+    | RingOfElements
+    | RingOfWealth
     | Artifact
     | BrokenSeal
     | CloakOfShadows
+    | DriedRose
     | DamageWand
     | WandOfMagicMissile
     | WandOfFireblast
@@ -2530,12 +3041,133 @@ export interface VelvetPouch {
     | Seed
     | Dewdrop
     | Waterskin
+    | Amulet
     | Stone
     | Boomerang
     | ThrowableDagger
     | Throwable
     | GooBlob
     | DwarfToken
+    | Petal
+    | Chest
+    | VelvetPouch
+    | ScrollHolder
+    | MagicalHolster
+    | PotionBandolier
+    | Bag
+  )[];
+}
+export interface VelvetPouch {
+  kind?: "velvet_pouch";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  capacity?: number;
+  items?: (
+    | MeleeWeapon
+    | Dagger
+    | WornShortsword
+    | Bow
+    | SpiritBow
+    | Staff
+    | MissileWeapon
+    | Armor
+    | Ring
+    | RingOfAccuracy
+    | RingOfEvasion
+    | RingOfHaste
+    | RingOfFuror
+    | RingOfMight
+    | RingOfTenacity
+    | RingOfEnergy
+    | RingOfArcana
+    | RingOfSharpshooting
+    | RingOfForce
+    | RingOfElements
+    | RingOfWealth
+    | Artifact
+    | BrokenSeal
+    | CloakOfShadows
+    | DriedRose
+    | DamageWand
+    | WandOfMagicMissile
+    | WandOfFireblast
+    | WandOfFrost
+    | WandOfLightning
+    | WandOfDisintegration
+    | WandOfPrismaticLight
+    | WandOfBlastWave
+    | WandOfTransfusion
+    | WandOfCorrosion
+    | WandOfCorruption
+    | WandOfRegrowth
+    | WandOfWarding
+    | WandOfLivingEarth
+    | Wand
+    | HealthPotion
+    | RevivingPotion
+    | FuryPotion
+    | PotionOfStrength
+    | PotionOfHaste
+    | PotionOfInvisibility
+    | PotionOfLevitation
+    | PotionOfMindVision
+    | PotionOfFrost
+    | PotionOfLiquidFlame
+    | PotionOfToxicGas
+    | PotionOfParalyticGas
+    | PotionOfPurity
+    | PotionOfExperience
+    | ElixirOfAquaticRejuvenation
+    | Potion
+    | ScrollOfRage
+    | ScrollOfMetamorphosis
+    | ScrollOfUpgrade
+    | ScrollOfIdentify
+    | ScrollOfMagicMapping
+    | ScrollOfTeleportation
+    | ScrollOfRemoveCurse
+    | ScrollOfRecharging
+    | ScrollOfLullaby
+    | ScrollOfTerror
+    | ScrollOfMirrorImage
+    | ScrollOfRetribution
+    | ScrollOfTransmutation
+    | Scroll
+    | Gold
+    | MysteryMeat
+    | FrozenCarpaccio
+    | Berry
+    | SmallRation
+    | Ration
+    | Pasty
+    | ChargrilledMeat
+    | Food
+    | Key
+    | TenguMask
+    | KingsCrown
+    | Seed
+    | Dewdrop
+    | Waterskin
+    | Amulet
+    | Stone
+    | Boomerang
+    | ThrowableDagger
+    | Throwable
+    | GooBlob
+    | DwarfToken
+    | Petal
+    | Chest
     | VelvetPouch
     | ScrollHolder
     | MagicalHolster
@@ -2564,13 +3196,27 @@ export interface ScrollHolder {
     | Dagger
     | WornShortsword
     | Bow
+    | SpiritBow
     | Staff
     | MissileWeapon
     | Armor
     | Ring
+    | RingOfAccuracy
+    | RingOfEvasion
+    | RingOfHaste
+    | RingOfFuror
+    | RingOfMight
+    | RingOfTenacity
+    | RingOfEnergy
+    | RingOfArcana
+    | RingOfSharpshooting
+    | RingOfForce
+    | RingOfElements
+    | RingOfWealth
     | Artifact
     | BrokenSeal
     | CloakOfShadows
+    | DriedRose
     | DamageWand
     | WandOfMagicMissile
     | WandOfFireblast
@@ -2631,12 +3277,15 @@ export interface ScrollHolder {
     | Seed
     | Dewdrop
     | Waterskin
+    | Amulet
     | Stone
     | Boomerang
     | ThrowableDagger
     | Throwable
     | GooBlob
     | DwarfToken
+    | Petal
+    | Chest
     | VelvetPouch
     | ScrollHolder
     | MagicalHolster
@@ -2665,13 +3314,27 @@ export interface MagicalHolster {
     | Dagger
     | WornShortsword
     | Bow
+    | SpiritBow
     | Staff
     | MissileWeapon
     | Armor
     | Ring
+    | RingOfAccuracy
+    | RingOfEvasion
+    | RingOfHaste
+    | RingOfFuror
+    | RingOfMight
+    | RingOfTenacity
+    | RingOfEnergy
+    | RingOfArcana
+    | RingOfSharpshooting
+    | RingOfForce
+    | RingOfElements
+    | RingOfWealth
     | Artifact
     | BrokenSeal
     | CloakOfShadows
+    | DriedRose
     | DamageWand
     | WandOfMagicMissile
     | WandOfFireblast
@@ -2732,12 +3395,15 @@ export interface MagicalHolster {
     | Seed
     | Dewdrop
     | Waterskin
+    | Amulet
     | Stone
     | Boomerang
     | ThrowableDagger
     | Throwable
     | GooBlob
     | DwarfToken
+    | Petal
+    | Chest
     | VelvetPouch
     | ScrollHolder
     | MagicalHolster
@@ -2766,13 +3432,27 @@ export interface PotionBandolier {
     | Dagger
     | WornShortsword
     | Bow
+    | SpiritBow
     | Staff
     | MissileWeapon
     | Armor
     | Ring
+    | RingOfAccuracy
+    | RingOfEvasion
+    | RingOfHaste
+    | RingOfFuror
+    | RingOfMight
+    | RingOfTenacity
+    | RingOfEnergy
+    | RingOfArcana
+    | RingOfSharpshooting
+    | RingOfForce
+    | RingOfElements
+    | RingOfWealth
     | Artifact
     | BrokenSeal
     | CloakOfShadows
+    | DriedRose
     | DamageWand
     | WandOfMagicMissile
     | WandOfFireblast
@@ -2833,12 +3513,15 @@ export interface PotionBandolier {
     | Seed
     | Dewdrop
     | Waterskin
+    | Amulet
     | Stone
     | Boomerang
     | ThrowableDagger
     | Throwable
     | GooBlob
     | DwarfToken
+    | Petal
+    | Chest
     | VelvetPouch
     | ScrollHolder
     | MagicalHolster
@@ -2933,6 +3616,7 @@ export interface Mob {
   attack_range?: number;
   aggro_windup?: number;
   engaged?: boolean;
+  last_known_target_pos?: Position | null;
   owner_id?: string | null;
   summon_lifespan?: number;
 }

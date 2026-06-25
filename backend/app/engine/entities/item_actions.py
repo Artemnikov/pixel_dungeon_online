@@ -29,7 +29,7 @@ from typing import Optional
 
 from app.engine.dungeon.constants import TileType
 from app.engine.entities.base import (
-    Action, Position, Potion, Seed, Wand,
+    Action, Position, Potion, Seed, Wand, SpiritBow,
     GooBlob, HealthPotion, ElixirOfAquaticRejuvenation, Waterskin,
 )
 from app.engine.entities.scroll_actions import action_read
@@ -145,6 +145,14 @@ def action_drink(game, player, item, tx=None, ty=None) -> None:
         if removed is not None and player.belongings.get_item(item.id) is None:
             player.quickslot.convert_to_placeholder(removed)
         game.add_event("DRINK", {"player": player.id, "type": "mind_vision"}, floor_id=player.floor_id, source_player_id=player.id)
+    elif effect == "invisibility":
+        # SPD Invisibility: 20-turn buff. Attacking breaks invisibility (see
+        # combat._dispel_stealth). Reference-counted on Entity.invisible.
+        player.add_buff("invisibility", duration=20.0)
+        removed = player.belongings.backpack.detach(item.id)
+        if removed is not None and player.belongings.get_item(item.id) is None:
+            player.quickslot.convert_to_placeholder(removed)
+        game.add_event("DRINK", {"player": player.id, "type": "invisibility"}, floor_id=player.floor_id, source_player_id=player.id)
     elif effect == "liquid_flame":
         dmg = max(1, player.hp // 3)
         player.take_damage(dmg)
@@ -176,6 +184,29 @@ def action_drink(game, player, item, tx=None, ty=None) -> None:
             floor.blob_areas[blob_id] = {"type": "fire", "cells": cells, "volume": volume}
             game.add_event("PLAY_SOUND", {"sound": "SHATTER"}, floor_id=player.floor_id)
             game.add_event("PLAY_SOUND", {"sound": "BURNING"}, floor_id=player.floor_id)
+    elif effect == "toxic_gas":
+        dmg = max(1, player.hp // 4)
+        player.take_damage(dmg)
+        player.add_buff("poison", duration=10.0, level=1, stack_mode="extend")
+        removed = player.belongings.backpack.detach(item.id)
+        if removed is not None and player.belongings.get_item(item.id) is None:
+            player.quickslot.convert_to_placeholder(removed)
+        game.add_event("DAMAGE", {"target": player.id, "amount": dmg}, floor_id=player.floor_id)
+        cx, cy = player.pos.x, player.pos.y
+        floor = game._get_or_create_floor(player.floor_id)
+        from app.engine.game.terrain_effects import _create_gas
+        _create_gas(floor, (cx, cy), 4 + player.floor_id // 2, "toxic_gas")
+        game.add_event("PLAY_SOUND", {"sound": "SHATTER"}, floor_id=player.floor_id)
+    elif effect == "paralytic_gas":
+        player.add_buff("paralysis", duration=5.0, level=1, stack_mode="extend")
+        removed = player.belongings.backpack.detach(item.id)
+        if removed is not None and player.belongings.get_item(item.id) is None:
+            player.quickslot.convert_to_placeholder(removed)
+        cx, cy = player.pos.x, player.pos.y
+        floor = game._get_or_create_floor(player.floor_id)
+        from app.engine.game.terrain_effects import _create_gas
+        _create_gas(floor, (cx, cy), 4 + player.floor_id // 2, "paralytic_gas")
+        game.add_event("PLAY_SOUND", {"sound": "SHATTER"}, floor_id=player.floor_id)
     game.on_potion_drunk(player, item)
 
 
@@ -277,6 +308,12 @@ def action_plant(game, player, item, tx=None, ty=None) -> None:
     floor.rebuild_flags()
 
 
+def action_shoot(game, player, item, tx=None, ty=None) -> None:
+    if tx is None or ty is None:
+        return
+    game.perform_ranged_attack(player.id, item.id, tx, ty)
+
+
 def action_throw(game, player, item, tx=None, ty=None) -> None:
     if tx is None or ty is None:
         return
@@ -284,9 +321,12 @@ def action_throw(game, player, item, tx=None, ty=None) -> None:
     if isinstance(item, Seed):
         action_plant(game, player, item, tx, ty)
         return
-    # Potion of Liquid Flame: shatter on impact, create fire blob
-    if isinstance(item, Potion) and item.effect == "liquid_flame":
-        _shatter_liquid_flame(game, player, item, tx, ty)
+    # Potions that shatter on impact and create area effects
+    if isinstance(item, Potion) and item.effect in ("liquid_flame", "toxic_gas", "paralytic_gas"):
+        if item.effect == "liquid_flame":
+            _shatter_liquid_flame(game, player, item, tx, ty)
+        else:
+            _shatter_gas(game, player, item, tx, ty)
         return
     game.perform_ranged_attack(player.id, item.id, tx, ty)
 
@@ -328,6 +368,23 @@ def _shatter_liquid_flame(game, player, item, tx, ty) -> None:
         game.add_event("PLAY_SOUND", {"sound": "SHATTER"}, floor_id=player.floor_id)
         game.add_event("FLAME_BURST", {"x": tx, "y": ty}, floor_id=player.floor_id)
         game.add_event("PLAY_SOUND", {"sound": "BURNING"}, floor_id=player.floor_id)
+
+
+def _shatter_gas(game, player, item, tx, ty) -> None:
+    from app.engine.game.terrain_effects import _create_gas
+    floor = game._get_or_create_floor(player.floor_id)
+    if not (0 <= tx < floor.width and 0 <= ty < floor.height):
+        return
+
+    removed = player.belongings.backpack.detach(item.id)
+    if removed is not None and player.belongings.get_item(item.id) is None:
+        player.quickslot.convert_to_placeholder(removed)
+
+    gas_type = item.effect
+    strength = 4 + player.floor_id // 2
+    _create_gas(floor, (tx, ty), strength, gas_type)
+
+    game.add_event("PLAY_SOUND", {"sound": "SHATTER"}, floor_id=player.floor_id)
 
 
 def action_zap(game, player, item, tx=None, ty=None) -> None:
@@ -505,6 +562,7 @@ ITEM_ACTION_DISPATCH = {
     Action.READ: action_read,
     Action.THROW: action_throw,
     Action.ZAP: action_zap,
+    Action.SHOOT: action_shoot,
     Action.AFFIX: action_affix,
     Action.STEALTH: action_stealth,
     Action.SUMMON: action_summon,

@@ -296,11 +296,19 @@
   border-radius: 2px;
   overflow: hidden;
 }
+.wnd-info-hpbar-shield {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, #ddd, #999);
+  transition: width 0.1s linear;
+  z-index: 1;
+}
 .wnd-info-hpbar-fill {
   position: absolute;
   inset: 0;
   background: linear-gradient(to bottom, #5f5, #2c2);
   transition: width 0.1s linear;
+  z-index: 2;
 }
 .wnd-info-hpbar-label {
   position: relative;

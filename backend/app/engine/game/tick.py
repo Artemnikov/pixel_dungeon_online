@@ -47,7 +47,7 @@ from app.engine.game.constants import (
     NO_RESPAWN_FLOORS,
     OOZE_TICK_INTERVAL,
     PASSIVE_REGEN_INTERVAL,
-    RECHARGING_REGEN_INTERVAL,
+    RECHARGING_REGEN_MULTIPLIER,
     PATH_BLOCKED_GIVE_UP_TICKS,
     RESPAWN_TURNS,
     ROOM_HEAL_AMOUNT,
@@ -121,6 +121,8 @@ class TickMixin:
             for mob in floor.mobs.values():
                 if mob.is_alive:
                     removed = process_buffs(mob.buffs, dt)
+                    if "invisibility" in removed or "shadows" in removed:
+                        mob.invisible = max(0, mob.invisible - 1)
                     if "drowsy" in removed and mob.ai_state in ("idle", "wandering"):
                         mob.ai_state = "sleeping"
                     if "terror" in removed and mob.ai_state == "fleeing":
@@ -131,6 +133,24 @@ class TickMixin:
             blob_events = tick_blob_areas(active_floors, self.players)
             for ev in blob_events:
                 self.add_event(ev["type"], ev["data"])
+            for ev in blob_events:
+                if ev["type"] == "DEATH" and "target" in ev.get("data", {}):
+                    target_id = ev["data"]["target"]
+                    for fid in active_ids:
+                        f = self.floors[fid]
+                        mob = f.mobs.get(target_id)
+                        if mob is not None and not mob.is_alive:
+                            self.handle_mob_death(mob, f, fid)
+                            drops = roll_drops(mob, self.drop_counters,
+                                               mob.pos.x, mob.pos.y,
+                                               players=list(self._players_on_floor(fid)))
+                            for item in drops:
+                                f.items[item.id] = item
+                            if any(isinstance(d, Gold) for d in drops):
+                                self.add_event("GOLD_DROP",
+                                               {"x": mob.pos.x, "y": mob.pos.y},
+                                               floor_id=fid)
+                            break
 
         for floor_id in active_ids:
             self._tick_tengu_blobs(self.floors[floor_id], floor_id)
@@ -151,6 +171,8 @@ class TickMixin:
             move_interval = AUTO_MOVE_INTERVAL
             if player.invisible > 0 and player.subclass_info.talent_info.level("speedy_stealth") >= 3:
                 move_interval /= 2
+            from app.engine.entities.rings import haste_multiplier
+            move_interval /= haste_multiplier(player)
 
             if player.move_intent:
                 now = time.time()
@@ -183,7 +205,6 @@ class TickMixin:
             self._apply_room_heal_tick(player)
             self._apply_passive_regen(player)
             self._tick_passive_wand_recharge(player, dt)
-            self._tick_recharging(player, dt)
 
             if player.armor_charge < 100:
                 player.armor_charge = min(100, player.armor_charge + 2)
@@ -241,7 +262,7 @@ class TickMixin:
             if player.berserk_cooldown > 0:
                 player.berserk_cooldown -= 1
 
-            self._apply_hunger_tick(player)
+            # self._apply_hunger_tick(player)  # disabled per request
 
             if hf_tick:
                 player.decay_shields()
@@ -259,6 +280,7 @@ class TickMixin:
 
             self._process_bleed_ooze(floor_id, active_players)
             self._process_burning(floor_id, active_players)
+            self._process_poison_corrosion(floor_id, active_players)
             self._process_respawns(floor_id, floor, active_players)
             self._update_prison_boss(floor, floor_id)
 
@@ -419,6 +441,21 @@ class TickMixin:
                     self.qualified_for_boss_challenge = True
                     self._goo_seal_entrance(floor, floor_id)
 
+                # Track last known position while target is visible (mirrors
+                # SPD HUNTING: mob remembers where it last saw the player).
+                if target_player is not None:
+                    mob.last_known_target_pos = Position(x=target_player.pos.x, y=target_player.pos.y)
+
+                # If target lost (e.g. player went invisible), move toward the
+                # last known position before degrading to wandering.
+                search_pos = None
+                if target_player is None and mob.ai_state == "hunting" and mob.last_known_target_pos is not None:
+                    search_pos = mob.last_known_target_pos
+                    if self._get_distance(mob.pos, search_pos) <= 1:
+                        mob.last_known_target_pos = None
+                        mob.ai_state = "wandering"
+                        search_pos = None
+
                 dist = self._get_distance(mob.pos, target_player.pos) if target_player else float("inf")
                 atk_range = getattr(mob, "attack_range", 1)
                 is_passive = getattr(mob, "ai_state", "") == "passive"
@@ -450,6 +487,14 @@ class TickMixin:
                     if target_player and dist <= atk_range:
                         dx, dy = target_player.pos.x - mob.pos.x, target_player.pos.y - mob.pos.y
                         self.move_entity(mob.id, dx, dy)
+                    elif search_pos and can_move:
+                        step = self._get_next_step_to(mob.pos, search_pos, floor_id=floor_id, flying=mob.flying)
+                        if step:
+                            move_times[mob.id] = now
+                            self.move_entity(mob.id, step[0], step[1])
+                        else:
+                            mob.last_known_target_pos = None
+                            mob.ai_state = "wandering"
                     elif can_move:
                         step = self._pick_wander_step(mob, floor, floor_id, now)
                         if step:
@@ -469,6 +514,14 @@ class TickMixin:
                             )):
                                 move_times[mob.id] = now
                                 self.move_entity(mob.id, step[0], step[1])
+                    elif search_pos and can_move:
+                        step = self._get_next_step_to(mob.pos, search_pos, floor_id=floor_id, flying=mob.flying)
+                        if step:
+                            move_times[mob.id] = now
+                            self.move_entity(mob.id, step[0], step[1])
+                        else:
+                            mob.last_known_target_pos = None
+                            mob.ai_state = "wandering"
                     elif can_move:
                         step = self._pick_wander_step(mob, floor, floor_id, now)
                         if step:
@@ -485,6 +538,14 @@ class TickMixin:
                             if step:
                                 move_times[mob.id] = now
                                 self.move_entity(mob.id, step[0], step[1])
+                    elif search_pos and can_move:
+                        step = self._get_next_step_to(mob.pos, search_pos, floor_id=floor_id, flying=mob.flying)
+                        if step:
+                            move_times[mob.id] = now
+                            self.move_entity(mob.id, step[0], step[1])
+                        else:
+                            mob.last_known_target_pos = None
+                            mob.ai_state = "wandering"
                     elif can_move:
                         step = self._pick_wander_step(mob, floor, floor_id, now)
                         if step:
@@ -759,6 +820,53 @@ class TickMixin:
                 if any(isinstance(d, Gold) for d in drops):
                     self.add_event("GOLD_DROP", {"x": mob.pos.x, "y": mob.pos.y}, floor_id=floor_id)
 
+    def _process_poison_corrosion(self, floor_id: int, active_players: List[Player]):
+        floor = self._get_or_create_floor(floor_id)
+
+        def do_dot(entity, buff_type: str, dmg_per_tick: int):
+            buff = get_buff(entity.buffs, buff_type)
+            if buff is None:
+                return
+            accum_key = f"{buff_type}_accum"
+            accum = getattr(entity, accum_key, 0.0)
+            accum += 0.05
+            if accum < 1.0:
+                setattr(entity, accum_key, accum)
+                return
+            setattr(entity, accum_key, 0.0)
+
+            if is_immune(entity, buff_type):
+                remove_buff(entity.buffs, buff_type)
+                return
+
+            dmg = dmg_per_tick + buff.level
+            actual = entity.take_damage(dmg)
+            source = f"{buff_type}_dot"
+            self.add_event("DAMAGE", {"target": entity.id, "amount": actual, source: True}, floor_id=floor_id)
+
+            if isinstance(entity, MobEntity) and not entity.is_alive:
+                entity.die(floor_mobs=floor.mobs, tile_x=entity.pos.x, tile_y=entity.pos.y,
+                           players=list(self._players_on_floor(floor_id)))
+                self.add_event("DEATH", {"target": entity.id}, floor_id=floor_id)
+                self.handle_mob_death(entity, floor, floor_id)
+                from app.engine.systems.loot import roll_drops
+                drops = roll_drops(entity, self.drop_counters, entity.pos.x, entity.pos.y,
+                                   players=list(self._players_on_floor(floor_id)))
+                for item in drops:
+                    floor.items[item.id] = item
+                if any(isinstance(d, Gold) for d in drops):
+                    self.add_event("GOLD_DROP", {"x": entity.pos.x, "y": entity.pos.y}, floor_id=floor_id)
+
+        for player in active_players:
+            do_dot(player, "poison", 0)
+            do_dot(player, "corrosion", 1)
+
+        for mob in floor.mobs.values():
+            if not mob.is_alive:
+                continue
+            do_dot(mob, "poison", 0)
+            do_dot(mob, "corrosion", 1)
+
     def _burn_player_inventory(self, player: Player, floor_id: int):
         player.burning_total_seconds += 1.0
         if player.burning_total_seconds < 4.0:
@@ -919,6 +1027,16 @@ class TickMixin:
                 key="locked_floor", name="Locked Floor", icon=35,
                 remaining=max(0.0, min(50.0, player.locked_floor_left)), duration=50.0,
             ))
+        invis_buff = get_buff(player.buffs, "invisibility")
+        if invis_buff is not None:
+            effects.append(Effect(
+                key="invisibility", name="Invisible", icon=12,
+                remaining=invis_buff.remaining, duration=20.0,
+            ))
+        elif get_buff(player.buffs, "shadows") is not None:
+            effects.append(Effect(
+                key="invisibility", name="Invisible", icon=12,
+            ))
         player.active_effects = effects
 
     def _apply_heal_tick(self, player: Player):
@@ -1046,12 +1164,17 @@ class TickMixin:
     def _tick_passive_wand_recharge(self, player: Player, dt: float):
         """Passive wand recharge:
         - Normal wands: SPD formula (10 + 40 * 0.875^missing)
-        - Staff-imbued wands: +1 charge every 2s (SPD MagesStaff style)."""
+        - Staff-imbued wands: +1 charge every 2s (SPD MagesStaff style).
+        - Recharging buff (Scroll of Recharging): multiplier on regen speed."""
         from app.engine.entities.base import Staff as StaffCls
         weapon = getattr(player, "belongings", None)
         if weapon is not None:
             weapon = weapon.weapon
         imbued_wand = weapon.imbued_wand if isinstance(weapon, StaffCls) else None
+
+        rate_mult = RECHARGING_REGEN_MULTIPLIER if player.has_buff("recharging") else 1.0
+        from app.engine.entities.rings import energy_wand_multiplier
+        rate_mult *= energy_wand_multiplier(player)
 
         for item in player_inventory_items(player):
             if item is imbued_wand:
@@ -1059,25 +1182,12 @@ class TickMixin:
             if isinstance(item, Wand) and item.charges < item.max_charges and not item.cursed:
                 missing = item.max_charges - item.charges
                 turns_to_charge = 10.0 + 40.0 * (0.875 ** missing)
-                item.gain_charge(dt / turns_to_charge)
+                item.gain_charge(dt / turns_to_charge * rate_mult)
         # Staff-imbued wand recharge: +1 charge every 2s, scaled by the
         # wand's recharge_scale (set to 0.75 by MagesStaff imbuing).
         if imbued_wand is not None:
             w = imbued_wand
             if w.charges < w.max_charges and not w.cursed:
-                w.gain_charge(dt / (2.0 * w.recharge_scale))
+                w.gain_charge(dt / (2.0 * w.recharge_scale) * rate_mult)
 
-    def _tick_recharging(self, player: Player, dt: float):
-        """Scroll of Recharging aftereffect: while the "recharging" buff is
-        active, slowly regenerate one charge on the first under-max wand
-        roughly every RECHARGING_REGEN_INTERVAL seconds."""
-        if not player.has_buff("recharging"):
-            player._recharging_accum = 0.0
-            return
-        player._recharging_accum += dt
-        while player._recharging_accum >= RECHARGING_REGEN_INTERVAL:
-            player._recharging_accum -= RECHARGING_REGEN_INTERVAL
-            for item in player_inventory_items(player):
-                if isinstance(item, Wand) and item.charges < item.max_charges:
-                    item.charges += 1
-                    break
+

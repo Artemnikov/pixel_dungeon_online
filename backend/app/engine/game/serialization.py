@@ -47,7 +47,9 @@ class SerializationMixin:
                       "Indigo", "Magenta", "Bistre", "Charcoal", "Silver", "Ivory"]
     _SCROLL_LABELS = ["Kaunan", "Sowilo", "Laguz", "Yngvi", "Gyfu", "Raido",
                       "Isaz", "Mannaz", "Naudiz", "Berkanan", "Odal", "Tiwaz"]
-    _APPEARANCE_ROW = {"potion": 22, "scroll": 19}
+    _RING_GEMS = ["garnet", "ruby", "topaz", "emerald", "onyx", "opal",
+                  "tourmaline", "sapphire", "amethyst", "quartz", "agate", "diamond"]
+    _APPEARANCE_ROW = {"potion": 22, "scroll": 19, "ring": 14}
 
     def _kind_index(self, kind: str, typ: str) -> int:
         # Stable per-run colour/rune index for a potion/scroll kind. Assigns the
@@ -63,11 +65,20 @@ class SerializationMixin:
 
     def _label_for(self, kind: str, typ: str) -> str:
         if kind not in self.kind_labels:
-            pool = self._POTION_LABELS if typ == "potion" else self._SCROLL_LABELS
+            if typ == "potion":
+                pool = self._POTION_LABELS
+            elif typ == "scroll":
+                pool = self._SCROLL_LABELS
+            else:
+                pool = self._RING_GEMS
             idx = self._kind_index(kind, typ)
             word = pool[idx] if idx < len(pool) else kind
-            self.kind_labels[kind] = (f"{word} Potion" if typ == "potion"
-                                      else f"Scroll of {word}")
+            if typ == "potion":
+                self.kind_labels[kind] = f"{word} Potion"
+            elif typ == "scroll":
+                self.kind_labels[kind] = f"Scroll of {word}"
+            else:
+                self.kind_labels[kind] = f"Ring of {word.title()}"
         return self.kind_labels[kind]
 
     def _appearance_for(self, kind: str, typ: str) -> dict:
@@ -76,7 +87,7 @@ class SerializationMixin:
         return {"col": self._kind_index(kind, typ), "row": self._APPEARANCE_ROW[typ]}
 
     def _mask_item_dict(self, d: Optional[dict]) -> Optional[dict]:
-        # Recursively obscure unidentified potion/scroll types in a serialized
+        # Recursively obscure unidentified potion/scroll/ring types in a serialized
         # item dict: scramble the name, collapse `kind` to the generic category so
         # the client can't read the subtype, and hide subtype fields.
         if not d:
@@ -86,22 +97,24 @@ class SerializationMixin:
             for it in items:
                 self._mask_item_dict(it)
         typ = d.get("type")
-        if typ in ("potion", "scroll"):
-            # Attach the per-run colour/rune sprite from the TRUE kind before any
-            # masking collapses it. The bottle keeps its colour after ID (SPD).
+        if typ in ("potion", "scroll", "ring"):
+            # Attach the per-run colour/rune/gem sprite from the TRUE kind before
+            # any masking collapses it. The visual keeps its colour after ID (SPD).
             d["appearance"] = self._appearance_for(d["kind"], typ)
-        if d.get("type") in ("potion", "scroll") and d.get("kind") not in self.identified_kinds:
-            d["name"] = self._label_for(d["kind"], d["type"])
-            d["kind"] = d["type"]
+        if typ in ("potion", "scroll", "ring") and d.get("kind") not in self.identified_kinds:
+            d["name"] = self._label_for(d["kind"], typ)
+            d["kind"] = typ
             d.pop("effect", None)
+            d.pop("buff_class", None)
             d["level_known"] = False
             d.pop("locale_key", None)
             if "description" in d:
-                d["description"] = (
-                    "You'll have to drink it to find out what it does."
-                    if d["type"] == "potion"
-                    else "You'll have to read it to find out what it does."
-                )
+                if typ == "potion":
+                    d["description"] = "You'll have to drink it to find out what it does."
+                elif typ == "scroll":
+                    d["description"] = "You'll have to read it to find out what it does."
+                else:
+                    d["description"] = "You'll have to wear it to find out what it does."
         return d
 
     def _serialize_player(self, p) -> dict:
@@ -132,6 +145,8 @@ class SerializationMixin:
             if live is not None:
                 node["actions"] = live.actions(p)
                 node["default_action"] = live.default_action()
+                if hasattr(live, "get_reach"):
+                    node["range"] = live.get_reach()
                 node["description"] = live.description(p)
                 node["value"] = live.value(identified=live.kind in self.identified_kinds)
                 lk = item_locale_key(live)

@@ -91,6 +91,10 @@ class Entity(BaseModel):
     burning_accum: float = 0.0
     burning_total_seconds: float = 0.0  # total time burning (for inventory destruction)
 
+    # Poison / Corrosion DoT: accumulating tick timer (seconds) for ~1s intervals
+    poison_accum: float = 0.0
+    corrosion_accum: float = 0.0
+
     # Shields (absorption layers)
     shields: List[Shield] = Field(default_factory=list)
 
@@ -284,9 +288,10 @@ class Action:
     IMBUE = "IMBUE"      # MagesStaff: imbue a wand into the staff
     SUMMON = "SUMMON"    # DriedRose: summon the ghost ally
     DIRECT = "DIRECT"    # DriedRose: direct the ghost ally to a target
+    SHOOT = "SHOOT"      # SpiritBow: fire an arrow
 
 # Actions that require the player to pick a target cell before resolving.
-TARGETED_ACTIONS = {Action.THROW, Action.ZAP, Action.DIRECT}
+TARGETED_ACTIONS = {Action.THROW, Action.ZAP, Action.DIRECT, Action.SHOOT}
 
 
 def _new_id() -> str:
@@ -413,6 +418,12 @@ class EquipableItem(ItemBase):
     def default_action(self) -> Optional[str]:
         return Action.EQUIP
 
+    def on_equip(self, player: "Player") -> None:
+        """Hook called after the item is placed in an equip slot (SPD activate)."""
+
+    def on_unequip(self, player: "Player") -> None:
+        """Hook called before the item is removed from an equip slot (SPD doUnequip)."""
+
     def _info_lines(self, player: Optional["Player"] = None) -> List[str]:
         lines: List[str] = []
         req = f"It requires {self.strength_requirement} points of strength."
@@ -442,6 +453,10 @@ class KindOfWeapon(EquipableItem):
     # Flat DR bonus while wielded: dr_bonus_base + dr_bonus_per_lvl * level
     dr_bonus_base: int = 0
     dr_bonus_per_lvl: int = 0
+    # Sound + pitch played on a successful melee hit (mirrors SPD's
+    # KindOfWeapon.hitSound / hitSoundPitch). Defaults match SPD's HIT / 1.0.
+    hit_sound: str = "HIT_BODY"
+    hit_sound_pitch: float = 1.0
 
     def buffed_lvl(self) -> int:
         # SPD's weapon.buffedLvl(): proc formulas never see a negative
@@ -494,6 +509,8 @@ class Dagger(MeleeWeapon):
     attack_cooldown: float = 0.84
     strength_requirement: int = 9
     surprise_damage_floor: float = 0.75
+    hit_sound: str = "HIT_STAB"
+    hit_sound_pitch: float = 1.1
     DESC: ClassVar[str] = "A quick dagger. Surprise attacks deal more consistent damage."
 
     def dmg_max(self, lvl: int = 0) -> int:
@@ -505,6 +522,8 @@ class WornShortsword(MeleeWeapon):
     name: str = "Worn Shortsword"
     attack_cooldown: float = 1.2
     strength_requirement: int = 10
+    hit_sound: str = "HIT_SLASH"
+    hit_sound_pitch: float = 1.1
     DESC: ClassVar[str] = "A basic shortsword, somewhat the worse for wear. All warriors start with one."
 
 
@@ -521,6 +540,7 @@ def make_named_melee_weapon(name: str, level: int = 0, **kwargs) -> MeleeWeapon:
         strength_requirement=defn.str_req, attack_cooldown=defn.dly_factor,
         range=defn.reach, acc_factor=defn.acc_factor,
         dr_bonus_base=defn.dr_bonus_base, dr_bonus_per_lvl=defn.dr_bonus_per_lvl,
+        hit_sound=defn.hit_sound, hit_sound_pitch=defn.hit_sound_pitch,
         **kwargs,
     )
 
@@ -531,6 +551,54 @@ class Bow(KindOfWeapon):
     range: int = 6
     projectile_type: str = "arrow"
     DESC: ClassVar[str] = "A ranged weapon that fires arrows at distant foes. Equip it, then target an enemy to shoot."
+
+
+class SpiritBow(KindOfWeapon):
+    kind: Literal["spirit_bow"] = "spirit_bow"
+    name: str = "Spirit Bow"
+    unique: bool = True
+    bones: bool = False
+    range: int = 6
+    projectile_type: str = "spirit_arrow"
+    attack_cooldown: float = 1.0
+    acc_factor: float = 1.0
+    strength_requirement: int = 10
+    hit_sound: str = "HIT_ARROW"
+    DESC: ClassVar[str] = "The spirit bow of the Huntress. Its magic arrows grow stronger as you delve deeper."
+
+    def actions(self, player: Optional["Player"] = None) -> List[str]:
+        return [Action.SHOOT, Action.DROP, Action.INFO]
+
+    def default_action(self) -> Optional[str]:
+        return Action.SHOOT
+
+    def uses_targeting(self, action: str) -> bool:
+        return action == Action.SHOOT
+
+    def dmg_min(self, hero_level: int) -> int:
+        return 1 + hero_level // 5
+
+    def dmg_max(self, hero_level: int) -> int:
+        return 6 + int(hero_level / 2.5)
+
+    def is_upgradable(self) -> bool:
+        return False
+
+    def get_reach(self) -> int:
+        bonus = 1 if self.enchantment == "projecting" else 0
+        return self.range + bonus
+
+    def _info_lines(self, player: Optional["Player"] = None) -> List[str]:
+        lines = []
+        if player is not None:
+            hero_lvl = player.level
+            lines.append(f"Deals {self.dmg_min(hero_lvl)}-{self.dmg_max(hero_lvl)} magic damage.")
+        else:
+            lines.append("Deals magic damage that scales with the wielder.")
+        return lines
+
+    def value(self, identified: bool = False) -> int:
+        return 0
 
 
 class Staff(MeleeWeapon):
@@ -742,7 +810,22 @@ class Ring(KindofMisc):
     kind: Literal["ring"] = "ring"
     type: str = "ring"
     category: ClassVar[str] = ItemCategory.RING
+    # Identifies which RingBuff subclass this ring grants (e.g. "accuracy",
+    # "haste"). Used by ring_bonus() to find matching rings across both slots.
+    buff_class: Optional[str] = None
+    # Per-run gem appearance (SPD ItemStatusHandler): assigned by serialization
+    # layer. Unidentified rings display as "Ring of {gem}".
+    gem: str = "garnet"
+    # SPD: rings ID via hero XP while equipped. Starts at 1.0; decremented by
+    # levelPercent per hero level gained. At <=0 the ring auto-identifies.
+    levels_to_id: float = 1.0
     DESC: ClassVar[str] = "A magical ring that grants a passive bonus while worn."
+
+    def upgrade(self) -> "Ring":
+        self.level += 1
+        if _random.randint(0, 2) == 0:
+            self.cursed = False
+        return self
 
     def value(self, identified: bool = False) -> int:
         return _charm_value(self.level, self.level_known, self.cursed, self.cursed_known)
@@ -838,8 +921,8 @@ class DamageWand(Wand):
         from app.engine.entities.base import _random
         return _random.randint(self.min(lvl), self.max(lvl))
 
-    def damage_roll_buffed(self) -> int:
-        return self.damage_roll(self.buffed_lvl())
+    def damage_roll_buffed(self, lvl_bonus: int = 0) -> int:
+        return self.damage_roll(self.buffed_lvl() + lvl_bonus)
 
     def _info_lines(self, player: Optional["Player"] = None) -> List[str]:
         lvl = self.level if self.level_known else 0
@@ -870,7 +953,7 @@ class WandOfMagicMissile(DamageWand):
         if add_event:
             add_event("SPELL_SPRITE", {
                 "x": attacker.pos.x, "y": attacker.pos.y, "index": 2  # SPELL_CHARGE
-            }, floor_id=getattr(attacker, "floor_id", 0))
+            })
         belongings = getattr(attacker, "belongings", None)
         if belongings is None:
             return
@@ -988,6 +1071,10 @@ class WandOfLightning(DamageWand):
             return
         lvl = max(0, self.level)
         proc_chance = (lvl + 1) / (lvl + 4)
+        # SPD procChanceMultiplier: 2.0 if attacker has EmpoweredStrikeTracker
+        if has_buff(attacker.buffs, "empowered_strike_tracker"):
+            proc_chance *= 2.0
+            remove_buff(attacker.buffs, "empowered_strike_tracker")
         if _random.random() < proc_chance:
             attacker.add_buff("lightning_charge", duration=10.0, level=1)
             if add_event:
@@ -1093,20 +1180,55 @@ class WandOfCorrosion(Wand):
     kind: Literal["wand_corrosion"] = "wand_corrosion"
     name: str = "Wand of Corrosion"
     type: str = "wand"
-    damage: int = 3
+    damage: int = 0
     charges: int = 3
     max_charges: int = 3
     projectile_type: str = "corrosion"
+    wand_sound: str = "GAS"
     staff_name: str = "Staff of Corrosion"
     DESC: ClassVar[str] = "A wand that spews corrosive gas."
 
+    def _info_lines(self, player: Optional["Player"] = None) -> List[str]:
+        lvl = self.level if self.level_known else 0
+        return [
+            f"Creates a cloud of corrosive gas (tier {3 + lvl * 2}).",
+            f"It currently holds {self.charges} of {self.max_charges} charges.",
+        ]
+
     def on_hit(self, attacker, defender, damage, floor_mobs=None, tile_x=None, tile_y=None, floor=None, add_event=None):
-        if defender is None:
+        lvl = max(0, self.buffed_lvl())
+        if tile_x is not None and tile_y is not None:
+            cx, cy = tile_x, tile_y
+        elif defender is not None:
+            cx, cy = defender.pos.x, defender.pos.y
+        else:
             return
-        lvl = max(0, self.level)
-        proc_chance = (lvl + 1) / (lvl + 3)
-        if _random.random() < proc_chance:
-            defender.add_buff("ooze", duration=5.0, level=1)
+        if floor is None:
+            return
+        strength = 3 + lvl * 2
+        cells = set()
+        volume = {}
+        for dy in (-1, 0, 1):
+            for dx in (-1, 0, 1):
+                nx, ny = cx + dx, cy + dy
+                if 0 <= nx < floor.width and 0 <= ny < floor.height:
+                    if floor.flags and not floor.flags.solid[ny][nx]:
+                        cells.add((nx, ny))
+                        volume[(nx, ny)] = strength
+        if not cells:
+            return
+        for bid in list(floor.blob_areas.keys()):
+            b = floor.blob_areas[bid]
+            if b.get("type") == "corrosive_gas" and b.get("cells", set()) & cells:
+                del floor.blob_areas[bid]
+        blob_id = f"wand_corrosion_{cx}_{cy}"
+        floor.blob_areas[blob_id] = {
+            "type": "corrosive_gas", "cells": cells, "volume": volume,
+        }
+        cell_list = [(c[0], c[1], volume.get(c, 1)) for c in cells]
+        if add_event:
+            add_event("BLOB_UPDATE", {"id": blob_id, "type": "corrosive_gas", "cells": cell_list})
+            add_event("PLAY_SOUND", {"sound": "GAS"})
 
 
 class WandOfCorruption(Wand):
@@ -1602,7 +1724,7 @@ class ScrollOfRemoveCurse(Scroll):
 class ScrollOfRecharging(Scroll):
     kind: Literal["scroll_of_recharging"] = "scroll_of_recharging"
     name: str = "Scroll of Recharging"
-    DESC: ClassVar[str] = "Reading this scroll fully recharges your wands."
+    DESC: ClassVar[str] = "Reading this scroll temporarily speeds up the recharge rate of your wands."
 
 
 class ScrollOfLullaby(Scroll):
@@ -2012,10 +2134,21 @@ class PotionBandolier(Bag):
 # Keyed by `kind`, so member order is irrelevant and nested items serialize as
 # their concrete type. Server never validates inbound items, so this exists only
 # for clean outbound dumps + a stable client contract.
+from app.engine.entities.rings import (
+    RingOfAccuracy, RingOfEvasion, RingOfHaste, RingOfFuror,
+    RingOfMight, RingOfTenacity, RingOfEnergy, RingOfArcana, RingOfSharpshooting,
+)  # noqa: E402
+from app.engine.entities.rings_tier3 import (
+    RingOfForce, RingOfElements, RingOfWealth,
+)  # noqa: E402
+
 AnyItem = Annotated[
     Union[
-        MeleeWeapon, Dagger, WornShortsword, Bow, Staff, MissileWeapon,
-        Armor, Ring, Artifact, BrokenSeal, CloakOfShadows, DriedRose,
+        MeleeWeapon, Dagger, WornShortsword, Bow, SpiritBow, Staff, MissileWeapon,
+        Armor, Ring, RingOfAccuracy, RingOfEvasion, RingOfHaste, RingOfFuror,
+        RingOfMight, RingOfTenacity, RingOfEnergy, RingOfArcana, RingOfSharpshooting,
+        RingOfForce, RingOfElements, RingOfWealth,
+        Artifact, BrokenSeal, CloakOfShadows, DriedRose,
         DamageWand,
         WandOfMagicMissile, WandOfFireblast, WandOfFrost, WandOfLightning,
         WandOfDisintegration, WandOfPrismaticLight, WandOfBlastWave,
@@ -2206,6 +2339,10 @@ class Mob(Entity):
     # to arm the windup once per engagement); see GameInstance.update_tick.
     aggro_windup: float = 1.0
     engaged: bool = False
+    # Last known position of the mob's target. When the target goes invisible,
+    # the mob moves toward this position before degrading to wandering (mirrors
+    # SPD's HUNTING state where the mob paths to the last-seen cell).
+    last_known_target_pos: Optional[Position] = None
     # Summoned ally (e.g. Rogue's Shadow Clone): the owning player's id and the
     # remaining real-time lifespan in seconds (0 = permanent until killed).
     owner_id: Optional[str] = None
@@ -2286,6 +2423,10 @@ class Player(Entity):
     clobber_used: bool = False
     parry_used: bool = False
 
+    # Ring of Wealth bonus drop counters (SPD TriesToDrop / DropsToEquip)
+    wealth_tries_to_drop: float = 0.0
+    wealth_drops_to_equip: int = 0
+
     # Broken Seal (all Warriors): cooldown (in ticks) before the seal can
     # trigger its shield again. 150 on trigger, can go negative via Lethal
     # Defense (instant re-trigger once <= 0).
@@ -2329,10 +2470,6 @@ class Player(Entity):
     momentum_stacks: int = 0
     _momentum_decay_accum: float = 0.0
     freerun_seconds: float = 0.0
-    # Scroll of Recharging: while the "recharging" buff is active, accumulates
-    # real seconds toward the next wand charge gained (see tick.py).
-    _recharging_accum: float = 0.0
-
     @property
     def talent_info(self):
         return self.subclass_info.talent_info
@@ -2424,6 +2561,9 @@ class Player(Entity):
             return w.dmg_min(w.level)
         elif isinstance(w, KindOfWeapon):
             return w.damage
+        from app.engine.entities.rings_tier3 import using_force, force_damage_range
+        if using_force(self):
+            return force_damage_range(self)[0]
         return self.damage_min
 
     def get_damage_max(self) -> int:
@@ -2432,6 +2572,9 @@ class Player(Entity):
             return w.dmg_max(w.level)
         elif isinstance(w, KindOfWeapon):
             return w.damage
+        from app.engine.entities.rings_tier3 import using_force, force_damage_range
+        if using_force(self):
+            return force_damage_range(self)[1]
         return self.damage_max
 
     def get_surprise_damage_floor(self) -> float:
@@ -2441,11 +2584,14 @@ class Player(Entity):
         return 0.0
 
     def get_effective_strength(self) -> int:
-        """Strongman (warrior T3): effective STR = STR * (1 + 0.03 + 0.05*pts)."""
+        """Strongman (warrior T3): effective STR = STR * (1 + 0.03 + 0.05*pts).
+        Ring of Might: +ring_bonus (unbuffed)."""
         base = self.strength
         sm = self.subclass_info.talent_info.level(Talent.STRONGMAN)
         if sm > 0:
             base += int(base * (0.03 + 0.05 * sm))
+        from app.engine.entities.rings import might_str_bonus
+        base += might_str_bonus(self)
         return base
 
     def get_berserk_shield_amount(self) -> int:
@@ -2521,6 +2667,8 @@ class Player(Entity):
         ea = self.subclass_info.talent_info.level(Talent.EVASIVE_ARMOR)
         if ea > 0 and self.freerun_seconds > 0:
             base += self.level // 2 + excess_str * ea
+        from app.engine.entities.rings import evasion_multiplier
+        base = int(base * evasion_multiplier(self))
         return base
 
     def set_heal(self, amount: float, percent_per_tick: float, flat_per_tick: float):
@@ -2539,7 +2687,8 @@ class Player(Entity):
         return base
 
     def get_total_max_hp(self) -> int:
-        return self.max_hp
+        from app.engine.entities.rings import might_ht_multiplier
+        return int(self.max_hp * might_ht_multiplier(self))
 
     def add_to_inventory(self, item: ItemBase) -> bool:
         ok = self.belongings.backpack.collect(item)
@@ -2580,9 +2729,11 @@ class Player(Entity):
             return False
         self.belongings.backpack.detach_all(item_id)
         prev = getattr(self.belongings, slot)
-        setattr(self.belongings, slot, item)
         if prev is not None:
+            prev.on_unequip(self)
             self.belongings.backpack.collect(prev)
+        setattr(self.belongings, slot, item)
+        item.on_equip(self)
         return True
 
     def unequip_item(self, item_id: str) -> bool:
@@ -2593,6 +2744,7 @@ class Player(Entity):
                     return False  # cursed gear can't be removed (SPD)
                 if not self.belongings.backpack.can_hold(cur):
                     return False
+                cur.on_unequip(self)
                 setattr(self.belongings, slot, None)
                 self.belongings.backpack.collect(cur)
                 return True
@@ -2657,9 +2809,22 @@ class Player(Entity):
             self.attack_skill += 1
             self.defense_skill += 1
             leveled_up = True
+            self._try_id_rings()
         if self.level >= self.MAX_LEVEL:
             self.experience = 0
         return leveled_up
+
+    def _try_id_rings(self) -> None:
+        """SPD Ring.onHeroGainExp: decrement levelsToID by 1.0 per hero level
+        for each equipped un-identified ring. Auto-identifies at <=0."""
+        for slot in ("ring", "misc"):
+            ring = getattr(self.belongings, slot, None)
+            if not isinstance(ring, Ring) or ring.is_identified():
+                continue
+            ring.levels_to_id -= 1.0
+            if ring.levels_to_id <= 0:
+                ring.level_known = True
+                ring.cursed_known = True
 
 
 # Legacy aliases — keep existing imports/constructors working during migration.

@@ -6,6 +6,9 @@ import hitArrowSound from '../assets/pixel-dungeon/audio/hit_arrow.mp3';
 import hitSlashSound from '../assets/pixel-dungeon/audio/hit_slash.mp3';
 import hitBodySound from '../assets/pixel-dungeon/audio/hit.mp3';
 import hitStrongSound from '../assets/sounds/hit_strong.mp3';
+import hitStabSound from '../assets/sounds/hit_stab.mp3';
+import hitCrushSound from '../assets/sounds/hit_crush.mp3';
+import hitParrySound from '../assets/sounds/hit_parry.mp3';
 import healthWarnSound from '../assets/pixel-dungeon/audio/health_warn.mp3';
 import clickSound from '../assets/pixel-dungeon/audio/click.mp3';
 import itemSound from '../assets/sounds/item.mp3';
@@ -39,7 +42,7 @@ import meldSound from '../assets/sounds/meld.mp3';
 import gasSound from '../assets/sounds/gas.mp3';
 import shatterSound from '../assets/sounds/shatter.mp3';
 import bonesSound from '../assets/sounds/bones.mp3';
-import { effectiveSfxVolume } from '../menu/menuSettings';
+import { effectiveSfxVolume, subscribe } from '../menu/menuSettings';
 
 class AudioManager {
     constructor() {
@@ -53,6 +56,8 @@ class AudioManager {
         this.masterGain.gain.value = effectiveSfxVolume();
         this.masterGain.connect(this.audioCtx.destination);
 
+        subscribe(() => { this.masterGain.gain.value = effectiveSfxVolume(); });
+
         this.loadSound('ATTACK_BOW', atkBowSound);
         this.loadSound('THROW', throwSound);
         this.loadSound('MISS', throwSound);
@@ -63,6 +68,9 @@ class AudioManager {
         this.loadSound('STEP_GRASS', grassStepSound);
         this.loadSound('HIT_ARROW', hitArrowSound);
         this.loadSound('HIT_SLASH', hitSlashSound);
+        this.loadSound('HIT_STAB', hitStabSound);
+        this.loadSound('HIT_CRUSH', hitCrushSound);
+        this.loadSound('HIT_PARRY', hitParrySound);
         this.loadSound('HIT_STRONG', hitStrongSound);
         this.loadSound('HIT_BODY', hitBodySound);
         this.loadSound('HEALTH_WARN', healthWarnSound);

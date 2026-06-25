@@ -213,6 +213,7 @@ export interface RangedAttackEvent {
     target_hp_ratio?: number;
     sound?: string;
     is_wand?: boolean;
+    is_bow?: boolean;
     /** Serialized thrown item, present for thrown inventory items (not wands). */
     item?: SerializedItem;
   };
@@ -252,7 +253,19 @@ export interface HealEvent {
 
 export interface TrapTriggeredEvent {
   type: 'TRAP_TRIGGERED';
-  data: { player: string; trap: string; damage: number };
+  data: { player: string; trap: string; damage: number; x?: number; y?: number };
+}
+
+/** Single lightning arc from source cell to target cell. */
+export interface LightningArcEvent {
+  type: 'LIGHTNING_ARC';
+  data: { source_x: number; source_y: number; target_x: number; target_y: number };
+}
+
+/** DM-300 stepped on an inactive trap and gained a barrier. */
+export interface DM300TrapStepEvent {
+  type: 'DM300_TRAP_STEP';
+  data: { mob: string; x: number; y: number };
 }
 
 export interface DrinkEvent {
@@ -823,7 +836,9 @@ export type GameEvent =
   | LockedEvent
   | OpenChestEvent
   | CrystalChestShatterEvent
-  | SpawnMobEvent;
+  | SpawnMobEvent
+  | LightningArcEvent
+  | DM300TrapStepEvent;
 
 export type GameEventType = GameEvent['type'];
 

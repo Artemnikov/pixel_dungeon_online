@@ -222,6 +222,7 @@ class ConnectionManager:
                         energy=energy,
                         has_amulet=has_amulet,
                         boss_lurking=boss_lurking,
+                        mapped_tiles=state.get("mapped_tiles", []),
                         events=game.filter_events_for_player(events, player_id),
                     )
                     await connection.send_json(update.model_dump(exclude_none=True))

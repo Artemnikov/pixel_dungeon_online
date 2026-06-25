@@ -173,26 +173,27 @@ export default function InventoryPane({ belongings, gold, energy, strength, onOp
             itemFilter={itemFilter}
           />
         ))}
-        <div className="inv-currency">
-          <span className="inv-gold">{gold ?? 0}<i className="inv-gold-icon" /></span>
-          {energy > 0 && <span className="inv-energy">{energy}<i className="inv-energy-icon" /></span>}
+        <div className="inv-equip-right">
+          <div className="inv-currency">
+            <span className="inv-gold">{gold ?? 0}<i className="inv-gold-icon" /></span>
+            {energy > 0 && <span className="inv-energy">{energy}<i className="inv-energy-icon" /></span>}
+          </div>
+          {bags.length > 1 && (
+            <div className="inv-bag-tabs">
+              {bags.map(b => (
+                <button
+                  key={b.id}
+                  className={`inv-bag-tab ${b.id === effectiveBagId ? 'active' : ''}`}
+                  onClick={() => { AudioManager.play('CLICK'); setActiveBagId(b.id); }}
+                  title={b.name || 'Backpack'}
+                >
+                  <ItemIcon item={b.id === backpack.id ? { name: 'Backpack', type: 'bag' } : b} size={20} />
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
-
-      {bags.length > 1 && (
-        <div className="inv-bag-tabs">
-          {bags.map(b => (
-            <button
-              key={b.id}
-              className={`inv-bag-tab ${b.id === effectiveBagId ? 'active' : ''}`}
-              onClick={() => { AudioManager.play('CLICK'); setActiveBagId(b.id); }}
-              title={b.name || 'Backpack'}
-            >
-              <ItemIcon item={b.id === backpack.id ? { name: 'Backpack', type: 'bag' } : b} size={20} />
-            </button>
-          ))}
-        </div>
-      )}
 
       <div className="inv-grid">
         {items.map(item => (
