@@ -454,6 +454,46 @@ def _rolled_item_to_item(ri: RolledItem, cx: int, cy: int) -> Item:
     if ri.category == "STONE":
         return Stone(id=iid, pos=pos, damage=1, range=5)
     if ri.category in ("WAND",):
+        _WAND_CLASSES = [
+            "wand_magic_missile",     # 0
+            "wand_lightning",         # 1
+            "wand_disintegration",    # 2
+            "wand_fireblast",         # 3
+            "wand_corrosion",         # 4
+            "wand_blast_wave",        # 5
+            "wand_living_earth",      # 6
+            "wand_frost",             # 7
+            "wand_prismatic_light",   # 8
+            "wand_warding",            # 9
+            "wand_transfusion",       # 10
+            "wand_corruption",        # 11
+            "wand_regrowth",           # 12
+        ]
+        from app.engine.entities.base import (
+            WandOfMagicMissile, WandOfLightning, WandOfDisintegration,
+            WandOfFireblast, WandOfCorrosion, WandOfBlastWave,
+            WandOfLivingEarth, WandOfFrost, WandOfPrismaticLight,
+            WandOfWarding, WandOfTransfusion, WandOfCorruption, WandOfRegrowth,
+        )
+        _WAND_MAP = [
+            WandOfMagicMissile,
+            WandOfLightning,
+            WandOfDisintegration,
+            WandOfFireblast,
+            WandOfCorrosion,
+            WandOfBlastWave,
+            WandOfLivingEarth,
+            WandOfFrost,
+            WandOfPrismaticLight,
+            WandOfWarding,
+            WandOfTransfusion,
+            WandOfCorruption,
+            WandOfRegrowth,
+        ]
+        idx = ri.item_index
+        if 0 <= idx < len(_WAND_MAP):
+            kind = _WAND_CLASSES[idx]
+            return _WAND_MAP[idx](id=iid, pos=pos, name=kind, level=ri.level)
         return Wand(id=iid, pos=pos, name="Wand")
     if ri.category in WEP_TIER_ORDER:
         return _make_melee_weapon(ri.category, ri.item_index, ri.level, iid, pos)

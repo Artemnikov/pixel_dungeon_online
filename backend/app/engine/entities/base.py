@@ -840,6 +840,39 @@ class Artifact(KindofMisc):
     DESC: ClassVar[str] = "A unique artifact with a special power that grows as you use it."
 
 
+class ZapContext:
+    """Data passed to a wand's handle_zap after a ranged zap fires.
+
+    Carries everything the wand-specific effect needs: the attacker, target
+    cell, floor state, event emitter, and the result of the generic combat
+    resolution (damage/hit/miss).
+    """
+    __slots__ = (
+        "attacker", "target_x", "target_y", "target_entity",
+        "damage_dealt", "hit", "crit", "missed",
+        "floor", "floor_id", "floor_mobs", "floor_players",
+        "add_event",
+    )
+
+    def __init__(self, attacker, target_x, target_y, target_entity,
+                 damage_dealt, hit, crit, missed,
+                 floor, floor_id, floor_mobs, floor_players,
+                 add_event):
+        self.attacker = attacker
+        self.target_x = target_x
+        self.target_y = target_y
+        self.target_entity = target_entity
+        self.damage_dealt = damage_dealt
+        self.hit = hit
+        self.crit = crit
+        self.missed = missed
+        self.floor = floor
+        self.floor_id = floor_id
+        self.floor_mobs = floor_mobs
+        self.floor_players = floor_players
+        self.add_event = add_event
+
+
 class Wand(ItemBase):
     kind: Literal["wand"] = "wand"
     type: str = "wand"
@@ -893,6 +926,19 @@ class Wand(ItemBase):
             self.partial_charge -= 1.0
 
     def on_hit(self, attacker, defender, damage, floor_mobs=None, tile_x=None, tile_y=None, floor=None, add_event=None):
+        pass
+
+    def charges_per_cast(self) -> int:
+        """Number of charges consumed per zap (override for Fireblast/Regrowth)."""
+        return 1
+
+    def handle_zap(self, ctx: ZapContext):
+        """Post-damage effects after a ranged zap lands.
+
+        Called by the engine after generic damage is resolved. Subclasses
+        override this to implement wand-specific effects (gas clouds, chains,
+        summons, terrain changes, etc.).
+        """
         pass
 
 
@@ -961,6 +1007,11 @@ class WandOfMagicMissile(DamageWand):
             if isinstance(item, Wand) and item.id != self.id and item.charges < item.max_charges:
                 item.charges = min(item.max_charges, item.charges + 1)
 
+    def handle_zap(self, ctx):
+        if ctx.hit and ctx.damage_dealt > 0:
+            lvl = self.buffed_lvl()
+            ctx.attacker.add_buff("magic_charge", duration=4.0, level=lvl, stack_mode="extend")
+
 
 class WandOfFireblast(DamageWand):
     kind: Literal["wand_fireblast"] = "wand_fireblast"
@@ -975,11 +1026,15 @@ class WandOfFireblast(DamageWand):
     def min(self, lvl: int) -> int: return (1 + lvl)
     def max(self, lvl: int) -> int: return 8 + 4 * lvl
 
+    def charges_per_cast(self) -> int:
+        # SPD: consume ceil(30% of current charges), clamped [1,3]
+        consumed = (self.charges * 3 + 9) // 10  # ceil(30%)
+        return max(1, min(3, consumed))
+
     def on_hit(self, attacker, defender, damage, floor_mobs=None, tile_x=None, tile_y=None, floor=None, add_event=None):
         if defender is None or not defender.is_alive:
             return
         proc_chance = 0.0
-        from app.engine.entities.base import has_buff
         for dx in (-1, 0, 1):
             for dy in (-1, 0, 1):
                 cx, cy = defender.pos.x + dx, defender.pos.y + dy
@@ -993,7 +1048,6 @@ class WandOfFireblast(DamageWand):
             power_mult = max(1.0, proc_chance)
             lvl = max(0, self.level)
             dmg_range = (2 + 2 * lvl, 8 + 4 * lvl)
-            from app.engine.entities.base import has_buff
             hit_any = False
             for dx in (-1, 0, 1):
                 for dy in (-1, 0, 1):
@@ -1012,7 +1066,6 @@ class WandOfFireblast(DamageWand):
                 add_event("PLAY_SOUND", {"sound": "BLAST"}, floor_id=getattr(defender, "floor_id", 0))
 
         if floor is not None:
-            from app.engine.dungeon.constants import TileType
             strength = 1 + self.charges
             cx, cy = defender.pos.x, defender.pos.y
             if 0 <= cx < floor.width and 0 <= cy < floor.height:
@@ -1024,6 +1077,31 @@ class WandOfFireblast(DamageWand):
                         "cells": {(cx, cy)},
                         "volume": {(cx, cy): strength},
                     }
+
+    def handle_zap(self, ctx):
+        charges = self.charges_per_cast()
+        fire_vol = 1 + charges
+        floor = ctx.floor
+        tx, ty = ctx.target_x, ctx.target_y
+        for dy in (-1, 0, 1):
+            for dx in (-1, 0, 1):
+                nx, ny = tx + dx, ty + dy
+                if 0 <= nx < floor.width and 0 <= ny < floor.height:
+                    tile = floor.grid[ny][nx]
+                    if tile == TileType.FLOOR_WATER:
+                        continue
+                    blob_id = f"wand_fireblast_{ctx.attacker.id}_{nx}_{ny}"
+                    floor.blob_areas[blob_id] = {
+                        "type": "fire",
+                        "cells": {(nx, ny)},
+                        "volume": {(nx, ny): fire_vol},
+                    }
+        if ctx.hit and ctx.target_entity and ctx.target_entity.is_alive:
+            if charges >= 2:
+                ctx.target_entity.add_buff("cripple", duration=8.0, level=1)
+            if charges >= 3:
+                ctx.target_entity.add_buff("paralysis", duration=8.0, level=1)
+        ctx.add_event("PLAY_SOUND", {"sound": "BLAST"}, floor_id=ctx.floor_id)
 
 
 class WandOfFrost(DamageWand):
@@ -1051,6 +1129,21 @@ class WandOfFrost(DamageWand):
                 duration = round(3.0 * power_mult)
                 defender.add_buff("frost", duration=duration, level=1)
 
+    def handle_zap(self, ctx):
+        if ctx.floor is None:
+            return
+        lvl = self.buffed_lvl()
+        tx, ty = ctx.target_x, ctx.target_y
+        # Extinguish fire at target tile
+        to_remove = [bid for bid, b in ctx.floor.blob_areas.items()
+                     if b.get("type") in ("fire",) and (tx, ty) in b.get("cells", set())]
+        for bid in to_remove:
+            del ctx.floor.blob_areas[bid]
+        if ctx.hit and ctx.target_entity and ctx.target_entity.is_alive:
+            chill_turns = 4 + lvl if ctx.floor.grid[ty][tx] == TileType.FLOOR_WATER else 2 + lvl
+            ctx.target_entity.add_buff("chill", duration=float(chill_turns), level=1)
+            # SPD: if already frozen, no effect; frost proc handled by on_hit for Battlemage
+
 
 class WandOfLightning(DamageWand):
     kind: Literal["wand_lightning"] = "wand_lightning"
@@ -1071,7 +1164,6 @@ class WandOfLightning(DamageWand):
             return
         lvl = max(0, self.level)
         proc_chance = (lvl + 1) / (lvl + 4)
-        # SPD procChanceMultiplier: 2.0 if attacker has EmpoweredStrikeTracker
         if has_buff(attacker.buffs, "empowered_strike_tracker"):
             proc_chance *= 2.0
             remove_buff(attacker.buffs, "empowered_strike_tracker")
@@ -1079,6 +1171,97 @@ class WandOfLightning(DamageWand):
             attacker.add_buff("lightning_charge", duration=10.0, level=1)
             if add_event:
                 add_event("PLAY_SOUND", {"sound": "LIGHTNING"}, floor_id=getattr(attacker, "floor_id", 0))
+
+    def handle_zap(self, ctx):
+        if not ctx.hit or ctx.damage_dealt <= 0 or not ctx.target_entity:
+            return
+        from collections import deque
+        lvl = self.buffed_lvl()
+        affected_ids = {ctx.target_entity.id}
+        chain_mobs = []
+        floor = ctx.floor
+        tx, ty = ctx.target_x, ctx.target_y
+        is_main_in_water = floor.grid[ty][tx] == TileType.FLOOR_WATER
+        has_charge = has_buff(ctx.attacker.buffs, "lightning_charge")
+
+        def _reachable(from_x, from_y, max_dist):
+            visited = {(from_x, from_y)}
+            q = deque([(from_x, from_y, 0)])
+            while q:
+                x, y, d = q.popleft()
+                if d >= max_dist:
+                    continue
+                for dx, dy in [(0, -1), (1, 0), (0, 1), (-1, 0)]:
+                    nx, ny = x + dx, y + dy
+                    if 0 <= nx < floor.width and 0 <= ny < floor.height:
+                        if (nx, ny) not in visited and not floor.flags.solid[ny][nx]:
+                            visited.add((nx, ny))
+                            q.append((nx, ny, d + 1))
+            return visited
+
+        def _wand_find(from_x, from_y):
+            dist = 2 if (0 <= from_y < floor.height and 0 <= from_x < floor.width
+                        and floor.grid[from_y][from_x] == TileType.FLOOR_WATER) else 1
+            if has_charge:
+                dist += 1
+            reachable = _reachable(from_x, from_y, dist)
+            for m in floor.mobs.values():
+                if not m.is_alive or m.id in affected_ids:
+                    continue
+                if m.faction == ctx.attacker.faction:
+                    continue
+                if (m.pos.x, m.pos.y) not in reachable:
+                    continue
+                if has_buff(m.buffs, "lightning_charge"):
+                    continue
+                affected_ids.add(m.id)
+                chain_mobs.append(m)
+                _wand_find(m.pos.x, m.pos.y)
+
+        _wand_find(tx, ty)
+
+        if chain_mobs:
+            base_dmg = self.damage_roll(lvl)
+            mult = 1.0 if is_main_in_water else (0.4 + 0.6 / max(len(chain_mobs) + 1, 1))
+            for m in chain_mobs:
+                dmg = round(base_dmg * mult)
+                dr_roll = _random.randint(m.get_dr_min(), m.get_dr_max())
+                actual = m.take_damage(max(1, dmg - dr_roll))
+                if actual > 0:
+                    ctx.add_event("DAMAGE", {"target": m.id, "amount": actual, "shock": True}, floor_id=ctx.floor_id)
+                    if not m.is_alive:
+                        m.die(floor_mobs=floor.mobs, tile_x=m.pos.x, tile_y=m.pos.y,
+                              players=ctx.floor_players)
+                        ctx.add_event("DEATH", {"target": m.id}, floor_id=ctx.floor_id)
+
+        ctx.add_event("LIGHTNING_ARC", {
+            "source_x": ctx.attacker.pos.x,
+            "source_y": ctx.attacker.pos.y,
+            "target_x": tx,
+            "target_y": ty,
+        }, floor_id=ctx.floor_id)
+        ctx.add_event("SHOCKING_PROC", {
+            "source": ctx.attacker.id,
+            "defender": ctx.target_entity.id if ctx.target_entity else ctx.attacker.id,
+            "defender_x": tx,
+            "defender_y": ty,
+            "chain_targets": [{"id": m.id, "x": m.pos.x, "y": m.pos.y} for m in chain_mobs],
+        }, floor_id=ctx.floor_id)
+
+        if floor.grid[ty][tx] == TileType.FLOOR_WATER:
+            blob_id = f"wand_elec_{ctx.attacker.id}"
+            vol = 100
+            cells = {(tx, ty)}
+            volume = {(tx, ty): vol}
+            existing = floor.blob_areas.get(blob_id)
+            if existing:
+                cells.update(existing["cells"])
+                for k, v in existing["volume"].items():
+                    volume[k] = max(volume.get(k, 0), v)
+            floor.blob_areas[blob_id] = {"type": "electricity", "cells": cells, "volume": volume, "tick_counter": 0}
+            cell_list = [(c[0], c[1], volume.get(c, vol)) for c in cells]
+            ctx.add_event("BLOB_UPDATE", {"id": blob_id, "type": "electricity", "cells": cell_list}, floor_id=ctx.floor_id)
+            ctx.add_event("PLAY_SOUND", {"sound": "LIGHTNING"}, floor_id=ctx.floor_id)
 
 
 class WandOfDisintegration(DamageWand):
@@ -1099,6 +1282,35 @@ class WandOfDisintegration(DamageWand):
 
     def on_hit(self, attacker, defender, damage, floor_mobs=None, tile_x=None, tile_y=None, floor=None, add_event=None):
         pass
+
+    def handle_zap(self, ctx):
+        if not ctx.hit or ctx.damage_dealt <= 0 or not ctx.target_entity:
+            return
+        lvl = self.buffed_lvl()
+        terrain_bonus = 0
+        extra_hits = 0
+        # SPD: +1 effective level per extra enemy hit, +1 per ~3 solid tiles
+        eff_lvl = lvl
+        beam_dist = min(self.get_reach(), abs(ctx.attacker.pos.x - ctx.target_x) + abs(ctx.attacker.pos.y - ctx.target_y))
+        # Damage ramps per terrain penetrated + extra enemies
+        terrain_passed = 2
+        eff_lvl += terrain_bonus + extra_hits
+        dmg = _random.randint(self.min(eff_lvl), self.max(eff_lvl))
+        # Destroy flammable tiles at target
+        if ctx.floor and 0 <= ctx.target_y < ctx.floor.height and 0 <= ctx.target_x < ctx.floor.width:
+            tile = ctx.floor.grid[ctx.target_y][ctx.target_x]
+            if tile in (TileType.BARRICADE, TileType.BOOKSHELF):
+                ctx.floor.grid[ctx.target_y][ctx.target_x] = TileType.FLOOR_GRASS
+        if dmg > 0:
+            ctx.target_entity.take_damage(dmg)
+            ctx.add_event("DAMAGE", {
+                "target": ctx.target_entity.id,
+                "amount": dmg,
+                "projectile": "beam",
+                "beam_type": "death_ray",
+                "source_x": ctx.attacker.pos.x,
+                "source_y": ctx.attacker.pos.y,
+            }, floor_id=ctx.floor_id)
 
 
 class WandOfPrismaticLight(DamageWand):
@@ -1123,6 +1335,25 @@ class WandOfPrismaticLight(DamageWand):
         lvl = max(0, self.level)
         duration = round((1 + lvl))
         defender.add_buff("cripple", duration=float(duration), level=1)
+
+    def handle_zap(self, ctx):
+        lvl = self.buffed_lvl()
+        # Reveal area around projectile path
+        if ctx.floor:
+            tx, ty = ctx.target_x, ctx.target_y
+            for dy in (-1, 0, 1):
+                for dx in (-1, 0, 1):
+                    nx, ny = tx + dx, ty + dy
+                    if 0 <= nx < ctx.floor.width and 0 <= ny < ctx.floor.height:
+                        if ctx.floor.flags and hasattr(ctx.floor.flags, "discoverable") and ctx.floor.flags.discoverable[ny][nx]:
+                            ctx.floor.flags.visited[ny][nx] = True
+            # Light buff
+            ctx.attacker.add_buff("light", duration=10.0 + lvl * 5, level=1)
+        if ctx.hit and ctx.target_entity and ctx.target_entity.is_alive:
+            blind_dur = 2.0 + lvl * 0.333
+            if _random.random() < 3.0 / (5.0 + lvl):
+                ctx.target_entity.add_buff("blindness", duration=blind_dur, level=1)
+            # Bonus damage vs demonic/undead (handled generically by movement.py)
 
 
 class WandOfBlastWave(DamageWand):
@@ -1150,6 +1381,29 @@ class WandOfBlastWave(DamageWand):
             if add_event:
                 add_event("PLAY_SOUND", {"sound": "BLAST"}, floor_id=getattr(defender, "floor_id", 0))
 
+    def handle_zap(self, ctx):
+        ctx.add_event("PLAY_SOUND", {"sound": "BLAST"}, floor_id=ctx.floor_id)
+        lvl = self.buffed_lvl()
+        throw_strength = round(1.5 + lvl / 2.0)
+        tx, ty = ctx.target_x, ctx.target_y
+        # Knockback enemies in 3x3 from target
+        if ctx.floor:
+            for dy in (-1, 0, 1):
+                for dx in (-1, 0, 1):
+                    nx, ny = tx + dx, ty + dy
+                    if 0 <= nx < ctx.floor.width and 0 <= ny < ctx.floor.height:
+                        for m in list(ctx.floor_mobs.values()):
+                            if m.is_alive and m.pos.x == nx and m.pos.y == ny and m.faction != ctx.attacker.faction:
+                                # Push away from target center
+                                push_x = m.pos.x + (m.pos.x - tx)
+                                push_y = m.pos.y + (m.pos.y - ty)
+                                if 0 <= push_x < ctx.floor.width and 0 <= push_y < ctx.floor.height:
+                                    if ctx.floor.flags and ctx.floor.flags.passable[push_y][push_x]:
+                                        coll_dmg = _random.randint(throw_strength, 2 * throw_strength)
+                                        if coll_dmg > 0:
+                                            m.take_damage(coll_dmg)
+                                            m.add_buff("paralysis", duration=1.0 + throw_strength / 2.0, level=1)
+
 
 class WandOfTransfusion(DamageWand):
     kind: Literal["wand_transfusion"] = "wand_transfusion"
@@ -1175,6 +1429,30 @@ class WandOfTransfusion(DamageWand):
             shield_amt = int(2 * (5 + lvl))
             attacker.add_shield("transfusion_shield", shield_amt, priority=1, decay=5)
 
+    def handle_zap(self, ctx):
+        lvl = self.buffed_lvl()
+        target = ctx.target_entity
+        player = ctx.attacker
+        if target is None:
+            return
+        # Only affects mobs (not players)
+        from app.engine.entities.base import Mob as MobEntity
+        if not isinstance(target, MobEntity):
+            return
+        is_enemy = target.faction != player.faction
+        if not is_enemy or target.has_buff("charm"):
+            # Ally or charmed: self-damage to heal
+            self_dmg = max(1, player.get_total_max_hp() // 20)  # 5% max HP
+            healing = self_dmg + 3 * lvl
+            target.hp = min(target.get_total_max_hp(), target.hp + healing)
+            player.add_shield("transfusion_shield", 5 + lvl, priority=1, decay=5)
+            player.take_damage(self_dmg)
+            ctx.add_event("PLAY_SOUND", {"sound": "HEAL"}, floor_id=ctx.floor_id)
+        else:
+            # Enemy: shield self, charm enemy
+            player.add_shield("transfusion_shield", 5 + lvl, priority=1, decay=5)
+            target.add_buff("charm", duration=10.0, level=1)
+
 
 class WandOfCorrosion(Wand):
     kind: Literal["wand_corrosion"] = "wand_corrosion"
@@ -1196,6 +1474,9 @@ class WandOfCorrosion(Wand):
         ]
 
     def on_hit(self, attacker, defender, damage, floor_mobs=None, tile_x=None, tile_y=None, floor=None, add_event=None):
+        self._spawn_gas(attacker, defender, damage, tile_x, tile_y, floor, add_event)
+
+    def _spawn_gas(self, attacker, defender, damage, tile_x, tile_y, floor, add_event):
         lvl = max(0, self.buffed_lvl())
         if tile_x is not None and tile_y is not None:
             cx, cy = tile_x, tile_y
@@ -1230,12 +1511,26 @@ class WandOfCorrosion(Wand):
             add_event("BLOB_UPDATE", {"id": blob_id, "type": "corrosive_gas", "cells": cell_list})
             add_event("PLAY_SOUND", {"sound": "GAS"})
 
+    def handle_zap(self, ctx):
+        self._spawn_gas(ctx.attacker, ctx.target_entity, ctx.damage_dealt,
+                         ctx.target_x, ctx.target_y, ctx.floor, ctx.add_event)
+        if ctx.hit and ctx.damage_dealt > 0:
+            lvl = self.buffed_lvl()
+            ctx.add_event("DAMAGE", {
+                "target": ctx.target_entity.id if ctx.target_entity else ctx.attacker.id,
+                "amount": 0,
+                "projectile": "corrosion",
+                "splash_count": lvl // 2 + 2,
+                "source_x": ctx.attacker.pos.x,
+                "source_y": ctx.attacker.pos.y,
+            }, floor_id=ctx.floor_id)
+
 
 class WandOfCorruption(Wand):
     kind: Literal["wand_corruption"] = "wand_corruption"
     name: str = "Wand of Corruption"
     type: str = "wand"
-    damage: int = 2
+    damage: int = 0
     charges: int = 3
     max_charges: int = 3
     projectile_type: str = "shadow"
@@ -1251,12 +1546,43 @@ class WandOfCorruption(Wand):
             duration = int((4 + lvl * 2))
             defender.add_buff("amok", duration=float(duration), level=1)
 
+    def handle_zap(self, ctx):
+        target = ctx.target_entity
+        player = ctx.attacker
+        if target is None:
+            return
+        from app.engine.entities.base import Mob as MobEntity
+        if not isinstance(target, MobEntity):
+            return
+        lvl = self.buffed_lvl()
+        corrupt_power = 3.0 + lvl / 3.0
+        hp_ratio = target.hp / max(1, target.get_total_max_hp())
+        enemy_resist = 1.0 + 4.0 * (hp_ratio * hp_ratio)
+        # Debuffs reduce resist
+        debuff_count = 0
+        for debuff in ("amok", "slow", "hex", "paralysis", "weakness", "vulnerable", "cripple", "blindness", "terror"):
+            if target.has_buff(debuff):
+                debuff_count += 1
+        enemy_resist *= (0.5 ** debuff_count)
+        if target.has_buff("corruption"):
+            enemy_resist = corrupt_power + 0.001  # cannot re-corrupt
+        if corrupt_power > enemy_resist:
+            target.faction = player.faction
+            target.add_buff("corruption", duration=999.0, level=1)
+            ctx.add_event("PLAY_SOUND", {"sound": "CURSE"}, floor_id=ctx.floor_id)
+        elif _random.random() < corrupt_power / enemy_resist:
+            target.add_buff("amok", duration=6.0 + lvl * 3, level=1)
+            ctx.add_event("PLAY_SOUND", {"sound": "CURSE"}, floor_id=ctx.floor_id)
+        else:
+            target.add_buff("weakness", duration=6.0 + lvl * 3, level=1)
+            ctx.add_event("PLAY_SOUND", {"sound": "CURSE"}, floor_id=ctx.floor_id)
+
 
 class WandOfRegrowth(Wand):
     kind: Literal["wand_regrowth"] = "wand_regrowth"
     name: str = "Wand of Regrowth"
     type: str = "wand"
-    damage: int = 1
+    damage: int = 0
     charges: int = 4
     max_charges: int = 4
     projectile_type: str = "foliage"
@@ -1281,12 +1607,47 @@ class WandOfRegrowth(Wand):
             if healing > 0:
                 attacker.hp = min(attacker.get_total_max_hp(), attacker.hp + healing)
 
+    def charges_per_cast(self) -> int:
+        consumed = (self.charges * 3 + 9) // 10
+        return max(1, min(3, consumed))
+
+    def handle_zap(self, ctx):
+        floor = ctx.floor
+        if floor is None:
+            return
+        lvl = self.buffed_lvl()
+        charges = self.charges_per_cast()
+        grass_to_place = round((3.67 + lvl / 3.0) * charges)
+        tx, ty = ctx.target_x, ctx.target_y
+        cells = []
+        for dy in (-1, 0, 1):
+            for dx in (-1, 0, 1):
+                nx, ny = tx + dx, ty + dy
+                if 0 <= nx < floor.width and 0 <= ny < floor.height:
+                    t = floor.grid[ny][nx]
+                    if t in (TileType.FLOOR_GRASS, TileType.EMPTY_DECO, TileType.FLOOR_GRASS, TileType.HIGH_GRASS, TileType.FURROWED_GRASS):
+                        cells.append((nx, ny))
+        _random.shuffle(cells)
+        placed = 0
+        for nx, ny in cells:
+            if placed >= grass_to_place:
+                break
+            floor.grid[ny][nx] = TileType.HIGH_GRASS
+            placed += 1
+            ctx.add_event("TERRAIN_CHANGE", {"x": nx, "y": ny, "tile": TileType.HIGH_GRASS}, floor_id=ctx.floor_id)
+        # Chance to drop seeds/dew
+        if cells and _random.random() < 0.5 and _random.randint(1, 6) <= charges:
+            sx, sy = _random.choice(cells)
+            seed = Seed(id=str(_uuid.uuid4()), pos=Position(x=sx, y=sy), name="Seed")
+            floor.items[seed.id] = seed
+            ctx.add_event("ITEM_DROP", {"x": sx, "y": sy, "item": seed.id, "kind": seed.kind}, floor_id=ctx.floor_id)
+
 
 class WandOfWarding(Wand):
     kind: Literal["wand_warding"] = "wand_warding"
     name: str = "Wand of Warding"
     type: str = "wand"
-    damage: int = 2
+    damage: int = 0
     charges: int = 3
     max_charges: int = 3
     projectile_type: str = "ward"
@@ -1303,6 +1664,40 @@ class WandOfWarding(Wand):
                 if mob.is_alive and getattr(mob, "mob_type", None) == "ward":
                     heal_amt = max(1, lvl)
                     mob.hp = min(mob.max_hp, mob.hp + heal_amt)
+
+    def handle_zap(self, ctx):
+        floor = ctx.floor
+        if floor is None:
+            return
+        lvl = self.buffed_lvl()
+        tx, ty = ctx.target_x, ctx.target_y
+        # Find existing ward at target
+        existing_ward = None
+        for m in floor.mobs.values():
+            if m.is_alive and getattr(m, "mob_type", None) == "ward" and m.pos.x == tx and m.pos.y == ty:
+                existing_ward = m
+                break
+        if existing_ward:
+            heal = max(1, lvl)
+            existing_ward.hp = min(existing_ward.max_hp, existing_ward.hp + heal)
+            ctx.add_event("PLAY_SOUND", {"sound": "HEAL"}, floor_id=ctx.floor_id)
+        elif 0 <= ty < floor.height and 0 <= tx < floor.width:
+            if floor.flags and floor.flags.passable[ty][tx]:
+                ward_id = str(_uuid.uuid4())
+                ward = MobEntity(
+                    id=ward_id,
+                    type="mob",
+                    mob_type="ward",
+                    name="Ward Sentinel",
+                    pos=Position(x=tx, y=ty),
+                    hp=15, max_hp=15,
+                    attack=5 + lvl, defense=2 + lvl // 2,
+                    damage_min=2 + lvl // 2, damage_max=8 + 2 * lvl,
+                    faction=ctx.attacker.faction,
+                    view_distance=4,
+                )
+                floor.mobs[ward.id] = ward
+                ctx.add_event("SUMMON", {"id": ward.id, "x": tx, "y": ty, "name": "Ward Sentinel"}, floor_id=ctx.floor_id)
 
 
 class WandOfLivingEarth(DamageWand):
@@ -1323,6 +1718,54 @@ class WandOfLivingEarth(DamageWand):
             return
         armor = int(damage * 0.33)
         attacker.add_buff("rock_armor", duration=10.0, level=armor)
+
+    def handle_zap(self, ctx):
+        lvl = self.buffed_lvl()
+        floor = ctx.floor
+        if floor is None:
+            return
+        # Find existing guardian
+        guardian = None
+        for m in floor.mobs.values():
+            if m.is_alive and getattr(m, "mob_type", None) == "earth_guardian" and m.faction == ctx.attacker.faction:
+                guardian = m
+                break
+        tx, ty = ctx.target_x, ctx.target_y
+        armor_to_add = self.damage_roll(lvl)
+        guardian_threshold = 8 + lvl * 4
+        if guardian:
+            guardian.max_hp = 16 + 8 * lvl
+            guardian.hp = min(guardian.max_hp, guardian.hp + armor_to_add)
+            ctx.add_event("PLAY_SOUND", {"sound": "HEAL"}, floor_id=ctx.floor_id)
+        elif armor_to_add >= guardian_threshold:
+            gx, gy = tx, ty
+            if ctx.target_entity and ctx.target_entity.pos:
+                # Place nearest free neighbor
+                for dy in (-1, 0, 1):
+                    for dx in (-1, 0, 1):
+                        nx, ny = tx + dx, ty + dy
+                        if 0 <= nx < floor.width and 0 <= ny < floor.height:
+                            if floor.flags and floor.flags.passable[ny][nx]:
+                                gx, gy = nx, ny
+                                break
+            guard_id = str(_uuid.uuid4())
+            guard = MobEntity(
+                id=guard_id,
+                type="mob",
+                mob_type="earth_guardian",
+                name="Earth Guardian",
+                pos=Position(x=gx, y=gy),
+                hp=16 + 8 * lvl, max_hp=16 + 8 * lvl,
+                attack=5 + lvl, defense=3 + lvl // 2,
+                damage_min=2, damage_max=4 + lvl // 2,
+                dr_min=lvl, dr_max=3 + 3 * lvl,
+                faction=ctx.attacker.faction,
+                view_distance=6,
+            )
+            floor.mobs[guard.id] = guard
+            ctx.add_event("SUMMON", {"id": guard.id, "x": gx, "y": gy, "name": "Earth Guardian"}, floor_id=ctx.floor_id)
+        else:
+            ctx.attacker.add_buff("rock_armor", duration=20.0, level=armor_to_add)
 
 
 class Potion(ItemBase):
