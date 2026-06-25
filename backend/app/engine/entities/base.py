@@ -983,9 +983,11 @@ class WandOfMagicMissile(DamageWand):
     kind: Literal["wand_magic_missile"] = "wand_magic_missile"
     name: str = "Wand of Magic Missile"
     type: str = "wand"
-    charges: int = 4
-    max_charges: int = 4
+    charges: int = 6
+    max_charges: int = 6
+    range: int = 8
     projectile_type: str = "magic_missile"
+    wand_sound: str = "ATTACK_MAGIC"
     staff_name: str = "Staff of Magic Missile"
     DESC: ClassVar[str] = "A basic wand that fires a magic missile."
 
@@ -1017,9 +1019,11 @@ class WandOfFireblast(DamageWand):
     kind: Literal["wand_fireblast"] = "wand_fireblast"
     name: str = "Wand of Fireblast"
     type: str = "wand"
-    charges: int = 2
-    max_charges: int = 2
+    charges: int = 5
+    max_charges: int = 5
+    range: int = 8
     projectile_type: str = "fire_bolt"
+    wand_sound: str = "BLAST"
     staff_name: str = "Staff of Fireblast"
     DESC: ClassVar[str] = "A catastrophic wand that unleashes fire."
 
@@ -1108,9 +1112,11 @@ class WandOfFrost(DamageWand):
     kind: Literal["wand_frost"] = "wand_frost"
     name: str = "Wand of Frost"
     type: str = "wand"
-    charges: int = 3
-    max_charges: int = 3
+    charges: int = 4
+    max_charges: int = 4
+    range: int = 8
     projectile_type: str = "frost"
+    wand_sound: str = "SHATTER"
     staff_name: str = "Staff of Frost"
     DESC: ClassVar[str] = "A wand that freezes enemies solid."
 
@@ -1362,6 +1368,7 @@ class WandOfBlastWave(DamageWand):
     charges: int = 3
     max_charges: int = 3
     projectile_type: str = "force"
+    wand_sound: str = "BLAST"
     staff_name: str = "Staff of Blast Wave"
     DESC: ClassVar[str] = "A wand that blasts enemies backwards."
 
@@ -1532,6 +1539,7 @@ class WandOfCorruption(Wand):
     charges: int = 3
     max_charges: int = 3
     projectile_type: str = "shadow"
+    wand_sound: str = "SHATTER"
     staff_name: str = "Staff of Corruption"
     DESC: ClassVar[str] = "A wand that corrupts the minds of enemies."
 
@@ -1584,6 +1592,7 @@ class WandOfRegrowth(Wand):
     charges: int = 4
     max_charges: int = 4
     projectile_type: str = "foliage"
+    wand_sound: str = "PUFF"
     staff_name: str = "Staff of Regrowth"
     DESC: ClassVar[str] = "A wand that causes vegetation to spring forth."
 
@@ -1649,6 +1658,7 @@ class WandOfWarding(Wand):
     charges: int = 3
     max_charges: int = 3
     projectile_type: str = "ward"
+    wand_sound: str = "ATTACK_MAGIC"
     staff_name: str = "Staff of Warding"
     DESC: ClassVar[str] = "A wand that deploys a sentry ward."
 
@@ -1705,6 +1715,7 @@ class WandOfLivingEarth(DamageWand):
     charges: int = 3
     max_charges: int = 3
     projectile_type: str = "earth"
+    wand_sound: str = "BLAST"
     staff_name: str = "Staff of Living Earth"
     DESC: ClassVar[str] = "A wand that summons an earth guardian."
 

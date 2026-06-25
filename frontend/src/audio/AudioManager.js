@@ -192,6 +192,16 @@ class AudioManager {
                 this.playTone(250, 'square', 0.08, 0.12);
                 this.playTone(200, 'square', 0.08, 0.08, 0.06);
                 break;
+            case 'CURSE':
+                this.playTone(120, 'sawtooth', 0.3, 0.4);
+                this.playTone(90, 'sawtooth', 0.4, 0.3, 0.1);
+                this.playNoise(0.2, 0.15, 'lowpass', 400);
+                break;
+            case 'HEAL':
+                this.playTone(500, 'sine', 0.2, 0.15);
+                this.playTone(700, 'sine', 0.2, 0.15, 0.1);
+                this.playTone(900, 'sine', 0.3, 0.1, 0.2);
+                break;
             default:
                 // console.log(`Sound not found: ${soundName}`);
                 break;
