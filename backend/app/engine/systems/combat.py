@@ -223,6 +223,8 @@ def resolve_melee_attack(
         atk_acc = attacker.attack_skill
         if attacker.has_buff("hex"):
             atk_acc = int(atk_acc * 0.75)
+        if attacker.has_buff("daze"):
+            atk_acc = int(atk_acc * 0.5)
         def_ev = defender.get_effective_defense_skill()
         if defender.has_buff("hex"):
             def_ev = int(def_ev * 0.75)
@@ -254,6 +256,8 @@ def resolve_melee_attack(
     dmg_roll = int((dmg_roll + dmg_bonus) * dmg_multi)
     if attacker.has_buff("weakness"):
         dmg_roll = round(dmg_roll * 0.67)
+    if attacker.has_buff("bless") and getattr(defender, "faction", None) == "enemy":
+        dmg_roll = round(dmg_roll * 1.2)
     dr_roll = random.randint(defender.get_dr_min(), defender.get_dr_max())
     raw_damage = max(0, dmg_roll - dr_roll)
 

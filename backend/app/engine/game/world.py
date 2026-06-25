@@ -392,6 +392,8 @@ class WorldInteractionMixin:
         return True
 
     def _trigger_trap_if_needed(self, floor: FloorState, player: Player, floor_id: int):
+        if player.has_buff("levitation"):
+            return
         pos = (player.pos.x, player.pos.y)
         trap = floor.traps.get(pos)
         if not trap or not trap.active:

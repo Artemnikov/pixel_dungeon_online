@@ -282,7 +282,7 @@ def _create_gas(floor: FloorState, pos: Tuple[int, int], strength: int, gas_type
 
 def _cure_debuffs(entity: Entity):
     entity.remove_buff("poison")
-    entity.remove_buff("blind")
+    entity.remove_buff("blindness")
 
 
 def _teleport_activator(floor: FloorState, entity: Entity):

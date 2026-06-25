@@ -116,6 +116,11 @@ class TickMixin:
                 player.invisible = max(0, player.invisible - 1)
             if "endure_tracker" in removed:
                 self._finalize_endure(player)
+            bleed = get_buff(player.buffs, "bleeding")
+            if bleed:
+                dmg = max(1, bleed.level)
+                player.take_damage(dmg)
+                self.add_event("DAMAGE", {"target": player.id, "amount": dmg, "bleed": True})
         for floor_id in active_ids:
             floor = self.floors[floor_id]
             for mob in floor.mobs.values():
@@ -127,6 +132,11 @@ class TickMixin:
                         mob.ai_state = "sleeping"
                     if "terror" in removed and mob.ai_state == "fleeing":
                         mob.ai_state = "hunting"
+                    bleed = get_buff(mob.buffs, "bleeding")
+                    if bleed:
+                        dmg = max(1, bleed.level)
+                        mob.take_damage(dmg)
+                        self.add_event("DAMAGE", {"target": mob.id, "amount": dmg, "bleed": True})
 
         if active_ids:
             active_floors = {fid: self.floors[fid] for fid in active_ids}
@@ -171,6 +181,10 @@ class TickMixin:
             move_interval = AUTO_MOVE_INTERVAL
             if player.invisible > 0 and player.subclass_info.talent_info.level("speedy_stealth") >= 3:
                 move_interval /= 2
+            if player.has_buff("slow") or player.has_buff("chill"):
+                move_interval *= 2
+            if player.has_buff("paralysis"):
+                move_interval = 9999
             from app.engine.entities.rings import haste_multiplier
             move_interval /= haste_multiplier(player)
 
@@ -204,6 +218,9 @@ class TickMixin:
             self._apply_aqua_heal_tick(player)
             self._apply_room_heal_tick(player)
             self._apply_passive_regen(player)
+            heal_buff = get_buff(player.buffs, "healing")
+            if heal_buff and player.hp < player.get_total_max_hp():
+                player.set_heal(float(heal_buff.level * 2), 0.1, 1.0)
             self._tick_passive_wand_recharge(player, dt)
 
             if player.armor_charge < 100:
@@ -373,6 +390,10 @@ class TickMixin:
                     move_times = self._mob_move_times = {}
                 now = time.time()
                 move_interval = 2 * AUTO_MOVE_INTERVAL / max(0.1, mob.speed)
+                if mob.has_buff("slow") or mob.has_buff("chill"):
+                    move_interval *= 2
+                if mob.has_buff("paralysis"):
+                    move_interval = 9999
                 can_move = now - move_times.get(mob.id, 0.0) >= move_interval
 
                 if mob.has_buff("amok"):
@@ -1144,7 +1165,8 @@ class TickMixin:
         floor = self.floors.get(player.floor_id)
         if floor is None or not floor.rooms:
             return
-        if not self._is_in_entrance_room(floor, player.pos.x, player.pos.y):
+        in_entrance = self._is_in_entrance_room(floor, player.pos.x, player.pos.y)
+        if not in_entrance and not player.has_buff("well_fed"):
             return
         # SPD Regeneration.regenOn(): LockedFloor (sealed boss arena) pauses
         # passive regen once its timer runs out.
@@ -1153,13 +1175,16 @@ class TickMixin:
         if player.hp <= 0 or player.hp >= player.get_total_max_hp():
             player._regen_cooldown = 0
             return
+        interval = PASSIVE_REGEN_INTERVAL
+        if player.has_buff("well_fed"):
+            interval = max(1, interval // 3)  # 3x regen rate
         cooldown = getattr(player, "_regen_cooldown", 0)
         cooldown -= 1
         if cooldown > 0:
             player._regen_cooldown = cooldown
             return
         player.hp = min(player.get_total_max_hp(), player.hp + 1)
-        player._regen_cooldown = PASSIVE_REGEN_INTERVAL
+        player._regen_cooldown = interval
 
     def _tick_passive_wand_recharge(self, player: Player, dt: float):
         """Passive wand recharge:
