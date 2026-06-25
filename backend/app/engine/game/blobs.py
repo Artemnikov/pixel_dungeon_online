@@ -255,6 +255,112 @@ def _evolve_fire_blob(
         events.append({"type": "PLAY_SOUND", "data": {"sound": "BURNING"}})
 
 
+_GAS_CARDINALS = [(0, -1), (1, 0), (0, 1), (-1, 0)]
+
+
+GAS_TICK_INTERVAL = 20  # evolve gas once per second (20 ticks at 20 Hz)
+
+def _evolve_gas_blob(
+    floor: FloorState,
+    blob_id: Any,
+    blob: dict,
+    players: Dict[str, Entity],
+    events: List[dict],
+) -> None:
+    tick_counter = blob.get("tick_counter", 0) + 1
+    if tick_counter < GAS_TICK_INTERVAL:
+        blob["tick_counter"] = tick_counter
+        return
+    blob["tick_counter"] = 0
+
+    cells: Set[Tuple[int, int]] = blob.get("cells", set())
+    volume: Dict[Tuple[int, int], int] = blob.get("volume", {})
+    if not cells:
+        return
+    btype = blob.get("type", "toxic_gas")
+    depth = getattr(floor, "floor_id", 1)
+
+    # Collect all cells to process (current + 1-step neighbors)
+    all_cells: Set[Tuple[int, int]] = set(cells)
+    for cx, cy in cells:
+        for dx, dy in _GAS_CARDINALS:
+            nx, ny = cx + dx, cy + dy
+            if 0 <= nx < floor.width and 0 <= ny < floor.height:
+                all_cells.add((nx, ny))
+
+    solid = floor.flags.solid if floor.flags else None
+    new_cells: Set[Tuple[int, int]] = set()
+    new_volume: Dict[Tuple[int, int], int] = {}
+
+    for cx, cy in all_cells:
+        if not (0 <= cx < floor.width and 0 <= cy < floor.height):
+            continue
+        if solid and solid[cy][cx]:
+            continue
+
+        count = 1
+        total = volume.get((cx, cy), 0)
+
+        for dx, dy in _GAS_CARDINALS:
+            nx, ny = cx + dx, cy + dy
+            if 0 <= nx < floor.width and 0 <= ny < floor.height:
+                if not (solid and solid[ny][nx]):
+                    total += volume.get((nx, ny), 0)
+                    count += 1
+
+        if total >= count:
+            new_val = total // count - 1
+        else:
+            new_val = 0
+
+        if new_val > 0:
+            new_cells.add((cx, cy))
+            new_volume[(cx, cy)] = new_val
+
+    # Apply per-type effects
+    for cx, cy in list(new_cells):
+        for p in players.values():
+            if p.floor_id != floor.floor_id or not p.is_alive:
+                continue
+            if p.pos.x == cx and p.pos.y == cy:
+                if btype == "toxic_gas" and not is_immune(p, "toxic_gas"):
+                    dmg = 1 + depth // 5
+                    p.take_damage(dmg)
+                    events.append({"type": "DAMAGE", "data": {"target": p.id, "amount": dmg}})
+                elif btype == "paralytic_gas" and not is_immune(p, "paralytic_gas"):
+                    add_buff(p.buffs, "paralysis", duration=3.0, level=1, stack_mode="extend")
+                elif btype == "corrosive_gas" and not is_immune(p, "corrosive_gas"):
+                    add_buff(p.buffs, "corrosion", duration=5.0, level=1, stack_mode="extend")
+                elif btype == "confusion_gas" and not is_immune(p, "confusion_gas"):
+                    add_buff(p.buffs, "vertigo", duration=2.0, level=1, stack_mode="replace")
+
+        for m in list(floor.mobs.values()):
+            if m.is_alive and m.pos.x == cx and m.pos.y == cy:
+                if btype == "toxic_gas" and not is_immune(m, "toxic_gas"):
+                    dmg = 1 + depth // 5
+                    taken = m.take_damage(dmg)
+                    events.append({"type": "DAMAGE", "data": {"target": m.id, "amount": taken}})
+                    if not m.is_alive:
+                        m.die(floor_mobs=floor.mobs, tile_x=m.pos.x, tile_y=m.pos.y,
+                              players=list(players.values()))
+                        events.append({"type": "DEATH", "data": {"target": m.id}})
+                elif btype == "paralytic_gas" and not is_immune(m, "paralytic_gas"):
+                    add_buff(m.buffs, "paralysis", duration=3.0, level=1, stack_mode="extend")
+                elif btype == "corrosive_gas" and not is_immune(m, "corrosive_gas"):
+                    add_buff(m.buffs, "corrosion", duration=5.0, level=1, stack_mode="extend")
+                elif btype == "confusion_gas" and not is_immune(m, "confusion_gas"):
+                    add_buff(m.buffs, "vertigo", duration=2.0, level=1, stack_mode="replace")
+
+    if new_cells:
+        blob["cells"] = new_cells
+        blob["volume"] = new_volume
+        cell_list = [(c[0], c[1], new_volume.get(c, 1)) for c in new_cells]
+        events.append({"type": "BLOB_UPDATE", "data": {"id": blob_id, "type": btype, "cells": cell_list}})
+    else:
+        del floor.blob_areas[blob_id]
+        events.append({"type": "BLOB_DEPLETED", "data": {"id": blob_id}})
+
+
 def tick_blob_areas(floors: Dict[int, FloorState], players: Dict[str, Entity]) -> List[dict]:
     events: List[dict] = []
 
@@ -297,8 +403,10 @@ def tick_blob_areas(floors: Dict[int, FloorState], players: Dict[str, Entity]) -
             elif btype == "electricity":
                 _evolve_electricity_blob(floor, blob_id, blob, players, events)
 
-            elif btype in ("toxic_gas", "paralytic_gas", "corrosive_gas", "confusion_gas",
-                           "tengu_fire", "tengu_shocker"):
+            elif btype in ("toxic_gas", "paralytic_gas", "corrosive_gas", "confusion_gas"):
+                _evolve_gas_blob(floor, blob_id, blob, players, events)
+
+            elif btype in ("tengu_fire", "tengu_shocker"):
                 volume = blob.get("volume", {})
                 has_any = False
                 cell_list = []

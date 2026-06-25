@@ -13,6 +13,7 @@ import { spawnSpellSprite, SPELL_CHARGE, SPELL_MAP } from '../../rendering/draw/
 import { forceAlertMob } from '../../rendering/draw/mobs';
 import { spawnSparkMoving } from '../../rendering/draw/sparkParticle';
 import { spawnLightning } from '../../rendering/draw/lightning';
+import { spawnToxicGas, spawnCorrosiveGas, spawnConfusionGas } from '../../rendering/draw/gasParticle';
 import { addGameLog } from '../../ui/gameLogHelpers';
 import type { GameEvent } from '../../types/contract';
 import type { HandlerCtx } from '../types';
@@ -222,7 +223,27 @@ export function handlePlayerEvents(event: GameEvent, ctx: HandlerCtx): boolean {
       } else {
         AudioManager.play('TRAP');
         if (event.data.damage > 0 && floatingTextRef) spawnFloatingText(floatingTextRef, cx, cy, `-${event.data.damage}`, '#e74c3c');
-        if (particlesRef) spawnDust(particlesRef, cx, cy + TILE_SIZE / 2, 8);
+        if (particlesRef) {
+          const trap = event.data.trap;
+          if (trap === 'toxic_trap' || trap === 'poison_dart_trap') {
+            for (let i = 0; i < 6; i++) spawnToxicGas(particlesRef, cx + (Math.random() - 0.5) * 32, cy + TILE_SIZE / 2 + (Math.random() - 0.5) * 32);
+          } else if (trap === 'confusion_trap') {
+            for (let i = 0; i < 6; i++) spawnConfusionGas(particlesRef, cx + (Math.random() - 0.5) * 32, cy + TILE_SIZE / 2 + (Math.random() - 0.5) * 32);
+          } else if (trap === 'corrosion_trap') {
+            for (let i = 0; i < 6; i++) spawnCorrosiveGas(particlesRef, cx + (Math.random() - 0.5) * 32, cy + TILE_SIZE / 2 + (Math.random() - 0.5) * 32);
+          } else if (trap === 'chilling_trap' || trap === 'frost_trap') {
+            for (let i = 0; i < 8; i++) {
+              particlesRef.current.push({
+                x: cx + (Math.random() - 0.5) * 32, y: cy + TILE_SIZE / 2 + (Math.random() - 0.5) * 32,
+                vx: (Math.random() - 0.5) * 20, vy: -10 - Math.random() * 20,
+                life: 0.6 + Math.random() * 0.4, maxLife: 1.0, size: 3,
+                color: '#aaddff', gravity: false, additive: true, triangleAlpha: true, shrink: false,
+              });
+            }
+          } else {
+            spawnDust(particlesRef, cx, cy + TILE_SIZE / 2, 8);
+          }
+        }
       }
     }
     return true;

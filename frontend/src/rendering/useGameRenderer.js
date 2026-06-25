@@ -25,7 +25,7 @@ import { advanceAndDrawStateEffects } from './draw/states';
 import { advanceAndDrawSurprises } from './draw/surprise';
 import { advanceAndDrawScreenShake } from './draw/screenShake';
 import { advanceAndDrawBeams } from './draw/beam';
-import { advanceAndDrawBlobAreas, advanceAndDrawFireParticles } from './draw/blobArea';
+import { advanceAndDrawBlobAreas, advanceAndDrawBlobParticles } from './draw/blobArea';
 import { advanceAndDrawSinkDrips } from './draw/sinkDrip';
 import { advanceAndDrawFloorFade } from './floorTransition';
 import { drawCharHealth } from './draw/charHealth';
@@ -204,7 +204,7 @@ export default function useGameRenderer({
       drawCustomTiles(ctx, { customTiles: customTilesRef.current, assetImages, visionRef });
       drawTerrainFeatures(ctx, assetImages.terrainFeatures, trapsRef.current, grid, visionRef);
       advanceAndDrawBlobAreas(ctx, { blobAreasRef, visionRef });
-      advanceAndDrawFireParticles(ctx, { blobAreasRef, visionRef, particlesRef });
+      advanceAndDrawBlobParticles(ctx, { blobAreasRef, visionRef, particlesRef });
       advanceAndDrawSinkDrips(ctx, { grid, depth, visionRef, particlesRef });
       if (warnedTilesRef) drawWarnedTiles(ctx, { ref: warnedTilesRef });
       drawItems(ctx, { entitiesRef, visionRef, assetImages });

@@ -91,6 +91,10 @@ class Entity(BaseModel):
     burning_accum: float = 0.0
     burning_total_seconds: float = 0.0  # total time burning (for inventory destruction)
 
+    # Poison / Corrosion DoT: accumulating tick timer (seconds) for ~1s intervals
+    poison_accum: float = 0.0
+    corrosion_accum: float = 0.0
+
     # Shields (absorption layers)
     shields: List[Shield] = Field(default_factory=list)
 
@@ -917,8 +921,8 @@ class DamageWand(Wand):
         from app.engine.entities.base import _random
         return _random.randint(self.min(lvl), self.max(lvl))
 
-    def damage_roll_buffed(self) -> int:
-        return self.damage_roll(self.buffed_lvl())
+    def damage_roll_buffed(self, lvl_bonus: int = 0) -> int:
+        return self.damage_roll(self.buffed_lvl() + lvl_bonus)
 
     def _info_lines(self, player: Optional["Player"] = None) -> List[str]:
         lvl = self.level if self.level_known else 0
@@ -949,7 +953,7 @@ class WandOfMagicMissile(DamageWand):
         if add_event:
             add_event("SPELL_SPRITE", {
                 "x": attacker.pos.x, "y": attacker.pos.y, "index": 2  # SPELL_CHARGE
-            }, floor_id=getattr(attacker, "floor_id", 0))
+            })
         belongings = getattr(attacker, "belongings", None)
         if belongings is None:
             return
@@ -1176,20 +1180,55 @@ class WandOfCorrosion(Wand):
     kind: Literal["wand_corrosion"] = "wand_corrosion"
     name: str = "Wand of Corrosion"
     type: str = "wand"
-    damage: int = 3
+    damage: int = 0
     charges: int = 3
     max_charges: int = 3
     projectile_type: str = "corrosion"
+    wand_sound: str = "GAS"
     staff_name: str = "Staff of Corrosion"
     DESC: ClassVar[str] = "A wand that spews corrosive gas."
 
+    def _info_lines(self, player: Optional["Player"] = None) -> List[str]:
+        lvl = self.level if self.level_known else 0
+        return [
+            f"Creates a cloud of corrosive gas (tier {3 + lvl * 2}).",
+            f"It currently holds {self.charges} of {self.max_charges} charges.",
+        ]
+
     def on_hit(self, attacker, defender, damage, floor_mobs=None, tile_x=None, tile_y=None, floor=None, add_event=None):
-        if defender is None:
+        lvl = max(0, self.buffed_lvl())
+        if tile_x is not None and tile_y is not None:
+            cx, cy = tile_x, tile_y
+        elif defender is not None:
+            cx, cy = defender.pos.x, defender.pos.y
+        else:
             return
-        lvl = max(0, self.level)
-        proc_chance = (lvl + 1) / (lvl + 3)
-        if _random.random() < proc_chance:
-            defender.add_buff("ooze", duration=5.0, level=1)
+        if floor is None:
+            return
+        strength = 3 + lvl * 2
+        cells = set()
+        volume = {}
+        for dy in (-1, 0, 1):
+            for dx in (-1, 0, 1):
+                nx, ny = cx + dx, cy + dy
+                if 0 <= nx < floor.width and 0 <= ny < floor.height:
+                    if floor.flags and not floor.flags.solid[ny][nx]:
+                        cells.add((nx, ny))
+                        volume[(nx, ny)] = strength
+        if not cells:
+            return
+        for bid in list(floor.blob_areas.keys()):
+            b = floor.blob_areas[bid]
+            if b.get("type") == "corrosive_gas" and b.get("cells", set()) & cells:
+                del floor.blob_areas[bid]
+        blob_id = f"wand_corrosion_{cx}_{cy}"
+        floor.blob_areas[blob_id] = {
+            "type": "corrosive_gas", "cells": cells, "volume": volume,
+        }
+        cell_list = [(c[0], c[1], volume.get(c, 1)) for c in cells]
+        if add_event:
+            add_event("BLOB_UPDATE", {"id": blob_id, "type": "corrosive_gas", "cells": cell_list})
+            add_event("PLAY_SOUND", {"sound": "GAS"})
 
 
 class WandOfCorruption(Wand):

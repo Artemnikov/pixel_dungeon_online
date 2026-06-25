@@ -409,8 +409,6 @@ class WorldInteractionMixin:
 
         trap.active = False
 
-        # SPD TenguDartTrap: 8 poison damage (15 on challenge, but no
-        # challenge system yet), plus boss score penalty on floor 10.
         if trap.trap_type == "tengu_dart":
             damage = 8
             dealt = player.take_damage(damage)
@@ -438,6 +436,70 @@ class WorldInteractionMixin:
             self.add_event("PLAY_SOUND", {"sound": "LIGHTNING"}, floor_id=floor_id)
             damage = 0
             dealt = 0
+        elif trap.trap_type in ("toxic_trap", "poison_dart_trap"):
+            from app.engine.entities.buffs import add_buff
+            from app.engine.game.terrain_effects import _create_gas
+            if trap.trap_type == "toxic_trap":
+                _create_gas(floor, (player.pos.x, player.pos.y), 4 + player.floor_id // 3, "toxic_gas")
+            else:
+                add_buff(player.buffs, "poison", duration=10.0, level=1, stack_mode="extend")
+                _create_gas(floor, (player.pos.x, player.pos.y), 2, "toxic_gas")
+            self.add_event("PLAY_SOUND", {"sound": "GAS"}, floor_id=floor_id)
+            damage = 0
+            dealt = 0
+        elif trap.trap_type == "chilling_trap":
+            from app.engine.game.terrain_effects import _freeze_area
+            _freeze_area(floor, (player.pos.x, player.pos.y))
+            player.add_buff("chilled", duration=5.0, level=1, stack_mode="extend")
+            self.add_event("PLAY_SOUND", {"sound": "SHATTER"}, floor_id=floor_id)
+            damage = 0
+            dealt = 0
+        elif trap.trap_type == "frost_trap":
+            from app.engine.game.terrain_effects import _freeze_area
+            _freeze_area(floor, (player.pos.x, player.pos.y))
+            player.add_buff("frozen", duration=5.0, level=1, stack_mode="extend")
+            self.add_event("PLAY_SOUND", {"sound": "SHATTER"}, floor_id=floor_id)
+            damage = 0
+            dealt = 0
+        elif trap.trap_type == "confusion_trap":
+            player.add_buff("vertigo", duration=5.0, level=1, stack_mode="replace")
+            self.add_event("PLAY_SOUND", {"sound": "SHATTER"}, floor_id=floor_id)
+            damage = 0
+            dealt = 0
+        elif trap.trap_type == "ooze_trap":
+            player.add_buff("ooze", duration=10.0, level=1, stack_mode="extend")
+            damage = 0
+            dealt = 0
+        elif trap.trap_type == "corrosion_trap":
+            from app.engine.game.terrain_effects import _create_gas
+            _create_gas(floor, (player.pos.x, player.pos.y), 1 + player.floor_id // 4, "corrosive_gas")
+            self.add_event("PLAY_SOUND", {"sound": "GAS"}, floor_id=floor_id)
+            damage = 0
+            dealt = 0
+        elif trap.trap_type == "flock_trap":
+            self.add_event("PLAY_SOUND", {"sound": "SHATTER"}, floor_id=floor_id)
+            damage = 0
+            dealt = 0
+        elif trap.trap_type == "weakening_trap":
+            player.add_buff("weakness", duration=10.0, level=1, stack_mode="extend")
+            self.add_event("PLAY_SOUND", {"sound": "SHATTER"}, floor_id=floor_id)
+            damage = 0
+            dealt = 0
+        elif trap.trap_type == "gripping_trap":
+            _spawn_trap_fire(floor, player.pos.x, player.pos.y, 1, 1)
+            self.add_event("PLAY_SOUND", {"sound": "BURNING"}, floor_id=floor_id)
+            damage = 0
+            dealt = 0
+        elif trap.trap_type == "geyser_trap":
+            _spawn_trap_electricity(floor, player.pos.x, player.pos.y, 1, 5)
+            self.add_event("PLAY_SOUND", {"sound": "LIGHTNING"}, floor_id=floor_id)
+            damage = 0
+            dealt = 0
+        elif trap.trap_type == "explosive_trap":
+            _spawn_trap_fire(floor, player.pos.x, player.pos.y, 2, 4)
+            damage = max(1, player.hp // 6)
+            dealt = player.take_damage(damage)
+            self.add_event("PLAY_SOUND", {"sound": "BURNING"}, floor_id=floor_id)
         else:
             damage = 2
             dealt = player.take_damage(damage)

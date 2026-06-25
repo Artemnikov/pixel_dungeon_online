@@ -42,7 +42,9 @@ from app.engine.entities.base import (
     Staff,
     Throwable,
     Wand,
+    WandOfCorrosion,
     WandOfLightning,
+    WandOfMagicMissile,
     Waterskin,
     Weapon,
     is_immune,
@@ -50,14 +52,17 @@ from app.engine.entities.base import (
 from app.engine.entities.buffs import add_buff, has_buff, remove_buff
 from app.engine.entities.mobs import DM300, Goo, Wraith
 from app.engine.entities.subclasses import Talent
+from app.engine.systems.ballistica import ballistica_trace
 from app.engine.systems.combat import resolve_melee_attack, resolve_ranged_attack
 from app.engine.systems.loot import roll_drops
 from app.engine.game.constants import KEY_TIME_TO_UNLOCK, MAX_FLOOR_ID
 from app.engine.game.terrain_effects import press_cell
 
 
-def _effective_wand_damage(w) -> int:
-    return w.damage_roll_buffed() if hasattr(w, 'damage_roll_buffed') else w.damage
+def _effective_wand_damage(w, lvl_bonus: int = 0) -> int:
+    if hasattr(w, 'damage_roll_buffed'):
+        return w.damage_roll_buffed(lvl_bonus=lvl_bonus)
+    return w.damage
 
 
 class MovementCombatMixin:
@@ -562,10 +567,20 @@ class MovementCombatMixin:
 
         dist = abs(player.pos.x - target_x) + abs(player.pos.y - target_y)
         if not is_bow:
-            max_range = item.get_reach() if hasattr(item, "get_reach") else getattr(item, "range", 5)
-            if dist > max_range:
-                return None
-            if not self._is_in_los(player.pos, Position(x=target_x, y=target_y), floor_id=floor_id):
+            if not is_wand and not is_staff:
+                max_range = item.get_reach() if hasattr(item, "get_reach") else getattr(item, "range", 5)
+                if dist > max_range:
+                    return None
+            if is_wand or is_staff:
+                bfloor = self._get_or_create_floor(floor_id)
+                target_x, target_y = ballistica_trace(
+                    player.pos.x, player.pos.y, target_x, target_y,
+                    bfloor.flags, bfloor.width, bfloor.height,
+                    list(self._players_on_floor(floor_id)),
+                    list(bfloor.mobs.values()),
+                    player.id,
+                )
+            elif not self._is_in_los(player.pos, Position(x=target_x, y=target_y), floor_id=floor_id):
                 return None
 
         player.last_attack_time = current_time
@@ -620,7 +635,15 @@ class MovementCombatMixin:
                 atk_min = item.dmg_min(player.level)
                 atk_max = item.dmg_max(player.level)
             elif effective_wand is not None:
-                atk_min = atk_max = _effective_wand_damage(effective_wand)
+                # Magic Charge: boost non-Magic-Missile wand by +1 level on next use
+                magic_charge_lvl = 0
+                if (
+                    not isinstance(effective_wand, WandOfMagicMissile)
+                    and player.has_buff("magic_charge")
+                ):
+                    magic_charge_lvl = 1
+                    player.remove_buff("magic_charge")
+                atk_min = atk_max = _effective_wand_damage(effective_wand, lvl_bonus=magic_charge_lvl)
             elif is_weapon:
                 if player.belongings.weapon and item.id == player.belongings.weapon.id:
                     atk_min = player.get_damage_min()
@@ -800,37 +823,67 @@ class MovementCombatMixin:
                 self.add_event("BLOB_UPDATE", {"id": blob_id, "type": "electricity", "cells": cell_list}, floor_id=floor_id)
                 self.add_event("PLAY_SOUND", {"sound": "LIGHTNING"}, floor_id=floor_id)
 
+        # Wand of Corrosion — creates corrosive gas cloud at target (no direct damage)
+        if isinstance(effective_wand, WandOfCorrosion) and not is_staff:
+            lvl = effective_wand.buffed_lvl()
+            strength = 3 + lvl * 2
+            cells = set()
+            volume = {}
+            for dy in (-1, 0, 1):
+                for dx in (-1, 0, 1):
+                    nx, ny = target_x + dx, target_y + dy
+                    if 0 <= nx < floor.width and 0 <= ny < floor.height:
+                        if floor.flags and not floor.flags.solid[ny][nx]:
+                            cells.add((nx, ny))
+                            volume[(nx, ny)] = strength
+            if cells:
+                for bid in list(floor.blob_areas.keys()):
+                    b = floor.blob_areas[bid]
+                    if b.get("type") == "corrosive_gas" and b.get("cells", set()) & cells:
+                        del floor.blob_areas[bid]
+                blob_id = f"wand_corrosion_{target_x}_{target_y}"
+                floor.blob_areas[blob_id] = {
+                    "type": "corrosive_gas", "cells": cells, "volume": volume,
+                }
+                cell_list = [(c[0], c[1], volume.get(c, 1)) for c in cells]
+                self.add_event("BLOB_UPDATE", {"id": blob_id, "type": "corrosive_gas", "cells": cell_list}, floor_id=floor_id)
+                self.add_event("PLAY_SOUND", {"sound": "GAS"}, floor_id=floor_id)
+
+                # Visual DAMAGE event so frontend shows splash after missile flight
+                self.add_event("DAMAGE", {
+                    "target": target_entity.id if target_entity else player.id,
+                    "amount": 0,
+                    "projectile": "corrosion",
+                    "splash_count": lvl // 2 + 2,
+                    "source_x": player.pos.x,
+                    "source_y": player.pos.y,
+                }, floor_id=floor_id)
+
         if is_wand or is_staff:
             wand_item = staff_wand if is_staff else item
             # Wand Preservation (mage T2): chance to not consume charge
             wp = player.talent_info.level("wand_preservation")
             if wp <= 0 or random.random() >= wp * 0.17:
                 wand_item.charges -= 1
-            # Magic Charge (WandOfMagicMissile): upgrade another wand on hit
+            # Magic Charge: buff that boosts next non-Magic-Missile wand by +1 level
             if wand_item.kind == "wand_magic_missile" and damage_dealt > 0:
-                has_other_wand = any(
-                    isinstance(it, Wand) and it.id != wand_item.id
-                    for it in player.belongings.all_items()
-                )
-                if has_other_wand or player.has_buff("magic_charge"):
-                    player.add_buff("magic_charge", duration=4.0, level=wand_item.buffed_lvl(), stack_mode="extend")
+                player.add_buff("magic_charge", duration=4.0, level=wand_item.buffed_lvl(), stack_mode="extend")
             # Shield Battery (mage T2): gain shield on wand zap
             sb = player.talent_info.level("shield_battery")
             if sb > 0:
                 shield_amt = 1 + sb
                 player.add_shield("shield_battery", shield_amt, priority=1, decay=600)
-            # Imbued wand on_hit on ranged zap (battlemage synergy)
-            if damage_dealt > 0 and is_staff and staff_wand:
-                staff_wand.on_hit(
-                    player, target_entity, damage_dealt,
-                    floor_mobs=floor.mobs if target_entity and isinstance(target_entity, MobEntity) else None,
-                    tile_x=target_x, tile_y=target_y,
-                    floor=floor, add_event=lambda t, d, **kw: self.add_event(t, d, **{
-                        "floor_id": floor_id,
-                        "source_player_id": player.id,
-                        **kw,
-                    }),
-                )
+            # Corrosion gas cloud at target when staff imbued with WandOfCorrosion
+            if isinstance(staff_wand, WandOfCorrosion):
+                splash_lvl = staff_wand.buffed_lvl()
+                self.add_event("DAMAGE", {
+                    "target": target_entity.id if target_entity else player.id,
+                    "amount": 0,
+                    "projectile": "corrosion",
+                    "splash_count": splash_lvl // 2 + 2,
+                    "source_x": player.pos.x,
+                    "source_y": player.pos.y,
+                }, floor_id=floor_id)
             # Apply Empowered Strike tracker after zap if applicable
             if is_staff and damage_dealt > 0:
                 es_talent = player.talent_info.level("empowered_strike")

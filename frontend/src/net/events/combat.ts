@@ -1,6 +1,6 @@
 import { TILE_SIZE, PLAYER_ATTACK_DURATION, HIT_CONNECT_DELAY, FLASH_DURATION } from '../../constants';
 import AudioManager from '../../audio/AudioManager';
-import { spawnBlood, spawnCritSparkle, spawnGrimShadow, spawnWhiteSplash } from '../../rendering/draw/particles';
+import { spawnBlood, spawnCorrosionSplash, spawnCritSparkle, spawnGrimShadow, spawnWhiteSplash } from '../../rendering/draw/particles';
 import { spawnSurprise } from '../../rendering/draw/surprise';
 import { spawnFloatingText, TEXT_ICON } from '../../rendering/draw/floatingText';
 import { coordsForItem } from '../../rendering/sprites';
@@ -225,7 +225,7 @@ export function handleCombatEvents(event: GameEvent, ctx: HandlerCtx): boolean {
 
   if (event.type === 'DAMAGE') {
     const tgt = event.data.target;
-    const tgtEntity = entitiesRef.current.mobs[tgt] || entitiesRef.current.players[tgt];
+    const tgtEntity = entitiesRef.current.mobs[tgt] || dyingMobsRef.current[tgt] || entitiesRef.current.players[tgt];
     if (!tgtEntity) return true;
     const isGrim = event.data.grim_proc;
     const isCrit = event.data.crit;
@@ -268,6 +268,9 @@ export function handleCombatEvents(event: GameEvent, ctx: HandlerCtx): boolean {
               break;
             case 'frost':
               spawnWhiteSplash(particlesRef, tc.x, tc.y, 5);
+              break;
+            case 'corrosion':
+              spawnCorrosionSplash(particlesRef, tc.x, tc.y, 5);
               break;
             case 'earth':
             case 'force':

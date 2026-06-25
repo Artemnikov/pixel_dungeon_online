@@ -8,7 +8,7 @@ const ICON_H = 8;
 
 let lastNow = null;
 let textIconsImg = null;
-const iconLoad = new Promise(resolve => {
+const _iconLoad = new Promise(resolve => {
   const img = new Image();
   img.onload = () => { textIconsImg = img; resolve(); };
   img.onerror = () => resolve();

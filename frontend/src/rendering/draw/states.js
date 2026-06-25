@@ -85,12 +85,6 @@ function getDuration(type) {
   }
 }
 
-function emitParticle(e, count, spawnFn) {
-  for (let i = 0; i < count; i++) {
-    spawnFn(e);
-  }
-}
-
 function updateParticles(e, dt, gravity) {
   for (let i = e.particles.length - 1; i >= 0; i--) {
     const p = e.particles[i];

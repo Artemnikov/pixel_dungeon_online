@@ -386,6 +386,26 @@ export function spawnSewerBarrelBurst(particlesRef, cx, cy, count = 10) {
   }
 }
 
+// Green corrosion splash — hit effect for Wand of Corrosion / Staff of Corrosion
+export function spawnCorrosionSplash(particlesRef, cx, cy, count = 5) {
+  for (let i = 0; i < count; i++) {
+    const angle = -Math.PI / 2 + (Math.random() - 0.5) * Math.PI;
+    const speed = 30 + Math.random() * 50;
+    const life = 0.4 + Math.random() * 0.2;
+    particlesRef.current.push({
+      x: cx, y: cy,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      life,
+      maxLife: life,
+      size: 2 + Math.random() * 2,
+      color: Math.random() > 0.5 ? '#88CC00' : '#AADD44',
+      gravity: true,
+      additive: true,
+    });
+  }
+}
+
 // LeafParticle (effects/particles/LeafParticle.java): shrinking specks tossed
 // up and to the side, colored by interpolating between a region's color1/color2
 // (ColorMath.random == a single random factor applied uniformly to all 3
@@ -497,15 +517,39 @@ export function advanceAndDrawParticles(ctx, { particlesRef }) {
     }
     p.x += p.vx * dt;
     p.y += p.vy * dt;
+    if (p.jitter) {
+      p.x += (Math.random() - 0.5) * p.jitter;
+      p.y += (Math.random() - 0.5) * p.jitter;
+    }
 
     const t = p.life / p.maxLife;
     let alpha = t;
     if (p.fadeIn) {
       alpha = t > 0.8 ? (1 - t) * 5 : 1;
     }
-    if (p.shrink !== false) {
+    if (p.triangleAlpha) {
+      const tri = t < 0.5 ? t : 1 - t;
+      alpha = Math.sqrt(tri * 0.5);
+    }
+    if (p.shrink !== false && !p.growWithAge) {
       if (p._startSize === undefined) p._startSize = p.size;
       p.size = Math.max(1, p._startSize * t);
+    }
+    if (p.growWithAge) {
+      if (p._startSize === undefined) p._startSize = p.size;
+      p.size = Math.max(1, p._startSize * (1 + t));
+    }
+    if (p.colorEnd) {
+      const r1 = parseInt(p.color.slice(1,3), 16);
+      const g1 = parseInt(p.color.slice(3,5), 16);
+      const b1 = parseInt(p.color.slice(5,7), 16);
+      const r2 = parseInt(p.colorEnd.slice(1,3), 16);
+      const g2 = parseInt(p.colorEnd.slice(3,5), 16);
+      const b2 = parseInt(p.colorEnd.slice(5,7), 16);
+      const r = Math.round(r1 + (r2 - r1) * t);
+      const g = Math.round(g1 + (g2 - g1) * t);
+      const b = Math.round(b1 + (b2 - b1) * t);
+      p.color = `#${r.toString(16).padStart(2,'0')}${g.toString(16).padStart(2,'0')}${b.toString(16).padStart(2,'0')}`;
     }
 
     ctx.save();

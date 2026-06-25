@@ -145,6 +145,8 @@ class SerializationMixin:
             if live is not None:
                 node["actions"] = live.actions(p)
                 node["default_action"] = live.default_action()
+                if hasattr(live, "get_reach"):
+                    node["range"] = live.get_reach()
                 node["description"] = live.description(p)
                 node["value"] = live.value(identified=live.kind in self.identified_kinds)
                 lk = item_locale_key(live)

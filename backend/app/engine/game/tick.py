@@ -280,6 +280,7 @@ class TickMixin:
 
             self._process_bleed_ooze(floor_id, active_players)
             self._process_burning(floor_id, active_players)
+            self._process_poison_corrosion(floor_id, active_players)
             self._process_respawns(floor_id, floor, active_players)
             self._update_prison_boss(floor, floor_id)
 
@@ -818,6 +819,53 @@ class TickMixin:
                     floor.items[item.id] = item
                 if any(isinstance(d, Gold) for d in drops):
                     self.add_event("GOLD_DROP", {"x": mob.pos.x, "y": mob.pos.y}, floor_id=floor_id)
+
+    def _process_poison_corrosion(self, floor_id: int, active_players: List[Player]):
+        floor = self._get_or_create_floor(floor_id)
+
+        def do_dot(entity, buff_type: str, dmg_per_tick: int):
+            buff = get_buff(entity.buffs, buff_type)
+            if buff is None:
+                return
+            accum_key = f"{buff_type}_accum"
+            accum = getattr(entity, accum_key, 0.0)
+            accum += 0.05
+            if accum < 1.0:
+                setattr(entity, accum_key, accum)
+                return
+            setattr(entity, accum_key, 0.0)
+
+            if is_immune(entity, buff_type):
+                remove_buff(entity.buffs, buff_type)
+                return
+
+            dmg = dmg_per_tick + buff.level
+            actual = entity.take_damage(dmg)
+            source = f"{buff_type}_dot"
+            self.add_event("DAMAGE", {"target": entity.id, "amount": actual, source: True}, floor_id=floor_id)
+
+            if isinstance(entity, MobEntity) and not entity.is_alive:
+                entity.die(floor_mobs=floor.mobs, tile_x=entity.pos.x, tile_y=entity.pos.y,
+                           players=list(self._players_on_floor(floor_id)))
+                self.add_event("DEATH", {"target": entity.id}, floor_id=floor_id)
+                self.handle_mob_death(entity, floor, floor_id)
+                from app.engine.systems.loot import roll_drops
+                drops = roll_drops(entity, self.drop_counters, entity.pos.x, entity.pos.y,
+                                   players=list(self._players_on_floor(floor_id)))
+                for item in drops:
+                    floor.items[item.id] = item
+                if any(isinstance(d, Gold) for d in drops):
+                    self.add_event("GOLD_DROP", {"x": entity.pos.x, "y": entity.pos.y}, floor_id=floor_id)
+
+        for player in active_players:
+            do_dot(player, "poison", 0)
+            do_dot(player, "corrosion", 1)
+
+        for mob in floor.mobs.values():
+            if not mob.is_alive:
+                continue
+            do_dot(mob, "poison", 0)
+            do_dot(mob, "corrosion", 1)
 
     def _burn_player_inventory(self, player: Player, floor_id: int):
         player.burning_total_seconds += 1.0

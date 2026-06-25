@@ -226,6 +226,13 @@ export const coordsForItem = (item) => {
     const match = PLACEHOLDER_TYPE_BY_KIND_PREFIX.find(([prefix]) => item.kind.startsWith(prefix));
     if (match) return getItemSpriteCoords(null, match[1]);
   }
+  // "Staff of <WandName>" → show the imbued wand's sprite
+  if (item.name && item.name.startsWith('Staff of ')) {
+    const wandName = 'Wand of ' + item.name.slice(9);
+    for (const key in ITEM_SPRITES) {
+      if (wandName.includes(key)) return ITEM_SPRITES[key];
+    }
+  }
   return getItemSpriteCoords(item.name, item.type);
 };
 

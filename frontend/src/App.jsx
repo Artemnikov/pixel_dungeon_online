@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import './styles/index.css';
 
@@ -302,16 +302,19 @@ function App() {
     },
   });
 
-  const isBusy = useMemo(() => {
-    const me = entitiesRef.current?.players?.[myPlayerIdRef.current];
-    if (!me) return false;
-    const anim = playerAnimRef.current?.[myPlayerIdRef.current];
-    if (!anim) return false;
-    const now = performance.now();
-    return (anim.attackUntil || 0) > now
-      || (anim.operateUntil || 0) > now
-      || (anim.readUntil || 0) > now;
-  }, [myStats]); // re-derive when myStats changes (every frame)
+  const [isBusy, setIsBusy] = useState(false);
+  useEffect(() => {
+    const id = setInterval(() => {
+      const me = entitiesRef.current?.players?.[myPlayerIdRef.current];
+      const anim = playerAnimRef.current?.[myPlayerIdRef.current];
+      setIsBusy(!!me && !!anim && (
+        (anim.attackUntil || 0) > performance.now()
+        || (anim.operateUntil || 0) > performance.now()
+        || (anim.readUntil || 0) > performance.now()
+      ));
+    }, 50);
+    return () => clearInterval(id);
+  }, []);
 
   const { hasDraggedRef } = useCanvasControls({
     enabled: gameState === 'PLAYING',
@@ -411,9 +414,12 @@ function App() {
   };
 
   const handleToolbarDoubleClick = (item) => {
-    const isRangedWeapon = item && item.type === 'weapon' && item.range && item.range > 1;
-    const isThrowable = item && item.type === 'throwable';
-    if (!isRangedWeapon && !isThrowable) return;
+    if (!item) return;
+    const isTargeted = item.type === 'wand'
+      || item.type === 'throwable'
+      || (item.type === 'weapon' && item.range && item.range > 1)
+      || item.kind === 'staff';
+    if (!isTargeted) return;
 
     const myPlayer = entitiesRef.current.players[myPlayerIdRef.current];
     if (!myPlayer) return;
@@ -437,8 +443,6 @@ function App() {
       const ty = Math.round(nearestMob.renderPos.y);
       if (item.default_action && TARGETED_ACTIONS.includes(item.default_action)) {
         send({ type: 'EXECUTE_ITEM_ACTION', item_id: item.id, action: item.default_action, target_x: tx, target_y: ty });
-      } else if (isThrowable) {
-        send({ type: 'EXECUTE_ITEM_ACTION', item_id: item.id, action: 'THROW', target_x: tx, target_y: ty });
       } else {
         send({ type: 'RANGED_ATTACK', item_id: item.id, target_x: tx, target_y: ty });
       }
@@ -577,8 +581,8 @@ function App() {
 
   // Drive the inspect popup every frame: reposition from live camera, update mob HP,
   // hide off-screen, auto-dismiss after 3s of no activity.
-  const clearInspectRef = useRef(targeting.clearInspect);
-  clearInspectRef.current = targeting.clearInspect;
+  const clearInspectRef = useRef(null);
+  useEffect(() => { clearInspectRef.current = targeting.clearInspect; });
   useEffect(() => {
     if (!inspectInfo) return;
     const anchor = inspectInfo.anchor;
