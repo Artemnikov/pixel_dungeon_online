@@ -1320,8 +1320,7 @@ class WandOfPrismaticLight(DamageWand):
     charges: int = 4
     max_charges: int = 4
     range: int = 8
-    projectile_type: str = "beam"
-    beam_type: str = "light_ray"
+    projectile_type: str = "rainbow"
     wand_sound: str = "RAY"
     staff_name: str = "Staff of Prismatic Light"
     DESC: ClassVar[str] = "A wand that fires a beam of prismatic light."
@@ -1412,8 +1411,7 @@ class WandOfTransfusion(DamageWand):
     charges: int = 3
     max_charges: int = 3
     range: int = 6
-    projectile_type: str = "beam"
-    beam_type: str = "health_ray"
+    projectile_type: str = "beacon"
     wand_sound: str = "RAY"
     staff_name: str = "Staff of Transfusion"
     DESC: ClassVar[str] = "A wand that transfers health."
