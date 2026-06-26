@@ -338,7 +338,7 @@ def trinket_class_for_index(idx: int):
 def trinket_level(player, trinket_kind: str) -> int:
     """SPD trinketLevel(Class): returns buffed level of the trinket the player
     has equipped in their misc slot, or -1 if no matching trinket is worn."""
-    misc = getattr(player.belongings, "misc", None)
+    misc = getattr(getattr(player, "belongings", None), "misc", None)
     if misc is None:
         return -1
     if getattr(misc, "kind", None) != trinket_kind:

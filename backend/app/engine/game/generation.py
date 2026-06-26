@@ -102,7 +102,9 @@ class GenerationMixin:
             state[name] = -1
         if not self.players:
             return state
-        p = next(iter(self.players.values()))
+        p = next((p for p in self.players.values() if hasattr(p, "belongings")), None)
+        if not p:
+            return state
         for name in state:
             state[name] = _tl(p, name)
         return state
@@ -111,9 +113,9 @@ class GenerationMixin:
         """Post-processing for levelgen trinket effects after SPD gen."""
         import random
         from app.engine.entities.trinkets import (
-            rat_skull_exotic_chance,
-            mimic_tooth_ebony_chance,
-            exotic_crystals_chance,
+            RatSkull,
+            MimicTooth,
+            ExoticCrystals,
         )
         state = self._trinket_state()
 

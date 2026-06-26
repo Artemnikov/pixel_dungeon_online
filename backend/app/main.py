@@ -60,7 +60,7 @@ class ConnectionManager:
         inventory/HP/depth/position) instead of spawning a fresh one.
         """
         await websocket.accept()
-        if game_id not in self.active_connections:
+        if game_id not in self.game_instances:
             self.active_connections[game_id] = {}
             self.game_instances[game_id] = GameInstance(game_id, seed=seed or None)
             self.last_sent_floor[game_id] = {}
