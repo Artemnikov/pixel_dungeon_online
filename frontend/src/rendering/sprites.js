@@ -160,6 +160,26 @@ export const ITEM_SPRITES = {
   "Key":              [7, 3],
   "Amulet of Yendor": [14, 4],  // AMULET = MISC_CONSUMABLE+13 = xy(1,4)+13 = idx 78 -> col14,row4
 
+  // Trinkets (TRINKETS section = xy(1,18) → [0,17], 17 trinkets + 1 catalyst)
+  "Trinket Catalyst": [6, 4],   // TRINKET_CATA = MISC_CONSUMABLE+22 = [6,4]
+  "Rat Skull":        [0, 17],  // TRINKETS+0
+  "Parchment Scrap":  [1, 17],  // TRINKETS+1
+  "Petrified Seed":   [2, 17],  // TRINKETS+2
+  "Exotic Crystals":  [3, 17],  // TRINKETS+3
+  "Mossy Clump":      [4, 17],  // TRINKETS+4
+  "Sundial":          [5, 17],  // TRINKETS+5 (Dimensional Sundial)
+  "Clover":           [6, 17],  // TRINKETS+6 (Thirteen-Leaf Clover)
+  "Trap Mechanism":   [7, 17],  // TRINKETS+7
+  "Mimic Tooth":      [8, 17],  // TRINKETS+8
+  "Wondrous Resin":   [9, 17],  // TRINKETS+9
+  "Eye of Newt":      [10, 17], // TRINKETS+10
+  "Salt Cube":        [11, 17], // TRINKETS+11
+  "Vial of Blood":    [12, 17], // TRINKETS+12
+  "Shard of Oblivion":[13, 17], // TRINKETS+13
+  "Chaotic Censer":   [14, 17], // TRINKETS+14
+  "Ferret Tuft":      [15, 17], // TRINKETS+15
+  "Cracked Spyglass": [0, 18],  // TRINKETS+16 = next row
+
   // Default fallback (SOMETHING "?" placeholder, idx 0)
   "default":          [0, 0],
 };
@@ -193,6 +213,8 @@ export const getItemSpriteCoords = (itemName, itemType) => {
   if (itemType === 'key')       return [7, 3];
   if (itemType === 'gold')      return [2, 1];
   if (itemType === 'seed')      return [3, 24];  // SEED_SUNGRASS
+  if (itemType === 'trinket')   return [0, 17];  // RAT_SKULL (generic trinket fallback)
+  if (itemType === 'trinket_catalyst') return [6, 4];
   if (itemType === 'dewdrop')   return [5, 1];   // DEWDROP
   if (itemType === 'grave')     return [0, 2];   // BONES
   return ITEM_SPRITES["default"];
@@ -217,6 +239,24 @@ const PLACEHOLDER_TYPE_BY_KIND_PREFIX = [
   ['dewdrop', 'dewdrop'],
   ['gold', 'gold'],
   ['wand', 'wand'],
+  ['rat_skull', 'trinket'],
+  ['parchment_scrap', 'trinket'],
+  ['petrified_seed', 'trinket'],
+  ['exotic_crystals', 'trinket'],
+  ['mossy_clump', 'trinket'],
+  ['dimensional_sundial', 'trinket'],
+  ['thirteen_leaf_clover', 'trinket'],
+  ['trap_mechanism', 'trinket'],
+  ['mimic_tooth', 'trinket'],
+  ['wondrous_resin', 'trinket'],
+  ['eye_of_newt', 'trinket'],
+  ['salt_cube', 'trinket'],
+  ['vial_of_blood', 'trinket'],
+  ['shard_of_oblivion', 'trinket'],
+  ['chaotic_censer', 'trinket'],
+  ['ferret_tuft', 'trinket'],
+  ['cracked_spyglass', 'trinket'],
+  ['trinket_catalyst', 'trinket_catalyst'],
 ];
 
 // Resolve a serialized item to its sprite cell: server-sent per-run appearance
@@ -307,6 +347,24 @@ const KIND_COORDS = {
   'wand_regrowth':        [11, 13],
   'wand_transfusion':     [12, 13],
   'wand':                 [0, 13],
+  'trinket_catalyst':     [6, 4],
+  'rat_skull':            [0, 17],
+  'parchment_scrap':      [1, 17],
+  'petrified_seed':       [2, 17],
+  'exotic_crystals':      [3, 17],
+  'mossy_clump':          [4, 17],
+  'dimensional_sundial':  [5, 17],
+  'thirteen_leaf_clover': [6, 17],
+  'trap_mechanism':       [7, 17],
+  'mimic_tooth':          [8, 17],
+  'wondrous_resin':       [9, 17],
+  'eye_of_newt':          [10, 17],
+  'salt_cube':            [11, 17],
+  'vial_of_blood':        [12, 17],
+  'shard_of_oblivion':    [13, 17],
+  'chaotic_censer':       [14, 17],
+  'ferret_tuft':          [15, 17],
+  'cracked_spyglass':     [0, 18],
 };
 
 export function coordsForKind(kind) {
@@ -318,6 +376,8 @@ export function coordsForKind(kind) {
   if (kind.startsWith('wand_'))    return [0, 13];
   if (kind.startsWith('armor'))    return [0, 11];
   if (kind.startsWith('seed'))     return [3, 24];
+  if (kind === 'trinket_catalyst') return [6, 4];
+  if (kind.startsWith('trinket_')) return [0, 17];
   return [0, 0];
 }
 

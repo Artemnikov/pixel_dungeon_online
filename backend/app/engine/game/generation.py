@@ -92,7 +92,107 @@ class GenerationMixin:
         self.floors[depth] = floor
         return floor
 
+    def _trinket_state(self) -> dict:
+        """Compute levelgen-relevant trinket multipliers from the first player."""
+        from app.engine.entities.trinkets import trinket_level as _tl
+        state = {}
+        for name in ("rat_skull", "petrified_seed", "exotic_crystals",
+                     "mossy_clump", "dimensional_sundial", "trap_mechanism",
+                     "mimic_tooth", "parchment_scrap", "wondrous_resin"):
+            state[name] = -1
+        if not self.players:
+            return state
+        p = next(iter(self.players.values()))
+        for name in state:
+            state[name] = _tl(p, name)
+        return state
+
+    def _trinket_apply_post_spawn(self, floor: FloorState):
+        """Post-processing for levelgen trinket effects after SPD gen."""
+        import random
+        from app.engine.entities.trinkets import (
+            rat_skull_exotic_chance,
+            mimic_tooth_ebony_chance,
+            exotic_crystals_chance,
+        )
+        state = self._trinket_state()
+
+        # RatSkull: swap some mobs to alts (RARE_ALTS from mob_spawner)
+        rs_lvl = state["rat_skull"]
+        if rs_lvl >= 0:
+            from app.engine.entities.trinkets import RatSkull
+            from app.engine.dungeon.spd_levelgen.mob_spawner import RARE_ALTS
+            mult = RatSkull.exotic_chance_multiplier(rs_lvl)
+            alt_chance = (1.0 / 50.0) * mult
+            from app.engine.entities.mobs import (
+                Rat, Gnoll, Crab, Slime, Thief, Necromancer, Brute,
+                DM200, Monk, Scorpio,
+                AlbinoRat, GnollExile, HermitCrab, CausticSlime,
+                Bandit, SpectralNecromancer, ArmoredBrute,
+                DM201, Senior, Acidic,
+            )
+            ALT_MAP = {
+                Rat: AlbinoRat, Gnoll: GnollExile, Crab: HermitCrab,
+                Slime: CausticSlime, Thief: Bandit, Necromancer: SpectralNecromancer,
+                Brute: ArmoredBrute, DM200: DM201, Monk: Senior,
+                Scorpio: Acidic,
+            }
+            for mob_id, mob in list(floor.mobs.items()):
+                cls = type(mob)
+                alt_cls = ALT_MAP.get(cls)
+                if alt_cls and random.random() < alt_chance:
+                    new_mob = alt_cls(
+                        id=mob_id,
+                        pos=mob.pos,
+                        faction=mob.faction,
+                        hp=mob.hp,
+                        max_hp=mob.max_hp,
+                        attack_skill=mob.attack_skill,
+                        defense_skill=mob.defense_skill,
+                        damage_min=mob.damage_min,
+                        damage_max=mob.damage_max,
+                    )
+                    floor.mobs[mob_id] = new_mob
+
+        # ExoticCrystals: swap some potions/scrolls to exotic variants
+        ec_lvl = state["exotic_crystals"]
+        if ec_lvl >= 0:
+            from app.engine.entities.trinkets import ExoticCrystals
+            exo_chance = ExoticCrystals.consumable_exotic_chance(ec_lvl)
+            _exotic_potion_map = {
+                "health_potion": "exotic_health",
+                "potion_of_strength": "exotic_strength",
+                "potion_of_haste": "exotic_haste",
+            }
+            for item_id, item in list(floor.items.items()):
+                kind = getattr(item, "kind", "")
+                if kind in ("potion",) and random.random() < exo_chance:
+                    from app.engine.entities.base import HealthPotion
+                    floor.items[item_id] = HealthPotion(
+                        id=item_id, pos=item.pos, name="Exotic Potion"
+                    )
+
+        # MimicTooth: convert some chests to mimics
+        mt_lvl = state["mimic_tooth"]
+        if mt_lvl >= 0:
+            from app.engine.entities.trinkets import MimicTooth
+            mult = MimicTooth.mimic_chance_multiplier(mt_lvl)
+            extra_mimic_chance = (mult - 1.0) / 4.0
+            from app.engine.entities.base import Chest as ChestCls
+            from app.engine.entities.mobs import Mimic as MimicMob
+            for item_id, item in list(floor.items.items()):
+                if isinstance(item, ChestCls) and item.chest_type == "CHEST":
+                    if random.random() < extra_mimic_chance:
+                        mimic = MimicMob(
+                            id=str(uuid.uuid4()),
+                            pos=item.pos,
+                            faction=Faction.DUNGEON,
+                        )
+                        floor.mobs[mimic.id] = mimic
+                        del floor.items[item_id]
+
     def _generate_floor_spd(self, depth: int) -> FloorState:
+        import random
         from app.engine.dungeon.spd_random import SPDRandom
         from app.engine.dungeon.spd_levelgen.boss_level import build_boss_floor
         from app.engine.dungeon.spd_levelgen.last_level import build_last_level
@@ -101,23 +201,36 @@ class GenerationMixin:
         floor_seed = seed_for_depth(self.master_seed, depth, 0)
         rng = SPDRandom()
         rng.push_generator(floor_seed)
+
+        state = self._trinket_state()
+        mossy_chance = 0.0
+        trap_chance = 0.0
+        if state["mossy_clump"] >= 0:
+            from app.engine.entities.trinkets import MossyClump
+            mossy_chance = MossyClump.override_normal_level_chance(state["mossy_clump"])
+        if state["trap_mechanism"] >= 0:
+            from app.engine.entities.trinkets import TrapMechanism
+            trap_chance = TrapMechanism.override_normal_level_chance(state["trap_mechanism"])
+
         if depth == 26:
             gen_level, _rooms = build_last_level(rng, depth, self.run_state)
         elif is_boss_level(depth):
             gen_level, _rooms = build_boss_floor(rng, depth, self.run_state)
         else:
-            gen_level, _rooms = build_floor(rng, depth, self.run_state)
+            gen_level, _rooms = build_floor(rng, depth, self.run_state,
+                                            mossy_chance, trap_chance)
         rng.pop_generator()
 
         floor = gen_level_to_floor_state(gen_level, depth)
 
         if "stronger_bosses" in self.challenges:
             from app.engine.entities.mobs import Goo
-
             for mob in floor.mobs.values():
                 if isinstance(mob, Goo):
                     mob.hp = 120
                     mob.max_hp = 120
+
+        self._trinket_apply_post_spawn(floor)
 
         return floor
 

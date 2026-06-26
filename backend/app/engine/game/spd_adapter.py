@@ -59,6 +59,7 @@ from app.engine.dungeon.spd_levelgen.run_state import SCROLL_DEFAULT_PROBS_TOTAL
 from app.engine.entities.item_catalog import FLOOR_SCROLL_KINDS, TRANSMUTE_GROUPS, make_catalog_item
 from app.engine.entities.weapon_defs import WEP_TIER_ORDER
 from app.engine.entities.quest_bosses import FetidRat, Ghost, GnollTrickster, GreatCrab
+from app.engine.entities.trinkets import TrinketCatalyst
 from app.engine.entities.mobs import (
     AcidicScorpio,
     AlbinoRat,
@@ -524,7 +525,7 @@ _DESCRIPTOR_ITEM_MAP = {
     "PotionOfStrength": lambda iid, pos: HealthPotion(id=iid, pos=pos),
     "Scroll": lambda iid, pos: _random_scroll(iid, pos),
     "Runestone": lambda iid, pos: Stone(id=iid, pos=pos, name="Runestone", damage=1, range=5),
-    "TrinketCatalyst": lambda iid, pos: Dewdrop(id=iid, pos=pos, name="Trinket Catalyst"),
+    "TrinketCatalyst": lambda iid, pos: TrinketCatalyst(id=iid, pos=pos, name="Trinket Catalyst"),
     "IronKey": lambda iid, pos: Key(id=iid, pos=pos, name="Iron Key", key_id="iron"),
     "GoldenKey": lambda iid, pos: Key(id=iid, pos=pos, name="Golden Key", key_id="golden"),
     "CrystalKey": lambda iid, pos: Key(id=iid, pos=pos, name="Crystal Key", key_id="crystal"),

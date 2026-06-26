@@ -268,7 +268,7 @@ CATEGORY_ORDER = [
     ItemCategory.WEAPON, ItemCategory.ARMOR, ItemCategory.RING, ItemCategory.ARTIFACT,
     ItemCategory.WAND, ItemCategory.SCROLL, ItemCategory.POTION, ItemCategory.SEED,
     ItemCategory.STONE, ItemCategory.FOOD, ItemCategory.KEY, ItemCategory.GOLD,
-    ItemCategory.MISC, ItemCategory.BAG, ItemCategory.SCENERY,
+    ItemCategory.TRINKET, ItemCategory.MISC, ItemCategory.BAG, ItemCategory.SCENERY,
 ]
 
 class Action:
@@ -2608,6 +2608,13 @@ from app.engine.entities.rings import (
 from app.engine.entities.rings_tier3 import (
     RingOfForce, RingOfElements, RingOfWealth,
 )  # noqa: E402
+from app.engine.entities.trinkets import (
+    RatSkull, ParchmentScrap, PetrifiedSeed, ExoticCrystals,
+    MossyClump, DimensionalSundial, ThirteenLeafClover, TrapMechanism,
+    MimicTooth, WondrousResin, EyeOfNewt, SaltCube, VialOfBlood,
+    ShardOfOblivion, ChaoticCenser, FerretTuft, CrackedSpyglass,
+    TrinketCatalyst,
+)  # noqa: E402
 
 AnyItem = Annotated[
     Union[
@@ -2641,6 +2648,11 @@ AnyItem = Annotated[
         GooBlob, DwarfToken, Petal,
         Chest,
         VelvetPouch, ScrollHolder, MagicalHolster, PotionBandolier, Bag,
+        RatSkull, ParchmentScrap, PetrifiedSeed, ExoticCrystals,
+        MossyClump, DimensionalSundial, ThirteenLeafClover, TrapMechanism,
+        MimicTooth, WondrousResin, EyeOfNewt, SaltCube, VialOfBlood,
+        ShardOfOblivion, ChaoticCenser, FerretTuft, CrackedSpyglass,
+        TrinketCatalyst,
     ],
     Field(discriminator="kind"),
 ]
@@ -3136,6 +3148,12 @@ class Player(Entity):
             base += self.level // 2 + excess_str * ea
         from app.engine.entities.rings import evasion_multiplier
         base = int(base * evasion_multiplier(self))
+        # FerretTuft trinket: multiplies evasion
+        from app.engine.entities.trinkets import FerretTuft as _FerretTuft
+        from app.engine.entities.trinkets import trinket_level
+        ft_lvl = trinket_level(self, "ferret_tuft")
+        if ft_lvl >= 0:
+            base = int(base * _FerretTuft.evasion_multiplier(ft_lvl))
         return base
 
     def set_heal(self, amount: float, percent_per_tick: float, flat_per_tick: float):
@@ -3202,6 +3220,14 @@ class Player(Entity):
         setattr(self.belongings, slot, item)
         item.on_equip(self)
         return True
+
+    def count_worn_unidentified(self) -> int:
+        count = 0
+        for slot in ("weapon", "armor", "artifact", "misc", "ring"):
+            item = getattr(self.belongings, slot, None)
+            if item is not None and not item.identified:
+                count += 1
+        return count
 
     def unequip_item(self, item_id: str) -> bool:
         for slot in ("weapon", "armor", "artifact", "misc", "ring"):

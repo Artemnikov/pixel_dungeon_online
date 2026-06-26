@@ -120,6 +120,12 @@ from app.engine.entities.base import (
 from app.engine.entities.weapon_defs import WEP_TIER_ORDER
 from app.engine.entities.base import make_named_melee_weapon  # noqa: E402
 from app.engine.entities.rings_tier3 import RingOfForce, RingOfElements, RingOfWealth  # noqa: E402
+from app.engine.entities.trinkets import (  # noqa: E402
+    CrackedSpyglass, ChaoticCenser, DimensionalSundial, ExoticCrystals,
+    EyeOfNewt, FerretTuft, MimicTooth, MossyClump, ParchmentScrap,
+    PetrifiedSeed, RatSkull, SaltCube, ShardOfOblivion, ThirteenLeafClover,
+    TrapMechanism, TrinketCatalyst, VialOfBlood, WondrousResin,
+)
 
 
 class ItemCatalogEntry(TypedDict):
@@ -275,6 +281,26 @@ _CATALOG: List[tuple] = [
     ("magical_holster", "Magical Holster", "container", lambda: MagicalHolster()),
     ("potion_bandolier", "Potion Bandolier", "container", lambda: PotionBandolier()),
     ("bag", "Bag", "container", lambda: Bag(name="Bag")),
+
+    # Trinkets
+    ("trinket_catalyst", "Trinket Catalyst", "trinket", lambda: TrinketCatalyst()),
+    ("rat_skull", "Rat Skull", "trinket", lambda: RatSkull()),
+    ("parchment_scrap", "Parchment Scrap", "trinket", lambda: ParchmentScrap()),
+    ("petrified_seed", "Petrified Seed", "trinket", lambda: PetrifiedSeed()),
+    ("exotic_crystals", "Exotic Crystals", "trinket", lambda: ExoticCrystals()),
+    ("mossy_clump", "Mossy Clump", "trinket", lambda: MossyClump()),
+    ("dimensional_sundial", "Dimensional Sundial", "trinket", lambda: DimensionalSundial()),
+    ("thirteen_leaf_clover", "Thirteen-Leaf Clover", "trinket", lambda: ThirteenLeafClover()),
+    ("trap_mechanism", "Trap Mechanism", "trinket", lambda: TrapMechanism()),
+    ("mimic_tooth", "Mimic Tooth", "trinket", lambda: MimicTooth()),
+    ("wondrous_resin", "Wondrous Resin", "trinket", lambda: WondrousResin()),
+    ("eye_of_newt", "Eye of Newt", "trinket", lambda: EyeOfNewt()),
+    ("salt_cube", "Salt Cube", "trinket", lambda: SaltCube()),
+    ("vial_of_blood", "Vial of Blood", "trinket", lambda: VialOfBlood()),
+    ("shard_of_oblivion", "Shard of Oblivion", "trinket", lambda: ShardOfOblivion()),
+    ("chaotic_censer", "Chaotic Censer", "trinket", lambda: ChaoticCenser()),
+    ("ferret_tuft", "Ferret Tuft", "trinket", lambda: FerretTuft()),
+    ("cracked_spyglass", "Cracked Spyglass", "trinket", lambda: CrackedSpyglass()),
 ]
 
 _FACTORIES: dict = {kind: factory for kind, _name, _category, factory in _CATALOG}

@@ -1,16 +1,28 @@
 from __future__ import annotations
 
-from typing import ClassVar, Literal
+from typing import ClassVar, List, Literal, Optional, TYPE_CHECKING
 
-from app.engine.entities.base import Item, ItemCategory
+from app.engine.entities.base import (
+    Action,
+    EquipableItem,
+    ItemBase,
+    ItemCategory,
+    KindofMisc,
+)
+
+if TYPE_CHECKING:
+    from app.engine.entities.base import Player
 
 
-class Trinket(Item):
+class Trinket(KindofMisc):
     kind: Literal["trinket"] = "trinket"
     type: str = "trinket"
     unique: bool = True
     level_known: bool = True
-    category: ClassVar[str] = ItemCategory.MISC
+    category: ClassVar[str] = ItemCategory.TRINKET
+    level: int = 0
+    strength_requirement: int = 0
+    DESC: ClassVar[str] = "A mystical trinket that grants a passive bonus while worn."
 
     def upgrade_energy_cost(self) -> int:
         return 6 + 2 * self.level
@@ -18,6 +30,14 @@ class Trinket(Item):
     @classmethod
     def energy_val(cls) -> int:
         return 5
+
+    def actions(self, player: Optional["Player"] = None) -> List[str]:
+        base = list(super().actions(player))
+        equipped = bool(player and player.belongings.is_equipped(self.id))
+        return [Action.UNEQUIP if equipped else Action.EQUIP] + base
+
+    def default_action(self) -> Optional[str]:
+        return Action.EQUIP
 
 
 class RatSkull(Trinket):
@@ -273,16 +293,22 @@ class CrackedSpyglass(Trinket):
         return 0.375 * (level + 1)
 
 
-class TrinketCatalyst(Item):
+class TrinketCatalyst(ItemBase):
     kind: Literal["trinket_catalyst"] = "trinket_catalyst"
+    type: str = "trinket_catalyst"
     name: str = "Trinket Catalyst"
     unique: bool = True
     level_known: bool = True
     category: ClassVar[str] = ItemCategory.MISC
+    DESC: ClassVar[str] = "Can be used at an Alchemy Pot to create a random trinket."
 
     @classmethod
     def energy_val(cls) -> int:
         return 6
+
+    def actions(self, player: Optional["Player"] = None) -> List[str]:
+        base = list(super().actions(player))
+        return [Action.ALCHEMIZE] + base
 
 
 _TRINKET_CLASSES = [
@@ -308,3 +334,13 @@ def trinket_class_for_index(idx: int):
     if 0 <= idx < len(_TRINKET_CLASSES):
         return _TRINKET_CLASSES[idx]
     return RatSkull
+
+def trinket_level(player, trinket_kind: str) -> int:
+    """SPD trinketLevel(Class): returns buffed level of the trinket the player
+    has equipped in their misc slot, or -1 if no matching trinket is worn."""
+    misc = getattr(player.belongings, "misc", None)
+    if misc is None:
+        return -1
+    if getattr(misc, "kind", None) != trinket_kind:
+        return -1
+    return max(0, misc.level) if not misc.cursed else 0

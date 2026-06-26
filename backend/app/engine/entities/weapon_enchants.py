@@ -132,6 +132,41 @@ def striking_wave_multiplier(attacker: "Entity") -> float:
     return 1.0
 
 
+def trinket_curse_effect_bonus(attacker: "Entity") -> float:
+    """WondrousResin: positive_curse_effect_chance replaces a curse effect with
+    a positive one; extra_curse_effect_chance adds a bonus positive effect.
+    Returns (positive_chance, extra_chance) as a tuple."""
+    from app.engine.entities.trinkets import WondrousResin as _WR
+    from app.engine.entities.trinkets import trinket_level
+    lvl = trinket_level(attacker, "wondrous_resin")
+    if lvl < 0:
+        return (0.0, 0.0)
+    return (_WR.positive_curse_effect_chance(lvl),
+            _WR.extra_curse_effect_chance(lvl))
+
+
+def roll_curse_effect_wondrous(attacker: "Entity", positive_procs: dict) -> Optional[str]:
+    """If WondrousResin is active, roll whether a curse effect is replaced with
+    a positive one. Returns a positive enchant name to substitute, or None."""
+    pos_chance, _ = trinket_curse_effect_bonus(attacker)
+    if pos_chance <= 0:
+        return None
+    if random.random() >= pos_chance:
+        return None
+    # Pick a random positive enchant as substitute
+    return random.choice(list(ENCHANT_RARITY.keys()))
+
+
+def roll_extra_curse_effect(attacker: "Entity") -> Optional[str]:
+    """If WondrousResin is active, roll for an extra positive effect."""
+    _, extra_chance = trinket_curse_effect_bonus(attacker)
+    if extra_chance <= 0:
+        return None
+    if random.random() >= extra_chance:
+        return None
+    return random.choice(list(ENCHANT_RARITY.keys()))
+
+
 def enraged_catalyst_bonus(attacker: "Entity") -> float:
     """Enraged Catalyst (warrior T3 berserker): while raging, weapon
     enchant/curse proc chances go up by up to 15% per point, scaled by
@@ -159,17 +194,22 @@ def roll_weapon_level(rng: random.Random = random) -> int:
     return 2
 
 
-def roll_weapon_enchant(rng: random.Random = random) -> Tuple[Optional[str], bool]:
+def roll_weapon_enchant(rng: random.Random = random,
+                        enchant_mult: float = 1.0,
+                        curse_mult: float = 1.0) -> Tuple[Optional[str], bool]:
     """Returns (enchant_or_curse_name, is_cursed). 30% cursed, else 10%
-    enchanted, else (None, False). See module docstring for the rarity-table
-    renormalization used for the not-yet-implemented enchants/curses."""
+    enchanted, else (None, False). enchant_mult/curse_mult scale the respective
+    chances (from ParchmentScrap trinket). See module docstring for the rarity-
+    table renormalization used for the not-yet-implemented enchants/curses."""
     r = rng.random()
-    if r < 0.30:
+    curse_threshold = 0.30 * curse_mult
+    if r < curse_threshold:
         curse = rng.choice(ALL_SPD_CURSES)
         if curse in CURSES:
             return curse, True
         return None, False
-    if r < 0.40:
+    enchant_threshold = curse_threshold + 0.10 * enchant_mult
+    if r < enchant_threshold:
         roll = rng.random() * 100.0
         acc = 0.0
         for name, weight in ENCHANT_RARITY.items():
@@ -344,6 +384,20 @@ _PROC_HANDLERS: Dict[str, Callable] = {
 }
 
 
+def _resolve_wondrous_resin(
+    name: str, attacker: "Entity", actual_damage: int,
+    result: dict, floor_mobs: dict, tile_x: int, tile_y: int,
+    floor, add_event,
+) -> str:
+    """If name is a curse and WondrousResin is active, potentially replace
+    it with a positive enchant."""
+    if name in CURSES:
+        replacement = roll_curse_effect_wondrous(attacker, {})
+        if replacement is not None:
+            return replacement
+    return name
+
+
 def apply_enchant_proc(
     name: str,
     attacker: "Entity",
@@ -361,6 +415,7 @@ def apply_enchant_proc(
 ) -> None:
     """Dispatch an on-hit weapon enchant/curse proc. Grim, Kinetic, Polarized
     and Projecting are handled separately in combat.py (see plan §3)."""
+    name = _resolve_wondrous_resin(name, attacker, actual_damage, result, floor_mobs, tile_x, tile_y, floor, add_event)
     handler = _PROC_HANDLERS.get(name)
     if handler is not None:
         arcana_mult = 1.0

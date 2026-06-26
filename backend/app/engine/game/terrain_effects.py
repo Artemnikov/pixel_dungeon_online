@@ -74,6 +74,24 @@ def _drop_berry(floor: FloorState, pos: Tuple[int, int]):
     return berry.id
 
 
+def _trinket_grass_loot_mult(player: Player) -> float:
+    from app.engine.entities.trinkets import PetrifiedSeed as _PS
+    from app.engine.entities.trinkets import trinket_level
+    lvl = trinket_level(player, "petrified_seed")
+    if lvl < 0:
+        return 1.0
+    return _PS.grass_loot_multiplier(lvl)
+
+
+def _trinket_stone_instead_of_seed(player: Player) -> bool:
+    from app.engine.entities.trinkets import PetrifiedSeed as _PS
+    from app.engine.entities.trinkets import trinket_level
+    lvl = trinket_level(player, "petrified_seed")
+    if lvl < 0:
+        return False
+    return random.random() < _PS.stone_instead_of_seed_chance(lvl)
+
+
 def roll_grass_loot(floor: FloorState, trampler: Entity) -> list:
     drops: list = []
 
@@ -90,13 +108,26 @@ def roll_grass_loot(floor: FloorState, trampler: Entity) -> list:
                 naturalism = getattr(item, "naturalism_level", 0)
                 break
 
+    # PetrifiedSeed trinket: grass loot multiplier
+    loot_mult = 1.0
+    if isinstance(trampler, Player):
+        loot_mult = _trinket_grass_loot_mult(trampler)
+
     # Seeds: 1/(25 - naturalism*4) chance
-    seed_chance = 1.0 / max(1, 25 - naturalism * 4)
-    if random.random() < seed_chance:
+    seed_chance = 1.0 / max(1, 25 - naturalism * 4) * loot_mult
+    if isinstance(trampler, Player) and _trinket_stone_instead_of_seed(trampler):
+        from app.engine.entities.base import Stone as StoneItem
+        stone = StoneItem(
+            id=str(uuid.uuid4()),
+            pos=Position(x=trampler.pos.x, y=trampler.pos.y),
+            damage=1, range=5,
+        )
+        floor.items[stone.id] = stone
+    elif random.random() < seed_chance:
         _drop_seed(floor, (trampler.pos.x, trampler.pos.y))
 
     # Dewdrops: 1/(6 - naturalism/2) chance
-    dew_chance = 1.0 / max(1, 6 - naturalism / 2)
+    dew_chance = 1.0 / max(1, 6 - naturalism / 2) * loot_mult
     if region == "sewers":
         dew_chance /= 2  # GRASS-feeling floors in sewers
     if random.random() < dew_chance:
@@ -111,7 +142,7 @@ def roll_grass_loot(floor: FloorState, trampler: Entity) -> list:
         if talent_level > 0:
             berry_floor = getattr(floor, "floor_id", 1)
             berry_rate = max(0.0, 1.0 - (berry_floor - 2) * 0.02 * talent_level)
-            if berry_rate > 0 and random.random() < berry_rate * 0.01:
+            if berry_rate > 0 and random.random() < berry_rate * 0.01 * loot_mult:
                 _drop_berry(floor, (trampler.pos.x, trampler.pos.y))
 
     return drops

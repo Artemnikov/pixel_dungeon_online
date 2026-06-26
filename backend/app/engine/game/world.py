@@ -306,6 +306,12 @@ class WorldInteractionMixin:
             distance += 1
             circular = wide_search == 1
 
+        # TrapMechanism trinket: extra trap reveal chance during search
+        from app.engine.entities.trinkets import TrapMechanism as _TM
+        from app.engine.entities.trinkets import trinket_level
+        tm_lvl = trinket_level(player, "trap_mechanism")
+        trap_reveal_chance = _TM.reveal_hidden_trap_chance(tm_lvl) if tm_lvl >= 0 else 0.0
+
         for dy in range(-distance, distance + 1):
             for dx in range(-distance, distance + 1):
                 if dx == 0 and dy == 0:
@@ -327,11 +333,12 @@ class WorldInteractionMixin:
 
                 trap = floor.traps.get(pos)
                 if trap and trap.hidden:
-                    trap.hidden = False
-                    found_secret = True
-                    if floor.grid[ty][tx] == TileType.SECRET_TRAP:
-                        floor.grid[ty][tx] = TileType.TRAP
-                        patches.append({"x": tx, "y": ty, "tile": TileType.TRAP})
+                    if trap_reveal_chance > 0 and random.random() < trap_reveal_chance:
+                        trap.hidden = False
+                        found_secret = True
+                        if floor.grid[ty][tx] == TileType.SECRET_TRAP:
+                            floor.grid[ty][tx] = TileType.TRAP
+                            patches.append({"x": tx, "y": ty, "tile": TileType.TRAP})
 
         if patches:
             # Tile mutations changed the grid — refresh derived flag maps

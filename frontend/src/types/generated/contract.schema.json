@@ -328,15 +328,22 @@
                 "boomerang": "#/$defs/Boomerang",
                 "bow": "#/$defs/Bow",
                 "broken_seal": "#/$defs/BrokenSeal",
+                "chaotic_censer": "#/$defs/ChaoticCenser",
                 "chargrilled_meat": "#/$defs/ChargrilledMeat",
                 "chest": "#/$defs/Chest",
                 "cloak_of_shadows": "#/$defs/CloakOfShadows",
+                "cloth_armor": "#/$defs/ClothArmor",
+                "cracked_spyglass": "#/$defs/CrackedSpyglass",
                 "dagger": "#/$defs/Dagger",
                 "damage_wand": "#/$defs/DamageWand",
                 "dewdrop": "#/$defs/Dewdrop",
+                "dimensional_sundial": "#/$defs/DimensionalSundial",
                 "dried_rose": "#/$defs/DriedRose",
                 "dwarf_token": "#/$defs/DwarfToken",
                 "elixir_aqua_rejuv": "#/$defs/ElixirOfAquaticRejuvenation",
+                "exotic_crystals": "#/$defs/ExoticCrystals",
+                "eye_of_newt": "#/$defs/EyeOfNewt",
+                "ferret_tuft": "#/$defs/FerretTuft",
                 "food": "#/$defs/Food",
                 "frozen_carpaccio": "#/$defs/FrozenCarpaccio",
                 "fury_potion": "#/$defs/FuryPotion",
@@ -345,12 +352,19 @@
                 "health_potion": "#/$defs/HealthPotion",
                 "key": "#/$defs/Key",
                 "kings_crown": "#/$defs/KingsCrown",
+                "leather_armor": "#/$defs/LeatherArmor",
                 "magical_holster": "#/$defs/MagicalHolster",
+                "mail_armor": "#/$defs/MailArmor",
                 "melee_weapon": "#/$defs/MeleeWeapon",
+                "mimic_tooth": "#/$defs/MimicTooth",
                 "missile_weapon": "#/$defs/MissileWeapon",
+                "mossy_clump": "#/$defs/MossyClump",
                 "mystery_meat": "#/$defs/MysteryMeat",
+                "parchment_scrap": "#/$defs/ParchmentScrap",
                 "pasty": "#/$defs/Pasty",
                 "petal": "#/$defs/Petal",
+                "petrified_seed": "#/$defs/PetrifiedSeed",
+                "plate_armor": "#/$defs/PlateArmor",
                 "potion": "#/$defs/Potion",
                 "potion_bandolier": "#/$defs/PotionBandolier",
                 "potion_of_experience": "#/$defs/PotionOfExperience",
@@ -364,6 +378,7 @@
                 "potion_of_purity": "#/$defs/PotionOfPurity",
                 "potion_of_strength": "#/$defs/PotionOfStrength",
                 "potion_of_toxic_gas": "#/$defs/PotionOfToxicGas",
+                "rat_skull": "#/$defs/RatSkull",
                 "ration": "#/$defs/Ration",
                 "reviving_potion": "#/$defs/RevivingPotion",
                 "ring": "#/$defs/Ring",
@@ -379,6 +394,8 @@
                 "ring_sharpshooting": "#/$defs/RingOfSharpshooting",
                 "ring_tenacity": "#/$defs/RingOfTenacity",
                 "ring_wealth": "#/$defs/RingOfWealth",
+                "salt_cube": "#/$defs/SaltCube",
+                "scale_armor": "#/$defs/ScaleArmor",
                 "scroll": "#/$defs/Scroll",
                 "scroll_holder": "#/$defs/ScrollHolder",
                 "scroll_of_identify": "#/$defs/ScrollOfIdentify",
@@ -395,14 +412,19 @@
                 "scroll_of_transmutation": "#/$defs/ScrollOfTransmutation",
                 "scroll_of_upgrade": "#/$defs/ScrollOfUpgrade",
                 "seed": "#/$defs/Seed",
+                "shard_of_oblivion": "#/$defs/ShardOfOblivion",
                 "small_ration": "#/$defs/SmallRation",
                 "spirit_bow": "#/$defs/SpiritBow",
                 "staff": "#/$defs/Staff",
                 "stone": "#/$defs/Stone",
                 "tengu_mask": "#/$defs/TenguMask",
+                "thirteen_leaf_clover": "#/$defs/ThirteenLeafClover",
                 "throwable": "#/$defs/Throwable",
                 "throwable_dagger": "#/$defs/ThrowableDagger",
+                "trap_mechanism": "#/$defs/TrapMechanism",
+                "trinket_catalyst": "#/$defs/TrinketCatalyst",
                 "velvet_pouch": "#/$defs/VelvetPouch",
+                "vial_of_blood": "#/$defs/VialOfBlood",
                 "wand": "#/$defs/Wand",
                 "wand_blast_wave": "#/$defs/WandOfBlastWave",
                 "wand_corrosion": "#/$defs/WandOfCorrosion",
@@ -418,6 +440,7 @@
                 "wand_transfusion": "#/$defs/WandOfTransfusion",
                 "wand_warding": "#/$defs/WandOfWarding",
                 "waterskin": "#/$defs/Waterskin",
+                "wondrous_resin": "#/$defs/WondrousResin",
                 "worn_shortsword": "#/$defs/WornShortsword"
               },
               "propertyName": "kind"
@@ -446,6 +469,21 @@
               },
               {
                 "$ref": "#/$defs/Armor"
+              },
+              {
+                "$ref": "#/$defs/ClothArmor"
+              },
+              {
+                "$ref": "#/$defs/LeatherArmor"
+              },
+              {
+                "$ref": "#/$defs/MailArmor"
+              },
+              {
+                "$ref": "#/$defs/ScaleArmor"
+              },
+              {
+                "$ref": "#/$defs/PlateArmor"
               },
               {
                 "$ref": "#/$defs/Ring"
@@ -719,6 +757,60 @@
               },
               {
                 "$ref": "#/$defs/Bag"
+              },
+              {
+                "$ref": "#/$defs/RatSkull"
+              },
+              {
+                "$ref": "#/$defs/ParchmentScrap"
+              },
+              {
+                "$ref": "#/$defs/PetrifiedSeed"
+              },
+              {
+                "$ref": "#/$defs/ExoticCrystals"
+              },
+              {
+                "$ref": "#/$defs/MossyClump"
+              },
+              {
+                "$ref": "#/$defs/DimensionalSundial"
+              },
+              {
+                "$ref": "#/$defs/ThirteenLeafClover"
+              },
+              {
+                "$ref": "#/$defs/TrapMechanism"
+              },
+              {
+                "$ref": "#/$defs/MimicTooth"
+              },
+              {
+                "$ref": "#/$defs/WondrousResin"
+              },
+              {
+                "$ref": "#/$defs/EyeOfNewt"
+              },
+              {
+                "$ref": "#/$defs/SaltCube"
+              },
+              {
+                "$ref": "#/$defs/VialOfBlood"
+              },
+              {
+                "$ref": "#/$defs/ShardOfOblivion"
+              },
+              {
+                "$ref": "#/$defs/ChaoticCenser"
+              },
+              {
+                "$ref": "#/$defs/FerretTuft"
+              },
+              {
+                "$ref": "#/$defs/CrackedSpyglass"
+              },
+              {
+                "$ref": "#/$defs/TrinketCatalyst"
               }
             ]
           },
@@ -748,15 +840,22 @@
                   "boomerang": "#/$defs/Boomerang",
                   "bow": "#/$defs/Bow",
                   "broken_seal": "#/$defs/BrokenSeal",
+                  "chaotic_censer": "#/$defs/ChaoticCenser",
                   "chargrilled_meat": "#/$defs/ChargrilledMeat",
                   "chest": "#/$defs/Chest",
                   "cloak_of_shadows": "#/$defs/CloakOfShadows",
+                  "cloth_armor": "#/$defs/ClothArmor",
+                  "cracked_spyglass": "#/$defs/CrackedSpyglass",
                   "dagger": "#/$defs/Dagger",
                   "damage_wand": "#/$defs/DamageWand",
                   "dewdrop": "#/$defs/Dewdrop",
+                  "dimensional_sundial": "#/$defs/DimensionalSundial",
                   "dried_rose": "#/$defs/DriedRose",
                   "dwarf_token": "#/$defs/DwarfToken",
                   "elixir_aqua_rejuv": "#/$defs/ElixirOfAquaticRejuvenation",
+                  "exotic_crystals": "#/$defs/ExoticCrystals",
+                  "eye_of_newt": "#/$defs/EyeOfNewt",
+                  "ferret_tuft": "#/$defs/FerretTuft",
                   "food": "#/$defs/Food",
                   "frozen_carpaccio": "#/$defs/FrozenCarpaccio",
                   "fury_potion": "#/$defs/FuryPotion",
@@ -765,12 +864,19 @@
                   "health_potion": "#/$defs/HealthPotion",
                   "key": "#/$defs/Key",
                   "kings_crown": "#/$defs/KingsCrown",
+                  "leather_armor": "#/$defs/LeatherArmor",
                   "magical_holster": "#/$defs/MagicalHolster",
+                  "mail_armor": "#/$defs/MailArmor",
                   "melee_weapon": "#/$defs/MeleeWeapon",
+                  "mimic_tooth": "#/$defs/MimicTooth",
                   "missile_weapon": "#/$defs/MissileWeapon",
+                  "mossy_clump": "#/$defs/MossyClump",
                   "mystery_meat": "#/$defs/MysteryMeat",
+                  "parchment_scrap": "#/$defs/ParchmentScrap",
                   "pasty": "#/$defs/Pasty",
                   "petal": "#/$defs/Petal",
+                  "petrified_seed": "#/$defs/PetrifiedSeed",
+                  "plate_armor": "#/$defs/PlateArmor",
                   "potion": "#/$defs/Potion",
                   "potion_bandolier": "#/$defs/PotionBandolier",
                   "potion_of_experience": "#/$defs/PotionOfExperience",
@@ -784,6 +890,7 @@
                   "potion_of_purity": "#/$defs/PotionOfPurity",
                   "potion_of_strength": "#/$defs/PotionOfStrength",
                   "potion_of_toxic_gas": "#/$defs/PotionOfToxicGas",
+                  "rat_skull": "#/$defs/RatSkull",
                   "ration": "#/$defs/Ration",
                   "reviving_potion": "#/$defs/RevivingPotion",
                   "ring": "#/$defs/Ring",
@@ -799,6 +906,8 @@
                   "ring_sharpshooting": "#/$defs/RingOfSharpshooting",
                   "ring_tenacity": "#/$defs/RingOfTenacity",
                   "ring_wealth": "#/$defs/RingOfWealth",
+                  "salt_cube": "#/$defs/SaltCube",
+                  "scale_armor": "#/$defs/ScaleArmor",
                   "scroll": "#/$defs/Scroll",
                   "scroll_holder": "#/$defs/ScrollHolder",
                   "scroll_of_identify": "#/$defs/ScrollOfIdentify",
@@ -815,14 +924,19 @@
                   "scroll_of_transmutation": "#/$defs/ScrollOfTransmutation",
                   "scroll_of_upgrade": "#/$defs/ScrollOfUpgrade",
                   "seed": "#/$defs/Seed",
+                  "shard_of_oblivion": "#/$defs/ShardOfOblivion",
                   "small_ration": "#/$defs/SmallRation",
                   "spirit_bow": "#/$defs/SpiritBow",
                   "staff": "#/$defs/Staff",
                   "stone": "#/$defs/Stone",
                   "tengu_mask": "#/$defs/TenguMask",
+                  "thirteen_leaf_clover": "#/$defs/ThirteenLeafClover",
                   "throwable": "#/$defs/Throwable",
                   "throwable_dagger": "#/$defs/ThrowableDagger",
+                  "trap_mechanism": "#/$defs/TrapMechanism",
+                  "trinket_catalyst": "#/$defs/TrinketCatalyst",
                   "velvet_pouch": "#/$defs/VelvetPouch",
+                  "vial_of_blood": "#/$defs/VialOfBlood",
                   "wand": "#/$defs/Wand",
                   "wand_blast_wave": "#/$defs/WandOfBlastWave",
                   "wand_corrosion": "#/$defs/WandOfCorrosion",
@@ -838,6 +952,7 @@
                   "wand_transfusion": "#/$defs/WandOfTransfusion",
                   "wand_warding": "#/$defs/WandOfWarding",
                   "waterskin": "#/$defs/Waterskin",
+                  "wondrous_resin": "#/$defs/WondrousResin",
                   "worn_shortsword": "#/$defs/WornShortsword"
                 },
                 "propertyName": "kind"
@@ -866,6 +981,21 @@
                 },
                 {
                   "$ref": "#/$defs/Armor"
+                },
+                {
+                  "$ref": "#/$defs/ClothArmor"
+                },
+                {
+                  "$ref": "#/$defs/LeatherArmor"
+                },
+                {
+                  "$ref": "#/$defs/MailArmor"
+                },
+                {
+                  "$ref": "#/$defs/ScaleArmor"
+                },
+                {
+                  "$ref": "#/$defs/PlateArmor"
                 },
                 {
                   "$ref": "#/$defs/Ring"
@@ -1139,6 +1269,60 @@
                 },
                 {
                   "$ref": "#/$defs/Bag"
+                },
+                {
+                  "$ref": "#/$defs/RatSkull"
+                },
+                {
+                  "$ref": "#/$defs/ParchmentScrap"
+                },
+                {
+                  "$ref": "#/$defs/PetrifiedSeed"
+                },
+                {
+                  "$ref": "#/$defs/ExoticCrystals"
+                },
+                {
+                  "$ref": "#/$defs/MossyClump"
+                },
+                {
+                  "$ref": "#/$defs/DimensionalSundial"
+                },
+                {
+                  "$ref": "#/$defs/ThirteenLeafClover"
+                },
+                {
+                  "$ref": "#/$defs/TrapMechanism"
+                },
+                {
+                  "$ref": "#/$defs/MimicTooth"
+                },
+                {
+                  "$ref": "#/$defs/WondrousResin"
+                },
+                {
+                  "$ref": "#/$defs/EyeOfNewt"
+                },
+                {
+                  "$ref": "#/$defs/SaltCube"
+                },
+                {
+                  "$ref": "#/$defs/VialOfBlood"
+                },
+                {
+                  "$ref": "#/$defs/ShardOfOblivion"
+                },
+                {
+                  "$ref": "#/$defs/ChaoticCenser"
+                },
+                {
+                  "$ref": "#/$defs/FerretTuft"
+                },
+                {
+                  "$ref": "#/$defs/CrackedSpyglass"
+                },
+                {
+                  "$ref": "#/$defs/TrinketCatalyst"
                 }
               ]
             },
@@ -1161,15 +1345,22 @@
                   "boomerang": "#/$defs/Boomerang",
                   "bow": "#/$defs/Bow",
                   "broken_seal": "#/$defs/BrokenSeal",
+                  "chaotic_censer": "#/$defs/ChaoticCenser",
                   "chargrilled_meat": "#/$defs/ChargrilledMeat",
                   "chest": "#/$defs/Chest",
                   "cloak_of_shadows": "#/$defs/CloakOfShadows",
+                  "cloth_armor": "#/$defs/ClothArmor",
+                  "cracked_spyglass": "#/$defs/CrackedSpyglass",
                   "dagger": "#/$defs/Dagger",
                   "damage_wand": "#/$defs/DamageWand",
                   "dewdrop": "#/$defs/Dewdrop",
+                  "dimensional_sundial": "#/$defs/DimensionalSundial",
                   "dried_rose": "#/$defs/DriedRose",
                   "dwarf_token": "#/$defs/DwarfToken",
                   "elixir_aqua_rejuv": "#/$defs/ElixirOfAquaticRejuvenation",
+                  "exotic_crystals": "#/$defs/ExoticCrystals",
+                  "eye_of_newt": "#/$defs/EyeOfNewt",
+                  "ferret_tuft": "#/$defs/FerretTuft",
                   "food": "#/$defs/Food",
                   "frozen_carpaccio": "#/$defs/FrozenCarpaccio",
                   "fury_potion": "#/$defs/FuryPotion",
@@ -1178,12 +1369,19 @@
                   "health_potion": "#/$defs/HealthPotion",
                   "key": "#/$defs/Key",
                   "kings_crown": "#/$defs/KingsCrown",
+                  "leather_armor": "#/$defs/LeatherArmor",
                   "magical_holster": "#/$defs/MagicalHolster",
+                  "mail_armor": "#/$defs/MailArmor",
                   "melee_weapon": "#/$defs/MeleeWeapon",
+                  "mimic_tooth": "#/$defs/MimicTooth",
                   "missile_weapon": "#/$defs/MissileWeapon",
+                  "mossy_clump": "#/$defs/MossyClump",
                   "mystery_meat": "#/$defs/MysteryMeat",
+                  "parchment_scrap": "#/$defs/ParchmentScrap",
                   "pasty": "#/$defs/Pasty",
                   "petal": "#/$defs/Petal",
+                  "petrified_seed": "#/$defs/PetrifiedSeed",
+                  "plate_armor": "#/$defs/PlateArmor",
                   "potion": "#/$defs/Potion",
                   "potion_bandolier": "#/$defs/PotionBandolier",
                   "potion_of_experience": "#/$defs/PotionOfExperience",
@@ -1197,6 +1395,7 @@
                   "potion_of_purity": "#/$defs/PotionOfPurity",
                   "potion_of_strength": "#/$defs/PotionOfStrength",
                   "potion_of_toxic_gas": "#/$defs/PotionOfToxicGas",
+                  "rat_skull": "#/$defs/RatSkull",
                   "ration": "#/$defs/Ration",
                   "reviving_potion": "#/$defs/RevivingPotion",
                   "ring": "#/$defs/Ring",
@@ -1212,6 +1411,8 @@
                   "ring_sharpshooting": "#/$defs/RingOfSharpshooting",
                   "ring_tenacity": "#/$defs/RingOfTenacity",
                   "ring_wealth": "#/$defs/RingOfWealth",
+                  "salt_cube": "#/$defs/SaltCube",
+                  "scale_armor": "#/$defs/ScaleArmor",
                   "scroll": "#/$defs/Scroll",
                   "scroll_holder": "#/$defs/ScrollHolder",
                   "scroll_of_identify": "#/$defs/ScrollOfIdentify",
@@ -1228,14 +1429,19 @@
                   "scroll_of_transmutation": "#/$defs/ScrollOfTransmutation",
                   "scroll_of_upgrade": "#/$defs/ScrollOfUpgrade",
                   "seed": "#/$defs/Seed",
+                  "shard_of_oblivion": "#/$defs/ShardOfOblivion",
                   "small_ration": "#/$defs/SmallRation",
                   "spirit_bow": "#/$defs/SpiritBow",
                   "staff": "#/$defs/Staff",
                   "stone": "#/$defs/Stone",
                   "tengu_mask": "#/$defs/TenguMask",
+                  "thirteen_leaf_clover": "#/$defs/ThirteenLeafClover",
                   "throwable": "#/$defs/Throwable",
                   "throwable_dagger": "#/$defs/ThrowableDagger",
+                  "trap_mechanism": "#/$defs/TrapMechanism",
+                  "trinket_catalyst": "#/$defs/TrinketCatalyst",
                   "velvet_pouch": "#/$defs/VelvetPouch",
+                  "vial_of_blood": "#/$defs/VialOfBlood",
                   "wand": "#/$defs/Wand",
                   "wand_blast_wave": "#/$defs/WandOfBlastWave",
                   "wand_corrosion": "#/$defs/WandOfCorrosion",
@@ -1251,6 +1457,7 @@
                   "wand_transfusion": "#/$defs/WandOfTransfusion",
                   "wand_warding": "#/$defs/WandOfWarding",
                   "waterskin": "#/$defs/Waterskin",
+                  "wondrous_resin": "#/$defs/WondrousResin",
                   "worn_shortsword": "#/$defs/WornShortsword"
                 },
                 "propertyName": "kind"
@@ -1279,6 +1486,21 @@
                 },
                 {
                   "$ref": "#/$defs/Armor"
+                },
+                {
+                  "$ref": "#/$defs/ClothArmor"
+                },
+                {
+                  "$ref": "#/$defs/LeatherArmor"
+                },
+                {
+                  "$ref": "#/$defs/MailArmor"
+                },
+                {
+                  "$ref": "#/$defs/ScaleArmor"
+                },
+                {
+                  "$ref": "#/$defs/PlateArmor"
                 },
                 {
                   "$ref": "#/$defs/Ring"
@@ -1552,6 +1774,60 @@
                 },
                 {
                   "$ref": "#/$defs/Bag"
+                },
+                {
+                  "$ref": "#/$defs/RatSkull"
+                },
+                {
+                  "$ref": "#/$defs/ParchmentScrap"
+                },
+                {
+                  "$ref": "#/$defs/PetrifiedSeed"
+                },
+                {
+                  "$ref": "#/$defs/ExoticCrystals"
+                },
+                {
+                  "$ref": "#/$defs/MossyClump"
+                },
+                {
+                  "$ref": "#/$defs/DimensionalSundial"
+                },
+                {
+                  "$ref": "#/$defs/ThirteenLeafClover"
+                },
+                {
+                  "$ref": "#/$defs/TrapMechanism"
+                },
+                {
+                  "$ref": "#/$defs/MimicTooth"
+                },
+                {
+                  "$ref": "#/$defs/WondrousResin"
+                },
+                {
+                  "$ref": "#/$defs/EyeOfNewt"
+                },
+                {
+                  "$ref": "#/$defs/SaltCube"
+                },
+                {
+                  "$ref": "#/$defs/VialOfBlood"
+                },
+                {
+                  "$ref": "#/$defs/ShardOfOblivion"
+                },
+                {
+                  "$ref": "#/$defs/ChaoticCenser"
+                },
+                {
+                  "$ref": "#/$defs/FerretTuft"
+                },
+                {
+                  "$ref": "#/$defs/CrackedSpyglass"
+                },
+                {
+                  "$ref": "#/$defs/TrinketCatalyst"
                 }
               ]
             },
@@ -1574,15 +1850,22 @@
                   "boomerang": "#/$defs/Boomerang",
                   "bow": "#/$defs/Bow",
                   "broken_seal": "#/$defs/BrokenSeal",
+                  "chaotic_censer": "#/$defs/ChaoticCenser",
                   "chargrilled_meat": "#/$defs/ChargrilledMeat",
                   "chest": "#/$defs/Chest",
                   "cloak_of_shadows": "#/$defs/CloakOfShadows",
+                  "cloth_armor": "#/$defs/ClothArmor",
+                  "cracked_spyglass": "#/$defs/CrackedSpyglass",
                   "dagger": "#/$defs/Dagger",
                   "damage_wand": "#/$defs/DamageWand",
                   "dewdrop": "#/$defs/Dewdrop",
+                  "dimensional_sundial": "#/$defs/DimensionalSundial",
                   "dried_rose": "#/$defs/DriedRose",
                   "dwarf_token": "#/$defs/DwarfToken",
                   "elixir_aqua_rejuv": "#/$defs/ElixirOfAquaticRejuvenation",
+                  "exotic_crystals": "#/$defs/ExoticCrystals",
+                  "eye_of_newt": "#/$defs/EyeOfNewt",
+                  "ferret_tuft": "#/$defs/FerretTuft",
                   "food": "#/$defs/Food",
                   "frozen_carpaccio": "#/$defs/FrozenCarpaccio",
                   "fury_potion": "#/$defs/FuryPotion",
@@ -1591,12 +1874,19 @@
                   "health_potion": "#/$defs/HealthPotion",
                   "key": "#/$defs/Key",
                   "kings_crown": "#/$defs/KingsCrown",
+                  "leather_armor": "#/$defs/LeatherArmor",
                   "magical_holster": "#/$defs/MagicalHolster",
+                  "mail_armor": "#/$defs/MailArmor",
                   "melee_weapon": "#/$defs/MeleeWeapon",
+                  "mimic_tooth": "#/$defs/MimicTooth",
                   "missile_weapon": "#/$defs/MissileWeapon",
+                  "mossy_clump": "#/$defs/MossyClump",
                   "mystery_meat": "#/$defs/MysteryMeat",
+                  "parchment_scrap": "#/$defs/ParchmentScrap",
                   "pasty": "#/$defs/Pasty",
                   "petal": "#/$defs/Petal",
+                  "petrified_seed": "#/$defs/PetrifiedSeed",
+                  "plate_armor": "#/$defs/PlateArmor",
                   "potion": "#/$defs/Potion",
                   "potion_bandolier": "#/$defs/PotionBandolier",
                   "potion_of_experience": "#/$defs/PotionOfExperience",
@@ -1610,6 +1900,7 @@
                   "potion_of_purity": "#/$defs/PotionOfPurity",
                   "potion_of_strength": "#/$defs/PotionOfStrength",
                   "potion_of_toxic_gas": "#/$defs/PotionOfToxicGas",
+                  "rat_skull": "#/$defs/RatSkull",
                   "ration": "#/$defs/Ration",
                   "reviving_potion": "#/$defs/RevivingPotion",
                   "ring": "#/$defs/Ring",
@@ -1625,6 +1916,8 @@
                   "ring_sharpshooting": "#/$defs/RingOfSharpshooting",
                   "ring_tenacity": "#/$defs/RingOfTenacity",
                   "ring_wealth": "#/$defs/RingOfWealth",
+                  "salt_cube": "#/$defs/SaltCube",
+                  "scale_armor": "#/$defs/ScaleArmor",
                   "scroll": "#/$defs/Scroll",
                   "scroll_holder": "#/$defs/ScrollHolder",
                   "scroll_of_identify": "#/$defs/ScrollOfIdentify",
@@ -1641,14 +1934,19 @@
                   "scroll_of_transmutation": "#/$defs/ScrollOfTransmutation",
                   "scroll_of_upgrade": "#/$defs/ScrollOfUpgrade",
                   "seed": "#/$defs/Seed",
+                  "shard_of_oblivion": "#/$defs/ShardOfOblivion",
                   "small_ration": "#/$defs/SmallRation",
                   "spirit_bow": "#/$defs/SpiritBow",
                   "staff": "#/$defs/Staff",
                   "stone": "#/$defs/Stone",
                   "tengu_mask": "#/$defs/TenguMask",
+                  "thirteen_leaf_clover": "#/$defs/ThirteenLeafClover",
                   "throwable": "#/$defs/Throwable",
                   "throwable_dagger": "#/$defs/ThrowableDagger",
+                  "trap_mechanism": "#/$defs/TrapMechanism",
+                  "trinket_catalyst": "#/$defs/TrinketCatalyst",
                   "velvet_pouch": "#/$defs/VelvetPouch",
+                  "vial_of_blood": "#/$defs/VialOfBlood",
                   "wand": "#/$defs/Wand",
                   "wand_blast_wave": "#/$defs/WandOfBlastWave",
                   "wand_corrosion": "#/$defs/WandOfCorrosion",
@@ -1664,6 +1962,7 @@
                   "wand_transfusion": "#/$defs/WandOfTransfusion",
                   "wand_warding": "#/$defs/WandOfWarding",
                   "waterskin": "#/$defs/Waterskin",
+                  "wondrous_resin": "#/$defs/WondrousResin",
                   "worn_shortsword": "#/$defs/WornShortsword"
                 },
                 "propertyName": "kind"
@@ -1692,6 +1991,21 @@
                 },
                 {
                   "$ref": "#/$defs/Armor"
+                },
+                {
+                  "$ref": "#/$defs/ClothArmor"
+                },
+                {
+                  "$ref": "#/$defs/LeatherArmor"
+                },
+                {
+                  "$ref": "#/$defs/MailArmor"
+                },
+                {
+                  "$ref": "#/$defs/ScaleArmor"
+                },
+                {
+                  "$ref": "#/$defs/PlateArmor"
                 },
                 {
                   "$ref": "#/$defs/Ring"
@@ -1965,6 +2279,60 @@
                 },
                 {
                   "$ref": "#/$defs/Bag"
+                },
+                {
+                  "$ref": "#/$defs/RatSkull"
+                },
+                {
+                  "$ref": "#/$defs/ParchmentScrap"
+                },
+                {
+                  "$ref": "#/$defs/PetrifiedSeed"
+                },
+                {
+                  "$ref": "#/$defs/ExoticCrystals"
+                },
+                {
+                  "$ref": "#/$defs/MossyClump"
+                },
+                {
+                  "$ref": "#/$defs/DimensionalSundial"
+                },
+                {
+                  "$ref": "#/$defs/ThirteenLeafClover"
+                },
+                {
+                  "$ref": "#/$defs/TrapMechanism"
+                },
+                {
+                  "$ref": "#/$defs/MimicTooth"
+                },
+                {
+                  "$ref": "#/$defs/WondrousResin"
+                },
+                {
+                  "$ref": "#/$defs/EyeOfNewt"
+                },
+                {
+                  "$ref": "#/$defs/SaltCube"
+                },
+                {
+                  "$ref": "#/$defs/VialOfBlood"
+                },
+                {
+                  "$ref": "#/$defs/ShardOfOblivion"
+                },
+                {
+                  "$ref": "#/$defs/ChaoticCenser"
+                },
+                {
+                  "$ref": "#/$defs/FerretTuft"
+                },
+                {
+                  "$ref": "#/$defs/CrackedSpyglass"
+                },
+                {
+                  "$ref": "#/$defs/TrinketCatalyst"
                 }
               ]
             },
@@ -1987,15 +2355,22 @@
                   "boomerang": "#/$defs/Boomerang",
                   "bow": "#/$defs/Bow",
                   "broken_seal": "#/$defs/BrokenSeal",
+                  "chaotic_censer": "#/$defs/ChaoticCenser",
                   "chargrilled_meat": "#/$defs/ChargrilledMeat",
                   "chest": "#/$defs/Chest",
                   "cloak_of_shadows": "#/$defs/CloakOfShadows",
+                  "cloth_armor": "#/$defs/ClothArmor",
+                  "cracked_spyglass": "#/$defs/CrackedSpyglass",
                   "dagger": "#/$defs/Dagger",
                   "damage_wand": "#/$defs/DamageWand",
                   "dewdrop": "#/$defs/Dewdrop",
+                  "dimensional_sundial": "#/$defs/DimensionalSundial",
                   "dried_rose": "#/$defs/DriedRose",
                   "dwarf_token": "#/$defs/DwarfToken",
                   "elixir_aqua_rejuv": "#/$defs/ElixirOfAquaticRejuvenation",
+                  "exotic_crystals": "#/$defs/ExoticCrystals",
+                  "eye_of_newt": "#/$defs/EyeOfNewt",
+                  "ferret_tuft": "#/$defs/FerretTuft",
                   "food": "#/$defs/Food",
                   "frozen_carpaccio": "#/$defs/FrozenCarpaccio",
                   "fury_potion": "#/$defs/FuryPotion",
@@ -2004,12 +2379,19 @@
                   "health_potion": "#/$defs/HealthPotion",
                   "key": "#/$defs/Key",
                   "kings_crown": "#/$defs/KingsCrown",
+                  "leather_armor": "#/$defs/LeatherArmor",
                   "magical_holster": "#/$defs/MagicalHolster",
+                  "mail_armor": "#/$defs/MailArmor",
                   "melee_weapon": "#/$defs/MeleeWeapon",
+                  "mimic_tooth": "#/$defs/MimicTooth",
                   "missile_weapon": "#/$defs/MissileWeapon",
+                  "mossy_clump": "#/$defs/MossyClump",
                   "mystery_meat": "#/$defs/MysteryMeat",
+                  "parchment_scrap": "#/$defs/ParchmentScrap",
                   "pasty": "#/$defs/Pasty",
                   "petal": "#/$defs/Petal",
+                  "petrified_seed": "#/$defs/PetrifiedSeed",
+                  "plate_armor": "#/$defs/PlateArmor",
                   "potion": "#/$defs/Potion",
                   "potion_bandolier": "#/$defs/PotionBandolier",
                   "potion_of_experience": "#/$defs/PotionOfExperience",
@@ -2023,6 +2405,7 @@
                   "potion_of_purity": "#/$defs/PotionOfPurity",
                   "potion_of_strength": "#/$defs/PotionOfStrength",
                   "potion_of_toxic_gas": "#/$defs/PotionOfToxicGas",
+                  "rat_skull": "#/$defs/RatSkull",
                   "ration": "#/$defs/Ration",
                   "reviving_potion": "#/$defs/RevivingPotion",
                   "ring": "#/$defs/Ring",
@@ -2038,6 +2421,8 @@
                   "ring_sharpshooting": "#/$defs/RingOfSharpshooting",
                   "ring_tenacity": "#/$defs/RingOfTenacity",
                   "ring_wealth": "#/$defs/RingOfWealth",
+                  "salt_cube": "#/$defs/SaltCube",
+                  "scale_armor": "#/$defs/ScaleArmor",
                   "scroll": "#/$defs/Scroll",
                   "scroll_holder": "#/$defs/ScrollHolder",
                   "scroll_of_identify": "#/$defs/ScrollOfIdentify",
@@ -2054,14 +2439,19 @@
                   "scroll_of_transmutation": "#/$defs/ScrollOfTransmutation",
                   "scroll_of_upgrade": "#/$defs/ScrollOfUpgrade",
                   "seed": "#/$defs/Seed",
+                  "shard_of_oblivion": "#/$defs/ShardOfOblivion",
                   "small_ration": "#/$defs/SmallRation",
                   "spirit_bow": "#/$defs/SpiritBow",
                   "staff": "#/$defs/Staff",
                   "stone": "#/$defs/Stone",
                   "tengu_mask": "#/$defs/TenguMask",
+                  "thirteen_leaf_clover": "#/$defs/ThirteenLeafClover",
                   "throwable": "#/$defs/Throwable",
                   "throwable_dagger": "#/$defs/ThrowableDagger",
+                  "trap_mechanism": "#/$defs/TrapMechanism",
+                  "trinket_catalyst": "#/$defs/TrinketCatalyst",
                   "velvet_pouch": "#/$defs/VelvetPouch",
+                  "vial_of_blood": "#/$defs/VialOfBlood",
                   "wand": "#/$defs/Wand",
                   "wand_blast_wave": "#/$defs/WandOfBlastWave",
                   "wand_corrosion": "#/$defs/WandOfCorrosion",
@@ -2077,6 +2467,7 @@
                   "wand_transfusion": "#/$defs/WandOfTransfusion",
                   "wand_warding": "#/$defs/WandOfWarding",
                   "waterskin": "#/$defs/Waterskin",
+                  "wondrous_resin": "#/$defs/WondrousResin",
                   "worn_shortsword": "#/$defs/WornShortsword"
                 },
                 "propertyName": "kind"
@@ -2105,6 +2496,21 @@
                 },
                 {
                   "$ref": "#/$defs/Armor"
+                },
+                {
+                  "$ref": "#/$defs/ClothArmor"
+                },
+                {
+                  "$ref": "#/$defs/LeatherArmor"
+                },
+                {
+                  "$ref": "#/$defs/MailArmor"
+                },
+                {
+                  "$ref": "#/$defs/ScaleArmor"
+                },
+                {
+                  "$ref": "#/$defs/PlateArmor"
                 },
                 {
                   "$ref": "#/$defs/Ring"
@@ -2378,6 +2784,60 @@
                 },
                 {
                   "$ref": "#/$defs/Bag"
+                },
+                {
+                  "$ref": "#/$defs/RatSkull"
+                },
+                {
+                  "$ref": "#/$defs/ParchmentScrap"
+                },
+                {
+                  "$ref": "#/$defs/PetrifiedSeed"
+                },
+                {
+                  "$ref": "#/$defs/ExoticCrystals"
+                },
+                {
+                  "$ref": "#/$defs/MossyClump"
+                },
+                {
+                  "$ref": "#/$defs/DimensionalSundial"
+                },
+                {
+                  "$ref": "#/$defs/ThirteenLeafClover"
+                },
+                {
+                  "$ref": "#/$defs/TrapMechanism"
+                },
+                {
+                  "$ref": "#/$defs/MimicTooth"
+                },
+                {
+                  "$ref": "#/$defs/WondrousResin"
+                },
+                {
+                  "$ref": "#/$defs/EyeOfNewt"
+                },
+                {
+                  "$ref": "#/$defs/SaltCube"
+                },
+                {
+                  "$ref": "#/$defs/VialOfBlood"
+                },
+                {
+                  "$ref": "#/$defs/ShardOfOblivion"
+                },
+                {
+                  "$ref": "#/$defs/ChaoticCenser"
+                },
+                {
+                  "$ref": "#/$defs/FerretTuft"
+                },
+                {
+                  "$ref": "#/$defs/CrackedSpyglass"
+                },
+                {
+                  "$ref": "#/$defs/TrinketCatalyst"
                 }
               ]
             },
@@ -2400,15 +2860,22 @@
                   "boomerang": "#/$defs/Boomerang",
                   "bow": "#/$defs/Bow",
                   "broken_seal": "#/$defs/BrokenSeal",
+                  "chaotic_censer": "#/$defs/ChaoticCenser",
                   "chargrilled_meat": "#/$defs/ChargrilledMeat",
                   "chest": "#/$defs/Chest",
                   "cloak_of_shadows": "#/$defs/CloakOfShadows",
+                  "cloth_armor": "#/$defs/ClothArmor",
+                  "cracked_spyglass": "#/$defs/CrackedSpyglass",
                   "dagger": "#/$defs/Dagger",
                   "damage_wand": "#/$defs/DamageWand",
                   "dewdrop": "#/$defs/Dewdrop",
+                  "dimensional_sundial": "#/$defs/DimensionalSundial",
                   "dried_rose": "#/$defs/DriedRose",
                   "dwarf_token": "#/$defs/DwarfToken",
                   "elixir_aqua_rejuv": "#/$defs/ElixirOfAquaticRejuvenation",
+                  "exotic_crystals": "#/$defs/ExoticCrystals",
+                  "eye_of_newt": "#/$defs/EyeOfNewt",
+                  "ferret_tuft": "#/$defs/FerretTuft",
                   "food": "#/$defs/Food",
                   "frozen_carpaccio": "#/$defs/FrozenCarpaccio",
                   "fury_potion": "#/$defs/FuryPotion",
@@ -2417,12 +2884,19 @@
                   "health_potion": "#/$defs/HealthPotion",
                   "key": "#/$defs/Key",
                   "kings_crown": "#/$defs/KingsCrown",
+                  "leather_armor": "#/$defs/LeatherArmor",
                   "magical_holster": "#/$defs/MagicalHolster",
+                  "mail_armor": "#/$defs/MailArmor",
                   "melee_weapon": "#/$defs/MeleeWeapon",
+                  "mimic_tooth": "#/$defs/MimicTooth",
                   "missile_weapon": "#/$defs/MissileWeapon",
+                  "mossy_clump": "#/$defs/MossyClump",
                   "mystery_meat": "#/$defs/MysteryMeat",
+                  "parchment_scrap": "#/$defs/ParchmentScrap",
                   "pasty": "#/$defs/Pasty",
                   "petal": "#/$defs/Petal",
+                  "petrified_seed": "#/$defs/PetrifiedSeed",
+                  "plate_armor": "#/$defs/PlateArmor",
                   "potion": "#/$defs/Potion",
                   "potion_bandolier": "#/$defs/PotionBandolier",
                   "potion_of_experience": "#/$defs/PotionOfExperience",
@@ -2436,6 +2910,7 @@
                   "potion_of_purity": "#/$defs/PotionOfPurity",
                   "potion_of_strength": "#/$defs/PotionOfStrength",
                   "potion_of_toxic_gas": "#/$defs/PotionOfToxicGas",
+                  "rat_skull": "#/$defs/RatSkull",
                   "ration": "#/$defs/Ration",
                   "reviving_potion": "#/$defs/RevivingPotion",
                   "ring": "#/$defs/Ring",
@@ -2451,6 +2926,8 @@
                   "ring_sharpshooting": "#/$defs/RingOfSharpshooting",
                   "ring_tenacity": "#/$defs/RingOfTenacity",
                   "ring_wealth": "#/$defs/RingOfWealth",
+                  "salt_cube": "#/$defs/SaltCube",
+                  "scale_armor": "#/$defs/ScaleArmor",
                   "scroll": "#/$defs/Scroll",
                   "scroll_holder": "#/$defs/ScrollHolder",
                   "scroll_of_identify": "#/$defs/ScrollOfIdentify",
@@ -2467,14 +2944,19 @@
                   "scroll_of_transmutation": "#/$defs/ScrollOfTransmutation",
                   "scroll_of_upgrade": "#/$defs/ScrollOfUpgrade",
                   "seed": "#/$defs/Seed",
+                  "shard_of_oblivion": "#/$defs/ShardOfOblivion",
                   "small_ration": "#/$defs/SmallRation",
                   "spirit_bow": "#/$defs/SpiritBow",
                   "staff": "#/$defs/Staff",
                   "stone": "#/$defs/Stone",
                   "tengu_mask": "#/$defs/TenguMask",
+                  "thirteen_leaf_clover": "#/$defs/ThirteenLeafClover",
                   "throwable": "#/$defs/Throwable",
                   "throwable_dagger": "#/$defs/ThrowableDagger",
+                  "trap_mechanism": "#/$defs/TrapMechanism",
+                  "trinket_catalyst": "#/$defs/TrinketCatalyst",
                   "velvet_pouch": "#/$defs/VelvetPouch",
+                  "vial_of_blood": "#/$defs/VialOfBlood",
                   "wand": "#/$defs/Wand",
                   "wand_blast_wave": "#/$defs/WandOfBlastWave",
                   "wand_corrosion": "#/$defs/WandOfCorrosion",
@@ -2490,6 +2972,7 @@
                   "wand_transfusion": "#/$defs/WandOfTransfusion",
                   "wand_warding": "#/$defs/WandOfWarding",
                   "waterskin": "#/$defs/Waterskin",
+                  "wondrous_resin": "#/$defs/WondrousResin",
                   "worn_shortsword": "#/$defs/WornShortsword"
                 },
                 "propertyName": "kind"
@@ -2518,6 +3001,21 @@
                 },
                 {
                   "$ref": "#/$defs/Armor"
+                },
+                {
+                  "$ref": "#/$defs/ClothArmor"
+                },
+                {
+                  "$ref": "#/$defs/LeatherArmor"
+                },
+                {
+                  "$ref": "#/$defs/MailArmor"
+                },
+                {
+                  "$ref": "#/$defs/ScaleArmor"
+                },
+                {
+                  "$ref": "#/$defs/PlateArmor"
                 },
                 {
                   "$ref": "#/$defs/Ring"
@@ -2791,6 +3289,60 @@
                 },
                 {
                   "$ref": "#/$defs/Bag"
+                },
+                {
+                  "$ref": "#/$defs/RatSkull"
+                },
+                {
+                  "$ref": "#/$defs/ParchmentScrap"
+                },
+                {
+                  "$ref": "#/$defs/PetrifiedSeed"
+                },
+                {
+                  "$ref": "#/$defs/ExoticCrystals"
+                },
+                {
+                  "$ref": "#/$defs/MossyClump"
+                },
+                {
+                  "$ref": "#/$defs/DimensionalSundial"
+                },
+                {
+                  "$ref": "#/$defs/ThirteenLeafClover"
+                },
+                {
+                  "$ref": "#/$defs/TrapMechanism"
+                },
+                {
+                  "$ref": "#/$defs/MimicTooth"
+                },
+                {
+                  "$ref": "#/$defs/WondrousResin"
+                },
+                {
+                  "$ref": "#/$defs/EyeOfNewt"
+                },
+                {
+                  "$ref": "#/$defs/SaltCube"
+                },
+                {
+                  "$ref": "#/$defs/VialOfBlood"
+                },
+                {
+                  "$ref": "#/$defs/ShardOfOblivion"
+                },
+                {
+                  "$ref": "#/$defs/ChaoticCenser"
+                },
+                {
+                  "$ref": "#/$defs/FerretTuft"
+                },
+                {
+                  "$ref": "#/$defs/CrackedSpyglass"
+                },
+                {
+                  "$ref": "#/$defs/TrinketCatalyst"
                 }
               ]
             },
@@ -3208,6 +3760,79 @@
       ],
       "type": "object"
     },
+    "ChaoticCenser": {
+      "properties": {
+        "kind": {
+          "const": "chaotic_censer",
+          "default": "chaotic_censer",
+          "type": "string"
+        },
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "name": {
+          "default": "Chaotic Censer",
+          "type": "string"
+        },
+        "type": {
+          "default": "trinket",
+          "type": "string"
+        },
+        "pos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Position"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "quantity": {
+          "default": 1,
+          "type": "integer"
+        },
+        "level": {
+          "default": 0,
+          "type": "integer"
+        },
+        "level_known": {
+          "default": true,
+          "type": "boolean"
+        },
+        "cursed": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "unique": {
+          "default": true,
+          "type": "boolean"
+        },
+        "kept_though_lost": {
+          "default": false,
+          "type": "boolean"
+        },
+        "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        },
+        "strength_requirement": {
+          "default": 0,
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    },
     "ChargrilledMeat": {
       "properties": {
         "kind": {
@@ -3366,15 +3991,22 @@
                 "boomerang": "#/$defs/Boomerang",
                 "bow": "#/$defs/Bow",
                 "broken_seal": "#/$defs/BrokenSeal",
+                "chaotic_censer": "#/$defs/ChaoticCenser",
                 "chargrilled_meat": "#/$defs/ChargrilledMeat",
                 "chest": "#/$defs/Chest",
                 "cloak_of_shadows": "#/$defs/CloakOfShadows",
+                "cloth_armor": "#/$defs/ClothArmor",
+                "cracked_spyglass": "#/$defs/CrackedSpyglass",
                 "dagger": "#/$defs/Dagger",
                 "damage_wand": "#/$defs/DamageWand",
                 "dewdrop": "#/$defs/Dewdrop",
+                "dimensional_sundial": "#/$defs/DimensionalSundial",
                 "dried_rose": "#/$defs/DriedRose",
                 "dwarf_token": "#/$defs/DwarfToken",
                 "elixir_aqua_rejuv": "#/$defs/ElixirOfAquaticRejuvenation",
+                "exotic_crystals": "#/$defs/ExoticCrystals",
+                "eye_of_newt": "#/$defs/EyeOfNewt",
+                "ferret_tuft": "#/$defs/FerretTuft",
                 "food": "#/$defs/Food",
                 "frozen_carpaccio": "#/$defs/FrozenCarpaccio",
                 "fury_potion": "#/$defs/FuryPotion",
@@ -3383,12 +4015,19 @@
                 "health_potion": "#/$defs/HealthPotion",
                 "key": "#/$defs/Key",
                 "kings_crown": "#/$defs/KingsCrown",
+                "leather_armor": "#/$defs/LeatherArmor",
                 "magical_holster": "#/$defs/MagicalHolster",
+                "mail_armor": "#/$defs/MailArmor",
                 "melee_weapon": "#/$defs/MeleeWeapon",
+                "mimic_tooth": "#/$defs/MimicTooth",
                 "missile_weapon": "#/$defs/MissileWeapon",
+                "mossy_clump": "#/$defs/MossyClump",
                 "mystery_meat": "#/$defs/MysteryMeat",
+                "parchment_scrap": "#/$defs/ParchmentScrap",
                 "pasty": "#/$defs/Pasty",
                 "petal": "#/$defs/Petal",
+                "petrified_seed": "#/$defs/PetrifiedSeed",
+                "plate_armor": "#/$defs/PlateArmor",
                 "potion": "#/$defs/Potion",
                 "potion_bandolier": "#/$defs/PotionBandolier",
                 "potion_of_experience": "#/$defs/PotionOfExperience",
@@ -3402,6 +4041,7 @@
                 "potion_of_purity": "#/$defs/PotionOfPurity",
                 "potion_of_strength": "#/$defs/PotionOfStrength",
                 "potion_of_toxic_gas": "#/$defs/PotionOfToxicGas",
+                "rat_skull": "#/$defs/RatSkull",
                 "ration": "#/$defs/Ration",
                 "reviving_potion": "#/$defs/RevivingPotion",
                 "ring": "#/$defs/Ring",
@@ -3417,6 +4057,8 @@
                 "ring_sharpshooting": "#/$defs/RingOfSharpshooting",
                 "ring_tenacity": "#/$defs/RingOfTenacity",
                 "ring_wealth": "#/$defs/RingOfWealth",
+                "salt_cube": "#/$defs/SaltCube",
+                "scale_armor": "#/$defs/ScaleArmor",
                 "scroll": "#/$defs/Scroll",
                 "scroll_holder": "#/$defs/ScrollHolder",
                 "scroll_of_identify": "#/$defs/ScrollOfIdentify",
@@ -3433,14 +4075,19 @@
                 "scroll_of_transmutation": "#/$defs/ScrollOfTransmutation",
                 "scroll_of_upgrade": "#/$defs/ScrollOfUpgrade",
                 "seed": "#/$defs/Seed",
+                "shard_of_oblivion": "#/$defs/ShardOfOblivion",
                 "small_ration": "#/$defs/SmallRation",
                 "spirit_bow": "#/$defs/SpiritBow",
                 "staff": "#/$defs/Staff",
                 "stone": "#/$defs/Stone",
                 "tengu_mask": "#/$defs/TenguMask",
+                "thirteen_leaf_clover": "#/$defs/ThirteenLeafClover",
                 "throwable": "#/$defs/Throwable",
                 "throwable_dagger": "#/$defs/ThrowableDagger",
+                "trap_mechanism": "#/$defs/TrapMechanism",
+                "trinket_catalyst": "#/$defs/TrinketCatalyst",
                 "velvet_pouch": "#/$defs/VelvetPouch",
+                "vial_of_blood": "#/$defs/VialOfBlood",
                 "wand": "#/$defs/Wand",
                 "wand_blast_wave": "#/$defs/WandOfBlastWave",
                 "wand_corrosion": "#/$defs/WandOfCorrosion",
@@ -3456,6 +4103,7 @@
                 "wand_transfusion": "#/$defs/WandOfTransfusion",
                 "wand_warding": "#/$defs/WandOfWarding",
                 "waterskin": "#/$defs/Waterskin",
+                "wondrous_resin": "#/$defs/WondrousResin",
                 "worn_shortsword": "#/$defs/WornShortsword"
               },
               "propertyName": "kind"
@@ -3484,6 +4132,21 @@
               },
               {
                 "$ref": "#/$defs/Armor"
+              },
+              {
+                "$ref": "#/$defs/ClothArmor"
+              },
+              {
+                "$ref": "#/$defs/LeatherArmor"
+              },
+              {
+                "$ref": "#/$defs/MailArmor"
+              },
+              {
+                "$ref": "#/$defs/ScaleArmor"
+              },
+              {
+                "$ref": "#/$defs/PlateArmor"
               },
               {
                 "$ref": "#/$defs/Ring"
@@ -3757,6 +4420,60 @@
               },
               {
                 "$ref": "#/$defs/Bag"
+              },
+              {
+                "$ref": "#/$defs/RatSkull"
+              },
+              {
+                "$ref": "#/$defs/ParchmentScrap"
+              },
+              {
+                "$ref": "#/$defs/PetrifiedSeed"
+              },
+              {
+                "$ref": "#/$defs/ExoticCrystals"
+              },
+              {
+                "$ref": "#/$defs/MossyClump"
+              },
+              {
+                "$ref": "#/$defs/DimensionalSundial"
+              },
+              {
+                "$ref": "#/$defs/ThirteenLeafClover"
+              },
+              {
+                "$ref": "#/$defs/TrapMechanism"
+              },
+              {
+                "$ref": "#/$defs/MimicTooth"
+              },
+              {
+                "$ref": "#/$defs/WondrousResin"
+              },
+              {
+                "$ref": "#/$defs/EyeOfNewt"
+              },
+              {
+                "$ref": "#/$defs/SaltCube"
+              },
+              {
+                "$ref": "#/$defs/VialOfBlood"
+              },
+              {
+                "$ref": "#/$defs/ShardOfOblivion"
+              },
+              {
+                "$ref": "#/$defs/ChaoticCenser"
+              },
+              {
+                "$ref": "#/$defs/FerretTuft"
+              },
+              {
+                "$ref": "#/$defs/CrackedSpyglass"
+              },
+              {
+                "$ref": "#/$defs/TrinketCatalyst"
               }
             ]
           },
@@ -3847,6 +4564,159 @@
           "type": "integer"
         },
         "exp": {
+          "default": 0,
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    },
+    "ClothArmor": {
+      "properties": {
+        "kind": {
+          "const": "cloth_armor",
+          "default": "cloth_armor",
+          "type": "string"
+        },
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "name": {
+          "default": "Cloth Armor",
+          "type": "string"
+        },
+        "type": {
+          "default": "wearable",
+          "type": "string"
+        },
+        "pos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Position"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "quantity": {
+          "default": 1,
+          "type": "integer"
+        },
+        "level": {
+          "default": 0,
+          "type": "integer"
+        },
+        "level_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "unique": {
+          "default": false,
+          "type": "boolean"
+        },
+        "kept_though_lost": {
+          "default": false,
+          "type": "boolean"
+        },
+        "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        },
+        "strength_requirement": {
+          "default": 10,
+          "type": "integer"
+        },
+        "tier": {
+          "default": 1,
+          "type": "integer"
+        },
+        "enchantment": {
+          "$ref": "#/$defs/ArmorEnchantment"
+        }
+      },
+      "type": "object"
+    },
+    "CrackedSpyglass": {
+      "properties": {
+        "kind": {
+          "const": "cracked_spyglass",
+          "default": "cracked_spyglass",
+          "type": "string"
+        },
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "name": {
+          "default": "Cracked Spyglass",
+          "type": "string"
+        },
+        "type": {
+          "default": "trinket",
+          "type": "string"
+        },
+        "pos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Position"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "quantity": {
+          "default": 1,
+          "type": "integer"
+        },
+        "level": {
+          "default": 0,
+          "type": "integer"
+        },
+        "level_known": {
+          "default": true,
+          "type": "boolean"
+        },
+        "cursed": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "unique": {
+          "default": true,
+          "type": "boolean"
+        },
+        "kept_though_lost": {
+          "default": false,
+          "type": "boolean"
+        },
+        "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        },
+        "strength_requirement": {
           "default": 0,
           "type": "integer"
         }
@@ -4183,6 +5053,79 @@
       },
       "type": "object"
     },
+    "DimensionalSundial": {
+      "properties": {
+        "kind": {
+          "const": "dimensional_sundial",
+          "default": "dimensional_sundial",
+          "type": "string"
+        },
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "name": {
+          "default": "Dimensional Sundial",
+          "type": "string"
+        },
+        "type": {
+          "default": "trinket",
+          "type": "string"
+        },
+        "pos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Position"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "quantity": {
+          "default": 1,
+          "type": "integer"
+        },
+        "level": {
+          "default": 0,
+          "type": "integer"
+        },
+        "level_known": {
+          "default": true,
+          "type": "boolean"
+        },
+        "cursed": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "unique": {
+          "default": true,
+          "type": "boolean"
+        },
+        "kept_though_lost": {
+          "default": false,
+          "type": "boolean"
+        },
+        "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        },
+        "strength_requirement": {
+          "default": 0,
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    },
     "DriedRose": {
       "properties": {
         "kind": {
@@ -4489,6 +5432,225 @@
         "effect": {
           "default": "aqua_rejuv",
           "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "ExoticCrystals": {
+      "properties": {
+        "kind": {
+          "const": "exotic_crystals",
+          "default": "exotic_crystals",
+          "type": "string"
+        },
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "name": {
+          "default": "Exotic Crystals",
+          "type": "string"
+        },
+        "type": {
+          "default": "trinket",
+          "type": "string"
+        },
+        "pos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Position"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "quantity": {
+          "default": 1,
+          "type": "integer"
+        },
+        "level": {
+          "default": 0,
+          "type": "integer"
+        },
+        "level_known": {
+          "default": true,
+          "type": "boolean"
+        },
+        "cursed": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "unique": {
+          "default": true,
+          "type": "boolean"
+        },
+        "kept_though_lost": {
+          "default": false,
+          "type": "boolean"
+        },
+        "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        },
+        "strength_requirement": {
+          "default": 0,
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    },
+    "EyeOfNewt": {
+      "properties": {
+        "kind": {
+          "const": "eye_of_newt",
+          "default": "eye_of_newt",
+          "type": "string"
+        },
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "name": {
+          "default": "Eye of Newt",
+          "type": "string"
+        },
+        "type": {
+          "default": "trinket",
+          "type": "string"
+        },
+        "pos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Position"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "quantity": {
+          "default": 1,
+          "type": "integer"
+        },
+        "level": {
+          "default": 0,
+          "type": "integer"
+        },
+        "level_known": {
+          "default": true,
+          "type": "boolean"
+        },
+        "cursed": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "unique": {
+          "default": true,
+          "type": "boolean"
+        },
+        "kept_though_lost": {
+          "default": false,
+          "type": "boolean"
+        },
+        "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        },
+        "strength_requirement": {
+          "default": 0,
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    },
+    "FerretTuft": {
+      "properties": {
+        "kind": {
+          "const": "ferret_tuft",
+          "default": "ferret_tuft",
+          "type": "string"
+        },
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "name": {
+          "default": "Ferret Tuft",
+          "type": "string"
+        },
+        "type": {
+          "default": "trinket",
+          "type": "string"
+        },
+        "pos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Position"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "quantity": {
+          "default": 1,
+          "type": "integer"
+        },
+        "level": {
+          "default": 0,
+          "type": "integer"
+        },
+        "level_known": {
+          "default": true,
+          "type": "boolean"
+        },
+        "cursed": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "unique": {
+          "default": true,
+          "type": "boolean"
+        },
+        "kept_though_lost": {
+          "default": false,
+          "type": "boolean"
+        },
+        "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        },
+        "strength_requirement": {
+          "default": 0,
+          "type": "integer"
         }
       },
       "type": "object"
@@ -5095,6 +6257,86 @@
       },
       "type": "object"
     },
+    "LeatherArmor": {
+      "properties": {
+        "kind": {
+          "const": "leather_armor",
+          "default": "leather_armor",
+          "type": "string"
+        },
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "name": {
+          "default": "Leather Armor",
+          "type": "string"
+        },
+        "type": {
+          "default": "wearable",
+          "type": "string"
+        },
+        "pos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Position"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "quantity": {
+          "default": 1,
+          "type": "integer"
+        },
+        "level": {
+          "default": 0,
+          "type": "integer"
+        },
+        "level_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "unique": {
+          "default": false,
+          "type": "boolean"
+        },
+        "kept_though_lost": {
+          "default": false,
+          "type": "boolean"
+        },
+        "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        },
+        "strength_requirement": {
+          "default": 12,
+          "type": "integer"
+        },
+        "tier": {
+          "default": 2,
+          "type": "integer"
+        },
+        "enchantment": {
+          "$ref": "#/$defs/ArmorEnchantment"
+        }
+      },
+      "type": "object"
+    },
     "MagicalHolster": {
       "properties": {
         "kind": {
@@ -5177,15 +6419,22 @@
                 "boomerang": "#/$defs/Boomerang",
                 "bow": "#/$defs/Bow",
                 "broken_seal": "#/$defs/BrokenSeal",
+                "chaotic_censer": "#/$defs/ChaoticCenser",
                 "chargrilled_meat": "#/$defs/ChargrilledMeat",
                 "chest": "#/$defs/Chest",
                 "cloak_of_shadows": "#/$defs/CloakOfShadows",
+                "cloth_armor": "#/$defs/ClothArmor",
+                "cracked_spyglass": "#/$defs/CrackedSpyglass",
                 "dagger": "#/$defs/Dagger",
                 "damage_wand": "#/$defs/DamageWand",
                 "dewdrop": "#/$defs/Dewdrop",
+                "dimensional_sundial": "#/$defs/DimensionalSundial",
                 "dried_rose": "#/$defs/DriedRose",
                 "dwarf_token": "#/$defs/DwarfToken",
                 "elixir_aqua_rejuv": "#/$defs/ElixirOfAquaticRejuvenation",
+                "exotic_crystals": "#/$defs/ExoticCrystals",
+                "eye_of_newt": "#/$defs/EyeOfNewt",
+                "ferret_tuft": "#/$defs/FerretTuft",
                 "food": "#/$defs/Food",
                 "frozen_carpaccio": "#/$defs/FrozenCarpaccio",
                 "fury_potion": "#/$defs/FuryPotion",
@@ -5194,12 +6443,19 @@
                 "health_potion": "#/$defs/HealthPotion",
                 "key": "#/$defs/Key",
                 "kings_crown": "#/$defs/KingsCrown",
+                "leather_armor": "#/$defs/LeatherArmor",
                 "magical_holster": "#/$defs/MagicalHolster",
+                "mail_armor": "#/$defs/MailArmor",
                 "melee_weapon": "#/$defs/MeleeWeapon",
+                "mimic_tooth": "#/$defs/MimicTooth",
                 "missile_weapon": "#/$defs/MissileWeapon",
+                "mossy_clump": "#/$defs/MossyClump",
                 "mystery_meat": "#/$defs/MysteryMeat",
+                "parchment_scrap": "#/$defs/ParchmentScrap",
                 "pasty": "#/$defs/Pasty",
                 "petal": "#/$defs/Petal",
+                "petrified_seed": "#/$defs/PetrifiedSeed",
+                "plate_armor": "#/$defs/PlateArmor",
                 "potion": "#/$defs/Potion",
                 "potion_bandolier": "#/$defs/PotionBandolier",
                 "potion_of_experience": "#/$defs/PotionOfExperience",
@@ -5213,6 +6469,7 @@
                 "potion_of_purity": "#/$defs/PotionOfPurity",
                 "potion_of_strength": "#/$defs/PotionOfStrength",
                 "potion_of_toxic_gas": "#/$defs/PotionOfToxicGas",
+                "rat_skull": "#/$defs/RatSkull",
                 "ration": "#/$defs/Ration",
                 "reviving_potion": "#/$defs/RevivingPotion",
                 "ring": "#/$defs/Ring",
@@ -5228,6 +6485,8 @@
                 "ring_sharpshooting": "#/$defs/RingOfSharpshooting",
                 "ring_tenacity": "#/$defs/RingOfTenacity",
                 "ring_wealth": "#/$defs/RingOfWealth",
+                "salt_cube": "#/$defs/SaltCube",
+                "scale_armor": "#/$defs/ScaleArmor",
                 "scroll": "#/$defs/Scroll",
                 "scroll_holder": "#/$defs/ScrollHolder",
                 "scroll_of_identify": "#/$defs/ScrollOfIdentify",
@@ -5244,14 +6503,19 @@
                 "scroll_of_transmutation": "#/$defs/ScrollOfTransmutation",
                 "scroll_of_upgrade": "#/$defs/ScrollOfUpgrade",
                 "seed": "#/$defs/Seed",
+                "shard_of_oblivion": "#/$defs/ShardOfOblivion",
                 "small_ration": "#/$defs/SmallRation",
                 "spirit_bow": "#/$defs/SpiritBow",
                 "staff": "#/$defs/Staff",
                 "stone": "#/$defs/Stone",
                 "tengu_mask": "#/$defs/TenguMask",
+                "thirteen_leaf_clover": "#/$defs/ThirteenLeafClover",
                 "throwable": "#/$defs/Throwable",
                 "throwable_dagger": "#/$defs/ThrowableDagger",
+                "trap_mechanism": "#/$defs/TrapMechanism",
+                "trinket_catalyst": "#/$defs/TrinketCatalyst",
                 "velvet_pouch": "#/$defs/VelvetPouch",
+                "vial_of_blood": "#/$defs/VialOfBlood",
                 "wand": "#/$defs/Wand",
                 "wand_blast_wave": "#/$defs/WandOfBlastWave",
                 "wand_corrosion": "#/$defs/WandOfCorrosion",
@@ -5267,6 +6531,7 @@
                 "wand_transfusion": "#/$defs/WandOfTransfusion",
                 "wand_warding": "#/$defs/WandOfWarding",
                 "waterskin": "#/$defs/Waterskin",
+                "wondrous_resin": "#/$defs/WondrousResin",
                 "worn_shortsword": "#/$defs/WornShortsword"
               },
               "propertyName": "kind"
@@ -5295,6 +6560,21 @@
               },
               {
                 "$ref": "#/$defs/Armor"
+              },
+              {
+                "$ref": "#/$defs/ClothArmor"
+              },
+              {
+                "$ref": "#/$defs/LeatherArmor"
+              },
+              {
+                "$ref": "#/$defs/MailArmor"
+              },
+              {
+                "$ref": "#/$defs/ScaleArmor"
+              },
+              {
+                "$ref": "#/$defs/PlateArmor"
               },
               {
                 "$ref": "#/$defs/Ring"
@@ -5568,10 +6848,144 @@
               },
               {
                 "$ref": "#/$defs/Bag"
+              },
+              {
+                "$ref": "#/$defs/RatSkull"
+              },
+              {
+                "$ref": "#/$defs/ParchmentScrap"
+              },
+              {
+                "$ref": "#/$defs/PetrifiedSeed"
+              },
+              {
+                "$ref": "#/$defs/ExoticCrystals"
+              },
+              {
+                "$ref": "#/$defs/MossyClump"
+              },
+              {
+                "$ref": "#/$defs/DimensionalSundial"
+              },
+              {
+                "$ref": "#/$defs/ThirteenLeafClover"
+              },
+              {
+                "$ref": "#/$defs/TrapMechanism"
+              },
+              {
+                "$ref": "#/$defs/MimicTooth"
+              },
+              {
+                "$ref": "#/$defs/WondrousResin"
+              },
+              {
+                "$ref": "#/$defs/EyeOfNewt"
+              },
+              {
+                "$ref": "#/$defs/SaltCube"
+              },
+              {
+                "$ref": "#/$defs/VialOfBlood"
+              },
+              {
+                "$ref": "#/$defs/ShardOfOblivion"
+              },
+              {
+                "$ref": "#/$defs/ChaoticCenser"
+              },
+              {
+                "$ref": "#/$defs/FerretTuft"
+              },
+              {
+                "$ref": "#/$defs/CrackedSpyglass"
+              },
+              {
+                "$ref": "#/$defs/TrinketCatalyst"
               }
             ]
           },
           "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "MailArmor": {
+      "properties": {
+        "kind": {
+          "const": "mail_armor",
+          "default": "mail_armor",
+          "type": "string"
+        },
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "name": {
+          "default": "Mail Armor",
+          "type": "string"
+        },
+        "type": {
+          "default": "wearable",
+          "type": "string"
+        },
+        "pos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Position"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "quantity": {
+          "default": 1,
+          "type": "integer"
+        },
+        "level": {
+          "default": 0,
+          "type": "integer"
+        },
+        "level_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "unique": {
+          "default": false,
+          "type": "boolean"
+        },
+        "kept_though_lost": {
+          "default": false,
+          "type": "boolean"
+        },
+        "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        },
+        "strength_requirement": {
+          "default": 14,
+          "type": "integer"
+        },
+        "tier": {
+          "default": 3,
+          "type": "integer"
+        },
+        "enchantment": {
+          "$ref": "#/$defs/ArmorEnchantment"
         }
       },
       "type": "object"
@@ -5711,6 +7125,79 @@
       "required": [
         "name"
       ],
+      "type": "object"
+    },
+    "MimicTooth": {
+      "properties": {
+        "kind": {
+          "const": "mimic_tooth",
+          "default": "mimic_tooth",
+          "type": "string"
+        },
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "name": {
+          "default": "Mimic Tooth",
+          "type": "string"
+        },
+        "type": {
+          "default": "trinket",
+          "type": "string"
+        },
+        "pos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Position"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "quantity": {
+          "default": 1,
+          "type": "integer"
+        },
+        "level": {
+          "default": 0,
+          "type": "integer"
+        },
+        "level_known": {
+          "default": true,
+          "type": "boolean"
+        },
+        "cursed": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "unique": {
+          "default": true,
+          "type": "boolean"
+        },
+        "kept_though_lost": {
+          "default": false,
+          "type": "boolean"
+        },
+        "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        },
+        "strength_requirement": {
+          "default": 0,
+          "type": "integer"
+        }
+      },
       "type": "object"
     },
     "MissileWeapon": {
@@ -5959,6 +7446,14 @@
           "default": 0.0,
           "type": "number"
         },
+        "poison_accum": {
+          "default": 0.0,
+          "type": "number"
+        },
+        "corrosion_accum": {
+          "default": 0.0,
+          "type": "number"
+        },
         "shields": {
           "items": {
             "$ref": "#/$defs/Shield"
@@ -6088,6 +7583,79 @@
       ],
       "type": "object"
     },
+    "MossyClump": {
+      "properties": {
+        "kind": {
+          "const": "mossy_clump",
+          "default": "mossy_clump",
+          "type": "string"
+        },
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "name": {
+          "default": "Mossy Clump",
+          "type": "string"
+        },
+        "type": {
+          "default": "trinket",
+          "type": "string"
+        },
+        "pos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Position"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "quantity": {
+          "default": 1,
+          "type": "integer"
+        },
+        "level": {
+          "default": 0,
+          "type": "integer"
+        },
+        "level_known": {
+          "default": true,
+          "type": "boolean"
+        },
+        "cursed": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "unique": {
+          "default": true,
+          "type": "boolean"
+        },
+        "kept_though_lost": {
+          "default": false,
+          "type": "boolean"
+        },
+        "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        },
+        "strength_requirement": {
+          "default": 0,
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    },
     "MysteryMeat": {
       "properties": {
         "kind": {
@@ -6155,6 +7723,79 @@
           "type": "boolean"
         },
         "energy": {
+          "default": 0,
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    },
+    "ParchmentScrap": {
+      "properties": {
+        "kind": {
+          "const": "parchment_scrap",
+          "default": "parchment_scrap",
+          "type": "string"
+        },
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "name": {
+          "default": "Parchment Scrap",
+          "type": "string"
+        },
+        "type": {
+          "default": "trinket",
+          "type": "string"
+        },
+        "pos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Position"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "quantity": {
+          "default": 1,
+          "type": "integer"
+        },
+        "level": {
+          "default": 0,
+          "type": "integer"
+        },
+        "level_known": {
+          "default": true,
+          "type": "boolean"
+        },
+        "cursed": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "unique": {
+          "default": true,
+          "type": "boolean"
+        },
+        "kept_though_lost": {
+          "default": false,
+          "type": "boolean"
+        },
+        "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        },
+        "strength_requirement": {
           "default": 0,
           "type": "integer"
         }
@@ -6303,6 +7944,159 @@
       },
       "type": "object"
     },
+    "PetrifiedSeed": {
+      "properties": {
+        "kind": {
+          "const": "petrified_seed",
+          "default": "petrified_seed",
+          "type": "string"
+        },
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "name": {
+          "default": "Petrified Seed",
+          "type": "string"
+        },
+        "type": {
+          "default": "trinket",
+          "type": "string"
+        },
+        "pos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Position"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "quantity": {
+          "default": 1,
+          "type": "integer"
+        },
+        "level": {
+          "default": 0,
+          "type": "integer"
+        },
+        "level_known": {
+          "default": true,
+          "type": "boolean"
+        },
+        "cursed": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "unique": {
+          "default": true,
+          "type": "boolean"
+        },
+        "kept_though_lost": {
+          "default": false,
+          "type": "boolean"
+        },
+        "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        },
+        "strength_requirement": {
+          "default": 0,
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    },
+    "PlateArmor": {
+      "properties": {
+        "kind": {
+          "const": "plate_armor",
+          "default": "plate_armor",
+          "type": "string"
+        },
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "name": {
+          "default": "Plate Armor",
+          "type": "string"
+        },
+        "type": {
+          "default": "wearable",
+          "type": "string"
+        },
+        "pos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Position"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "quantity": {
+          "default": 1,
+          "type": "integer"
+        },
+        "level": {
+          "default": 0,
+          "type": "integer"
+        },
+        "level_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "unique": {
+          "default": false,
+          "type": "boolean"
+        },
+        "kept_though_lost": {
+          "default": false,
+          "type": "boolean"
+        },
+        "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        },
+        "strength_requirement": {
+          "default": 18,
+          "type": "integer"
+        },
+        "tier": {
+          "default": 5,
+          "type": "integer"
+        },
+        "enchantment": {
+          "$ref": "#/$defs/ArmorEnchantment"
+        }
+      },
+      "type": "object"
+    },
     "Player": {
       "properties": {
         "id": {
@@ -6409,6 +8203,14 @@
           "type": "number"
         },
         "burning_total_seconds": {
+          "default": 0.0,
+          "type": "number"
+        },
+        "poison_accum": {
+          "default": 0.0,
+          "type": "number"
+        },
+        "corrosion_accum": {
           "default": 0.0,
           "type": "number"
         },
@@ -6747,15 +8549,22 @@
                 "boomerang": "#/$defs/Boomerang",
                 "bow": "#/$defs/Bow",
                 "broken_seal": "#/$defs/BrokenSeal",
+                "chaotic_censer": "#/$defs/ChaoticCenser",
                 "chargrilled_meat": "#/$defs/ChargrilledMeat",
                 "chest": "#/$defs/Chest",
                 "cloak_of_shadows": "#/$defs/CloakOfShadows",
+                "cloth_armor": "#/$defs/ClothArmor",
+                "cracked_spyglass": "#/$defs/CrackedSpyglass",
                 "dagger": "#/$defs/Dagger",
                 "damage_wand": "#/$defs/DamageWand",
                 "dewdrop": "#/$defs/Dewdrop",
+                "dimensional_sundial": "#/$defs/DimensionalSundial",
                 "dried_rose": "#/$defs/DriedRose",
                 "dwarf_token": "#/$defs/DwarfToken",
                 "elixir_aqua_rejuv": "#/$defs/ElixirOfAquaticRejuvenation",
+                "exotic_crystals": "#/$defs/ExoticCrystals",
+                "eye_of_newt": "#/$defs/EyeOfNewt",
+                "ferret_tuft": "#/$defs/FerretTuft",
                 "food": "#/$defs/Food",
                 "frozen_carpaccio": "#/$defs/FrozenCarpaccio",
                 "fury_potion": "#/$defs/FuryPotion",
@@ -6764,12 +8573,19 @@
                 "health_potion": "#/$defs/HealthPotion",
                 "key": "#/$defs/Key",
                 "kings_crown": "#/$defs/KingsCrown",
+                "leather_armor": "#/$defs/LeatherArmor",
                 "magical_holster": "#/$defs/MagicalHolster",
+                "mail_armor": "#/$defs/MailArmor",
                 "melee_weapon": "#/$defs/MeleeWeapon",
+                "mimic_tooth": "#/$defs/MimicTooth",
                 "missile_weapon": "#/$defs/MissileWeapon",
+                "mossy_clump": "#/$defs/MossyClump",
                 "mystery_meat": "#/$defs/MysteryMeat",
+                "parchment_scrap": "#/$defs/ParchmentScrap",
                 "pasty": "#/$defs/Pasty",
                 "petal": "#/$defs/Petal",
+                "petrified_seed": "#/$defs/PetrifiedSeed",
+                "plate_armor": "#/$defs/PlateArmor",
                 "potion": "#/$defs/Potion",
                 "potion_bandolier": "#/$defs/PotionBandolier",
                 "potion_of_experience": "#/$defs/PotionOfExperience",
@@ -6783,6 +8599,7 @@
                 "potion_of_purity": "#/$defs/PotionOfPurity",
                 "potion_of_strength": "#/$defs/PotionOfStrength",
                 "potion_of_toxic_gas": "#/$defs/PotionOfToxicGas",
+                "rat_skull": "#/$defs/RatSkull",
                 "ration": "#/$defs/Ration",
                 "reviving_potion": "#/$defs/RevivingPotion",
                 "ring": "#/$defs/Ring",
@@ -6798,6 +8615,8 @@
                 "ring_sharpshooting": "#/$defs/RingOfSharpshooting",
                 "ring_tenacity": "#/$defs/RingOfTenacity",
                 "ring_wealth": "#/$defs/RingOfWealth",
+                "salt_cube": "#/$defs/SaltCube",
+                "scale_armor": "#/$defs/ScaleArmor",
                 "scroll": "#/$defs/Scroll",
                 "scroll_holder": "#/$defs/ScrollHolder",
                 "scroll_of_identify": "#/$defs/ScrollOfIdentify",
@@ -6814,14 +8633,19 @@
                 "scroll_of_transmutation": "#/$defs/ScrollOfTransmutation",
                 "scroll_of_upgrade": "#/$defs/ScrollOfUpgrade",
                 "seed": "#/$defs/Seed",
+                "shard_of_oblivion": "#/$defs/ShardOfOblivion",
                 "small_ration": "#/$defs/SmallRation",
                 "spirit_bow": "#/$defs/SpiritBow",
                 "staff": "#/$defs/Staff",
                 "stone": "#/$defs/Stone",
                 "tengu_mask": "#/$defs/TenguMask",
+                "thirteen_leaf_clover": "#/$defs/ThirteenLeafClover",
                 "throwable": "#/$defs/Throwable",
                 "throwable_dagger": "#/$defs/ThrowableDagger",
+                "trap_mechanism": "#/$defs/TrapMechanism",
+                "trinket_catalyst": "#/$defs/TrinketCatalyst",
                 "velvet_pouch": "#/$defs/VelvetPouch",
+                "vial_of_blood": "#/$defs/VialOfBlood",
                 "wand": "#/$defs/Wand",
                 "wand_blast_wave": "#/$defs/WandOfBlastWave",
                 "wand_corrosion": "#/$defs/WandOfCorrosion",
@@ -6837,6 +8661,7 @@
                 "wand_transfusion": "#/$defs/WandOfTransfusion",
                 "wand_warding": "#/$defs/WandOfWarding",
                 "waterskin": "#/$defs/Waterskin",
+                "wondrous_resin": "#/$defs/WondrousResin",
                 "worn_shortsword": "#/$defs/WornShortsword"
               },
               "propertyName": "kind"
@@ -6865,6 +8690,21 @@
               },
               {
                 "$ref": "#/$defs/Armor"
+              },
+              {
+                "$ref": "#/$defs/ClothArmor"
+              },
+              {
+                "$ref": "#/$defs/LeatherArmor"
+              },
+              {
+                "$ref": "#/$defs/MailArmor"
+              },
+              {
+                "$ref": "#/$defs/ScaleArmor"
+              },
+              {
+                "$ref": "#/$defs/PlateArmor"
               },
               {
                 "$ref": "#/$defs/Ring"
@@ -7138,6 +8978,60 @@
               },
               {
                 "$ref": "#/$defs/Bag"
+              },
+              {
+                "$ref": "#/$defs/RatSkull"
+              },
+              {
+                "$ref": "#/$defs/ParchmentScrap"
+              },
+              {
+                "$ref": "#/$defs/PetrifiedSeed"
+              },
+              {
+                "$ref": "#/$defs/ExoticCrystals"
+              },
+              {
+                "$ref": "#/$defs/MossyClump"
+              },
+              {
+                "$ref": "#/$defs/DimensionalSundial"
+              },
+              {
+                "$ref": "#/$defs/ThirteenLeafClover"
+              },
+              {
+                "$ref": "#/$defs/TrapMechanism"
+              },
+              {
+                "$ref": "#/$defs/MimicTooth"
+              },
+              {
+                "$ref": "#/$defs/WondrousResin"
+              },
+              {
+                "$ref": "#/$defs/EyeOfNewt"
+              },
+              {
+                "$ref": "#/$defs/SaltCube"
+              },
+              {
+                "$ref": "#/$defs/VialOfBlood"
+              },
+              {
+                "$ref": "#/$defs/ShardOfOblivion"
+              },
+              {
+                "$ref": "#/$defs/ChaoticCenser"
+              },
+              {
+                "$ref": "#/$defs/FerretTuft"
+              },
+              {
+                "$ref": "#/$defs/CrackedSpyglass"
+              },
+              {
+                "$ref": "#/$defs/TrinketCatalyst"
               }
             ]
           },
@@ -7157,15 +9051,22 @@
                   "boomerang": "#/$defs/Boomerang",
                   "bow": "#/$defs/Bow",
                   "broken_seal": "#/$defs/BrokenSeal",
+                  "chaotic_censer": "#/$defs/ChaoticCenser",
                   "chargrilled_meat": "#/$defs/ChargrilledMeat",
                   "chest": "#/$defs/Chest",
                   "cloak_of_shadows": "#/$defs/CloakOfShadows",
+                  "cloth_armor": "#/$defs/ClothArmor",
+                  "cracked_spyglass": "#/$defs/CrackedSpyglass",
                   "dagger": "#/$defs/Dagger",
                   "damage_wand": "#/$defs/DamageWand",
                   "dewdrop": "#/$defs/Dewdrop",
+                  "dimensional_sundial": "#/$defs/DimensionalSundial",
                   "dried_rose": "#/$defs/DriedRose",
                   "dwarf_token": "#/$defs/DwarfToken",
                   "elixir_aqua_rejuv": "#/$defs/ElixirOfAquaticRejuvenation",
+                  "exotic_crystals": "#/$defs/ExoticCrystals",
+                  "eye_of_newt": "#/$defs/EyeOfNewt",
+                  "ferret_tuft": "#/$defs/FerretTuft",
                   "food": "#/$defs/Food",
                   "frozen_carpaccio": "#/$defs/FrozenCarpaccio",
                   "fury_potion": "#/$defs/FuryPotion",
@@ -7174,12 +9075,19 @@
                   "health_potion": "#/$defs/HealthPotion",
                   "key": "#/$defs/Key",
                   "kings_crown": "#/$defs/KingsCrown",
+                  "leather_armor": "#/$defs/LeatherArmor",
                   "magical_holster": "#/$defs/MagicalHolster",
+                  "mail_armor": "#/$defs/MailArmor",
                   "melee_weapon": "#/$defs/MeleeWeapon",
+                  "mimic_tooth": "#/$defs/MimicTooth",
                   "missile_weapon": "#/$defs/MissileWeapon",
+                  "mossy_clump": "#/$defs/MossyClump",
                   "mystery_meat": "#/$defs/MysteryMeat",
+                  "parchment_scrap": "#/$defs/ParchmentScrap",
                   "pasty": "#/$defs/Pasty",
                   "petal": "#/$defs/Petal",
+                  "petrified_seed": "#/$defs/PetrifiedSeed",
+                  "plate_armor": "#/$defs/PlateArmor",
                   "potion": "#/$defs/Potion",
                   "potion_bandolier": "#/$defs/PotionBandolier",
                   "potion_of_experience": "#/$defs/PotionOfExperience",
@@ -7193,6 +9101,7 @@
                   "potion_of_purity": "#/$defs/PotionOfPurity",
                   "potion_of_strength": "#/$defs/PotionOfStrength",
                   "potion_of_toxic_gas": "#/$defs/PotionOfToxicGas",
+                  "rat_skull": "#/$defs/RatSkull",
                   "ration": "#/$defs/Ration",
                   "reviving_potion": "#/$defs/RevivingPotion",
                   "ring": "#/$defs/Ring",
@@ -7208,6 +9117,8 @@
                   "ring_sharpshooting": "#/$defs/RingOfSharpshooting",
                   "ring_tenacity": "#/$defs/RingOfTenacity",
                   "ring_wealth": "#/$defs/RingOfWealth",
+                  "salt_cube": "#/$defs/SaltCube",
+                  "scale_armor": "#/$defs/ScaleArmor",
                   "scroll": "#/$defs/Scroll",
                   "scroll_holder": "#/$defs/ScrollHolder",
                   "scroll_of_identify": "#/$defs/ScrollOfIdentify",
@@ -7224,14 +9135,19 @@
                   "scroll_of_transmutation": "#/$defs/ScrollOfTransmutation",
                   "scroll_of_upgrade": "#/$defs/ScrollOfUpgrade",
                   "seed": "#/$defs/Seed",
+                  "shard_of_oblivion": "#/$defs/ShardOfOblivion",
                   "small_ration": "#/$defs/SmallRation",
                   "spirit_bow": "#/$defs/SpiritBow",
                   "staff": "#/$defs/Staff",
                   "stone": "#/$defs/Stone",
                   "tengu_mask": "#/$defs/TenguMask",
+                  "thirteen_leaf_clover": "#/$defs/ThirteenLeafClover",
                   "throwable": "#/$defs/Throwable",
                   "throwable_dagger": "#/$defs/ThrowableDagger",
+                  "trap_mechanism": "#/$defs/TrapMechanism",
+                  "trinket_catalyst": "#/$defs/TrinketCatalyst",
                   "velvet_pouch": "#/$defs/VelvetPouch",
+                  "vial_of_blood": "#/$defs/VialOfBlood",
                   "wand": "#/$defs/Wand",
                   "wand_blast_wave": "#/$defs/WandOfBlastWave",
                   "wand_corrosion": "#/$defs/WandOfCorrosion",
@@ -7247,6 +9163,7 @@
                   "wand_transfusion": "#/$defs/WandOfTransfusion",
                   "wand_warding": "#/$defs/WandOfWarding",
                   "waterskin": "#/$defs/Waterskin",
+                  "wondrous_resin": "#/$defs/WondrousResin",
                   "worn_shortsword": "#/$defs/WornShortsword"
                 },
                 "propertyName": "kind"
@@ -7275,6 +9192,21 @@
                 },
                 {
                   "$ref": "#/$defs/Armor"
+                },
+                {
+                  "$ref": "#/$defs/ClothArmor"
+                },
+                {
+                  "$ref": "#/$defs/LeatherArmor"
+                },
+                {
+                  "$ref": "#/$defs/MailArmor"
+                },
+                {
+                  "$ref": "#/$defs/ScaleArmor"
+                },
+                {
+                  "$ref": "#/$defs/PlateArmor"
                 },
                 {
                   "$ref": "#/$defs/Ring"
@@ -7548,6 +9480,60 @@
                 },
                 {
                   "$ref": "#/$defs/Bag"
+                },
+                {
+                  "$ref": "#/$defs/RatSkull"
+                },
+                {
+                  "$ref": "#/$defs/ParchmentScrap"
+                },
+                {
+                  "$ref": "#/$defs/PetrifiedSeed"
+                },
+                {
+                  "$ref": "#/$defs/ExoticCrystals"
+                },
+                {
+                  "$ref": "#/$defs/MossyClump"
+                },
+                {
+                  "$ref": "#/$defs/DimensionalSundial"
+                },
+                {
+                  "$ref": "#/$defs/ThirteenLeafClover"
+                },
+                {
+                  "$ref": "#/$defs/TrapMechanism"
+                },
+                {
+                  "$ref": "#/$defs/MimicTooth"
+                },
+                {
+                  "$ref": "#/$defs/WondrousResin"
+                },
+                {
+                  "$ref": "#/$defs/EyeOfNewt"
+                },
+                {
+                  "$ref": "#/$defs/SaltCube"
+                },
+                {
+                  "$ref": "#/$defs/VialOfBlood"
+                },
+                {
+                  "$ref": "#/$defs/ShardOfOblivion"
+                },
+                {
+                  "$ref": "#/$defs/ChaoticCenser"
+                },
+                {
+                  "$ref": "#/$defs/FerretTuft"
+                },
+                {
+                  "$ref": "#/$defs/CrackedSpyglass"
+                },
+                {
+                  "$ref": "#/$defs/TrinketCatalyst"
                 }
               ]
             },
@@ -7570,15 +9556,22 @@
                   "boomerang": "#/$defs/Boomerang",
                   "bow": "#/$defs/Bow",
                   "broken_seal": "#/$defs/BrokenSeal",
+                  "chaotic_censer": "#/$defs/ChaoticCenser",
                   "chargrilled_meat": "#/$defs/ChargrilledMeat",
                   "chest": "#/$defs/Chest",
                   "cloak_of_shadows": "#/$defs/CloakOfShadows",
+                  "cloth_armor": "#/$defs/ClothArmor",
+                  "cracked_spyglass": "#/$defs/CrackedSpyglass",
                   "dagger": "#/$defs/Dagger",
                   "damage_wand": "#/$defs/DamageWand",
                   "dewdrop": "#/$defs/Dewdrop",
+                  "dimensional_sundial": "#/$defs/DimensionalSundial",
                   "dried_rose": "#/$defs/DriedRose",
                   "dwarf_token": "#/$defs/DwarfToken",
                   "elixir_aqua_rejuv": "#/$defs/ElixirOfAquaticRejuvenation",
+                  "exotic_crystals": "#/$defs/ExoticCrystals",
+                  "eye_of_newt": "#/$defs/EyeOfNewt",
+                  "ferret_tuft": "#/$defs/FerretTuft",
                   "food": "#/$defs/Food",
                   "frozen_carpaccio": "#/$defs/FrozenCarpaccio",
                   "fury_potion": "#/$defs/FuryPotion",
@@ -7587,12 +9580,19 @@
                   "health_potion": "#/$defs/HealthPotion",
                   "key": "#/$defs/Key",
                   "kings_crown": "#/$defs/KingsCrown",
+                  "leather_armor": "#/$defs/LeatherArmor",
                   "magical_holster": "#/$defs/MagicalHolster",
+                  "mail_armor": "#/$defs/MailArmor",
                   "melee_weapon": "#/$defs/MeleeWeapon",
+                  "mimic_tooth": "#/$defs/MimicTooth",
                   "missile_weapon": "#/$defs/MissileWeapon",
+                  "mossy_clump": "#/$defs/MossyClump",
                   "mystery_meat": "#/$defs/MysteryMeat",
+                  "parchment_scrap": "#/$defs/ParchmentScrap",
                   "pasty": "#/$defs/Pasty",
                   "petal": "#/$defs/Petal",
+                  "petrified_seed": "#/$defs/PetrifiedSeed",
+                  "plate_armor": "#/$defs/PlateArmor",
                   "potion": "#/$defs/Potion",
                   "potion_bandolier": "#/$defs/PotionBandolier",
                   "potion_of_experience": "#/$defs/PotionOfExperience",
@@ -7606,6 +9606,7 @@
                   "potion_of_purity": "#/$defs/PotionOfPurity",
                   "potion_of_strength": "#/$defs/PotionOfStrength",
                   "potion_of_toxic_gas": "#/$defs/PotionOfToxicGas",
+                  "rat_skull": "#/$defs/RatSkull",
                   "ration": "#/$defs/Ration",
                   "reviving_potion": "#/$defs/RevivingPotion",
                   "ring": "#/$defs/Ring",
@@ -7621,6 +9622,8 @@
                   "ring_sharpshooting": "#/$defs/RingOfSharpshooting",
                   "ring_tenacity": "#/$defs/RingOfTenacity",
                   "ring_wealth": "#/$defs/RingOfWealth",
+                  "salt_cube": "#/$defs/SaltCube",
+                  "scale_armor": "#/$defs/ScaleArmor",
                   "scroll": "#/$defs/Scroll",
                   "scroll_holder": "#/$defs/ScrollHolder",
                   "scroll_of_identify": "#/$defs/ScrollOfIdentify",
@@ -7637,14 +9640,19 @@
                   "scroll_of_transmutation": "#/$defs/ScrollOfTransmutation",
                   "scroll_of_upgrade": "#/$defs/ScrollOfUpgrade",
                   "seed": "#/$defs/Seed",
+                  "shard_of_oblivion": "#/$defs/ShardOfOblivion",
                   "small_ration": "#/$defs/SmallRation",
                   "spirit_bow": "#/$defs/SpiritBow",
                   "staff": "#/$defs/Staff",
                   "stone": "#/$defs/Stone",
                   "tengu_mask": "#/$defs/TenguMask",
+                  "thirteen_leaf_clover": "#/$defs/ThirteenLeafClover",
                   "throwable": "#/$defs/Throwable",
                   "throwable_dagger": "#/$defs/ThrowableDagger",
+                  "trap_mechanism": "#/$defs/TrapMechanism",
+                  "trinket_catalyst": "#/$defs/TrinketCatalyst",
                   "velvet_pouch": "#/$defs/VelvetPouch",
+                  "vial_of_blood": "#/$defs/VialOfBlood",
                   "wand": "#/$defs/Wand",
                   "wand_blast_wave": "#/$defs/WandOfBlastWave",
                   "wand_corrosion": "#/$defs/WandOfCorrosion",
@@ -7660,6 +9668,7 @@
                   "wand_transfusion": "#/$defs/WandOfTransfusion",
                   "wand_warding": "#/$defs/WandOfWarding",
                   "waterskin": "#/$defs/Waterskin",
+                  "wondrous_resin": "#/$defs/WondrousResin",
                   "worn_shortsword": "#/$defs/WornShortsword"
                 },
                 "propertyName": "kind"
@@ -7688,6 +9697,21 @@
                 },
                 {
                   "$ref": "#/$defs/Armor"
+                },
+                {
+                  "$ref": "#/$defs/ClothArmor"
+                },
+                {
+                  "$ref": "#/$defs/LeatherArmor"
+                },
+                {
+                  "$ref": "#/$defs/MailArmor"
+                },
+                {
+                  "$ref": "#/$defs/ScaleArmor"
+                },
+                {
+                  "$ref": "#/$defs/PlateArmor"
                 },
                 {
                   "$ref": "#/$defs/Ring"
@@ -7961,6 +9985,60 @@
                 },
                 {
                   "$ref": "#/$defs/Bag"
+                },
+                {
+                  "$ref": "#/$defs/RatSkull"
+                },
+                {
+                  "$ref": "#/$defs/ParchmentScrap"
+                },
+                {
+                  "$ref": "#/$defs/PetrifiedSeed"
+                },
+                {
+                  "$ref": "#/$defs/ExoticCrystals"
+                },
+                {
+                  "$ref": "#/$defs/MossyClump"
+                },
+                {
+                  "$ref": "#/$defs/DimensionalSundial"
+                },
+                {
+                  "$ref": "#/$defs/ThirteenLeafClover"
+                },
+                {
+                  "$ref": "#/$defs/TrapMechanism"
+                },
+                {
+                  "$ref": "#/$defs/MimicTooth"
+                },
+                {
+                  "$ref": "#/$defs/WondrousResin"
+                },
+                {
+                  "$ref": "#/$defs/EyeOfNewt"
+                },
+                {
+                  "$ref": "#/$defs/SaltCube"
+                },
+                {
+                  "$ref": "#/$defs/VialOfBlood"
+                },
+                {
+                  "$ref": "#/$defs/ShardOfOblivion"
+                },
+                {
+                  "$ref": "#/$defs/ChaoticCenser"
+                },
+                {
+                  "$ref": "#/$defs/FerretTuft"
+                },
+                {
+                  "$ref": "#/$defs/CrackedSpyglass"
+                },
+                {
+                  "$ref": "#/$defs/TrinketCatalyst"
                 }
               ]
             },
@@ -8155,15 +10233,22 @@
                 "boomerang": "#/$defs/Boomerang",
                 "bow": "#/$defs/Bow",
                 "broken_seal": "#/$defs/BrokenSeal",
+                "chaotic_censer": "#/$defs/ChaoticCenser",
                 "chargrilled_meat": "#/$defs/ChargrilledMeat",
                 "chest": "#/$defs/Chest",
                 "cloak_of_shadows": "#/$defs/CloakOfShadows",
+                "cloth_armor": "#/$defs/ClothArmor",
+                "cracked_spyglass": "#/$defs/CrackedSpyglass",
                 "dagger": "#/$defs/Dagger",
                 "damage_wand": "#/$defs/DamageWand",
                 "dewdrop": "#/$defs/Dewdrop",
+                "dimensional_sundial": "#/$defs/DimensionalSundial",
                 "dried_rose": "#/$defs/DriedRose",
                 "dwarf_token": "#/$defs/DwarfToken",
                 "elixir_aqua_rejuv": "#/$defs/ElixirOfAquaticRejuvenation",
+                "exotic_crystals": "#/$defs/ExoticCrystals",
+                "eye_of_newt": "#/$defs/EyeOfNewt",
+                "ferret_tuft": "#/$defs/FerretTuft",
                 "food": "#/$defs/Food",
                 "frozen_carpaccio": "#/$defs/FrozenCarpaccio",
                 "fury_potion": "#/$defs/FuryPotion",
@@ -8172,12 +10257,19 @@
                 "health_potion": "#/$defs/HealthPotion",
                 "key": "#/$defs/Key",
                 "kings_crown": "#/$defs/KingsCrown",
+                "leather_armor": "#/$defs/LeatherArmor",
                 "magical_holster": "#/$defs/MagicalHolster",
+                "mail_armor": "#/$defs/MailArmor",
                 "melee_weapon": "#/$defs/MeleeWeapon",
+                "mimic_tooth": "#/$defs/MimicTooth",
                 "missile_weapon": "#/$defs/MissileWeapon",
+                "mossy_clump": "#/$defs/MossyClump",
                 "mystery_meat": "#/$defs/MysteryMeat",
+                "parchment_scrap": "#/$defs/ParchmentScrap",
                 "pasty": "#/$defs/Pasty",
                 "petal": "#/$defs/Petal",
+                "petrified_seed": "#/$defs/PetrifiedSeed",
+                "plate_armor": "#/$defs/PlateArmor",
                 "potion": "#/$defs/Potion",
                 "potion_bandolier": "#/$defs/PotionBandolier",
                 "potion_of_experience": "#/$defs/PotionOfExperience",
@@ -8191,6 +10283,7 @@
                 "potion_of_purity": "#/$defs/PotionOfPurity",
                 "potion_of_strength": "#/$defs/PotionOfStrength",
                 "potion_of_toxic_gas": "#/$defs/PotionOfToxicGas",
+                "rat_skull": "#/$defs/RatSkull",
                 "ration": "#/$defs/Ration",
                 "reviving_potion": "#/$defs/RevivingPotion",
                 "ring": "#/$defs/Ring",
@@ -8206,6 +10299,8 @@
                 "ring_sharpshooting": "#/$defs/RingOfSharpshooting",
                 "ring_tenacity": "#/$defs/RingOfTenacity",
                 "ring_wealth": "#/$defs/RingOfWealth",
+                "salt_cube": "#/$defs/SaltCube",
+                "scale_armor": "#/$defs/ScaleArmor",
                 "scroll": "#/$defs/Scroll",
                 "scroll_holder": "#/$defs/ScrollHolder",
                 "scroll_of_identify": "#/$defs/ScrollOfIdentify",
@@ -8222,14 +10317,19 @@
                 "scroll_of_transmutation": "#/$defs/ScrollOfTransmutation",
                 "scroll_of_upgrade": "#/$defs/ScrollOfUpgrade",
                 "seed": "#/$defs/Seed",
+                "shard_of_oblivion": "#/$defs/ShardOfOblivion",
                 "small_ration": "#/$defs/SmallRation",
                 "spirit_bow": "#/$defs/SpiritBow",
                 "staff": "#/$defs/Staff",
                 "stone": "#/$defs/Stone",
                 "tengu_mask": "#/$defs/TenguMask",
+                "thirteen_leaf_clover": "#/$defs/ThirteenLeafClover",
                 "throwable": "#/$defs/Throwable",
                 "throwable_dagger": "#/$defs/ThrowableDagger",
+                "trap_mechanism": "#/$defs/TrapMechanism",
+                "trinket_catalyst": "#/$defs/TrinketCatalyst",
                 "velvet_pouch": "#/$defs/VelvetPouch",
+                "vial_of_blood": "#/$defs/VialOfBlood",
                 "wand": "#/$defs/Wand",
                 "wand_blast_wave": "#/$defs/WandOfBlastWave",
                 "wand_corrosion": "#/$defs/WandOfCorrosion",
@@ -8245,6 +10345,7 @@
                 "wand_transfusion": "#/$defs/WandOfTransfusion",
                 "wand_warding": "#/$defs/WandOfWarding",
                 "waterskin": "#/$defs/Waterskin",
+                "wondrous_resin": "#/$defs/WondrousResin",
                 "worn_shortsword": "#/$defs/WornShortsword"
               },
               "propertyName": "kind"
@@ -8273,6 +10374,21 @@
               },
               {
                 "$ref": "#/$defs/Armor"
+              },
+              {
+                "$ref": "#/$defs/ClothArmor"
+              },
+              {
+                "$ref": "#/$defs/LeatherArmor"
+              },
+              {
+                "$ref": "#/$defs/MailArmor"
+              },
+              {
+                "$ref": "#/$defs/ScaleArmor"
+              },
+              {
+                "$ref": "#/$defs/PlateArmor"
               },
               {
                 "$ref": "#/$defs/Ring"
@@ -8546,6 +10662,60 @@
               },
               {
                 "$ref": "#/$defs/Bag"
+              },
+              {
+                "$ref": "#/$defs/RatSkull"
+              },
+              {
+                "$ref": "#/$defs/ParchmentScrap"
+              },
+              {
+                "$ref": "#/$defs/PetrifiedSeed"
+              },
+              {
+                "$ref": "#/$defs/ExoticCrystals"
+              },
+              {
+                "$ref": "#/$defs/MossyClump"
+              },
+              {
+                "$ref": "#/$defs/DimensionalSundial"
+              },
+              {
+                "$ref": "#/$defs/ThirteenLeafClover"
+              },
+              {
+                "$ref": "#/$defs/TrapMechanism"
+              },
+              {
+                "$ref": "#/$defs/MimicTooth"
+              },
+              {
+                "$ref": "#/$defs/WondrousResin"
+              },
+              {
+                "$ref": "#/$defs/EyeOfNewt"
+              },
+              {
+                "$ref": "#/$defs/SaltCube"
+              },
+              {
+                "$ref": "#/$defs/VialOfBlood"
+              },
+              {
+                "$ref": "#/$defs/ShardOfOblivion"
+              },
+              {
+                "$ref": "#/$defs/ChaoticCenser"
+              },
+              {
+                "$ref": "#/$defs/FerretTuft"
+              },
+              {
+                "$ref": "#/$defs/CrackedSpyglass"
+              },
+              {
+                "$ref": "#/$defs/TrinketCatalyst"
               }
             ]
           },
@@ -9395,6 +11565,79 @@
             }
           ],
           "default": null
+        }
+      },
+      "type": "object"
+    },
+    "RatSkull": {
+      "properties": {
+        "kind": {
+          "const": "rat_skull",
+          "default": "rat_skull",
+          "type": "string"
+        },
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "name": {
+          "default": "Rat Skull",
+          "type": "string"
+        },
+        "type": {
+          "default": "trinket",
+          "type": "string"
+        },
+        "pos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Position"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "quantity": {
+          "default": 1,
+          "type": "integer"
+        },
+        "level": {
+          "default": 0,
+          "type": "integer"
+        },
+        "level_known": {
+          "default": true,
+          "type": "boolean"
+        },
+        "cursed": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "unique": {
+          "default": true,
+          "type": "boolean"
+        },
+        "kept_though_lost": {
+          "default": false,
+          "type": "boolean"
+        },
+        "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        },
+        "strength_requirement": {
+          "default": 0,
+          "type": "integer"
         }
       },
       "type": "object"
@@ -10659,6 +12902,159 @@
       },
       "type": "object"
     },
+    "SaltCube": {
+      "properties": {
+        "kind": {
+          "const": "salt_cube",
+          "default": "salt_cube",
+          "type": "string"
+        },
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "name": {
+          "default": "Salt Cube",
+          "type": "string"
+        },
+        "type": {
+          "default": "trinket",
+          "type": "string"
+        },
+        "pos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Position"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "quantity": {
+          "default": 1,
+          "type": "integer"
+        },
+        "level": {
+          "default": 0,
+          "type": "integer"
+        },
+        "level_known": {
+          "default": true,
+          "type": "boolean"
+        },
+        "cursed": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "unique": {
+          "default": true,
+          "type": "boolean"
+        },
+        "kept_though_lost": {
+          "default": false,
+          "type": "boolean"
+        },
+        "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        },
+        "strength_requirement": {
+          "default": 0,
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    },
+    "ScaleArmor": {
+      "properties": {
+        "kind": {
+          "const": "scale_armor",
+          "default": "scale_armor",
+          "type": "string"
+        },
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "name": {
+          "default": "Scale Armor",
+          "type": "string"
+        },
+        "type": {
+          "default": "wearable",
+          "type": "string"
+        },
+        "pos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Position"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "quantity": {
+          "default": 1,
+          "type": "integer"
+        },
+        "level": {
+          "default": 0,
+          "type": "integer"
+        },
+        "level_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "unique": {
+          "default": false,
+          "type": "boolean"
+        },
+        "kept_though_lost": {
+          "default": false,
+          "type": "boolean"
+        },
+        "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        },
+        "strength_requirement": {
+          "default": 16,
+          "type": "integer"
+        },
+        "tier": {
+          "default": 4,
+          "type": "integer"
+        },
+        "enchantment": {
+          "$ref": "#/$defs/ArmorEnchantment"
+        }
+      },
+      "type": "object"
+    },
     "Scroll": {
       "properties": {
         "kind": {
@@ -10812,15 +13208,22 @@
                 "boomerang": "#/$defs/Boomerang",
                 "bow": "#/$defs/Bow",
                 "broken_seal": "#/$defs/BrokenSeal",
+                "chaotic_censer": "#/$defs/ChaoticCenser",
                 "chargrilled_meat": "#/$defs/ChargrilledMeat",
                 "chest": "#/$defs/Chest",
                 "cloak_of_shadows": "#/$defs/CloakOfShadows",
+                "cloth_armor": "#/$defs/ClothArmor",
+                "cracked_spyglass": "#/$defs/CrackedSpyglass",
                 "dagger": "#/$defs/Dagger",
                 "damage_wand": "#/$defs/DamageWand",
                 "dewdrop": "#/$defs/Dewdrop",
+                "dimensional_sundial": "#/$defs/DimensionalSundial",
                 "dried_rose": "#/$defs/DriedRose",
                 "dwarf_token": "#/$defs/DwarfToken",
                 "elixir_aqua_rejuv": "#/$defs/ElixirOfAquaticRejuvenation",
+                "exotic_crystals": "#/$defs/ExoticCrystals",
+                "eye_of_newt": "#/$defs/EyeOfNewt",
+                "ferret_tuft": "#/$defs/FerretTuft",
                 "food": "#/$defs/Food",
                 "frozen_carpaccio": "#/$defs/FrozenCarpaccio",
                 "fury_potion": "#/$defs/FuryPotion",
@@ -10829,12 +13232,19 @@
                 "health_potion": "#/$defs/HealthPotion",
                 "key": "#/$defs/Key",
                 "kings_crown": "#/$defs/KingsCrown",
+                "leather_armor": "#/$defs/LeatherArmor",
                 "magical_holster": "#/$defs/MagicalHolster",
+                "mail_armor": "#/$defs/MailArmor",
                 "melee_weapon": "#/$defs/MeleeWeapon",
+                "mimic_tooth": "#/$defs/MimicTooth",
                 "missile_weapon": "#/$defs/MissileWeapon",
+                "mossy_clump": "#/$defs/MossyClump",
                 "mystery_meat": "#/$defs/MysteryMeat",
+                "parchment_scrap": "#/$defs/ParchmentScrap",
                 "pasty": "#/$defs/Pasty",
                 "petal": "#/$defs/Petal",
+                "petrified_seed": "#/$defs/PetrifiedSeed",
+                "plate_armor": "#/$defs/PlateArmor",
                 "potion": "#/$defs/Potion",
                 "potion_bandolier": "#/$defs/PotionBandolier",
                 "potion_of_experience": "#/$defs/PotionOfExperience",
@@ -10848,6 +13258,7 @@
                 "potion_of_purity": "#/$defs/PotionOfPurity",
                 "potion_of_strength": "#/$defs/PotionOfStrength",
                 "potion_of_toxic_gas": "#/$defs/PotionOfToxicGas",
+                "rat_skull": "#/$defs/RatSkull",
                 "ration": "#/$defs/Ration",
                 "reviving_potion": "#/$defs/RevivingPotion",
                 "ring": "#/$defs/Ring",
@@ -10863,6 +13274,8 @@
                 "ring_sharpshooting": "#/$defs/RingOfSharpshooting",
                 "ring_tenacity": "#/$defs/RingOfTenacity",
                 "ring_wealth": "#/$defs/RingOfWealth",
+                "salt_cube": "#/$defs/SaltCube",
+                "scale_armor": "#/$defs/ScaleArmor",
                 "scroll": "#/$defs/Scroll",
                 "scroll_holder": "#/$defs/ScrollHolder",
                 "scroll_of_identify": "#/$defs/ScrollOfIdentify",
@@ -10879,14 +13292,19 @@
                 "scroll_of_transmutation": "#/$defs/ScrollOfTransmutation",
                 "scroll_of_upgrade": "#/$defs/ScrollOfUpgrade",
                 "seed": "#/$defs/Seed",
+                "shard_of_oblivion": "#/$defs/ShardOfOblivion",
                 "small_ration": "#/$defs/SmallRation",
                 "spirit_bow": "#/$defs/SpiritBow",
                 "staff": "#/$defs/Staff",
                 "stone": "#/$defs/Stone",
                 "tengu_mask": "#/$defs/TenguMask",
+                "thirteen_leaf_clover": "#/$defs/ThirteenLeafClover",
                 "throwable": "#/$defs/Throwable",
                 "throwable_dagger": "#/$defs/ThrowableDagger",
+                "trap_mechanism": "#/$defs/TrapMechanism",
+                "trinket_catalyst": "#/$defs/TrinketCatalyst",
                 "velvet_pouch": "#/$defs/VelvetPouch",
+                "vial_of_blood": "#/$defs/VialOfBlood",
                 "wand": "#/$defs/Wand",
                 "wand_blast_wave": "#/$defs/WandOfBlastWave",
                 "wand_corrosion": "#/$defs/WandOfCorrosion",
@@ -10902,6 +13320,7 @@
                 "wand_transfusion": "#/$defs/WandOfTransfusion",
                 "wand_warding": "#/$defs/WandOfWarding",
                 "waterskin": "#/$defs/Waterskin",
+                "wondrous_resin": "#/$defs/WondrousResin",
                 "worn_shortsword": "#/$defs/WornShortsword"
               },
               "propertyName": "kind"
@@ -10930,6 +13349,21 @@
               },
               {
                 "$ref": "#/$defs/Armor"
+              },
+              {
+                "$ref": "#/$defs/ClothArmor"
+              },
+              {
+                "$ref": "#/$defs/LeatherArmor"
+              },
+              {
+                "$ref": "#/$defs/MailArmor"
+              },
+              {
+                "$ref": "#/$defs/ScaleArmor"
+              },
+              {
+                "$ref": "#/$defs/PlateArmor"
               },
               {
                 "$ref": "#/$defs/Ring"
@@ -11203,6 +13637,60 @@
               },
               {
                 "$ref": "#/$defs/Bag"
+              },
+              {
+                "$ref": "#/$defs/RatSkull"
+              },
+              {
+                "$ref": "#/$defs/ParchmentScrap"
+              },
+              {
+                "$ref": "#/$defs/PetrifiedSeed"
+              },
+              {
+                "$ref": "#/$defs/ExoticCrystals"
+              },
+              {
+                "$ref": "#/$defs/MossyClump"
+              },
+              {
+                "$ref": "#/$defs/DimensionalSundial"
+              },
+              {
+                "$ref": "#/$defs/ThirteenLeafClover"
+              },
+              {
+                "$ref": "#/$defs/TrapMechanism"
+              },
+              {
+                "$ref": "#/$defs/MimicTooth"
+              },
+              {
+                "$ref": "#/$defs/WondrousResin"
+              },
+              {
+                "$ref": "#/$defs/EyeOfNewt"
+              },
+              {
+                "$ref": "#/$defs/SaltCube"
+              },
+              {
+                "$ref": "#/$defs/VialOfBlood"
+              },
+              {
+                "$ref": "#/$defs/ShardOfOblivion"
+              },
+              {
+                "$ref": "#/$defs/ChaoticCenser"
+              },
+              {
+                "$ref": "#/$defs/FerretTuft"
+              },
+              {
+                "$ref": "#/$defs/CrackedSpyglass"
+              },
+              {
+                "$ref": "#/$defs/TrinketCatalyst"
               }
             ]
           },
@@ -12183,6 +14671,79 @@
       ],
       "type": "object"
     },
+    "ShardOfOblivion": {
+      "properties": {
+        "kind": {
+          "const": "shard_of_oblivion",
+          "default": "shard_of_oblivion",
+          "type": "string"
+        },
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "name": {
+          "default": "Shard of Oblivion",
+          "type": "string"
+        },
+        "type": {
+          "default": "trinket",
+          "type": "string"
+        },
+        "pos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Position"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "quantity": {
+          "default": 1,
+          "type": "integer"
+        },
+        "level": {
+          "default": 0,
+          "type": "integer"
+        },
+        "level_known": {
+          "default": true,
+          "type": "boolean"
+        },
+        "cursed": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "unique": {
+          "default": true,
+          "type": "boolean"
+        },
+        "kept_though_lost": {
+          "default": false,
+          "type": "boolean"
+        },
+        "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        },
+        "strength_requirement": {
+          "default": 0,
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    },
     "Shield": {
       "properties": {
         "priority": {
@@ -12766,6 +15327,79 @@
       },
       "type": "object"
     },
+    "ThirteenLeafClover": {
+      "properties": {
+        "kind": {
+          "const": "thirteen_leaf_clover",
+          "default": "thirteen_leaf_clover",
+          "type": "string"
+        },
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "name": {
+          "default": "Thirteen-Leaf Clover",
+          "type": "string"
+        },
+        "type": {
+          "default": "trinket",
+          "type": "string"
+        },
+        "pos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Position"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "quantity": {
+          "default": 1,
+          "type": "integer"
+        },
+        "level": {
+          "default": 0,
+          "type": "integer"
+        },
+        "level_known": {
+          "default": true,
+          "type": "boolean"
+        },
+        "cursed": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "unique": {
+          "default": true,
+          "type": "boolean"
+        },
+        "kept_though_lost": {
+          "default": false,
+          "type": "boolean"
+        },
+        "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        },
+        "strength_requirement": {
+          "default": 0,
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    },
     "Throwable": {
       "properties": {
         "kind": {
@@ -12938,6 +15572,148 @@
       },
       "type": "object"
     },
+    "TrapMechanism": {
+      "properties": {
+        "kind": {
+          "const": "trap_mechanism",
+          "default": "trap_mechanism",
+          "type": "string"
+        },
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "name": {
+          "default": "Trap Mechanism",
+          "type": "string"
+        },
+        "type": {
+          "default": "trinket",
+          "type": "string"
+        },
+        "pos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Position"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "quantity": {
+          "default": 1,
+          "type": "integer"
+        },
+        "level": {
+          "default": 0,
+          "type": "integer"
+        },
+        "level_known": {
+          "default": true,
+          "type": "boolean"
+        },
+        "cursed": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "unique": {
+          "default": true,
+          "type": "boolean"
+        },
+        "kept_though_lost": {
+          "default": false,
+          "type": "boolean"
+        },
+        "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        },
+        "strength_requirement": {
+          "default": 0,
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    },
+    "TrinketCatalyst": {
+      "properties": {
+        "kind": {
+          "const": "trinket_catalyst",
+          "default": "trinket_catalyst",
+          "type": "string"
+        },
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "name": {
+          "default": "Trinket Catalyst",
+          "type": "string"
+        },
+        "type": {
+          "default": "trinket_catalyst",
+          "type": "string"
+        },
+        "pos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Position"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "quantity": {
+          "default": 1,
+          "type": "integer"
+        },
+        "level": {
+          "default": 0,
+          "type": "integer"
+        },
+        "level_known": {
+          "default": true,
+          "type": "boolean"
+        },
+        "cursed": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "unique": {
+          "default": true,
+          "type": "boolean"
+        },
+        "kept_though_lost": {
+          "default": false,
+          "type": "boolean"
+        },
+        "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
     "VelvetPouch": {
       "properties": {
         "kind": {
@@ -13020,15 +15796,22 @@
                 "boomerang": "#/$defs/Boomerang",
                 "bow": "#/$defs/Bow",
                 "broken_seal": "#/$defs/BrokenSeal",
+                "chaotic_censer": "#/$defs/ChaoticCenser",
                 "chargrilled_meat": "#/$defs/ChargrilledMeat",
                 "chest": "#/$defs/Chest",
                 "cloak_of_shadows": "#/$defs/CloakOfShadows",
+                "cloth_armor": "#/$defs/ClothArmor",
+                "cracked_spyglass": "#/$defs/CrackedSpyglass",
                 "dagger": "#/$defs/Dagger",
                 "damage_wand": "#/$defs/DamageWand",
                 "dewdrop": "#/$defs/Dewdrop",
+                "dimensional_sundial": "#/$defs/DimensionalSundial",
                 "dried_rose": "#/$defs/DriedRose",
                 "dwarf_token": "#/$defs/DwarfToken",
                 "elixir_aqua_rejuv": "#/$defs/ElixirOfAquaticRejuvenation",
+                "exotic_crystals": "#/$defs/ExoticCrystals",
+                "eye_of_newt": "#/$defs/EyeOfNewt",
+                "ferret_tuft": "#/$defs/FerretTuft",
                 "food": "#/$defs/Food",
                 "frozen_carpaccio": "#/$defs/FrozenCarpaccio",
                 "fury_potion": "#/$defs/FuryPotion",
@@ -13037,12 +15820,19 @@
                 "health_potion": "#/$defs/HealthPotion",
                 "key": "#/$defs/Key",
                 "kings_crown": "#/$defs/KingsCrown",
+                "leather_armor": "#/$defs/LeatherArmor",
                 "magical_holster": "#/$defs/MagicalHolster",
+                "mail_armor": "#/$defs/MailArmor",
                 "melee_weapon": "#/$defs/MeleeWeapon",
+                "mimic_tooth": "#/$defs/MimicTooth",
                 "missile_weapon": "#/$defs/MissileWeapon",
+                "mossy_clump": "#/$defs/MossyClump",
                 "mystery_meat": "#/$defs/MysteryMeat",
+                "parchment_scrap": "#/$defs/ParchmentScrap",
                 "pasty": "#/$defs/Pasty",
                 "petal": "#/$defs/Petal",
+                "petrified_seed": "#/$defs/PetrifiedSeed",
+                "plate_armor": "#/$defs/PlateArmor",
                 "potion": "#/$defs/Potion",
                 "potion_bandolier": "#/$defs/PotionBandolier",
                 "potion_of_experience": "#/$defs/PotionOfExperience",
@@ -13056,6 +15846,7 @@
                 "potion_of_purity": "#/$defs/PotionOfPurity",
                 "potion_of_strength": "#/$defs/PotionOfStrength",
                 "potion_of_toxic_gas": "#/$defs/PotionOfToxicGas",
+                "rat_skull": "#/$defs/RatSkull",
                 "ration": "#/$defs/Ration",
                 "reviving_potion": "#/$defs/RevivingPotion",
                 "ring": "#/$defs/Ring",
@@ -13071,6 +15862,8 @@
                 "ring_sharpshooting": "#/$defs/RingOfSharpshooting",
                 "ring_tenacity": "#/$defs/RingOfTenacity",
                 "ring_wealth": "#/$defs/RingOfWealth",
+                "salt_cube": "#/$defs/SaltCube",
+                "scale_armor": "#/$defs/ScaleArmor",
                 "scroll": "#/$defs/Scroll",
                 "scroll_holder": "#/$defs/ScrollHolder",
                 "scroll_of_identify": "#/$defs/ScrollOfIdentify",
@@ -13087,14 +15880,19 @@
                 "scroll_of_transmutation": "#/$defs/ScrollOfTransmutation",
                 "scroll_of_upgrade": "#/$defs/ScrollOfUpgrade",
                 "seed": "#/$defs/Seed",
+                "shard_of_oblivion": "#/$defs/ShardOfOblivion",
                 "small_ration": "#/$defs/SmallRation",
                 "spirit_bow": "#/$defs/SpiritBow",
                 "staff": "#/$defs/Staff",
                 "stone": "#/$defs/Stone",
                 "tengu_mask": "#/$defs/TenguMask",
+                "thirteen_leaf_clover": "#/$defs/ThirteenLeafClover",
                 "throwable": "#/$defs/Throwable",
                 "throwable_dagger": "#/$defs/ThrowableDagger",
+                "trap_mechanism": "#/$defs/TrapMechanism",
+                "trinket_catalyst": "#/$defs/TrinketCatalyst",
                 "velvet_pouch": "#/$defs/VelvetPouch",
+                "vial_of_blood": "#/$defs/VialOfBlood",
                 "wand": "#/$defs/Wand",
                 "wand_blast_wave": "#/$defs/WandOfBlastWave",
                 "wand_corrosion": "#/$defs/WandOfCorrosion",
@@ -13110,6 +15908,7 @@
                 "wand_transfusion": "#/$defs/WandOfTransfusion",
                 "wand_warding": "#/$defs/WandOfWarding",
                 "waterskin": "#/$defs/Waterskin",
+                "wondrous_resin": "#/$defs/WondrousResin",
                 "worn_shortsword": "#/$defs/WornShortsword"
               },
               "propertyName": "kind"
@@ -13138,6 +15937,21 @@
               },
               {
                 "$ref": "#/$defs/Armor"
+              },
+              {
+                "$ref": "#/$defs/ClothArmor"
+              },
+              {
+                "$ref": "#/$defs/LeatherArmor"
+              },
+              {
+                "$ref": "#/$defs/MailArmor"
+              },
+              {
+                "$ref": "#/$defs/ScaleArmor"
+              },
+              {
+                "$ref": "#/$defs/PlateArmor"
               },
               {
                 "$ref": "#/$defs/Ring"
@@ -13411,10 +16225,137 @@
               },
               {
                 "$ref": "#/$defs/Bag"
+              },
+              {
+                "$ref": "#/$defs/RatSkull"
+              },
+              {
+                "$ref": "#/$defs/ParchmentScrap"
+              },
+              {
+                "$ref": "#/$defs/PetrifiedSeed"
+              },
+              {
+                "$ref": "#/$defs/ExoticCrystals"
+              },
+              {
+                "$ref": "#/$defs/MossyClump"
+              },
+              {
+                "$ref": "#/$defs/DimensionalSundial"
+              },
+              {
+                "$ref": "#/$defs/ThirteenLeafClover"
+              },
+              {
+                "$ref": "#/$defs/TrapMechanism"
+              },
+              {
+                "$ref": "#/$defs/MimicTooth"
+              },
+              {
+                "$ref": "#/$defs/WondrousResin"
+              },
+              {
+                "$ref": "#/$defs/EyeOfNewt"
+              },
+              {
+                "$ref": "#/$defs/SaltCube"
+              },
+              {
+                "$ref": "#/$defs/VialOfBlood"
+              },
+              {
+                "$ref": "#/$defs/ShardOfOblivion"
+              },
+              {
+                "$ref": "#/$defs/ChaoticCenser"
+              },
+              {
+                "$ref": "#/$defs/FerretTuft"
+              },
+              {
+                "$ref": "#/$defs/CrackedSpyglass"
+              },
+              {
+                "$ref": "#/$defs/TrinketCatalyst"
               }
             ]
           },
           "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "VialOfBlood": {
+      "properties": {
+        "kind": {
+          "const": "vial_of_blood",
+          "default": "vial_of_blood",
+          "type": "string"
+        },
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "name": {
+          "default": "Vial of Blood",
+          "type": "string"
+        },
+        "type": {
+          "default": "trinket",
+          "type": "string"
+        },
+        "pos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Position"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "quantity": {
+          "default": 1,
+          "type": "integer"
+        },
+        "level": {
+          "default": 0,
+          "type": "integer"
+        },
+        "level_known": {
+          "default": true,
+          "type": "boolean"
+        },
+        "cursed": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "unique": {
+          "default": true,
+          "type": "boolean"
+        },
+        "kept_though_lost": {
+          "default": false,
+          "type": "boolean"
+        },
+        "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        },
+        "strength_requirement": {
+          "default": 0,
+          "type": "integer"
         }
       },
       "type": "object"
@@ -13642,15 +16583,8 @@
           "default": null
         },
         "wand_sound": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null
+          "default": "BLAST",
+          "type": "string"
         },
         "partial_charge": {
           "default": 0.0,
@@ -13734,7 +16668,7 @@
           "type": "boolean"
         },
         "damage": {
-          "default": 3,
+          "default": 0,
           "type": "integer"
         },
         "charges": {
@@ -13765,15 +16699,8 @@
           "default": null
         },
         "wand_sound": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null
+          "default": "GAS",
+          "type": "string"
         },
         "partial_charge": {
           "default": 0.0,
@@ -13857,7 +16784,7 @@
           "type": "boolean"
         },
         "damage": {
-          "default": 2,
+          "default": 0,
           "type": "integer"
         },
         "charges": {
@@ -13888,15 +16815,8 @@
           "default": null
         },
         "wand_sound": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null
+          "default": "SHATTER",
+          "type": "string"
         },
         "partial_charge": {
           "default": 0.0,
@@ -14093,15 +17013,15 @@
           "type": "integer"
         },
         "charges": {
-          "default": 2,
+          "default": 5,
           "type": "integer"
         },
         "max_charges": {
-          "default": 2,
+          "default": 5,
           "type": "integer"
         },
         "range": {
-          "default": 4,
+          "default": 8,
           "type": "integer"
         },
         "projectile_type": {
@@ -14120,15 +17040,8 @@
           "default": null
         },
         "wand_sound": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null
+          "default": "BLAST",
+          "type": "string"
         },
         "partial_charge": {
           "default": 0.0,
@@ -14216,15 +17129,15 @@
           "type": "integer"
         },
         "charges": {
-          "default": 3,
+          "default": 4,
           "type": "integer"
         },
         "max_charges": {
-          "default": 3,
+          "default": 4,
           "type": "integer"
         },
         "range": {
-          "default": 4,
+          "default": 8,
           "type": "integer"
         },
         "projectile_type": {
@@ -14243,15 +17156,8 @@
           "default": null
         },
         "wand_sound": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null
+          "default": "SHATTER",
+          "type": "string"
         },
         "partial_charge": {
           "default": 0.0,
@@ -14482,15 +17388,8 @@
           "default": null
         },
         "wand_sound": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null
+          "default": "BLAST",
+          "type": "string"
         },
         "partial_charge": {
           "default": 0.0,
@@ -14578,15 +17477,15 @@
           "type": "integer"
         },
         "charges": {
-          "default": 4,
+          "default": 6,
           "type": "integer"
         },
         "max_charges": {
-          "default": 4,
+          "default": 6,
           "type": "integer"
         },
         "range": {
-          "default": 4,
+          "default": 8,
           "type": "integer"
         },
         "projectile_type": {
@@ -14605,15 +17504,8 @@
           "default": null
         },
         "wand_sound": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null
+          "default": "ATTACK_MAGIC",
+          "type": "string"
         },
         "partial_charge": {
           "default": 0.0,
@@ -14713,12 +17605,19 @@
           "type": "integer"
         },
         "projectile_type": {
-          "default": "beam",
+          "default": "rainbow",
           "type": "string"
         },
         "beam_type": {
-          "default": "light_ray",
-          "type": "string"
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "wand_sound": {
           "default": "RAY",
@@ -14806,7 +17705,7 @@
           "type": "boolean"
         },
         "damage": {
-          "default": 1,
+          "default": 0,
           "type": "integer"
         },
         "charges": {
@@ -14837,15 +17736,8 @@
           "default": null
         },
         "wand_sound": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null
+          "default": "PUFF",
+          "type": "string"
         },
         "partial_charge": {
           "default": 0.0,
@@ -14945,12 +17837,19 @@
           "type": "integer"
         },
         "projectile_type": {
-          "default": "beam",
+          "default": "beacon",
           "type": "string"
         },
         "beam_type": {
-          "default": "health_ray",
-          "type": "string"
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "wand_sound": {
           "default": "RAY",
@@ -15038,7 +17937,7 @@
           "type": "boolean"
         },
         "damage": {
-          "default": 2,
+          "default": 0,
           "type": "integer"
         },
         "charges": {
@@ -15069,15 +17968,8 @@
           "default": null
         },
         "wand_sound": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null
+          "default": "ATTACK_MAGIC",
+          "type": "string"
         },
         "partial_charge": {
           "default": 0.0,
@@ -15191,6 +18083,79 @@
         "item_kind",
         "weights"
       ],
+      "type": "object"
+    },
+    "WondrousResin": {
+      "properties": {
+        "kind": {
+          "const": "wondrous_resin",
+          "default": "wondrous_resin",
+          "type": "string"
+        },
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "name": {
+          "default": "Wondrous Resin",
+          "type": "string"
+        },
+        "type": {
+          "default": "trinket",
+          "type": "string"
+        },
+        "pos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Position"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "quantity": {
+          "default": 1,
+          "type": "integer"
+        },
+        "level": {
+          "default": 0,
+          "type": "integer"
+        },
+        "level_known": {
+          "default": true,
+          "type": "boolean"
+        },
+        "cursed": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "unique": {
+          "default": true,
+          "type": "boolean"
+        },
+        "kept_though_lost": {
+          "default": false,
+          "type": "boolean"
+        },
+        "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        },
+        "strength_requirement": {
+          "default": 0,
+          "type": "integer"
+        }
+      },
       "type": "object"
     },
     "WornShortsword": {

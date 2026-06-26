@@ -272,6 +272,49 @@ def action_imbue(game, player, item, tx=None, ty=None) -> None:
 
 
 def action_alchemize(game, player, item, tx=None, ty=None) -> None:
+    from app.engine.entities.trinkets import TrinketCatalyst, trinket_class_for_index
+    import random as _random
+
+    # TrinketCatalyst -> random trinket (SPD TrinketCatalyst.Recipe)
+    if isinstance(item, TrinketCatalyst):
+        floor = game._get_or_create_floor(player.floor_id)
+        if (player.pos.x, player.pos.y) not in floor.alchemy_pots:
+            return
+        detached = player.belongings.backpack.detach(item.id)
+        if detached is None:
+            return
+        if player.belongings.get_item(item.id) is None:
+            player.quickslot.convert_to_placeholder(item)
+        idx = _random.randint(0, 16)
+        trinket_cls = trinket_class_for_index(idx)
+        trinket = trinket_cls()
+        player.belongings.backpack.collect(trinket)
+        game.add_event("ALCHEMIZE", {"player": player.id, "item": trinket.id},
+                       floor_id=player.floor_id, source_player_id=player.id)
+        return
+
+    # Trinket upgrading: use a trinket copy on an alchemy pot while holding
+    # the same trinket to level it up.
+    from app.engine.entities.trinkets import Trinket as _TrinketCls
+    if isinstance(item, _TrinketCls):
+        # Find the same trinket in inventory (the one to upgrade)
+        upgrade_target = None
+        for it in player.inventory:
+            if it.id != item.id and type(it) is type(item):
+                upgrade_target = it
+                break
+        if upgrade_target is not None and upgrade_target.level < upgrade_target.max_level:
+            floor = game._get_or_create_floor(player.floor_id)
+            if (player.pos.x, player.pos.y) not in floor.alchemy_pots:
+                return
+            detached = player.belongings.backpack.detach(item.id)
+            if detached is None:
+                return
+            upgrade_target.level += 1
+            game.add_event("ALCHEMIZE", {"player": player.id, "item": upgrade_target.id},
+                           floor_id=player.floor_id, source_player_id=player.id)
+            return
+
     # GooBlob + Health Potion at an Alchemy Pot -> Elixir of Aquatic Rejuvenation
     # (SPD ElixirOfAquaticRejuvenation.Recipe). Requires standing on the pot.
     if not isinstance(item, GooBlob):

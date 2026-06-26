@@ -102,6 +102,41 @@ def roll_drops(
                 bonus = _wealth_bonus_drop(p, death_x, death_y)
                 items.extend(bonus)
 
+    # CrackedSpyglass trinket: extra loot chance from defeated enemies
+    if players:
+        for p in players:
+            from app.engine.entities.trinkets import CrackedSpyglass as _CS
+            from app.engine.entities.trinkets import trinket_level
+            cs_lvl = trinket_level(p, "cracked_spyglass")
+            if cs_lvl >= 0:
+                chance = _CS.extra_loot_chance(cs_lvl)
+                while chance > 0:
+                    if random.random() < min(chance, 1.0):
+                        bonus_item = _random_wealth_consumable()
+                        if bonus_item:
+                            bonus_item.id = str(uuid.uuid4())
+                            bonus_item.pos = Position(x=death_x, y=death_y)
+                            items.append(bonus_item)
+                    chance -= 1.0
+
+    # ShardOfOblivion trinket: loot multiplier based on worn unidentified items
+    if players:
+        for p in players:
+            from app.engine.entities.trinkets import ShardOfOblivion as _SO
+            from app.engine.entities.trinkets import trinket_level
+            so_lvl = trinket_level(p, "shard_of_oblivion")
+            if so_lvl >= 0:
+                worn_un_id = p.count_worn_unidentified()
+                mult = _SO.loot_chance_multiplier(so_lvl, worn_un_id)
+                if mult > 1.0:
+                    for existing in items[:]:
+                        if random.random() < mult - 1.0:
+                            dup = _make_item(getattr(existing, "kind", "gold"))
+                            if dup:
+                                dup.id = str(uuid.uuid4())
+                                dup.pos = Position(x=death_x, y=death_y)
+                                items.append(dup)
+
     return items
 
 

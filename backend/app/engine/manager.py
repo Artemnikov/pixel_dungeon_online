@@ -10,6 +10,7 @@ the module constants) keep the historical ``from app.engine.manager import ...``
 import paths working for callers and tests.
 """
 
+import time
 from typing import Dict, List, Optional, Tuple
 
 # Re-exported for backward-compatible imports (main.py, tests).
@@ -134,6 +135,9 @@ class GameInstance(
         # Badge eligibility — set when entering a boss floor, cleared on
         # avoidable damage (SPD Statistics.qualifiedForBossChallengeBadge)
         self.qualified_for_boss_challenge: bool = False
+
+        # DimensionalSundial day/night cycle start (unix timestamp).
+        self.game_start_time = time.time()
 
         # Seed + RunState for SPD-parity level generation.
         if seed:

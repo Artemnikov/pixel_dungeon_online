@@ -253,6 +253,16 @@ def resolve_melee_attack(
         return result
 
     dmg_roll = _roll_damage(attacker, result, prep)
+    # ThirteenLeafClover trinket: alters damage roll toward extremes
+    if hasattr(attacker, "belongings"):
+        from app.engine.entities.trinkets import ThirteenLeafClover as _TLC
+        from app.engine.entities.trinkets import trinket_level
+        tlc_lvl = trinket_level(attacker, "thirteen_leaf_clover")
+        if tlc_lvl >= 0 and random.random() < _TLC.alter_damage_chance(tlc_lvl):
+            if random.random() < 0.6:
+                dmg_roll = attacker.get_damage_max()
+            else:
+                dmg_roll = attacker.get_damage_min()
     dmg_roll = int((dmg_roll + dmg_bonus) * dmg_multi)
     if attacker.has_buff("weakness"):
         dmg_roll = round(dmg_roll * 0.67)

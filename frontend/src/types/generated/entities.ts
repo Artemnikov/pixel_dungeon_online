@@ -45,6 +45,8 @@ export interface Player {
   ooze_cooldown?: number;
   burning_accum?: number;
   burning_total_seconds?: number;
+  poison_accum?: number;
+  corrosion_accum?: number;
   shields?: Shield[];
   crit_damage_bonus?: number;
   grim_max_chance?: number;
@@ -118,6 +120,11 @@ export interface Player {
     | Staff
     | MissileWeapon
     | Armor
+    | ClothArmor
+    | LeatherArmor
+    | MailArmor
+    | ScaleArmor
+    | PlateArmor
     | Ring
     | RingOfAccuracy
     | RingOfEvasion
@@ -209,6 +216,24 @@ export interface Player {
     | MagicalHolster
     | PotionBandolier
     | Bag
+    | RatSkull
+    | ParchmentScrap
+    | PetrifiedSeed
+    | ExoticCrystals
+    | MossyClump
+    | DimensionalSundial
+    | ThirteenLeafClover
+    | TrapMechanism
+    | MimicTooth
+    | WondrousResin
+    | EyeOfNewt
+    | SaltCube
+    | VialOfBlood
+    | ShardOfOblivion
+    | ChaoticCenser
+    | FerretTuft
+    | CrackedSpyglass
+    | TrinketCatalyst
   )[];
   equipped_weapon:
     | (
@@ -220,6 +245,11 @@ export interface Player {
         | Staff
         | MissileWeapon
         | Armor
+        | ClothArmor
+        | LeatherArmor
+        | MailArmor
+        | ScaleArmor
+        | PlateArmor
         | Ring
         | RingOfAccuracy
         | RingOfEvasion
@@ -311,6 +341,24 @@ export interface Player {
         | MagicalHolster
         | PotionBandolier
         | Bag
+        | RatSkull
+        | ParchmentScrap
+        | PetrifiedSeed
+        | ExoticCrystals
+        | MossyClump
+        | DimensionalSundial
+        | ThirteenLeafClover
+        | TrapMechanism
+        | MimicTooth
+        | WondrousResin
+        | EyeOfNewt
+        | SaltCube
+        | VialOfBlood
+        | ShardOfOblivion
+        | ChaoticCenser
+        | FerretTuft
+        | CrackedSpyglass
+        | TrinketCatalyst
       )
     | null;
   equipped_wearable:
@@ -323,6 +371,11 @@ export interface Player {
         | Staff
         | MissileWeapon
         | Armor
+        | ClothArmor
+        | LeatherArmor
+        | MailArmor
+        | ScaleArmor
+        | PlateArmor
         | Ring
         | RingOfAccuracy
         | RingOfEvasion
@@ -414,6 +467,24 @@ export interface Player {
         | MagicalHolster
         | PotionBandolier
         | Bag
+        | RatSkull
+        | ParchmentScrap
+        | PetrifiedSeed
+        | ExoticCrystals
+        | MossyClump
+        | DimensionalSundial
+        | ThirteenLeafClover
+        | TrapMechanism
+        | MimicTooth
+        | WondrousResin
+        | EyeOfNewt
+        | SaltCube
+        | VialOfBlood
+        | ShardOfOblivion
+        | ChaoticCenser
+        | FerretTuft
+        | CrackedSpyglass
+        | TrinketCatalyst
       )
     | null;
 }
@@ -455,6 +526,11 @@ export interface Belongings {
         | Staff
         | MissileWeapon
         | Armor
+        | ClothArmor
+        | LeatherArmor
+        | MailArmor
+        | ScaleArmor
+        | PlateArmor
         | Ring
         | RingOfAccuracy
         | RingOfEvasion
@@ -546,6 +622,24 @@ export interface Belongings {
         | MagicalHolster
         | PotionBandolier
         | Bag
+        | RatSkull
+        | ParchmentScrap
+        | PetrifiedSeed
+        | ExoticCrystals
+        | MossyClump
+        | DimensionalSundial
+        | ThirteenLeafClover
+        | TrapMechanism
+        | MimicTooth
+        | WondrousResin
+        | EyeOfNewt
+        | SaltCube
+        | VialOfBlood
+        | ShardOfOblivion
+        | ChaoticCenser
+        | FerretTuft
+        | CrackedSpyglass
+        | TrinketCatalyst
       )
     | null;
   armor?:
@@ -558,6 +652,11 @@ export interface Belongings {
         | Staff
         | MissileWeapon
         | Armor
+        | ClothArmor
+        | LeatherArmor
+        | MailArmor
+        | ScaleArmor
+        | PlateArmor
         | Ring
         | RingOfAccuracy
         | RingOfEvasion
@@ -649,6 +748,24 @@ export interface Belongings {
         | MagicalHolster
         | PotionBandolier
         | Bag
+        | RatSkull
+        | ParchmentScrap
+        | PetrifiedSeed
+        | ExoticCrystals
+        | MossyClump
+        | DimensionalSundial
+        | ThirteenLeafClover
+        | TrapMechanism
+        | MimicTooth
+        | WondrousResin
+        | EyeOfNewt
+        | SaltCube
+        | VialOfBlood
+        | ShardOfOblivion
+        | ChaoticCenser
+        | FerretTuft
+        | CrackedSpyglass
+        | TrinketCatalyst
       )
     | null;
   artifact?:
@@ -661,6 +778,11 @@ export interface Belongings {
         | Staff
         | MissileWeapon
         | Armor
+        | ClothArmor
+        | LeatherArmor
+        | MailArmor
+        | ScaleArmor
+        | PlateArmor
         | Ring
         | RingOfAccuracy
         | RingOfEvasion
@@ -752,6 +874,24 @@ export interface Belongings {
         | MagicalHolster
         | PotionBandolier
         | Bag
+        | RatSkull
+        | ParchmentScrap
+        | PetrifiedSeed
+        | ExoticCrystals
+        | MossyClump
+        | DimensionalSundial
+        | ThirteenLeafClover
+        | TrapMechanism
+        | MimicTooth
+        | WondrousResin
+        | EyeOfNewt
+        | SaltCube
+        | VialOfBlood
+        | ShardOfOblivion
+        | ChaoticCenser
+        | FerretTuft
+        | CrackedSpyglass
+        | TrinketCatalyst
       )
     | null;
   misc?:
@@ -764,6 +904,11 @@ export interface Belongings {
         | Staff
         | MissileWeapon
         | Armor
+        | ClothArmor
+        | LeatherArmor
+        | MailArmor
+        | ScaleArmor
+        | PlateArmor
         | Ring
         | RingOfAccuracy
         | RingOfEvasion
@@ -855,6 +1000,24 @@ export interface Belongings {
         | MagicalHolster
         | PotionBandolier
         | Bag
+        | RatSkull
+        | ParchmentScrap
+        | PetrifiedSeed
+        | ExoticCrystals
+        | MossyClump
+        | DimensionalSundial
+        | ThirteenLeafClover
+        | TrapMechanism
+        | MimicTooth
+        | WondrousResin
+        | EyeOfNewt
+        | SaltCube
+        | VialOfBlood
+        | ShardOfOblivion
+        | ChaoticCenser
+        | FerretTuft
+        | CrackedSpyglass
+        | TrinketCatalyst
       )
     | null;
   ring?:
@@ -867,6 +1030,11 @@ export interface Belongings {
         | Staff
         | MissileWeapon
         | Armor
+        | ClothArmor
+        | LeatherArmor
+        | MailArmor
+        | ScaleArmor
+        | PlateArmor
         | Ring
         | RingOfAccuracy
         | RingOfEvasion
@@ -958,6 +1126,24 @@ export interface Belongings {
         | MagicalHolster
         | PotionBandolier
         | Bag
+        | RatSkull
+        | ParchmentScrap
+        | PetrifiedSeed
+        | ExoticCrystals
+        | MossyClump
+        | DimensionalSundial
+        | ThirteenLeafClover
+        | TrapMechanism
+        | MimicTooth
+        | WondrousResin
+        | EyeOfNewt
+        | SaltCube
+        | VialOfBlood
+        | ShardOfOblivion
+        | ChaoticCenser
+        | FerretTuft
+        | CrackedSpyglass
+        | TrinketCatalyst
       )
     | null;
 }
@@ -986,6 +1172,11 @@ export interface Bag {
     | Staff
     | MissileWeapon
     | Armor
+    | ClothArmor
+    | LeatherArmor
+    | MailArmor
+    | ScaleArmor
+    | PlateArmor
     | Ring
     | RingOfAccuracy
     | RingOfEvasion
@@ -1077,6 +1268,24 @@ export interface Bag {
     | MagicalHolster
     | PotionBandolier
     | Bag
+    | RatSkull
+    | ParchmentScrap
+    | PetrifiedSeed
+    | ExoticCrystals
+    | MossyClump
+    | DimensionalSundial
+    | ThirteenLeafClover
+    | TrapMechanism
+    | MimicTooth
+    | WondrousResin
+    | EyeOfNewt
+    | SaltCube
+    | VialOfBlood
+    | ShardOfOblivion
+    | ChaoticCenser
+    | FerretTuft
+    | CrackedSpyglass
+    | TrinketCatalyst
   )[];
 }
 export interface MeleeWeapon {
@@ -1334,6 +1543,101 @@ export interface Armor {
 export interface ArmorEnchantment {
   type?: string;
   level?: number;
+}
+export interface ClothArmor {
+  kind?: "cloth_armor";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  strength_requirement?: number;
+  tier?: number;
+  enchantment?: ArmorEnchantment;
+}
+export interface LeatherArmor {
+  kind?: "leather_armor";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  strength_requirement?: number;
+  tier?: number;
+  enchantment?: ArmorEnchantment;
+}
+export interface MailArmor {
+  kind?: "mail_armor";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  strength_requirement?: number;
+  tier?: number;
+  enchantment?: ArmorEnchantment;
+}
+export interface ScaleArmor {
+  kind?: "scale_armor";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  strength_requirement?: number;
+  tier?: number;
+  enchantment?: ArmorEnchantment;
+}
+export interface PlateArmor {
+  kind?: "plate_armor";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  strength_requirement?: number;
+  tier?: number;
+  enchantment?: ArmorEnchantment;
 }
 export interface Ring {
   kind?: "ring";
@@ -1730,7 +2034,7 @@ export interface WandOfMagicMissile {
   range?: number;
   projectile_type?: string;
   beam_type?: string | null;
-  wand_sound?: string | null;
+  wand_sound?: string;
   partial_charge?: number;
   staff_name?: string;
   recharge_scale?: number;
@@ -1756,7 +2060,7 @@ export interface WandOfFireblast {
   range?: number;
   projectile_type?: string;
   beam_type?: string | null;
-  wand_sound?: string | null;
+  wand_sound?: string;
   partial_charge?: number;
   staff_name?: string;
   recharge_scale?: number;
@@ -1782,7 +2086,7 @@ export interface WandOfFrost {
   range?: number;
   projectile_type?: string;
   beam_type?: string | null;
-  wand_sound?: string | null;
+  wand_sound?: string;
   partial_charge?: number;
   staff_name?: string;
   recharge_scale?: number;
@@ -1859,7 +2163,7 @@ export interface WandOfPrismaticLight {
   max_charges?: number;
   range?: number;
   projectile_type?: string;
-  beam_type?: string;
+  beam_type?: string | null;
   wand_sound?: string;
   partial_charge?: number;
   staff_name?: string;
@@ -1886,7 +2190,7 @@ export interface WandOfBlastWave {
   range?: number;
   projectile_type?: string;
   beam_type?: string | null;
-  wand_sound?: string | null;
+  wand_sound?: string;
   partial_charge?: number;
   staff_name?: string;
   recharge_scale?: number;
@@ -1911,7 +2215,7 @@ export interface WandOfTransfusion {
   max_charges?: number;
   range?: number;
   projectile_type?: string;
-  beam_type?: string;
+  beam_type?: string | null;
   wand_sound?: string;
   partial_charge?: number;
   staff_name?: string;
@@ -1938,7 +2242,7 @@ export interface WandOfCorrosion {
   range?: number;
   projectile_type?: string;
   beam_type?: string | null;
-  wand_sound?: string | null;
+  wand_sound?: string;
   partial_charge?: number;
   staff_name?: string;
   recharge_scale?: number;
@@ -1964,7 +2268,7 @@ export interface WandOfCorruption {
   range?: number;
   projectile_type?: string;
   beam_type?: string | null;
-  wand_sound?: string | null;
+  wand_sound?: string;
   partial_charge?: number;
   staff_name?: string;
   recharge_scale?: number;
@@ -1990,7 +2294,7 @@ export interface WandOfRegrowth {
   range?: number;
   projectile_type?: string;
   beam_type?: string | null;
-  wand_sound?: string | null;
+  wand_sound?: string;
   partial_charge?: number;
   staff_name?: string;
   recharge_scale?: number;
@@ -2016,7 +2320,7 @@ export interface WandOfWarding {
   range?: number;
   projectile_type?: string;
   beam_type?: string | null;
-  wand_sound?: string | null;
+  wand_sound?: string;
   partial_charge?: number;
   staff_name?: string;
   recharge_scale?: number;
@@ -2042,7 +2346,7 @@ export interface WandOfLivingEarth {
   range?: number;
   projectile_type?: string;
   beam_type?: string | null;
-  wand_sound?: string | null;
+  wand_sound?: string;
   partial_charge?: number;
   staff_name?: string;
   recharge_scale?: number;
@@ -2964,6 +3268,11 @@ export interface Chest {
     | Staff
     | MissileWeapon
     | Armor
+    | ClothArmor
+    | LeatherArmor
+    | MailArmor
+    | ScaleArmor
+    | PlateArmor
     | Ring
     | RingOfAccuracy
     | RingOfEvasion
@@ -3055,6 +3364,24 @@ export interface Chest {
     | MagicalHolster
     | PotionBandolier
     | Bag
+    | RatSkull
+    | ParchmentScrap
+    | PetrifiedSeed
+    | ExoticCrystals
+    | MossyClump
+    | DimensionalSundial
+    | ThirteenLeafClover
+    | TrapMechanism
+    | MimicTooth
+    | WondrousResin
+    | EyeOfNewt
+    | SaltCube
+    | VialOfBlood
+    | ShardOfOblivion
+    | ChaoticCenser
+    | FerretTuft
+    | CrackedSpyglass
+    | TrinketCatalyst
   )[];
 }
 export interface VelvetPouch {
@@ -3082,6 +3409,11 @@ export interface VelvetPouch {
     | Staff
     | MissileWeapon
     | Armor
+    | ClothArmor
+    | LeatherArmor
+    | MailArmor
+    | ScaleArmor
+    | PlateArmor
     | Ring
     | RingOfAccuracy
     | RingOfEvasion
@@ -3173,6 +3505,24 @@ export interface VelvetPouch {
     | MagicalHolster
     | PotionBandolier
     | Bag
+    | RatSkull
+    | ParchmentScrap
+    | PetrifiedSeed
+    | ExoticCrystals
+    | MossyClump
+    | DimensionalSundial
+    | ThirteenLeafClover
+    | TrapMechanism
+    | MimicTooth
+    | WondrousResin
+    | EyeOfNewt
+    | SaltCube
+    | VialOfBlood
+    | ShardOfOblivion
+    | ChaoticCenser
+    | FerretTuft
+    | CrackedSpyglass
+    | TrinketCatalyst
   )[];
 }
 export interface ScrollHolder {
@@ -3200,6 +3550,11 @@ export interface ScrollHolder {
     | Staff
     | MissileWeapon
     | Armor
+    | ClothArmor
+    | LeatherArmor
+    | MailArmor
+    | ScaleArmor
+    | PlateArmor
     | Ring
     | RingOfAccuracy
     | RingOfEvasion
@@ -3291,6 +3646,24 @@ export interface ScrollHolder {
     | MagicalHolster
     | PotionBandolier
     | Bag
+    | RatSkull
+    | ParchmentScrap
+    | PetrifiedSeed
+    | ExoticCrystals
+    | MossyClump
+    | DimensionalSundial
+    | ThirteenLeafClover
+    | TrapMechanism
+    | MimicTooth
+    | WondrousResin
+    | EyeOfNewt
+    | SaltCube
+    | VialOfBlood
+    | ShardOfOblivion
+    | ChaoticCenser
+    | FerretTuft
+    | CrackedSpyglass
+    | TrinketCatalyst
   )[];
 }
 export interface MagicalHolster {
@@ -3318,6 +3691,11 @@ export interface MagicalHolster {
     | Staff
     | MissileWeapon
     | Armor
+    | ClothArmor
+    | LeatherArmor
+    | MailArmor
+    | ScaleArmor
+    | PlateArmor
     | Ring
     | RingOfAccuracy
     | RingOfEvasion
@@ -3409,6 +3787,24 @@ export interface MagicalHolster {
     | MagicalHolster
     | PotionBandolier
     | Bag
+    | RatSkull
+    | ParchmentScrap
+    | PetrifiedSeed
+    | ExoticCrystals
+    | MossyClump
+    | DimensionalSundial
+    | ThirteenLeafClover
+    | TrapMechanism
+    | MimicTooth
+    | WondrousResin
+    | EyeOfNewt
+    | SaltCube
+    | VialOfBlood
+    | ShardOfOblivion
+    | ChaoticCenser
+    | FerretTuft
+    | CrackedSpyglass
+    | TrinketCatalyst
   )[];
 }
 export interface PotionBandolier {
@@ -3436,6 +3832,11 @@ export interface PotionBandolier {
     | Staff
     | MissileWeapon
     | Armor
+    | ClothArmor
+    | LeatherArmor
+    | MailArmor
+    | ScaleArmor
+    | PlateArmor
     | Ring
     | RingOfAccuracy
     | RingOfEvasion
@@ -3527,7 +3928,330 @@ export interface PotionBandolier {
     | MagicalHolster
     | PotionBandolier
     | Bag
+    | RatSkull
+    | ParchmentScrap
+    | PetrifiedSeed
+    | ExoticCrystals
+    | MossyClump
+    | DimensionalSundial
+    | ThirteenLeafClover
+    | TrapMechanism
+    | MimicTooth
+    | WondrousResin
+    | EyeOfNewt
+    | SaltCube
+    | VialOfBlood
+    | ShardOfOblivion
+    | ChaoticCenser
+    | FerretTuft
+    | CrackedSpyglass
+    | TrinketCatalyst
   )[];
+}
+export interface RatSkull {
+  kind?: "rat_skull";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  strength_requirement?: number;
+}
+export interface ParchmentScrap {
+  kind?: "parchment_scrap";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  strength_requirement?: number;
+}
+export interface PetrifiedSeed {
+  kind?: "petrified_seed";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  strength_requirement?: number;
+}
+export interface ExoticCrystals {
+  kind?: "exotic_crystals";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  strength_requirement?: number;
+}
+export interface MossyClump {
+  kind?: "mossy_clump";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  strength_requirement?: number;
+}
+export interface DimensionalSundial {
+  kind?: "dimensional_sundial";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  strength_requirement?: number;
+}
+export interface ThirteenLeafClover {
+  kind?: "thirteen_leaf_clover";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  strength_requirement?: number;
+}
+export interface TrapMechanism {
+  kind?: "trap_mechanism";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  strength_requirement?: number;
+}
+export interface MimicTooth {
+  kind?: "mimic_tooth";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  strength_requirement?: number;
+}
+export interface WondrousResin {
+  kind?: "wondrous_resin";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  strength_requirement?: number;
+}
+export interface EyeOfNewt {
+  kind?: "eye_of_newt";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  strength_requirement?: number;
+}
+export interface SaltCube {
+  kind?: "salt_cube";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  strength_requirement?: number;
+}
+export interface VialOfBlood {
+  kind?: "vial_of_blood";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  strength_requirement?: number;
+}
+export interface ShardOfOblivion {
+  kind?: "shard_of_oblivion";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  strength_requirement?: number;
+}
+export interface ChaoticCenser {
+  kind?: "chaotic_censer";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  strength_requirement?: number;
+}
+export interface FerretTuft {
+  kind?: "ferret_tuft";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  strength_requirement?: number;
+}
+export interface CrackedSpyglass {
+  kind?: "cracked_spyglass";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  strength_requirement?: number;
+}
+export interface TrinketCatalyst {
+  kind?: "trinket_catalyst";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
 }
 export interface QuickSlot {
   slots?: QuickSlotEntry[];
@@ -3597,6 +4321,8 @@ export interface Mob {
   ooze_cooldown?: number;
   burning_accum?: number;
   burning_total_seconds?: number;
+  poison_accum?: number;
+  corrosion_accum?: number;
   shields?: Shield[];
   crit_damage_bonus?: number;
   grim_max_chance?: number;

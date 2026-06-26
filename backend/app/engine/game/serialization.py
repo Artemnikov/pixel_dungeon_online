@@ -245,7 +245,19 @@ class SerializationMixin:
 
             # SPD MindVision: while active, every mob's 3x3 neighbourhood is
             # revealed regardless of walls/FOV.
+            # EyeOfNewt trinket: permanent passive mind-vision radius.
             mind_vision_set = set()
+            from app.engine.entities.trinkets import EyeOfNewt as _EyeOfNewt
+            from app.engine.entities.trinkets import trinket_level
+            eon_lvl = trinket_level(player, "eye_of_newt")
+            if eon_lvl >= 0:
+                mv_radius = _EyeOfNewt.mind_vision_radius(eon_lvl)
+                for m in floor.mobs.values():
+                    if not m.is_alive:
+                        continue
+                    for dx in range(-mv_radius, mv_radius + 1):
+                        for dy in range(-mv_radius, mv_radius + 1):
+                            mind_vision_set.add((m.pos.x + dx, m.pos.y + dy))
             if player.has_buff("mind_vision"):
                 for m in floor.mobs.values():
                     if not m.is_alive:
