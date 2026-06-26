@@ -25,12 +25,12 @@ from typing import List, Optional, Tuple
 from app.engine.dungeon.generator import TileType
 from app.engine.entities.base import (
     Amulet,
-    Armor,
     Bag,
     Belongings,
     Bow,
     CharacterClass,
     CloakOfShadows,
+    ClothArmor,
     Dagger,
     Faction,
     Item,
@@ -75,11 +75,8 @@ class PlayersMixin:
             belongings.weapon = WornShortsword(
                 id=str(uuid.uuid4()),
             )
-            belongings.armor = Armor(
+            belongings.armor = ClothArmor(
                 id=str(uuid.uuid4()),
-                name="Cloth Armor",
-                tier=1,
-                strength_requirement=10,
             )
             stones = Stone(
                 id=str(uuid.uuid4()),
@@ -123,11 +120,8 @@ class PlayersMixin:
             belongings.weapon = Dagger(
                 id=str(uuid.uuid4()),
             )
-            belongings.armor = Armor(
+            belongings.armor = ClothArmor(
                 id=str(uuid.uuid4()),
-                name="Cloth Armor",
-                tier=1,
-                strength_requirement=10,
             )
             belongings.artifact = CloakOfShadows(
                 id=str(uuid.uuid4()),
@@ -146,11 +140,8 @@ class PlayersMixin:
             # + Spirit Bow (quickslot). No armor in SPD, but the remake gives
             # Cloth Armor for parity with other starting kits.
             belongings.weapon = make_named_melee_weapon("Gloves", id=str(uuid.uuid4()))
-            belongings.armor = Armor(
+            belongings.armor = ClothArmor(
                 id=str(uuid.uuid4()),
-                name="Cloth Armor",
-                tier=1,
-                strength_requirement=10,
             )
             spirit_bow = SpiritBow(
                 id=str(uuid.uuid4()),

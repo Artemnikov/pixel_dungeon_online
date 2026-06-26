@@ -25,7 +25,8 @@ from typing import List, Optional, Tuple
 
 from app.engine.dungeon.generator import TileType
 from app.engine.entities.base import (
-    Armor, CharacterClass, Item, Key, Player, Position, make_named_melee_weapon,
+    Armor, CharacterClass, Item, Key, LeatherArmor, MailArmor, PlateArmor, Player,
+    Position, ScaleArmor, make_named_melee_weapon,
 )
 from app.engine.entities.base import DwarfToken
 from app.engine.entities.mobs import Imp, Shopkeeper
@@ -82,8 +83,6 @@ _GHOST_REWARD_TEXT = (
     "Maybe they will help you in your journey..."
 )
 _GHOST_BOSS_CLASSES = {1: FetidRat, 2: GnollTrickster, 3: GreatCrab}
-_GHOST_ARMOR_NAMES = {2: "Leather Armor", 3: "Mail Armor", 4: "Scale Armor", 5: "Plate Armor"}
-_GHOST_ARMOR_STR_REQ = {2: 12, 3: 14, 4: 16, 5: 18}
 
 
 def _random_free_cell(floor: FloorState) -> Optional[Tuple[int, int]]:
@@ -111,10 +110,9 @@ def _make_ghost_reward_item(quest, choice: str) -> Optional[Item]:
         )
     if choice == "armor" and quest.armor_tier is not None:
         tier = quest.armor_tier
-        return Armor(
-            id=str(uuid.uuid4()), name=_GHOST_ARMOR_NAMES[tier], tier=tier,
-            strength_requirement=_GHOST_ARMOR_STR_REQ[tier],
-            level=quest.item_level, level_known=True, cursed=False,
+        _ARMOR_TYPES = {2: LeatherArmor, 3: MailArmor, 4: ScaleArmor, 5: PlateArmor}
+        return _ARMOR_TYPES[tier](
+            id=str(uuid.uuid4()), level=quest.item_level, level_known=True, cursed=False,
         )
     return None
 

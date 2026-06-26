@@ -221,6 +221,11 @@ def _trigger_plant_effect(floor: FloorState, pos: Tuple[int, int], plant, activa
         "sorrowmoss": lambda: _create_gas(floor, pos, 4, "toxic_gas"),
         "dreamfoil": lambda: _cure_debuffs(activator),
         "fadeleaf": lambda: _teleport_activator(floor, activator),
+        "rotberry": lambda: activator.add_buff("bless", duration=20.0, level=1),
+        "starflower": lambda: activator.add_buff("well_fed", duration=50.0, level=1),
+        "stormvine": lambda: _teleport_activator(floor, activator),
+        "blindweed": lambda: activator.add_buff("blindness", duration=10.0, level=1),
+        "swiftthistle": lambda: activator.add_buff("haste", duration=3.0, level=1),
     }
 
     effect = effects.get(plant_type)
@@ -281,8 +286,8 @@ def _create_gas(floor: FloorState, pos: Tuple[int, int], strength: int, gas_type
 
 
 def _cure_debuffs(entity: Entity):
-    entity.remove_buff("poison")
-    entity.remove_buff("blindness")
+    for debuff in ("poison", "blindness", "bleeding", "weakness", "slow", "cripple", "burning", "chill", "frost"):
+        entity.remove_buff(debuff)
 
 
 def _teleport_activator(floor: FloorState, entity: Entity):

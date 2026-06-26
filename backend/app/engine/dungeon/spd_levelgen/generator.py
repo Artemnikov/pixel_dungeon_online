@@ -72,6 +72,7 @@ class RolledItem:
     is_artifact: bool
     is_upgradable: bool
     level: int
+    tier: int = 1
     # Deck index picked for WAM categories (e.g. WEP_T1.._WEP_T5/MIS_T1.._MIS_T5)
     # -- selects a concrete item name from WEP_TIER_ORDER. 0 for non-WAM kinds.
     item_index: int = 0
@@ -307,9 +308,9 @@ def _random_armor(rng: SPDRandom, depth: int) -> RolledItem:
     """Generator.randomArmor() -- direct creation via floorSetTierProbs, NOT
     deck-based (no push/pop, no probs decrement, no exotic check)."""
     floor_set = int(gate(0, depth // 5, len(_FLOOR_SET_TIER_PROBS) - 1))
-    rng.chances(_FLOOR_SET_TIER_PROBS[floor_set])
+    tier_idx = rng.chances(_FLOOR_SET_TIER_PROBS[floor_set])
     n = _roll_wam(rng)  # Armor.random() -- identical shape to Weapon/MissileWeapon
-    return RolledItem(category="ARMOR", is_artifact=False, is_upgradable=True, level=n)
+    return RolledItem(category="ARMOR", is_artifact=False, is_upgradable=True, level=n, tier=tier_idx + 1)
 
 
 def _random_weapon_or_missile(state: GeneratorState, rng: SPDRandom, depth: int, tiers: Tuple[str, ...]) -> RolledItem:

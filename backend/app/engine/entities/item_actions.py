@@ -207,6 +207,55 @@ def action_drink(game, player, item, tx=None, ty=None) -> None:
         from app.engine.game.terrain_effects import _create_gas
         _create_gas(floor, (cx, cy), 4 + player.floor_id // 2, "paralytic_gas")
         game.add_event("PLAY_SOUND", {"sound": "SHATTER"}, floor_id=player.floor_id)
+    elif effect == "levitation":
+        player.add_buff("levitation", duration=20.0)
+        removed = player.belongings.backpack.detach(item.id)
+        if removed is not None and player.belongings.get_item(item.id) is None:
+            player.quickslot.convert_to_placeholder(removed)
+        game.add_event("PLAY_SOUND", {"sound": "SHATTER"}, floor_id=player.floor_id)
+        game.add_event("DRINK", {"player": player.id, "type": "levitation"}, floor_id=player.floor_id, source_player_id=player.id)
+    elif effect == "haste":
+        player.add_buff("haste", duration=20.0)
+        removed = player.belongings.backpack.detach(item.id)
+        if removed is not None and player.belongings.get_item(item.id) is None:
+            player.quickslot.convert_to_placeholder(removed)
+        game.add_event("PLAY_SOUND", {"sound": "SHATTER"}, floor_id=player.floor_id)
+        game.add_event("DRINK", {"player": player.id, "type": "haste"}, floor_id=player.floor_id, source_player_id=player.id)
+    elif effect == "frost":
+        dmg = max(1, round(player.get_total_max_hp() * 0.1))
+        player.take_damage(dmg)
+        player.add_buff("frost", duration=10.0, level=1)
+        removed = player.belongings.backpack.detach(item.id)
+        if removed is not None and player.belongings.get_item(item.id) is None:
+            player.quickslot.convert_to_placeholder(removed)
+        game.add_event("DAMAGE", {"target": player.id, "amount": dmg}, floor_id=player.floor_id)
+        game.add_event("PLAY_SOUND", {"sound": "SHATTER"}, floor_id=player.floor_id)
+        game.add_event("DRINK", {"player": player.id, "type": "frost"}, floor_id=player.floor_id)
+    elif effect == "purity":
+        for debuff in ("poison", "blindness", "bleeding", "weakness", "slow", "burning", "cripple"):
+            player.remove_buff(debuff)
+        removed = player.belongings.backpack.detach(item.id)
+        if removed is not None and player.belongings.get_item(item.id) is None:
+            player.quickslot.convert_to_placeholder(removed)
+        game.add_event("PLAY_SOUND", {"sound": "SHATTER"}, floor_id=player.floor_id)
+        game.add_event("DRINK", {"player": player.id, "type": "purity"}, floor_id=player.floor_id, source_player_id=player.id)
+    elif effect == "experience":
+        amount = max(1, round((player.get_total_max_hp() - player.hp) * 2))
+        leveled = player.earn_exp(amount)
+        if leveled:
+            game.add_event("LEVEL_UP", {"player": player.id, "level": player.level}, floor_id=player.floor_id)
+        removed = player.belongings.backpack.detach(item.id)
+        if removed is not None and player.belongings.get_item(item.id) is None:
+            player.quickslot.convert_to_placeholder(removed)
+        game.add_event("PLAY_SOUND", {"sound": "SHATTER"}, floor_id=player.floor_id)
+        game.add_event("DRINK", {"player": player.id, "type": "experience"}, floor_id=player.floor_id, source_player_id=player.id)
+    elif effect == "strength":
+        player.strength = min(player.strength + 1, 30)
+        removed = player.belongings.backpack.detach(item.id)
+        if removed is not None and player.belongings.get_item(item.id) is None:
+            player.quickslot.convert_to_placeholder(removed)
+        game.add_event("PLAY_SOUND", {"sound": "SHATTER"}, floor_id=player.floor_id)
+        game.add_event("DRINK", {"player": player.id, "type": "strength"}, floor_id=player.floor_id, source_player_id=player.id)
     game.on_potion_drunk(player, item)
 
 

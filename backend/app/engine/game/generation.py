@@ -28,6 +28,7 @@ from app.engine.entities.base import (
     Armor,
     Boomerang,
     Bow,
+    ClothArmor,
     EntityType,
     Faction,
     HealthPotion,
@@ -58,8 +59,11 @@ from app.engine.entities.base import (
     ScrollOfTransmutation,
     SmallRation,
     Ration,
+    ScaleArmor,
     Pasty,
     Key,
+    LeatherArmor,
+    MailArmor,
     Mob as MobEntity,
     Position,
     Stone,
@@ -293,20 +297,14 @@ class GenerationMixin:
             # of armor silently absorbing the freed probability mass.
             elif rand < 0.53:
                 armor_tiers = [
-                    ("Cloth Armor", 1, 10),
-                    ("Leather Armor", 2, 12),
-                    ("Mail Armor", 3, 14),
-                    ("Scale Armor", 4, 16),
+                    ClothArmor,
+                    LeatherArmor,
+                    MailArmor,
+                    ScaleArmor,
                 ]
                 tier_idx = min(len(armor_tiers) - 1, (floor.floor_id - 1) // 4)
-                name, tier, str_req = random.choice(armor_tiers[:tier_idx + 1])
-                floor.items[item_id] = Armor(
-                    id=item_id,
-                    name=name,
-                    tier=tier,
-                    pos=Position(x=x, y=y),
-                    strength_requirement=str_req,
-                )
+                cls = random.choice(armor_tiers[:tier_idx + 1])
+                floor.items[item_id] = cls(id=item_id, pos=Position(x=x, y=y))
             elif rand < 0.59:
                 t_rand = random.random()
                 if t_rand < 0.5:

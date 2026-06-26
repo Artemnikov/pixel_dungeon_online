@@ -44,6 +44,7 @@ from app.engine.dungeon.spd_levelgen.generator import _WEP_T1, _WEP_T2, _WEP_T3,
 from app.engine.dungeon.spd_random import SPDRandom
 from app.engine.entities.base import (
     Armor,
+    ClothArmor, LeatherArmor, MailArmor, ScaleArmor, PlateArmor,
     Artifact,
     Food,
     HealthPotion,
@@ -108,13 +109,17 @@ _SHOP_BAGS = {
 }
 
 
+_ARMOR_TYPES = {1: ClothArmor, 2: LeatherArmor, 3: MailArmor, 4: ScaleArmor, 5: PlateArmor}
+
 def generate_shop_items(rng: SPDRandom, depth: int) -> List[Item]:
     weapon_tier, armor_tier = _SHOP_TIERS.get(depth, (2, 1))
+
+    armor_cls = _ARMOR_TYPES.get(armor_tier, LeatherArmor)
 
     items: List[Item] = [
         _random_melee_weapon(rng, weapon_tier),
         MissileWeapon(name="Missile Weapon", tier=weapon_tier),
-        Armor(name="Armor", tier=armor_tier),
+        armor_cls(),
         # TippedDart.randomTipped(2) -> 2x Stone
         Stone(),
         Stone(),

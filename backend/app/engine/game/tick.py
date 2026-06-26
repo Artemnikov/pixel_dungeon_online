@@ -999,6 +999,9 @@ class TickMixin:
         "lightning_charge": "shocked",
         "rock_armor": "hearts",
         "barrier": "hearts",
+        "slow": "chilled",
+        "daze": "daze",
+        "levitation": "levitation",
     }
 
     def _check_state_buff(self, entity, x, y, floor_id):
@@ -1057,6 +1060,48 @@ class TickMixin:
         elif get_buff(player.buffs, "shadows") is not None:
             effects.append(Effect(
                 key="invisibility", name="Invisible", icon=12,
+            ))
+        slow_buff = get_buff(player.buffs, "slow")
+        if slow_buff is not None:
+            effects.append(Effect(
+                key="slow", name="Slowed", icon=23,
+                remaining=slow_buff.remaining, duration=30.0,
+            ))
+        bleed_buff = get_buff(player.buffs, "bleeding")
+        if bleed_buff is not None:
+            effects.append(Effect(
+                key="bleeding", name="Bleeding", icon=26,
+                remaining=bleed_buff.remaining, duration=30.0,
+            ))
+        daze_buff = get_buff(player.buffs, "daze")
+        if daze_buff is not None:
+            effects.append(Effect(
+                key="daze", name="Dazed", icon=70,
+                remaining=daze_buff.remaining, duration=30.0,
+            ))
+        bless_buff = get_buff(player.buffs, "bless")
+        if bless_buff is not None:
+            effects.append(Effect(
+                key="bless", name="Blessed", icon=37,
+                remaining=bless_buff.remaining, duration=30.0,
+            ))
+        heal_buff = get_buff(player.buffs, "healing")
+        if heal_buff is not None:
+            effects.append(Effect(
+                key="healing_buff", name="Healing", icon=44,
+                remaining=heal_buff.remaining, duration=30.0,
+            ))
+        well_fed_buff = get_buff(player.buffs, "well_fed")
+        if well_fed_buff is not None:
+            effects.append(Effect(
+                key="well_fed", name="Well Fed", icon=43,
+                remaining=well_fed_buff.remaining, duration=30.0,
+            ))
+        levitation_buff = get_buff(player.buffs, "levitation")
+        if levitation_buff is not None:
+            effects.append(Effect(
+                key="levitation", name="Levitation", icon=1,
+                remaining=levitation_buff.remaining, duration=30.0,
             ))
         player.active_effects = effects
 

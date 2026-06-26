@@ -260,6 +260,7 @@ class ItemCategory:
     KEY = "key"
     MISC = "misc"
     BAG = "bag"
+    TRINKET = "trinket"
     SCENERY = "scenery"
 
 # Sort order inside a bag (mirrors SPD's itemComparator grouping by category).
@@ -528,8 +529,6 @@ class WornShortsword(MeleeWeapon):
 
 
 def make_named_melee_weapon(name: str, level: int = 0, **kwargs) -> MeleeWeapon:
-    """Builds a concrete melee weapon by its SPD name (one of WEP_TIER_ORDER's
-    entries, excluding Mage's Staff/Pickaxe), using WEAPON_DEFS for stats."""
     if name == "Worn Shortsword":
         return WornShortsword(level=level, **kwargs)
     if name == "Dagger":
@@ -800,6 +799,22 @@ class Armor(EquipableItem):
 
     def value(self, identified: bool = False) -> int:
         return _tiered_value(self.tier, self.level, self.level_known, self.cursed, self.cursed_known)
+
+
+class ClothArmor(Armor):
+    kind: Literal["cloth_armor"] = "cloth_armor"; name: str = "Cloth Armor"; tier: int = 1; strength_requirement: int = 10
+
+class LeatherArmor(Armor):
+    kind: Literal["leather_armor"] = "leather_armor"; name: str = "Leather Armor"; tier: int = 2; strength_requirement: int = 12
+
+class MailArmor(Armor):
+    kind: Literal["mail_armor"] = "mail_armor"; name: str = "Mail Armor"; tier: int = 3; strength_requirement: int = 14
+
+class ScaleArmor(Armor):
+    kind: Literal["scale_armor"] = "scale_armor"; name: str = "Scale Armor"; tier: int = 4; strength_requirement: int = 16
+
+class PlateArmor(Armor):
+    kind: Literal["plate_armor"] = "plate_armor"; name: str = "Plate Armor"; tier: int = 5; strength_requirement: int = 18
 
 
 class KindofMisc(EquipableItem):
@@ -2597,7 +2612,7 @@ from app.engine.entities.rings_tier3 import (
 AnyItem = Annotated[
     Union[
         MeleeWeapon, Dagger, WornShortsword, Bow, SpiritBow, Staff, MissileWeapon,
-        Armor, Ring, RingOfAccuracy, RingOfEvasion, RingOfHaste, RingOfFuror,
+        Armor, ClothArmor, LeatherArmor, MailArmor, ScaleArmor, PlateArmor, Ring, RingOfAccuracy, RingOfEvasion, RingOfHaste, RingOfFuror,
         RingOfMight, RingOfTenacity, RingOfEnergy, RingOfArcana, RingOfSharpshooting,
         RingOfForce, RingOfElements, RingOfWealth,
         Artifact, BrokenSeal, CloakOfShadows, DriedRose,

@@ -3,21 +3,25 @@ import uuid
 from typing import Dict, List, Optional
 
 from app.engine.entities.base import (
+    ClothArmor,
     DropEntry,
-    ItemBase,
-    Mob,
-    Position,
-    Seed,
     Gold,
-    HealthPotion,
-    MysteryMeat,
-    make_named_melee_weapon,
-    Armor,
-    Potion,
-    Key,
-    TenguMask,
-    KingsCrown,
     GooBlob,
+    HealthPotion,
+    ItemBase,
+    Key,
+    KingsCrown,
+    LeatherArmor,
+    MailArmor,
+    make_named_melee_weapon,
+    Mob,
+    MysteryMeat,
+    PlateArmor,
+    Position,
+    Potion,
+    ScaleArmor,
+    Seed,
+    TenguMask,
 )
 from app.engine.entities.weapon_enchants import roll_weapon_level, roll_weapon_enchant
 
@@ -37,11 +41,11 @@ RANDOM_WEAPONS = [
 ]
 
 RANDOM_ARMORS = [
-    ("Cloth Armor", 1, 10),
-    ("Leather Armor", 2, 12),
-    ("Mail Armor", 3, 14),
-    ("Scale Armor", 4, 16),
-    ("Plate Armor", 5, 18),
+    ClothArmor,
+    LeatherArmor,
+    MailArmor,
+    ScaleArmor,
+    PlateArmor,
 ]
 
 RANDOM_POTIONS = [
@@ -152,8 +156,8 @@ def _make_item(item_kind: str) -> Optional[ItemBase]:
     elif item_kind == "weapon":
         return _random_dungeon_weapon(random.choice(RANDOM_WEAPONS))
     elif item_kind == "armor":
-        name, tier, str_req = random.choice(RANDOM_ARMORS)
-        return Armor(name=name, tier=tier, strength_requirement=str_req)
+        cls = random.choice(RANDOM_ARMORS)
+        return cls()
     elif item_kind == "potion":
         effect = random.choice(RANDOM_POTIONS)
         return Potion(name="Potion", effect=effect)

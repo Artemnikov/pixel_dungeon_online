@@ -23,6 +23,7 @@ from typing import Callable, List, Optional, TypedDict
 from app.engine.entities.base import (
     Amulet,
     Armor,
+    ClothArmor, LeatherArmor, MailArmor, ScaleArmor, PlateArmor,
     Artifact,
     Bag,
     Berry,
@@ -116,6 +117,8 @@ from app.engine.entities.base import (
     Waterskin,
     WornShortsword,
 )
+from app.engine.entities.weapon_defs import WEP_TIER_ORDER
+from app.engine.entities.base import make_named_melee_weapon  # noqa: E402
 from app.engine.entities.rings_tier3 import RingOfForce, RingOfElements, RingOfWealth  # noqa: E402
 
 
@@ -132,13 +135,47 @@ _CATALOG: List[tuple] = [
     ("melee_weapon", "Short Sword", "weapon", lambda: MeleeWeapon(name="Short Sword", tier=1)),
     ("dagger", "Dagger", "weapon", lambda: Dagger()),
     ("worn_shortsword", "Worn Shortsword", "weapon", lambda: WornShortsword()),
+    ("gloves", "Gloves", "weapon", lambda: make_named_melee_weapon("Gloves")),
+    ("rapier", "Rapier", "weapon", lambda: make_named_melee_weapon("Rapier")),
+    ("cudgel", "Cudgel", "weapon", lambda: make_named_melee_weapon("Cudgel")),
+    ("shortsword", "Shortsword", "weapon", lambda: make_named_melee_weapon("Shortsword")),
+    ("hand_axe", "Hand Axe", "weapon", lambda: make_named_melee_weapon("Hand Axe")),
+    ("spear", "Spear", "weapon", lambda: make_named_melee_weapon("Spear")),
+    ("quarterstaff", "Quarterstaff", "weapon", lambda: make_named_melee_weapon("Quarterstaff")),
+    ("dirk", "Dirk", "weapon", lambda: make_named_melee_weapon("Dirk")),
+    ("sickle", "Sickle", "weapon", lambda: make_named_melee_weapon("Sickle")),
+    ("sword", "Sword", "weapon", lambda: make_named_melee_weapon("Sword")),
+    ("mace", "Mace", "weapon", lambda: make_named_melee_weapon("Mace")),
+    ("scimitar", "Scimitar", "weapon", lambda: make_named_melee_weapon("Scimitar")),
+    ("round_shield", "Round Shield", "weapon", lambda: make_named_melee_weapon("Round Shield")),
+    ("sai", "Sai", "weapon", lambda: make_named_melee_weapon("Sai")),
+    ("whip", "Whip", "weapon", lambda: make_named_melee_weapon("Whip")),
+    ("longsword", "Longsword", "weapon", lambda: make_named_melee_weapon("Longsword")),
+    ("battle_axe", "Battle Axe", "weapon", lambda: make_named_melee_weapon("Battle Axe")),
+    ("flail", "Flail", "weapon", lambda: make_named_melee_weapon("Flail")),
+    ("runic_blade", "Runic Blade", "weapon", lambda: make_named_melee_weapon("Runic Blade")),
+    ("assassins_blade", "Assassin's Blade", "weapon", lambda: make_named_melee_weapon("Assassin's Blade")),
+    ("crossbow", "Crossbow", "weapon", lambda: make_named_melee_weapon("Crossbow")),
+    ("katana", "Katana", "weapon", lambda: make_named_melee_weapon("Katana")),
+    ("greatsword", "Greatsword", "weapon", lambda: make_named_melee_weapon("Greatsword")),
+    ("war_hammer", "War Hammer", "weapon", lambda: make_named_melee_weapon("War Hammer")),
+    ("glaive", "Glaive", "weapon", lambda: make_named_melee_weapon("Glaive")),
+    ("greataxe", "Greataxe", "weapon", lambda: make_named_melee_weapon("Greataxe")),
+    ("greatshield", "Greatshield", "weapon", lambda: make_named_melee_weapon("Greatshield")),
+    ("gauntlet", "Gauntlet", "weapon", lambda: make_named_melee_weapon("Gauntlet")),
+    ("war_scythe", "War Scythe", "weapon", lambda: make_named_melee_weapon("War Scythe")),
     ("bow", "Bow", "weapon", lambda: Bow()),
     ("spirit_bow", "Spirit Bow", "weapon", lambda: SpiritBow()),
     ("staff", "Staff", "weapon", lambda: Staff()),
     ("missile_weapon", "Throwing Knife", "weapon", lambda: MissileWeapon(name="Throwing Knife", tier=1)),
 
     # Armor / accessories
-    ("armor", "Leather Armor", "armor", lambda: Armor(name="Leather Armor", tier=1)),
+    ("armor", "Armor", "armor", lambda: Armor(name="Armor", tier=1)),
+    ("cloth_armor", "Cloth Armor", "armor", lambda: ClothArmor()),
+    ("leather_armor", "Leather Armor", "armor", lambda: LeatherArmor()),
+    ("mail_armor", "Mail Armor", "armor", lambda: MailArmor()),
+    ("scale_armor", "Scale Armor", "armor", lambda: ScaleArmor()),
+    ("plate_armor", "Plate Armor", "armor", lambda: PlateArmor()),
     ("ring", "Ring", "ring", lambda: Ring(name="Ring")),
     ("ring_accuracy", "Ring of Accuracy", "ring", lambda: RingOfAccuracy()),
     ("ring_evasion", "Ring of Evasion", "ring", lambda: RingOfEvasion()),
@@ -260,11 +297,19 @@ def make_catalog_item(item_kind: str) -> Optional[ItemBase]:
 # NOTE: TRANSMUTE_GROUPS["scroll"] excludes scroll_of_transmutation to prevent
 # self-transmutation. Use FLOOR_SCROLL_KINDS for random floor loot pools.
 TRANSMUTE_GROUPS: dict = {
-    # Staff is grouped with melee weapons: there's no separate "magic weapon"
-    # transmute pool in this codebase.
-    "weapon_melee": ["melee_weapon", "dagger", "staff"],
+    "weapon_melee": [kind for kind, _name, _category, _factory in _CATALOG if kind in (
+        "melee_weapon", "dagger", "staff",
+        "gloves", "rapier", "cudgel",
+        "shortsword", "hand_axe", "spear", "quarterstaff", "dirk", "sickle",
+        "sword", "mace", "scimitar", "round_shield", "sai", "whip",
+        "longsword", "battle_axe", "flail", "runic_blade", "assassins_blade",
+        "crossbow", "katana",
+        "greatsword", "war_hammer", "glaive", "greataxe", "greatshield",
+        "gauntlet", "war_scythe",
+    )],
     "weapon_missile": ["bow", "missile_weapon"],
-    "armor": ["armor"],
+    "armor": [kind for kind, _name, _category, _factory in _CATALOG
+              if kind in ("armor", "cloth_armor", "leather_armor", "mail_armor", "scale_armor", "plate_armor")],
     "wand": [kind for kind, _name, category, _factory in _CATALOG
              if category == "wand"],
     "ring": ["ring"] + [kind for kind, _name, category, _factory in _CATALOG

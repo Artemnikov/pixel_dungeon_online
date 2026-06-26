@@ -82,6 +82,8 @@ export const ITEM_SPRITES = {
   "Leather":          [1, 11],
   "Broken Shield":    [2, 11],  // ARMOR_MAIL (ARMOR+2) — closest stand-in
   "Mail Armor":       [2, 11],
+  "Scale Armor":      [3, 11],  // ARMOR_SCALE (ARMOR+3)
+  "Plate Armor":      [4, 11],  // ARMOR_PLATE (ARMOR+4)
   "Rogue's Cloak":    [7, 11],  // ARMOR_ROGUE (ARMOR+7)
 
   "Dried Rose":       [4, 16],  // ARTIFACT_ROSE1
@@ -283,7 +285,12 @@ const KIND_COORDS = {
   'bow':             [0, 9],
   'staff':           [5, 6],
   'missile_weapon':  [2, 9],
-  'armor':           [1, 11],  // Leather
+  'armor':           [1, 11],  // generic → Leather
+  'cloth_armor':     [0, 11],
+  'leather_armor':   [1, 11],
+  'mail_armor':      [2, 11],
+  'scale_armor':     [3, 11],
+  'plate_armor':     [4, 11],
   'ring':            [0, 14],
   'artifact':        [0, 15],
   'wand_magic_missile':   [0, 13],

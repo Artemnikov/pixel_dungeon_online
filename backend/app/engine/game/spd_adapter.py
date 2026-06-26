@@ -34,6 +34,7 @@ from app.engine.entities.base import (
     Amulet,
     Armor,
     Chest,
+    ClothArmor,
     Dewdrop,
     EntityType,
     Food,
@@ -41,9 +42,13 @@ from app.engine.entities.base import (
     HealthPotion,
     Item,
     Key,
+    LeatherArmor,
+    MailArmor,
     make_named_melee_weapon,
     Mob as MobEntity,
+    PlateArmor,
     Position,
+    ScaleArmor,
     Scroll,
     Seed,
     Stone,
@@ -501,8 +506,9 @@ def _rolled_item_to_item(ri: RolledItem, cx: int, cy: int) -> Item:
         return Weapon(id=iid, pos=pos, name="Weapon", damage=2 + ri.level, range=1,
                       strength_requirement=10, attack_cooldown=2.0)
     if ri.category == "ARMOR":
-        return Armor(id=iid, pos=pos, name="Armor", tier=1 + ri.level,
-                     strength_requirement=10)
+        _ARMOR_TYPES = {1: ClothArmor, 2: LeatherArmor, 3: MailArmor, 4: ScaleArmor, 5: PlateArmor}
+        _tier = min(max(1, ri.tier), 5)
+        return _ARMOR_TYPES[_tier](id=iid, pos=pos, level=ri.level)
     if ri.category in ("MISSILE", "MIS_T1", "MIS_T2", "MIS_T3", "MIS_T4", "MIS_T5"):
         return Stone(id=iid, pos=pos, name="Missile", damage=1 + ri.level, range=5)
     if ri.category == "RING":
@@ -531,7 +537,7 @@ _DESCRIPTOR_ITEM_MAP = {
     "Bomb": lambda iid, pos: Stone(id=iid, pos=pos, name="Bomb", damage=5, range=1),
     "Gold": lambda iid, pos: Gold(id=iid, pos=pos, name="Gold"),
     "Weapon": lambda iid, pos: Weapon(id=iid, pos=pos, name="Weapon", damage=2, range=1, strength_requirement=10, attack_cooldown=2.0),
-    "Armor": lambda iid, pos: Armor(id=iid, pos=pos, name="Armor", tier=1, strength_requirement=10),
+    "Armor": lambda iid, pos: PlateArmor(id=iid, pos=pos),
 }
 
 
