@@ -406,6 +406,12 @@ def spawn_golden_mimic(rng: SPDRandom, level, pos: int, item: RolledItem, depth:
     return GenMob(cls_name="GoldenMimic", pos=pos, items=[item, prize])
 
 
+def spawn_crystal_mimic(rng: SPDRandom, level, pos: int, item: RolledItem, depth: int):
+    """Port of CrystalMimic.spawnAt -- carries the chest's prize item."""
+    from app.engine.dungeon.spd_levelgen.mob_spawner import GenMob
+    return GenMob(cls_name="CrystalMimic", pos=pos, items=[item])
+
+
 def generator_random(state: GeneratorState, rng: SPDRandom, depth: int) -> RolledItem:
     """Port of Generator.random() (no-arg) -- the full no-arg dispatcher.
     Never returns null (unlike randomArtifact/randomUsingDefaults): the

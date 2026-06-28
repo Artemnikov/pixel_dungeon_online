@@ -610,8 +610,8 @@ class CrystalVaultRoom(SpecialRoom):
         j = rng.IntMax(2)
         prize_classes[1], prize_classes[j] = prize_classes[j], prize_classes[1]
 
-        gen._dispatch_random_category(level.run_state.generator_state, rng, level.depth, prize_classes[0])
-        gen._dispatch_random_category(level.run_state.generator_state, rng, level.depth, prize_classes[1])
+        ri1 = gen._dispatch_random_category(level.run_state.generator_state, rng, level.depth, prize_classes[0])
+        ri2 = gen._dispatch_random_category(level.run_state.generator_state, rng, level.depth, prize_classes[1])
 
         door_pos = level.point_to_cell(self.entrance())
         _CIRCLE8 = ((-1, -1), (0, -1), (1, -1), (1, 0), (1, 1), (0, 1), (-1, 1), (-1, 0))
@@ -632,10 +632,12 @@ class CrystalVaultRoom(SpecialRoom):
             if not _adj(i1_pos, door_pos) and not _adj(i2_pos, door_pos):
                 break
 
-        level.drop(frozenset(), i1_pos).type = "CRYSTAL_CHEST"
-        rng.Float()  # mimic altChance check (RatSkull * MimicTooth modifiers are zero-RNG)
-        # Mimic would be spawned here; for layout parity we always drop a chest
-        level.drop(frozenset(), i2_pos).type = "CRYSTAL_CHEST"
+        level.drop(ri1, i1_pos).type = "CRYSTAL_CHEST"
+        mimic_chance = rng.Float()
+        if mimic_chance < 0.1:
+            level.mobs.append(gen.spawn_crystal_mimic(rng, level, i2_pos, ri2, level.depth))
+        else:
+            level.drop(ri2, i2_pos).type = "CRYSTAL_CHEST"
         Painter.set(level, i1_pos, terrain.PEDESTAL)
         Painter.set(level, i2_pos, terrain.PEDESTAL)
 
