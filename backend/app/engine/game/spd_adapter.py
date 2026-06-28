@@ -85,6 +85,7 @@ from app.engine.entities.mobs import (
     DM201,
     DM300,
     DemonSpawner,
+    CrystalMimic,
     EbonyMimic,
     Eye,
     FireElemental,
@@ -237,6 +238,7 @@ _MOB_CLASSES: Dict[str, type[MobEntity]] = {
     "Mimic": Mimic,
     "GoldenMimic": GoldenMimic,
     "EbonyMimic": EbonyMimic,
+    "CrystalMimic": CrystalMimic,
     "Statue": Statue,
     "ArmoredStatue": ArmoredStatue,
     "Bee": Bee,
@@ -422,17 +424,31 @@ _CHEST_TYPE_NAMES = {
 
 
 def _spawn_chest(heap, cell_x: int, cell_y: int) -> Optional[Chest]:
+    from app.engine.dungeon.spd_levelgen.generator import RolledItem
     chest_type = getattr(heap, "type", "HEAP")
     name = _CHEST_TYPE_NAMES.get(chest_type)
     if name is None:
         return None
-    contents = [_spawn_item([item], cell_x, cell_y) for item in getattr(heap, "items", [])]
+    raw_items = list(getattr(heap, "items", []))
+    item_category: Optional[str] = None
+    contents = []
+    for it in raw_items:
+        if isinstance(it, RolledItem):
+            item_category = it.category
+            spawned = _rolled_item_to_item(it, cell_x, cell_y)
+            if spawned:
+                contents.append(spawned)
+        else:
+            spawned = _spawn_item([it], cell_x, cell_y)
+            if spawned:
+                contents.append(spawned)
     return Chest(
         id=str(uuid.uuid4()),
         name=name,
         pos=Position(x=cell_x, y=cell_y),
         chest_type=chest_type,
         contents=contents,
+        item_category=item_category,
     )
 
 
@@ -584,6 +600,63 @@ def _extract_doors(gen_level: GenLevel, width: int, height: int) -> Tuple[Dict[T
     return hidden_doors, locked_doors
 
 
+def _apply_depth_scaling_mimic(mob: "CrystalMimic", depth: int) -> None:
+    """Set base stats for a crystal mimic (depth scaling applied at runtime)."""
+    level = depth
+    mob.floor_level = level
+    mob.max_hp = (1 + level) * 6
+    mob.hp = mob.max_hp
+    mob.defense_skill = 2 + level // 2
+    mob.attack_skill = 6 + level
+
+
+def _adapt_gen_mobs_and_items(gen_mobs, width: int):
+    """Convert GenMob list to (mobs dict, extra_items dict).
+
+    CrystalMimic: spawn mob entity + fake Chest item at same position.
+    Regular Mimic/GoldenMimic: extract items only (not yet real entities).
+    Ghost: spawn mob and wire ghost_quest (handled via caller).
+    """
+    from app.engine.dungeon.spd_levelgen.generator import RolledItem
+    from app.engine.entities.base import Faction
+    mobs: Dict[str, MobEntity] = {}
+    extra_items: Dict[str, Item] = {}
+    for gen_mob in gen_mobs:
+        if not isinstance(gen_mob, GenMob):
+            continue
+        pos = gen_mob.pos
+        x = pos % width
+        y = pos // width
+        if gen_mob.cls_name == "CrystalMimic":
+            mob = CrystalMimic(
+                id=str(uuid.uuid4()),
+                pos=Position(x=x, y=y),
+                faction=Faction.DUNGEON,
+                disguised=True,
+            )
+            _apply_depth_scaling_mimic(mob, 0)
+            ri_items = [it for it in gen_mob.items if isinstance(it, RolledItem)]
+            item_category = ri_items[0].category if ri_items else None
+            fake_chest = Chest(
+                id=str(uuid.uuid4()),
+                name="Crystal Chest",
+                pos=Position(x=x, y=y),
+                chest_type="CRYSTAL_CHEST",
+                contents=[],
+                item_category=item_category,
+            )
+            mob.fake_chest_id = fake_chest.id
+            mobs[mob.id] = mob
+            extra_items[fake_chest.id] = fake_chest
+        elif gen_mob.cls_name in ("Mimic", "GoldenMimic") and gen_mob.items:
+            item = _spawn_item(gen_mob.items, x, y)
+            extra_items[item.id] = item
+        else:
+            mob = _spawn_mob(gen_mob, width)
+            mobs[mob.id] = mob
+    return mobs, extra_items
+
+
 def gen_level_to_floor_state(gen_level: GenLevel, depth: int) -> FloorState:
     w = gen_level.width()
     h = gen_level.height()
@@ -600,15 +673,19 @@ def gen_level_to_floor_state(gen_level: GenLevel, depth: int) -> FloorState:
     rooms = [_convert_room(r) for r in gen_level.rooms
              if hasattr(r, 'left') and not isinstance(r, ConnectionRoom)]
 
-    mobs: Dict[str, MobEntity] = {}
+    mobs, extra_items = _adapt_gen_mobs_and_items(gen_level.mobs, w)
+
+    # Ghost quest (sewers depths 2-4): wire ghost_quest.ghost_id to the live mob id.
     for gen_mob in gen_level.mobs:
-        if isinstance(gen_mob, GenMob):
-            mob = _spawn_mob(gen_mob, w)
-            mobs[mob.id] = mob
-            # Ghost quest (sewers depths 2-4): remember the live mob id so
-            # world.py's interaction/reward handlers can find it by identity.
-            if gen_mob.cls_name == "Ghost" and gen_level.run_state is not None:
-                gen_level.run_state.ghost_quest.ghost_id = mob.id
+        if isinstance(gen_mob, GenMob) and gen_mob.cls_name == "Ghost" and gen_level.run_state is not None:
+            # find the spawned Ghost mob by position
+            pos = gen_mob.pos
+            x = pos % w
+            y = pos // w
+            for mob in mobs.values():
+                if mob.pos.x == x and mob.pos.y == y and type(mob).__name__ == "Ghost":
+                    gen_level.run_state.ghost_quest.ghost_id = mob.id
+                    break
 
     items: Dict[str, Item] = {}
     for cell, heap in gen_level.heaps.items():
@@ -616,16 +693,7 @@ def gen_level_to_floor_state(gen_level: GenLevel, depth: int) -> FloorState:
         y = cell // w
         item = _spawn_chest(heap, x, y) or _spawn_item(heap.items, x, y)
         items[item.id] = item
-
-    # Extract items from mimics (not yet implemented as entities) so keys
-    # they carry are not permanently lost.
-    for gen_mob in gen_level.mobs:
-        if isinstance(gen_mob, GenMob) and gen_mob.cls_name in ("Mimic", "GoldenMimic") and gen_mob.items:
-            pos = gen_mob.pos
-            x = pos % w
-            y = pos // w
-            item = _spawn_item(gen_mob.items, x, y)
-            items[item.id] = item
+    items.update(extra_items)
 
     traps = _convert_traps(gen_level, w)
     hidden_doors, locked_doors = _extract_doors(gen_level, w, h)
