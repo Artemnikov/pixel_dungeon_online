@@ -63,13 +63,14 @@ def test_disguised_mimic_not_in_serialized_mobs():
     assert "cm1" not in mob_ids
 
 
-def test_crystal_mimic_revealed_on_adjacency():
-    """Moving adjacent to disguised CrystalMimic must emit SPAWN_MOB and remove fake chest."""
+def test_crystal_mimic_revealed_on_open():
+    """Trying to open a disguised CrystalMimic's fake chest must reveal it (SPAWN_MOB, MESSAGE, fake chest removed)."""
     floor = _make_floor()
     game = _make_game(floor)
     player = game.add_player("p1", "Hero")
     player.floor_id = floor.floor_id
-    player.pos = Position(x=3, y=5)
+    player.pos = Position(x=4, y=5)
+    player.add_key("crystal", floor.floor_id, name="Crystal Key")
 
     fake_chest = Chest(id="fc1", pos=Position(x=4, y=5), chest_type="CRYSTAL_CHEST")
     floor.items["fc1"] = fake_chest
@@ -80,7 +81,7 @@ def test_crystal_mimic_revealed_on_adjacency():
     floor.mobs["cm1"] = mimic
 
     game.events = []
-    game._check_crystal_mimic_reveal(player, floor, floor.floor_id)
+    game._reveal_crystal_mimic_for_chest(player, floor, floor.floor_id, "fc1")
 
     assert "fc1" not in floor.items
     assert mimic.disguised is False

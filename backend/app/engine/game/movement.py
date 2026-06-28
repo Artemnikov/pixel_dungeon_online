@@ -110,19 +110,21 @@ class MovementCombatMixin:
             item.pos = Position(x=x, y=y)
             floor.items[item.id] = item
 
-    def _check_crystal_mimic_reveal(self, player: Player, floor, floor_id: int) -> None:
-        px, py = player.pos.x, player.pos.y
+    def _reveal_crystal_mimic_for_chest(self, player: Player, floor, floor_id: int, chest_id: str) -> bool:
+        """If chest_id is a disguised CrystalMimic's fake chest, reveal the mimic and return True."""
         for mob in list(floor.mobs.values()):
             if not isinstance(mob, CrystalMimic) or not mob.disguised or not mob.is_alive:
                 continue
-            mx, my = mob.pos.x, mob.pos.y
-            if abs(px - mx) <= 1 and abs(py - my) <= 1:
-                floor.items.pop(mob.fake_chest_id, None)
-                mob.disguised = False
-                mob.ai_state = "hunting"
-                self.add_event("SPAWN_MOB", {"mob": mob.model_dump()}, floor_id=floor_id)
-                self.add_event("PLAY_SOUND", {"sound": "MIMIC"}, floor_id=floor_id)
-                self.add_event("MESSAGE", {"text": "The crystal chest was a mimic!", "player": player.id}, floor_id=floor_id)
+            if mob.fake_chest_id != chest_id:
+                continue
+            floor.items.pop(chest_id, None)
+            mob.disguised = False
+            mob.ai_state = "hunting"
+            self.add_event("SPAWN_MOB", {"mob": mob.model_dump()}, floor_id=floor_id)
+            self.add_event("PLAY_SOUND", {"sound": "MIMIC"}, floor_id=floor_id)
+            self.add_event("MESSAGE", {"text": "The crystal chest was a mimic!", "player": player.id}, floor_id=floor_id)
+            return True
+        return False
 
     def _teleport_entity_to_free_cell(self, entity, floor, floor_id: int) -> None:
         import random as _random
@@ -155,6 +157,11 @@ class MovementCombatMixin:
         if chest.chest_type == "CRYSTAL_CHEST" and not player.remove_key("crystal", floor_id):
             self.add_event("LOCKED", {"player": player.id, "x": chest.pos.x, "y": chest.pos.y}, floor_id=floor_id)
             return False
+
+        # Crystal chest may be a CrystalMimic in disguise — reveal it instead of opening.
+        if chest.chest_type == "CRYSTAL_CHEST" and self._reveal_crystal_mimic_for_chest(player, floor, floor_id, chest.id):
+            self._spend_unlock_action(player)
+            return True
 
         self._spend_unlock_action(player)
         x, y = chest.pos.x, chest.pos.y
@@ -481,7 +488,6 @@ class MovementCombatMixin:
 
         if isinstance(entity, Player):
             self.add_event("MOVE", {"entity": entity_id, "x": entity.pos.x, "y": entity.pos.y}, floor_id=floor_id)
-            self._check_crystal_mimic_reveal(entity, floor, floor_id)
             # Freerunner builds Momentum on each step.
             self.gain_momentum(entity)
             # Rejuvenating Steps (huntress T2): heal small amount per step

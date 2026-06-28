@@ -359,6 +359,9 @@ class TickMixin:
                 if not mob.is_alive:
                     continue
 
+                if isinstance(mob, CrystalMimic) and mob.disguised:
+                    continue
+
                 if mob.faction == Faction.PLAYER:
                     if isinstance(mob, GhostHeroMob):
                         owner = self.players.get(mob.owner_id)
