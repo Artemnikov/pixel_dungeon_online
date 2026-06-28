@@ -5,7 +5,9 @@ import './styles/index.css';
 import CharacterSelection from './CharacterSelection';
 import MainMenu from './menu/MainMenu';
 import cursorMouseUrl from './assets/cursors/cursor_mouse.png';
+import cursorMouse2xUrl from './assets/cursors/cursor_mouse@2x.png';
 import cursorControllerUrl from './assets/cursors/cursor_controller.png';
+import cursorController2xUrl from './assets/cursors/cursor_controller@2x.png';
 
 import { TILE_SIZE, TILE_SCALE, MIN_ZOOM, MAX_DPR } from './constants';
 import useAudioUnlock from './audio/useAudioUnlock';
@@ -576,6 +578,13 @@ function App() {
   };
 
   const isDesktop = interfaceSize > 0;
+  const isMac = /Macintosh|MacIntel|MacPPC|Mac68K/.test(navigator.userAgent);
+  const mouseCursorVal = isMac
+    ? `url(${cursorMouse2xUrl}) 2 2, pointer`
+    : `image-set(url(${cursorMouseUrl}) 1x, url(${cursorMouse2xUrl}) 2x) 1 1, pointer`;
+  const controllerCursorVal = isMac
+    ? `url(${cursorController2xUrl}) 16 16, crosshair`
+    : `image-set(url(${cursorControllerUrl}) 1x, url(${cursorController2xUrl}) 2x) 8 8, crosshair`;
 
   // Destructure targeting values used in JSX so the linter doesn't flag object-property
   // accesses on a hook return that contains refs.
@@ -642,7 +651,7 @@ function App() {
         <title>{t('app.titleWelcome')}</title>
         <meta name="description" content={t('app.descWelcome')} />
         <div className={isDesktop ? 'desktop-mode' : ''}
-             style={isDesktop ? { '--cursor-mouse': `url(${cursorMouseUrl}) 1 1, pointer` } : {}}>
+             style={isDesktop ? { '--cursor-mouse': mouseCursorVal } : {}}>
           <MainMenu onStart={() => setGameState('SELECT')} />
         </div>
       </>
@@ -655,7 +664,7 @@ function App() {
         <title>{t('app.titleSelect')}</title>
         <meta name="description" content={t('app.descSelect')} />
         <div className={isDesktop ? 'desktop-mode' : ''}
-             style={isDesktop ? { '--cursor-mouse': `url(${cursorMouseUrl}) 1 1, pointer` } : {}}>
+             style={isDesktop ? { '--cursor-mouse': mouseCursorVal } : {}}>
           <CharacterSelection onSelect={(c, d, n, strongerBosses) => {
             setSelectedClass(c);
             setDifficulty(d);
@@ -672,12 +681,8 @@ function App() {
   }
 
   const cursorStyle = (targetingMode || examineMode)
-    ? isDesktop
-      ? `url(${cursorControllerUrl}) 8 8, crosshair`
-      : 'crosshair'
-    : isDesktop
-      ? `url(${cursorMouseUrl}) 1 1, auto`
-      : 'default';
+    ? isDesktop ? controllerCursorVal : 'crosshair'
+    : isDesktop ? mouseCursorVal.replace(', pointer', ', auto') : 'default';
 
   // Toolbar quickslots mirror the real quickslot state, resolving each slot's item id
   // against the flattened belongings.
@@ -696,7 +701,7 @@ function App() {
       <title>{t('app.titlePlaying', { depth })}</title>
       <meta name="description" content={t('app.descPlaying', { depth })} />
       <div className={`game-container ${isDesktop ? 'desktop-mode' : ''}`}
-           style={isDesktop ? { '--cursor-mouse': `url(${cursorMouseUrl}) 1 1, pointer` } : {}}>
+           style={isDesktop ? { '--cursor-mouse': mouseCursorVal } : {}}>
 
         <LoadingOverlay visible={grid.length === 0} />
 
