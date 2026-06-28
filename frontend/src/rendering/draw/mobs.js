@@ -315,7 +315,7 @@ export function drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef,
     } else if (mob.name === 'Piranha' || mob.name === 'Phantom Piranha') {
       mobSprite = assetImages.piranha;
       sx = getPiranhaFrame(mob, mobAnimRef.current, now);
-    } else if (mob.name === 'Mimic' || mob.name === 'Golden Mimic' || mob.name === 'Ebony Mimic') {
+    } else if (mob.name === 'Mimic' || mob.name === 'Golden Mimic' || mob.name === 'Crystal Mimic' || mob.name === 'Ebony Mimic') {
       mobSprite = assetImages.mimic;
       sx = getMimicFrame(mob, mobAnimRef.current, now);
     } else if (mob.name === 'Statue' || mob.name === 'Armored Statue') {
