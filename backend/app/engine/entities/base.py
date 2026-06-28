@@ -145,6 +145,13 @@ class Entity(BaseModel):
         prep = self.get_buff("preparation")
         if prep:
             base += 2
+        # Armor glyph: Obfuscation (passive stealth when equipped)
+        from app.engine.entities.armor_glyphs import stealth_boost
+        belongings = getattr(self, "belongings", None)
+        if belongings is not None:
+            armor = getattr(belongings, "armor", None)
+            if armor is not None:
+                base += stealth_boost(self, armor)
         return base
 
     def get_dr_min(self) -> int:
@@ -255,6 +262,7 @@ class ItemCategory:
     SCROLL = "scroll"
     SEED = "seed"
     STONE = "stone"
+    RUNESTONE = "runestone"
     FOOD = "food"
     GOLD = "gold"
     KEY = "key"
@@ -262,18 +270,21 @@ class ItemCategory:
     BAG = "bag"
     TRINKET = "trinket"
     SCENERY = "scenery"
+    STYLUS = "stylus"
 
 # Sort order inside a bag (mirrors SPD's itemComparator grouping by category).
 CATEGORY_ORDER = [
     ItemCategory.WEAPON, ItemCategory.ARMOR, ItemCategory.RING, ItemCategory.ARTIFACT,
     ItemCategory.WAND, ItemCategory.SCROLL, ItemCategory.POTION, ItemCategory.SEED,
-    ItemCategory.STONE, ItemCategory.FOOD, ItemCategory.KEY, ItemCategory.GOLD,
-    ItemCategory.TRINKET, ItemCategory.MISC, ItemCategory.BAG, ItemCategory.SCENERY,
+    ItemCategory.STONE, ItemCategory.RUNESTONE, ItemCategory.FOOD, ItemCategory.KEY,
+    ItemCategory.GOLD, ItemCategory.TRINKET, ItemCategory.MISC, ItemCategory.BAG,
+    ItemCategory.SCENERY,
 ]
 
 class Action:
     DROP = "DROP"
     THROW = "THROW"
+    USE = "USE"
     EQUIP = "EQUIP"
     UNEQUIP = "UNEQUIP"
     DRINK = "DRINK"
@@ -290,6 +301,7 @@ class Action:
     SUMMON = "SUMMON"    # DriedRose: summon the ghost ally
     DIRECT = "DIRECT"    # DriedRose: direct the ghost ally to a target
     SHOOT = "SHOOT"      # SpiritBow: fire an arrow
+    INSCRIBE = "INSCRIBE"  # ArcaneStylus: inscribe a glyph on armor
 
 # Actions that require the player to pick a target cell before resolving.
 TARGETED_ACTIONS = {Action.THROW, Action.ZAP, Action.DIRECT, Action.SHOOT}
@@ -446,6 +458,7 @@ class KindOfWeapon(EquipableItem):
     range: int = 1
     attack_cooldown: float = 1.0
     enchantment: Optional[str] = None
+    augment: Optional[str] = None
     projectile_type: Optional[str] = None
     # On surprise attacks, damage floor is raised by this fraction of the range
     surprise_damage_floor: float = 0.0
@@ -789,6 +802,7 @@ class Armor(EquipableItem):
     category: ClassVar[str] = ItemCategory.ARMOR
     tier: int = 1
     enchantment: ArmorEnchantment = Field(default_factory=ArmorEnchantment)
+    augment: Optional[str] = None
     DESC: ClassVar[str] = "Worn armor that absorbs a portion of incoming damage. Equip it for protection."
 
     def dr_min(self, upgrade_level: int = 0) -> int:
@@ -1999,6 +2013,46 @@ class TenguMask(ItemBase):
         return Action.WEAR
 
 
+class ArcaneStylus(ItemBase):
+    kind: Literal["arcane_stylus"] = "arcane_stylus"
+    name: str = "Arcane Stylus"
+    type: str = "stylus"
+    category: ClassVar[str] = ItemCategory.STYLUS
+    stackable: ClassVar[bool] = True
+    DESC: ClassVar[str] = "A stylus enchanted with magical energy. Use it to inscribe a random glyph onto a piece of armor."
+
+    def actions(self, player: Optional["Player"] = None) -> List[str]:
+        from typing import List as _List
+        acts: _List[str] = [Action.THROW, Action.DROP]
+        if player is not None:
+            armor = getattr(player.belongings, "armor", None)
+            if armor is not None and armor.cursed_known and not armor.cursed:
+                acts.insert(0, Action.INSCRIBE)
+        return acts
+
+    def default_action(self) -> Optional[str]:
+        return Action.INSCRIBE
+
+
+class MagicalInfusion(ItemBase):
+    kind: Literal["magical_infusion"] = "magical_infusion"
+    name: str = "Magical Infusion"
+    type: str = "spell"
+    category: ClassVar[str] = ItemCategory.MISC
+    unique: bool = True
+    stackable: ClassVar[bool] = True
+    DESC: ClassVar[str] = "A magical infusion that upgrades a weapon or armor by one level. If the item already has an enchantment or glyph, it is preserved."
+
+    def actions(self, player: Optional["Player"] = None) -> List[str]:
+        return [Action.USE, Action.DROP]
+
+    def default_action(self) -> Optional[str]:
+        return Action.USE
+
+    def value(self, identified: bool = False) -> int:
+        return 60 * self.quantity
+
+
 class KingsCrown(ItemBase):
     kind: Literal["kings_crown"] = "kings_crown"
     name: str = "King's Crown"
@@ -2222,6 +2276,22 @@ class ScrollOfTransmutation(Scroll):
     kind: Literal["scroll_of_transmutation"] = "scroll_of_transmutation"
     name: str = "Scroll of Transmutation"
     DESC: ClassVar[str] = "Reading this scroll transforms a held item into another of the same category."
+
+
+class ScrollOfEnchantment(Scroll):
+    kind: Literal["scroll_of_enchantment"] = "scroll_of_enchantment"
+    name: str = "Scroll of Enchantment"
+    DESC: ClassVar[str] = "Imbues a weapon or armor with a random enchantment or glyph."
+
+    def actions(self, player: Optional["Player"] = None) -> List[str]:
+        return [Action.READ, Action.DROP]
+
+
+class ExoticScrollOfEnchantment(Scroll):
+    kind: Literal["scroll_of_exotic_enchantment"] = "scroll_of_exotic_enchantment"
+    name: str = "Exotic Scroll of Enchantment"
+    DESC: ClassVar[str] = "Imbues a weapon or armor with a choice of three enchantments or glyphs."
+    unique: bool = True
 
 
 class Throwable(ItemBase):
@@ -2560,7 +2630,7 @@ class VelvetPouch(Bag):
     kind: Literal["velvet_pouch"] = "velvet_pouch"
     name: str = "Velvet Pouch"
     capacity: int = 19
-    accepts: ClassVar[Optional[set]] = {ItemCategory.SEED}
+    accepts: ClassVar[Optional[set]] = {ItemCategory.SEED, ItemCategory.RUNESTONE}
     DESC: ClassVar[str] = "This small velvet pouch can store seeds and other small alchemy ingredients."
 
     def _accepts_extra(self, item: "ItemBase") -> bool:
@@ -2615,6 +2685,12 @@ from app.engine.entities.trinkets import (
     ShardOfOblivion, ChaoticCenser, FerretTuft, CrackedSpyglass,
     TrinketCatalyst,
 )  # noqa: E402
+from app.engine.entities.runestones import (
+    Runestone, InventoryStone,
+    StoneOfBlast, StoneOfBlink, StoneOfDeepSleep, StoneOfClairvoyance,
+    StoneOfAggression, StoneOfFlock, StoneOfShock, StoneOfFear,
+    StoneOfIntuition, StoneOfAugmentation, StoneOfDetectMagic, StoneOfEnchantment,
+)  # noqa: E402
 
 AnyItem = Annotated[
     Union[
@@ -2645,6 +2721,7 @@ AnyItem = Annotated[
         Key,
         TenguMask, KingsCrown,
         Seed, Dewdrop, Waterskin, Amulet, Stone, Boomerang, ThrowableDagger, Throwable,
+        ArcaneStylus, MagicalInfusion,
         GooBlob, DwarfToken, Petal,
         Chest,
         VelvetPouch, ScrollHolder, MagicalHolster, PotionBandolier, Bag,
@@ -2653,6 +2730,9 @@ AnyItem = Annotated[
         MimicTooth, WondrousResin, EyeOfNewt, SaltCube, VialOfBlood,
         ShardOfOblivion, ChaoticCenser, FerretTuft, CrackedSpyglass,
         TrinketCatalyst,
+        StoneOfBlast, StoneOfBlink, StoneOfDeepSleep, StoneOfClairvoyance,
+        StoneOfAggression, StoneOfFlock, StoneOfShock, StoneOfFear,
+        StoneOfIntuition, StoneOfAugmentation, StoneOfDetectMagic, StoneOfEnchantment,
     ],
     Field(discriminator="kind"),
 ]

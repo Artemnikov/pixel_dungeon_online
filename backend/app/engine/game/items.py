@@ -8,7 +8,11 @@ identification of potion/scroll kinds.
 from typing import Optional
 
 from app.engine.entities import item_actions, scroll_actions
-from app.engine.entities.base import Position, QuickSlotEntry, Wand
+from app.engine.entities.base import Position, QuickSlotEntry, Runestone, Wand
+from app.engine.entities.runestone_actions import (
+    apply_stone_augment, apply_stone_intuition_guess, apply_stone_intuition_pick,
+    apply_stone_target,
+)
 from app.engine.entities.scroll_predicates import PREDICATE
 
 
@@ -89,6 +93,43 @@ class ItemsMixin:
         player._pending_scroll_kind = None
         player._pending_scroll_id = None
 
+    def select_stone_target(self, player_id: str, stone_id: str, item_id: str):
+        player = self.players.get(player_id)
+        if not player:
+            return
+        stone = player.belongings.get_item(stone_id)
+        if stone is None:
+            return
+        if stone.kind == "magical_infusion":
+            self.use_magical_infusion(player_id, item_id, infusion_id=stone_id)
+            return
+        if not isinstance(stone, Runestone):
+            return
+        target = player.belongings.get_item(item_id)
+        if target is None:
+            return
+        apply_stone_target(self, player, stone, target)
+
+    def stone_intuition_pick(self, player_id: str, stone_id: str, item_id: str):
+        player = self.players.get(player_id)
+        if not player:
+            return
+        apply_stone_intuition_pick(self, player, stone_id, item_id)
+
+    def stone_intuition_guess(self, player_id: str, stone_id: str, item_id: str,
+                               guessed_kind: str):
+        player = self.players.get(player_id)
+        if not player:
+            return
+        apply_stone_intuition_guess(self, player, stone_id, item_id, guessed_kind)
+
+    def stone_augment_choose(self, player_id: str, stone_id: str, item_id: str,
+                              augment_type: str):
+        player = self.players.get(player_id)
+        if not player:
+            return
+        apply_stone_augment(self, player, stone_id, item_id, augment_type)
+
     def imbue_wand(self, player_id: str, staff_id: str, wand_id: str):
         """Handle imbue wand choice from IMBUE_WAND_CHOICE_AVAILABLE dialog."""
         player = self.players.get(player_id)
@@ -159,6 +200,41 @@ class ItemsMixin:
             if rose.armor:
                 player.belongings.backpack.collect(rose.armor)
             rose.armor = item
+
+    def choose_enchant(self, player_id: str, target_id: str, choice_index: int):
+        """Handle exotic Scroll of Enchantment choice."""
+        player = self.players.get(player_id)
+        if not player:
+            return
+        from app.engine.entities.scroll_actions import choose_enchant_apply
+        choose_enchant_apply(self, player, choice_index)
+
+    def use_magical_infusion(self, player_id: str, item_id: str, infusion_id: Optional[str] = None):
+        """MagicalInfusion: upgrade a weapon/armor by 1 level."""
+        player = self.players.get(player_id)
+        if not player:
+            return
+        item = player.belongings.get_item(item_id)
+        if item is None:
+            return
+        if infusion_id:
+            infusion = player.belongings.get_item(infusion_id)
+        else:
+            infusion = next((it for it in player.belongings.all_items() if it.kind == "magical_infusion"), None)
+        if infusion is None:
+            return
+        if not getattr(item, "is_upgradable", lambda: True)():
+            return
+        item.level += 1
+        item.level_known = True
+        player.remove_buff("degrade")
+        # Consume one infusion
+        detached = player.belongings.backpack.detach(infusion.id)
+        if detached is not None and player.belongings.get_item(infusion.id) is None:
+            player.quickslot.convert_to_placeholder(detached)
+        self.add_event("MESSAGE", {"text": f"Your {item.name} glows with magical energy and upgrades!"},
+                       floor_id=player.floor_id, player_id=player.id)
+        self.add_event("PLAY_SOUND", {"sound": "LEVELUP"}, floor_id=player.floor_id)
 
     def identify_kind(self, item):
         # Reveal a potion/scroll kind for the whole party (co-op shared knowledge).

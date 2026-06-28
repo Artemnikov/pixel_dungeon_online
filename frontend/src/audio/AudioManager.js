@@ -42,6 +42,7 @@ import meldSound from '../assets/sounds/meld.mp3';
 import gasSound from '../assets/sounds/gas.mp3';
 import shatterSound from '../assets/sounds/shatter.mp3';
 import bonesSound from '../assets/sounds/bones.mp3';
+import sheepSound from '../assets/sounds/sheep.mp3';
 import { effectiveSfxVolume, subscribe } from '../menu/menuSettings';
 
 class AudioManager {
@@ -103,6 +104,7 @@ class AudioManager {
         this.loadSound('GAS', gasSound);
         this.loadSound('SHATTER', shatterSound);
         this.loadSound('BONES', bonesSound);
+        this.loadSound('SHEEP', sheepSound);
 
         const doorSounds = import.meta.glob('../assets/sounds/door_open.mp3', { eager: true, query: '?url' });
         const doorUrl = doorSounds['../assets/sounds/door_open.mp3']?.default;

@@ -9,6 +9,11 @@ export default function useModalState() {
   const [impWindow, setImpWindow] = useState(null);
   const [ghostWindow, setGhostWindow] = useState(null);
   const [scrollPickerData, setScrollPickerData] = useState(null);
+  const [stonePickerData, setStonePickerData] = useState(null);
+  const [intuitionData, setIntuitionData] = useState(null);
+  const [intuitionGuessData, setIntuitionGuessData] = useState(null);
+  const [augmentSelectData, setAugmentSelectData] = useState(null);
+  const [enchantChoiceData, setEnchantChoiceData] = useState(null);
   const [imbueWandData, setImbueWandData] = useState(null);
   const [showItemBrowser, setShowItemBrowser] = useState(false);
   const [itemCatalog, setItemCatalog] = useState([]);
@@ -44,6 +49,12 @@ export default function useModalState() {
     setGhostWindow({ npc, text, canClaim: can_claim, weapon, armor });
   const onImbueWand = (data) => setImbueWandData(data);
   const onScrollSelectTarget = (data) => setScrollPickerData(data);
+  const onStoneSelectTarget = (data) => setStonePickerData(data);
+  const onStoneIntuitionPickItem = (data) => setIntuitionData(data);
+  const onStoneIntuitionGuessKind = (data) => setIntuitionGuessData(data);
+  const onStoneAugmentSelect = (data) => setAugmentSelectData(data);
+  const onStoneAugmentPickItem = (data) => setAugmentSelectData(data);
+  const onEnchantChoiceAvailable = (data) => setEnchantChoiceData(data);
   const onGhostGearOpen = (data) => setGhostGearData(data);
   const [chasmPrompt, setChasmPrompt] = useState(null);
   const onChasmPrompt = (data) => setChasmPrompt(data);
@@ -57,6 +68,11 @@ export default function useModalState() {
     ghostWindow, setGhostWindow,
     ghostGearData, setGhostGearData,
     scrollPickerData, setScrollPickerData,
+    stonePickerData, setStonePickerData,
+    intuitionData, setIntuitionData,
+    intuitionGuessData, setIntuitionGuessData,
+    augmentSelectData, setAugmentSelectData,
+    enchantChoiceData, setEnchantChoiceData,
     imbueWandData, setImbueWandData,
     showItemBrowser, setShowItemBrowser,
     itemCatalog,
@@ -76,6 +92,12 @@ export default function useModalState() {
     onGhostDialogue,
     onImbueWand,
     onScrollSelectTarget,
+    onStoneSelectTarget,
+    onStoneIntuitionPickItem,
+    onStoneIntuitionGuessKind,
+    onStoneAugmentSelect,
+    onStoneAugmentPickItem,
+    onEnchantChoiceAvailable,
     onGhostGearOpen,
     chasmPrompt, setChasmPrompt,
     onChasmPrompt,

@@ -231,6 +231,8 @@ def resolve_melee_attack(
         if hasattr(attacker, "belongings"):
             from app.engine.entities.rings import accuracy_multiplier
             atk_acc = int(atk_acc * accuracy_multiplier(attacker))
+        if attacker.has_buff("wayward_buff"):
+            atk_acc //= 2
         acu_roll = random.random() * atk_acc
         def_roll = random.random() * def_ev
         if acu_roll < def_roll:
@@ -274,11 +276,25 @@ def resolve_melee_attack(
     # Invisibility dispel on attack
     _dispel_stealth(attacker)
 
-    # Pre-DR defense proc (glyphs, abilities)
+    # Defense proc (abilities + glyphs)
     if hasattr(defender, "defense_proc") and raw_damage > 0:
         raw_damage = defender.defense_proc(raw_damage, attacker, floor_mobs, tile_x, tile_y)
         if raw_damage <= 0:
             return result
+
+    # Armor glyph proc
+    armor = getattr(getattr(defender, "belongings", None), "armor", None)
+    if armor is not None:
+        g = armor.enchantment
+        if g is not None and g.type not in ("none", None):
+            from app.engine.entities.armor_glyphs import apply_glyph_proc
+            raw_damage = apply_glyph_proc(
+                g.type, defender, attacker, armor,
+                raw_damage, floor_mobs, tile_x, tile_y, floor,
+                add_event=add_event,
+            )
+            if raw_damage <= 0:
+                return result
 
     weapon = getattr(getattr(attacker, "belongings", None), "weapon", None)
 

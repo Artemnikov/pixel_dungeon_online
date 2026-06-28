@@ -135,6 +135,11 @@ class TickMixin:
             for mob in floor.mobs.values():
                 if mob.is_alive:
                     removed = process_buffs(mob.buffs, dt)
+                    if "sheep_timer" in removed and mob.is_alive:
+                        mob.is_alive = False
+                        self.add_event("DEATH", {"target": mob.id}, floor_id=floor_id)
+                        self.handle_mob_death(mob, floor, floor_id)
+                        continue
                     if "invisibility" in removed or "shadows" in removed:
                         mob.invisible = max(0, mob.invisible - 1)
                     if "drowsy" in removed and mob.ai_state in ("idle", "wandering"):
@@ -196,6 +201,17 @@ class TickMixin:
                 move_interval = 9999
             from app.engine.entities.rings import haste_multiplier
             move_interval /= haste_multiplier(player)
+            # Armor glyph speed boost (Swiftness, Flow, Bulk)
+            from app.engine.entities.armor_glyphs import speed_boost
+            armor = getattr(player.belongings, "armor", None)
+            if armor is not None:
+                pf = self._get_or_create_floor(player.floor_id)
+                enemies_nearby = any(
+                    m.is_alive for m in pf.mobs.values()
+                    if abs(m.pos.x - player.pos.x) + abs(m.pos.y - player.pos.y) <= 3
+                )
+                s = speed_boost(player, armor, enemies_nearby)
+                move_interval /= s
 
             if player.move_intent:
                 now = time.time()

@@ -57,6 +57,7 @@ import swarmSprite from '../assets/pixel-dungeon/sprites/swarm.png';
 import ghostSprite from '../assets/pixel-dungeon/sprites/ghost.png';
 import spinnerSprite from '../assets/pixel-dungeon/sprites/spinner.png';
 import dm200Sprite from '../assets/pixel-dungeon/sprites/dm200.png';
+import sheepSprite from '../assets/pixel-dungeon/sprites/sheep.png';
 import shamanSprite from '../assets/pixel-dungeon/sprites/shaman.png';
 import iconsSprite from '../assets/pixel-dungeon/interfaces/icons.png';
 import spellIconsSprite from '../assets/pixel-dungeon/effects/spell_icons.png';
@@ -122,6 +123,7 @@ export default function useAssetImages() {
     spinner: null,
     dm200: null,
     shaman: null,
+    sheep: null,
     swarm: null,
     icons: null,
     spellIcons: null,
@@ -226,6 +228,7 @@ export default function useAssetImages() {
     loadImage(bruteSprite, 'brute');
     loadImage(spinnerSprite, 'spinner');
     loadImage(dm200Sprite, 'dm200');
+    loadImage(sheepSprite, 'sheep');
     loadImage(shamanSprite, 'shaman');
     loadImage(swarmSprite, 'swarm');
     loadImage(iconsSprite, 'icons');

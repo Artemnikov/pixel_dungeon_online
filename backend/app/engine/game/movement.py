@@ -46,7 +46,7 @@ from app.engine.entities.base import (
     Weapon,
     is_immune,
 )
-from app.engine.entities.buffs import add_buff, has_buff, remove_buff
+from app.engine.entities.buffs import add_buff, get_buff, has_buff, remove_buff
 from app.engine.entities.mobs import DM300, Goo, Wraith
 from app.engine.entities.subclasses import Talent
 from app.engine.systems.ballistica import ballistica_trace
@@ -208,6 +208,19 @@ class MovementCombatMixin:
                     break
 
         if target_entity:
+            # Sheep interaction: player bump → baa message, 1s action cost, sound
+            if isinstance(entity, Player) and getattr(target_entity, "name", "") == "Sheep":
+                entity.action_until = time.time() + 1.0
+                baa = random.choice(["Baa!", "Baa?", "Baa.", "Baa..."])
+                self.add_event("MESSAGE", {"text": baa}, floor_id=floor_id, player_id=entity.id)
+                self.add_event("PLAY_SOUND", {"sound": "SHEEP",
+                                               "rate": random.uniform(0.91, 1.1)},
+                               floor_id=floor_id)
+                sheep_buff = get_buff(target_entity.buffs, "sheep_timer")
+                if sheep_buff and sheep_buff.remaining >= 20:
+                    sheep_buff.remaining = 0
+                return
+
             # Mirrors SPD's enemyInFOV check (Mob.java:252): a mob cannot
             # perceive an invisible player, so it treats the tile as blocked
             # rather than attacking.

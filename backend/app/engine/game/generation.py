@@ -70,6 +70,11 @@ from app.engine.entities.base import (
     ThrowableDagger,
     Weapon,
 )
+from app.engine.entities.runestones import (
+    StoneOfBlast, StoneOfBlink, StoneOfDeepSleep, StoneOfClairvoyance,
+    StoneOfAggression, StoneOfFlock, StoneOfShock, StoneOfFear,
+    StoneOfDetectMagic, StoneOfIntuition, StoneOfEnchantment, StoneOfAugmentation,
+)
 from app.engine.entities.mobs import (
     Rat, Snake, Gnoll, Swarm, Crab, Slime,
     AlbinoRat, GnollExile, HermitCrab, CausticSlime,
@@ -378,6 +383,11 @@ class GenerationMixin:
             ScrollOfTerror, ScrollOfMirrorImage, ScrollOfRetribution, ScrollOfTransmutation,
         ]
         _ALL_FOOD = [SmallRation, Ration, Ration, Pasty]
+        _ALL_RUNESTONES = [
+            StoneOfBlast, StoneOfBlink, StoneOfDeepSleep, StoneOfClairvoyance,
+            StoneOfAggression, StoneOfFlock, StoneOfShock, StoneOfFear,
+            StoneOfDetectMagic, StoneOfIntuition, StoneOfEnchantment, StoneOfAugmentation,
+        ]
 
         num_items = 4 + random.randint(0, 3)
         for _ in range(num_items):
@@ -407,6 +417,7 @@ class GenerationMixin:
                     attack_cooldown=3.5,
                 )
             # Thresholds below rescaled by 7/6 after the unique never-dropping
+
             # Staff's 10%-wide band (rand<0.4) was removed, so armor/throwables/
             # potion/scroll/food keep their original relative proportions instead
             # of armor silently absorbing the freed probability mass.
@@ -434,9 +445,13 @@ class GenerationMixin:
             elif rand < 0.92:
                 cls = random.choice(_ALL_SCROLLS)
                 floor.items[item_id] = cls(id=item_id, pos=Position(x=x, y=y))
+            elif rand < 0.97:
+                cls = random.choice(_ALL_RUNESTONES)
+                floor.items[item_id] = cls(id=item_id, pos=Position(x=x, y=y))
             else:
                 cls = random.choice(_ALL_FOOD)
                 floor.items[item_id] = cls(id=item_id, pos=Position(x=x, y=y))
+
 
     def _spawn_floor_keys(self, floor: FloorState):
         for key_id, (x, y) in floor.key_spawns.items():

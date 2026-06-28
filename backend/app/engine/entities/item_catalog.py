@@ -92,6 +92,8 @@ from app.engine.entities.base import (
     ScrollOfTerror,
     ScrollOfTransmutation,
     ScrollOfUpgrade,
+    ScrollOfEnchantment,
+    ExoticScrollOfEnchantment,
     Seed,
     SmallRation,
     Staff,
@@ -116,10 +118,17 @@ from app.engine.entities.base import (
     WandOfLivingEarth,
     Waterskin,
     WornShortsword,
+    ArcaneStylus,
+    MagicalInfusion,
 )
 from app.engine.entities.weapon_defs import WEP_TIER_ORDER
 from app.engine.entities.base import make_named_melee_weapon  # noqa: E402
 from app.engine.entities.rings_tier3 import RingOfForce, RingOfElements, RingOfWealth  # noqa: E402
+from app.engine.entities.runestones import (  # noqa: E402
+    StoneOfBlast, StoneOfBlink, StoneOfDeepSleep, StoneOfClairvoyance,
+    StoneOfAggression, StoneOfFlock, StoneOfShock, StoneOfFear,
+    StoneOfDetectMagic, StoneOfIntuition, StoneOfEnchantment, StoneOfAugmentation,
+)
 from app.engine.entities.trinkets import (  # noqa: E402
     CrackedSpyglass, ChaoticCenser, DimensionalSundial, ExoticCrystals,
     EyeOfNewt, FerretTuft, MimicTooth, MossyClump, ParchmentScrap,
@@ -246,6 +255,8 @@ _CATALOG: List[tuple] = [
     ("scroll_of_mirror_image", "Scroll of Mirror Image", "scroll", lambda: ScrollOfMirrorImage()),
     ("scroll_of_retribution", "Scroll of Retribution", "scroll", lambda: ScrollOfRetribution()),
     ("scroll_of_transmutation", "Scroll of Transmutation", "scroll", lambda: ScrollOfTransmutation()),
+    ("scroll_of_enchantment", "Scroll of Enchantment", "scroll", lambda: ScrollOfEnchantment()),
+    ("scroll_of_exotic_enchantment", "Exotic Scroll of Enchantment", "scroll", lambda: ExoticScrollOfEnchantment()),
 
     # Currency
     ("gold", "Gold", "currency", lambda: Gold(name="Gold", quantity=100)),
@@ -281,6 +292,24 @@ _CATALOG: List[tuple] = [
     ("magical_holster", "Magical Holster", "container", lambda: MagicalHolster()),
     ("potion_bandolier", "Potion Bandolier", "container", lambda: PotionBandolier()),
     ("bag", "Bag", "container", lambda: Bag(name="Bag")),
+
+    # Runestones
+    ("stone_blast", "Stone of Blast", "runestone", lambda: StoneOfBlast()),
+    ("stone_blink", "Stone of Blink", "runestone", lambda: StoneOfBlink()),
+    ("stone_deep_sleep", "Stone of Deep Sleep", "runestone", lambda: StoneOfDeepSleep()),
+    ("stone_clairvoyance", "Stone of Clairvoyance", "runestone", lambda: StoneOfClairvoyance()),
+    ("stone_aggression", "Stone of Aggression", "runestone", lambda: StoneOfAggression()),
+    ("stone_flock", "Stone of Flock", "runestone", lambda: StoneOfFlock()),
+    ("stone_shock", "Stone of Shock", "runestone", lambda: StoneOfShock()),
+    ("stone_fear", "Stone of Fear", "runestone", lambda: StoneOfFear()),
+    ("stone_detect_magic", "Stone of Detect Magic", "runestone", lambda: StoneOfDetectMagic()),
+    ("stone_intuition", "Stone of Intuition", "runestone", lambda: StoneOfIntuition()),
+    ("stone_enchantment", "Stone of Enchantment", "runestone", lambda: StoneOfEnchantment()),
+    ("stone_augmentation", "Stone of Augmentation", "runestone", lambda: StoneOfAugmentation()),
+
+    # Stylus
+    ("arcane_stylus", "Arcane Stylus", "stylus", lambda: ArcaneStylus()),
+    ("magical_infusion", "Magical Infusion", "misc", lambda: MagicalInfusion()),
 
     # Trinkets
     ("trinket_catalyst", "Trinket Catalyst", "trinket", lambda: TrinketCatalyst()),
@@ -350,6 +379,8 @@ TRANSMUTE_GROUPS: dict = {
              if category == "misc" and kind == "seed"],
     "stone": [kind for kind, _name, category, _factory in _CATALOG
               if category == "misc" and kind == "stone"],
+    "runestone": [kind for kind, _name, category, _factory in _CATALOG
+                  if category == "runestone"],
 }
 
 # All scroll kinds including scroll_of_transmutation — for random floor loot.

@@ -455,18 +455,106 @@ def _apply_remove_curse(game, player, target_item) -> bool:
     return procced
 
 
+def _apply_enchant_random(game, player, target_item) -> None:
+    """ScrollOfEnchantment (regular): apply a random enchant/glyph."""
+    if isinstance(target_item, KindOfWeapon):
+        from app.engine.entities.weapon_enchants import roll_weapon_enchant
+        import random as _r
+        ench_name, _ = roll_weapon_enchant(_r, enchant_mult=1.0, curse_mult=0.0)
+        if ench_name:
+            target_item.enchantment = ench_name
+    elif isinstance(target_item, Armor):
+        from app.engine.entities.armor_glyphs import roll_armor_glyph
+        import random as _r
+        glyph_name, _ = roll_armor_glyph(_r, glyph_mult=1.0, curse_mult=0.0)
+        if glyph_name:
+            target_item.enchantment.type = glyph_name
+
+
+def _generate_enchant_options(game, player, target_item) -> dict:
+    """Generate 3 enchant/glyph choices for the exotic scroll."""
+    from app.engine.entities.weapon_enchants import roll_weapon_enchant
+    from app.engine.entities.armor_glyphs import roll_armor_glyph
+    import random as _r
+
+    if isinstance(target_item, KindOfWeapon):
+        existing = target_item.enchantment if isinstance(target_item.enchantment, str) else None
+        opts = []
+        used = set()
+        if existing:
+            used.add(existing)
+        for _ in range(3):
+            name, _ = roll_weapon_enchant(_r, enchant_mult=1.0, curse_mult=0.0)
+            if name and name not in used:
+                opts.append(name)
+                used.add(name)
+        if len(opts) < 3:
+            for _ in range(10):
+                name, _ = roll_weapon_enchant(_r, enchant_mult=1.0, curse_mult=0.0)
+                if name and name not in used:
+                    opts.append(name)
+                    used.add(name)
+                if len(opts) >= 3:
+                    break
+        if not opts:
+            opts = ["blazing", "chilling", "shocking"]
+        return {"is_weapon": True, "options": opts[:3]}
+    elif isinstance(target_item, Armor):
+        existing = target_item.enchantment.type if hasattr(target_item.enchantment, "type") else "none"
+        opts = []
+        used = set()
+        if existing not in ("none", None):
+            used.add(existing)
+        for _ in range(3):
+            name, _ = roll_armor_glyph(_r, glyph_mult=1.0, curse_mult=0.0)
+            if name and name not in used:
+                opts.append(name)
+                used.add(name)
+        if len(opts) < 3:
+            for _ in range(10):
+                name, _ = roll_armor_glyph(_r, glyph_mult=1.0, curse_mult=0.0)
+                if name and name not in used:
+                    opts.append(name)
+                    used.add(name)
+                if len(opts) >= 3:
+                    break
+        if not opts:
+            opts = ["thorns", "affection", "entanglement"]
+        return {"is_weapon": False, "options": opts[:3]}
+    return {"options": []}
+
+
 # scroll `kind` -> apply function, called once a target has been chosen.
 _APPLY_SCROLL_TARGET = {
     "scroll_of_upgrade": _apply_upgrade_target,
     "scroll_of_identify": _apply_identify,
     "scroll_of_remove_curse": _apply_remove_curse,
     "scroll_of_transmutation": _apply_transmutation,
+    "scroll_of_enchantment": _apply_enchant_random,
 }
 
 
 def apply_scroll_target(game, player, scroll_item, target_item) -> None:
     """Finishes a selector-based scroll read once the player has chosen a
     target item (via SELECT_SCROLL_TARGET / ItemsMixin.select_scroll_target)."""
+
+    # Exotic scroll: generate 3 choices and wait for player pick (don't consume yet)
+    if scroll_item.kind == "scroll_of_exotic_enchantment":
+        opts = _generate_enchant_options(game, player, target_item)
+        if not opts.get("options"):
+            return
+        player._pending_exotic_scroll_id = scroll_item.id
+        player._pending_exotic_target_id = target_item.id
+        player._pending_exotic_is_weapon = opts.get("is_weapon", True)
+        game.add_event("ENCHANT_CHOICE_AVAILABLE", {
+            "player": player.id,
+            "scroll_id": scroll_item.id,
+            "target_id": target_item.id,
+            "is_weapon": opts["is_weapon"],
+            "options": opts["options"],
+        }, floor_id=player.floor_id, source_player_id=player.id)
+        return
+
     apply_fn = _APPLY_SCROLL_TARGET.get(scroll_item.kind)
     if apply_fn is None:
         return
@@ -490,9 +578,42 @@ def apply_scroll_target(game, player, scroll_item, target_item) -> None:
         read_data["old_kind"] = old_kind
         read_data["new_kind"] = new_item_result.kind
     if scroll_item.kind == "scroll_of_upgrade" and was_cursed:
-        # SPD emits ShadowParticle.UP when an upgrade removes a curse from an item.
         read_data["shadow_particles"] = True
     if scroll_item.kind == "scroll_of_remove_curse":
-        # SPD: GLog for cleansed/not_cleansed distinction.
         read_data["cleansed"] = bool(new_item_result)
     game.add_event("READ", read_data, floor_id=player.floor_id)
+
+
+def choose_enchant_apply(game, player, choice_index: int) -> None:
+    """Apply the chosen enchant from an exotic scroll selection."""
+    scroll_id = getattr(player, "_pending_exotic_scroll_id", None)
+    target_id = getattr(player, "_pending_exotic_target_id", None)
+    is_weapon = getattr(player, "_pending_exotic_is_weapon", True)
+    if not scroll_id or not target_id:
+        return
+    scroll_item = player.belongings.get_item(scroll_id)
+    target_item = player.belongings.get_item(target_id)
+    if scroll_item is None or target_item is None:
+        return
+    # Re-generate options to validate choice
+    opts = _generate_enchant_options(game, player, target_item)
+    options = opts.get("options", [])
+    if choice_index < 0 or choice_index >= len(options):
+        return
+    chosen = options[choice_index]
+    if is_weapon:
+        target_item.enchantment = chosen
+    else:
+        target_item.enchantment.type = chosen
+    # Consume the scroll
+    removed = player.belongings.backpack.detach(scroll_item.id)
+    if removed is not None and player.belongings.get_item(scroll_item.id) is None:
+        player.quickslot.convert_to_placeholder(removed)
+    game.add_event("MESSAGE", {"text": f"Your {target_item.name} glows with {chosen.replace('_', ' ')}!"},
+                   floor_id=player.floor_id, player_id=player.id)
+    game.add_event("ENCHANT", {"player": player.id, "item": target_item.id},
+                   floor_id=player.floor_id)
+    game.add_event("PLAY_SOUND", {"sound": "READ"}, floor_id=player.floor_id)
+    # Clean up pending state
+    player._pending_exotic_scroll_id = None
+    player._pending_exotic_target_id = None

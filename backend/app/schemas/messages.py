@@ -211,6 +211,38 @@ class SelectScrollTarget(_ClientMessageBase):
     item_id: str
 
 
+class SelectStoneTarget(_ClientMessageBase):
+    type: Literal["SELECT_STONE_TARGET"]
+    stone_id: str
+    item_id: str
+
+
+class StoneIntuitionChooseItem(_ClientMessageBase):
+    type: Literal["STONE_INTUITION_CHOOSE_ITEM"]
+    stone_id: str
+    item_id: str
+
+
+class StoneIntuitionGuess(_ClientMessageBase):
+    type: Literal["STONE_INTUITION_GUESS"]
+    stone_id: str
+    item_id: str
+    guessed_kind: str
+
+
+class StoneAugmentChoose(_ClientMessageBase):
+    type: Literal["STONE_AUGMENT_CHOOSE"]
+    stone_id: str
+    item_id: str
+    augment_type: str
+
+
+class ChooseEnchant(_ClientMessageBase):
+    type: Literal["CHOOSE_ENCHANT"]
+    target_id: str
+    choice_index: int
+
+
 class Resume(_ClientMessageBase):
     type: Literal["RESUME"]
 
@@ -265,8 +297,13 @@ ClientMessage = Annotated[
         ImpClaimReward,
         GhostClaimReward,
         SelectScrollTarget,
+        SelectStoneTarget,
+        StoneIntuitionChooseItem,
+        StoneIntuitionGuess,
+        StoneAugmentChoose,
         ChooseImbueWand,
         EquipGhostItem,
+        ChooseEnchant,
         Resume,
         PickupFloor,
         Attack,

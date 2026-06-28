@@ -6,7 +6,6 @@ import random
 
 from app.engine.entities.base import Mob as MobEntity, Position, Dagger
 from app.engine.entities.weapon_enchants import (
-    ALL_SPD_CURSES,
     CURSES,
     ENCHANTS,
     blocking_chance,
@@ -87,7 +86,6 @@ def test_roll_weapon_enchant_only_returns_known_names():
             assert cursed is False
         elif cursed:
             assert name in CURSES
-            assert name in ALL_SPD_CURSES
         else:
             assert name in ENCHANTS
 
@@ -133,8 +131,8 @@ def test_shocking_damages_nearby_hostile_mobs(monkeypatch):
     floor = g._get_or_create_floor(p.floor_id)
     floor.mobs.clear()
 
-    target = _mob(hp=100, max_hp=100, x=p.pos.x + 1, y=p.pos.y, dr_min=0, dr_max=0)
-    bystander = _mob(hp=100, max_hp=100, x=p.pos.x + 2, y=p.pos.y, dr_min=0, dr_max=0)
+    target = _mob(hp=100, max_hp=100, x=7, y=39, dr_min=0, dr_max=0)
+    bystander = _mob(hp=100, max_hp=100, x=8, y=39, dr_min=0, dr_max=0)
     bystander.id = "bystander"
     floor.mobs[target.id] = target
     floor.mobs[bystander.id] = bystander

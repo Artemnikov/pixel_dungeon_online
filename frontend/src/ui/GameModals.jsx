@@ -12,6 +12,10 @@ import WndChasmJump from './WndChasmJump';
 import WndQuickBag from './WndQuickBag';
 import RadialMenu from './RadialMenu';
 
+import WndStoneIntuition from './WndStoneIntuition';
+import WndStoneAugment from './WndStoneAugment';
+import WndChooseEnchant from './WndChooseEnchant';
+
 const SCROLL_PICKER_KEYS = {
   scroll_of_upgrade: 'modal.upgrade',
   scroll_of_identify: 'modal.identify',
@@ -23,7 +27,7 @@ export default function GameModals({
   modals, itemsById, toolbarItems,
   belongings, gold, energy, strength,
   isDesktop,
-  executeItemAction, assignQuickslot, sendSelectScrollTarget,
+  executeItemAction, assignQuickslot, sendSelectScrollTarget, sendStoneTarget,
   send, handleToolbarClick,
 }) {
   const { t } = useTranslation();
@@ -40,6 +44,11 @@ export default function GameModals({
     radialOpen, setRadialOpen,
     quickslotPicker, setQuickslotPicker,
     scrollPickerData, setScrollPickerData,
+    stonePickerData, setStonePickerData,
+    intuitionData, setIntuitionData,
+    intuitionGuessData, setIntuitionGuessData,
+    augmentSelectData, setAugmentSelectData,
+    enchantChoiceData, setEnchantChoiceData,
     imbueWandData, setImbueWandData,
     openQuickslotPicker,
   } = modals;
@@ -233,6 +242,86 @@ export default function GameModals({
             setImbueWandData(null);
           }}
           onClose={() => setImbueWandData(null)}
+        />
+      )}
+
+      {stonePickerData && (
+        <WndBag
+          belongings={belongings}
+          gold={gold}
+          energy={energy}
+          strength={strength}
+          selectMode
+          itemFilter={(item) => stonePickerData.candidates.includes(item.id)}
+          title={t('ui.chooseItem')}
+          onSelectItem={(item) => {
+            sendStoneTarget(stonePickerData.stone_id, item.id);
+            setStonePickerData(null);
+          }}
+          onClose={() => setStonePickerData(null)}
+        />
+      )}
+
+      {intuitionData && (
+        <WndStoneIntuition
+          belongings={belongings}
+          candidates={intuitionData.candidates}
+          gold={gold}
+          energy={energy}
+          strength={strength}
+          onPickItem={(itemId) => {
+            send({ type: 'STONE_INTUITION_CHOOSE_ITEM', stone_id: intuitionData.stone_id, item_id: itemId });
+            setIntuitionData(null);
+          }}
+          onClose={() => setIntuitionData(null)}
+        />
+      )}
+
+      {intuitionGuessData && (
+        <WndStoneIntuition
+          belongings={belongings}
+          pickMode="guess"
+          possibleKinds={intuitionGuessData.possible_kinds}
+          gold={gold}
+          energy={energy}
+          strength={strength}
+          onGuess={(guessedKind) => {
+            send({
+              type: 'STONE_INTUITION_GUESS',
+              stone_id: intuitionGuessData.stone_id,
+              item_id: intuitionGuessData.item_id,
+              guessed_kind: guessedKind,
+            });
+            setIntuitionGuessData(null);
+          }}
+          onClose={() => setIntuitionGuessData(null)}
+        />
+      )}
+
+      {augmentSelectData && augmentSelectData.candidates && (
+        <WndStoneAugment
+          belongings={belongings}
+          candidates={augmentSelectData.candidates}
+          gold={gold}
+          energy={energy}
+          strength={strength}
+          onChoose={(itemId, augmentType) => {
+            send({ type: 'STONE_AUGMENT_CHOOSE', stone_id: augmentSelectData.stone_id, item_id: itemId, augment_type: augmentType });
+            setAugmentSelectData(null);
+          }}
+          onClose={() => setAugmentSelectData(null)}
+        />
+      )}
+
+      {enchantChoiceData && (
+        <WndChooseEnchant
+          options={enchantChoiceData.options}
+          isWeapon={enchantChoiceData.is_weapon}
+          onChoose={(choiceIndex) => {
+            send({ type: 'CHOOSE_ENCHANT', target_id: enchantChoiceData.target_id, choice_index: choiceIndex });
+            setEnchantChoiceData(null);
+          }}
+          onClose={() => setEnchantChoiceData(null)}
         />
       )}
     </>

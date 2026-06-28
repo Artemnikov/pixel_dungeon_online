@@ -1,6 +1,6 @@
 import { TILE_SIZE, PLAYER_ATTACK_DURATION, HIT_CONNECT_DELAY, FLASH_DURATION } from '../../constants';
 import AudioManager from '../../audio/AudioManager';
-import { spawnBlood, spawnCorrosionSplash, spawnCritSparkle, spawnGrimShadow, spawnWhiteSplash } from '../../rendering/draw/particles';
+import { spawnBlood, spawnCorrosionSplash, spawnCritSparkle, spawnGrimShadow, spawnWhiteSplash, spawnEnergy } from '../../rendering/draw/particles';
 import { spawnSurprise } from '../../rendering/draw/surprise';
 import { spawnFloatingText, TEXT_ICON } from '../../rendering/draw/floatingText';
 import { coordsForItem } from '../../rendering/sprites';
@@ -365,6 +365,194 @@ export function handleCombatEvents(event: GameEvent, ctx: HandlerCtx): boolean {
       if (mob.faction === 'enemy') addGameLog(`${mob.name} defeated!`, 'positive');
     }
     if (selectedEnemyIdRef?.current === id) selectedEnemyIdRef.current = null;
+    return true;
+  }
+
+  if (event.type === 'BLOOMING_PROC') {
+    const cx = event.data.defender;
+    const entity = entitiesRef.current.mobs[cx] || entitiesRef.current.players[cx];
+    if (entity && visionRef?.current?.visible?.has(`${Math.round(entity.renderPos.x)},${Math.round(entity.renderPos.y)}`)) {
+      const px = entity.renderPos.x * TILE_SIZE + TILE_SIZE / 2;
+      const py = entity.renderPos.y * TILE_SIZE + TILE_SIZE / 2;
+      spawnEarthBurst(particlesRef, px, py, 6);
+    }
+    return true;
+  }
+
+  if (event.type === 'CORRUPT_PROC') {
+    const tgt = event.data.target;
+    const entity = entitiesRef.current.mobs[tgt] || entitiesRef.current.players[tgt];
+    if (entity && visionRef?.current?.visible?.has(`${Math.round(entity.renderPos.x)},${Math.round(entity.renderPos.y)}`)) {
+      const px = entity.renderPos.x * TILE_SIZE + TILE_SIZE / 2;
+      const py = entity.renderPos.y * TILE_SIZE + TILE_SIZE / 2;
+      spawnPurpleBurst(particlesRef, px, py, 8);
+      AudioManager.play('CURSE');
+    }
+    return true;
+  }
+
+  if (event.type === 'VAMPIRIC_PROC') {
+    const src = event.data.source;
+    const entity = entitiesRef.current.players[src] || entitiesRef.current.mobs[src];
+    if (entity && (src === myPlayerIdRef.current || visionRef?.current?.visible?.has(`${Math.round(entity.renderPos.x)},${Math.round(entity.renderPos.y)}`))) {
+      const px = entity.renderPos.x * TILE_SIZE + TILE_SIZE / 2;
+      const py = entity.renderPos.y * TILE_SIZE + TILE_SIZE / 2;
+      spawnBlood(particlesRef, px, py, -Math.PI / 2, 4, '#cc0000');
+      if (event.data.heal > 0 && floatingTextRef) {
+        spawnFloatingText(floatingTextRef, px, py - TILE_SIZE / 2, `+${event.data.heal}`, '#2ecc71', TEXT_ICON.HIT_WEP);
+      }
+    }
+    return true;
+  }
+
+  if (event.type === 'BLOCKING_PROC') {
+    if (event.data.source === myPlayerIdRef.current) {
+      spawnWhiteSplash(particlesRef, 0, 0, 5);
+      spawnScreenShake(screenShakeRef, 1, 200);
+      if (event.data.shield > 0 && floatingTextRef) {
+        spawnFloatingText(floatingTextRef, 0, 0, `block ${event.data.shield}`, '#66ccff', TEXT_ICON.MISS_ARM);
+      }
+    }
+    return true;
+  }
+
+  if (event.type === 'ELASTIC_PROC') {
+    const tgt = entitiesRef.current.mobs[event.data.target] || entitiesRef.current.players[event.data.target];
+    if (tgt && visionRef?.current?.visible?.has(`${event.data.to_x},${event.data.to_y}`)) {
+      const fx = event.data.from_x * TILE_SIZE + TILE_SIZE / 2;
+      const fy = event.data.from_y * TILE_SIZE + TILE_SIZE / 2;
+      const tx = event.data.to_x * TILE_SIZE + TILE_SIZE / 2;
+      const ty = event.data.to_y * TILE_SIZE + TILE_SIZE / 2;
+      spawnSparkMoving(particlesRef, tx, ty, 5);
+      spawnLightning(lightningRef, fx, fy, tx, ty, '#66ff99');
+    }
+    return true;
+  }
+
+  if (event.type === 'CHARM_PROC') {
+    const src = event.data.source;
+    const entity = entitiesRef.current.players[src] || entitiesRef.current.mobs[src];
+    if (entity && visionRef?.current?.visible?.has(`${Math.round(entity.renderPos.x)},${Math.round(entity.renderPos.y)}`)) {
+      const px = entity.renderPos.x * TILE_SIZE + TILE_SIZE / 2;
+      const py = entity.renderPos.y * TILE_SIZE + TILE_SIZE / 2;
+      spawnRainbowBurst(particlesRef, px, py, 6);
+      AudioManager.play('CURSE');
+    }
+    return true;
+  }
+
+  if (event.type === 'EXPLOSIVE_PROC') {
+    const ex = event.data.x * TILE_SIZE + TILE_SIZE / 2;
+    const ey = event.data.y * TILE_SIZE + TILE_SIZE / 2;
+    spawnFlameBurst(particlesRef, ex, ey, 8);
+    spawnScreenShake(screenShakeRef, 3, 400);
+    AudioManager.play('EXPLOSION');
+    return true;
+  }
+
+  // --- armor glyph procs ---------------------------------------------------
+
+  if (event.type === 'REPULSION_PROC') {
+    const tgt = entitiesRef.current.mobs[event.data.target] || entitiesRef.current.players[event.data.target];
+    if (tgt && visionRef?.current?.visible?.has(`${event.data.to_x},${event.data.to_y}`)) {
+      const fx = event.data.from_x * TILE_SIZE + TILE_SIZE / 2;
+      const fy = event.data.from_y * TILE_SIZE + TILE_SIZE / 2;
+      const tx = event.data.to_x * TILE_SIZE + TILE_SIZE / 2;
+      const ty = event.data.to_y * TILE_SIZE + TILE_SIZE / 2;
+      spawnSparkMoving(particlesRef, tx, ty, 5);
+      spawnLightning(lightningRef, fx, fy, tx, ty, '#ffcc66');
+    }
+    return true;
+  }
+
+  if (event.type === 'VISCOSITY_PROC') {
+    if (event.data.defender === myPlayerIdRef.current) {
+      spawnWhiteSplash(particlesRef, 0, 0, 5);
+      if (event.data.deferred > 0 && floatingTextRef) {
+        spawnFloatingText(floatingTextRef, 0, 0, `deferred ${event.data.deferred}`, '#66ccff', TEXT_ICON.MISS_ARM);
+      }
+    }
+    return true;
+  }
+
+  if (event.type === 'POTENTIAL_PROC') {
+    const def = entitiesRef.current.players[event.data.defender] || entitiesRef.current.mobs[event.data.defender];
+    if (def && (event.data.defender === myPlayerIdRef.current || visionRef?.current?.visible?.has(`${Math.round(def.renderPos.x)},${Math.round(def.renderPos.y)}`))) {
+      const px = def.renderPos.x * TILE_SIZE + TILE_SIZE / 2;
+      const py = def.renderPos.y * TILE_SIZE + TILE_SIZE / 2;
+      spawnEnergy(particlesRef, px, py, 6);
+      AudioManager.play('SPARK');
+    }
+    return true;
+  }
+
+  if (event.type === 'ENTANGLEMENT_PROC') {
+    const def = entitiesRef.current.players[event.data.defender] || entitiesRef.current.mobs[event.data.defender];
+    if (def && (event.data.defender === myPlayerIdRef.current || visionRef?.current?.visible?.has(`${Math.round(def.renderPos.x)},${Math.round(def.renderPos.y)}`))) {
+      const px = def.renderPos.x * TILE_SIZE + TILE_SIZE / 2;
+      const py = def.renderPos.y * TILE_SIZE + TILE_SIZE / 2;
+      spawnEarthBurst(particlesRef, px, py, 8);
+      if (event.data.absorb > 0 && floatingTextRef) {
+        spawnFloatingText(floatingTextRef, px, py - TILE_SIZE / 2, `absorb ${event.data.absorb}`, '#2ecc71', TEXT_ICON.MISS_ARM);
+      }
+    }
+    return true;
+  }
+
+  if (event.type === 'THORNS_PROC') {
+    const atk = entitiesRef.current.mobs[event.data.attacker] || entitiesRef.current.players[event.data.attacker];
+    if (atk && visionRef?.current?.visible?.has(`${Math.round(atk.renderPos.x)},${Math.round(atk.renderPos.y)}`)) {
+      const px = atk.renderPos.x * TILE_SIZE + TILE_SIZE / 2;
+      const py = atk.renderPos.y * TILE_SIZE + TILE_SIZE / 2;
+      spawnBlood(particlesRef, px, py, -Math.PI / 2, 4, '#cc0000');
+      if (event.data.bleed > 0 && floatingTextRef) {
+        spawnFloatingText(floatingTextRef, px, py - TILE_SIZE / 2, `bleed ${event.data.bleed}`, '#ff6666', TEXT_ICON.HIT_BLS);
+      }
+    }
+    return true;
+  }
+
+  if (event.type === 'ANTI_ENTROPY_PROC') {
+    const x = event.data.x * TILE_SIZE + TILE_SIZE / 2;
+    const y = event.data.y * TILE_SIZE + TILE_SIZE / 2;
+    spawnFlameBurst(particlesRef, x, y, 6);
+    spawnWhiteSplash(particlesRef, x, y, 6);
+    AudioManager.play('CURSE');
+    return true;
+  }
+
+  if (event.type === 'CORROSION_PROC') {
+    const x = event.data.x * TILE_SIZE + TILE_SIZE / 2;
+    const y = event.data.y * TILE_SIZE + TILE_SIZE / 2;
+    spawnCorrosionSplash(particlesRef, x, y, 8);
+    AudioManager.play('CURSE');
+    return true;
+  }
+
+  if (event.type === 'DISPLACEMENT_PROC') {
+    const def = entitiesRef.current.players[event.data.defender] || entitiesRef.current.mobs[event.data.defender];
+    if (def && visionRef?.current?.visible?.has(`${Math.round(def.renderPos.x)},${Math.round(def.renderPos.y)}`)) {
+      const px = def.renderPos.x * TILE_SIZE + TILE_SIZE / 2;
+      const py = def.renderPos.y * TILE_SIZE + TILE_SIZE / 2;
+      spawnPurpleBurst(particlesRef, px, py, 6);
+    }
+    return true;
+  }
+
+  if (event.type === 'METABOLISM_PROC') {
+    if (event.data.defender === myPlayerIdRef.current) {
+      if (event.data.heal > 0 && floatingTextRef) {
+        spawnFloatingText(floatingTextRef, 0, 0, `+${event.data.heal} metabolism`, '#2ecc71', TEXT_ICON.HIT_BLS);
+      }
+    }
+    return true;
+  }
+
+  if (event.type === 'STENCH_PROC') {
+    const x = event.data.x * TILE_SIZE + TILE_SIZE / 2;
+    const y = event.data.y * TILE_SIZE + TILE_SIZE / 2;
+    spawnCorrosionSplash(particlesRef, x, y, 6);
+    AudioManager.play('CURSE');
     return true;
   }
 

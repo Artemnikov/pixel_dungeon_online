@@ -25,14 +25,17 @@ before dispatch, so handlers can assume the action is legal for the item.
 Scroll-specific handlers live in scroll_actions.py.
 """
 import math
+import time
 from typing import Optional
 
 from app.engine.dungeon.constants import TileType
 from app.engine.entities.base import (
-    Action, Position, Potion, Seed, Wand, SpiritBow,
+    Action, Position, Potion, Runestone, Seed, Wand, SpiritBow,
     GooBlob, HealthPotion, ElixirOfAquaticRejuvenation, Waterskin,
 )
+from app.engine.entities.runestone_actions import action_throw_runestone, action_use_stone
 from app.engine.entities.scroll_actions import action_read
+from app.engine.entities.armor_glyphs import CURSE_GLYPHS as _CURSE_GLYPHS_TUPLE
 
 
 def _floor_drop(game, player, item) -> None:
@@ -420,6 +423,10 @@ def action_throw(game, player, item, tx=None, ty=None) -> None:
         else:
             _shatter_gas(game, player, item, tx, ty)
         return
+    # Runestones trigger their magical effect instead of dealing physical damage
+    if isinstance(item, Runestone):
+        action_throw_runestone(game, player, item, tx, ty)
+        return
     game.perform_ranged_attack(player.id, item.id, tx, ty)
 
 
@@ -641,8 +648,46 @@ def _wear_kings_crown(game, player, item) -> None:
     }, floor_id=player.floor_id, source_player_id=player.id)
 
 
+def action_inscribe(game, player, item, tx=None, ty=None) -> None:
+    """ArcaneStylus: apply a random glyph to equipped armor."""
+    armor = player.belongings.armor
+    if armor is None:
+        return
+    if armor.cursed_known and armor.cursed:
+        game.add_event("MESSAGE", {"text": "The armor is cursed and rejects the stylus!"},
+                       floor_id=player.floor_id, player_id=player.id)
+        return
+    if hasattr(armor.enchantment, "type") and armor.enchantment.type in _CURSE_GLYPH_SET:
+        game.add_event("MESSAGE", {"text": "The cursed glyph cannot be overwritten!"},
+                       floor_id=player.floor_id, player_id=player.id)
+        return
+    # Consume one stylus
+    detached = player.belongings.backpack.detach(item.id)
+    if detached is None:
+        return
+    if player.belongings.get_item(item.id) is None:
+        player.quickslot.convert_to_placeholder(item)
+    # Roll random glyph (no curses)
+    from app.engine.entities.armor_glyphs import roll_armor_glyph
+    import random as _rando
+    glyph_name, _ = roll_armor_glyph(_rando, glyph_mult=1.0, curse_mult=0.0)
+    if glyph_name:
+        armor.enchantment.type = glyph_name
+    else:
+        armor.enchantment.type = "none"
+    game.add_event("MESSAGE", {"text": f"Your {armor.name} is inscribed with a glyph!"},
+                   floor_id=player.floor_id, player_id=player.id)
+    game.add_event("ENCHANT", {"player": player.id, "item": armor.id},
+                   floor_id=player.floor_id)
+    game.add_event("PLAY_SOUND", {"sound": "BURNING"}, floor_id=player.floor_id)
+    player.action_until = time.time() + 2.0
+
+
+_CURSE_GLYPH_SET = frozenset(_CURSE_GLYPHS_TUPLE)
+
+
 def action_noop(game, player, item, tx=None, ty=None) -> None:
-    # OPEN (bag) are handled client-side or are no-ops.
+    # OPEN (bag) are handled client-side or are no-op.
     return
 
 
@@ -653,6 +698,7 @@ ITEM_ACTION_DISPATCH = {
     Action.DRINK: action_drink,
     Action.READ: action_read,
     Action.THROW: action_throw,
+    Action.USE: action_use_stone,
     Action.ZAP: action_zap,
     Action.SHOOT: action_shoot,
     Action.AFFIX: action_affix,
@@ -664,6 +710,7 @@ ITEM_ACTION_DISPATCH = {
     Action.WEAR: action_wear,
     Action.ALCHEMIZE: action_alchemize,
     Action.IMBUE: action_imbue,
+    Action.INSCRIBE: action_inscribe,
     Action.OPEN: action_noop,
     Action.INFO: action_noop,
 }

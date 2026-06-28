@@ -28,6 +28,27 @@ from app.engine.entities.base import (
 from app.engine.game.floor_state import FloorState
 
 
+GRASS_TILES = {TileType.FLOOR_GRASS, TileType.EMPTY_DECO, TileType.EMBERS,
+               TileType.HIGH_GRASS, TileType.FURROWED_GRASS}
+
+
+def plant_grass(floor: FloorState, x: int, y: int, furrow: bool = False):
+    """Plant grass at (x,y). Sets FURROWED_GRASS if furrow=True and regen off,
+    else HIGH_GRASS. Only on empty/deco/embers/grass/furrowed tiles."""
+    from app.engine.dungeon.constants import TileType
+    if not (0 <= x < floor.width and 0 <= y < floor.height):
+        return
+    t = floor.grid[y][x]
+    if t not in GRASS_TILES:
+        return
+    if floor.plants and (x, y) in floor.plants:
+        return
+    if furrow:
+        floor.grid[y][x] = TileType.FURROWED_GRASS
+    else:
+        floor.grid[y][x] = TileType.HIGH_GRASS
+
+
 def _plant_seed_at(floor: FloorState, pos: Tuple[int, int], plant_type: str):
     plant = {
         "pos": pos,

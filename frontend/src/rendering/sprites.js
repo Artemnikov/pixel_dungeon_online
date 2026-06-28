@@ -74,6 +74,21 @@ export const ITEM_SPRITES = {
   "Old Bow":          [0, 9],
   "Bow":              [0, 9],
   "Boomerang":        [12, 9],  // BOOMERANG (MISSILE_WEP+12)
+
+  // Runestones — MUST precede generic "Stone" below (substring matching).
+  "Stone of Aggression":     [0, 21],
+  "Stone of Augmentation":   [1, 21],
+  "Stone of Fear":           [2, 21],
+  "Stone of Blast":          [3, 21],
+  "Stone of Blink":          [4, 21],
+  "Stone of Clairvoyance":   [5, 21],
+  "Stone of Deep Sleep":     [6, 21],
+  "Stone of Detect Magic":   [7, 21],
+  "Stone of Enchantment":    [8, 21],
+  "Stone of Flock":          [9, 21],
+  "Stone of Intuition":      [10, 21],
+  "Stone of Shock":          [11, 21],
+
   "Stone":            [3, 9],   // THROWING_STONE (MISSILE_WEP+3)
 
   // Armor (ARMOR = xy(1,12) = idx 176 -> row 11)
@@ -141,6 +156,7 @@ export const ITEM_SPRITES = {
   "Seed":             [3, 24],  // generic Seed / "Seed of Sunlight" -> SEED_SUNGRASS
 
   // Misc
+  "Arcane Stylus":    [1, 3],   // STYLUS (MISC_CONSUMABLE+1 = idx 49 = col 1, row 3)
   "Tengu's Mask":     [11, 3],  // MASK (MISC_CONSUMABLE+11 = idx 59 = col 11, row 3 in items.png)
   "Goo Blob":         [7, 29],  // BLOB (QUEST+7, QUEST = xy(1,30) = idx 464)
   "King's Crown":     [12, 3],  // CROWN (MISC_CONSUMABLE+12 = idx 60 = col 12, row 3)
@@ -201,6 +217,8 @@ export const getItemSpriteCoords = (itemName, itemType) => {
     }
   }
   // Type fallbacks — also cover unidentified potions/scrolls (masked name, kept type).
+  if (itemType === 'stylus')    return [1, 3];
+  if (itemType === 'spell')     return [0, 19];
   if (itemType === 'weapon')    return [8, 6];
   if (itemType === 'wearable')  return [0, 11];
   if (itemType === 'potion')    return [0, 22];
@@ -215,6 +233,7 @@ export const getItemSpriteCoords = (itemName, itemType) => {
   if (itemType === 'seed')      return [3, 24];  // SEED_SUNGRASS
   if (itemType === 'trinket')   return [0, 17];  // RAT_SKULL (generic trinket fallback)
   if (itemType === 'trinket_catalyst') return [6, 4];
+  if (itemType === 'runestone') return [0, 21];
   if (itemType === 'dewdrop')   return [5, 1];   // DEWDROP
   if (itemType === 'grave')     return [0, 2];   // BONES
   return ITEM_SPRITES["default"];
@@ -257,6 +276,19 @@ const PLACEHOLDER_TYPE_BY_KIND_PREFIX = [
   ['ferret_tuft', 'trinket'],
   ['cracked_spyglass', 'trinket'],
   ['trinket_catalyst', 'trinket_catalyst'],
+  ['stone_augmentation', 'runestone'],
+  ['stone_enchantment', 'runestone'],
+  ['stone_intuition', 'runestone'],
+  ['stone_detect_magic', 'runestone'],
+  ['stone_fear', 'runestone'],
+  ['stone_shock', 'runestone'],
+  ['stone_flock', 'runestone'],
+  ['stone_aggression', 'runestone'],
+  ['stone_clairvoyance', 'runestone'],
+  ['stone_deep_sleep', 'runestone'],
+  ['stone_blink', 'runestone'],
+  ['stone_blast', 'runestone'],
+  ['stone_', 'runestone'],
 ];
 
 // Resolve a serialized item to its sprite cell: server-sent per-run appearance
@@ -347,6 +379,8 @@ const KIND_COORDS = {
   'wand_regrowth':        [11, 13],
   'wand_transfusion':     [12, 13],
   'wand':                 [0, 13],
+  'arcane_stylus':        [1, 3],
+  'magical_infusion':     [0, 19],
   'trinket_catalyst':     [6, 4],
   'rat_skull':            [0, 17],
   'parchment_scrap':      [1, 17],
@@ -378,6 +412,8 @@ export function coordsForKind(kind) {
   if (kind.startsWith('seed'))     return [3, 24];
   if (kind === 'trinket_catalyst') return [6, 4];
   if (kind.startsWith('trinket_')) return [0, 17];
+  if (kind.startsWith('stone_'))   return [0, 21];
+  if (kind === 'arcane_stylus')    return [1, 3];
   return [0, 0];
 }
 

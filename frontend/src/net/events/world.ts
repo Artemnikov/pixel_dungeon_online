@@ -100,6 +100,24 @@ export function handleWorldEvents(event: GameEvent, ctx: HandlerCtx): boolean {
     return true;
   }
 
+  if (event.type === 'WOOL_BURST' && particlesRef) {
+    const { x, y } = event.data;
+    if (!visionRef || visionRef.current?.visible?.has(`${x},${y}`)) {
+      spawnWhiteSplash(particlesRef, x * TILE_SIZE + TILE_SIZE / 2, y * TILE_SIZE + TILE_SIZE / 2, 4);
+    }
+    return true;
+  }
+
+  if (event.type === 'FLOCK' && particlesRef && visionRef) {
+    const sheep = event.data.sheep || [];
+    for (const s of sheep) {
+      if (visionRef.current?.visible?.has(`${s.x},${s.y}`)) {
+        spawnWhiteSplash(particlesRef, s.x * TILE_SIZE + TILE_SIZE / 2, s.y * TILE_SIZE + TILE_SIZE / 2, 4);
+      }
+    }
+    return true;
+  }
+
   if (event.type === 'LOCKED') {
     AudioManager.play('LOCKED');
     return true;

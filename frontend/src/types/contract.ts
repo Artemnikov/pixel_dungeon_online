@@ -561,6 +561,31 @@ export interface ScrollSelectTargetEvent {
   data: { player: string; scroll_id: string; scroll_kind: string; candidates: string[] };
 }
 
+/** Stone item-selector flow: server asks the player to pick a target item
+ * for a stone (e.g. Stone of Detect Magic, Stone of Enchantment). */
+export interface StoneSelectTargetEvent {
+  type: 'STONE_SELECT_TARGET';
+  data: { player: string; stone_id: string; stone_kind: string; candidates: string[] };
+}
+
+/** Stone of Intuition: server asks the player to pick an unidentified item. */
+export interface StoneIntuitionPickItemEvent {
+  type: 'STONE_INTUITION_PICK_ITEM';
+  data: { player: string; stone_id: string; candidates: string[] };
+}
+
+/** Stone of Intuition: after item is chosen, server sends possible kind names. */
+export interface StoneIntuitionGuessKindEvent {
+  type: 'STONE_INTUITION_GUESS_KIND';
+  data: { player: string; stone_id: string; item_id: string; possible_kinds: string[] };
+}
+
+/** Stone of Augmentation: server asks the player to pick a weapon or armor. */
+export interface StoneAugmentPickItemEvent {
+  type: 'STONE_AUGMENT_PICK_ITEM';
+  data: { player: string; stone_id: string; candidates: string[] };
+}
+
 /** Boss was slain — shows "BOSS SLAIN" banner + badge icon. */
 export interface BossSlainEvent {
   type: 'BOSS_SLAIN';
@@ -742,6 +767,125 @@ export interface LeafBurstEvent {
   data: { x: number; y: number };
 }
 
+/** Sheep spawned from Stone of Flock at each sheep position. */
+export interface FlockEvent {
+  type: 'FLOCK';
+  data: { sheep: Array<{ id: string; x: number; y: number }> };
+}
+
+/** Wool particle burst at a single cell (Stone of Flock). */
+export interface WoolBurstEvent {
+  type: 'WOOL_BURST';
+  data: { x: number; y: number };
+}
+
+// --- weapon enchant / armor glyph proc events --------------------------------
+
+export interface VampiricProcEvent {
+  type: 'VAMPIRIC_PROC';
+  data: { source: string; heal: number };
+}
+
+export interface BlockingProcEvent {
+  type: 'BLOCKING_PROC';
+  data: { source: string; shield: number };
+}
+
+export interface ElasticProcEvent {
+  type: 'ELASTIC_PROC';
+  data: { target: string; from_x: number; from_y: number; to_x: number; to_y: number };
+}
+
+export interface BloomingProcEvent {
+  type: 'BLOOMING_PROC';
+  data: { source: string; defender: string; cells: [number, number][] };
+}
+
+export interface CorruptProcEvent {
+  type: 'CORRUPT_PROC';
+  data: { source: string; target: string };
+}
+
+export interface CharmProcEvent {
+  type: 'CHARM_PROC';
+  data: { source: string; target: string };
+}
+
+export interface ExplosiveProcEvent {
+  type: 'EXPLOSIVE_PROC';
+  data: { x: number; y: number; radius: number };
+}
+
+// --- armor glyph proc events -------------------------------------------------
+
+export interface RepulsionProcEvent {
+  type: 'REPULSION_PROC';
+  data: { target: string; from_x: number; from_y: number; to_x: number; to_y: number };
+}
+
+export interface ViscosityProcEvent {
+  type: 'VISCOSITY_PROC';
+  data: { defender: string; deferred: number };
+}
+
+export interface PotentialProcEvent {
+  type: 'POTENTIAL_PROC';
+  data: { defender: string };
+}
+
+export interface EntanglementProcEvent {
+  type: 'ENTANGLEMENT_PROC';
+  data: { defender: string; absorb: number };
+}
+
+export interface ThornsProcEvent {
+  type: 'THORNS_PROC';
+  data: { defender: string; attacker: string; bleed: number };
+}
+
+export interface AntiEntropyProcEvent {
+  type: 'ANTI_ENTROPY_PROC';
+  data: { defender: string; x: number; y: number };
+}
+
+export interface CorrosionProcEvent {
+  type: 'CORROSION_PROC';
+  data: { defender: string; x: number; y: number };
+}
+
+export interface DisplacementProcEvent {
+  type: 'DISPLACEMENT_PROC';
+  data: { defender: string; attacker: string };
+}
+
+export interface MetabolismProcEvent {
+  type: 'METABOLISM_PROC';
+  data: { defender: string; heal: number };
+}
+
+export interface StenchProcEvent {
+  type: 'STENCH_PROC';
+  data: { defender: string; x: number; y: number };
+}
+
+// --- scroll / exotic items --------------------------------------------------
+
+export interface EnchantChoiceAvailableEvent {
+  type: 'ENCHANT_CHOICE_AVAILABLE';
+  data: {
+    player: string;
+    scroll_id: string;
+    target_id: string;
+    is_weapon: boolean;
+    options: string[];
+  };
+}
+
+export interface EnchantEvent {
+  type: 'ENCHANT';
+  data: { player: string; item: string };
+}
+
 export type GameEvent =
   | AttackEvent
   | MissEvent
@@ -797,6 +941,10 @@ export type GameEvent =
   | MetamorphOptionsEvent
   | TalentMetamorphedEvent
   | ScrollSelectTargetEvent
+  | StoneSelectTargetEvent
+  | StoneIntuitionPickItemEvent
+  | StoneIntuitionGuessKindEvent
+  | StoneAugmentPickItemEvent
   | GooChargeEvent
   | GooEnrageEvent
   | GooFightStartedEvent
@@ -832,13 +980,34 @@ export type GameEvent =
   | SacrificialFireEvent
   | FlameBurstEvent
   | LeafBurstEvent
+  | FlockEvent
+  | WoolBurstEvent
   | SpellSpriteEvent
   | LockedEvent
   | OpenChestEvent
   | CrystalChestShatterEvent
   | SpawnMobEvent
   | LightningArcEvent
-  | DM300TrapStepEvent;
+  | DM300TrapStepEvent
+  | VampiricProcEvent
+  | BlockingProcEvent
+  | ElasticProcEvent
+  | BloomingProcEvent
+  | CorruptProcEvent
+  | CharmProcEvent
+  | ExplosiveProcEvent
+  | RepulsionProcEvent
+  | ViscosityProcEvent
+  | PotentialProcEvent
+  | EntanglementProcEvent
+  | ThornsProcEvent
+  | AntiEntropyProcEvent
+  | CorrosionProcEvent
+  | DisplacementProcEvent
+  | MetabolismProcEvent
+  | StenchProcEvent
+  | EnchantChoiceAvailableEvent
+  | EnchantEvent;
 
 export type GameEventType = GameEvent['type'];
 
@@ -944,4 +1113,9 @@ export type ClientMessage =
   | { type: 'SHOP_SELL'; item_id: string }
   | { type: 'IMP_CLAIM_REWARD'; npc_id: string }
   | { type: 'SELECT_SCROLL_TARGET'; scroll_id: string; item_id: string }
+  | { type: 'SELECT_STONE_TARGET'; stone_id: string; item_id: string }
+  | { type: 'STONE_INTUITION_CHOOSE_ITEM'; stone_id: string; item_id: string }
+  | { type: 'STONE_INTUITION_GUESS'; stone_id: string; item_id: string; guessed_kind: string }
+  | { type: 'STONE_AUGMENT_CHOOSE'; stone_id: string; item_id: string; augment_type: string }
+  | { type: 'CHOOSE_ENCHANT'; target_id: string; choice_index: number }
   | { type: 'CONFIRM_CHASM_FALL'; x: number; y: number };

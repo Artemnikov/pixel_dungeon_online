@@ -81,8 +81,11 @@ import {
   SWARM_DEST,
    KEEPER_FW,
    KEEPER_FH,
-   KEEPER_DEST,
-   IMP_FW,
+    KEEPER_DEST,
+    SHEEP_FW,
+    SHEEP_FH,
+    SHEEP_DEST,
+    IMP_FW,
    IMP_FH,
    IMP_DEST,
    RATKING_FW,
@@ -139,7 +142,8 @@ import {
   getSwarmFrame,
   getKeeperFrame,
   getImpFrame,
-  getRatKingFrame,
+   getRatKingFrame,
+   getSheepFrame,
 } from '../mobs';
 import { drawShieldHalo } from './shieldHalo';
 
@@ -389,6 +393,9 @@ export function drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef,
     } else if (mob.name === 'Ghost' || mob.name === 'Ghost Hero') {
       mobSprite = assetImages.ghost;
       sx = getGhostFrame(mob, mobAnimRef.current, now);
+    } else if (mob.name === 'Sheep') {
+      mobSprite = assetImages.sheep;
+      sx = getSheepFrame(mob, mobAnimRef.current, now);
     } else if (mob.name === 'Fetid Rat') {
       mobSprite = assetImages.rat;
       sx = getFetidRatFrame(mob, mobAnimRef.current, now);
@@ -446,6 +453,7 @@ export function drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef,
     const isImp = mob.name === 'Imp';
     const isRatKing = mob.name === 'Rat King';
     const isGhost = mob.name === 'Ghost' || mob.name === 'Ghost Hero';
+    const isSheep = mob.name === 'Sheep';
     const isFetidRat = mob.name === 'Fetid Rat';
     const isGnollTrickster = mob.name === 'Gnoll Trickster';
     const isGreatCrab = mob.name === 'Great Crab';
@@ -536,6 +544,8 @@ export function drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef,
       ctx.globalAlpha = 0.85;
       drawMobSprite(ctx, mob, mobSprite, sx, GHOST_FW, GHOST_FH, flash, GHOST_DEST);
       ctx.restore();
+    } else if (isSheep) {
+      drawMobSprite(ctx, mob, mobSprite, sx, SHEEP_FW, SHEEP_FH, flash, SHEEP_DEST);
     } else if (isFetidRat) {
       // Fetid Rat: rat.png row 2 (16x15 frames, sy = 2 * FRAME_H = 30)
       drawMobSprite(ctx, mob, mobSprite, sx, FRAME_W, FRAME_H, flash, null, 1, 2 * FRAME_H);
@@ -561,7 +571,7 @@ export function drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef,
     // ('idle' is the default spawn state and maps to SPD's default SLEEPING
     // state). Shopkeeper/Imp are friendly NPCs that default to "sleeping" but
     // are awake (never_wakes just means their AI never transitions) - skip them.
-    if ((mob.ai_state === 'sleeping' || mob.ai_state === 'idle') && !isShopkeeper && !isImp && assetImages.icons) {
+    if ((mob.ai_state === 'sleeping' || mob.ai_state === 'idle') && !isShopkeeper && !isImp && !isSheep && assetImages.icons) {
       const pulse = 1 + 0.1 * (Math.sin(now * 0.008) + 1);
       const dw = SLEEP_ICON_W * 2 * pulse;
       const dh = SLEEP_ICON_H * 2 * pulse;
@@ -644,6 +654,7 @@ export function drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef,
     const isGnollTricksterDeath = mob.name === 'Gnoll Trickster';
     const isShamanDeath = mob.name === 'Red Shaman' || mob.name === 'Blue Shaman' || mob.name === 'Purple Shaman';
     const isGreatCrabDeath = mob.name === 'Great Crab';
+    const isSheepDeath = mob.name === 'Sheep';
     const isEvilEyeDeath = mob.name === 'Evil Eye' || mob.name === 'Yog Eye';
     const isDM200Death = mob.name === 'DM-200' || mob.name === 'DM-201';
     const isSpinnerDeath = mob.name === 'Spinner';
@@ -652,7 +663,7 @@ export function drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef,
     const isRipperDeath = mob.name === 'Yog Ripper' || mob.name === 'Ripper Demon';
     // Gnoll: die frames [8,9,10] over 250ms, then a 3s alpha fade (SPD AlphaTweener).
     // Snake: die frames [11,12,13] over 300ms, then a 3s alpha fade.
-    const deathDuration = isScorpioDeath ? 417 : isGooDeath ? 300 : isRatDeath ? 400 : (isCrabDeath || isHermitCrabDeath) ? 333 : (isSlimeDeath || isCausticSlimeDeath) ? 400 : isSnakeDeath ? 3300 : isSkeletonDeath ? 332 : isThiefDeath ? 500 : isBanditDeath ? 500 : isSwarmDeath ? 333 : isDM100Death ? 498 : isGuardDeath ? 500 : isNecromancerDeath ? 400 : isTenguDeath ? 1000 : isDM300Death ? 1000 : isBruteDeath ? 250 : isFetidRatDeath ? 400 : isGnollTricksterDeath ? 3250 : isGreatCrabDeath ? 400 : isEvilEyeDeath ? 375 : isDM200Death ? 375 : isSpinnerDeath ? 332 : isSuccubusDeath ? 100 : isWarlockDeath ? 335 : isRipperDeath ? 333 : isShamanDeath ? 375 : 3250;
+    const deathDuration = isScorpioDeath ? 417 : isGooDeath ? 300 : isRatDeath ? 400 : (isCrabDeath || isHermitCrabDeath) ? 333 : (isSlimeDeath || isCausticSlimeDeath) ? 400 : isSnakeDeath ? 3300 : isSkeletonDeath ? 332 : isThiefDeath ? 500 : isBanditDeath ? 500 : isSwarmDeath ? 333 : isDM100Death ? 498 : isGuardDeath ? 500 : isNecromancerDeath ? 400 : isTenguDeath ? 1000 : isDM300Death ? 1000 : isBruteDeath ? 250 : isFetidRatDeath ? 400 : isGnollTricksterDeath ? 3250 : isGreatCrabDeath ? 400 : isSheepDeath ? 1000 : isEvilEyeDeath ? 375 : isDM200Death ? 375 : isSpinnerDeath ? 332 : isSuccubusDeath ? 100 : isWarlockDeath ? 335 : isRipperDeath ? 333 : isShamanDeath ? 375 : 3250;
     if (elapsed > deathDuration) { delete dyingMobsRef.current[id]; return; }
     if (!visionRef.current.visible.has(`${Math.round(mob.renderPos.x)},${Math.round(mob.renderPos.y)}`)) return;
     if (isScorpioDeath) {
@@ -766,6 +777,10 @@ export function drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef,
       const sx = [8, 9, 10][fi] * SHAMAN_FW;
       const shamanRow = mob.name === 'Red Shaman' ? 0 : mob.name === 'Blue Shaman' ? SHAMAN_FH : 2 * SHAMAN_FH;
       drawMobSprite(ctx, mob, assetImages.shaman, sx, SHAMAN_FW, SHAMAN_FH, false, SHAMAN_DEST, 1, shamanRow);
+    } else if (isSheepDeath) {
+      // Sheep death: fade alpha 1→0 over 1s, no anim (SPD SheepSprite die = single frame 0).
+      const alpha = Math.max(0, 1 - elapsed / 1000);
+      drawMobSprite(ctx, mob, assetImages.sheep, 0, SHEEP_FW, SHEEP_FH, false, SHEEP_DEST, alpha);
     } else {
       // Gnoll death: [8,9,10] @ 83ms, then hold frame 10 and fade alpha 1->0 over 3s.
       const fi = Math.min(Math.floor(elapsed / 83), 2);

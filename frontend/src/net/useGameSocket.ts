@@ -97,6 +97,11 @@ export default function useGameSocket({
   onGhostQuestGiven,
   onGhostQuestComplete,
   onScrollSelectTarget,
+  onStoneSelectTarget,
+  onStoneIntuitionPickItem,
+  onStoneIntuitionGuessKind,
+  onStoneAugmentSelect,
+  onStoneAugmentPickItem,
   onGhostGearOpen,
   onBossSlain,
   onPlayerDeath,
@@ -205,20 +210,21 @@ export default function useGameSocket({
           setInventory, setEquippedItems, setMyStats, setBossInfo, setBelongings, setQuickslot,
         });
 
-        const handlerCtx: HandlerCtx = {
-          myPlayerIdRef, gridRef, setGrid, entitiesRef, visionRef,
-          projectilesRef, mobAnimRef, dyingMobsRef, playerAnimRef, particlesRef,
-          searchEffectsRef, floatingTextRef, screenFlashRef, screenShakeRef,
-          transmuteEffectsRef, warnedTilesRef, flareEffectsRef, spellSpriteEffectsRef,
-          lightningRef, shieldHaloRef, stateEffectsRef, magicMissileRef,
-          surpriseRef, selectedEnemyIdRef, beamRef, blobAreasRef,
-          onLevelUp, onSubclassChoiceAvailable, onArmorAbilityChoiceAvailable,
-          onImbueWandChoiceAvailable, onTalentUpgraded,
-          onMetamorphOpen, onMetamorphOptions, onGooFightStarted, onTenguFightStarted, onChasmPrompt,
-          onDM300FightStarted, onDwarfKingFightStarted, onDwarfKingPhase2, onYogFightStarted, onYogFinalPhase,
-          onShopOpen, onImpDialogue, onGhostDialogue, onGhostQuestGiven, onGhostQuestComplete, onScrollSelectTarget, onGhostGearOpen, onBossSlain, onPlayerDeath,
-          depth: depthRef.current,
-        };
+  const handlerCtx: HandlerCtx = {
+    myPlayerIdRef, gridRef, setGrid, entitiesRef, visionRef,
+    projectilesRef, mobAnimRef, dyingMobsRef, playerAnimRef, particlesRef,
+    searchEffectsRef, floatingTextRef, screenFlashRef, screenShakeRef,
+    transmuteEffectsRef, warnedTilesRef, flareEffectsRef, spellSpriteEffectsRef,
+    lightningRef, shieldHaloRef, stateEffectsRef, magicMissileRef,
+    surpriseRef, selectedEnemyIdRef, beamRef, blobAreasRef,
+    onLevelUp, onSubclassChoiceAvailable, onArmorAbilityChoiceAvailable,
+    onImbueWandChoiceAvailable, onTalentUpgraded,
+    onMetamorphOpen, onMetamorphOptions, onGooFightStarted, onTenguFightStarted, onChasmPrompt,
+    onDM300FightStarted, onDwarfKingFightStarted, onDwarfKingPhase2, onYogFightStarted, onYogFinalPhase,
+    onShopOpen, onImpDialogue, onGhostDialogue, onGhostQuestGiven, onGhostQuestComplete, onScrollSelectTarget, onGhostGearOpen, onBossSlain, onPlayerDeath,
+    onStoneSelectTarget, onStoneIntuitionPickItem, onStoneIntuitionGuessKind, onStoneAugmentSelect, onStoneAugmentPickItem,
+    depth: depthRef.current,
+  };
 
         if (data.events) {
           data.events.forEach(ev => handleEvent(ev, handlerCtx));
@@ -337,5 +343,12 @@ export default function useGameSocket({
     }
   };
 
-  return { sendSelectScrollTarget };
+  const sendStoneTarget = (stoneId: string, itemId: string) => {
+    const ws = socketRef.current;
+    if (ws?.readyState === WebSocket.OPEN) {
+      sendMessage(ws, { type: 'SELECT_STONE_TARGET', stone_id: stoneId, item_id: itemId });
+    }
+  };
+
+  return { sendSelectScrollTarget, sendStoneTarget };
 }

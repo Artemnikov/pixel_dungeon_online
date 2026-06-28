@@ -254,7 +254,7 @@ function App() {
   const assetImages = useAssetImages();
   useMusicByDepth({ enabled: true, menu: gameState !== 'PLAYING', depth, bossFightActive: bossFightActive && !!bossInfo, bossBleeding, bossLurking, tense: ghostQuestGiven && depth <= 5, amuletObtained: hasAmulet, musicRef });
 
-  const { sendSelectScrollTarget } = useGameSocket({
+  const { sendSelectScrollTarget, sendStoneTarget } = useGameSocket({
     enabled: gameState === 'PLAYING',
     gameId, sessionId, selectedClass, difficulty, challenges, playerName,
     setConnectionStatus,
@@ -287,6 +287,12 @@ function App() {
     onGhostQuestComplete: () => setGhostQuestGiven(false),
     onImbueWandChoiceAvailable: modals.onImbueWand,
     onScrollSelectTarget: modals.onScrollSelectTarget,
+    onStoneSelectTarget: modals.onStoneSelectTarget,
+    onStoneIntuitionPickItem: modals.onStoneIntuitionPickItem,
+    onStoneIntuitionGuessKind: modals.onStoneIntuitionGuessKind,
+    onStoneAugmentSelect: modals.onStoneAugmentSelect,
+    onStoneAugmentPickItem: modals.onStoneAugmentPickItem,
+    onEnchantChoiceAvailable: modals.onEnchantChoiceAvailable,
     onGhostGearOpen: modals.onGhostGearOpen,
     onTalentUpgraded: talent.onTalentUpgraded,
     onBossSlain: (data) => {
@@ -874,6 +880,7 @@ function App() {
           executeItemAction={executeItemAction}
           assignQuickslot={assignQuickslot}
           sendSelectScrollTarget={sendSelectScrollTarget}
+          sendStoneTarget={sendStoneTarget}
           send={send}
           handleToolbarClick={handleToolbarClick}
         />

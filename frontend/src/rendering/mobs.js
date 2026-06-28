@@ -145,6 +145,11 @@ export const SWARM_DEST = { dx: 0, dy: 0, dw: 32, dh: 32 };
 
 // Shopkeeper: 14x14 frames (ShopkeeperSprite TextureFilm(texture, 14, 14)),
 // shopkeeper.png. Centered/bottom-aligned in the 32px tile, scaled 2x -> 28x28 @ +2,+2.
+// Sheep: 16x16 frames (SheepSprite uses 16x15 but our sheep.png is 16x16).
+export const SHEEP_FW = 16;
+export const SHEEP_FH = 16;
+export const SHEEP_DEST = { dx: 0, dy: 2, dw: 32, dh: 30 };
+
 export const KEEPER_FW = 14;
 export const KEEPER_FH = 14;
 export const KEEPER_DEST = { dx: 2, dy: 2, dw: 28, dh: 28 };
@@ -736,6 +741,17 @@ export const getSuccubusFrame = (mob, mobAnim, now) => {
     return [3, 4, 5, 6, 7, 8][Math.floor(now / 67) % 6] * SUCCUBUS_FW;
   }
   return [0,0,0,0,0,0,0,0,0,0,0,0,0,0,1,2,2,2,2,1][Math.floor(now / 125) % 20] * SUCCUBUS_FW;
+};
+
+// Sheep: 4-frame idle animation (SPD SheepSprite: idle 8fps loop 0,0,0,0,0,0,0,0,0,0,0,0,1,2,3,0).
+// Frame 0 = standing, 1-2-3 = blink cycle.
+export const getSheepFrame = (mob, mobAnim, now) => {
+  const anim = mobAnim[mob.id] || {};
+  const isAttacking = anim.attackUntil && now < anim.attackUntil;
+  if (isAttacking) return 0;
+  // idle: show frame 0 most of the time, blink occasionally
+  const pattern = [0,0,0,0,0,0,0,0,0,0,0,0,1,2,3,0];
+  return pattern[Math.floor(now / 125) % 16] * SHEEP_FW;
 };
 
 // dest (optional): in-tile placement {dx,dy,dw,dh} for sprites whose native frame is not a

@@ -193,6 +193,12 @@ export interface HookProps {
   onGhostQuestComplete?: () => void;
   onGhostDialogue?: (data: { npc: string; text: string; can_claim: boolean; weapon?: SerializedItem | null; armor?: SerializedItem | null }) => void;
   onScrollSelectTarget?: (data: { player: string; scroll_id: string; scroll_kind: string; candidates: string[] }) => void;
+  onStoneSelectTarget?: (data: { player: string; stone_id: string; stone_kind: string; candidates: string[] }) => void;
+  onStoneIntuitionPickItem?: (data: { player: string; stone_id: string; candidates: string[] }) => void;
+  onStoneIntuitionGuessKind?: (data: { player: string; stone_id: string; item_id: string; possible_kinds: string[] }) => void;
+  onStoneAugmentSelect?: (data: { player: string; stone_id: string; candidates: string[] }) => void;
+  onStoneAugmentPickItem?: (data: { player: string; stone_id: string; candidates: string[] }) => void;
+  onEnchantChoiceAvailable?: (data: { scroll_id: string; target_id: string; is_weapon: boolean; options: string[] }) => void;
   onGhostGearOpen?: (data: {
     player: string; rose_id: string; ghost_id: string;
     ghost_hp: number; ghost_max_hp: number;
@@ -252,7 +258,13 @@ export type HandlerCtx = Pick<
   onGhostQuestGiven?: HookProps['onGhostQuestGiven'];
   onGhostQuestComplete?: HookProps['onGhostQuestComplete'];
   onScrollSelectTarget?: HookProps['onScrollSelectTarget'];
+  onStoneSelectTarget?: HookProps['onStoneSelectTarget'];
+  onStoneIntuitionPickItem?: HookProps['onStoneIntuitionPickItem'];
+  onStoneIntuitionGuessKind?: HookProps['onStoneIntuitionGuessKind'];
+  onStoneAugmentSelect?: HookProps['onStoneAugmentSelect'];
+  onStoneAugmentPickItem?: HookProps['onStoneAugmentPickItem'];
   onGhostGearOpen?: HookProps['onGhostGearOpen'];
+  onEnchantChoiceAvailable?: HookProps['onEnchantChoiceAvailable'];
   onBossSlain?: HookProps['onBossSlain'];
   onPlayerDeath?: HookProps['onPlayerDeath'];
   depth?: number;

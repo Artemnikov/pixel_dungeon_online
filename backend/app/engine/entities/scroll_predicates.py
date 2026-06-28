@@ -15,9 +15,10 @@ Remove Curse) are also implemented.
 from typing import List, Optional
 
 from app.engine.entities.base import (
-    Artifact, Bow, ItemCategory, ItemBase, MeleeWeapon, MissileWeapon,
-    Player, Seed, Staff, Stone,
+    Armor, Artifact, Bow, ItemCategory, ItemBase, KindOfWeapon, MeleeWeapon,
+    MissileWeapon, Player, Seed, Staff, Stone,
 )
+from app.engine.entities.armor_glyphs import CURSE_GLYPHS as _ARMOR_CURSES
 from app.engine.entities.weapon_enchants import CURSES
 
 
@@ -75,11 +76,10 @@ def is_cursed_or_suspect(item, game) -> bool:
     if item.cursed:
         return True
     enchantment = getattr(item, "enchantment", None)
-    if isinstance(enchantment, str) and enchantment in CURSES:
+    curse_pool = CURSES + _ARMOR_CURSES
+    if isinstance(enchantment, str) and enchantment in curse_pool:
         return True
-    # Armor curse-enchant generation isn't implemented yet (enchantment.type
-    # is always "none"), but this stays forward-compatible once it lands.
-    if hasattr(enchantment, "type") and enchantment.type in CURSES:
+    if hasattr(enchantment, "type") and enchantment.type in curse_pool:
         return True
     return False
 
@@ -110,6 +110,8 @@ def transmute_group(item) -> Optional[str]:
         return "seed"
     if item.category == ItemCategory.STONE:
         return "stone"
+    if item.category == ItemCategory.RUNESTONE:
+        return "runestone"
     return None
 
 
@@ -121,10 +123,17 @@ def is_transmutable(item, game) -> bool:
     return transmute_group(item) is not None
 
 
+def _is_enchantable(item, game) -> bool:
+    """True if `item` is a weapon or armor that can receive an enchant/glyph."""
+    return isinstance(item, (KindOfWeapon, Armor))
+
+
 # scroll `kind` -> predicate. Extended by later tasks.
 PREDICATE = {
     "scroll_of_upgrade": is_upgradable,
     "scroll_of_identify": is_unidentified_target,
     "scroll_of_remove_curse": is_cursed_or_suspect,
     "scroll_of_transmutation": is_transmutable,
+    "scroll_of_enchantment": _is_enchantable,
+    "scroll_of_exotic_enchantment": _is_enchantable,
 }
