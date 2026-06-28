@@ -1102,6 +1102,25 @@ class EbonyMimic(Mimic):
     name: str = "Ebony Mimic"
 
 
+class CrystalMimic(Mimic):
+    """Crystal variant — steals on attack while disguised, teleports target when revealed, then flees."""
+    name: str = "Crystal Mimic"
+    fake_chest_id: str = ""
+    pending_steal_name: str = ""
+    pending_teleport: bool = False
+
+    def attack_proc(self, target) -> None:
+        if self.disguised:
+            items = list(target.belongings.all_items()) if getattr(target, 'belongings', None) else []
+            stealable = [i for i in items if i.category not in ('KEY', 'SCROLL_OF_UPGRADE')]
+            if stealable:
+                stolen = random.choice(stealable)
+                target.belongings.backpack.detach_all(stolen.id)
+                self.pending_steal_name = stolen.name
+        else:
+            self.pending_teleport = True
+
+
 class Statue(MobEntity):
     """Passive until attacked (activated=False). HP=15+depth*5.
     attackSkill scales with depth. Drops its weapon on death. EXP=0. INORGANIC."""

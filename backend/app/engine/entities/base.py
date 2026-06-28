@@ -2516,11 +2516,13 @@ class Scenery(ItemBase):
 
 class Chest(ItemBase):
     kind: Literal["chest"] = "chest"
+    name: str = "Chest"
     type: str = "chest"
     category: ClassVar[str] = ItemCategory.SCENERY
     chest_type: str = "CHEST"
     opened: bool = False
     contents: List["AnyItem"] = Field(default_factory=list)
+    item_category: Optional[str] = None
 
 
 class Bag(ItemBase):
