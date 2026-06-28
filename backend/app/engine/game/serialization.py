@@ -219,7 +219,7 @@ class SerializationMixin:
                 return {
                     "depth": player.floor_id,
                     "players": [self._serialize_player(p) for p in floor_players],
-                    "mobs": [self._serialize_mob(m) for m in floor.mobs.values() if m.is_alive],
+                    "mobs": [self._serialize_mob(m) for m in floor.mobs.values() if m.is_alive and not getattr(m, 'disguised', False)],
                     "items": [self._serialize_floor_item(i) for i in floor.items.values() if i.pos],
                     "visible_tiles": all_tiles,
                     "open_doors": self._get_open_doors(floor),

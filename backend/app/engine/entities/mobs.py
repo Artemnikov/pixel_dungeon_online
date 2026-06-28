@@ -14,7 +14,7 @@
 #
 import math
 import random
-from typing import Optional, List, TYPE_CHECKING
+from typing import Optional, List, Any, TYPE_CHECKING
 
 from pydantic import BaseModel, Field
 
@@ -1108,6 +1108,7 @@ class CrystalMimic(Mimic):
     fake_chest_id: str = ""
     pending_steal_name: str = ""
     pending_teleport: bool = False
+    pending_stolen_item: Optional[Any] = None
 
     def attack_proc(self, target) -> None:
         if self.disguised:
@@ -1117,6 +1118,7 @@ class CrystalMimic(Mimic):
                 stolen = random.choice(stealable)
                 target.belongings.backpack.detach_all(stolen.id)
                 self.pending_steal_name = stolen.name
+                self.pending_stolen_item = stolen
         else:
             self.pending_teleport = True
 

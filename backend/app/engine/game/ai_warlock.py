@@ -1,6 +1,8 @@
 import random
 import time
+import uuid
 
+from app.engine.entities.base import Position
 from app.engine.entities.mobs import Warlock
 
 
@@ -80,6 +82,13 @@ class WarlockAIMixin:
                 self.add_event("MESSAGE", {"text": f"The Crystal Mimic stole your {pending_steal}!", "player": target.id if hasattr(target, 'id') else ""}, floor_id=floor_id)
                 mob.pending_steal_name = ""
                 mob.ai_state = "fleeing"
+                stolen_item = getattr(mob, "pending_stolen_item", None)
+                if stolen_item is not None:
+                    stolen_item = stolen_item.model_copy(deep=True)
+                    stolen_item.id = str(uuid.uuid4())
+                    stolen_item.pos = Position(x=mob.pos.x, y=mob.pos.y)
+                    floor.items[stolen_item.id] = stolen_item
+                    mob.pending_stolen_item = None
             pending_tp = getattr(mob, "pending_teleport", False)
             if pending_tp:
                 self._teleport_entity_to_free_cell(target, floor, floor_id)
