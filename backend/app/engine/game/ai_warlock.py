@@ -75,6 +75,15 @@ class WarlockAIMixin:
             proc = getattr(mob, "attack_proc", None)
             if proc:
                 proc(target)
+            pending_steal = getattr(mob, "pending_steal_name", "")
+            if pending_steal:
+                self.add_event("MESSAGE", {"text": f"The Crystal Mimic stole your {pending_steal}!", "player": target.id if hasattr(target, 'id') else ""}, floor_id=floor_id)
+                mob.pending_steal_name = ""
+                mob.ai_state = "fleeing"
+            pending_tp = getattr(mob, "pending_teleport", False)
+            if pending_tp:
+                self._teleport_entity_to_free_cell(target, floor, floor_id)
+                mob.pending_teleport = False
             pending = getattr(mob, "_pending_sound", None)
             if pending:
                 self.add_event("PLAY_SOUND", {"sound": pending}, floor_id=floor_id)

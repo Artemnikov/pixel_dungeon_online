@@ -47,7 +47,7 @@ from app.engine.entities.base import (
     is_immune,
 )
 from app.engine.entities.buffs import add_buff, get_buff, has_buff, remove_buff
-from app.engine.entities.mobs import DM300, Goo, Wraith
+from app.engine.entities.mobs import CrystalMimic, DM300, Goo, Wraith
 from app.engine.entities.subclasses import Talent
 from app.engine.systems.ballistica import ballistica_trace
 from app.engine.systems.combat import resolve_melee_attack, resolve_ranged_attack
@@ -110,18 +110,41 @@ class MovementCombatMixin:
             item.pos = Position(x=x, y=y)
             floor.items[item.id] = item
 
-    def _shatter_other_crystal_chests(self, floor, floor_id: int, chest: Chest) -> None:
-        if chest.pos is None:
-            return
-        room = self._find_room_containing(floor, chest.pos.x, chest.pos.y)
-        if room is None:
-            return
-        for item_id, item in list(floor.items.items()):
-            if item_id == chest.id or not isinstance(item, Chest) or item.chest_type != "CRYSTAL_CHEST" or item.pos is None:
+    def _check_crystal_mimic_reveal(self, player: Player, floor, floor_id: int) -> None:
+        px, py = player.pos.x, player.pos.y
+        for mob in list(floor.mobs.values()):
+            if not isinstance(mob, CrystalMimic) or not mob.disguised or not mob.is_alive:
                 continue
-            if room.x <= item.pos.x < room.x + room.width and room.y <= item.pos.y < room.y + room.height:
-                del floor.items[item_id]
-                self.add_event("CRYSTAL_CHEST_SHATTER", {"x": item.pos.x, "y": item.pos.y}, floor_id=floor_id)
+            mx, my = mob.pos.x, mob.pos.y
+            if abs(px - mx) <= 1 and abs(py - my) <= 1:
+                floor.items.pop(mob.fake_chest_id, None)
+                mob.disguised = False
+                mob.ai_state = "hunting"
+                self.add_event("SPAWN_MOB", {"mob": mob.model_dump()}, floor_id=floor_id)
+                self.add_event("PLAY_SOUND", {"sound": "MIMIC"}, floor_id=floor_id)
+                self.add_event("MESSAGE", {"text": "The crystal chest was a mimic!", "player": player.id}, floor_id=floor_id)
+
+    def _teleport_entity_to_free_cell(self, entity, floor, floor_id: int) -> None:
+        import random as _random
+        candidates = []
+        for dy in range(-2, 3):
+            for dx in range(-2, 3):
+                if dx == 0 and dy == 0:
+                    continue
+                nx, ny = entity.pos.x + dx, entity.pos.y + dy
+                if not (0 <= nx < floor.width and 0 <= ny < floor.height):
+                    continue
+                if not floor.flags or not floor.flags.passable[ny][nx]:
+                    continue
+                if any(m.is_alive and m.pos.x == nx and m.pos.y == ny for m in floor.mobs.values()):
+                    continue
+                candidates.append((nx, ny))
+        if not candidates:
+            return
+        nx, ny = _random.choice(candidates)
+        entity.pos = Position(x=nx, y=ny)
+        self.add_event("TELEPORT", {"entity": entity.id, "x": nx, "y": ny}, floor_id=floor_id)
+        self.add_event("PLAY_SOUND", {"sound": "TELEPORT"}, floor_id=floor_id)
 
     def _try_open_chest(self, player: Player, floor, floor_id: int, chest: Chest) -> bool:
         if chest.pos is None:
@@ -136,8 +159,6 @@ class MovementCombatMixin:
         self._spend_unlock_action(player)
         x, y = chest.pos.x, chest.pos.y
         floor.items.pop(chest.id, None)
-        if chest.chest_type == "CRYSTAL_CHEST":
-            self._shatter_other_crystal_chests(floor, floor_id, chest)
         if chest.chest_type == "TOMB":
             self.add_event("PLAY_SOUND", {"sound": "TOMB"}, floor_id=floor_id)
             self._spawn_wraiths_around(floor, floor_id, player)
@@ -460,6 +481,7 @@ class MovementCombatMixin:
 
         if isinstance(entity, Player):
             self.add_event("MOVE", {"entity": entity_id, "x": entity.pos.x, "y": entity.pos.y}, floor_id=floor_id)
+            self._check_crystal_mimic_reveal(entity, floor, floor_id)
             # Freerunner builds Momentum on each step.
             self.gain_momentum(entity)
             # Rejuvenating Steps (huntress T2): heal small amount per step

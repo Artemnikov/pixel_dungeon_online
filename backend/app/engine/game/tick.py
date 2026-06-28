@@ -34,7 +34,7 @@ from app.engine.entities.mobs import (
     Rat, Goo, DwarfKing, Eye,
     YogDzewa, BurningFist, SoiledFist, RottingFist, RustedFist, BrightFist, DarkFist,
     DemonSpawner, Pylon, DM300,
-    Wraith, TormentedSpirit, Bee, EbonyMimic, MobEntity,
+    Wraith, TormentedSpirit, Bee, EbonyMimic, CrystalMimic, MobEntity,
     Necromancer, Tengu, MirrorImage, GhostHeroMob,
     RedShaman, BlueShaman, PurpleShaman,
     Warlock,
@@ -83,6 +83,14 @@ def _apply_floor_scaling(mob: MobEntity, floor_id: int) -> None:
         mob.attack_skill = mob.defense_skill
         mob.damage_min = max(1, max_hp // 10)
         mob.damage_max = max(1, max_hp // 4)
+    elif isinstance(mob, CrystalMimic):
+        max_hp = (1 + level) * 6
+        mob.floor_level = level
+        mob.max_hp = max_hp
+        mob.hp = max_hp
+        mob.defense_skill = 2 + level // 2
+        mob.attack_skill = 6 + level
+        # CrystalMimic starts disguised; scaling doesn't reveal it
     elif isinstance(mob, EbonyMimic):
         max_hp = (1 + level) * 6
         mob.floor_level = level
@@ -460,6 +468,23 @@ class TickMixin:
                             if not occupied:
                                 move_times[mob.id] = now
                                 self.move_entity(mob.id, step[0], step[1])
+                    if isinstance(mob, CrystalMimic):
+                        active_players = [p for p in self._players_on_floor(floor_id) if p.is_alive]
+                        far_enough = all(
+                            self._get_distance(mob.pos, p.pos) >= 6 for p in active_players
+                        )
+                        if far_enough and active_players:
+                            fov_cells = set()
+                            for p in active_players:
+                                fov = self._fov_from(p.pos, floor, self._view_distance(p), viewer_id=p.id)
+                                for fy in range(floor.height):
+                                    for fx in range(floor.width):
+                                        if fov[fy * floor.width + fx]:
+                                            fov_cells.add((fx, fy))
+                            if (mob.pos.x, mob.pos.y) not in fov_cells:
+                                mob.is_alive = False
+                                self.add_event("DEATH", {"target": mob.id}, floor_id=floor_id)
+                                continue
                     continue
 
                 if target_player and isinstance(target_player, Player) and target_player.invisible > 0:
