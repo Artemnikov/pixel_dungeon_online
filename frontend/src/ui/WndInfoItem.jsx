@@ -60,7 +60,14 @@ export default function WndInfoItem({ item }) {
         level={level}
         color={titleColor(item)}
       />
-      {item.description && <div className="wnd-info-desc">{item.description}</div>}
+      {item.kind === 'chest' && item.chest_type === 'CRYSTAL_CHEST' && item.item_category && (
+        <div className="wnd-info-desc">
+          {`You can see through the crystal — this chest contains a ${item.item_category.toLowerCase()}.`}
+        </div>
+      )}
+      {!(item.kind === 'chest' && item.chest_type === 'CRYSTAL_CHEST' && item.item_category) && item.description && (
+        <div className="wnd-info-desc">{item.description}</div>
+      )}
       {lines.length > 0 && (
         <div className="wnd-info-stats">
           {lines.map((l, i) => <div key={i} className="wnd-info-stat-row">{l}</div>)}

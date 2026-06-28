@@ -207,6 +207,8 @@ export interface Player {
     | Boomerang
     | ThrowableDagger
     | Throwable
+    | ArcaneStylus
+    | MagicalInfusion
     | GooBlob
     | DwarfToken
     | Petal
@@ -234,6 +236,18 @@ export interface Player {
     | FerretTuft
     | CrackedSpyglass
     | TrinketCatalyst
+    | StoneOfBlast
+    | StoneOfBlink
+    | StoneOfDeepSleep
+    | StoneOfClairvoyance
+    | StoneOfAggression
+    | StoneOfFlock
+    | StoneOfShock
+    | StoneOfFear
+    | StoneOfIntuition
+    | StoneOfAugmentation
+    | StoneOfDetectMagic
+    | StoneOfEnchantment
   )[];
   equipped_weapon:
     | (
@@ -332,6 +346,8 @@ export interface Player {
         | Boomerang
         | ThrowableDagger
         | Throwable
+        | ArcaneStylus
+        | MagicalInfusion
         | GooBlob
         | DwarfToken
         | Petal
@@ -359,6 +375,18 @@ export interface Player {
         | FerretTuft
         | CrackedSpyglass
         | TrinketCatalyst
+        | StoneOfBlast
+        | StoneOfBlink
+        | StoneOfDeepSleep
+        | StoneOfClairvoyance
+        | StoneOfAggression
+        | StoneOfFlock
+        | StoneOfShock
+        | StoneOfFear
+        | StoneOfIntuition
+        | StoneOfAugmentation
+        | StoneOfDetectMagic
+        | StoneOfEnchantment
       )
     | null;
   equipped_wearable:
@@ -458,6 +486,8 @@ export interface Player {
         | Boomerang
         | ThrowableDagger
         | Throwable
+        | ArcaneStylus
+        | MagicalInfusion
         | GooBlob
         | DwarfToken
         | Petal
@@ -485,6 +515,18 @@ export interface Player {
         | FerretTuft
         | CrackedSpyglass
         | TrinketCatalyst
+        | StoneOfBlast
+        | StoneOfBlink
+        | StoneOfDeepSleep
+        | StoneOfClairvoyance
+        | StoneOfAggression
+        | StoneOfFlock
+        | StoneOfShock
+        | StoneOfFear
+        | StoneOfIntuition
+        | StoneOfAugmentation
+        | StoneOfDetectMagic
+        | StoneOfEnchantment
       )
     | null;
 }
@@ -613,6 +655,8 @@ export interface Belongings {
         | Boomerang
         | ThrowableDagger
         | Throwable
+        | ArcaneStylus
+        | MagicalInfusion
         | GooBlob
         | DwarfToken
         | Petal
@@ -640,6 +684,18 @@ export interface Belongings {
         | FerretTuft
         | CrackedSpyglass
         | TrinketCatalyst
+        | StoneOfBlast
+        | StoneOfBlink
+        | StoneOfDeepSleep
+        | StoneOfClairvoyance
+        | StoneOfAggression
+        | StoneOfFlock
+        | StoneOfShock
+        | StoneOfFear
+        | StoneOfIntuition
+        | StoneOfAugmentation
+        | StoneOfDetectMagic
+        | StoneOfEnchantment
       )
     | null;
   armor?:
@@ -739,6 +795,8 @@ export interface Belongings {
         | Boomerang
         | ThrowableDagger
         | Throwable
+        | ArcaneStylus
+        | MagicalInfusion
         | GooBlob
         | DwarfToken
         | Petal
@@ -766,6 +824,18 @@ export interface Belongings {
         | FerretTuft
         | CrackedSpyglass
         | TrinketCatalyst
+        | StoneOfBlast
+        | StoneOfBlink
+        | StoneOfDeepSleep
+        | StoneOfClairvoyance
+        | StoneOfAggression
+        | StoneOfFlock
+        | StoneOfShock
+        | StoneOfFear
+        | StoneOfIntuition
+        | StoneOfAugmentation
+        | StoneOfDetectMagic
+        | StoneOfEnchantment
       )
     | null;
   artifact?:
@@ -865,6 +935,8 @@ export interface Belongings {
         | Boomerang
         | ThrowableDagger
         | Throwable
+        | ArcaneStylus
+        | MagicalInfusion
         | GooBlob
         | DwarfToken
         | Petal
@@ -892,6 +964,18 @@ export interface Belongings {
         | FerretTuft
         | CrackedSpyglass
         | TrinketCatalyst
+        | StoneOfBlast
+        | StoneOfBlink
+        | StoneOfDeepSleep
+        | StoneOfClairvoyance
+        | StoneOfAggression
+        | StoneOfFlock
+        | StoneOfShock
+        | StoneOfFear
+        | StoneOfIntuition
+        | StoneOfAugmentation
+        | StoneOfDetectMagic
+        | StoneOfEnchantment
       )
     | null;
   misc?:
@@ -991,6 +1075,8 @@ export interface Belongings {
         | Boomerang
         | ThrowableDagger
         | Throwable
+        | ArcaneStylus
+        | MagicalInfusion
         | GooBlob
         | DwarfToken
         | Petal
@@ -1018,6 +1104,18 @@ export interface Belongings {
         | FerretTuft
         | CrackedSpyglass
         | TrinketCatalyst
+        | StoneOfBlast
+        | StoneOfBlink
+        | StoneOfDeepSleep
+        | StoneOfClairvoyance
+        | StoneOfAggression
+        | StoneOfFlock
+        | StoneOfShock
+        | StoneOfFear
+        | StoneOfIntuition
+        | StoneOfAugmentation
+        | StoneOfDetectMagic
+        | StoneOfEnchantment
       )
     | null;
   ring?:
@@ -1117,6 +1215,8 @@ export interface Belongings {
         | Boomerang
         | ThrowableDagger
         | Throwable
+        | ArcaneStylus
+        | MagicalInfusion
         | GooBlob
         | DwarfToken
         | Petal
@@ -1144,6 +1244,18 @@ export interface Belongings {
         | FerretTuft
         | CrackedSpyglass
         | TrinketCatalyst
+        | StoneOfBlast
+        | StoneOfBlink
+        | StoneOfDeepSleep
+        | StoneOfClairvoyance
+        | StoneOfAggression
+        | StoneOfFlock
+        | StoneOfShock
+        | StoneOfFear
+        | StoneOfIntuition
+        | StoneOfAugmentation
+        | StoneOfDetectMagic
+        | StoneOfEnchantment
       )
     | null;
 }
@@ -1259,6 +1371,8 @@ export interface Bag {
     | Boomerang
     | ThrowableDagger
     | Throwable
+    | ArcaneStylus
+    | MagicalInfusion
     | GooBlob
     | DwarfToken
     | Petal
@@ -1286,6 +1400,18 @@ export interface Bag {
     | FerretTuft
     | CrackedSpyglass
     | TrinketCatalyst
+    | StoneOfBlast
+    | StoneOfBlink
+    | StoneOfDeepSleep
+    | StoneOfClairvoyance
+    | StoneOfAggression
+    | StoneOfFlock
+    | StoneOfShock
+    | StoneOfFear
+    | StoneOfIntuition
+    | StoneOfAugmentation
+    | StoneOfDetectMagic
+    | StoneOfEnchantment
   )[];
 }
 export interface MeleeWeapon {
@@ -1308,6 +1434,7 @@ export interface MeleeWeapon {
   range?: number;
   attack_cooldown?: number;
   enchantment?: string | null;
+  augment?: string | null;
   projectile_type?: string | null;
   surprise_damage_floor?: number;
   acc_factor?: number;
@@ -1337,6 +1464,7 @@ export interface Dagger {
   range?: number;
   attack_cooldown?: number;
   enchantment?: string | null;
+  augment?: string | null;
   projectile_type?: string | null;
   surprise_damage_floor?: number;
   acc_factor?: number;
@@ -1366,6 +1494,7 @@ export interface WornShortsword {
   range?: number;
   attack_cooldown?: number;
   enchantment?: string | null;
+  augment?: string | null;
   projectile_type?: string | null;
   surprise_damage_floor?: number;
   acc_factor?: number;
@@ -1395,6 +1524,7 @@ export interface Bow {
   range?: number;
   attack_cooldown?: number;
   enchantment?: string | null;
+  augment?: string | null;
   projectile_type?: string;
   surprise_damage_floor?: number;
   acc_factor?: number;
@@ -1423,6 +1553,7 @@ export interface SpiritBow {
   range?: number;
   attack_cooldown?: number;
   enchantment?: string | null;
+  augment?: string | null;
   projectile_type?: string;
   surprise_damage_floor?: number;
   acc_factor?: number;
@@ -1452,6 +1583,7 @@ export interface Staff {
   range?: number;
   attack_cooldown?: number;
   enchantment?: string | null;
+  augment?: string | null;
   projectile_type?: string;
   surprise_damage_floor?: number;
   acc_factor?: number;
@@ -1512,6 +1644,7 @@ export interface MissileWeapon {
   range?: number;
   attack_cooldown?: number;
   enchantment?: string | null;
+  augment?: string | null;
   projectile_type?: string | null;
   surprise_damage_floor?: number;
   acc_factor?: number;
@@ -1539,6 +1672,7 @@ export interface Armor {
   strength_requirement?: number;
   tier?: number;
   enchantment?: ArmorEnchantment;
+  augment?: string | null;
 }
 export interface ArmorEnchantment {
   type?: string;
@@ -1562,6 +1696,7 @@ export interface ClothArmor {
   strength_requirement?: number;
   tier?: number;
   enchantment?: ArmorEnchantment;
+  augment?: string | null;
 }
 export interface LeatherArmor {
   kind?: "leather_armor";
@@ -1581,6 +1716,7 @@ export interface LeatherArmor {
   strength_requirement?: number;
   tier?: number;
   enchantment?: ArmorEnchantment;
+  augment?: string | null;
 }
 export interface MailArmor {
   kind?: "mail_armor";
@@ -1600,6 +1736,7 @@ export interface MailArmor {
   strength_requirement?: number;
   tier?: number;
   enchantment?: ArmorEnchantment;
+  augment?: string | null;
 }
 export interface ScaleArmor {
   kind?: "scale_armor";
@@ -1619,6 +1756,7 @@ export interface ScaleArmor {
   strength_requirement?: number;
   tier?: number;
   enchantment?: ArmorEnchantment;
+  augment?: string | null;
 }
 export interface PlateArmor {
   kind?: "plate_armor";
@@ -1638,6 +1776,7 @@ export interface PlateArmor {
   strength_requirement?: number;
   tier?: number;
   enchantment?: ArmorEnchantment;
+  augment?: string | null;
 }
 export interface Ring {
   kind?: "ring";
@@ -3194,6 +3333,38 @@ export interface Throwable {
   consumable?: boolean;
   projectile_type?: string;
 }
+export interface ArcaneStylus {
+  kind?: "arcane_stylus";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+}
+export interface MagicalInfusion {
+  kind?: "magical_infusion";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+}
 export interface GooBlob {
   kind?: "goo_blob";
   id?: string;
@@ -3245,7 +3416,7 @@ export interface Petal {
 export interface Chest {
   kind?: "chest";
   id?: string;
-  name: string;
+  name?: string;
   type?: string;
   pos?: Position | null;
   quantity?: number;
@@ -3355,6 +3526,8 @@ export interface Chest {
     | Boomerang
     | ThrowableDagger
     | Throwable
+    | ArcaneStylus
+    | MagicalInfusion
     | GooBlob
     | DwarfToken
     | Petal
@@ -3382,7 +3555,20 @@ export interface Chest {
     | FerretTuft
     | CrackedSpyglass
     | TrinketCatalyst
+    | StoneOfBlast
+    | StoneOfBlink
+    | StoneOfDeepSleep
+    | StoneOfClairvoyance
+    | StoneOfAggression
+    | StoneOfFlock
+    | StoneOfShock
+    | StoneOfFear
+    | StoneOfIntuition
+    | StoneOfAugmentation
+    | StoneOfDetectMagic
+    | StoneOfEnchantment
   )[];
+  item_category?: string | null;
 }
 export interface VelvetPouch {
   kind?: "velvet_pouch";
@@ -3496,6 +3682,8 @@ export interface VelvetPouch {
     | Boomerang
     | ThrowableDagger
     | Throwable
+    | ArcaneStylus
+    | MagicalInfusion
     | GooBlob
     | DwarfToken
     | Petal
@@ -3523,6 +3711,18 @@ export interface VelvetPouch {
     | FerretTuft
     | CrackedSpyglass
     | TrinketCatalyst
+    | StoneOfBlast
+    | StoneOfBlink
+    | StoneOfDeepSleep
+    | StoneOfClairvoyance
+    | StoneOfAggression
+    | StoneOfFlock
+    | StoneOfShock
+    | StoneOfFear
+    | StoneOfIntuition
+    | StoneOfAugmentation
+    | StoneOfDetectMagic
+    | StoneOfEnchantment
   )[];
 }
 export interface ScrollHolder {
@@ -3637,6 +3837,8 @@ export interface ScrollHolder {
     | Boomerang
     | ThrowableDagger
     | Throwable
+    | ArcaneStylus
+    | MagicalInfusion
     | GooBlob
     | DwarfToken
     | Petal
@@ -3664,6 +3866,18 @@ export interface ScrollHolder {
     | FerretTuft
     | CrackedSpyglass
     | TrinketCatalyst
+    | StoneOfBlast
+    | StoneOfBlink
+    | StoneOfDeepSleep
+    | StoneOfClairvoyance
+    | StoneOfAggression
+    | StoneOfFlock
+    | StoneOfShock
+    | StoneOfFear
+    | StoneOfIntuition
+    | StoneOfAugmentation
+    | StoneOfDetectMagic
+    | StoneOfEnchantment
   )[];
 }
 export interface MagicalHolster {
@@ -3778,6 +3992,8 @@ export interface MagicalHolster {
     | Boomerang
     | ThrowableDagger
     | Throwable
+    | ArcaneStylus
+    | MagicalInfusion
     | GooBlob
     | DwarfToken
     | Petal
@@ -3805,6 +4021,18 @@ export interface MagicalHolster {
     | FerretTuft
     | CrackedSpyglass
     | TrinketCatalyst
+    | StoneOfBlast
+    | StoneOfBlink
+    | StoneOfDeepSleep
+    | StoneOfClairvoyance
+    | StoneOfAggression
+    | StoneOfFlock
+    | StoneOfShock
+    | StoneOfFear
+    | StoneOfIntuition
+    | StoneOfAugmentation
+    | StoneOfDetectMagic
+    | StoneOfEnchantment
   )[];
 }
 export interface PotionBandolier {
@@ -3919,6 +4147,8 @@ export interface PotionBandolier {
     | Boomerang
     | ThrowableDagger
     | Throwable
+    | ArcaneStylus
+    | MagicalInfusion
     | GooBlob
     | DwarfToken
     | Petal
@@ -3946,6 +4176,18 @@ export interface PotionBandolier {
     | FerretTuft
     | CrackedSpyglass
     | TrinketCatalyst
+    | StoneOfBlast
+    | StoneOfBlink
+    | StoneOfDeepSleep
+    | StoneOfClairvoyance
+    | StoneOfAggression
+    | StoneOfFlock
+    | StoneOfShock
+    | StoneOfFear
+    | StoneOfIntuition
+    | StoneOfAugmentation
+    | StoneOfDetectMagic
+    | StoneOfEnchantment
   )[];
 }
 export interface RatSkull {
@@ -4239,6 +4481,198 @@ export interface CrackedSpyglass {
 }
 export interface TrinketCatalyst {
   kind?: "trinket_catalyst";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+}
+export interface StoneOfBlast {
+  kind?: "stone_of_blast";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+}
+export interface StoneOfBlink {
+  kind?: "stone_of_blink";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+}
+export interface StoneOfDeepSleep {
+  kind?: "stone_of_deep_sleep";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+}
+export interface StoneOfClairvoyance {
+  kind?: "stone_of_clairvoyance";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+}
+export interface StoneOfAggression {
+  kind?: "stone_of_aggression";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+}
+export interface StoneOfFlock {
+  kind?: "stone_of_flock";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+}
+export interface StoneOfShock {
+  kind?: "stone_of_shock";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+}
+export interface StoneOfFear {
+  kind?: "stone_of_fear";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+}
+export interface StoneOfIntuition {
+  kind?: "stone_of_intuition";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+}
+export interface StoneOfAugmentation {
+  kind?: "stone_of_augmentation";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+}
+export interface StoneOfDetectMagic {
+  kind?: "stone_of_detect_magic";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+}
+export interface StoneOfEnchantment {
+  kind?: "stone_of_enchantment";
   id?: string;
   name?: string;
   type?: string;

@@ -69,6 +69,75 @@
       },
       "type": "object"
     },
+    "ArcaneStylus": {
+      "properties": {
+        "kind": {
+          "const": "arcane_stylus",
+          "default": "arcane_stylus",
+          "type": "string"
+        },
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "name": {
+          "default": "Arcane Stylus",
+          "type": "string"
+        },
+        "type": {
+          "default": "stylus",
+          "type": "string"
+        },
+        "pos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Position"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "quantity": {
+          "default": 1,
+          "type": "integer"
+        },
+        "level": {
+          "default": 0,
+          "type": "integer"
+        },
+        "level_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "unique": {
+          "default": false,
+          "type": "boolean"
+        },
+        "kept_though_lost": {
+          "default": false,
+          "type": "boolean"
+        },
+        "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
     "Armor": {
       "properties": {
         "kind": {
@@ -144,6 +213,17 @@
         },
         "enchantment": {
           "$ref": "#/$defs/ArmorEnchantment"
+        },
+        "augment": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "required": [
@@ -321,6 +401,7 @@
             "discriminator": {
               "mapping": {
                 "amulet": "#/$defs/Amulet",
+                "arcane_stylus": "#/$defs/ArcaneStylus",
                 "armor": "#/$defs/Armor",
                 "artifact": "#/$defs/Artifact",
                 "bag": "#/$defs/Bag",
@@ -354,6 +435,7 @@
                 "kings_crown": "#/$defs/KingsCrown",
                 "leather_armor": "#/$defs/LeatherArmor",
                 "magical_holster": "#/$defs/MagicalHolster",
+                "magical_infusion": "#/$defs/MagicalInfusion",
                 "mail_armor": "#/$defs/MailArmor",
                 "melee_weapon": "#/$defs/MeleeWeapon",
                 "mimic_tooth": "#/$defs/MimicTooth",
@@ -417,6 +499,18 @@
                 "spirit_bow": "#/$defs/SpiritBow",
                 "staff": "#/$defs/Staff",
                 "stone": "#/$defs/Stone",
+                "stone_of_aggression": "#/$defs/StoneOfAggression",
+                "stone_of_augmentation": "#/$defs/StoneOfAugmentation",
+                "stone_of_blast": "#/$defs/StoneOfBlast",
+                "stone_of_blink": "#/$defs/StoneOfBlink",
+                "stone_of_clairvoyance": "#/$defs/StoneOfClairvoyance",
+                "stone_of_deep_sleep": "#/$defs/StoneOfDeepSleep",
+                "stone_of_detect_magic": "#/$defs/StoneOfDetectMagic",
+                "stone_of_enchantment": "#/$defs/StoneOfEnchantment",
+                "stone_of_fear": "#/$defs/StoneOfFear",
+                "stone_of_flock": "#/$defs/StoneOfFlock",
+                "stone_of_intuition": "#/$defs/StoneOfIntuition",
+                "stone_of_shock": "#/$defs/StoneOfShock",
                 "tengu_mask": "#/$defs/TenguMask",
                 "thirteen_leaf_clover": "#/$defs/ThirteenLeafClover",
                 "throwable": "#/$defs/Throwable",
@@ -732,6 +826,12 @@
                 "$ref": "#/$defs/Throwable"
               },
               {
+                "$ref": "#/$defs/ArcaneStylus"
+              },
+              {
+                "$ref": "#/$defs/MagicalInfusion"
+              },
+              {
                 "$ref": "#/$defs/GooBlob"
               },
               {
@@ -811,6 +911,42 @@
               },
               {
                 "$ref": "#/$defs/TrinketCatalyst"
+              },
+              {
+                "$ref": "#/$defs/StoneOfBlast"
+              },
+              {
+                "$ref": "#/$defs/StoneOfBlink"
+              },
+              {
+                "$ref": "#/$defs/StoneOfDeepSleep"
+              },
+              {
+                "$ref": "#/$defs/StoneOfClairvoyance"
+              },
+              {
+                "$ref": "#/$defs/StoneOfAggression"
+              },
+              {
+                "$ref": "#/$defs/StoneOfFlock"
+              },
+              {
+                "$ref": "#/$defs/StoneOfShock"
+              },
+              {
+                "$ref": "#/$defs/StoneOfFear"
+              },
+              {
+                "$ref": "#/$defs/StoneOfIntuition"
+              },
+              {
+                "$ref": "#/$defs/StoneOfAugmentation"
+              },
+              {
+                "$ref": "#/$defs/StoneOfDetectMagic"
+              },
+              {
+                "$ref": "#/$defs/StoneOfEnchantment"
               }
             ]
           },
@@ -833,6 +969,7 @@
               "discriminator": {
                 "mapping": {
                   "amulet": "#/$defs/Amulet",
+                  "arcane_stylus": "#/$defs/ArcaneStylus",
                   "armor": "#/$defs/Armor",
                   "artifact": "#/$defs/Artifact",
                   "bag": "#/$defs/Bag",
@@ -866,6 +1003,7 @@
                   "kings_crown": "#/$defs/KingsCrown",
                   "leather_armor": "#/$defs/LeatherArmor",
                   "magical_holster": "#/$defs/MagicalHolster",
+                  "magical_infusion": "#/$defs/MagicalInfusion",
                   "mail_armor": "#/$defs/MailArmor",
                   "melee_weapon": "#/$defs/MeleeWeapon",
                   "mimic_tooth": "#/$defs/MimicTooth",
@@ -929,6 +1067,18 @@
                   "spirit_bow": "#/$defs/SpiritBow",
                   "staff": "#/$defs/Staff",
                   "stone": "#/$defs/Stone",
+                  "stone_of_aggression": "#/$defs/StoneOfAggression",
+                  "stone_of_augmentation": "#/$defs/StoneOfAugmentation",
+                  "stone_of_blast": "#/$defs/StoneOfBlast",
+                  "stone_of_blink": "#/$defs/StoneOfBlink",
+                  "stone_of_clairvoyance": "#/$defs/StoneOfClairvoyance",
+                  "stone_of_deep_sleep": "#/$defs/StoneOfDeepSleep",
+                  "stone_of_detect_magic": "#/$defs/StoneOfDetectMagic",
+                  "stone_of_enchantment": "#/$defs/StoneOfEnchantment",
+                  "stone_of_fear": "#/$defs/StoneOfFear",
+                  "stone_of_flock": "#/$defs/StoneOfFlock",
+                  "stone_of_intuition": "#/$defs/StoneOfIntuition",
+                  "stone_of_shock": "#/$defs/StoneOfShock",
                   "tengu_mask": "#/$defs/TenguMask",
                   "thirteen_leaf_clover": "#/$defs/ThirteenLeafClover",
                   "throwable": "#/$defs/Throwable",
@@ -1244,6 +1394,12 @@
                   "$ref": "#/$defs/Throwable"
                 },
                 {
+                  "$ref": "#/$defs/ArcaneStylus"
+                },
+                {
+                  "$ref": "#/$defs/MagicalInfusion"
+                },
+                {
                   "$ref": "#/$defs/GooBlob"
                 },
                 {
@@ -1323,6 +1479,42 @@
                 },
                 {
                   "$ref": "#/$defs/TrinketCatalyst"
+                },
+                {
+                  "$ref": "#/$defs/StoneOfBlast"
+                },
+                {
+                  "$ref": "#/$defs/StoneOfBlink"
+                },
+                {
+                  "$ref": "#/$defs/StoneOfDeepSleep"
+                },
+                {
+                  "$ref": "#/$defs/StoneOfClairvoyance"
+                },
+                {
+                  "$ref": "#/$defs/StoneOfAggression"
+                },
+                {
+                  "$ref": "#/$defs/StoneOfFlock"
+                },
+                {
+                  "$ref": "#/$defs/StoneOfShock"
+                },
+                {
+                  "$ref": "#/$defs/StoneOfFear"
+                },
+                {
+                  "$ref": "#/$defs/StoneOfIntuition"
+                },
+                {
+                  "$ref": "#/$defs/StoneOfAugmentation"
+                },
+                {
+                  "$ref": "#/$defs/StoneOfDetectMagic"
+                },
+                {
+                  "$ref": "#/$defs/StoneOfEnchantment"
                 }
               ]
             },
@@ -1338,6 +1530,7 @@
               "discriminator": {
                 "mapping": {
                   "amulet": "#/$defs/Amulet",
+                  "arcane_stylus": "#/$defs/ArcaneStylus",
                   "armor": "#/$defs/Armor",
                   "artifact": "#/$defs/Artifact",
                   "bag": "#/$defs/Bag",
@@ -1371,6 +1564,7 @@
                   "kings_crown": "#/$defs/KingsCrown",
                   "leather_armor": "#/$defs/LeatherArmor",
                   "magical_holster": "#/$defs/MagicalHolster",
+                  "magical_infusion": "#/$defs/MagicalInfusion",
                   "mail_armor": "#/$defs/MailArmor",
                   "melee_weapon": "#/$defs/MeleeWeapon",
                   "mimic_tooth": "#/$defs/MimicTooth",
@@ -1434,6 +1628,18 @@
                   "spirit_bow": "#/$defs/SpiritBow",
                   "staff": "#/$defs/Staff",
                   "stone": "#/$defs/Stone",
+                  "stone_of_aggression": "#/$defs/StoneOfAggression",
+                  "stone_of_augmentation": "#/$defs/StoneOfAugmentation",
+                  "stone_of_blast": "#/$defs/StoneOfBlast",
+                  "stone_of_blink": "#/$defs/StoneOfBlink",
+                  "stone_of_clairvoyance": "#/$defs/StoneOfClairvoyance",
+                  "stone_of_deep_sleep": "#/$defs/StoneOfDeepSleep",
+                  "stone_of_detect_magic": "#/$defs/StoneOfDetectMagic",
+                  "stone_of_enchantment": "#/$defs/StoneOfEnchantment",
+                  "stone_of_fear": "#/$defs/StoneOfFear",
+                  "stone_of_flock": "#/$defs/StoneOfFlock",
+                  "stone_of_intuition": "#/$defs/StoneOfIntuition",
+                  "stone_of_shock": "#/$defs/StoneOfShock",
                   "tengu_mask": "#/$defs/TenguMask",
                   "thirteen_leaf_clover": "#/$defs/ThirteenLeafClover",
                   "throwable": "#/$defs/Throwable",
@@ -1749,6 +1955,12 @@
                   "$ref": "#/$defs/Throwable"
                 },
                 {
+                  "$ref": "#/$defs/ArcaneStylus"
+                },
+                {
+                  "$ref": "#/$defs/MagicalInfusion"
+                },
+                {
                   "$ref": "#/$defs/GooBlob"
                 },
                 {
@@ -1828,6 +2040,42 @@
                 },
                 {
                   "$ref": "#/$defs/TrinketCatalyst"
+                },
+                {
+                  "$ref": "#/$defs/StoneOfBlast"
+                },
+                {
+                  "$ref": "#/$defs/StoneOfBlink"
+                },
+                {
+                  "$ref": "#/$defs/StoneOfDeepSleep"
+                },
+                {
+                  "$ref": "#/$defs/StoneOfClairvoyance"
+                },
+                {
+                  "$ref": "#/$defs/StoneOfAggression"
+                },
+                {
+                  "$ref": "#/$defs/StoneOfFlock"
+                },
+                {
+                  "$ref": "#/$defs/StoneOfShock"
+                },
+                {
+                  "$ref": "#/$defs/StoneOfFear"
+                },
+                {
+                  "$ref": "#/$defs/StoneOfIntuition"
+                },
+                {
+                  "$ref": "#/$defs/StoneOfAugmentation"
+                },
+                {
+                  "$ref": "#/$defs/StoneOfDetectMagic"
+                },
+                {
+                  "$ref": "#/$defs/StoneOfEnchantment"
                 }
               ]
             },
@@ -1843,6 +2091,7 @@
               "discriminator": {
                 "mapping": {
                   "amulet": "#/$defs/Amulet",
+                  "arcane_stylus": "#/$defs/ArcaneStylus",
                   "armor": "#/$defs/Armor",
                   "artifact": "#/$defs/Artifact",
                   "bag": "#/$defs/Bag",
@@ -1876,6 +2125,7 @@
                   "kings_crown": "#/$defs/KingsCrown",
                   "leather_armor": "#/$defs/LeatherArmor",
                   "magical_holster": "#/$defs/MagicalHolster",
+                  "magical_infusion": "#/$defs/MagicalInfusion",
                   "mail_armor": "#/$defs/MailArmor",
                   "melee_weapon": "#/$defs/MeleeWeapon",
                   "mimic_tooth": "#/$defs/MimicTooth",
@@ -1939,6 +2189,18 @@
                   "spirit_bow": "#/$defs/SpiritBow",
                   "staff": "#/$defs/Staff",
                   "stone": "#/$defs/Stone",
+                  "stone_of_aggression": "#/$defs/StoneOfAggression",
+                  "stone_of_augmentation": "#/$defs/StoneOfAugmentation",
+                  "stone_of_blast": "#/$defs/StoneOfBlast",
+                  "stone_of_blink": "#/$defs/StoneOfBlink",
+                  "stone_of_clairvoyance": "#/$defs/StoneOfClairvoyance",
+                  "stone_of_deep_sleep": "#/$defs/StoneOfDeepSleep",
+                  "stone_of_detect_magic": "#/$defs/StoneOfDetectMagic",
+                  "stone_of_enchantment": "#/$defs/StoneOfEnchantment",
+                  "stone_of_fear": "#/$defs/StoneOfFear",
+                  "stone_of_flock": "#/$defs/StoneOfFlock",
+                  "stone_of_intuition": "#/$defs/StoneOfIntuition",
+                  "stone_of_shock": "#/$defs/StoneOfShock",
                   "tengu_mask": "#/$defs/TenguMask",
                   "thirteen_leaf_clover": "#/$defs/ThirteenLeafClover",
                   "throwable": "#/$defs/Throwable",
@@ -2254,6 +2516,12 @@
                   "$ref": "#/$defs/Throwable"
                 },
                 {
+                  "$ref": "#/$defs/ArcaneStylus"
+                },
+                {
+                  "$ref": "#/$defs/MagicalInfusion"
+                },
+                {
                   "$ref": "#/$defs/GooBlob"
                 },
                 {
@@ -2333,6 +2601,42 @@
                 },
                 {
                   "$ref": "#/$defs/TrinketCatalyst"
+                },
+                {
+                  "$ref": "#/$defs/StoneOfBlast"
+                },
+                {
+                  "$ref": "#/$defs/StoneOfBlink"
+                },
+                {
+                  "$ref": "#/$defs/StoneOfDeepSleep"
+                },
+                {
+                  "$ref": "#/$defs/StoneOfClairvoyance"
+                },
+                {
+                  "$ref": "#/$defs/StoneOfAggression"
+                },
+                {
+                  "$ref": "#/$defs/StoneOfFlock"
+                },
+                {
+                  "$ref": "#/$defs/StoneOfShock"
+                },
+                {
+                  "$ref": "#/$defs/StoneOfFear"
+                },
+                {
+                  "$ref": "#/$defs/StoneOfIntuition"
+                },
+                {
+                  "$ref": "#/$defs/StoneOfAugmentation"
+                },
+                {
+                  "$ref": "#/$defs/StoneOfDetectMagic"
+                },
+                {
+                  "$ref": "#/$defs/StoneOfEnchantment"
                 }
               ]
             },
@@ -2348,6 +2652,7 @@
               "discriminator": {
                 "mapping": {
                   "amulet": "#/$defs/Amulet",
+                  "arcane_stylus": "#/$defs/ArcaneStylus",
                   "armor": "#/$defs/Armor",
                   "artifact": "#/$defs/Artifact",
                   "bag": "#/$defs/Bag",
@@ -2381,6 +2686,7 @@
                   "kings_crown": "#/$defs/KingsCrown",
                   "leather_armor": "#/$defs/LeatherArmor",
                   "magical_holster": "#/$defs/MagicalHolster",
+                  "magical_infusion": "#/$defs/MagicalInfusion",
                   "mail_armor": "#/$defs/MailArmor",
                   "melee_weapon": "#/$defs/MeleeWeapon",
                   "mimic_tooth": "#/$defs/MimicTooth",
@@ -2444,6 +2750,18 @@
                   "spirit_bow": "#/$defs/SpiritBow",
                   "staff": "#/$defs/Staff",
                   "stone": "#/$defs/Stone",
+                  "stone_of_aggression": "#/$defs/StoneOfAggression",
+                  "stone_of_augmentation": "#/$defs/StoneOfAugmentation",
+                  "stone_of_blast": "#/$defs/StoneOfBlast",
+                  "stone_of_blink": "#/$defs/StoneOfBlink",
+                  "stone_of_clairvoyance": "#/$defs/StoneOfClairvoyance",
+                  "stone_of_deep_sleep": "#/$defs/StoneOfDeepSleep",
+                  "stone_of_detect_magic": "#/$defs/StoneOfDetectMagic",
+                  "stone_of_enchantment": "#/$defs/StoneOfEnchantment",
+                  "stone_of_fear": "#/$defs/StoneOfFear",
+                  "stone_of_flock": "#/$defs/StoneOfFlock",
+                  "stone_of_intuition": "#/$defs/StoneOfIntuition",
+                  "stone_of_shock": "#/$defs/StoneOfShock",
                   "tengu_mask": "#/$defs/TenguMask",
                   "thirteen_leaf_clover": "#/$defs/ThirteenLeafClover",
                   "throwable": "#/$defs/Throwable",
@@ -2759,6 +3077,12 @@
                   "$ref": "#/$defs/Throwable"
                 },
                 {
+                  "$ref": "#/$defs/ArcaneStylus"
+                },
+                {
+                  "$ref": "#/$defs/MagicalInfusion"
+                },
+                {
                   "$ref": "#/$defs/GooBlob"
                 },
                 {
@@ -2838,6 +3162,42 @@
                 },
                 {
                   "$ref": "#/$defs/TrinketCatalyst"
+                },
+                {
+                  "$ref": "#/$defs/StoneOfBlast"
+                },
+                {
+                  "$ref": "#/$defs/StoneOfBlink"
+                },
+                {
+                  "$ref": "#/$defs/StoneOfDeepSleep"
+                },
+                {
+                  "$ref": "#/$defs/StoneOfClairvoyance"
+                },
+                {
+                  "$ref": "#/$defs/StoneOfAggression"
+                },
+                {
+                  "$ref": "#/$defs/StoneOfFlock"
+                },
+                {
+                  "$ref": "#/$defs/StoneOfShock"
+                },
+                {
+                  "$ref": "#/$defs/StoneOfFear"
+                },
+                {
+                  "$ref": "#/$defs/StoneOfIntuition"
+                },
+                {
+                  "$ref": "#/$defs/StoneOfAugmentation"
+                },
+                {
+                  "$ref": "#/$defs/StoneOfDetectMagic"
+                },
+                {
+                  "$ref": "#/$defs/StoneOfEnchantment"
                 }
               ]
             },
@@ -2853,6 +3213,7 @@
               "discriminator": {
                 "mapping": {
                   "amulet": "#/$defs/Amulet",
+                  "arcane_stylus": "#/$defs/ArcaneStylus",
                   "armor": "#/$defs/Armor",
                   "artifact": "#/$defs/Artifact",
                   "bag": "#/$defs/Bag",
@@ -2886,6 +3247,7 @@
                   "kings_crown": "#/$defs/KingsCrown",
                   "leather_armor": "#/$defs/LeatherArmor",
                   "magical_holster": "#/$defs/MagicalHolster",
+                  "magical_infusion": "#/$defs/MagicalInfusion",
                   "mail_armor": "#/$defs/MailArmor",
                   "melee_weapon": "#/$defs/MeleeWeapon",
                   "mimic_tooth": "#/$defs/MimicTooth",
@@ -2949,6 +3311,18 @@
                   "spirit_bow": "#/$defs/SpiritBow",
                   "staff": "#/$defs/Staff",
                   "stone": "#/$defs/Stone",
+                  "stone_of_aggression": "#/$defs/StoneOfAggression",
+                  "stone_of_augmentation": "#/$defs/StoneOfAugmentation",
+                  "stone_of_blast": "#/$defs/StoneOfBlast",
+                  "stone_of_blink": "#/$defs/StoneOfBlink",
+                  "stone_of_clairvoyance": "#/$defs/StoneOfClairvoyance",
+                  "stone_of_deep_sleep": "#/$defs/StoneOfDeepSleep",
+                  "stone_of_detect_magic": "#/$defs/StoneOfDetectMagic",
+                  "stone_of_enchantment": "#/$defs/StoneOfEnchantment",
+                  "stone_of_fear": "#/$defs/StoneOfFear",
+                  "stone_of_flock": "#/$defs/StoneOfFlock",
+                  "stone_of_intuition": "#/$defs/StoneOfIntuition",
+                  "stone_of_shock": "#/$defs/StoneOfShock",
                   "tengu_mask": "#/$defs/TenguMask",
                   "thirteen_leaf_clover": "#/$defs/ThirteenLeafClover",
                   "throwable": "#/$defs/Throwable",
@@ -3264,6 +3638,12 @@
                   "$ref": "#/$defs/Throwable"
                 },
                 {
+                  "$ref": "#/$defs/ArcaneStylus"
+                },
+                {
+                  "$ref": "#/$defs/MagicalInfusion"
+                },
+                {
                   "$ref": "#/$defs/GooBlob"
                 },
                 {
@@ -3343,6 +3723,42 @@
                 },
                 {
                   "$ref": "#/$defs/TrinketCatalyst"
+                },
+                {
+                  "$ref": "#/$defs/StoneOfBlast"
+                },
+                {
+                  "$ref": "#/$defs/StoneOfBlink"
+                },
+                {
+                  "$ref": "#/$defs/StoneOfDeepSleep"
+                },
+                {
+                  "$ref": "#/$defs/StoneOfClairvoyance"
+                },
+                {
+                  "$ref": "#/$defs/StoneOfAggression"
+                },
+                {
+                  "$ref": "#/$defs/StoneOfFlock"
+                },
+                {
+                  "$ref": "#/$defs/StoneOfShock"
+                },
+                {
+                  "$ref": "#/$defs/StoneOfFear"
+                },
+                {
+                  "$ref": "#/$defs/StoneOfIntuition"
+                },
+                {
+                  "$ref": "#/$defs/StoneOfAugmentation"
+                },
+                {
+                  "$ref": "#/$defs/StoneOfDetectMagic"
+                },
+                {
+                  "$ref": "#/$defs/StoneOfEnchantment"
                 }
               ]
             },
@@ -3596,6 +4012,17 @@
           "type": "number"
         },
         "enchantment": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "augment": {
           "anyOf": [
             {
               "type": "string"
@@ -3918,6 +4345,7 @@
           "type": "string"
         },
         "name": {
+          "default": "Chest",
           "type": "string"
         },
         "type": {
@@ -3984,6 +4412,7 @@
             "discriminator": {
               "mapping": {
                 "amulet": "#/$defs/Amulet",
+                "arcane_stylus": "#/$defs/ArcaneStylus",
                 "armor": "#/$defs/Armor",
                 "artifact": "#/$defs/Artifact",
                 "bag": "#/$defs/Bag",
@@ -4017,6 +4446,7 @@
                 "kings_crown": "#/$defs/KingsCrown",
                 "leather_armor": "#/$defs/LeatherArmor",
                 "magical_holster": "#/$defs/MagicalHolster",
+                "magical_infusion": "#/$defs/MagicalInfusion",
                 "mail_armor": "#/$defs/MailArmor",
                 "melee_weapon": "#/$defs/MeleeWeapon",
                 "mimic_tooth": "#/$defs/MimicTooth",
@@ -4080,6 +4510,18 @@
                 "spirit_bow": "#/$defs/SpiritBow",
                 "staff": "#/$defs/Staff",
                 "stone": "#/$defs/Stone",
+                "stone_of_aggression": "#/$defs/StoneOfAggression",
+                "stone_of_augmentation": "#/$defs/StoneOfAugmentation",
+                "stone_of_blast": "#/$defs/StoneOfBlast",
+                "stone_of_blink": "#/$defs/StoneOfBlink",
+                "stone_of_clairvoyance": "#/$defs/StoneOfClairvoyance",
+                "stone_of_deep_sleep": "#/$defs/StoneOfDeepSleep",
+                "stone_of_detect_magic": "#/$defs/StoneOfDetectMagic",
+                "stone_of_enchantment": "#/$defs/StoneOfEnchantment",
+                "stone_of_fear": "#/$defs/StoneOfFear",
+                "stone_of_flock": "#/$defs/StoneOfFlock",
+                "stone_of_intuition": "#/$defs/StoneOfIntuition",
+                "stone_of_shock": "#/$defs/StoneOfShock",
                 "tengu_mask": "#/$defs/TenguMask",
                 "thirteen_leaf_clover": "#/$defs/ThirteenLeafClover",
                 "throwable": "#/$defs/Throwable",
@@ -4395,6 +4837,12 @@
                 "$ref": "#/$defs/Throwable"
               },
               {
+                "$ref": "#/$defs/ArcaneStylus"
+              },
+              {
+                "$ref": "#/$defs/MagicalInfusion"
+              },
+              {
                 "$ref": "#/$defs/GooBlob"
               },
               {
@@ -4474,15 +4922,59 @@
               },
               {
                 "$ref": "#/$defs/TrinketCatalyst"
+              },
+              {
+                "$ref": "#/$defs/StoneOfBlast"
+              },
+              {
+                "$ref": "#/$defs/StoneOfBlink"
+              },
+              {
+                "$ref": "#/$defs/StoneOfDeepSleep"
+              },
+              {
+                "$ref": "#/$defs/StoneOfClairvoyance"
+              },
+              {
+                "$ref": "#/$defs/StoneOfAggression"
+              },
+              {
+                "$ref": "#/$defs/StoneOfFlock"
+              },
+              {
+                "$ref": "#/$defs/StoneOfShock"
+              },
+              {
+                "$ref": "#/$defs/StoneOfFear"
+              },
+              {
+                "$ref": "#/$defs/StoneOfIntuition"
+              },
+              {
+                "$ref": "#/$defs/StoneOfAugmentation"
+              },
+              {
+                "$ref": "#/$defs/StoneOfDetectMagic"
+              },
+              {
+                "$ref": "#/$defs/StoneOfEnchantment"
               }
             ]
           },
           "type": "array"
+        },
+        "item_category": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
-      "required": [
-        "name"
-      ],
       "type": "object"
     },
     "CloakOfShadows": {
@@ -4646,6 +5138,17 @@
         },
         "enchantment": {
           "$ref": "#/$defs/ArmorEnchantment"
+        },
+        "augment": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "type": "object"
@@ -4806,6 +5309,17 @@
           "type": "number"
         },
         "enchantment": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "augment": {
           "anyOf": [
             {
               "type": "string"
@@ -6333,6 +6847,17 @@
         },
         "enchantment": {
           "$ref": "#/$defs/ArmorEnchantment"
+        },
+        "augment": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "type": "object"
@@ -6412,6 +6937,7 @@
             "discriminator": {
               "mapping": {
                 "amulet": "#/$defs/Amulet",
+                "arcane_stylus": "#/$defs/ArcaneStylus",
                 "armor": "#/$defs/Armor",
                 "artifact": "#/$defs/Artifact",
                 "bag": "#/$defs/Bag",
@@ -6445,6 +6971,7 @@
                 "kings_crown": "#/$defs/KingsCrown",
                 "leather_armor": "#/$defs/LeatherArmor",
                 "magical_holster": "#/$defs/MagicalHolster",
+                "magical_infusion": "#/$defs/MagicalInfusion",
                 "mail_armor": "#/$defs/MailArmor",
                 "melee_weapon": "#/$defs/MeleeWeapon",
                 "mimic_tooth": "#/$defs/MimicTooth",
@@ -6508,6 +7035,18 @@
                 "spirit_bow": "#/$defs/SpiritBow",
                 "staff": "#/$defs/Staff",
                 "stone": "#/$defs/Stone",
+                "stone_of_aggression": "#/$defs/StoneOfAggression",
+                "stone_of_augmentation": "#/$defs/StoneOfAugmentation",
+                "stone_of_blast": "#/$defs/StoneOfBlast",
+                "stone_of_blink": "#/$defs/StoneOfBlink",
+                "stone_of_clairvoyance": "#/$defs/StoneOfClairvoyance",
+                "stone_of_deep_sleep": "#/$defs/StoneOfDeepSleep",
+                "stone_of_detect_magic": "#/$defs/StoneOfDetectMagic",
+                "stone_of_enchantment": "#/$defs/StoneOfEnchantment",
+                "stone_of_fear": "#/$defs/StoneOfFear",
+                "stone_of_flock": "#/$defs/StoneOfFlock",
+                "stone_of_intuition": "#/$defs/StoneOfIntuition",
+                "stone_of_shock": "#/$defs/StoneOfShock",
                 "tengu_mask": "#/$defs/TenguMask",
                 "thirteen_leaf_clover": "#/$defs/ThirteenLeafClover",
                 "throwable": "#/$defs/Throwable",
@@ -6823,6 +7362,12 @@
                 "$ref": "#/$defs/Throwable"
               },
               {
+                "$ref": "#/$defs/ArcaneStylus"
+              },
+              {
+                "$ref": "#/$defs/MagicalInfusion"
+              },
+              {
                 "$ref": "#/$defs/GooBlob"
               },
               {
@@ -6902,10 +7447,115 @@
               },
               {
                 "$ref": "#/$defs/TrinketCatalyst"
+              },
+              {
+                "$ref": "#/$defs/StoneOfBlast"
+              },
+              {
+                "$ref": "#/$defs/StoneOfBlink"
+              },
+              {
+                "$ref": "#/$defs/StoneOfDeepSleep"
+              },
+              {
+                "$ref": "#/$defs/StoneOfClairvoyance"
+              },
+              {
+                "$ref": "#/$defs/StoneOfAggression"
+              },
+              {
+                "$ref": "#/$defs/StoneOfFlock"
+              },
+              {
+                "$ref": "#/$defs/StoneOfShock"
+              },
+              {
+                "$ref": "#/$defs/StoneOfFear"
+              },
+              {
+                "$ref": "#/$defs/StoneOfIntuition"
+              },
+              {
+                "$ref": "#/$defs/StoneOfAugmentation"
+              },
+              {
+                "$ref": "#/$defs/StoneOfDetectMagic"
+              },
+              {
+                "$ref": "#/$defs/StoneOfEnchantment"
               }
             ]
           },
           "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "MagicalInfusion": {
+      "properties": {
+        "kind": {
+          "const": "magical_infusion",
+          "default": "magical_infusion",
+          "type": "string"
+        },
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "name": {
+          "default": "Magical Infusion",
+          "type": "string"
+        },
+        "type": {
+          "default": "spell",
+          "type": "string"
+        },
+        "pos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Position"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "quantity": {
+          "default": 1,
+          "type": "integer"
+        },
+        "level": {
+          "default": 0,
+          "type": "integer"
+        },
+        "level_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "unique": {
+          "default": true,
+          "type": "boolean"
+        },
+        "kept_though_lost": {
+          "default": false,
+          "type": "boolean"
+        },
+        "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
         }
       },
       "type": "object"
@@ -6986,6 +7636,17 @@
         },
         "enchantment": {
           "$ref": "#/$defs/ArmorEnchantment"
+        },
+        "augment": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "type": "object"
@@ -7072,6 +7733,17 @@
           "type": "number"
         },
         "enchantment": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "augment": {
           "anyOf": [
             {
               "type": "string"
@@ -7282,6 +7954,17 @@
           "type": "number"
         },
         "enchantment": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "augment": {
           "anyOf": [
             {
               "type": "string"
@@ -8093,6 +8776,17 @@
         },
         "enchantment": {
           "$ref": "#/$defs/ArmorEnchantment"
+        },
+        "augment": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "type": "object"
@@ -8542,6 +9236,7 @@
             "discriminator": {
               "mapping": {
                 "amulet": "#/$defs/Amulet",
+                "arcane_stylus": "#/$defs/ArcaneStylus",
                 "armor": "#/$defs/Armor",
                 "artifact": "#/$defs/Artifact",
                 "bag": "#/$defs/Bag",
@@ -8575,6 +9270,7 @@
                 "kings_crown": "#/$defs/KingsCrown",
                 "leather_armor": "#/$defs/LeatherArmor",
                 "magical_holster": "#/$defs/MagicalHolster",
+                "magical_infusion": "#/$defs/MagicalInfusion",
                 "mail_armor": "#/$defs/MailArmor",
                 "melee_weapon": "#/$defs/MeleeWeapon",
                 "mimic_tooth": "#/$defs/MimicTooth",
@@ -8638,6 +9334,18 @@
                 "spirit_bow": "#/$defs/SpiritBow",
                 "staff": "#/$defs/Staff",
                 "stone": "#/$defs/Stone",
+                "stone_of_aggression": "#/$defs/StoneOfAggression",
+                "stone_of_augmentation": "#/$defs/StoneOfAugmentation",
+                "stone_of_blast": "#/$defs/StoneOfBlast",
+                "stone_of_blink": "#/$defs/StoneOfBlink",
+                "stone_of_clairvoyance": "#/$defs/StoneOfClairvoyance",
+                "stone_of_deep_sleep": "#/$defs/StoneOfDeepSleep",
+                "stone_of_detect_magic": "#/$defs/StoneOfDetectMagic",
+                "stone_of_enchantment": "#/$defs/StoneOfEnchantment",
+                "stone_of_fear": "#/$defs/StoneOfFear",
+                "stone_of_flock": "#/$defs/StoneOfFlock",
+                "stone_of_intuition": "#/$defs/StoneOfIntuition",
+                "stone_of_shock": "#/$defs/StoneOfShock",
                 "tengu_mask": "#/$defs/TenguMask",
                 "thirteen_leaf_clover": "#/$defs/ThirteenLeafClover",
                 "throwable": "#/$defs/Throwable",
@@ -8953,6 +9661,12 @@
                 "$ref": "#/$defs/Throwable"
               },
               {
+                "$ref": "#/$defs/ArcaneStylus"
+              },
+              {
+                "$ref": "#/$defs/MagicalInfusion"
+              },
+              {
                 "$ref": "#/$defs/GooBlob"
               },
               {
@@ -9032,6 +9746,42 @@
               },
               {
                 "$ref": "#/$defs/TrinketCatalyst"
+              },
+              {
+                "$ref": "#/$defs/StoneOfBlast"
+              },
+              {
+                "$ref": "#/$defs/StoneOfBlink"
+              },
+              {
+                "$ref": "#/$defs/StoneOfDeepSleep"
+              },
+              {
+                "$ref": "#/$defs/StoneOfClairvoyance"
+              },
+              {
+                "$ref": "#/$defs/StoneOfAggression"
+              },
+              {
+                "$ref": "#/$defs/StoneOfFlock"
+              },
+              {
+                "$ref": "#/$defs/StoneOfShock"
+              },
+              {
+                "$ref": "#/$defs/StoneOfFear"
+              },
+              {
+                "$ref": "#/$defs/StoneOfIntuition"
+              },
+              {
+                "$ref": "#/$defs/StoneOfAugmentation"
+              },
+              {
+                "$ref": "#/$defs/StoneOfDetectMagic"
+              },
+              {
+                "$ref": "#/$defs/StoneOfEnchantment"
               }
             ]
           },
@@ -9044,6 +9794,7 @@
               "discriminator": {
                 "mapping": {
                   "amulet": "#/$defs/Amulet",
+                  "arcane_stylus": "#/$defs/ArcaneStylus",
                   "armor": "#/$defs/Armor",
                   "artifact": "#/$defs/Artifact",
                   "bag": "#/$defs/Bag",
@@ -9077,6 +9828,7 @@
                   "kings_crown": "#/$defs/KingsCrown",
                   "leather_armor": "#/$defs/LeatherArmor",
                   "magical_holster": "#/$defs/MagicalHolster",
+                  "magical_infusion": "#/$defs/MagicalInfusion",
                   "mail_armor": "#/$defs/MailArmor",
                   "melee_weapon": "#/$defs/MeleeWeapon",
                   "mimic_tooth": "#/$defs/MimicTooth",
@@ -9140,6 +9892,18 @@
                   "spirit_bow": "#/$defs/SpiritBow",
                   "staff": "#/$defs/Staff",
                   "stone": "#/$defs/Stone",
+                  "stone_of_aggression": "#/$defs/StoneOfAggression",
+                  "stone_of_augmentation": "#/$defs/StoneOfAugmentation",
+                  "stone_of_blast": "#/$defs/StoneOfBlast",
+                  "stone_of_blink": "#/$defs/StoneOfBlink",
+                  "stone_of_clairvoyance": "#/$defs/StoneOfClairvoyance",
+                  "stone_of_deep_sleep": "#/$defs/StoneOfDeepSleep",
+                  "stone_of_detect_magic": "#/$defs/StoneOfDetectMagic",
+                  "stone_of_enchantment": "#/$defs/StoneOfEnchantment",
+                  "stone_of_fear": "#/$defs/StoneOfFear",
+                  "stone_of_flock": "#/$defs/StoneOfFlock",
+                  "stone_of_intuition": "#/$defs/StoneOfIntuition",
+                  "stone_of_shock": "#/$defs/StoneOfShock",
                   "tengu_mask": "#/$defs/TenguMask",
                   "thirteen_leaf_clover": "#/$defs/ThirteenLeafClover",
                   "throwable": "#/$defs/Throwable",
@@ -9455,6 +10219,12 @@
                   "$ref": "#/$defs/Throwable"
                 },
                 {
+                  "$ref": "#/$defs/ArcaneStylus"
+                },
+                {
+                  "$ref": "#/$defs/MagicalInfusion"
+                },
+                {
                   "$ref": "#/$defs/GooBlob"
                 },
                 {
@@ -9534,6 +10304,42 @@
                 },
                 {
                   "$ref": "#/$defs/TrinketCatalyst"
+                },
+                {
+                  "$ref": "#/$defs/StoneOfBlast"
+                },
+                {
+                  "$ref": "#/$defs/StoneOfBlink"
+                },
+                {
+                  "$ref": "#/$defs/StoneOfDeepSleep"
+                },
+                {
+                  "$ref": "#/$defs/StoneOfClairvoyance"
+                },
+                {
+                  "$ref": "#/$defs/StoneOfAggression"
+                },
+                {
+                  "$ref": "#/$defs/StoneOfFlock"
+                },
+                {
+                  "$ref": "#/$defs/StoneOfShock"
+                },
+                {
+                  "$ref": "#/$defs/StoneOfFear"
+                },
+                {
+                  "$ref": "#/$defs/StoneOfIntuition"
+                },
+                {
+                  "$ref": "#/$defs/StoneOfAugmentation"
+                },
+                {
+                  "$ref": "#/$defs/StoneOfDetectMagic"
+                },
+                {
+                  "$ref": "#/$defs/StoneOfEnchantment"
                 }
               ]
             },
@@ -9549,6 +10355,7 @@
               "discriminator": {
                 "mapping": {
                   "amulet": "#/$defs/Amulet",
+                  "arcane_stylus": "#/$defs/ArcaneStylus",
                   "armor": "#/$defs/Armor",
                   "artifact": "#/$defs/Artifact",
                   "bag": "#/$defs/Bag",
@@ -9582,6 +10389,7 @@
                   "kings_crown": "#/$defs/KingsCrown",
                   "leather_armor": "#/$defs/LeatherArmor",
                   "magical_holster": "#/$defs/MagicalHolster",
+                  "magical_infusion": "#/$defs/MagicalInfusion",
                   "mail_armor": "#/$defs/MailArmor",
                   "melee_weapon": "#/$defs/MeleeWeapon",
                   "mimic_tooth": "#/$defs/MimicTooth",
@@ -9645,6 +10453,18 @@
                   "spirit_bow": "#/$defs/SpiritBow",
                   "staff": "#/$defs/Staff",
                   "stone": "#/$defs/Stone",
+                  "stone_of_aggression": "#/$defs/StoneOfAggression",
+                  "stone_of_augmentation": "#/$defs/StoneOfAugmentation",
+                  "stone_of_blast": "#/$defs/StoneOfBlast",
+                  "stone_of_blink": "#/$defs/StoneOfBlink",
+                  "stone_of_clairvoyance": "#/$defs/StoneOfClairvoyance",
+                  "stone_of_deep_sleep": "#/$defs/StoneOfDeepSleep",
+                  "stone_of_detect_magic": "#/$defs/StoneOfDetectMagic",
+                  "stone_of_enchantment": "#/$defs/StoneOfEnchantment",
+                  "stone_of_fear": "#/$defs/StoneOfFear",
+                  "stone_of_flock": "#/$defs/StoneOfFlock",
+                  "stone_of_intuition": "#/$defs/StoneOfIntuition",
+                  "stone_of_shock": "#/$defs/StoneOfShock",
                   "tengu_mask": "#/$defs/TenguMask",
                   "thirteen_leaf_clover": "#/$defs/ThirteenLeafClover",
                   "throwable": "#/$defs/Throwable",
@@ -9960,6 +10780,12 @@
                   "$ref": "#/$defs/Throwable"
                 },
                 {
+                  "$ref": "#/$defs/ArcaneStylus"
+                },
+                {
+                  "$ref": "#/$defs/MagicalInfusion"
+                },
+                {
                   "$ref": "#/$defs/GooBlob"
                 },
                 {
@@ -10039,6 +10865,42 @@
                 },
                 {
                   "$ref": "#/$defs/TrinketCatalyst"
+                },
+                {
+                  "$ref": "#/$defs/StoneOfBlast"
+                },
+                {
+                  "$ref": "#/$defs/StoneOfBlink"
+                },
+                {
+                  "$ref": "#/$defs/StoneOfDeepSleep"
+                },
+                {
+                  "$ref": "#/$defs/StoneOfClairvoyance"
+                },
+                {
+                  "$ref": "#/$defs/StoneOfAggression"
+                },
+                {
+                  "$ref": "#/$defs/StoneOfFlock"
+                },
+                {
+                  "$ref": "#/$defs/StoneOfShock"
+                },
+                {
+                  "$ref": "#/$defs/StoneOfFear"
+                },
+                {
+                  "$ref": "#/$defs/StoneOfIntuition"
+                },
+                {
+                  "$ref": "#/$defs/StoneOfAugmentation"
+                },
+                {
+                  "$ref": "#/$defs/StoneOfDetectMagic"
+                },
+                {
+                  "$ref": "#/$defs/StoneOfEnchantment"
                 }
               ]
             },
@@ -10226,6 +11088,7 @@
             "discriminator": {
               "mapping": {
                 "amulet": "#/$defs/Amulet",
+                "arcane_stylus": "#/$defs/ArcaneStylus",
                 "armor": "#/$defs/Armor",
                 "artifact": "#/$defs/Artifact",
                 "bag": "#/$defs/Bag",
@@ -10259,6 +11122,7 @@
                 "kings_crown": "#/$defs/KingsCrown",
                 "leather_armor": "#/$defs/LeatherArmor",
                 "magical_holster": "#/$defs/MagicalHolster",
+                "magical_infusion": "#/$defs/MagicalInfusion",
                 "mail_armor": "#/$defs/MailArmor",
                 "melee_weapon": "#/$defs/MeleeWeapon",
                 "mimic_tooth": "#/$defs/MimicTooth",
@@ -10322,6 +11186,18 @@
                 "spirit_bow": "#/$defs/SpiritBow",
                 "staff": "#/$defs/Staff",
                 "stone": "#/$defs/Stone",
+                "stone_of_aggression": "#/$defs/StoneOfAggression",
+                "stone_of_augmentation": "#/$defs/StoneOfAugmentation",
+                "stone_of_blast": "#/$defs/StoneOfBlast",
+                "stone_of_blink": "#/$defs/StoneOfBlink",
+                "stone_of_clairvoyance": "#/$defs/StoneOfClairvoyance",
+                "stone_of_deep_sleep": "#/$defs/StoneOfDeepSleep",
+                "stone_of_detect_magic": "#/$defs/StoneOfDetectMagic",
+                "stone_of_enchantment": "#/$defs/StoneOfEnchantment",
+                "stone_of_fear": "#/$defs/StoneOfFear",
+                "stone_of_flock": "#/$defs/StoneOfFlock",
+                "stone_of_intuition": "#/$defs/StoneOfIntuition",
+                "stone_of_shock": "#/$defs/StoneOfShock",
                 "tengu_mask": "#/$defs/TenguMask",
                 "thirteen_leaf_clover": "#/$defs/ThirteenLeafClover",
                 "throwable": "#/$defs/Throwable",
@@ -10637,6 +11513,12 @@
                 "$ref": "#/$defs/Throwable"
               },
               {
+                "$ref": "#/$defs/ArcaneStylus"
+              },
+              {
+                "$ref": "#/$defs/MagicalInfusion"
+              },
+              {
                 "$ref": "#/$defs/GooBlob"
               },
               {
@@ -10716,6 +11598,42 @@
               },
               {
                 "$ref": "#/$defs/TrinketCatalyst"
+              },
+              {
+                "$ref": "#/$defs/StoneOfBlast"
+              },
+              {
+                "$ref": "#/$defs/StoneOfBlink"
+              },
+              {
+                "$ref": "#/$defs/StoneOfDeepSleep"
+              },
+              {
+                "$ref": "#/$defs/StoneOfClairvoyance"
+              },
+              {
+                "$ref": "#/$defs/StoneOfAggression"
+              },
+              {
+                "$ref": "#/$defs/StoneOfFlock"
+              },
+              {
+                "$ref": "#/$defs/StoneOfShock"
+              },
+              {
+                "$ref": "#/$defs/StoneOfFear"
+              },
+              {
+                "$ref": "#/$defs/StoneOfIntuition"
+              },
+              {
+                "$ref": "#/$defs/StoneOfAugmentation"
+              },
+              {
+                "$ref": "#/$defs/StoneOfDetectMagic"
+              },
+              {
+                "$ref": "#/$defs/StoneOfEnchantment"
               }
             ]
           },
@@ -13051,6 +13969,17 @@
         },
         "enchantment": {
           "$ref": "#/$defs/ArmorEnchantment"
+        },
+        "augment": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "type": "object"
@@ -13201,6 +14130,7 @@
             "discriminator": {
               "mapping": {
                 "amulet": "#/$defs/Amulet",
+                "arcane_stylus": "#/$defs/ArcaneStylus",
                 "armor": "#/$defs/Armor",
                 "artifact": "#/$defs/Artifact",
                 "bag": "#/$defs/Bag",
@@ -13234,6 +14164,7 @@
                 "kings_crown": "#/$defs/KingsCrown",
                 "leather_armor": "#/$defs/LeatherArmor",
                 "magical_holster": "#/$defs/MagicalHolster",
+                "magical_infusion": "#/$defs/MagicalInfusion",
                 "mail_armor": "#/$defs/MailArmor",
                 "melee_weapon": "#/$defs/MeleeWeapon",
                 "mimic_tooth": "#/$defs/MimicTooth",
@@ -13297,6 +14228,18 @@
                 "spirit_bow": "#/$defs/SpiritBow",
                 "staff": "#/$defs/Staff",
                 "stone": "#/$defs/Stone",
+                "stone_of_aggression": "#/$defs/StoneOfAggression",
+                "stone_of_augmentation": "#/$defs/StoneOfAugmentation",
+                "stone_of_blast": "#/$defs/StoneOfBlast",
+                "stone_of_blink": "#/$defs/StoneOfBlink",
+                "stone_of_clairvoyance": "#/$defs/StoneOfClairvoyance",
+                "stone_of_deep_sleep": "#/$defs/StoneOfDeepSleep",
+                "stone_of_detect_magic": "#/$defs/StoneOfDetectMagic",
+                "stone_of_enchantment": "#/$defs/StoneOfEnchantment",
+                "stone_of_fear": "#/$defs/StoneOfFear",
+                "stone_of_flock": "#/$defs/StoneOfFlock",
+                "stone_of_intuition": "#/$defs/StoneOfIntuition",
+                "stone_of_shock": "#/$defs/StoneOfShock",
                 "tengu_mask": "#/$defs/TenguMask",
                 "thirteen_leaf_clover": "#/$defs/ThirteenLeafClover",
                 "throwable": "#/$defs/Throwable",
@@ -13612,6 +14555,12 @@
                 "$ref": "#/$defs/Throwable"
               },
               {
+                "$ref": "#/$defs/ArcaneStylus"
+              },
+              {
+                "$ref": "#/$defs/MagicalInfusion"
+              },
+              {
                 "$ref": "#/$defs/GooBlob"
               },
               {
@@ -13691,6 +14640,42 @@
               },
               {
                 "$ref": "#/$defs/TrinketCatalyst"
+              },
+              {
+                "$ref": "#/$defs/StoneOfBlast"
+              },
+              {
+                "$ref": "#/$defs/StoneOfBlink"
+              },
+              {
+                "$ref": "#/$defs/StoneOfDeepSleep"
+              },
+              {
+                "$ref": "#/$defs/StoneOfClairvoyance"
+              },
+              {
+                "$ref": "#/$defs/StoneOfAggression"
+              },
+              {
+                "$ref": "#/$defs/StoneOfFlock"
+              },
+              {
+                "$ref": "#/$defs/StoneOfShock"
+              },
+              {
+                "$ref": "#/$defs/StoneOfFear"
+              },
+              {
+                "$ref": "#/$defs/StoneOfIntuition"
+              },
+              {
+                "$ref": "#/$defs/StoneOfAugmentation"
+              },
+              {
+                "$ref": "#/$defs/StoneOfDetectMagic"
+              },
+              {
+                "$ref": "#/$defs/StoneOfEnchantment"
               }
             ]
           },
@@ -14931,6 +15916,17 @@
           ],
           "default": null
         },
+        "augment": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "projectile_type": {
           "default": "spirit_arrow",
           "type": "string"
@@ -15049,6 +16045,17 @@
           "type": "number"
         },
         "enchantment": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "augment": {
           "anyOf": [
             {
               "type": "string"
@@ -15206,6 +16213,834 @@
         "projectile_type": {
           "default": "stone",
           "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "StoneOfAggression": {
+      "properties": {
+        "kind": {
+          "const": "stone_of_aggression",
+          "default": "stone_of_aggression",
+          "type": "string"
+        },
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "name": {
+          "default": "Stone of Aggression",
+          "type": "string"
+        },
+        "type": {
+          "default": "runestone",
+          "type": "string"
+        },
+        "pos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Position"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "quantity": {
+          "default": 1,
+          "type": "integer"
+        },
+        "level": {
+          "default": 0,
+          "type": "integer"
+        },
+        "level_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "unique": {
+          "default": false,
+          "type": "boolean"
+        },
+        "kept_though_lost": {
+          "default": false,
+          "type": "boolean"
+        },
+        "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
+    "StoneOfAugmentation": {
+      "properties": {
+        "kind": {
+          "const": "stone_of_augmentation",
+          "default": "stone_of_augmentation",
+          "type": "string"
+        },
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "name": {
+          "default": "Stone of Augmentation",
+          "type": "string"
+        },
+        "type": {
+          "default": "runestone",
+          "type": "string"
+        },
+        "pos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Position"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "quantity": {
+          "default": 1,
+          "type": "integer"
+        },
+        "level": {
+          "default": 0,
+          "type": "integer"
+        },
+        "level_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "unique": {
+          "default": false,
+          "type": "boolean"
+        },
+        "kept_though_lost": {
+          "default": false,
+          "type": "boolean"
+        },
+        "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
+    "StoneOfBlast": {
+      "properties": {
+        "kind": {
+          "const": "stone_of_blast",
+          "default": "stone_of_blast",
+          "type": "string"
+        },
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "name": {
+          "default": "Stone of Blast",
+          "type": "string"
+        },
+        "type": {
+          "default": "runestone",
+          "type": "string"
+        },
+        "pos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Position"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "quantity": {
+          "default": 1,
+          "type": "integer"
+        },
+        "level": {
+          "default": 0,
+          "type": "integer"
+        },
+        "level_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "unique": {
+          "default": false,
+          "type": "boolean"
+        },
+        "kept_though_lost": {
+          "default": false,
+          "type": "boolean"
+        },
+        "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
+    "StoneOfBlink": {
+      "properties": {
+        "kind": {
+          "const": "stone_of_blink",
+          "default": "stone_of_blink",
+          "type": "string"
+        },
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "name": {
+          "default": "Stone of Blink",
+          "type": "string"
+        },
+        "type": {
+          "default": "runestone",
+          "type": "string"
+        },
+        "pos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Position"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "quantity": {
+          "default": 1,
+          "type": "integer"
+        },
+        "level": {
+          "default": 0,
+          "type": "integer"
+        },
+        "level_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "unique": {
+          "default": false,
+          "type": "boolean"
+        },
+        "kept_though_lost": {
+          "default": false,
+          "type": "boolean"
+        },
+        "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
+    "StoneOfClairvoyance": {
+      "properties": {
+        "kind": {
+          "const": "stone_of_clairvoyance",
+          "default": "stone_of_clairvoyance",
+          "type": "string"
+        },
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "name": {
+          "default": "Stone of Clairvoyance",
+          "type": "string"
+        },
+        "type": {
+          "default": "runestone",
+          "type": "string"
+        },
+        "pos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Position"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "quantity": {
+          "default": 1,
+          "type": "integer"
+        },
+        "level": {
+          "default": 0,
+          "type": "integer"
+        },
+        "level_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "unique": {
+          "default": false,
+          "type": "boolean"
+        },
+        "kept_though_lost": {
+          "default": false,
+          "type": "boolean"
+        },
+        "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
+    "StoneOfDeepSleep": {
+      "properties": {
+        "kind": {
+          "const": "stone_of_deep_sleep",
+          "default": "stone_of_deep_sleep",
+          "type": "string"
+        },
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "name": {
+          "default": "Stone of Deep Sleep",
+          "type": "string"
+        },
+        "type": {
+          "default": "runestone",
+          "type": "string"
+        },
+        "pos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Position"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "quantity": {
+          "default": 1,
+          "type": "integer"
+        },
+        "level": {
+          "default": 0,
+          "type": "integer"
+        },
+        "level_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "unique": {
+          "default": false,
+          "type": "boolean"
+        },
+        "kept_though_lost": {
+          "default": false,
+          "type": "boolean"
+        },
+        "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
+    "StoneOfDetectMagic": {
+      "properties": {
+        "kind": {
+          "const": "stone_of_detect_magic",
+          "default": "stone_of_detect_magic",
+          "type": "string"
+        },
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "name": {
+          "default": "Stone of Detect Magic",
+          "type": "string"
+        },
+        "type": {
+          "default": "runestone",
+          "type": "string"
+        },
+        "pos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Position"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "quantity": {
+          "default": 1,
+          "type": "integer"
+        },
+        "level": {
+          "default": 0,
+          "type": "integer"
+        },
+        "level_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "unique": {
+          "default": false,
+          "type": "boolean"
+        },
+        "kept_though_lost": {
+          "default": false,
+          "type": "boolean"
+        },
+        "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
+    "StoneOfEnchantment": {
+      "properties": {
+        "kind": {
+          "const": "stone_of_enchantment",
+          "default": "stone_of_enchantment",
+          "type": "string"
+        },
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "name": {
+          "default": "Stone of Enchantment",
+          "type": "string"
+        },
+        "type": {
+          "default": "runestone",
+          "type": "string"
+        },
+        "pos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Position"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "quantity": {
+          "default": 1,
+          "type": "integer"
+        },
+        "level": {
+          "default": 0,
+          "type": "integer"
+        },
+        "level_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "unique": {
+          "default": false,
+          "type": "boolean"
+        },
+        "kept_though_lost": {
+          "default": false,
+          "type": "boolean"
+        },
+        "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
+    "StoneOfFear": {
+      "properties": {
+        "kind": {
+          "const": "stone_of_fear",
+          "default": "stone_of_fear",
+          "type": "string"
+        },
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "name": {
+          "default": "Stone of Fear",
+          "type": "string"
+        },
+        "type": {
+          "default": "runestone",
+          "type": "string"
+        },
+        "pos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Position"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "quantity": {
+          "default": 1,
+          "type": "integer"
+        },
+        "level": {
+          "default": 0,
+          "type": "integer"
+        },
+        "level_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "unique": {
+          "default": false,
+          "type": "boolean"
+        },
+        "kept_though_lost": {
+          "default": false,
+          "type": "boolean"
+        },
+        "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
+    "StoneOfFlock": {
+      "properties": {
+        "kind": {
+          "const": "stone_of_flock",
+          "default": "stone_of_flock",
+          "type": "string"
+        },
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "name": {
+          "default": "Stone of Flock",
+          "type": "string"
+        },
+        "type": {
+          "default": "runestone",
+          "type": "string"
+        },
+        "pos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Position"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "quantity": {
+          "default": 1,
+          "type": "integer"
+        },
+        "level": {
+          "default": 0,
+          "type": "integer"
+        },
+        "level_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "unique": {
+          "default": false,
+          "type": "boolean"
+        },
+        "kept_though_lost": {
+          "default": false,
+          "type": "boolean"
+        },
+        "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
+    "StoneOfIntuition": {
+      "properties": {
+        "kind": {
+          "const": "stone_of_intuition",
+          "default": "stone_of_intuition",
+          "type": "string"
+        },
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "name": {
+          "default": "Stone of Intuition",
+          "type": "string"
+        },
+        "type": {
+          "default": "runestone",
+          "type": "string"
+        },
+        "pos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Position"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "quantity": {
+          "default": 1,
+          "type": "integer"
+        },
+        "level": {
+          "default": 0,
+          "type": "integer"
+        },
+        "level_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "unique": {
+          "default": false,
+          "type": "boolean"
+        },
+        "kept_though_lost": {
+          "default": false,
+          "type": "boolean"
+        },
+        "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
+    "StoneOfShock": {
+      "properties": {
+        "kind": {
+          "const": "stone_of_shock",
+          "default": "stone_of_shock",
+          "type": "string"
+        },
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "name": {
+          "default": "Stone of Shock",
+          "type": "string"
+        },
+        "type": {
+          "default": "runestone",
+          "type": "string"
+        },
+        "pos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Position"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "quantity": {
+          "default": 1,
+          "type": "integer"
+        },
+        "level": {
+          "default": 0,
+          "type": "integer"
+        },
+        "level_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed_known": {
+          "default": false,
+          "type": "boolean"
+        },
+        "unique": {
+          "default": false,
+          "type": "boolean"
+        },
+        "kept_though_lost": {
+          "default": false,
+          "type": "boolean"
+        },
+        "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
         }
       },
       "type": "object"
@@ -15789,6 +17624,7 @@
             "discriminator": {
               "mapping": {
                 "amulet": "#/$defs/Amulet",
+                "arcane_stylus": "#/$defs/ArcaneStylus",
                 "armor": "#/$defs/Armor",
                 "artifact": "#/$defs/Artifact",
                 "bag": "#/$defs/Bag",
@@ -15822,6 +17658,7 @@
                 "kings_crown": "#/$defs/KingsCrown",
                 "leather_armor": "#/$defs/LeatherArmor",
                 "magical_holster": "#/$defs/MagicalHolster",
+                "magical_infusion": "#/$defs/MagicalInfusion",
                 "mail_armor": "#/$defs/MailArmor",
                 "melee_weapon": "#/$defs/MeleeWeapon",
                 "mimic_tooth": "#/$defs/MimicTooth",
@@ -15885,6 +17722,18 @@
                 "spirit_bow": "#/$defs/SpiritBow",
                 "staff": "#/$defs/Staff",
                 "stone": "#/$defs/Stone",
+                "stone_of_aggression": "#/$defs/StoneOfAggression",
+                "stone_of_augmentation": "#/$defs/StoneOfAugmentation",
+                "stone_of_blast": "#/$defs/StoneOfBlast",
+                "stone_of_blink": "#/$defs/StoneOfBlink",
+                "stone_of_clairvoyance": "#/$defs/StoneOfClairvoyance",
+                "stone_of_deep_sleep": "#/$defs/StoneOfDeepSleep",
+                "stone_of_detect_magic": "#/$defs/StoneOfDetectMagic",
+                "stone_of_enchantment": "#/$defs/StoneOfEnchantment",
+                "stone_of_fear": "#/$defs/StoneOfFear",
+                "stone_of_flock": "#/$defs/StoneOfFlock",
+                "stone_of_intuition": "#/$defs/StoneOfIntuition",
+                "stone_of_shock": "#/$defs/StoneOfShock",
                 "tengu_mask": "#/$defs/TenguMask",
                 "thirteen_leaf_clover": "#/$defs/ThirteenLeafClover",
                 "throwable": "#/$defs/Throwable",
@@ -16200,6 +18049,12 @@
                 "$ref": "#/$defs/Throwable"
               },
               {
+                "$ref": "#/$defs/ArcaneStylus"
+              },
+              {
+                "$ref": "#/$defs/MagicalInfusion"
+              },
+              {
                 "$ref": "#/$defs/GooBlob"
               },
               {
@@ -16279,6 +18134,42 @@
               },
               {
                 "$ref": "#/$defs/TrinketCatalyst"
+              },
+              {
+                "$ref": "#/$defs/StoneOfBlast"
+              },
+              {
+                "$ref": "#/$defs/StoneOfBlink"
+              },
+              {
+                "$ref": "#/$defs/StoneOfDeepSleep"
+              },
+              {
+                "$ref": "#/$defs/StoneOfClairvoyance"
+              },
+              {
+                "$ref": "#/$defs/StoneOfAggression"
+              },
+              {
+                "$ref": "#/$defs/StoneOfFlock"
+              },
+              {
+                "$ref": "#/$defs/StoneOfShock"
+              },
+              {
+                "$ref": "#/$defs/StoneOfFear"
+              },
+              {
+                "$ref": "#/$defs/StoneOfIntuition"
+              },
+              {
+                "$ref": "#/$defs/StoneOfAugmentation"
+              },
+              {
+                "$ref": "#/$defs/StoneOfDetectMagic"
+              },
+              {
+                "$ref": "#/$defs/StoneOfEnchantment"
               }
             ]
           },
@@ -18241,6 +20132,17 @@
           "type": "number"
         },
         "enchantment": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "augment": {
           "anyOf": [
             {
               "type": "string"

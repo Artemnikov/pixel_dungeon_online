@@ -429,6 +429,7 @@ export function drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef,
     const isShaman = shamanRow !== undefined;
     const isMimic = mob.name === 'Mimic';
     const isGoldenMimic = mob.name === 'Golden Mimic';
+    const isCrystalMimic = mob.name === 'Crystal Mimic';
     const isEbonyMimic = mob.name === 'Ebony Mimic';
     const isStatue = mob.name === 'Statue';
     const isArmoredStatue = mob.name === 'Armored Statue';
@@ -492,9 +493,9 @@ export function drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef,
     } else if (isPiranha || isPhantomPiranha) {
       // piranha.png stacks variants in 16px rows: Piranha = row 0, Phantom Piranha = row 1.
       drawMobSprite(ctx, mob, mobSprite, sx, PIRANHA_FW, PIRANHA_FH, flash, PIRANHA_DEST, 1, isPhantomPiranha ? PIRANHA_FH : 0);
-    } else if (isMimic || isGoldenMimic || isEbonyMimic) {
-      // mimic.png stacks variants in 16px rows: Mimic = row 0, Golden = row 1, Ebony = row 2.
-      const sy = isGoldenMimic ? FRAME_H : isEbonyMimic ? FRAME_H * 2 : 0;
+    } else if (isMimic || isGoldenMimic || isCrystalMimic || isEbonyMimic) {
+      // mimic.png stacks variants in 16px rows: Mimic = row 0, Golden = row 1, Crystal = row 2, Ebony = row 3.
+      const sy = isGoldenMimic ? FRAME_H : isCrystalMimic ? FRAME_H * 2 : isEbonyMimic ? FRAME_H * 3 : 0;
       drawMobSprite(ctx, mob, mobSprite, sx, FRAME_W, FRAME_H, flash, null, 1, sy);
     } else if (isStatue || isArmoredStatue) {
       // statue.png stacks variants in 16px rows: Statue = row 0, Armored Statue = row 1.
