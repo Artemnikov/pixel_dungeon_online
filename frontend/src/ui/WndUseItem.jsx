@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import AudioManager from '../audio/AudioManager';
 import ItemIcon from './ItemIcon';
 import { actionLabel, orderedActions, titleColor } from './itemActions';
+import { statLines } from './WndInfoItem';
 import useEntityName from './useEntityName';
 
 export default function WndUseItem({ item, onAction, onAssignQuickslot, onClose }) {
@@ -19,6 +20,7 @@ export default function WndUseItem({ item, onAction, onAssignQuickslot, onClose 
   const def = item.default_action;
   const actions = orderedActions(item);
   const level = item.level_known && item.level ? `${item.level > 0 ? '+' : ''}${item.level}` : null;
+  const stats = statLines(item, t);
 
   const run = (action) => {
     AudioManager.play('CLICK');
@@ -38,6 +40,12 @@ export default function WndUseItem({ item, onAction, onAssignQuickslot, onClose 
 
         {item.description && (
           <div className="wnd-item-desc">{item.description}</div>
+        )}
+
+        {stats.length > 0 && (
+          <div className="wnd-info-stats">
+            {stats.map((l, i) => <div key={i} className="wnd-info-stat-row">{l}</div>)}
+          </div>
         )}
 
         <div className="wnd-item-actions">

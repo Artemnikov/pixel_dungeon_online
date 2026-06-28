@@ -103,6 +103,12 @@ class ItemsMixin:
         if stone.kind == "magical_infusion":
             self.use_magical_infusion(player_id, item_id, infusion_id=stone_id)
             return
+        if stone.kind == "arcane_stylus":
+            target = player.belongings.get_item(item_id)
+            if target is None:
+                return
+            item_actions.apply_stylus_target(self, player, stone, target)
+            return
         if not isinstance(stone, Runestone):
             return
         target = player.belongings.get_item(item_id)

@@ -805,6 +805,9 @@ class Armor(EquipableItem):
     augment: Optional[str] = None
     DESC: ClassVar[str] = "Worn armor that absorbs a portion of incoming damage. Equip it for protection."
 
+    def buffed_lvl(self) -> int:
+        return max(0, self.level)
+
     def dr_min(self, upgrade_level: int = 0) -> int:
         return upgrade_level
 
@@ -813,6 +816,17 @@ class Armor(EquipableItem):
 
     def value(self, identified: bool = False) -> int:
         return _tiered_value(self.tier, self.level, self.level_known, self.cursed, self.cursed_known)
+
+    def _info_lines(self, player=None) -> List[str]:
+        glyph = self.enchantment.type
+        if not glyph or glyph == "none":
+            return []
+        from app.engine.entities.armor_glyphs import GLYPH_DESC
+        desc = GLYPH_DESC.get(glyph)
+        if not desc:
+            return []
+        label = glyph.replace("_", " ").title()
+        return [f"Glyph of {label}: {desc}"]
 
 
 class ClothArmor(Armor):
@@ -2025,8 +2039,8 @@ class ArcaneStylus(ItemBase):
         from typing import List as _List
         acts: _List[str] = [Action.THROW, Action.DROP]
         if player is not None:
-            armor = getattr(player.belongings, "armor", None)
-            if armor is not None and armor.cursed_known and not armor.cursed:
+            has_armor = any(isinstance(it, Armor) for it in player.belongings.all_items() if it.id != self.id)
+            if has_armor:
                 acts.insert(0, Action.INSCRIBE)
         return acts
 

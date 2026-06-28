@@ -649,9 +649,30 @@ def _wear_kings_crown(game, player, item) -> None:
 
 
 def action_inscribe(game, player, item, tx=None, ty=None) -> None:
-    """ArcaneStylus: apply a random glyph to equipped armor."""
-    armor = player.belongings.armor
-    if armor is None:
+    """ArcaneStylus: open armor picker, then apply glyph via apply_stylus_target."""
+    from app.engine.entities.base import Armor as _Armor
+    candidates = [
+        it.id for it in player.belongings.all_items()
+        if it.id != item.id and isinstance(it, _Armor)
+        and not (it.cursed_known and it.cursed)
+        and not (hasattr(it.enchantment, "type") and it.enchantment.type in _CURSE_GLYPH_SET)
+    ]
+    if not candidates:
+        game.add_event("MESSAGE", {"text": "You have no armor suitable for inscription."},
+                       floor_id=player.floor_id, player_id=player.id)
+        return
+    game.add_event(
+        "STONE_SELECT_TARGET",
+        {"player": player.id, "stone_id": item.id, "stone_kind": "arcane_stylus",
+         "candidates": candidates},
+        floor_id=player.floor_id, player_id=player.id,
+    )
+
+
+def apply_stylus_target(game, player, stylus, armor) -> None:
+    """Apply a random glyph to the chosen armor; consume the stylus."""
+    from app.engine.entities.base import Armor as _Armor
+    if not isinstance(armor, _Armor):
         return
     if armor.cursed_known and armor.cursed:
         game.add_event("MESSAGE", {"text": "The armor is cursed and rejects the stylus!"},
@@ -661,21 +682,17 @@ def action_inscribe(game, player, item, tx=None, ty=None) -> None:
         game.add_event("MESSAGE", {"text": "The cursed glyph cannot be overwritten!"},
                        floor_id=player.floor_id, player_id=player.id)
         return
-    # Consume one stylus
-    detached = player.belongings.backpack.detach(item.id)
+    detached = player.belongings.backpack.detach(stylus.id)
     if detached is None:
         return
-    if player.belongings.get_item(item.id) is None:
-        player.quickslot.convert_to_placeholder(item)
-    # Roll random glyph (no curses)
-    from app.engine.entities.armor_glyphs import roll_armor_glyph
+    if player.belongings.get_item(stylus.id) is None:
+        player.quickslot.convert_to_placeholder(stylus)
+    from app.engine.entities.armor_glyphs import GLYPH_RARITY
     import random as _rando
-    glyph_name, _ = roll_armor_glyph(_rando, glyph_mult=1.0, curse_mult=0.0)
-    if glyph_name:
-        armor.enchantment.type = glyph_name
-    else:
-        armor.enchantment.type = "none"
-    game.add_event("MESSAGE", {"text": f"Your {armor.name} is inscribed with a glyph!"},
+    glyph_name = _rando.choices(list(GLYPH_RARITY.keys()), weights=list(GLYPH_RARITY.values()), k=1)[0]
+    armor.enchantment.type = glyph_name
+    glyph_label = glyph_name.replace("_", " ").title()
+    game.add_event("MESSAGE", {"text": f"Your {armor.name} is inscribed with the {glyph_label} glyph!"},
                    floor_id=player.floor_id, player_id=player.id)
     game.add_event("ENCHANT", {"player": player.id, "item": armor.id},
                    floor_id=player.floor_id)

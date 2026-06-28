@@ -39,6 +39,31 @@ GLYPH_RARITY: Dict[str, float] = {
 
 GLYPHS: Tuple[str, ...] = tuple(GLYPH_RARITY)
 
+GLYPH_DESC: Dict[str, str] = {
+    "obfuscation": "Increases stealth while worn, making you harder for enemies to detect.",
+    "swiftness":   "Increases movement speed when no enemies are nearby.",
+    "viscosity":   "Spreads damage taken over time instead of absorbing it all at once.",
+    "potential":   "On hit, charges your wands and staff slightly.",
+    "brimstone":   "Provides immunity to fire damage.",
+    "stone":       "Reduces damage taken based on how likely the attack was to hit.",
+    "entanglement":"On hit, has a chance to root you in magical earthen armor that absorbs damage.",
+    "repulsion":   "On hit, has a chance to knock your attacker away.",
+    "camouflage":  "Grants invisibility briefly when you walk over grass.",
+    "flow":        "Greatly increases movement speed while standing in water.",
+    "affection":   "On hit, has a chance to charm your attacker, causing them to fight for you.",
+    "anti_magic":  "Reduces magical damage and debuff durations.",
+    "thorns":      "Reflects a portion of melee damage back at your attacker.",
+    # curses
+    "anti_entropy":  "Cursed: spreads chill and fire to nearby tiles on hit.",
+    "corrosion":     "Cursed: slowly corrodes and weakens the armor over time.",
+    "displacement":  "Cursed: randomly teleports you when hit.",
+    "metabolism":    "Cursed: rapidly drains your hunger when hit.",
+    "multiplicity":  "Cursed: spawns hostile clones of yourself on hit.",
+    "stench":        "Cursed: releases a cloud of toxic gas when hit.",
+    "overgrowth":    "Cursed: causes wild plants to sprout around you on hit.",
+    "bulk":          "Cursed: slows your movement while passing through doorways.",
+}
+
 CURSE_GLYPHS: Tuple[str, ...] = (
     "anti_entropy", "corrosion", "displacement", "metabolism",
     "multiplicity", "stench", "overgrowth", "bulk",

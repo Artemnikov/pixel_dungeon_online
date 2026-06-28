@@ -3,7 +3,7 @@ import IconTitle from './IconTitle';
 import ItemIcon from './ItemIcon';
 import { titleColor } from './itemActions';
 
-function statLines(item, t) {
+export function statLines(item, t) {
   const lines = [];
   const wTypes = ['weapon', 'melee_weapon', 'staff', 'missile_weapon'];
   if (wTypes.includes(item.type) || wTypes.includes(item.kind)) {
@@ -37,8 +37,10 @@ function statLines(item, t) {
   if (item.cursed_known === false && (wTypes.includes(item.type) || item.type === 'wearable'
       || item.kind === 'ring' || item.kind === 'artifact' || item.kind === 'wand'))
     lines.push(t('ui.cursedUnknown'));
-  if (item.enchantment && item.enchantment.type && item.enchantment.type !== 'none')
-    lines.push(item.enchantment.type);
+  if (item.enchantment && item.enchantment.type && item.enchantment.type !== 'none') {
+    const glyphLabel = item.enchantment.type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    lines.push(`Glyph of ${glyphLabel}`);
+  }
   return lines;
 }
 
