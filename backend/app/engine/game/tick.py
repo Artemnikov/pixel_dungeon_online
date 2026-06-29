@@ -373,7 +373,7 @@ class TickMixin:
                         self._refresh_mirror_image_stats(mob, owner, floor, floor_id)
                         if not mob.is_alive:
                             continue
-                    if mob.type != "ninja_log":
+                    if mob.type not in ("ninja_log", "npc"):
                         self._update_shadow_ally(mob, floor, floor_id)
                     continue
 
