@@ -72,15 +72,19 @@ class NecromancerAIMixin:
                 self.add_event("ZAP_SUMMON", {"mob": necro.id, "x": best_pos[0], "y": best_pos[1]}, floor_id=floor_id)
             return True
 
+        if necro.heal_cooldown > 0:
+            necro.heal_cooldown -= 1
+
         if enemy_seen and skeleton is not None:
-            if skeleton.hp < skeleton.max_hp:
+            if skeleton.hp < skeleton.max_hp and necro.heal_cooldown == 0:
                 heal = skeleton.max_hp // 5
                 skeleton.hp = min(skeleton.max_hp, skeleton.hp + heal)
+                necro.heal_cooldown = 10
                 self.add_event("HEAL", {"target": skeleton.id, "amount": heal,
                                           "x": skeleton.pos.x, "y": skeleton.pos.y}, floor_id=floor_id)
                 self.add_event("ZAP_SUMMON", {"mob": necro.id, "x": skeleton.pos.x, "y": skeleton.pos.y}, floor_id=floor_id)
                 self.add_event("PLAY_SOUND", {"sound": "RAY"}, floor_id=floor_id)
-            elif not has_buff(skeleton.buffs, "adrenaline"):
+            elif skeleton.hp >= skeleton.max_hp and not has_buff(skeleton.buffs, "adrenaline"):
                 skeleton.add_buff("adrenaline", 3.0)
                 self.add_event("ZAP_SUMMON", {"mob": necro.id, "x": skeleton.pos.x, "y": skeleton.pos.y}, floor_id=floor_id)
                 self.add_event("PLAY_SOUND", {"sound": "RAY"}, floor_id=floor_id)

@@ -558,6 +558,7 @@ class Guard(MobEntity):
     loot_table: List[DropEntry] = [
         DropEntry(item_kind="armor", chance=0.2, max_global=0),
     ]
+    chain_pulled: bool = False
 
 
 class NecroSkeleton(Skeleton):
@@ -597,6 +598,7 @@ class Necromancer(MobEntity):
     summoning_y: int = -1
     first_summon: bool = True
     my_skeleton_id: str = ""
+    heal_cooldown: int = 0
 
     def die(self, attacker=None, floor_mobs=None, tile_x=0, tile_y=0, players=None):
         # SPD Necromancer.die(): kill the linked NecroSkeleton when its master dies.

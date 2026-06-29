@@ -40,6 +40,7 @@ from app.engine.entities.mobs import (
     Warlock,
     Spinner,
     DM200,
+    Guard,
 )
 from app.engine.game.constants import (
     AUTO_MOVE_INTERVAL,
@@ -413,6 +414,9 @@ class TickMixin:
                                      RustedFist, BrightFist, DarkFist)):
                     if self._update_yog_fist(mob, floor, floor_id):
                         continue
+
+                if isinstance(mob, Guard):
+                    self._update_guard(mob, floor, floor_id)
 
                 if isinstance(mob, Necromancer):
                     if self._update_necromancer(mob, floor, floor_id):

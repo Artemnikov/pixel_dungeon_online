@@ -163,9 +163,11 @@ class PrisonBossMixin:
                 return  # mirrors Java: nothing free, wait and try again next tick
             cx, cy = candidates[0]
 
-        # Seal the cell behind Tengu.
+        # Seal the cell behind Tengu. "tengu_boss" key = any player may enter
+        # freely once the fight starts, but no key is consumed (auto-open).
         dx, dy = layout.TENGU_CELL_DOOR.x, layout.TENGU_CELL_DOOR.y
         floor.grid[dy][dx] = TileType.LOCKED_DOOR
+        floor.locked_doors[(dx, dy)] = "tengu_boss"
         floor.rebuild_flags()
         self.add_event("MAP_PATCH", {"tiles": [{"x": dx, "y": dy, "tile": TileType.LOCKED_DOOR}]}, floor_id=floor_id)
 
@@ -226,8 +228,74 @@ class PrisonBossMixin:
         tengu.ai_state = "hunting"
         floor.mobs[tengu.id] = tengu
 
+        # Teleport any player whose tile is now a wall into the arena.
+        # This happens when a player stayed in the Tengu cell while their
+        # partner triggered the phase transition from the start hallway.
+        self._relocate_players_into_arena(floor, floor_id)
+
         self.add_event("PLAY_SOUND", {"sound": "BLAST"}, floor_id=floor_id)
         floor.tengu_state = "FIGHT_ARENA"
+
+    def _relocate_players_into_arena(self, floor: FloorState, floor_id: int) -> None:
+        """Move players who ended up in walls after the arena grid swap."""
+        # Candidate spawn positions: bottom half of arena, center outward,
+        # only passable tiles.
+        cx = layout.ARENA.left + layout.ARENA.width() // 2
+        seen: set = set()
+        candidates = []
+        for dy in range(0, layout.ARENA.height() // 2):
+            y = layout.ARENA.bottom - 2 - dy
+            if y < 0:
+                break
+            for dx in range(0, layout.ARENA.width() // 2 + 1):
+                for x in (cx + dx, cx - dx) if dx > 0 else (cx,):
+                    if (x, y) in seen:
+                        continue
+                    seen.add((x, y))
+                    if not (0 <= x < floor.width and 0 <= y < floor.height):
+                        continue
+                    if floor.flags and not floor.flags.passable[y][x]:
+                        continue
+                    candidates.append((x, y))
+
+        taken = set()
+        for player in self._players_on_floor(floor_id):
+            if not player.is_alive:
+                continue
+            tile_passable = (
+                floor.flags
+                and floor.flags.passable[player.pos.y][player.pos.x]
+            )
+            if tile_passable:
+                taken.add((player.pos.x, player.pos.y))
+
+        for player in self._players_on_floor(floor_id):
+            if not player.is_alive:
+                continue
+            tile_passable = (
+                floor.flags
+                and floor.flags.passable[player.pos.y][player.pos.x]
+            )
+            if tile_passable:
+                continue
+            # Find first free candidate not occupied by a mob or other player.
+            for (nx, ny) in candidates:
+                if (nx, ny) in taken:
+                    continue
+                mob_here = any(
+                    m.is_alive and m.pos.x == nx and m.pos.y == ny
+                    for m in floor.mobs.values()
+                )
+                if mob_here:
+                    continue
+                player.pos.x, player.pos.y = nx, ny
+                taken.add((nx, ny))
+                self.add_event(
+                    "TELEPORT",
+                    {"entity": player.id, "x": nx, "y": ny},
+                    floor_id=floor_id,
+                )
+                break
 
     def _prison_boss_arena_to_won(self, floor: FloorState, floor_id: int) -> None:
         if self._find_tengu(floor) is not None:

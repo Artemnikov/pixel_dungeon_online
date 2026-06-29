@@ -60,6 +60,7 @@ from app.engine.game.ai_shaman import ShamanAIMixin
 from app.engine.game.ai_warlock import WarlockAIMixin
 from app.engine.game.ai_spinner import SpinnerAIMixin
 from app.engine.game.ai_dm200 import DM200AIMixin
+from app.engine.game.ai_guard import GuardAIMixin
 from app.engine.game.tick import TickMixin
 from app.engine.game.vision import VisionMixin
 from app.engine.game.world import WorldInteractionMixin
@@ -88,6 +89,7 @@ class GameInstance(
     WarlockAIMixin,
     SpinnerAIMixin,
     DM200AIMixin,
+    GuardAIMixin,
     TickMixin,
     ArmorAbilitiesMixin,
     TalentsMixin,

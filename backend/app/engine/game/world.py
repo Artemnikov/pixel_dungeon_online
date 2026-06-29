@@ -370,7 +370,8 @@ class WorldInteractionMixin:
         if not key_id:
             return False
 
-        if not player.remove_key(key_id, floor.floor_id):
+        # Tengu cell entrance: any player may pass freely once fight starts.
+        if key_id != "tengu_boss" and not player.remove_key(key_id, floor.floor_id):
             self.add_event("LOCKED", {"player": player.id, "x": x, "y": y}, floor_id=player.floor_id)
             return False
 

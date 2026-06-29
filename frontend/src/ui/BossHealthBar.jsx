@@ -176,8 +176,8 @@ export default function BossHealthBar({ boss, bleeding, interfaceSize }) {
       if (isLarge && spriteImg && sInfo) {
         const sw = sInfo.fw * s;
         const sh = sInfo.fh * s;
-        const sx = (paneSize - sw) / 2;
-        const sy = (paneSize - sh) / 2;
+        const sx = (paneSize * s - sw) / 2;
+        const sy = (paneSize * s - sh) / 2;
         if (isBleeding) {
           ctx.save();
           ctx.drawImage(spriteImg, 0, 0, sInfo.fw, sInfo.fh, sx, sy, sw, sh);
