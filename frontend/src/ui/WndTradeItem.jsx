@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import AudioManager from '../audio/AudioManager';
 import WndInfoItem from './WndInfoItem';
 
-export default function WndTradeItem({ item, mode, onConfirm, onCancel, price }) {
+export default function WndTradeItem({ item, mode, onConfirm, onCancel, price, canAfford = true }) {
   const { t } = useTranslation();
   useEffect(() => {
     const onKey = (e) => { if (e.key === 'Escape') onCancel(); };
@@ -22,7 +22,11 @@ export default function WndTradeItem({ item, mode, onConfirm, onCancel, price })
       <div className="wnd-info-card wnd-trade" onClick={(e) => e.stopPropagation()}>
         <WndInfoItem item={item} />
         <div className="wnd-trade-actions">
-          <button className="wnd-trade-btn" onClick={() => { AudioManager.play('CLICK'); onConfirm(); }}>
+          <button
+            className="wnd-trade-btn"
+            disabled={mode === 'buy' && !canAfford}
+            onClick={() => { AudioManager.play('CLICK'); onConfirm(); }}
+          >
             {label}
           </button>
           <button className="wnd-trade-btn cancel" onClick={() => { AudioManager.play('CLICK'); onCancel(); }}>

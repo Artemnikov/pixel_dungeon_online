@@ -37,6 +37,7 @@ export default function WndShop({ npcId, stock, gold, backpackItems, onBuy, onSe
         item={buyTarget}
         mode="buy"
         price={buyTarget.value || 0}
+        canAfford={(gold ?? 0) >= (buyTarget.value || 0)}
         onConfirm={() => { onBuy(npcId, buyTarget.id); setBuyTarget(null); }}
         onCancel={() => setBuyTarget(null)}
       />
@@ -66,7 +67,6 @@ export default function WndShop({ npcId, stock, gold, backpackItems, onBuy, onSe
                 <button
                   key={item.id}
                   className="wnd-shop-row"
-                  disabled={(gold ?? 0) < (item.value || 0)}
                   onClick={() => { AudioManager.play('CLICK'); setBuyTarget(item); }}
                 >
                   <ItemIcon item={item} size={28} />

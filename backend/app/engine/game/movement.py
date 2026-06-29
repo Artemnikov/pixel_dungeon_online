@@ -47,7 +47,7 @@ from app.engine.entities.base import (
     is_immune,
 )
 from app.engine.entities.buffs import add_buff, get_buff, has_buff, remove_buff
-from app.engine.entities.mobs import CrystalMimic, DM300, Goo, Wraith
+from app.engine.entities.mobs import CrystalMimic, DM300, Goo, Shopkeeper, Wraith
 from app.engine.entities.subclasses import Talent
 from app.engine.systems.ballistica import ballistica_trace
 from app.engine.systems.combat import resolve_melee_attack, resolve_ranged_attack
@@ -247,6 +247,10 @@ class MovementCombatMixin:
                 sheep_buff = get_buff(target_entity.buffs, "sheep_timer")
                 if sheep_buff and sheep_buff.remaining >= 20:
                     sheep_buff.remaining = 0
+                return
+
+            if isinstance(entity, Player) and isinstance(target_entity, Shopkeeper):
+                self.npc_interact(entity.id, target_entity.id)
                 return
 
             # Mirrors SPD's enemyInFOV check (Mob.java:252): a mob cannot
