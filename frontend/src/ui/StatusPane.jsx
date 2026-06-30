@@ -2,15 +2,10 @@ import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import AudioManager from '../audio/AudioManager';
 import { MAX_DPR } from '../constants';
+import WndHero from './WndHero';
 
 const DPR = Math.min(window.devicePixelRatio || 1, MAX_DPR);
 
-import statusPaneImg from '../assets/pixel-dungeon/interfaces/status_pane.png';
-import buffsImg from '../assets/pixel-dungeon/interfaces/buffs.png';
-import warriorSheet from '../assets/pixel-dungeon/sprites/warrior.png';
-import mageSheet from '../assets/pixel-dungeon/sprites/mage.png';
-import rogueSheet from '../assets/pixel-dungeon/sprites/rogue.png';
-import huntressSheet from '../assets/pixel-dungeon/sprites/huntress.png';
 const PANE_W_LARGE = 160;
 const PANE_H_LARGE = 39;
 const PANE_W_SMALL = 82;
@@ -36,13 +31,6 @@ const MAX_BUFFS = 14; // matches SPD's BuffIndicator.maxBuffs default
 const FLASH_RATE = Math.PI * 1.5;
 const WARNING_COLORS = ['#660000', '#cc0000', '#660000'];
 
-const CLASS_SHEETS = {
-  warrior: warriorSheet,
-  mage: mageSheet,
-  rogue: rogueSheet,
-  huntress: huntressSheet,
-};
-
 function lerpColor(t, colors) {
   const seg = Math.min(Math.floor(t * (colors.length - 1)), colors.length - 2);
   const local = t * (colors.length - 1) - seg;
@@ -56,7 +44,8 @@ function lerpColor(t, colors) {
   return `rgb(${r},${g},${bl})`;
 }
 
-export default function StatusPane({ myStats, depth, exitPos, isAdmin, onSearch, hasTalentPoints, onOpenTalents, onTeleport, isBusy, onBuffClick, interfaceSize }) {
+export default function StatusPane({ myStats, depth, exitPos, isAdmin, onSearch, hasTalentPoints, gold, onOpenTalentPane, onTeleport, isBusy, onBuffClick, interfaceSize, assetImages }) {
+  const [showHeroInfo, setShowHeroInfo] = useState(false);
   const isLarge = interfaceSize > 0;
   const SCALE = isLarge ? 3 : 2;
   const PANE_W = isLarge ? PANE_W_LARGE : PANE_W_SMALL;
@@ -69,7 +58,6 @@ export default function StatusPane({ myStats, depth, exitPos, isAdmin, onSearch,
   const [showFloorPicker, setShowFloorPicker] = useState(false);
   const canvasRef = useRef(null);
   const imagesRef = useRef({});
-  const imgsLoadedRef = useRef(false);
   const statsRef = useRef(myStats);
   const exitPosRef = useRef(exitPos);
   const starsRef = useRef([]);
@@ -83,34 +71,14 @@ export default function StatusPane({ myStats, depth, exitPos, isAdmin, onSearch,
   useEffect(() => { exitPosRef.current = exitPos; }, [exitPos]);
 
   useEffect(() => {
-    const sources = { status: statusPaneImg, buffs: buffsImg, ...CLASS_SHEETS };
-    const entries = Object.entries(sources);
-    let loaded = 0;
-    let errored = 0;
-    const total = entries.length;
-    const checkDone = () => {
-      if (loaded + errored === total) imgsLoadedRef.current = true;
-    };
-    entries.forEach(([key, src]) => {
-      const img = new Image();
-      img.onload = () => { loaded++; checkDone(); };
-      img.onerror = () => {
-        errored++;
-        checkDone();
-      };
-      img.src = src;
-      if (img.complete && img.naturalWidth > 0) {
-        img.onload = null;
-        loaded++;
-        checkDone();
-      } else if (img.complete && img.naturalWidth === 0) {
-        img.onerror = null;
-        errored++;
-        checkDone();
-      }
-      imagesRef.current[key] = img;
-    });
-  }, []);
+    const imgs = imagesRef.current;
+    if (assetImages?.statusPane) imgs.status = assetImages.statusPane;
+    if (assetImages?.buffs) imgs.buffs = assetImages.buffs;
+    if (assetImages?.warrior) imgs.warrior = assetImages.warrior;
+    if (assetImages?.mage) imgs.mage = assetImages.mage;
+    if (assetImages?.rogue) imgs.rogue = assetImages.rogue;
+    if (assetImages?.huntress) imgs.huntress = assetImages.huntress;
+  }, [assetImages]);
 
   useEffect(() => {
     let raf;
@@ -391,6 +359,7 @@ export default function StatusPane({ myStats, depth, exitPos, isAdmin, onSearch,
   for (let i = 1; i <= 26; i++) floorNumbers.push(i);
 
   return (
+  <>
     <div className="top-left-hud">
       <div className="status-pane-footer">
         <span
@@ -442,7 +411,7 @@ export default function StatusPane({ myStats, depth, exitPos, isAdmin, onSearch,
           const aw = FRAME_W * SCALE, ah = FRAME_H * SCALE;
           if (x >= ax && x < ax + aw && y >= ay && y < ay + ah) {
             AudioManager.play('CLICK');
-            onOpenTalents?.();
+            setShowHeroInfo(true);
             return;
           }
           // Buff icon hit test — icons are at y = (isLarge ? 0 : 8*SCALE), x = (31 + i*(BUFF_SIZE+1))*SCALE
@@ -462,5 +431,15 @@ export default function StatusPane({ myStats, depth, exitPos, isAdmin, onSearch,
         }}
       />
     </div>
+    {showHeroInfo && (
+      <WndHero
+        myStats={myStats}
+        depth={depth}
+        gold={gold}
+        onOpenTalents={onOpenTalentPane}
+        onClose={() => setShowHeroInfo(false)}
+      />
+    )}
+  </>
   );
 }

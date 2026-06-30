@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, memo } from 'react';
 
 const BANNER_W = 127;
 const BANNER_H = 68;
@@ -6,7 +6,7 @@ const BADGE_SIZE = 16;
 const BADGE_COLS = 8;
 const SCALE = 2;
 
-export default function BossSlainBanner({ badgeImage, onDismiss }) {
+function BossSlainBanner({ badgeImage, onDismiss }) {
   const timerRef = useRef(null);
   const onDismissRef = useRef(onDismiss);
   useEffect(() => { onDismissRef.current = onDismiss; });
@@ -38,3 +38,5 @@ export default function BossSlainBanner({ badgeImage, onDismiss }) {
     </div>
   );
 }
+
+export default memo(BossSlainBanner);

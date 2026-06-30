@@ -1,4 +1,6 @@
-export default function AttackIndicator({ myStats, onAttack }) {
+import { memo } from 'react';
+
+function AttackIndicator({ myStats, onAttack }) {
   const target = myStats?.attack_target;
   if (!target) return null;
   return (
@@ -12,3 +14,5 @@ export default function AttackIndicator({ myStats, onAttack }) {
     </div>
   );
 }
+
+export default memo(AttackIndicator);

@@ -1,6 +1,7 @@
+import { memo } from 'react';
 import { useTranslation } from 'react-i18next';
 
-export default function LoadingOverlay({ visible }) {
+function LoadingOverlay({ visible }) {
   const { t } = useTranslation();
   if (!visible) return null;
   return (
@@ -10,3 +11,5 @@ export default function LoadingOverlay({ visible }) {
     </div>
   );
 }
+
+export default memo(LoadingOverlay);

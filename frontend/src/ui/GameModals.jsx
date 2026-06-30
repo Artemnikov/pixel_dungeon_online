@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import { useTranslation } from 'react-i18next';
 import AudioManager from '../audio/AudioManager';
 import WndBag from './WndBag';
@@ -23,7 +23,7 @@ const SCROLL_PICKER_KEYS = {
   scroll_of_transmutation: 'modal.transmute',
 };
 
-export default function GameModals({
+function GameModals({
   modals, itemsById, toolbarItems,
   belongings, gold, energy, strength,
   isDesktop,
@@ -327,3 +327,5 @@ export default function GameModals({
     </>
   );
 }
+
+export default memo(GameModals);

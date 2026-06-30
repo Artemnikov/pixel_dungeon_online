@@ -14,9 +14,6 @@
 //
 import { useEffect, useRef } from 'react';
 import AudioManager from '../audio/AudioManager';
-import itemsSpriteSrc from '../assets/pixel-dungeon/sprites/items.png';
-import toolbarSpriteSrc from '../assets/pixel-dungeon/interfaces/toolbar.png';
-import iconsSpriteSrc from '../assets/pixel-dungeon/interfaces/icons.png';
 import { coordsForItem } from '../rendering/sprites';
 import { itemRects } from '../rendering/spriteRects';
 import { centeredItemCrop } from '../rendering/itemCrop';
@@ -49,6 +46,7 @@ export default function Toolbar({
   equippedItems = {},
   targetingMode = false,
   swappedQuickslots = false,
+  assetImages,
   onWait,
   onSearch,
   onInventory,
@@ -64,7 +62,6 @@ export default function Toolbar({
   const canvasRef = useRef(null);
   const areasRef = useRef(makeButtonAreas());
   const imgsRef = useRef({ toolbar: null, items: null, icons: null });
-  const imgsLoaded = useRef(false);
   const animFrame = useRef(null);
   const touchTimerRef = useRef(null);
   const longPressFiredRef = useRef(false);
@@ -72,22 +69,11 @@ export default function Toolbar({
   const baseDprRef = useRef(window.devicePixelRatio || 1);
 
   useEffect(() => {
-    const toolbarImg = new Image();
-    const itemsImg = new Image();
-    const iconsImg = new Image();
-    let loaded = 0;
-    const check = () => { if (++loaded >= 3) imgsLoaded.current = true; };
-    toolbarImg.onload = check;
-    itemsImg.onload = check;
-    iconsImg.onload = check;
-    toolbarImg.src = toolbarSpriteSrc;
-    itemsImg.src = itemsSpriteSrc;
-    iconsImg.src = iconsSpriteSrc;
-    if (toolbarImg.complete && toolbarImg.naturalWidth > 0) check();
-    if (itemsImg.complete && itemsImg.naturalWidth > 0) check();
-    if (iconsImg.complete && iconsImg.naturalWidth > 0) check();
-    imgsRef.current = { toolbar: toolbarImg, items: itemsImg, icons: iconsImg };
-  }, []);
+    const { toolbar, items, icons } = assetImages || {};
+    if (toolbar && items && icons) {
+      imgsRef.current = { toolbar, items, icons };
+    }
+  }, [assetImages]);
 
   useEffect(() => {
     const canvas = canvasRef.current;

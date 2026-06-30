@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, memo } from 'react';
 import { useTranslation } from 'react-i18next';
 import IconTitle from './IconTitle';
 import HeroIcon from './HeroIcon';
@@ -88,7 +88,7 @@ function BuffsTab({ effects, onBuffClick }) {
   );
 }
 
-export default function WndHero({ myStats, depth, gold, onOpenTalents, onClose }) {
+function WndHero({ myStats, depth, gold, onOpenTalents, onClose }) {
   const { t } = useTranslation();
   const [tab, setTab] = useState(0);
   const [buffPopup, setBuffPopup] = useState(null);
@@ -149,3 +149,5 @@ export default function WndHero({ myStats, depth, gold, onOpenTalents, onClose }
     </>
   );
 }
+
+export default memo(WndHero);

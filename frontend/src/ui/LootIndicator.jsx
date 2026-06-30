@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, memo } from 'react';
 
-export default function LootIndicator({ entitiesRef, myPlayerIdRef, onPickup }) {
+function LootIndicator({ entitiesRef, myPlayerIdRef, onPickup }) {
   const [item, setItem] = useState(null);
 
   useEffect(() => {
@@ -33,3 +33,5 @@ export default function LootIndicator({ entitiesRef, myPlayerIdRef, onPickup }) 
     </div>
   );
 }
+
+export default memo(LootIndicator);

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import './styles/index.css';
 
@@ -45,7 +45,6 @@ import TalentLayer from './ui/TalentLayer';
 import GameOverlay from './ui/GameOverlay';
 import BossSlainBanner from './ui/BossSlainBanner';
 import WndInfoBuff from './ui/WndInfoBuff';
-import WndHero from './ui/WndHero';
 
 // Live viewport position of an inspect-popup anchor (a world tile, or a mob we follow
 // by its renderPos). Returns { left, top, below } or null when the popup should hide
@@ -121,7 +120,6 @@ function App() {
   const [bossSlainData, setBossSlainData] = useState(null);
   const [loreOverlay, setLoreOverlay] = useState(null);
   const [inspectBuff, setInspectBuff] = useState(null);
-  const [showHeroInfo, setShowHeroInfo] = useState(false);
   const loreFinishRef = useRef(null);
 
   const handleLoreNeeded = useCallback((depth, finishTransition) => {
@@ -133,9 +131,9 @@ function App() {
     setLoreOverlay({ depth, body: lore.body });
   }, []);
 
-  const handleLoreDismiss = () => {
+  const handleLoreDismiss = useCallback(() => {
     loreFinishRef.current?.();
-  };
+  }, []);
 
   // --- shared refs ---
   const canvasRef = useRef(null);
@@ -216,28 +214,12 @@ function App() {
   const canFitFullUI = Math.min(viewport.width / 360, viewport.height / 200) >= 2;
   const interfaceSize = (viewport.width > viewport.height && canFitFullUI) ? 2 : 0;
 
-  const [isFullscreen, setIsFullscreen] = useState(false);
-
-  const toggleFullscreen = () => {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().catch(() => {});
-    } else {
-      document.exitFullscreen().catch(() => {});
-    }
-  };
-
-  useEffect(() => {
-    const handler = () => setIsFullscreen(!!document.fullscreenElement);
-    document.addEventListener('fullscreenchange', handler);
-    return () => document.removeEventListener('fullscreenchange', handler);
-  }, []);
-
   // Define send early — domain hooks below need it; safe because it only reads socketRef (a ref)
-  const send = (msg) => {
+  const send = useCallback((msg) => {
     if (socketRef.current?.readyState === WebSocket.OPEN) {
       socketRef.current.send(JSON.stringify(msg));
     }
-  };
+  }, []);
 
   // --- domain hooks ---
   const modals = useModalState();
@@ -353,26 +335,26 @@ function App() {
   // --- item action dispatch ---
   const TARGETED_ACTIONS = ['THROW', 'ZAP', 'DIRECT', 'SHOOT'];
 
-  const equipItem = (itemId) => send({ type: 'EQUIP_ITEM', item_id: itemId });
+  const equipItem = useCallback((itemId) => send({ type: 'EQUIP_ITEM', item_id: itemId }), [send]);
 
-  const executeItemAction = (itemId, action, tx, ty) => {
+  const executeItemAction = useCallback((itemId, action, tx, ty) => {
     if (TARGETED_ACTIONS.includes(action) && tx === undefined) {
       targeting.setTargetingMode({ itemId, action });
       modals.setShowInventory(false);
       return;
     }
     send({ type: 'EXECUTE_ITEM_ACTION', item_id: itemId, action, target_x: tx, target_y: ty });
-  };
+  }, [send]); // targeting.setTargetingMode and modals.setShowInventory are stable setters
 
-  const assignQuickslot = (itemId) => {
+  const assignQuickslot = useCallback((itemId) => {
     const slots = quickslot?.slots || [];
     let idx = slots.findIndex(s => !s.item_id);
     if (idx < 0) idx = 0;
     send({ type: 'SET_QUICKSLOT', index: idx, item_id: itemId });
-  };
+  }, [quickslot, send]);
 
   // --- toolbar handlers ---
-  const handleToolbarClick = (item) => {
+  const handleToolbarClick = useCallback((item) => {
     if (!item) return;
     if (item.type === 'potion') {
       send({ type: 'USE_ITEM', item_id: item.id });
@@ -419,9 +401,9 @@ function App() {
     } else if (item.default_action) {
       executeItemAction(item.id, item.default_action);
     }
-  };
+  }, [send, executeItemAction, equipItem, equippedItems, targeting.targetingMode, targeting.setTargetingMode]);
 
-  const handleToolbarDoubleClick = (item) => {
+  const handleToolbarDoubleClick = useCallback((item) => {
     if (!item) return;
     const isTargeted = item.type === 'wand'
       || item.type === 'throwable'
@@ -455,27 +437,26 @@ function App() {
         send({ type: 'RANGED_ATTACK', item_id: item.id, target_x: tx, target_y: ty });
       }
     }
-  };
+  }, [send]);
 
-  // Flatten belongings into an id->item map for quickslot resolution.
-  const itemsById = {};
-  if (belongings) {
+  const itemsById = useMemo(() => {
+    const map = {};
+    if (!belongings) return map;
     ['weapon', 'armor', 'artifact', 'misc', 'ring'].forEach(k => {
-      if (belongings[k]) itemsById[belongings[k].id] = belongings[k];
+      if (belongings[k]) map[belongings[k].id] = belongings[k];
     });
     const walk = (bag) => {
       (bag?.items || []).forEach(it => {
-        itemsById[it.id] = it;
+        map[it.id] = it;
         if (it.items) walk(it);
       });
     };
     walk(belongings.backpack);
-  }
+    return map;
+  }, [belongings]);
 
-  const handleEscape = () => {
-    if (showHeroInfo) {
-      setShowHeroInfo(false);
-    } else if (targeting.examineModeRef.current || targeting.targetingModeRef.current) {
+  const handleEscape = useCallback(() => {
+    if (targeting.examineModeRef.current || targeting.targetingModeRef.current) {
       targeting.setExamineMode(false);
       targeting.setTargetingMode(false);
       targeting.clearInspect();
@@ -489,9 +470,9 @@ function App() {
     } else if (!modals.gameMenuOpenRef.current) {
       modals.setGameMenuOpen(true);
     }
-  };
+  }, [talent.showSubclassChoice, talent.showArmorAbilityChoice, talent.showTalentPane]);
 
-  const resetForRestart = () => {
+  const resetForRestart = useCallback(() => {
     if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
       socketRef.current.close();
     }
@@ -514,13 +495,13 @@ function App() {
     setCanResurrect(false);
     setIsVictory(false);
     talent.resetMetamorph();
-  };
+  }, [talent.resetMetamorph]);
 
-  const handleLeaveGame = () => {
+  const handleLeaveGame = useCallback(() => {
     resetForRestart();
     modals.setGameMenuOpen(false);
     setGameState('WELCOME');
-  };
+  }, [resetForRestart]);
 
   useKeyboardControls({
     socketRef, inventory, setShowInventory: modals.setShowInventory,
@@ -539,7 +520,7 @@ function App() {
     },
   });
 
-  const handleCanvasClick = (e) => {
+  const handleCanvasClick = useCallback((e) => {
     if (isFloorFadeActive(floorFadeRef)) return;
     if (hasDraggedRef.current) return;
     if (!canvasRef.current) return;
@@ -575,7 +556,7 @@ function App() {
       if (action.type === 'MOVE_TO' || action.type === 'MOVE') isRefocusingRef.current = true;
       socketRef.current.send(JSON.stringify(action));
     }
-  };
+  }, []);
 
   const isDesktop = interfaceSize > 0;
   const isMac = /Macintosh|MacIntel|MacPPC|Mac68K/.test(navigator.userAgent);
@@ -684,9 +665,7 @@ function App() {
     ? isDesktop ? controllerCursorVal : 'crosshair'
     : isDesktop ? mouseCursorVal.replace(', pointer', ', auto') : 'default';
 
-  // Toolbar quickslots mirror the real quickslot state, resolving each slot's item id
-  // against the flattened belongings.
-  const toolbarItems = Array.from({ length: 6 }).map((_, i) => {
+  const toolbarItems = useMemo(() => Array.from({ length: 6 }).map((_, i) => {
     const slot = quickslot?.slots?.[i];
     if (!slot) return null;
     if (slot.item_id) return itemsById[slot.item_id] || null;
@@ -694,7 +673,7 @@ function App() {
       return { id: null, kind: slot.placeholder_kind, name: '', type: null, is_placeholder: true };
     }
     return null;
-  });
+  }), [quickslot, itemsById]);
 
   return (
     <>
@@ -711,7 +690,7 @@ function App() {
           </div>
         )}
 
-        <BossHealthBar boss={bossInfo} bleeding={bossBleeding} interfaceSize={interfaceSize} />
+        <BossHealthBar boss={bossInfo} bleeding={bossBleeding} interfaceSize={interfaceSize} assetImages={assetImages} />
         <KeyDisplay keys={myStats.keys} depth={depth} />
 
         <SideTags>
@@ -769,10 +748,12 @@ function App() {
           isAdmin={myStats.isAdmin}
           onSearch={handleExamineOrReveal}
           hasTalentPoints={Object.values(talent.talentPoints || {}).some(p => p > 0)}
-          onOpenTalents={() => setShowHeroInfo(true)}
+          gold={gold}
+          onOpenTalentPane={() => talent.setShowTalentPane(true)}
           onTeleport={(floor) => send({ type: 'ADMIN_TELEPORT', target_floor: floor })}
           isBusy={isBusy}
           onBuffClick={(buff) => setInspectBuff(buff)}
+          assetImages={assetImages}
         />
 
         <div className="canvas-wrapper" ref={wrapperRef}>
@@ -804,20 +785,11 @@ function App() {
           />
         )}
 
-        {showHeroInfo && (
-          <WndHero
-            myStats={myStats}
-            depth={depth}
-            gold={gold}
-            onOpenTalents={() => talent.setShowTalentPane(true)}
-            onClose={() => setShowHeroInfo(false)}
-          />
-        )}
-
         <GameHud
           interfaceSize={interfaceSize}
           isDesktop={isDesktop}
           canvasWidth={viewport.width}
+          assetImages={assetImages}
           toolbarItems={toolbarItems}
           equippedItems={equippedItems}
           targetingMode={targetingMode}
@@ -862,16 +834,6 @@ function App() {
             onDismiss={() => setShowBossSlainBanner(false)}
           />
         )}
-
-        <button className="fullscreen-btn" onClick={toggleFullscreen} title={isFullscreen ? t('app.exitFullscreen') : t('app.fullscreen')}>
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            {isFullscreen ? (
-              <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3" />
-            ) : (
-              <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
-            )}
-          </svg>
-        </button>
 
         <GameModals
           modals={modals}
