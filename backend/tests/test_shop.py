@@ -1,5 +1,8 @@
 """Tests for Shopkeeper NPC interaction and buy/sell mechanics."""
-from app.engine.entities.base import HealthPotion, Position, SmallRation, WornShortsword
+from app.engine.entities.base import Position
+from app.engine.entities.items_consumable import SmallRation
+from app.engine.entities.items_equip import WornShortsword
+from app.engine.entities.items_potions import HealthPotion
 from app.engine.entities.mobs import Shopkeeper
 from app.engine.manager import GameInstance
 
@@ -95,7 +98,7 @@ def test_shop_sell_rejects_zero_value_items():
     p = g.add_player("p1", "Bob")
     p.gold = 0
 
-    from app.engine.entities.base import Key
+    from app.engine.entities.items_consumable import Key
     key = Key(id="k1", name="Key")
     p.add_to_inventory(key)
 

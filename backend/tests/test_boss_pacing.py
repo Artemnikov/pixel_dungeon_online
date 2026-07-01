@@ -17,7 +17,8 @@ relentless, "infinite-looking" flood of summoned minions.
 import random
 
 from app.engine.dungeon.generator import TileType
-from app.engine.entities.base import Faction, Player, Position
+from app.engine.entities.base import Faction, Position
+from app.engine.entities.player import Player
 from app.engine.entities.mobs import DwarfKing, YogDzewa
 from app.engine.game.floor_state import FloorState
 from app.engine.manager import GameInstance

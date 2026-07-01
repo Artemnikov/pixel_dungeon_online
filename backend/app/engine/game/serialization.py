@@ -21,7 +21,8 @@ potion colours / scroll runes, shared per-run across the co-op party).
 
 from typing import Dict, Optional
 
-from app.engine.entities.base import Bag, Difficulty
+from app.engine.entities.item_union import Bag
+from app.engine.entities.player import Difficulty
 from app.engine.entities.locale_keys import item_locale_key, mob_locale_key
 
 

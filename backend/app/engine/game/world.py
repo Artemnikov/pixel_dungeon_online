@@ -24,11 +24,11 @@ import uuid
 from typing import List, Optional, Tuple
 
 from app.engine.dungeon.generator import TileType
-from app.engine.entities.base import (
-    Armor, CharacterClass, Item, Key, LeatherArmor, MailArmor, PlateArmor, Player,
-    Position, ScaleArmor, make_named_melee_weapon,
-)
-from app.engine.entities.base import DwarfToken
+from app.engine.entities.base import Position
+from app.engine.entities.items_consumable import Key
+from app.engine.entities.items_equip import Armor, LeatherArmor, MailArmor, PlateArmor, ScaleArmor, make_named_melee_weapon
+from app.engine.entities.player import CharacterClass, Item, Player
+from app.engine.entities.items_consumable import DwarfToken
 from app.engine.entities.mobs import Imp, Shopkeeper
 from app.engine.entities.quest_bosses import FetidRat, Ghost, GnollTrickster, GreatCrab
 from app.engine.entities.weapon_defs import WEP_TIER_ORDER
@@ -191,7 +191,7 @@ class WorldInteractionMixin:
         key is dropped here because it needs the floor-specific lock id, and it
         must drop no matter how Goo died (melee or bleed) so progression can't
         soft-lock."""
-        from app.engine.entities.base import DwarfToken
+        from app.engine.entities.items_consumable import DwarfToken
         from app.engine.entities.mobs import DM300, Golem, Goo, Monk, Necromancer, Pylon, Skeleton, Tengu, YogDzewa
 
         # Imp.Quest.process(): once the quest is given (and not yet
@@ -227,7 +227,7 @@ class WorldInteractionMixin:
 
         # GhostHeroMob death: clear ghost_id on the owner's DriedRose so
         # the rose can be recharged and re-summoned.
-        from app.engine.entities.base import DriedRose
+        from app.engine.entities.items_artifacts import DriedRose
         from app.engine.entities.mobs import GhostHeroMob
         if isinstance(mob, GhostHeroMob) and mob.owner_id:
             owner = self.players.get(mob.owner_id)

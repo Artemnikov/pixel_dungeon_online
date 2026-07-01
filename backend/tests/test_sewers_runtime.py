@@ -1,5 +1,5 @@
 from app.engine.dungeon.constants import TileType
-from app.engine.entities.base import Key
+from app.engine.entities.items_consumable import Key
 from app.engine.manager import GameInstance
 
 

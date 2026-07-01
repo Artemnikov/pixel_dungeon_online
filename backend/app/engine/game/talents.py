@@ -1,7 +1,7 @@
 import random
 from typing import Dict, List, Optional
 
-from app.engine.entities.base import Player
+from app.engine.entities.player import Player
 from app.engine.entities.buffs import add_buff, get_buff, remove_buff
 from app.engine.entities.subclasses import (
     Subclass,
@@ -544,7 +544,7 @@ class TalentsMixin:
         # Empowering Meal (mage T1): gain wand charge per point
         empowering = ti.level(Talent.EMPOWERING_MEAL)
         if empowering > 0:
-            from app.engine.entities.base import Wand
+            from app.engine.entities.items_wands import Wand
             for w in player.belongings.all_items():
                 if isinstance(w, Wand) and w.charges < w.max_charges:
                     w.charges = min(w.max_charges, w.charges + empowering)
@@ -559,7 +559,7 @@ class TalentsMixin:
         # Energizing Meal (mage T2): recharge wand charges on eat
         energizing = ti.level(Talent.ENERGIZING_MEAL)
         if energizing > 0:
-            from app.engine.entities.base import Wand as WandCls
+            from app.engine.entities.items_wands import Wand as WandCls
             for item in player.belongings.all_items():
                 if isinstance(item, WandCls) and item.max_charges > 0:
                     item.charges = min(item.max_charges, item.charges + energizing)
@@ -594,7 +594,7 @@ class TalentsMixin:
         # Inscribed Power (mage T2): gain wand charges on potion
         inscribed = ti.level(Talent.INSCRIBED_POWER)
         if inscribed > 0:
-            from app.engine.entities.base import Wand as WandCls
+            from app.engine.entities.items_wands import Wand as WandCls
             for item in player.belongings.all_items():
                 if isinstance(item, WandCls) and item.max_charges > 0:
                     item.charges = min(item.max_charges, item.charges + inscribed)

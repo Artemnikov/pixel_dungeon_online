@@ -195,7 +195,7 @@ class ImpQuestState:
             self.alternative = True
         self.given = False
 
-        from app.engine.entities.base import Ring
+        from app.engine.entities.items_equip import Ring
         self.reward = Ring(name="Ring", level=2, level_known=True, cursed=True, cursed_known=False)
 
         return AmbitiousImpRoom()

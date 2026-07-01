@@ -22,12 +22,8 @@ Registered into ITEM_ACTION_DISPATCH in item_actions.py.
 import random
 
 from app.engine.dungeon.generator import TileType
-from app.engine.entities.base import (
-    Action, Position,
-    AlchemistsToolkit, ChaliceOfBlood, EtherealChains, HolyTome,
-    HornOfPlenty, LloydsBeacon, MasterThievesArmband, SandalsOfNature,
-    SkeletonKey, TalismanOfForesight, TimekeepersHourglass, UnstableSpellbook,
-)
+from app.engine.entities.base import Action, Position
+from app.engine.entities.items_artifacts import AlchemistsToolkit, ChaliceOfBlood, EtherealChains, HolyTome, HornOfPlenty, LloydsBeacon, MasterThievesArmband, SandalsOfNature, SkeletonKey, TalismanOfForesight, TimekeepersHourglass, UnstableSpellbook
 
 
 # ---------------------------------------------------------------------------
@@ -216,7 +212,7 @@ def action_store_food(game, player, item, tx=None, ty=None) -> None:
     if not isinstance(item, HornOfPlenty):
         return
     # Find the first food item in the backpack.
-    from app.engine.entities.base import Food as _Food
+    from app.engine.entities.items_consumable import Food as _Food
     food = next(
         (it for it in player.belongings.backpack.items.values()
          if isinstance(it, _Food)),
@@ -557,7 +553,7 @@ def _construct_scroll(kind: str):
     scroll = make_catalog_item(kind)
     if scroll is not None:
         return scroll
-    from app.engine.entities.base import Scroll
+    from app.engine.entities.items_scrolls import Scroll
 
     def _walk(cls):
         for sub in cls.__subclasses__():

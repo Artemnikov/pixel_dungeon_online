@@ -3,7 +3,9 @@ Staff.imbue_wand)."""
 import pytest
 
 from app.engine.manager import GameInstance
-from app.engine.entities.base import Staff, WandOfFireblast, WandOfFrost, CharacterClass
+from app.engine.entities.items_equip import Staff
+from app.engine.entities.items_wands import WandOfFireblast, WandOfFrost
+from app.engine.entities.player import CharacterClass
 
 
 def _make_mage_with_unimbued_staff(game, player_id="mage-1"):

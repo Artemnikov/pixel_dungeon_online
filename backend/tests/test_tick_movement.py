@@ -1,5 +1,6 @@
 from app.engine.manager import GameInstance
-from app.engine.entities.base import Mob as MobEntity, Position
+from app.engine.entities.base import Position
+from app.engine.entities.player import Mob as MobEntity
 from app.engine.game.constants import PATH_BLOCKED_GIVE_UP_TICKS
 
 

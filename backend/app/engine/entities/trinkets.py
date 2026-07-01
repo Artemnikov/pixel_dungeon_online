@@ -2,16 +2,11 @@ from __future__ import annotations
 
 from typing import ClassVar, List, Literal, Optional, TYPE_CHECKING
 
-from app.engine.entities.base import (
-    Action,
-    EquipableItem,
-    ItemBase,
-    ItemCategory,
-    KindofMisc,
-)
+from app.engine.entities.base import Action, ItemBase, ItemCategory
+from app.engine.entities.items_equip import EquipableItem, KindofMisc
 
 if TYPE_CHECKING:
-    from app.engine.entities.base import Player
+    from app.engine.entities.player import Player
 
 
 class Trinket(KindofMisc):

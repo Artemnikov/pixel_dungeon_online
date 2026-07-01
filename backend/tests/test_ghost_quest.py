@@ -3,7 +3,8 @@ on interact, completion on boss death, and the weapon-or-armor reward claim).
 """
 import uuid
 
-from app.engine.entities.base import Armor, MeleeWeapon, Position
+from app.engine.entities.base import Position
+from app.engine.entities.items_equip import Armor, MeleeWeapon
 from app.engine.entities.quest_bosses import FetidRat, Ghost, GnollTrickster, GreatCrab
 from app.engine.manager import GameInstance
 

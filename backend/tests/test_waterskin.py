@@ -1,6 +1,7 @@
 """Tests for the Waterskin item: Dewdrop collection on pickup and the DRINK
 action's missing-HP%-based instant heal (and Shielding Dew shield top-up)."""
-from app.engine.entities.base import Action, Dewdrop, Position, Waterskin
+from app.engine.entities.base import Action, Position
+from app.engine.entities.items_consumable import Dewdrop, Waterskin
 from app.engine.manager import GameInstance
 
 

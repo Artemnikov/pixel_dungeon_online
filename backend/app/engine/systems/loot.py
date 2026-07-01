@@ -2,27 +2,11 @@ import random
 import uuid
 from typing import Dict, List, Optional
 
-from app.engine.entities.base import (
-    ClothArmor,
-    DropEntry,
-    Gold,
-    GooBlob,
-    HealthPotion,
-    ItemBase,
-    Key,
-    KingsCrown,
-    LeatherArmor,
-    MailArmor,
-    make_named_melee_weapon,
-    Mob,
-    MysteryMeat,
-    PlateArmor,
-    Position,
-    Potion,
-    ScaleArmor,
-    Seed,
-    TenguMask,
-)
+from app.engine.entities.base import ItemBase, Position
+from app.engine.entities.items_consumable import Gold, GooBlob, Key, KingsCrown, MysteryMeat, Seed, TenguMask
+from app.engine.entities.items_equip import ClothArmor, LeatherArmor, MailArmor, make_named_melee_weapon, PlateArmor, ScaleArmor
+from app.engine.entities.items_potions import HealthPotion, Potion
+from app.engine.entities.player import DropEntry, Mob
 from app.engine.entities.weapon_enchants import roll_weapon_level, roll_weapon_enchant
 
 TIER2_WEAPONS = [

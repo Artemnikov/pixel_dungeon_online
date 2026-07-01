@@ -18,13 +18,8 @@ from typing import Optional, List, Any, TYPE_CHECKING
 
 from pydantic import BaseModel, Field
 
-from app.engine.entities.base import (
-    Mob as MobEntity,
-    DropEntry,
-    WeightedCountDrop,
-    Faction,
-    Position,
-)
+from app.engine.entities.base import Faction, Position
+from app.engine.entities.player import Mob as MobEntity, DropEntry, WeightedCountDrop
 
 if TYPE_CHECKING:
     from app.engine.entities.base import Entity

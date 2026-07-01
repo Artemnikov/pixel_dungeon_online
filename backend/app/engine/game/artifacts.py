@@ -20,13 +20,8 @@ via tick_artifacts(player, dt).
 """
 import random
 
-from app.engine.entities.base import (
-    Player,
-    AlchemistsToolkit, CapeOfThorns, ChaliceOfBlood, EtherealChains,
-    HolyTome, HornOfPlenty, LloydsBeacon, MasterThievesArmband,
-    SandalsOfNature, SkeletonKey, TalismanOfForesight,
-    TimekeepersHourglass, UnstableSpellbook,
-)
+from app.engine.entities.items_artifacts import AlchemistsToolkit, CapeOfThorns, ChaliceOfBlood, EtherealChains, HolyTome, HornOfPlenty, LloydsBeacon, MasterThievesArmband, SandalsOfNature, SkeletonKey, TalismanOfForesight, TimekeepersHourglass, UnstableSpellbook
+from app.engine.entities.player import Player
 from app.engine.dungeon.generator import TileType
 
 # Seconds per charge tick for passive-recharge artifacts.

@@ -1,4 +1,10 @@
-from app.engine.entities.base import ScrollOfTeleportation, ScrollOfRecharging, ScrollOfLullaby, ScrollOfTerror, ScrollOfRage, ScrollOfRetribution, ScrollOfIdentify, ScrollOfRemoveCurse, ScrollOfTransmutation, ScrollOfMirrorImage, ScrollOfMagicMapping, ScrollOfMetamorphosis, ScrollOfUpgrade, Wand, Position, Mob, Faction, HealthPotion, PotionOfLiquidFlame, Seed, Dagger, Gold, is_immune
+from app.engine.entities.base import Position, Faction, is_immune
+from app.engine.entities.items_consumable import Seed, Gold
+from app.engine.entities.items_equip import Dagger
+from app.engine.entities.items_potions import HealthPotion, PotionOfLiquidFlame
+from app.engine.entities.items_scrolls import ScrollOfTeleportation, ScrollOfRecharging, ScrollOfLullaby, ScrollOfTerror, ScrollOfRage, ScrollOfRetribution, ScrollOfIdentify, ScrollOfRemoveCurse, ScrollOfTransmutation, ScrollOfMirrorImage, ScrollOfMagicMapping, ScrollOfMetamorphosis, ScrollOfUpgrade
+from app.engine.entities.items_wands import Wand
+from app.engine.entities.player import Mob
 from app.engine.entities.mobs import Tengu, MirrorImage
 from app.engine.entities.scroll_actions import action_read
 from app.engine.entities.scroll_predicates import player_inventory_items

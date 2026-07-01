@@ -360,6 +360,9 @@ class ItemBase(BaseModel):
 
     # Type-intrinsic, so kept off the wire as ClassVars.
     stackable: ClassVar[bool] = False
+    # True for Bag (a container). Kept as a flag so base need not import Bag,
+    # which lives in the item_union module (avoids an import cycle).
+    is_bag: ClassVar[bool] = False
     category: ClassVar[str] = ItemCategory.MISC
     # Flavour text shown in the item info window (SPD's Item.desc()).
     DESC: ClassVar[str] = ""
@@ -391,7 +394,7 @@ class ItemBase(BaseModel):
     def is_similar(self, other: "ItemBase") -> bool:
         return (
             type(self) is type(other)
-            and not isinstance(self, Bag)
+            and not self.is_bag
             and self.level == other.level
             and self.name == other.name
         )
@@ -441,16 +444,3 @@ def _charm_value(level: int, level_known: bool, cursed: bool, cursed_known: bool
             price /= (1 - level)
     return max(1, round(price))
 
-
-
-
-# --- TRANSIENT re-export shim (Phase 1 of base.py split) -----------
-# Removed in Phase 3 once all importers point at the concrete modules.
-from app.engine.entities.items_equip import *
-from app.engine.entities.items_wands import *
-from app.engine.entities.items_potions import *
-from app.engine.entities.items_scrolls import *
-from app.engine.entities.items_consumable import *
-from app.engine.entities.items_artifacts import *
-from app.engine.entities.item_union import *  # noqa: F401,F403
-from app.engine.entities.player import *  # noqa: F401,F403

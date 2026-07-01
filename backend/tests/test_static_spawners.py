@@ -1,7 +1,8 @@
 import sys, os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-from app.engine.entities.base import Position, Faction, Player
+from app.engine.entities.base import Position, Faction
+from app.engine.entities.player import Player
 from app.engine.entities.mobs import DemonSpawner, Pylon, RipperDemon, DM300
 from app.engine.dungeon.generator import TileType
 from app.engine.game.constants import MAP_WIDTH, MAP_HEIGHT

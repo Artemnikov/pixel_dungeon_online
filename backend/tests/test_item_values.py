@@ -1,32 +1,12 @@
 """Tests for ItemBase.value() — the SPD shop sell-price table."""
 import pytest
 
-from app.engine.entities.base import (
-    Armor,
-    ArmorEnchantment,
-    Bag,
-    Boomerang,
-    Dagger,
-    Dewdrop,
-    ElixirOfAquaticRejuvenation,
-    GooBlob,
-    HealthPotion,
-    Key,
-    MagicalHolster,
-    PotionOfExperience,
-    Ring,
-    Scroll,
-    ScrollOfMagicMapping,
-    ScrollOfUpgrade,
-    Seed,
-    SmallRation,
-    Stone,
-    ThrowableDagger,
-    VelvetPouch,
-    Wand,
-    Waterskin,
-    WornShortsword,
-)
+from app.engine.entities.item_union import Bag, MagicalHolster, VelvetPouch
+from app.engine.entities.items_consumable import Boomerang, Dewdrop, GooBlob, Key, Seed, SmallRation, Stone, ThrowableDagger, Waterskin
+from app.engine.entities.items_equip import Armor, ArmorEnchantment, Dagger, Ring, WornShortsword
+from app.engine.entities.items_potions import ElixirOfAquaticRejuvenation, HealthPotion, PotionOfExperience
+from app.engine.entities.items_scrolls import Scroll, ScrollOfMagicMapping, ScrollOfUpgrade
+from app.engine.entities.items_wands import Wand
 
 
 @pytest.mark.parametrize("item, expected", [

@@ -4,7 +4,9 @@ Scroll of Upgrade."""
 
 import random
 
-from app.engine.entities.base import Mob as MobEntity, Position, Dagger
+from app.engine.entities.base import Position
+from app.engine.entities.items_equip import Dagger
+from app.engine.entities.player import Mob as MobEntity
 from app.engine.entities.weapon_enchants import (
     CURSES,
     ENCHANTS,
@@ -258,7 +260,7 @@ def test_weapon_dr_bonus_applies_to_player_dr():
 # --- Scroll of Upgrade -----------------------------------------------------------
 
 def test_scroll_of_upgrade_levels_up_equipped_weapon():
-    from app.engine.entities.base import ScrollOfUpgrade
+    from app.engine.entities.items_scrolls import ScrollOfUpgrade
     from app.engine.entities.item_actions import action_read
 
     g = GameInstance("t")
@@ -282,7 +284,7 @@ def test_scroll_of_upgrade_levels_up_equipped_weapon():
 
 
 def test_scroll_of_upgrade_removes_curse():
-    from app.engine.entities.base import ScrollOfUpgrade
+    from app.engine.entities.items_scrolls import ScrollOfUpgrade
     from app.engine.entities.item_actions import action_read
 
     g = GameInstance("t")
@@ -304,7 +306,8 @@ def test_scroll_of_upgrade_removes_curse():
 
 
 def test_scroll_of_upgrade_excludes_non_upgradable_items():
-    from app.engine.entities.base import ScrollOfUpgrade, Gold
+    from app.engine.entities.items_consumable import Gold
+    from app.engine.entities.items_scrolls import ScrollOfUpgrade
     from app.engine.entities.item_actions import action_read
     from app.engine.entities.scroll_predicates import is_upgradable
 

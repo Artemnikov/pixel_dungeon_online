@@ -1,6 +1,7 @@
 """Keys are picked up like Gold/Dewdrop: they bypass the bag entirely and go
 straight into the player's depth-keyed key counter."""
-from app.engine.entities.base import Key, Position
+from app.engine.entities.base import Position
+from app.engine.entities.items_consumable import Key
 from app.engine.manager import GameInstance
 
 

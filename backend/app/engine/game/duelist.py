@@ -10,7 +10,7 @@ Called from TickMixin and ArmorAbilitiesMixin.
 """
 import random
 
-from app.engine.entities.base import Player, CharacterClass
+from app.engine.entities.player import Player, CharacterClass
 
 _CHARGE_PER_HIT = 10
 _CHARGE_MAX = 100

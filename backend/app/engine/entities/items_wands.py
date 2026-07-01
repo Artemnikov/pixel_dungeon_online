@@ -629,7 +629,7 @@ class WandOfTransfusion(DamageWand):
         if target is None:
             return
         # Only affects mobs (not players)
-        from app.engine.entities.base import Mob as MobEntity
+        from app.engine.entities.player import Mob as MobEntity
         if not isinstance(target, MobEntity):
             return
         is_enemy = target.faction != player.faction
@@ -745,7 +745,7 @@ class WandOfCorruption(Wand):
         player = ctx.attacker
         if target is None:
             return
-        from app.engine.entities.base import Mob as MobEntity
+        from app.engine.entities.player import Mob as MobEntity
         if not isinstance(target, MobEntity):
             return
         lvl = self.buffed_lvl()

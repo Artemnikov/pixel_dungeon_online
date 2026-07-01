@@ -30,31 +30,14 @@ from app.engine.dungeon.spd_levelgen.traps import (
     DisarmingTrap, CursingTrap, DistortionTrap, GrimTrap,
 )
 from app.engine.dungeon.generator import TileType
-from app.engine.entities.base import (
-    Amulet,
-    Armor,
-    Chest,
-    ClothArmor,
-    Dewdrop,
-    EntityType,
-    Food,
-    Gold,
-    HealthPotion,
-    Item,
-    Key,
-    LeatherArmor,
-    MailArmor,
-    make_named_melee_weapon,
-    Mob as MobEntity,
-    PlateArmor,
-    Position,
-    ScaleArmor,
-    Scroll,
-    Seed,
-    Stone,
-    Wand,
-    Weapon,
-)
+from app.engine.entities.base import EntityType, Position
+from app.engine.entities.item_union import Chest
+from app.engine.entities.items_consumable import Amulet, Dewdrop, Food, Gold, Key, Seed, Stone
+from app.engine.entities.items_equip import Armor, ClothArmor, LeatherArmor, MailArmor, make_named_melee_weapon, PlateArmor, ScaleArmor
+from app.engine.entities.items_potions import HealthPotion
+from app.engine.entities.items_scrolls import Scroll
+from app.engine.entities.items_wands import Wand
+from app.engine.entities.player import Item, Mob as MobEntity, Weapon
 from app.engine.dungeon.spd_levelgen.run_state import SCROLL_DEFAULT_PROBS_TOTAL
 from app.engine.entities.item_catalog import FLOOR_SCROLL_KINDS, TRANSMUTE_GROUPS, make_catalog_item
 from app.engine.entities.weapon_defs import WEP_TIER_ORDER
@@ -491,12 +474,7 @@ def _rolled_item_to_item(ri: RolledItem, cx: int, cy: int) -> Item:
             "wand_corruption",        # 11
             "wand_regrowth",           # 12
         ]
-        from app.engine.entities.base import (
-            WandOfMagicMissile, WandOfLightning, WandOfDisintegration,
-            WandOfFireblast, WandOfCorrosion, WandOfBlastWave,
-            WandOfLivingEarth, WandOfFrost, WandOfPrismaticLight,
-            WandOfWarding, WandOfTransfusion, WandOfCorruption, WandOfRegrowth,
-        )
+        from app.engine.entities.items_wands import WandOfMagicMissile, WandOfLightning, WandOfDisintegration, WandOfFireblast, WandOfCorrosion, WandOfBlastWave, WandOfLivingEarth, WandOfFrost, WandOfPrismaticLight, WandOfWarding, WandOfTransfusion, WandOfCorruption, WandOfRegrowth
         _WAND_MAP = [
             WandOfMagicMissile,
             WandOfLightning,
@@ -529,15 +507,11 @@ def _rolled_item_to_item(ri: RolledItem, cx: int, cy: int) -> Item:
     if ri.category in ("MISSILE", "MIS_T1", "MIS_T2", "MIS_T3", "MIS_T4", "MIS_T5"):
         return Stone(id=iid, pos=pos, name="Missile", damage=1 + ri.level, range=5)
     if ri.category == "RING":
-        from app.engine.entities.base import Ring
+        from app.engine.entities.items_equip import Ring
         return Ring(id=iid, pos=pos, name="Ring")
     if ri.category == "ARTIFACT":
-        from app.engine.entities.base import (
-            Artifact, AlchemistsToolkit, ChaliceOfBlood, CloakOfShadows,
-            DriedRose, EtherealChains, HolyTome, HornOfPlenty,
-            MasterThievesArmband, SandalsOfNature, SkeletonKey,
-            TalismanOfForesight, TimekeepersHourglass, UnstableSpellbook,
-        )
+        from app.engine.entities.items_artifacts import AlchemistsToolkit, ChaliceOfBlood, CloakOfShadows, DriedRose, EtherealChains, HolyTome, HornOfPlenty, MasterThievesArmband, SandalsOfNature, SkeletonKey, TalismanOfForesight, TimekeepersHourglass, UnstableSpellbook
+        from app.engine.entities.items_equip import Artifact
         # SPD Generator.Category.ARTIFACT.classes order (index -> class).
         # Indices 2 (Cloak) and 5 (Tome) have prob 0 -> never drawn from the
         # deck, but mapped defensively.

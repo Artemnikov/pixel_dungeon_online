@@ -1,6 +1,8 @@
 import pytest
 from app.engine.manager import GameInstance
-from app.engine.entities.base import KindOfWeapon, Mob as MobEntity, Player, Position
+from app.engine.entities.base import Position
+from app.engine.entities.items_equip import KindOfWeapon
+from app.engine.entities.player import Mob as MobEntity, Player
 
 
 def test_combat_logic():
@@ -21,7 +23,7 @@ def test_combat_logic():
     )
     
     # Add a mob with 0 DR and 0 defense skill (guaranteed hit)
-    from app.engine.entities.base import Mob as MobEntity
+    from app.engine.entities.player import Mob as MobEntity
     mob = MobEntity(
         id="test-mob",
         name="Rat",
@@ -66,7 +68,7 @@ def test_player_takes_damage():
     
     # Add a mob with known damage
     mob_id = "test-mob"
-    from app.engine.entities.base import Mob as MobEntity
+    from app.engine.entities.player import Mob as MobEntity
     mob = MobEntity(
         id=mob_id,
         name="Rat",
@@ -144,7 +146,7 @@ def test_surprise_auto_hit():
 
 def test_dagger_surprise_damage_floor():
     """Dagger's surprise_damage_floor=0.75 raises min damage on surprise."""
-    from app.engine.entities.base import Dagger
+    from app.engine.entities.items_equip import Dagger
     from app.engine.systems.combat import resolve_melee_attack
 
     player = Player(id="p", name="Tester", pos=Position(x=1, y=1),

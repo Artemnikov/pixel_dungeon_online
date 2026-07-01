@@ -10,11 +10,11 @@ from __future__ import annotations
 
 from typing import ClassVar, Literal, Optional, TYPE_CHECKING
 
-from app.engine.entities.base import Ring
+from app.engine.entities.items_equip import Ring
 from app.engine.entities.rings import ring_bonus, ring_buffed_bonus
 
 if TYPE_CHECKING:
-    from app.engine.entities.base import Player
+    from app.engine.entities.player import Player
 
 
 class RingOfForce(Ring):

@@ -9,7 +9,7 @@
 from typing import List, Optional, Tuple
 
 from app.engine.dungeon.terrain_flags import FloorFlagMaps
-from app.engine.entities.base import Mob as MobEntity, Player
+from app.engine.entities.player import Mob as MobEntity, Player
 
 
 def ballistica_trace(

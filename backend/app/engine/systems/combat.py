@@ -369,7 +369,8 @@ def resolve_melee_attack(
     if actual_damage > 0:
         subclass_info = getattr(attacker, "subclass_info", None)
         if subclass_info is not None and subclass_info.subclass == "battlemage":
-            from app.engine.entities.base import Staff, Wand
+            from app.engine.entities.items_equip import Staff
+            from app.engine.entities.items_wands import Wand
             w = getattr(getattr(attacker, "belongings", None), "weapon", None)
             if isinstance(w, Staff) and w.imbued_wand is not None:
                 wand = w.imbued_wand

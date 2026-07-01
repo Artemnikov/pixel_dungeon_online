@@ -2,14 +2,11 @@
 passive recharge tick (_tick_passive_wand_recharge / recharge_scale)."""
 import pytest
 
-from app.engine.entities.base import (
-    CharacterClass,
-    PotionOfLiquidFlame,
-    ScrollOfIdentify,
-    ScrollOfUpgrade,
-    Staff,
-    Wand,
-)
+from app.engine.entities.items_equip import Staff
+from app.engine.entities.items_potions import PotionOfLiquidFlame
+from app.engine.entities.items_scrolls import ScrollOfIdentify, ScrollOfUpgrade
+from app.engine.entities.items_wands import Wand
+from app.engine.entities.player import CharacterClass
 from app.engine.manager import GameInstance
 
 

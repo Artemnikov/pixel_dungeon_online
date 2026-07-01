@@ -8,7 +8,10 @@ identification of potion/scroll kinds.
 from typing import Optional
 
 from app.engine.entities import item_actions, scroll_actions
-from app.engine.entities.base import Position, QuickSlotEntry, Runestone, Wand
+from app.engine.entities.base import Position
+from app.engine.entities.runestones import Runestone
+from app.engine.entities.items_wands import Wand
+from app.engine.entities.player import QuickSlotEntry
 from app.engine.entities.runestone_actions import (
     apply_stone_augment, apply_stone_intuition_guess, apply_stone_intuition_pick,
     apply_stone_target,
@@ -163,7 +166,8 @@ class ItemsMixin:
 
     def equip_ghost_item(self, player_id: str, rose_id: str, slot: str,
                          item_id: Optional[str] = None):
-        from app.engine.entities.base import Armor, DriedRose, MeleeWeapon
+        from app.engine.entities.items_artifacts import DriedRose
+        from app.engine.entities.items_equip import Armor, MeleeWeapon
         player = self.players.get(player_id)
         if not player or not player.is_alive or player.is_downed:
             return

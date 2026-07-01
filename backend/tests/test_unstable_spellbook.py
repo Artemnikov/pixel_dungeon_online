@@ -1,7 +1,8 @@
 import sys, os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-from app.engine.entities.base import UnstableSpellbook, Action
+from app.engine.entities.base import Action
+from app.engine.entities.items_artifacts import UnstableSpellbook
 from app.engine.entities.item_catalog import make_catalog_item
 from app.engine.manager import GameInstance
 import app.engine.entities.artifact_actions as aa

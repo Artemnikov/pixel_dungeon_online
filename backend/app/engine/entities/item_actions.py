@@ -29,10 +29,12 @@ import time
 from typing import Optional
 
 from app.engine.dungeon.constants import TileType
-from app.engine.entities.base import (
-    Action, Position, Potion, Runestone, Seed, Wand, SpiritBow,
-    GooBlob, HealthPotion, ElixirOfAquaticRejuvenation, Waterskin,
-)
+from app.engine.entities.base import Action, Position
+from app.engine.entities.runestones import Runestone
+from app.engine.entities.items_consumable import Seed, GooBlob, Waterskin
+from app.engine.entities.items_equip import SpiritBow
+from app.engine.entities.items_potions import Potion, HealthPotion, ElixirOfAquaticRejuvenation
+from app.engine.entities.items_wands import Wand
 from app.engine.entities.runestone_actions import action_throw_runestone, action_use_stone
 from app.engine.entities.scroll_actions import action_read
 from app.engine.entities.armor_glyphs import CURSE_GLYPHS as _CURSE_GLYPHS_TUPLE
@@ -806,7 +808,7 @@ def action_stealth(game, player, item, tx=None, ty=None) -> None:
 def action_summon(game, player, item, tx=None, ty=None) -> None:
     import random
     import uuid
-    from app.engine.entities.base import DriedRose
+    from app.engine.entities.items_artifacts import DriedRose
     from app.engine.entities.mobs import GhostHeroMob
 
     if not isinstance(item, DriedRose):
@@ -843,7 +845,7 @@ def action_summon(game, player, item, tx=None, ty=None) -> None:
 
 
 def action_direct(game, player, item, tx=None, ty=None) -> None:
-    from app.engine.entities.base import DriedRose
+    from app.engine.entities.items_artifacts import DriedRose
     from app.engine.entities.mobs import GhostHeroMob
     if not isinstance(item, DriedRose) or tx is None or ty is None:
         return
@@ -880,7 +882,7 @@ def _ghost_armor_info(a) -> dict:
 
 
 def action_ghost_gear(game, player, item, tx=None, ty=None) -> None:
-    from app.engine.entities.base import DriedRose
+    from app.engine.entities.items_artifacts import DriedRose
     if not isinstance(item, DriedRose):
         return
     floor = game._get_or_create_floor(player.floor_id)
@@ -956,7 +958,7 @@ def _wear_kings_crown(game, player, item) -> None:
 
 def action_inscribe(game, player, item, tx=None, ty=None) -> None:
     """ArcaneStylus: open armor picker, then apply glyph via apply_stylus_target."""
-    from app.engine.entities.base import Armor as _Armor
+    from app.engine.entities.items_equip import Armor as _Armor
     candidates = [
         it.id for it in player.belongings.all_items()
         if it.id != item.id and isinstance(it, _Armor)
@@ -977,7 +979,7 @@ def action_inscribe(game, player, item, tx=None, ty=None) -> None:
 
 def apply_stylus_target(game, player, stylus, armor) -> None:
     """Apply a random glyph to the chosen armor; consume the stylus."""
-    from app.engine.entities.base import Armor as _Armor
+    from app.engine.entities.items_equip import Armor as _Armor
     if not isinstance(armor, _Armor):
         return
     if armor.cursed_known and armor.cursed:

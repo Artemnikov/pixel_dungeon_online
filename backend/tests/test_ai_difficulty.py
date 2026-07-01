@@ -1,6 +1,7 @@
 import pytest
 from app.engine.manager import GameInstance
-from app.engine.entities.base import Position, Difficulty
+from app.engine.entities.base import Position
+from app.engine.entities.player import Difficulty
 from app.engine.entities.mobs import Rat
 from app.engine.dungeon.constants import TileType
 

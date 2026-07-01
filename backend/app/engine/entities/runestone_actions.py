@@ -3,9 +3,10 @@ import random
 import uuid
 
 from app.engine.dungeon.constants import TileType
-from app.engine.entities.base import (
-    Armor, Faction, InventoryStone, ItemBase, KindOfWeapon, Position, Runestone, Wand,
-)
+from app.engine.entities.base import Faction, ItemBase, Position
+from app.engine.entities.runestones import InventoryStone, Runestone
+from app.engine.entities.items_equip import Armor, KindOfWeapon
+from app.engine.entities.items_wands import Wand
 from app.engine.entities.armor_glyphs import roll_armor_glyph
 from app.engine.entities.weapon_enchants import roll_weapon_enchant
 
@@ -186,7 +187,7 @@ def _aggression_effect(game, player, floor, tx, ty) -> None:
 
 
 def _flock_effect(game, player, floor, tx, ty) -> None:
-    from app.engine.entities.base import Mob as MobEntity
+    from app.engine.entities.player import Mob as MobEntity
     RADIUS = 2
     placed = []
     for dy in range(-RADIUS, RADIUS + 1):

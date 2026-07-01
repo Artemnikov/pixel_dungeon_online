@@ -56,6 +56,7 @@ class Bag(ItemBase):
     kind: Literal["bag"] = "bag"
     type: str = "bag"
     category: ClassVar[str] = ItemCategory.BAG
+    is_bag: ClassVar[bool] = True
     unique: bool = True
     capacity: int = 20
     items: List["AnyItem"] = Field(default_factory=list)

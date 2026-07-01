@@ -1,7 +1,9 @@
 import sys, os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-from app.engine.entities.base import Armor, Player, Position
+from app.engine.entities.base import Position
+from app.engine.entities.items_equip import Armor
+from app.engine.entities.player import Player
 from app.engine.manager import GameInstance
 import uuid
 
@@ -37,7 +39,7 @@ def test_add_player_sets_is_admin():
 
 
 def test_admin_get_state_shows_all_mobs():
-    from app.engine.entities.base import Mob as MobEntity
+    from app.engine.entities.player import Mob as MobEntity
     game = GameInstance("test-admin-vision")
     player_id = str(uuid.uuid4())
     player = game.add_player(player_id, "Admin", is_admin=True)

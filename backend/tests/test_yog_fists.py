@@ -3,7 +3,8 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 import random
 
-from app.engine.entities.base import Faction, Player, Position
+from app.engine.entities.base import Faction, Position
+from app.engine.entities.player import Player
 from app.engine.entities.buffs import has_buff, get_buff
 from app.engine.entities.mobs import (
     BurningFist, SoiledFist, RottingFist, RustedFist, BrightFist, DarkFist,

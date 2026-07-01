@@ -13,7 +13,8 @@ from typing import TYPE_CHECKING, Callable, Dict, Optional, Tuple
 from app.engine.dungeon.constants import TileType
 
 if TYPE_CHECKING:
-    from app.engine.entities.base import Entity, KindOfWeapon
+    from app.engine.entities.base import Entity
+    from app.engine.entities.items_equip import KindOfWeapon
 
 
 # ---------------------------------------------------------------------------

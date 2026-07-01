@@ -74,7 +74,7 @@ def _evolve_electricity_blob(
                         events.append({"type": "DAMAGE", "data": {"target": p.id, "amount": dmg, "shock": True}})
                         damaged = True
                 # Charge wands in inventory
-                from app.engine.entities.base import Wand
+                from app.engine.entities.items_wands import Wand
                 for item in list(getattr(p, "belongings", None).all_items() if getattr(p, "belongings", None) else []):
                     if isinstance(item, Wand) and not item.cursed and item.charges < item.max_charges:
                         item.gain_charge(0.333)
@@ -97,7 +97,7 @@ def _evolve_electricity_blob(
         # Charge wands on ground
         for item_id, item in list(floor.items.items()):
             if item.pos and item.pos.x == cx and item.pos.y == cy:
-                from app.engine.entities.base import Wand
+                from app.engine.entities.items_wands import Wand
                 if isinstance(item, Wand) and not item.cursed and item.charges < item.max_charges:
                     item.gain_charge(0.333)
 
@@ -159,7 +159,8 @@ def _blob_cell_intensity(blob: dict, cell: tuple) -> int:
 
 def _burn_floor_items(floor: FloorState, cx: int, cy: int) -> None:
     """Selectively burn items at a cell, matching SPD Heap.burn()."""
-    from app.engine.entities.base import ChargrilledMeat, Dewdrop, MysteryMeat, Scroll
+    from app.engine.entities.items_consumable import ChargrilledMeat, Dewdrop, MysteryMeat
+    from app.engine.entities.items_scrolls import Scroll
     for item_id, item in list(floor.items.items()):
         if item.pos and item.pos.x == cx and item.pos.y == cy:
             if isinstance(item, Scroll) and not item.unique:

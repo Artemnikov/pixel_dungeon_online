@@ -24,9 +24,10 @@ import time
 from typing import List, Optional, Type
 
 from app.engine.dungeon.generator import TileType
-from app.engine.entities.base import (
-    ChargrilledMeat, Difficulty, Effect, Faction, FrozenCarpaccio, Gold, is_immune, MysteryMeat, Player, Position, Wand,
-)
+from app.engine.entities.base import Faction, is_immune, Position
+from app.engine.entities.items_consumable import ChargrilledMeat, FrozenCarpaccio, Gold, MysteryMeat
+from app.engine.entities.items_wands import Wand
+from app.engine.entities.player import Difficulty, Effect, Player
 from app.engine.entities.buffs import add_buff, get_buff, has_buff, process_buffs, remove_buff
 from app.engine.entities.scroll_predicates import player_inventory_items
 from app.engine.game.blobs import tick_blob_areas
@@ -710,7 +711,7 @@ class TickMixin:
         return step
 
     def _refresh_ghost_hero_stats(self, mob, owner, floor: FloorState, floor_id: int) -> None:
-        from app.engine.entities.base import DriedRose
+        from app.engine.entities.items_artifacts import DriedRose
         if owner is None or not owner.is_alive or owner.floor_id != floor_id:
             mob.is_alive = False
             mob.hp = 0
@@ -1359,7 +1360,7 @@ class TickMixin:
         - Normal wands: SPD formula (10 + 40 * 0.875^missing)
         - Staff-imbued wands: +1 charge every 2s (SPD MagesStaff style).
         - Recharging buff (Scroll of Recharging): multiplier on regen speed."""
-        from app.engine.entities.base import Staff as StaffCls
+        from app.engine.entities.items_equip import Staff as StaffCls
         weapon = getattr(player, "belongings", None)
         if weapon is not None:
             weapon = weapon.weapon

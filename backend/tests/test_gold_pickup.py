@@ -1,5 +1,6 @@
 """Tests for Gold pickup: adds to Player.gold counter, never enters inventory."""
-from app.engine.entities.base import Gold, Position
+from app.engine.entities.base import Position
+from app.engine.entities.items_consumable import Gold
 from app.engine.manager import GameInstance
 
 

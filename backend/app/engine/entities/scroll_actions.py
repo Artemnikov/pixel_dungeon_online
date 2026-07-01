@@ -19,9 +19,11 @@ Extracted from item_actions.py so that file stays under the 400-line limit.
 import random
 
 from app.engine.dungeon.constants import TileType
-from app.engine.entities.base import (
-    Armor, ArmorEnchantment, Bag, KindOfWeapon, Position, Wand, Mob,
-)
+from app.engine.entities.base import Position
+from app.engine.entities.item_union import Bag
+from app.engine.entities.items_equip import Armor, ArmorEnchantment, KindOfWeapon
+from app.engine.entities.items_wands import Wand
+from app.engine.entities.player import Mob
 from app.engine.entities.item_catalog import TRANSMUTE_GROUPS, make_catalog_item
 from app.engine.entities.scroll_predicates import PREDICATE, player_inventory_items, transmute_group
 from app.engine.entities.weapon_enchants import CURSES
@@ -380,7 +382,7 @@ def action_read(game, player, item, tx=None, ty=None) -> None:
     elif effect == "scroll_of_mystical_energy":
         player.add_buff("artifact_recharge", duration=30.0)
         for it in player.belongings.all_items():
-            from app.engine.entities.base import Wand
+            from app.engine.entities.items_wands import Wand
             if isinstance(it, Wand) and it.charges < it.max_charges:
                 it.charges = it.max_charges
         removed = player.belongings.backpack.detach(item.id)
@@ -494,7 +496,7 @@ def action_read(game, player, item, tx=None, ty=None) -> None:
 
 
 def _apply_upgrade_target(game, player, target_item) -> None:
-    from app.engine.entities.base import Staff, KindOfWeapon, Armor as ArmorCls, Ring as RingCls
+    from app.engine.entities.items_equip import Staff, KindOfWeapon, Armor as ArmorCls, Ring as RingCls
     # Pre-upgrade state tracking (SPD: curse enchant vs plain curse distinction)
     had_cursed_enchant = False
     if isinstance(target_item, KindOfWeapon) and target_item.enchantment:

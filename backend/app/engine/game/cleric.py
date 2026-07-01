@@ -10,7 +10,7 @@ Called from TickMixin and ArmorAbilitiesMixin.
 """
 import random
 
-from app.engine.entities.base import Player, CharacterClass
+from app.engine.entities.player import Player, CharacterClass
 
 _SPELL_COOLDOWNS: dict[str, float] = {
     "holy_light": 20.0,
@@ -166,7 +166,8 @@ class ClericMixin:
         if player.class_type != CharacterClass.CLERIC:
             return
         import uuid as _uuid
-        from app.engine.entities.base import Mob, Position
+        from app.engine.entities.base import Position
+        from app.engine.entities.player import Mob
         floor = self._get_or_create_floor(player.floor_id)
 
         # Remove existing ally if any

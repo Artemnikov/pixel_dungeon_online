@@ -2,7 +2,7 @@ import sys, os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 from app.engine.entities.mobs import CrystalMimic
-from app.engine.entities.base import Chest
+from app.engine.entities.item_union import Chest
 from app.engine.dungeon.generator import TileType
 from app.engine.game.floor_state import FloorState
 from app.engine.game.spd_adapter import gen_level_to_floor_state

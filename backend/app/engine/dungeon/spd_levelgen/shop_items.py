@@ -42,26 +42,13 @@ from typing import List
 
 from app.engine.dungeon.spd_levelgen.generator import _WEP_T1, _WEP_T2, _WEP_T3, _WEP_T4, _WEP_T5
 from app.engine.dungeon.spd_random import SPDRandom
-from app.engine.entities.base import (
-    Armor,
-    ClothArmor, LeatherArmor, MailArmor, ScaleArmor, PlateArmor,
-    Artifact,
-    Food,
-    HealthPotion,
-    Item,
-    MagicalHolster,
-    make_named_melee_weapon,
-    MissileWeapon,
-    PotionBandolier,
-    Ring,
-    ScrollHolder,
-    ScrollOfIdentify,
-    ScrollOfMagicMapping,
-    ScrollOfRemoveCurse,
-    ScrollOfUpgrade,
-    Stone,
-    Wand,
-)
+from app.engine.entities.item_union import MagicalHolster, PotionBandolier, ScrollHolder
+from app.engine.entities.items_consumable import Food, Stone
+from app.engine.entities.items_equip import Armor, ClothArmor, LeatherArmor, MailArmor, ScaleArmor, PlateArmor, Artifact, make_named_melee_weapon, MissileWeapon, Ring
+from app.engine.entities.items_potions import HealthPotion
+from app.engine.entities.items_scrolls import ScrollOfIdentify, ScrollOfMagicMapping, ScrollOfRemoveCurse, ScrollOfUpgrade
+from app.engine.entities.items_wands import Wand
+from app.engine.entities.player import Item
 from app.engine.entities.weapon_defs import WEP_TIER_ORDER
 from app.engine.entities.weapon_enchants import ENCHANT_RARITY
 

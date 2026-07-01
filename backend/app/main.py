@@ -203,7 +203,7 @@ class ConnectionManager:
                     player_obj = game.players.get(player_id)
                     gold = player_obj.gold if player_obj else 0
                     energy = player_obj.energy if player_obj else 0
-                    from app.engine.entities.base import Amulet
+                    from app.engine.entities.items_consumable import Amulet
                     has_amulet = (
                         any(isinstance(it, Amulet) for it in player_obj.belongings.all_items())
                         if player_obj else False
@@ -255,7 +255,7 @@ async def get_talents(class_type: str):
         TIER_MAX_POINTS, CLASS_SUBCLASSES,
         T4_ABILITY_TALENTS, CLASS_ARMOR_ABILITIES, Talent,
     )
-    from app.engine.entities.base import CharacterClass
+    from app.engine.entities.player import CharacterClass
 
     valid = {CharacterClass.WARRIOR, CharacterClass.MAGE, CharacterClass.ROGUE, CharacterClass.HUNTRESS}
     if class_type not in valid:
@@ -436,7 +436,7 @@ async def game_websocket(websocket: WebSocket, game_id: str, class_type: str = "
                         if i.pos and i.pos.x == player.pos.x and i.pos.y == player.pos.y
                         and i.type != "grave" and not getattr(i, 'for_sale', False)
                     ]
-                    from app.engine.entities.base import Gold, Dewdrop
+                    from app.engine.entities.items_consumable import Gold, Dewdrop
                     for i_id in items_to_pickup:
                         item = floor.items[i_id]
                         if isinstance(item, Gold):

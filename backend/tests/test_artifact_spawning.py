@@ -5,12 +5,8 @@ from app.engine.dungeon.spd_levelgen.generator import (
     RolledItem, SPDRandom, init_generator_state, _random_artifact, _ARTIFACT,
 )
 from app.engine.game.spd_adapter import _rolled_item_to_item
-from app.engine.entities.base import (
-    AlchemistsToolkit, CapeOfThorns, ChaliceOfBlood, CloakOfShadows, DriedRose,
-    EtherealChains, HolyTome, HornOfPlenty, LloydsBeacon, MasterThievesArmband,
-    SandalsOfNature, SkeletonKey, TalismanOfForesight, TimekeepersHourglass,
-    UnstableSpellbook, Chest,
-)
+from app.engine.entities.item_union import Chest
+from app.engine.entities.items_artifacts import AlchemistsToolkit, CapeOfThorns, ChaliceOfBlood, CloakOfShadows, DriedRose, EtherealChains, HolyTome, HornOfPlenty, LloydsBeacon, MasterThievesArmband, SandalsOfNature, SkeletonKey, TalismanOfForesight, TimekeepersHourglass, UnstableSpellbook
 
 
 def _artifact_roll(item_index, cursed=False):

@@ -24,28 +24,13 @@ import uuid
 from typing import Optional
 
 from app.engine.dungeon.generator import TileType
-from app.engine.entities.base import (
-    Amulet,
-    Bow,
-    Dewdrop,
-    Faction,
-    Gold,
-    Chest,
-    Key,
-    Mob as MobEntity,
-    MissileWeapon,
-    Player,
-    Position,
-    RevivingPotion,
-    SpiritBow,
-    Staff,
-    Throwable,
-    Wand,
-    ZapContext,
-    Waterskin,
-    Weapon,
-    is_immune,
-)
+from app.engine.entities.base import Faction, Position, is_immune
+from app.engine.entities.item_union import Chest
+from app.engine.entities.items_consumable import Amulet, Dewdrop, Gold, Key, Throwable, Waterskin
+from app.engine.entities.items_equip import Bow, MissileWeapon, SpiritBow, Staff
+from app.engine.entities.items_potions import RevivingPotion
+from app.engine.entities.items_wands import Wand, ZapContext
+from app.engine.entities.player import Mob as MobEntity, Player, Weapon
 from app.engine.entities.buffs import add_buff, get_buff, has_buff, remove_buff
 from app.engine.entities.mobs import CrystalMimic, DM300, Goo, Shopkeeper, Wraith
 from app.engine.entities.subclasses import Talent

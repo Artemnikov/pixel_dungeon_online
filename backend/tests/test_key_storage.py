@@ -1,6 +1,7 @@
 """Keys are tracked as a per-player, depth-keyed counter (mirrors SPD's
 Notes.KeyRecord), never as bag items. See Player.add_key/key_count/remove_key."""
-from app.engine.entities.base import Player, Position, Faction
+from app.engine.entities.base import Position, Faction
+from app.engine.entities.player import Player
 
 
 def make_player():

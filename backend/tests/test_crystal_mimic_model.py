@@ -2,7 +2,8 @@ import sys, os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 from app.engine.entities.mobs import CrystalMimic
-from app.engine.entities.base import Chest, Position
+from app.engine.entities.base import Position
+from app.engine.entities.item_union import Chest
 
 
 def test_crystal_mimic_has_required_fields():

@@ -1,7 +1,9 @@
 import pytest
 import time
 from app.engine.manager import GameInstance
-from app.engine.entities.base import Position, SpiritBow, CharacterClass
+from app.engine.entities.base import Position
+from app.engine.entities.items_equip import SpiritBow
+from app.engine.entities.player import CharacterClass
 from app.engine.dungeon.constants import TileType
 
 def test_ranged_combat_basics():
@@ -23,7 +25,7 @@ def test_ranged_combat_basics():
     
     # Add a mob within range (Bow range is 6 usually)
     mob_id = "target-mob"
-    from app.engine.entities.base import Mob as MobEntity
+    from app.engine.entities.player import Mob as MobEntity
     mob = MobEntity(
         id=mob_id,
         name="Rat",
@@ -60,7 +62,7 @@ def test_ranged_combat_out_of_range():
     bow = next(i for i in player.inventory if isinstance(i, SpiritBow))
     
     mob_id = "far-mob"
-    from app.engine.entities.base import Mob as MobEntity
+    from app.engine.entities.player import Mob as MobEntity
     mob = MobEntity(
         id=mob_id,
         name="Rat",
@@ -89,7 +91,7 @@ def test_ranged_combat_los_blocked():
     game.grid[6][5] = TileType.WALL
     
     mob_id = "hidden-mob"
-    from app.engine.entities.base import Mob as MobEntity
+    from app.engine.entities.player import Mob as MobEntity
     mob = MobEntity(
         id=mob_id,
         name="Rat",

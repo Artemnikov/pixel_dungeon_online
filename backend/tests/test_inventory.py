@@ -1,5 +1,7 @@
 import pytest
-from app.engine.entities.base import KindOfWeapon, Player, Armor, Position
+from app.engine.entities.base import Position
+from app.engine.entities.items_equip import KindOfWeapon, Armor
+from app.engine.entities.player import Player
 from app.engine.manager import GameInstance
 
 def test_player_inventory_limit():
@@ -63,7 +65,7 @@ def test_item_pickup_in_game():
     assert item_id not in floor.items
 
 def test_special_items_serialization():
-    from app.engine.entities.base import TenguMask, KingsCrown
+    from app.engine.entities.items_consumable import TenguMask, KingsCrown
     player = Player(id="p1", name="Test", pos=Position(x=0,y=0), hp=20, max_hp=20, attack=1, defense=0)
     player.add_to_inventory(TenguMask(id="mask1"))
     player.add_to_inventory(KingsCrown(id="crown1"))

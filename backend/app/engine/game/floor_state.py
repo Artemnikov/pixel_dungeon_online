@@ -9,7 +9,7 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from app.engine.dungeon.generator import TrapInfo
 from app.engine.dungeon.terrain_flags import FloorFlagMaps, build_flag_maps
-from app.engine.entities.base import Item, Mob as MobEntity
+from app.engine.entities.player import Item, Mob as MobEntity
 
 
 @dataclass
