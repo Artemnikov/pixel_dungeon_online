@@ -445,35 +445,30 @@ class TalismanOfForesight(Artifact):
 class TimekeepersHourglass(Artifact):
     kind: Literal["timekeepers_hourglass"] = "timekeepers_hourglass"
     name: str = "Timekeeper's Hourglass"
-    charge: int = 5
+    charge: int = 5               # SPD: 5 + level()
     charge_cap: int = 5
-    level_cap: ClassVar[int] = 10
+    level_cap: ClassVar[int] = 5
     exp: int = 0
-    time_frozen: bool = False
-    freeze_turns: int = 0
     _recharge_accum: float = 0.0
-    DESC: ClassVar[str] = "An hourglass of impossible complexity. Activate it to freeze time, halting all enemies on the floor for several seconds."
+    DESC: ClassVar[str] = "An hourglass of impossible complexity. Freeze halts all enemies around you; Stasis suspends you outside of time — untouchable, but unable to act."
 
     def actions(self, player: Optional["Player"] = None) -> List[str]:
         base = super().actions(player)
         if player is None or not player.belongings.is_equipped(self.id) or self.cursed:
             return base
-        cost = max(1, self.level + 1)
-        if self.charge >= cost and not self.time_frozen:
-            return [Action.FREEZE] + base
+        if self.charge > 0:
+            return [Action.FREEZE, Action.STASIS] + base
         return base
 
     def default_action(self) -> Optional[str]:
         return Action.FREEZE
 
     def on_upgrade(self) -> None:
-        self.charge_cap = min(5 + self.level, 15)
+        self.charge_cap = 5 + self.level
 
     def _info_lines(self, player: Optional["Player"] = None) -> List[str]:
         lines = super()._info_lines(player)
         lines.append(f"Holds {self.charge}/{self.charge_cap} charges.")
-        if self.time_frozen:
-            lines.append(f"Time frozen: {self.freeze_turns} ticks remaining.")
         return lines
 
 

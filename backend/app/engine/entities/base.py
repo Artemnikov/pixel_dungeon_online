@@ -318,7 +318,8 @@ class Action:
     UNLOCK = "UNLOCK"      # SkeletonKey
     KEY_REVEAL = "KEY_REVEAL"    # SkeletonKey
     SCRY = "SCRY"          # TalismanOfForesight
-    FREEZE = "FREEZE"      # TimekeepersHourglass
+    FREEZE = "FREEZE"      # TimekeepersHourglass (halt mobs)
+    STASIS = "STASIS"      # TimekeepersHourglass (self invuln/untargetable)
     BOOK_READ = "BOOK_READ"      # UnstableSpellbook
     BOOK_READ_RESOLVE = "BOOK_READ_RESOLVE"  # UnstableSpellbook exotic choice
     BOOK_INFUSE = "BOOK_INFUSE"  # UnstableSpellbook (feed a scroll to level up)

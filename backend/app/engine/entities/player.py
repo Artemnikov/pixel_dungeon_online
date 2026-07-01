@@ -387,6 +387,9 @@ class Player(Entity):
             return 0
         if self.is_downed:
             return 0
+        # Timekeeper's Hourglass Stasis: suspended outside time — immune to harm.
+        if self.has_buff("time_stasis"):
+            return 0
 
         # Deathless Fury (warrior T3 berserker): a fatal blow while raging with
         # power>=1 triggers Berserk instead of killing (cheat death, SPD

@@ -49,7 +49,7 @@ from app.engine.entities.artifact_actions import (
     action_identify_seed, action_plant_seed_from_sandals,
     action_unlock, action_key_reveal,
     action_scry,
-    action_freeze,
+    action_freeze, action_stasis,
     action_book_read, action_book_read_resolve, action_book_infuse,
 )
 
@@ -1055,6 +1055,7 @@ ITEM_ACTION_DISPATCH = {
     Action.KEY_REVEAL: action_key_reveal,
     Action.SCRY: action_scry,
     Action.FREEZE: action_freeze,
+    Action.STASIS: action_stasis,
     Action.BOOK_READ: action_book_read,
     Action.BOOK_READ_RESOLVE: action_book_read_resolve,
     Action.BOOK_INFUSE: action_book_infuse,

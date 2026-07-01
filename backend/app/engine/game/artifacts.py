@@ -287,20 +287,10 @@ class ArtifactsMixin:
             item.charge = min(item.charge + 1, item.charge_cap)
 
     # -----------------------------------------------------------------------
-    # TimekeepersHourglass — passive recharge + tick down freeze
+    # TimekeepersHourglass — passive recharge (freeze is per-mob freeze_ticks,
+    # decremented in tick.py; stasis is a player buff — nothing to track here)
     # -----------------------------------------------------------------------
     def _tick_hourglass(self, player: Player, item: TimekeepersHourglass, dt: float) -> None:
-        # Tick down time-frozen state.
-        if item.time_frozen and item.freeze_turns > 0:
-            item.freeze_turns -= 1
-            if item.freeze_turns <= 0:
-                item.time_frozen = False
-                item.freeze_turns = 0
-                self.add_event("TIME_UNFREEZE", {
-                    "player": player.id,
-                }, floor_id=player.floor_id, source_player_id=player.id)
-
-        # Passive recharge.
         if item.charge < item.charge_cap:
             item._recharge_accum += dt
             while item._recharge_accum >= _SLOW_RECHARGE:

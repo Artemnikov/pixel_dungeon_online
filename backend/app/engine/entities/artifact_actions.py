@@ -481,25 +481,52 @@ def action_scry(game, player, item, tx=None, ty=None) -> None:
 # TimekeepersHourglass
 # ---------------------------------------------------------------------------
 
+# SPD Hourglass spends charge at ~1 per 2 turns of freeze and 5 turns of stasis.
+# A "turn" is 20 ticks (_TICKS_PER_TURN); freeze burns per-mob freeze_ticks.
+_TICKS_PER_TURN = 20
+_FREEZE_TICKS_PER_CHARGE = 2 * _TICKS_PER_TURN   # 2 turns of freeze per charge
+_STASIS_SECONDS_PER_CHARGE = 5.0                 # 5 turns of stasis per charge
+
+
 def action_freeze(game, player, item, tx=None, ty=None) -> None:
-    if not isinstance(item, TimekeepersHourglass):
+    # Freeze: halt hostile mobs on the floor. Other players are unaffected.
+    if not isinstance(item, TimekeepersHourglass) or item.cursed:
         return
-    cost = max(1, item.level + 1)
-    if item.charge < cost or item.time_frozen:
+    if item.charge <= 0:
         return
+    used = min(item.charge, 2)
+    item.charge -= used
+    freeze_ticks = used * _FREEZE_TICKS_PER_CHARGE
     floor = game._get_or_create_floor(player.floor_id)
-    freeze_ticks = 2 + item.level
     for mob in floor.mobs.values():
-        if mob.is_alive:
+        if mob.is_alive and getattr(mob, "faction", "") != "player":
             mob.freeze_ticks = freeze_ticks
-    item.charge -= cost
-    item.time_frozen = True
-    item.freeze_turns = freeze_ticks
-    _artifact_gain_exp(item, 20)
     game.add_event("TIME_FREEZE", {
         "player": player.id, "ticks": freeze_ticks,
     }, floor_id=player.floor_id, source_player_id=player.id)
     game.add_event("PLAY_SOUND", {"sound": "SHATTER"}, floor_id=player.floor_id)
+
+
+def action_stasis(game, player, item, tx=None, ty=None) -> None:
+    # Stasis: suspend the user outside time — untargetable + invulnerable, but
+    # unable to act — for a fixed duration (SPD grants 5 free turns per charge).
+    if not isinstance(item, TimekeepersHourglass) or item.cursed:
+        return
+    if item.charge <= 0:
+        return
+    used = min(item.charge, 2)
+    item.charge -= used
+    duration = used * _STASIS_SECONDS_PER_CHARGE
+    player.add_buff("time_stasis", duration=duration)
+    # Any mob currently hunting the user loses its lock (they can no longer see it).
+    floor = game._get_or_create_floor(player.floor_id)
+    for mob in floor.mobs.values():
+        if getattr(mob, "target_id", None) == player.id:
+            mob.target_id = None
+    game.add_event("TIME_STASIS", {
+        "player": player.id, "duration": duration,
+    }, floor_id=player.floor_id, source_player_id=player.id)
+    game.add_event("PLAY_SOUND", {"sound": "TELEPORT"}, floor_id=player.floor_id)
 
 
 # ---------------------------------------------------------------------------

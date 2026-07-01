@@ -29,7 +29,8 @@ from app.engine.game.floor_state import FloorState
 
 class VisionMixin:
     def _find_nearest_player(self, pos: Position, floor_id: int):
-        candidates = [p for p in self._players_on_floor(floor_id) if p.is_alive and not p.is_downed]
+        candidates = [p for p in self._players_on_floor(floor_id)
+                      if p.is_alive and not p.is_downed and not p.has_buff("time_stasis")]
         if not candidates:
             return None
 
@@ -49,6 +50,7 @@ class VisionMixin:
         candidates: List = [
             p for p in self._players_on_floor(floor_id)
             if p.id != exclude_id and p.is_alive and not p.is_downed
+            and not p.has_buff("time_stasis")
         ]
         floor = self.floors.get(floor_id)
         if floor is not None:
