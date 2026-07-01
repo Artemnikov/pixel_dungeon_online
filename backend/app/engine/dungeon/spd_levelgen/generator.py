@@ -74,8 +74,11 @@ class RolledItem:
     level: int
     tier: int = 1
     # Deck index picked for WAM categories (e.g. WEP_T1.._WEP_T5/MIS_T1.._MIS_T5)
-    # -- selects a concrete item name from WEP_TIER_ORDER. 0 for non-WAM kinds.
+    # -- selects a concrete item name from WEP_TIER_ORDER. Also the ARTIFACT deck
+    # index (selects the concrete artifact class). 0 for non-indexed kinds.
     item_index: int = 0
+    # ARTIFACT/RING cursed roll (Artifact.random(): Float() < 0.3). False elsewhere.
+    cursed: bool = False
 
 
 # Generator.Category enum order + (firstProb, secondProb, kind, defaultProbs,
@@ -256,9 +259,10 @@ def _roll_wandring(rng: SPDRandom) -> int:
     return n
 
 
-def _roll_artifact_item(rng: SPDRandom) -> None:
-    """Artifact.random(): Float() < 0.3 cursed roll, always +0, no push."""
-    rng.Float()
+def _roll_artifact_item(rng: SPDRandom) -> bool:
+    """Artifact.random(): Float() < 0.3 cursed roll, always +0, no push.
+    Returns the cursed result (RNG draw unchanged -- still one Float())."""
+    return rng.Float() < 0.3
 
 
 def _roll_gold_item(rng: SPDRandom, depth: int) -> None:
@@ -335,8 +339,9 @@ def _random_artifact(state: GeneratorState, rng: SPDRandom) -> Optional[RolledIt
     if i == -1:
         return None
     deck.probs[i] -= 1
-    _roll_artifact_item(rng)
-    return RolledItem(category="ARTIFACT", is_artifact=True, is_upgradable=False, level=0)
+    cursed = _roll_artifact_item(rng)
+    return RolledItem(category="ARTIFACT", is_artifact=True, is_upgradable=False,
+                      level=0, item_index=i, cursed=cursed)
 
 
 def _random_gold(rng: SPDRandom, depth: int) -> RolledItem:

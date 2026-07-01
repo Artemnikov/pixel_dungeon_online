@@ -532,7 +532,33 @@ def _rolled_item_to_item(ri: RolledItem, cx: int, cy: int) -> Item:
         from app.engine.entities.base import Ring
         return Ring(id=iid, pos=pos, name="Ring")
     if ri.category == "ARTIFACT":
-        from app.engine.entities.base import Artifact
+        from app.engine.entities.base import (
+            Artifact, AlchemistsToolkit, ChaliceOfBlood, CloakOfShadows,
+            DriedRose, EtherealChains, HolyTome, HornOfPlenty,
+            MasterThievesArmband, SandalsOfNature, SkeletonKey,
+            TalismanOfForesight, TimekeepersHourglass, UnstableSpellbook,
+        )
+        # SPD Generator.Category.ARTIFACT.classes order (index -> class).
+        # Indices 2 (Cloak) and 5 (Tome) have prob 0 -> never drawn from the
+        # deck, but mapped defensively.
+        _ARTIFACT_MAP = [
+            AlchemistsToolkit,      # 0
+            ChaliceOfBlood,         # 1
+            CloakOfShadows,         # 2
+            DriedRose,              # 3
+            EtherealChains,         # 4
+            HolyTome,               # 5
+            HornOfPlenty,           # 6
+            MasterThievesArmband,   # 7
+            SandalsOfNature,        # 8
+            SkeletonKey,            # 9
+            TalismanOfForesight,    # 10
+            TimekeepersHourglass,   # 11
+            UnstableSpellbook,      # 12
+        ]
+        idx = ri.item_index
+        if 0 <= idx < len(_ARTIFACT_MAP):
+            return _ARTIFACT_MAP[idx](id=iid, pos=pos, cursed=ri.cursed)
         return Artifact(id=iid, pos=pos, name="Artifact")
     return Gold(id=iid, pos=pos, name="Gold")
 

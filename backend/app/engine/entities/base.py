@@ -320,6 +320,8 @@ class Action:
     SCRY = "SCRY"          # TalismanOfForesight
     FREEZE = "FREEZE"      # TimekeepersHourglass
     BOOK_READ = "BOOK_READ"      # UnstableSpellbook
+    BOOK_READ_RESOLVE = "BOOK_READ_RESOLVE"  # UnstableSpellbook exotic choice
+    BOOK_INFUSE = "BOOK_INFUSE"  # UnstableSpellbook (feed a scroll to level up)
 
 # Actions that require the player to pick a target cell before resolving.
 TARGETED_ACTIONS = {Action.THROW, Action.ZAP, Action.DIRECT, Action.SHOOT,
@@ -2783,35 +2785,86 @@ class TimekeepersHourglass(Artifact):
         return lines
 
 
+# SPD Generator.Category.SCROLL.classes order (index -> kind). Weights come from
+# run_state.SCROLL_DEFAULT_PROBS_TOTAL (same index). Upgrade (index 0) has weight
+# 0, so it is never drawn; transmutation (index 11) is drawn then explicitly
+# removed. Mirrors UnstableSpellbook.setupScrolls().
+_SPELLBOOK_SCROLL_KINDS: Tuple[str, ...] = (
+    "scroll_of_upgrade", "scroll_of_identify", "scroll_of_remove_curse",
+    "scroll_of_mirror_image", "scroll_of_recharging", "scroll_of_teleportation",
+    "scroll_of_lullaby", "scroll_of_magic_mapping", "scroll_of_rage",
+    "scroll_of_retribution", "scroll_of_terror", "scroll_of_transmutation",
+)
+
+
+def _build_spellbook_index() -> List[str]:
+    """Weighted draw-without-replacement over the SPD scroll deck, minus
+    transmutation (upgrade is weight-0 so never picked). Order matters: the book
+    shrinks this list from the front as it levels up."""
+    from app.engine.dungeon.spd_levelgen.run_state import SCROLL_DEFAULT_PROBS_TOTAL
+    pool = [(k, SCROLL_DEFAULT_PROBS_TOTAL[i])
+            for i, k in enumerate(_SPELLBOOK_SCROLL_KINDS)
+            if SCROLL_DEFAULT_PROBS_TOTAL[i] > 0]
+    order: List[str] = []
+    while pool:
+        kinds = [k for k, _ in pool]
+        weights = [w for _, w in pool]
+        pick = _random.choices(kinds, weights=weights, k=1)[0]
+        order.append(pick)
+        pool = [(k, w) for k, w in pool if k != pick]
+    order = [k for k in order if k != "scroll_of_transmutation"]
+    return order
+
+
 class UnstableSpellbook(Artifact):
     kind: Literal["unstable_spellbook"] = "unstable_spellbook"
     name: str = "Unstable Spellbook"
-    charge: int = 0
-    charge_cap: int = 5
+    charge: int = 2               # floor(level*0.6)+2, starts full
+    charge_cap: int = 2
     level_cap: ClassVar[int] = 10
     exp: int = 0
-    stored_scrolls: List[str] = Field(default_factory=list)
-    DESC: ClassVar[str] = "A spellbook crackling with unstable magic. Each scroll you read charges it; use those charges to cast a random stored spell."
+    scroll_index: List[str] = Field(default_factory=list)
+    initialized: bool = False     # guards one-time index build across reloads
+    _recharge_accum: float = 0.0
+    DESC: ClassVar[str] = "A spellbook crackling with unstable magic. It slowly recharges; read it to unleash a random scroll, empowering the ones it has learned into their exotic forms."
+
+    def model_post_init(self, __context) -> None:
+        if not self.initialized:
+            self.scroll_index = _build_spellbook_index()
+            self.initialized = True
 
     def actions(self, player: Optional["Player"] = None) -> List[str]:
         base = super().actions(player)
         if player is None or not player.belongings.is_equipped(self.id) or self.cursed:
             return base
-        if self.charge >= 1 and self.stored_scrolls:
-            return [Action.BOOK_READ] + base
-        return base
+        acts: List[str] = []
+        if getattr(player, "_pending_book_item_id", None) == self.id:
+            acts.append(Action.BOOK_READ_RESOLVE)
+        if self.charge >= 1:
+            acts.append(Action.BOOK_READ)
+        if self.level < self.level_cap and self._has_infusable_scroll(player):
+            acts.append(Action.BOOK_INFUSE)
+        return acts + base
+
+    def _has_infusable_scroll(self, player: "Player") -> bool:
+        # SPD only accepts a scroll matching the front two of the index.
+        front = self.scroll_index[:2]
+        for it in player.belongings.all_items():
+            if getattr(it, "kind", "") in front and it.level_known:
+                return True
+        return False
 
     def default_action(self) -> Optional[str]:
         return Action.BOOK_READ
 
     def on_upgrade(self) -> None:
-        self.charge_cap = min(self.charge_cap + 1, 10)
+        self.charge_cap = int(self.level * 0.6) + 2
+        while self.scroll_index and len(self.scroll_index) > (self.level_cap - 1 - self.level):
+            self.scroll_index.pop(0)
 
     def _info_lines(self, player: Optional["Player"] = None) -> List[str]:
         lines = super()._info_lines(player)
         lines.append(f"Holds {self.charge}/{self.charge_cap} charges.")
-        if self.stored_scrolls:
-            lines.append(f"Stored spells: {len(self.stored_scrolls)}")
         return lines
 
 
@@ -3401,6 +3454,10 @@ AnyItem = Annotated[
         RingOfMight, RingOfTenacity, RingOfEnergy, RingOfArcana, RingOfSharpshooting,
         RingOfForce, RingOfElements, RingOfWealth,
         Artifact, BrokenSeal, CloakOfShadows, DriedRose,
+        AlchemistsToolkit, CapeOfThorns, ChaliceOfBlood, EtherealChains,
+        HolyTome, HornOfPlenty, LloydsBeacon, MasterThievesArmband,
+        SandalsOfNature, SkeletonKey, TalismanOfForesight,
+        TimekeepersHourglass, UnstableSpellbook,
         DamageWand,
         WandOfMagicMissile, WandOfFireblast, WandOfFrost, WandOfLightning,
         WandOfDisintegration, WandOfPrismaticLight, WandOfBlastWave,

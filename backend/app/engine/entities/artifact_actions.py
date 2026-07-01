@@ -510,41 +510,145 @@ def action_freeze(game, player, item, tx=None, ty=None) -> None:
 # UnstableSpellbook
 # ---------------------------------------------------------------------------
 
-def action_book_read(game, player, item, tx=None, ty=None) -> None:
-    if not isinstance(item, UnstableSpellbook):
-        return
-    if item.charge < 1 or not item.stored_scrolls:
-        return
-    scroll_kind = random.choice(item.stored_scrolls)
-    item.stored_scrolls.remove(scroll_kind)
-    item.charge -= 1
-    _artifact_gain_exp(item, 10)
-    # Apply the scroll effect via scroll_actions using a dummy scroll object.
+# SPD ExoticScroll.regToExo (regular scroll kind -> exotic scroll kind).
+_REG_TO_EXO = {
+    "scroll_of_upgrade": "scroll_of_exotic_enchantment",
+    "scroll_of_identify": "scroll_of_divination",
+    "scroll_of_remove_curse": "scroll_of_anti_magic",
+    "scroll_of_mirror_image": "scroll_of_prismatic_image",
+    "scroll_of_recharging": "scroll_of_mystical_energy",
+    "scroll_of_teleportation": "scroll_of_passage",
+    "scroll_of_lullaby": "scroll_of_sirens_song",
+    "scroll_of_magic_mapping": "scroll_of_foresight",
+    "scroll_of_rage": "scroll_of_challenge",
+    "scroll_of_retribution": "scroll_of_psionic_blast",
+    "scroll_of_terror": "scroll_of_dread",
+    "scroll_of_transmutation": "scroll_of_metamorphosis",
+}
+
+# Scrolls whose roll frequency the book halves (SPD: 50% reroll).
+_HALVED_SCROLLS = {"scroll_of_identify", "scroll_of_remove_curse", "scroll_of_magic_mapping"}
+
+
+def _roll_book_scroll_kind(book) -> str:
+    """Mirror UnstableSpellbook.doReadEffect's scroll roll: weighted by the SPD
+    SCROLL deck (upgrade weight 0 → excluded), never transmutation, and
+    identify/remove_curse/magic_mapping at half frequency."""
+    from app.engine.entities.base import _SPELLBOOK_SCROLL_KINDS
+    from app.engine.dungeon.spd_levelgen.run_state import SCROLL_DEFAULT_PROBS_TOTAL
+    pool, weights = [], []
+    for i, kind in enumerate(_SPELLBOOK_SCROLL_KINDS):
+        w = SCROLL_DEFAULT_PROBS_TOTAL[i]
+        if w > 0 and kind != "scroll_of_transmutation":
+            pool.append(kind)
+            weights.append(w)
+    for _ in range(50):
+        kind = random.choices(pool, weights=weights, k=1)[0]
+        if kind in _HALVED_SCROLLS and random.random() < 0.5:
+            continue
+        return kind
+    return pool[0]
+
+
+def _construct_scroll(kind: str):
+    """Build a scroll instance by kind. Exotic scrolls are not in the loot
+    catalog, so fall back to locating the Scroll subclass directly."""
+    from app.engine.entities.item_catalog import make_catalog_item
+    scroll = make_catalog_item(kind)
+    if scroll is not None:
+        return scroll
+    from app.engine.entities.base import Scroll
+
+    def _walk(cls):
+        for sub in cls.__subclasses__():
+            yield sub
+            yield from _walk(sub)
+
+    for cls in _walk(Scroll):
+        field = cls.model_fields.get("kind")
+        if field is not None and field.default == kind:
+            return cls()
+    return None
+
+
+def _apply_book_scroll(game, player, kind: str) -> None:
+    """Apply a scroll's read effect for a transient (book-conjured) scroll."""
     from app.engine.entities.scroll_actions import action_read as _read
-    from app.engine.entities.base import Scroll as _Scroll
-    dummy = _Scroll.__subclasses__()
-    scroll_cls = next(
-        (c for c in _iter_scroll_subclasses() if c.__fields__.get("kind", None)
-         and c.__fields__["kind"].default == scroll_kind),
-        None,
-    )
-    if scroll_cls is None:
+    scroll = _construct_scroll(kind)
+    if scroll is None:
         game.add_event("MESSAGE", {"text": "The spell fizzles!"},
                        floor_id=player.floor_id, player_id=player.id)
         return
-    scroll = scroll_cls()
+    scroll.id = f"book_scroll_{kind}"
     _read(game, player, scroll)
     game.add_event("BOOK_CAST", {
-        "player": player.id, "scroll": scroll_kind,
+        "player": player.id, "scroll": kind,
     }, floor_id=player.floor_id, source_player_id=player.id)
 
 
-def _iter_scroll_subclasses():
-    from app.engine.entities.base import Scroll as _Scroll
+def action_book_read(game, player, item, tx=None, ty=None) -> None:
+    if not isinstance(item, UnstableSpellbook):
+        return
+    # Exploit guard (SPD ExploitHandler): a pending empower choice left unresolved
+    # is forced to a normal read before a fresh read can begin.
+    if getattr(player, "_pending_book_item_id", None) == item.id:
+        action_book_read_resolve(game, player, item, 0)
+    if item.charge < 1 or item.cursed:
+        return
+    item.charge -= 1
+    kind = _roll_book_scroll_kind(item)
+    # Empower prompt: charge left AND the book has "learned" this scroll (removed
+    # from its index) AND an exotic form exists.
+    if item.charge > 0 and kind not in item.scroll_index and kind in _REG_TO_EXO:
+        player._pending_book_item_id = item.id
+        player._pending_book_scroll_kind = kind
+        game.add_event("BOOK_READ_CHOICE", {
+            "player": player.id, "item_id": item.id,
+            "normal": kind, "exotic": _REG_TO_EXO[kind],
+        }, floor_id=player.floor_id, player_id=player.id)
+        return
+    _apply_book_scroll(game, player, kind)
 
-    def _all(cls):
-        for sub in cls.__subclasses__():
-            yield sub
-            yield from _all(sub)
 
-    yield from _all(_Scroll)
+def action_book_read_resolve(game, player, item, tx=None, ty=None) -> None:
+    """Resolve a pending empower choice. tx == 1 → exotic (spends a 2nd charge),
+    anything else → the regular scroll."""
+    if not isinstance(item, UnstableSpellbook):
+        return
+    kind = getattr(player, "_pending_book_scroll_kind", None)
+    if kind is None or getattr(player, "_pending_book_item_id", None) != item.id:
+        return
+    player._pending_book_item_id = None
+    player._pending_book_scroll_kind = None
+    if tx == 1 and item.charge > 0:
+        item.charge -= 1
+        _apply_book_scroll(game, player, _REG_TO_EXO.get(kind, kind))
+    else:
+        _apply_book_scroll(game, player, kind)
+
+
+def action_book_infuse(game, player, item, tx=None, ty=None) -> None:
+    if not isinstance(item, UnstableSpellbook):
+        return
+    if item.cursed or item.level >= item.level_cap:
+        return
+    front = item.scroll_index[:2]
+    scroll = next(
+        (it for it in player.belongings.all_items()
+         if getattr(it, "kind", "") in front and it.level_known),
+        None,
+    )
+    if scroll is None:
+        return
+    kind = scroll.kind
+    player.belongings.backpack.detach(scroll.id)
+    if kind in item.scroll_index:
+        item.scroll_index.remove(kind)
+    item.level += 1
+    item.level_known = True
+    item.on_upgrade()
+    game.add_event("BOOK_INFUSE", {
+        "player": player.id, "item_id": item.id,
+        "scroll": kind, "new_level": item.level,
+    }, floor_id=player.floor_id, source_player_id=player.id)
+    game.add_event("PLAY_SOUND", {"sound": "BURNING"}, floor_id=player.floor_id)

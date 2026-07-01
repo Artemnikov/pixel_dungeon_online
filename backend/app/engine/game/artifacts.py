@@ -34,6 +34,7 @@ _SLOW_RECHARGE = 50.0    # ~50s per charge (EtherealChains, LloydsBeacon, Skelet
 _TOOLKIT_RECHARGE = 10.0  # 10s per energy charge (AlchemistsToolkit)
 _HORN_RECHARGE = 20.0    # 20s per food charge (HornOfPlenty)
 _TALISMAN_RECHARGE = 1.0  # 1s per talisman charge (TalismanOfForesight, 100-cap)
+_SPELLBOOK_RECHARGE = 90.0  # ~90s per charge (UnstableSpellbook; SPD ~80-120 turns)
 
 
 def _gain_exp(item, amount: int) -> None:
@@ -86,7 +87,7 @@ class ArtifactsMixin:
         elif kind == "timekeepers_hourglass":
             self._tick_hourglass(player, artifact, dt)
         elif kind == "unstable_spellbook":
-            pass  # UnstableSpellbook charges on scroll read, no passive tick needed
+            self._tick_spellbook(player, artifact, dt)
 
     # -----------------------------------------------------------------------
     # AlchemistsToolkit — passive energy generation
@@ -312,15 +313,12 @@ class ArtifactsMixin:
                 item.charge = min(item.charge + 1, item.charge_cap)
 
     # -----------------------------------------------------------------------
-    # UnstableSpellbook — charges via on_spellbook_scroll_read
+    # UnstableSpellbook — passive time-based recharge (mirrors bookRecharge)
     # -----------------------------------------------------------------------
-    def on_spellbook_scroll_read(self, player: Player, scroll_kind: str) -> None:
-        """Call from scroll_actions after a scroll is read while spellbook is equipped."""
-        artifact = player.belongings.artifact
-        if artifact is None or getattr(artifact, "kind", "") != "unstable_spellbook":
+    def _tick_spellbook(self, player: Player, item: UnstableSpellbook, dt: float) -> None:
+        if item.charge >= item.charge_cap:
             return
-        if not player.belongings.is_equipped(artifact.id):
-            return
-        artifact.charge = min(artifact.charge + 1, artifact.charge_cap)
-        if scroll_kind not in artifact.stored_scrolls:
-            artifact.stored_scrolls.append(scroll_kind)
+        item._recharge_accum += dt
+        while item._recharge_accum >= _SPELLBOOK_RECHARGE:
+            item._recharge_accum -= _SPELLBOOK_RECHARGE
+            item.charge = min(item.charge + 1, item.charge_cap)
