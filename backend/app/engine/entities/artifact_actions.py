@@ -534,7 +534,7 @@ def _roll_book_scroll_kind(book) -> str:
     """Mirror UnstableSpellbook.doReadEffect's scroll roll: weighted by the SPD
     SCROLL deck (upgrade weight 0 → excluded), never transmutation, and
     identify/remove_curse/magic_mapping at half frequency."""
-    from app.engine.entities.base import _SPELLBOOK_SCROLL_KINDS
+    from app.engine.entities.items_artifacts import _SPELLBOOK_SCROLL_KINDS
     from app.engine.dungeon.spd_levelgen.run_state import SCROLL_DEFAULT_PROBS_TOTAL
     pool, weights = [], []
     for i, kind in enumerate(_SPELLBOOK_SCROLL_KINDS):
