@@ -42,18 +42,6 @@ def _artifact_gain_exp(item, amount: int) -> None:
         item.on_upgrade()
 
 
-def _adjacent_passable(floor, cx, cy):
-    """Return a list of passable, in-bounds neighbours."""
-    result = []
-    for dx, dy in ((-1, 0), (1, 0), (0, -1), (0, 1),
-                   (-1, -1), (1, -1), (-1, 1), (1, 1)):
-        nx, ny = cx + dx, cy + dy
-        if 0 <= nx < floor.width and 0 <= ny < floor.height:
-            if floor.flags and floor.flags.passable[ny][nx]:
-                result.append((nx, ny))
-    return result
-
-
 # ---------------------------------------------------------------------------
 # AlchemistsToolkit
 # ---------------------------------------------------------------------------
@@ -129,8 +117,12 @@ def action_prick(game, player, item, tx=None, ty=None) -> None:
 # EtherealChains
 # ---------------------------------------------------------------------------
 
+def _chebyshev(ax, ay, bx, by) -> int:
+    return max(abs(ax - bx), abs(ay - by))
+
+
 def action_cast_chains(game, player, item, tx=None, ty=None) -> None:
-    if not isinstance(item, EtherealChains):
+    if not isinstance(item, EtherealChains) or item.cursed:
         return
     if item.charge <= 0 or tx is None or ty is None:
         return
@@ -138,44 +130,67 @@ def action_cast_chains(game, player, item, tx=None, ty=None) -> None:
     if not (0 <= tx < floor.width and 0 <= ty < floor.height):
         return
 
-    # Check if a mob occupies the target cell.
-    target_mob = next(
-        (m for m in floor.mobs.values()
-         if m.is_alive and m.pos.x == tx and m.pos.y == ty),
-        None,
+    from app.engine.systems.ballistica import ballistica_path
+    path = ballistica_path(player.pos.x, player.pos.y, tx, ty,
+                           floor.flags, floor.width, floor.height)
+    cx, cy = path[-1]
+
+    def _occupied(x, y):
+        if x == player.pos.x and y == player.pos.y:
+            return True
+        return any(m.is_alive and m.pos.x == x and m.pos.y == y for m in floor.mobs.values())
+
+    enemy = next((m for m in floor.mobs.values()
+                  if m.is_alive and m.pos.x == cx and m.pos.y == cy
+                  and getattr(m, "faction", "") != "player"), None)
+
+    if enemy is not None:
+        # chainEnemy: pull to the earliest open cell along the chain (nearest hero).
+        if getattr(enemy, "immovable", False):
+            return
+        dest = next(((x, y) for (x, y) in path[1:]
+                     if not floor.flags.solid[y][x] and not _occupied(x, y)), None)
+        if dest is None:
+            return
+        cost = _chebyshev(enemy.pos.x, enemy.pos.y, dest[0], dest[1])
+        if cost > item.charge:
+            return
+        item.charge -= cost
+        _artifact_gain_exp(item, 10)
+        from_x, from_y = enemy.pos.x, enemy.pos.y
+        enemy.pos = Position(x=dest[0], y=dest[1])
+        game.add_event("CHAINS_PULL", {
+            "player": player.id, "target": enemy.id,
+            "from_x": from_x, "from_y": from_y, "to_x": dest[0], "to_y": dest[1],
+        }, floor_id=player.floor_id)
+        game.add_event("PLAY_SOUND", {"sound": "CHAINS"}, floor_id=player.floor_id)
+        return
+
+    # chainLocation: pull the hero to the collision cell if it's a grabbable
+    # surface (passable, has a solid 8-neighbour) and the hero isn't rooted.
+    if player.has_buff("rooted"):
+        return
+    if floor.flags.solid[cy][cx] or not floor.flags.passable[cy][cx]:
+        return
+    has_solid_neighbour = any(
+        0 <= cx + dx < floor.width and 0 <= cy + dy < floor.height
+        and floor.flags.solid[cy + dy][cx + dx]
+        for dx in (-1, 0, 1) for dy in (-1, 0, 1) if (dx or dy)
     )
-
-    item.charge -= 1
+    if not has_solid_neighbour:
+        return
+    cost = _chebyshev(player.pos.x, player.pos.y, cx, cy)
+    if cost <= 0 or cost > item.charge:
+        return
+    item.charge -= cost
     _artifact_gain_exp(item, 10)
-
-    if target_mob is not None:
-        # Pull mob to an adjacent passable cell next to the player.
-        candidates = _adjacent_passable(floor, player.pos.x, player.pos.y)
-        occupied = {(m.pos.x, m.pos.y) for m in floor.mobs.values() if m.is_alive and m is not target_mob}
-        occupied.add((player.pos.x, player.pos.y))
-        candidates = [(x, y) for x, y in candidates if (x, y) not in occupied]
-        if candidates:
-            dest = min(candidates,
-                       key=lambda p: abs(p[0] - tx) + abs(p[1] - ty))
-            target_mob.pos = Position(x=dest[0], y=dest[1])
-            game.add_event("CHAINS_PULL", {
-                "player": player.id, "target": target_mob.id,
-                "from_x": tx, "from_y": ty,
-                "to_x": dest[0], "to_y": dest[1],
-            }, floor_id=player.floor_id)
-            game.add_event("PLAY_SOUND", {"sound": "CHAINS"}, floor_id=player.floor_id)
-    else:
-        # No mob — teleport the player to the target cell if passable.
-        if floor.flags and floor.flags.passable[ty][tx]:
-            from_x, from_y = player.pos.x, player.pos.y
-            player.pos = Position(x=tx, y=ty)
-            game._invalidate_fov_cache()
-            game.add_event("TELEPORT", {
-                "player": player.id,
-                "from_x": from_x, "from_y": from_y,
-                "x": tx, "y": ty,
-            }, floor_id=player.floor_id)
-            game.add_event("PLAY_SOUND", {"sound": "CHAINS"}, floor_id=player.floor_id)
+    from_x, from_y = player.pos.x, player.pos.y
+    player.pos = Position(x=cx, y=cy)
+    game._invalidate_fov_cache()
+    game.add_event("TELEPORT", {
+        "player": player.id, "from_x": from_x, "from_y": from_y, "x": cx, "y": cy,
+    }, floor_id=player.floor_id)
+    game.add_event("PLAY_SOUND", {"sound": "CHAINS"}, floor_id=player.floor_id)
 
 
 # ---------------------------------------------------------------------------

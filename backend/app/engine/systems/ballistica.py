@@ -51,6 +51,32 @@ def ballistica_trace(
     return (target_x, target_y)
 
 
+def ballistica_path(
+    src_x: int, src_y: int,
+    target_x: int, target_y: int,
+    flags: Optional[FloorFlagMaps],
+    width: int, height: int,
+) -> List[Tuple[int, int]]:
+    """Chain path from src toward target (SPD Ballistica.STOP_TARGET): stops at
+    the target cell, or at the last open cell before a solid wall. Passes through
+    characters (they don't stop the chain). Returns the cell list from src to the
+    collision cell inclusive; `path[-1]` is the collision position."""
+    if not (0 <= target_x < width and 0 <= target_y < height):
+        return [(src_x, src_y)]
+    cells = _bresenham(src_x, src_y, target_x, target_y)
+    path = [cells[0]]
+    for i in range(1, len(cells)):
+        cx, cy = cells[i]
+        if not (0 <= cx < width and 0 <= cy < height):
+            break
+        if flags is not None and flags.solid[cy][cx]:
+            break
+        path.append((cx, cy))
+        if (cx, cy) == (target_x, target_y):
+            break
+    return path
+
+
 def _bresenham(x0: int, y0: int, x1: int, y1: int) -> List[Tuple[int, int]]:
     cells = []
     dx = abs(x1 - x0)

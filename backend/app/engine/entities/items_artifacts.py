@@ -205,12 +205,12 @@ class ChaliceOfBlood(Artifact):
 class EtherealChains(Artifact):
     kind: Literal["ethereal_chains"] = "ethereal_chains"
     name: str = "Ethereal Chains"
-    charge: int = 5
+    charge: int = 5               # SPD: 5 + level*2
     charge_cap: int = 5
-    level_cap: ClassVar[int] = 10
+    level_cap: ClassVar[int] = 5
     exp: int = 0
     _recharge_accum: float = 0.0
-    DESC: ClassVar[str] = "A length of ethereal chain. Cast at a foe to yank them adjacent to you; cast at empty ground to teleport yourself there."
+    DESC: ClassVar[str] = "A length of ethereal chain. Cast at a foe to yank them toward you; cast at a wall to pull yourself across the gap."
 
     def actions(self, player: Optional["Player"] = None) -> List[str]:
         base = super().actions(player)
@@ -224,7 +224,7 @@ class EtherealChains(Artifact):
         return Action.CAST
 
     def on_upgrade(self) -> None:
-        self.charge_cap = min(5 + self.level, 15)
+        self.charge_cap = 5 + self.level * 2
 
     def _info_lines(self, player: Optional["Player"] = None) -> List[str]:
         lines = super()._info_lines(player)
