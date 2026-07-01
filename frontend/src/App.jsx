@@ -625,6 +625,16 @@ function App() {
     return () => cancelAnimationFrame(raf);
   }, [inspectInfo]);
 
+  const toolbarItems = useMemo(() => Array.from({ length: 6 }).map((_, i) => {
+    const slot = quickslot?.slots?.[i];
+    if (!slot) return null;
+    if (slot.item_id) return itemsById[slot.item_id] || null;
+    if (slot.is_placeholder && slot.placeholder_kind) {
+      return { id: null, kind: slot.placeholder_kind, name: '', type: null, is_placeholder: true };
+    }
+    return null;
+  }), [quickslot, itemsById]);
+
   // --- screen flow ---
   if (gameState === 'WELCOME') {
     return (
@@ -664,16 +674,6 @@ function App() {
   const cursorStyle = (targetingMode || examineMode)
     ? isDesktop ? controllerCursorVal : 'crosshair'
     : isDesktop ? mouseCursorVal.replace(', pointer', ', auto') : 'default';
-
-  const toolbarItems = useMemo(() => Array.from({ length: 6 }).map((_, i) => {
-    const slot = quickslot?.slots?.[i];
-    if (!slot) return null;
-    if (slot.item_id) return itemsById[slot.item_id] || null;
-    if (slot.is_placeholder && slot.placeholder_kind) {
-      return { id: null, kind: slot.placeholder_kind, name: '', type: null, is_placeholder: true };
-    }
-    return null;
-  }), [quickslot, itemsById]);
 
   return (
     <>
