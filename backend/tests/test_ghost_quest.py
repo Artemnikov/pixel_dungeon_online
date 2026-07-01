@@ -8,7 +8,7 @@ from app.engine.entities.quest_bosses import FetidRat, Ghost, GnollTrickster, Gr
 from app.engine.manager import GameInstance
 
 # Fixed seed that reliably spawns a Ghost (quest_type=1, FetidRat) on depth 2.
-_SEED = "4"
+_SEED = "8"
 
 
 def _spawn_ghost_floor():

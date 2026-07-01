@@ -302,9 +302,29 @@ class Action:
     DIRECT = "DIRECT"    # DriedRose: direct the ghost ally to a target
     SHOOT = "SHOOT"      # SpiritBow: fire an arrow
     INSCRIBE = "INSCRIBE"  # ArcaneStylus: inscribe a glyph on armor
+    # Artifact actions
+    BREW = "BREW"          # AlchemistsToolkit
+    ENERGIZE = "ENERGIZE"  # AlchemistsToolkit
+    PRICK = "PRICK"        # ChaliceOfBlood
+    CAST = "CAST"          # EtherealChains
+    BLESS = "BLESS"        # HolyTome
+    SNACK = "SNACK"        # HornOfPlenty
+    STORE = "STORE"        # HornOfPlenty
+    BEACON_SET = "BEACON_SET"      # LloydsBeacon
+    BEACON_RETURN = "BEACON_RETURN"  # LloydsBeacon
+    STEAL = "STEAL"        # MasterThievesArmband
+    PLANT_SEED = "PLANT_SEED"    # SandalsOfNature
+    IDENTIFY_SEED = "IDENTIFY_SEED"  # SandalsOfNature
+    UNLOCK = "UNLOCK"      # SkeletonKey
+    KEY_REVEAL = "KEY_REVEAL"    # SkeletonKey
+    SCRY = "SCRY"          # TalismanOfForesight
+    FREEZE = "FREEZE"      # TimekeepersHourglass
+    BOOK_READ = "BOOK_READ"      # UnstableSpellbook
 
 # Actions that require the player to pick a target cell before resolving.
-TARGETED_ACTIONS = {Action.THROW, Action.ZAP, Action.DIRECT, Action.SHOOT}
+TARGETED_ACTIONS = {Action.THROW, Action.ZAP, Action.DIRECT, Action.SHOOT,
+                    Action.CAST, Action.STEAL, Action.PLANT_SEED,
+                    Action.UNLOCK, Action.KEY_REVEAL}
 
 
 def _new_id() -> str:
@@ -1820,6 +1840,21 @@ class WandOfLivingEarth(DamageWand):
             ctx.attacker.add_buff("rock_armor", duration=20.0, level=armor_to_add)
 
 
+class CursedWand(Wand):
+    kind: Literal["cursed_wand"] = "cursed_wand"
+    name: str = "Cursed Wand"
+    type: str = "wand"
+    charges: int = 1
+    max_charges: int = 1
+    cursed: bool = True
+    cursed_known: bool = True
+    DESC: ClassVar[str] = "A heavily cursed wand crammed with unstable magical energy. Nobody knows what it does."
+
+    def handle_zap(self, ctx):
+        from app.engine.entities.cursed_wand import fire_cursed_wand
+        fire_cursed_wand(ctx.game, ctx.attacker, self, ctx.target_x, ctx.target_y)
+
+
 class Potion(ItemBase):
     kind: Literal["potion"] = "potion"
     type: str = "potion"
@@ -1949,6 +1984,223 @@ class ElixirOfAquaticRejuvenation(Potion):
 
     def value(self, identified: bool = False) -> int:
         return 60 * self.quantity
+
+
+# ── Exotic Potions ────────────────────────────────────────────────────────────
+
+class PotionOfCleansing(Potion):
+    kind: Literal["potion_of_cleansing"] = "potion_of_cleansing"
+    name: str = "Potion of Cleansing"
+    effect: str = "cleansing"
+    DESC: ClassVar[str] = "Removes all debuffs and clears nearby gas clouds."
+
+
+class PotionOfCorrosiveGas(Potion):
+    kind: Literal["potion_of_corrosive_gas"] = "potion_of_corrosive_gas"
+    name: str = "Potion of Corrosive Gas"
+    effect: str = "corrosive_gas"
+    DESC: ClassVar[str] = "Smash to release a cloud of acid that eats through armor."
+
+
+class PotionOfDragonsBreath(Potion):
+    kind: Literal["potion_of_dragons_breath"] = "potion_of_dragons_breath"
+    name: str = "Potion of Dragon's Breath"
+    effect: str = "dragons_breath"
+    DESC: ClassVar[str] = "Drink to breathe fire in the direction you're facing."
+
+
+class PotionOfEarthenArmor(Potion):
+    kind: Literal["potion_of_earthen_armor"] = "potion_of_earthen_armor"
+    name: str = "Potion of Earthen Armor"
+    effect: str = "earthen_armor"
+    DESC: ClassVar[str] = "Hardens your skin like bark, providing temporary armor."
+
+
+class PotionOfMagicalSight(Potion):
+    kind: Literal["potion_of_magical_sight"] = "potion_of_magical_sight"
+    name: str = "Potion of Magical Sight"
+    effect: str = "magical_sight"
+    DESC: ClassVar[str] = "Drastically increases your vision range for a time."
+
+
+class PotionOfMastery(Potion):
+    kind: Literal["potion_of_mastery"] = "potion_of_mastery"
+    name: str = "Potion of Mastery"
+    effect: str = "mastery"
+    DESC: ClassVar[str] = "Lowers the strength requirement of one held item."
+
+
+class PotionOfShielding(Potion):
+    kind: Literal["potion_of_shielding"] = "potion_of_shielding"
+    name: str = "Potion of Shielding"
+    effect: str = "shielding"
+    DESC: ClassVar[str] = "Creates a magical shield that absorbs damage."
+
+
+class PotionOfShroudingFog(Potion):
+    kind: Literal["potion_of_shrouding_fog"] = "potion_of_shrouding_fog"
+    name: str = "Potion of Shrouding Fog"
+    effect: str = "shrouding_fog"
+    DESC: ClassVar[str] = "Smash to create blinding smoke that obscures vision."
+
+
+class PotionOfSnapFreeze(Potion):
+    kind: Literal["potion_of_snap_freeze"] = "potion_of_snap_freeze"
+    name: str = "Potion of Snap Freeze"
+    effect: str = "snap_freeze"
+    DESC: ClassVar[str] = "Smash to instantly freeze everything in a wide area."
+
+
+class PotionOfStamina(Potion):
+    kind: Literal["potion_of_stamina"] = "potion_of_stamina"
+    name: str = "Potion of Stamina"
+    effect: str = "stamina"
+    DESC: ClassVar[str] = "Reduces food cost of all actions for a long duration."
+
+
+class PotionOfStormClouds(Potion):
+    kind: Literal["potion_of_storm_clouds"] = "potion_of_storm_clouds"
+    name: str = "Potion of Storm Clouds"
+    effect: str = "storm_clouds"
+    DESC: ClassVar[str] = "Smash to call a thunderstorm that electrocutes your foes."
+
+
+class PotionOfDivineInspiration(Potion):
+    kind: Literal["potion_of_divine_inspiration"] = "potion_of_divine_inspiration"
+    name: str = "Potion of Divine Inspiration"
+    effect: str = "divine_inspiration"
+    DESC: ClassVar[str] = "Grants a powerful one-time boost to all your talents."
+
+
+# ── Elixirs ───────────────────────────────────────────────────────────────────
+
+class ElixirOfArcaneArmor(Potion):
+    kind: Literal["elixir_of_arcane_armor"] = "elixir_of_arcane_armor"
+    name: str = "Elixir of Arcane Armor"
+    effect: str = "arcane_armor"
+    DESC: ClassVar[str] = "Wraps you in magical protection that reduces all damage."
+
+
+class ElixirOfDragonsBlood(Potion):
+    kind: Literal["elixir_of_dragons_blood"] = "elixir_of_dragons_blood"
+    name: str = "Elixir of Dragon's Blood"
+    effect: str = "dragons_blood"
+    DESC: ClassVar[str] = "Imbues your attacks with searing fire for a time."
+
+
+class ElixirOfFeatherFall(Potion):
+    kind: Literal["elixir_of_feather_fall"] = "elixir_of_feather_fall"
+    name: str = "Elixir of Feather Fall"
+    effect: str = "feather_fall"
+    DESC: ClassVar[str] = "Allows you to fall into pits safely for a long duration."
+
+
+class ElixirOfHoneyedHealing(Potion):
+    kind: Literal["elixir_of_honeyed_healing"] = "elixir_of_honeyed_healing"
+    name: str = "Elixir of Honeyed Healing"
+    effect: str = "honeyed_healing"
+    DESC: ClassVar[str] = "Fully restores health and cleanses all debuffs."
+
+
+class ElixirOfIcyTouch(Potion):
+    kind: Literal["elixir_of_icy_touch"] = "elixir_of_icy_touch"
+    name: str = "Elixir of Icy Touch"
+    effect: str = "icy_touch"
+    DESC: ClassVar[str] = "Imbues your attacks with chilling frost for a time."
+
+
+class ElixirOfMight(Potion):
+    kind: Literal["elixir_of_might"] = "elixir_of_might"
+    name: str = "Elixir of Might"
+    effect: str = "might"
+    DESC: ClassVar[str] = "Permanently increases your strength and maximum health."
+
+
+class ElixirOfToxicEssence(Potion):
+    kind: Literal["elixir_of_toxic_essence"] = "elixir_of_toxic_essence"
+    name: str = "Elixir of Toxic Essence"
+    effect: str = "toxic_essence"
+    DESC: ClassVar[str] = "Imbues your attacks with toxic poison for a time."
+
+
+# ── Brews (throw-only) ────────────────────────────────────────────────────────
+
+class AquaBrew(Potion):
+    kind: Literal["aqua_brew"] = "aqua_brew"
+    name: str = "Aqua Brew"
+    effect: str = "aqua_brew"
+    DESC: ClassVar[str] = "Throw to create a powerful geyser of water."
+
+    def actions(self, player=None) -> List[str]:
+        return [Action.THROW, Action.DROP]
+
+    def default_action(self) -> Optional[str]:
+        return Action.THROW
+
+
+class BlizzardBrew(Potion):
+    kind: Literal["blizzard_brew"] = "blizzard_brew"
+    name: str = "Blizzard Brew"
+    effect: str = "blizzard_brew"
+    DESC: ClassVar[str] = "Throw to create a blizzard of ice and snow."
+
+    def actions(self, player=None) -> List[str]:
+        return [Action.THROW, Action.DROP]
+
+    def default_action(self) -> Optional[str]:
+        return Action.THROW
+
+
+class CausticBrew(Potion):
+    kind: Literal["caustic_brew"] = "caustic_brew"
+    name: str = "Caustic Brew"
+    effect: str = "caustic_brew"
+    DESC: ClassVar[str] = "Throw to coat a large area in caustic ooze."
+
+    def actions(self, player=None) -> List[str]:
+        return [Action.THROW, Action.DROP]
+
+    def default_action(self) -> Optional[str]:
+        return Action.THROW
+
+
+class InfernalBrew(Potion):
+    kind: Literal["infernal_brew"] = "infernal_brew"
+    name: str = "Infernal Brew"
+    effect: str = "infernal_brew"
+    DESC: ClassVar[str] = "Throw to create an intense firestorm."
+
+    def actions(self, player=None) -> List[str]:
+        return [Action.THROW, Action.DROP]
+
+    def default_action(self) -> Optional[str]:
+        return Action.THROW
+
+
+class ShockingBrew(Potion):
+    kind: Literal["shocking_brew"] = "shocking_brew"
+    name: str = "Shocking Brew"
+    effect: str = "shocking_brew"
+    DESC: ClassVar[str] = "Throw to electrify a large area."
+
+    def actions(self, player=None) -> List[str]:
+        return [Action.THROW, Action.DROP]
+
+    def default_action(self) -> Optional[str]:
+        return Action.THROW
+
+
+class UnstableBrew(Potion):
+    kind: Literal["unstable_brew"] = "unstable_brew"
+    name: str = "Unstable Brew"
+    effect: str = "unstable_brew"
+    DESC: ClassVar[str] = "Throw for a completely random explosive effect."
+
+    def actions(self, player=None) -> List[str]:
+        return [Action.THROW, Action.DROP]
+
+    def default_action(self) -> Optional[str]:
+        return Action.THROW
 
 
 class Scroll(ItemBase):
@@ -2191,6 +2443,378 @@ class DriedRose(Artifact):
         self.charge_cap = min(self.charge_cap + 1, self.level_cap)
 
 
+class AlchemistsToolkit(Artifact):
+    kind: Literal["alchemists_toolkit"] = "alchemists_toolkit"
+    name: str = "Alchemist's Toolkit"
+    charge: int = 0
+    charge_cap: int = 10
+    level_cap: ClassVar[int] = 10
+    exp: int = 0
+    _charge_accum: float = 0.0
+    DESC: ClassVar[str] = "A set of alchemical tools. It passively charges with alchemical energy, which can be used to brew items at any alchemy pot."
+
+    def actions(self, player: Optional["Player"] = None) -> List[str]:
+        base = super().actions(player)
+        if player is None or not player.belongings.is_equipped(self.id) or self.cursed:
+            return base
+        acts = []
+        if self.charge >= 2:
+            acts.append(Action.BREW)
+        acts.append(Action.ENERGIZE)
+        return acts + base
+
+    def on_upgrade(self) -> None:
+        self.charge_cap = min(self.charge_cap + 1, self.level_cap)
+
+
+class CapeOfThorns(Artifact):
+    kind: Literal["cape_of_thorns"] = "cape_of_thorns"
+    name: str = "Cape of Thorns"
+    charge: int = 0
+    charge_cap: int = 100
+    level_cap: ClassVar[int] = 10
+    exp: int = 0
+    DESC: ClassVar[str] = "A tattered cape lined with hardened thorns. It absorbs damage, then releases it back at attackers when fully charged."
+
+    def on_upgrade(self) -> None:
+        pass  # cape levels grant increased retaliation, no charge_cap change
+
+
+class ChaliceOfBlood(Artifact):
+    kind: Literal["chalice_of_blood"] = "chalice_of_blood"
+    name: str = "Chalice of Blood"
+    charge: int = 0
+    charge_cap: int = 1
+    level_cap: ClassVar[int] = 10
+    DESC: ClassVar[str] = "An ornate chalice. While equipped it enhances your natural regeneration. Pricking yourself with its needle upgrades it directly — at the cost of your health."
+
+    def actions(self, player: Optional["Player"] = None) -> List[str]:
+        base = super().actions(player)
+        if player is None or not player.belongings.is_equipped(self.id) or self.cursed:
+            return base
+        if self.level < self.level_cap:
+            return [Action.PRICK] + base
+        return base
+
+    def _info_lines(self, player: Optional["Player"] = None) -> List[str]:
+        lines = super()._info_lines(player)
+        regen = 1 + self.level
+        lines.append(f"Regenerates {regen} HP every 10 seconds while equipped.")
+        return lines
+
+
+class EtherealChains(Artifact):
+    kind: Literal["ethereal_chains"] = "ethereal_chains"
+    name: str = "Ethereal Chains"
+    charge: int = 5
+    charge_cap: int = 5
+    level_cap: ClassVar[int] = 10
+    exp: int = 0
+    _recharge_accum: float = 0.0
+    DESC: ClassVar[str] = "A length of ethereal chain. Cast at a foe to yank them adjacent to you; cast at empty ground to teleport yourself there."
+
+    def actions(self, player: Optional["Player"] = None) -> List[str]:
+        base = super().actions(player)
+        if player is None or not player.belongings.is_equipped(self.id) or self.cursed:
+            return base
+        if self.charge > 0:
+            return [Action.CAST] + base
+        return base
+
+    def default_action(self) -> Optional[str]:
+        return Action.CAST
+
+    def on_upgrade(self) -> None:
+        self.charge_cap = min(5 + self.level, 15)
+
+    def _info_lines(self, player: Optional["Player"] = None) -> List[str]:
+        lines = super()._info_lines(player)
+        lines.append(f"Holds {self.charge}/{self.charge_cap} charges.")
+        return lines
+
+
+class HolyTome(Artifact):
+    kind: Literal["holy_tome"] = "holy_tome"
+    name: str = "Holy Tome"
+    charge: int = 0
+    charge_cap: int = 3
+    level_cap: ClassVar[int] = 10
+    exp: int = 0
+    DESC: ClassVar[str] = "A tome of holy scripture. Each scroll read while it is equipped charges it with divine power, which amplifies the next scroll read."
+
+    def actions(self, player: Optional["Player"] = None) -> List[str]:
+        base = super().actions(player)
+        if player is None or not player.belongings.is_equipped(self.id) or self.cursed:
+            return base
+        if self.charge >= self.charge_cap:
+            return [Action.BLESS] + base
+        return base
+
+    def on_upgrade(self) -> None:
+        self.charge_cap = min(self.charge_cap + 1, 5)
+
+    def _info_lines(self, player: Optional["Player"] = None) -> List[str]:
+        lines = super()._info_lines(player)
+        lines.append(f"Holds {self.charge}/{self.charge_cap} charges.")
+        return lines
+
+
+class HornOfPlenty(Artifact):
+    kind: Literal["horn_of_plenty"] = "horn_of_plenty"
+    name: str = "Horn of Plenty"
+    charge: int = 0
+    charge_cap: int = 5
+    level_cap: ClassVar[int] = 10
+    exp: int = 0
+    _charge_accum: float = 0.0
+    DESC: ClassVar[str] = "A magical horn that slowly fills with food. Snack from it for a quick heal, or eat deeply to become satiated."
+
+    def actions(self, player: Optional["Player"] = None) -> List[str]:
+        base = super().actions(player)
+        if player is None or not player.belongings.is_equipped(self.id) or self.cursed:
+            return base
+        acts = []
+        if self.charge >= 1:
+            acts.append(Action.SNACK)
+        if self.charge >= self.charge_cap:
+            acts.append(Action.EAT)
+        acts.append(Action.STORE)
+        return acts + base
+
+    def on_upgrade(self) -> None:
+        self.charge_cap = min(self.charge_cap + 1, 10)
+
+    def _info_lines(self, player: Optional["Player"] = None) -> List[str]:
+        lines = super()._info_lines(player)
+        lines.append(f"Holds {self.charge}/{self.charge_cap} food charges.")
+        return lines
+
+
+class LloydsBeacon(Artifact):
+    kind: Literal["lloyds_beacon"] = "lloyds_beacon"
+    name: str = "Lloyd's Beacon"
+    charge: int = 3
+    charge_cap: int = 3
+    level_cap: ClassVar[int] = 10
+    exp: int = 0
+    beacon_floor: Optional[int] = None
+    beacon_x: Optional[int] = None
+    beacon_y: Optional[int] = None
+    _recharge_accum: float = 0.0
+    DESC: ClassVar[str] = "A magical beacon. Set it at a location, then return to that exact spot from anywhere — even a different floor."
+
+    def actions(self, player: Optional["Player"] = None) -> List[str]:
+        base = super().actions(player)
+        if player is None or not player.belongings.is_equipped(self.id) or self.cursed:
+            return base
+        acts = [Action.BEACON_SET]
+        if self.beacon_floor is not None and self.charge > 0:
+            acts.append(Action.BEACON_RETURN)
+        return acts + base
+
+    def default_action(self) -> Optional[str]:
+        return Action.BEACON_RETURN if self.beacon_floor is not None else Action.BEACON_SET
+
+    def on_upgrade(self) -> None:
+        self.charge_cap = min(self.charge_cap + 1, 6)
+
+    def _info_lines(self, player: Optional["Player"] = None) -> List[str]:
+        lines = super()._info_lines(player)
+        lines.append(f"Holds {self.charge}/{self.charge_cap} charges.")
+        if self.beacon_floor is not None:
+            lines.append(f"Beacon set at floor {self.beacon_floor} ({self.beacon_x},{self.beacon_y}).")
+        return lines
+
+
+class MasterThievesArmband(Artifact):
+    kind: Literal["master_thieves_armband"] = "master_thieves_armband"
+    name: str = "Master Thieves' Armband"
+    charge: int = 5
+    charge_cap: int = 5
+    level_cap: ClassVar[int] = 10
+    exp: int = 0
+    _recharge_accum: float = 0.0
+    DESC: ClassVar[str] = "A faded armband once worn by a legendary thief. Each kill has a chance to steal gold from the victim; you can also attempt a targeted steal at the cost of a charge."
+
+    def actions(self, player: Optional["Player"] = None) -> List[str]:
+        base = super().actions(player)
+        if player is None or not player.belongings.is_equipped(self.id) or self.cursed:
+            return base
+        if self.charge > 0:
+            return [Action.STEAL] + base
+        return base
+
+    def default_action(self) -> Optional[str]:
+        return Action.STEAL
+
+    def on_upgrade(self) -> None:
+        self.charge_cap = min(self.charge_cap + 1, 10)
+
+
+class SandalsOfNature(Artifact):
+    kind: Literal["sandals_of_nature"] = "sandals_of_nature"
+    name: str = "Sandals of Nature"
+    charge: int = 0
+    charge_cap: int = 5
+    level_cap: ClassVar[int] = 10
+    exp: int = 0
+    stored_seeds: List[str] = Field(default_factory=list)
+    DESC: ClassVar[str] = "Sandals woven from living grass. Walking on vegetation charges them; use the stored energy to identify seeds or plant them directly from your pack."
+
+    def actions(self, player: Optional["Player"] = None) -> List[str]:
+        base = super().actions(player)
+        if player is None or not player.belongings.is_equipped(self.id) or self.cursed:
+            return base
+        acts = []
+        if self.charge >= 1 and player:
+            has_unid_seed = any(
+                getattr(it, "kind", "").endswith("_seed") and not it.level_known
+                for it in player.belongings.backpack.items.values()
+            )
+            if has_unid_seed:
+                acts.append(Action.IDENTIFY_SEED)
+        if self.stored_seeds:
+            acts.append(Action.PLANT_SEED)
+        return acts + base
+
+    def on_upgrade(self) -> None:
+        self.charge_cap = min(self.charge_cap + 1, 10)
+
+    def _info_lines(self, player: Optional["Player"] = None) -> List[str]:
+        lines = super()._info_lines(player)
+        lines.append(f"Holds {self.charge}/{self.charge_cap} nature charges.")
+        if self.stored_seeds:
+            lines.append(f"Stored seeds: {len(self.stored_seeds)}")
+        return lines
+
+
+class SkeletonKey(Artifact):
+    kind: Literal["skeleton_key"] = "skeleton_key"
+    name: str = "Skeleton Key"
+    charge: int = 5
+    charge_cap: int = 5
+    level_cap: ClassVar[int] = 10
+    exp: int = 0
+    _recharge_accum: float = 0.0
+    DESC: ClassVar[str] = "A skeleton key that can open any lock. It also lets you reveal nearby hidden doors and traps."
+
+    def actions(self, player: Optional["Player"] = None) -> List[str]:
+        base = super().actions(player)
+        if player is None or not player.belongings.is_equipped(self.id) or self.cursed:
+            return base
+        acts = []
+        if self.charge >= 1:
+            acts.append(Action.UNLOCK)
+        if self.charge >= 2:
+            acts.append(Action.KEY_REVEAL)
+        return acts + base
+
+    def on_upgrade(self) -> None:
+        self.charge_cap = min(self.charge_cap + 1, 10)
+
+    def _info_lines(self, player: Optional["Player"] = None) -> List[str]:
+        lines = super()._info_lines(player)
+        lines.append(f"Holds {self.charge}/{self.charge_cap} charges.")
+        return lines
+
+
+class TalismanOfForesight(Artifact):
+    kind: Literal["talisman_of_foresight"] = "talisman_of_foresight"
+    name: str = "Talisman of Foresight"
+    charge: int = 0
+    charge_cap: int = 100
+    level_cap: ClassVar[int] = 10
+    exp: int = 0
+    _charge_accum: float = 0.0
+    DESC: ClassVar[str] = "A mystical talisman. It slowly charges with foresight; spend 20 charges to scry the floor and reveal hidden traps and doors nearby."
+
+    def actions(self, player: Optional["Player"] = None) -> List[str]:
+        base = super().actions(player)
+        if player is None or not player.belongings.is_equipped(self.id) or self.cursed:
+            return base
+        if self.charge >= 20:
+            return [Action.SCRY] + base
+        return base
+
+    def default_action(self) -> Optional[str]:
+        return Action.SCRY
+
+    def on_upgrade(self) -> None:
+        pass  # leveling increases scry radius, no field change needed
+
+    def _info_lines(self, player: Optional["Player"] = None) -> List[str]:
+        lines = super()._info_lines(player)
+        lines.append(f"Charged {self.charge}/{self.charge_cap}.")
+        return lines
+
+
+class TimekeepersHourglass(Artifact):
+    kind: Literal["timekeepers_hourglass"] = "timekeepers_hourglass"
+    name: str = "Timekeeper's Hourglass"
+    charge: int = 5
+    charge_cap: int = 5
+    level_cap: ClassVar[int] = 10
+    exp: int = 0
+    time_frozen: bool = False
+    freeze_turns: int = 0
+    _recharge_accum: float = 0.0
+    DESC: ClassVar[str] = "An hourglass of impossible complexity. Activate it to freeze time, halting all enemies on the floor for several seconds."
+
+    def actions(self, player: Optional["Player"] = None) -> List[str]:
+        base = super().actions(player)
+        if player is None or not player.belongings.is_equipped(self.id) or self.cursed:
+            return base
+        cost = max(1, self.level + 1)
+        if self.charge >= cost and not self.time_frozen:
+            return [Action.FREEZE] + base
+        return base
+
+    def default_action(self) -> Optional[str]:
+        return Action.FREEZE
+
+    def on_upgrade(self) -> None:
+        self.charge_cap = min(5 + self.level, 15)
+
+    def _info_lines(self, player: Optional["Player"] = None) -> List[str]:
+        lines = super()._info_lines(player)
+        lines.append(f"Holds {self.charge}/{self.charge_cap} charges.")
+        if self.time_frozen:
+            lines.append(f"Time frozen: {self.freeze_turns} ticks remaining.")
+        return lines
+
+
+class UnstableSpellbook(Artifact):
+    kind: Literal["unstable_spellbook"] = "unstable_spellbook"
+    name: str = "Unstable Spellbook"
+    charge: int = 0
+    charge_cap: int = 5
+    level_cap: ClassVar[int] = 10
+    exp: int = 0
+    stored_scrolls: List[str] = Field(default_factory=list)
+    DESC: ClassVar[str] = "A spellbook crackling with unstable magic. Each scroll you read charges it; use those charges to cast a random stored spell."
+
+    def actions(self, player: Optional["Player"] = None) -> List[str]:
+        base = super().actions(player)
+        if player is None or not player.belongings.is_equipped(self.id) or self.cursed:
+            return base
+        if self.charge >= 1 and self.stored_scrolls:
+            return [Action.BOOK_READ] + base
+        return base
+
+    def default_action(self) -> Optional[str]:
+        return Action.BOOK_READ
+
+    def on_upgrade(self) -> None:
+        self.charge_cap = min(self.charge_cap + 1, 10)
+
+    def _info_lines(self, player: Optional["Player"] = None) -> List[str]:
+        lines = super()._info_lines(player)
+        lines.append(f"Holds {self.charge}/{self.charge_cap} charges.")
+        if self.stored_scrolls:
+            lines.append(f"Stored spells: {len(self.stored_scrolls)}")
+        return lines
+
+
 class Petal(ItemBase):
     kind: Literal["petal"] = "petal"
     name: str = "Petal"
@@ -2306,6 +2930,68 @@ class ExoticScrollOfEnchantment(Scroll):
     name: str = "Exotic Scroll of Enchantment"
     DESC: ClassVar[str] = "Imbues a weapon or armor with a choice of three enchantments or glyphs."
     unique: bool = True
+
+
+# ── Exotic Scrolls ────────────────────────────────────────────────────────────
+
+class ScrollOfAntiMagic(Scroll):
+    kind: Literal["scroll_of_anti_magic"] = "scroll_of_anti_magic"
+    name: str = "Scroll of Anti-Magic"
+    DESC: ClassVar[str] = "Grants temporary immunity to all magical effects."
+
+
+class ScrollOfChallenge(Scroll):
+    kind: Literal["scroll_of_challenge"] = "scroll_of_challenge"
+    name: str = "Scroll of Challenge"
+    DESC: ClassVar[str] = "Summons every creature on the floor to your location for a grand melee."
+
+
+class ScrollOfDivination(Scroll):
+    kind: Literal["scroll_of_divination"] = "scroll_of_divination"
+    name: str = "Scroll of Divination"
+    DESC: ClassVar[str] = "Reveals the identity of several unknown items in your possession."
+
+
+class ScrollOfDread(Scroll):
+    kind: Literal["scroll_of_dread"] = "scroll_of_dread"
+    name: str = "Scroll of Dread"
+    DESC: ClassVar[str] = "Fills all visible creatures with overwhelming terror and permanent dread."
+
+
+class ScrollOfForesight(Scroll):
+    kind: Literal["scroll_of_foresight"] = "scroll_of_foresight"
+    name: str = "Scroll of Foresight"
+    DESC: ClassVar[str] = "Greatly expands your field of vision for a very long duration."
+
+
+class ScrollOfMysticalEnergy(Scroll):
+    kind: Literal["scroll_of_mystical_energy"] = "scroll_of_mystical_energy"
+    name: str = "Scroll of Mystical Energy"
+    DESC: ClassVar[str] = "Recharges all your wands and artifacts."
+
+
+class ScrollOfPassage(Scroll):
+    kind: Literal["scroll_of_passage"] = "scroll_of_passage"
+    name: str = "Scroll of Passage"
+    DESC: ClassVar[str] = "Opens a portal back to the previous floor."
+
+
+class ScrollOfPrismaticImage(Scroll):
+    kind: Literal["scroll_of_prismatic_image"] = "scroll_of_prismatic_image"
+    name: str = "Scroll of Prismatic Image"
+    DESC: ClassVar[str] = "Creates a vivid shimmering decoy that draws enemy attacks."
+
+
+class ScrollOfPsionicBlast(Scroll):
+    kind: Literal["scroll_of_psionic_blast"] = "scroll_of_psionic_blast"
+    name: str = "Scroll of Psionic Blast"
+    DESC: ClassVar[str] = "Releases a mental shockwave that devastates all nearby creatures but also harms you."
+
+
+class ScrollOfSirensSong(Scroll):
+    kind: Literal["scroll_of_sirens_song"] = "scroll_of_sirens_song"
+    name: str = "Scroll of Siren's Song"
+    DESC: ClassVar[str] = "Charms all visible creatures, and enthralls one as a permanent ally."
 
 
 class Throwable(ItemBase):
@@ -2719,18 +3405,29 @@ AnyItem = Annotated[
         WandOfMagicMissile, WandOfFireblast, WandOfFrost, WandOfLightning,
         WandOfDisintegration, WandOfPrismaticLight, WandOfBlastWave,
         WandOfTransfusion, WandOfCorrosion, WandOfCorruption,
-        WandOfRegrowth, WandOfWarding, WandOfLivingEarth,
+        WandOfRegrowth, WandOfWarding, WandOfLivingEarth, CursedWand,
         Wand,
         HealthPotion, RevivingPotion, FuryPotion,
         PotionOfStrength, PotionOfHaste, PotionOfInvisibility, PotionOfLevitation,
         PotionOfMindVision, PotionOfFrost, PotionOfLiquidFlame, PotionOfToxicGas,
         PotionOfParalyticGas, PotionOfPurity, PotionOfExperience,
         ElixirOfAquaticRejuvenation,
+        PotionOfCleansing, PotionOfCorrosiveGas, PotionOfDragonsBreath,
+        PotionOfEarthenArmor, PotionOfMagicalSight, PotionOfMastery,
+        PotionOfShielding, PotionOfShroudingFog, PotionOfSnapFreeze,
+        PotionOfStamina, PotionOfStormClouds, PotionOfDivineInspiration,
+        ElixirOfArcaneArmor, ElixirOfDragonsBlood, ElixirOfFeatherFall,
+        ElixirOfHoneyedHealing, ElixirOfIcyTouch, ElixirOfMight, ElixirOfToxicEssence,
+        AquaBrew, BlizzardBrew, CausticBrew, InfernalBrew, ShockingBrew, UnstableBrew,
         Potion,
         ScrollOfRage, ScrollOfMetamorphosis,
         ScrollOfUpgrade, ScrollOfIdentify, ScrollOfMagicMapping, ScrollOfTeleportation,
         ScrollOfRemoveCurse, ScrollOfRecharging, ScrollOfLullaby, ScrollOfTerror,
         ScrollOfMirrorImage, ScrollOfRetribution, ScrollOfTransmutation,
+        ScrollOfEnchantment, ExoticScrollOfEnchantment,
+        ScrollOfAntiMagic, ScrollOfChallenge, ScrollOfDivination, ScrollOfDread,
+        ScrollOfForesight, ScrollOfMysticalEnergy, ScrollOfPassage,
+        ScrollOfPrismaticImage, ScrollOfPsionicBlast, ScrollOfSirensSong,
         Scroll,
         Gold,
         MysteryMeat, FrozenCarpaccio, Berry, SmallRation, Ration, Pasty, ChargrilledMeat, Food,
@@ -2866,6 +3563,8 @@ class CharacterClass:
     MAGE = "mage"
     ROGUE = "rogue"
     HUNTRESS = "huntress"
+    DUELIST = "duelist"
+    CLERIC = "cleric"
 
 
 class Effect(BaseModel):
@@ -2893,6 +3592,7 @@ class WeightedCountDrop(BaseModel):
 class Mob(Entity):
     type: str = EntityType.MOB
     faction: str = Faction.DUNGEON
+    mob_type: Optional[str] = None
     ai_state: str = "idle"
     target_id: Optional[str] = None
     difficulty: str = Difficulty.NORMAL
@@ -2918,6 +3618,8 @@ class Mob(Entity):
     # the mob moves toward this position before degrading to wandering (mirrors
     # SPD's HUNTING state where the mob paths to the last-seen cell).
     last_known_target_pos: Optional[Position] = None
+    # TimekeepersHourglass: remaining ticks of time-freeze (0 = not frozen).
+    freeze_ticks: int = 0
     # Summoned ally (e.g. Rogue's Shadow Clone): the owning player's id and the
     # remaining real-time lifespan in seconds (0 = permanent until killed).
     owner_id: Optional[str] = None
@@ -3037,6 +3739,8 @@ class Player(Entity):
     cloak_stealth_active: bool = False
     _cloak_drain_accum: float = 0.0
     _cloak_recharge_accum: float = 0.0
+    # HolyTome: next scroll read is blessed (doubled effect).
+    holy_tome_buffed: bool = False
     # Assassin Preparation: real seconds spent invisible this stealth window.
     # Drives the surprise damage tier / KO threshold / blink range (see combat).
     prep_seconds: float = 0.0
@@ -3045,6 +3749,34 @@ class Player(Entity):
     momentum_stacks: int = 0
     _momentum_decay_accum: float = 0.0
     freerun_seconds: float = 0.0
+
+    # --- Duelist --------------------------------------------------------------
+    # Weapon charge (0-100): builds per melee hit, used by Champion/Monk finishers.
+    weapon_charge: int = 0
+    _weapon_charge_accum: float = 0.0
+    # Finisher eligibility: True once combo_count >= threshold for Duelist.
+    finisher_ready: bool = False
+    # Duel mode: set while Challenge armor ability 1v1 is active.
+    duel_mode_active: bool = False
+    duel_mode_target_id: Optional[str] = None
+    # Elemental strike last weapon kind (for enchant cone bonus).
+    last_weapon_enchant: str = ""
+
+    # --- Cleric ---------------------------------------------------------------
+    # Spells cast this tick (for per-turn spell limits / Trinity tracking).
+    spells_cast_this_turn: List[str] = Field(default_factory=list)
+    # Spell cooldowns: {spell_name -> remaining_seconds}
+    spell_cooldowns: Dict[str, float] = Field(default_factory=dict)
+    # Trinity: list of borrowed item kinds (max 3)
+    current_trinity_forms: List[str] = Field(default_factory=list)
+    # Ascended Form (Cleric armor ability): active flag
+    ascended_form_active: bool = False
+    ascended_form_timer: float = 0.0
+    # Power of Many: ally mob id
+    powered_ally_id: Optional[str] = None
+    # Paladin subclass: blessed weapon turns
+    blessed_weapon_turns: int = 0
+
     @property
     def talent_info(self):
         return self.subclass_info.talent_info

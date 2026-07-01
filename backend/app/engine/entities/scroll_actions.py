@@ -20,7 +20,7 @@ import random
 
 from app.engine.dungeon.constants import TileType
 from app.engine.entities.base import (
-    Armor, ArmorEnchantment, Bag, KindOfWeapon, Position, Wand,
+    Armor, ArmorEnchantment, Bag, KindOfWeapon, Position, Wand, Mob,
 )
 from app.engine.entities.item_catalog import TRANSMUTE_GROUPS, make_catalog_item
 from app.engine.entities.scroll_predicates import PREDICATE, player_inventory_items, transmute_group
@@ -330,6 +330,157 @@ def action_read(game, player, item, tx=None, ty=None) -> None:
         game.add_event("READ", read_data, floor_id=player.floor_id)
         game.add_event("METAMORPH_OPEN", {"player": player.id}, floor_id=player.floor_id)
         return
+    elif effect == "scroll_of_anti_magic":
+        player.add_buff("magic_immune", duration=20.0)
+        removed = player.belongings.backpack.detach(item.id)
+        if removed is not None and player.belongings.get_item(item.id) is None:
+            player.quickslot.convert_to_placeholder(removed)
+    elif effect == "scroll_of_challenge":
+        floor = game._get_or_create_floor(player.floor_id)
+        beckoned_ids = []
+        for mob in floor.mobs.values():
+            if mob.is_alive and mob.faction != "player":
+                mob.ai_state = "hunting"
+                mob.target_id = player.id
+                beckoned_ids.append(mob.id)
+        player.add_buff("challenge_arena", duration=100.0)
+        removed = player.belongings.backpack.detach(item.id)
+        if removed is not None and player.belongings.get_item(item.id) is None:
+            player.quickslot.convert_to_placeholder(removed)
+        _extra_event_data["beckoned_ids"] = beckoned_ids
+    elif effect == "scroll_of_divination":
+        unid = [it for it in player.belongings.all_items()
+                if getattr(it, "kind", "") not in game.identified_kinds
+                and hasattr(it, "kind") and getattr(it, "category", None) in ("potion", "scroll", "wand", "ring")]
+        random.shuffle(unid)
+        identified = []
+        for it in unid[:4]:
+            game.identify_kind(it)
+            identified.append(it.id)
+        removed = player.belongings.backpack.detach(item.id)
+        if removed is not None and player.belongings.get_item(item.id) is None:
+            player.quickslot.convert_to_placeholder(removed)
+        _extra_event_data["identified"] = identified
+    elif effect == "scroll_of_dread":
+        floor = game._get_or_create_floor(player.floor_id)
+        for mob in game._mobs_in_fov(player, floor, player.floor_id):
+            if "terror" in getattr(mob, "immunities", []):
+                continue
+            mob.add_buff("terror", duration=20, source_id=player.id)
+            mob.add_buff("dread", duration=999999, source_id=player.id)
+            mob.ai_state = "fleeing"
+        removed = player.belongings.backpack.detach(item.id)
+        if removed is not None and player.belongings.get_item(item.id) is None:
+            player.quickslot.convert_to_placeholder(removed)
+    elif effect == "scroll_of_foresight":
+        player.add_buff("foresight", duration=400.0)
+        removed = player.belongings.backpack.detach(item.id)
+        if removed is not None and player.belongings.get_item(item.id) is None:
+            player.quickslot.convert_to_placeholder(removed)
+    elif effect == "scroll_of_mystical_energy":
+        player.add_buff("artifact_recharge", duration=30.0)
+        for it in player.belongings.all_items():
+            from app.engine.entities.base import Wand
+            if isinstance(it, Wand) and it.charges < it.max_charges:
+                it.charges = it.max_charges
+        removed = player.belongings.backpack.detach(item.id)
+        if removed is not None and player.belongings.get_item(item.id) is None:
+            player.quickslot.convert_to_placeholder(removed)
+        _extra_event_data["artifact_recharge"] = True
+    elif effect == "scroll_of_passage":
+        prev_floor = player.floor_id - 1
+        if prev_floor >= 1:
+            old_floor_id = player.floor_id
+            player.floor_id = prev_floor
+            game._invalidate_fov_cache()
+            floor_prev = game._get_or_create_floor(prev_floor)
+            if floor_prev.entrance_pos:
+                player.pos = Position(x=floor_prev.entrance_pos[0], y=floor_prev.entrance_pos[1])
+            game.add_event("FLOOR_CHANGE", {
+                "player": player.id, "from_floor": old_floor_id, "to_floor": prev_floor,
+                "x": player.pos.x, "y": player.pos.y,
+            }, floor_id=prev_floor, source_player_id=player.id, player_id=player.id)
+        removed = player.belongings.backpack.detach(item.id)
+        if removed is not None and player.belongings.get_item(item.id) is None:
+            player.quickslot.convert_to_placeholder(removed)
+    elif effect == "scroll_of_prismatic_image":
+        floor = game._get_or_create_floor(player.floor_id)
+        import uuid as _uuid_mod
+        existing_image = next(
+            (m for m in floor.mobs.values()
+             if getattr(m, "mob_type", None) == "prismatic_image" and getattr(m, "owner_id", None) == player.id),
+            None)
+        if existing_image:
+            heal = round(player.get_total_max_hp() * 0.5)
+            existing_image.hp = min(existing_image.max_hp, existing_image.hp + heal)
+            _extra_event_data["healed_image"] = existing_image.id
+        else:
+            spawn = None
+            for dx, dy in ((-1,0),(1,0),(0,-1),(0,1),(-1,-1),(1,-1),(-1,1),(1,1)):
+                nx, ny = player.pos.x+dx, player.pos.y+dy
+                if 0<=nx<floor.width and 0<=ny<floor.height and floor.flags and floor.flags.passable[ny][nx]:
+                    if not any(m.is_alive and m.pos.x==nx and m.pos.y==ny for m in floor.mobs.values()):
+                        spawn = (nx, ny)
+                        break
+            if spawn:
+                img_id = f"prismatic_{_uuid_mod.uuid4().hex[:8]}"
+                img_hp = player.get_total_max_hp()
+                img = Mob(
+                    id=img_id, type="mob", mob_type="prismatic_image",
+                    name="Prismatic Image",
+                    pos=Position(x=spawn[0], y=spawn[1]),
+                    hp=img_hp, max_hp=img_hp,
+                    attack=player.attack, defense=player.defense,
+                    damage_min=getattr(player, "damage_min", 1),
+                    damage_max=getattr(player, "damage_max", 4),
+                    faction="player", owner_id=player.id,
+                )
+                floor.mobs[img.id] = img
+                _extra_event_data["prismatic_image"] = {"id": img.id, "x": spawn[0], "y": spawn[1]}
+        removed = player.belongings.backpack.detach(item.id)
+        if removed is not None and player.belongings.get_item(item.id) is None:
+            player.quickslot.convert_to_placeholder(removed)
+    elif effect == "scroll_of_psionic_blast":
+        from app.engine.systems.loot import roll_drops
+        floor = game._get_or_create_floor(player.floor_id)
+        for mob in game._mobs_in_fov(player, floor, player.floor_id):
+            dmg = max(1, round(mob.max_hp * 0.4))
+            dealt = mob.take_damage(dmg)
+            if dealt > 0:
+                game.add_event("DAMAGE", {"target": mob.id, "amount": dealt, "psionic": True}, floor_id=player.floor_id)
+            if not mob.is_alive:
+                mob.die(floor_mobs=floor.mobs, tile_x=mob.pos.x, tile_y=mob.pos.y,
+                        players=list(game._players_on_floor(player.floor_id)))
+                game.add_event("DEATH", {"target": mob.id}, floor_id=player.floor_id)
+                game.handle_mob_death(mob, floor, player.floor_id)
+                for drop in roll_drops(mob, game.drop_counters, mob.pos.x, mob.pos.y,
+                                       players=list(game._players_on_floor(player.floor_id))):
+                    floor.items[drop.id] = drop
+        self_dmg = max(1, round(player.get_total_max_hp() * 0.15))
+        player.take_damage(self_dmg)
+        player.add_buff("blindness", duration=10.0)
+        player.add_buff("weakness", duration=50.0)
+        game.add_event("DAMAGE", {"target": player.id, "amount": self_dmg, "psionic": True}, floor_id=player.floor_id)
+        removed = player.belongings.backpack.detach(item.id)
+        if removed is not None and player.belongings.get_item(item.id) is None:
+            player.quickslot.convert_to_placeholder(removed)
+    elif effect == "scroll_of_sirens_song":
+        floor = game._get_or_create_floor(player.floor_id)
+        visible_mobs = list(game._mobs_in_fov(player, floor, player.floor_id))
+        enthralled = None
+        for mob in visible_mobs:
+            if "charm" in getattr(mob, "immunities", []):
+                continue
+            mob.add_buff("charm", duration=999999, source_id=player.id)
+            mob.faction = "player"
+            mob.ai_state = "hunting"
+            if enthralled is None:
+                enthralled = mob
+        removed = player.belongings.backpack.detach(item.id)
+        if removed is not None and player.belongings.get_item(item.id) is None:
+            player.quickslot.convert_to_placeholder(removed)
+        if enthralled:
+            _extra_event_data["enthralled"] = enthralled.id
 
     _maybe_proc_inscribed_stealth(game, player)
 

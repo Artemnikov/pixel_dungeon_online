@@ -1,7 +1,7 @@
 import pytest
 import time
 from app.engine.manager import GameInstance
-from app.engine.entities.base import Position, Bow, CharacterClass
+from app.engine.entities.base import Position, SpiritBow, CharacterClass
 from app.engine.dungeon.constants import TileType
 
 def test_ranged_combat_basics():
@@ -12,14 +12,14 @@ def test_ranged_combat_basics():
     game.grid = [[TileType.FLOOR for _ in range(12)] for _ in range(12)]
     game._get_or_create_floor(game.depth).rebuild_flags()
 
-    # Add a Huntress player (starts with Bow)
+    # Add a Huntress player (starts with SpiritBow in backpack)
     player_id = "test-huntress"
     player = game.add_player(player_id, "Huntress", CharacterClass.HUNTRESS)
     player.pos = Position(x=5, y=5)
-    
-    # Ensure weapon is equipped
-    assert isinstance(player.equipped_weapon, Bow)
-    bow = player.equipped_weapon
+
+    # Huntress keeps SpiritBow in backpack (melee weapon is Gloves)
+    bow = next(i for i in player.inventory if isinstance(i, SpiritBow))
+    assert bow is not None
     
     # Add a mob within range (Bow range is 6 usually)
     mob_id = "target-mob"
@@ -53,11 +53,11 @@ def test_ranged_combat_basics():
 def test_ranged_combat_out_of_range():
     game = GameInstance("test-game")
     game.mobs = {}
-    
+
     player_id = "test-huntress"
     player = game.add_player(player_id, "Huntress", CharacterClass.HUNTRESS)
     player.pos = Position(x=5, y=5)
-    bow = player.equipped_weapon
+    bow = next(i for i in player.inventory if isinstance(i, SpiritBow))
     
     mob_id = "far-mob"
     from app.engine.entities.base import Mob as MobEntity
@@ -79,11 +79,11 @@ def test_ranged_combat_out_of_range():
 def test_ranged_combat_los_blocked():
     game = GameInstance("test-game")
     game.mobs = {}
-    
+
     player_id = "test-huntress"
     player = game.add_player(player_id, "Huntress", CharacterClass.HUNTRESS)
     player.pos = Position(x=5, y=5)
-    bow = player.equipped_weapon
+    bow = next(i for i in player.inventory if isinstance(i, SpiritBow))
     
     # Place a wall between player and mob
     game.grid[6][5] = TileType.WALL

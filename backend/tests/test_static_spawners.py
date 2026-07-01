@@ -52,8 +52,8 @@ def test_demon_spawner_spawns_ripper_demon_when_cooldown_elapses():
     assert abs(ripper.pos.y - spawner.pos.y) <= 1
     assert (ripper.pos.x, ripper.pos.y) != (spawner.pos.x, spawner.pos.y)
 
-    # Cooldown reset to 60 (floor <= 21, no reduction).
-    assert spawner.spawn_cooldown == 60
+    # Cooldown reset to 90 (floor <= 21, no reduction).
+    assert spawner.spawn_cooldown == 90
     # Spawner itself never moves.
     assert (spawner.pos.x, spawner.pos.y) == (5, 5)
 
@@ -105,8 +105,8 @@ def test_demon_spawner_floor_22_reduces_cooldown():
 
     rippers = [m for m in floor.mobs.values() if isinstance(m, RipperDemon)]
     assert len(rippers) == 1
-    # cooldown-- (0 -> -1), += 60 (-> 59), -= min(20, (22-21)*6.67)=6 (-> 53)
-    assert spawner.spawn_cooldown == 53
+    # cooldown-- (0 -> -1), += 90 (-> 89), -= min(30, (22-21)*10)=10 (-> 79)
+    assert spawner.spawn_cooldown == 79
 
 
 # ---------------------------------------------------------------------------

@@ -64,6 +64,9 @@ from app.engine.game.ai_guard import GuardAIMixin
 from app.engine.game.tick import TickMixin
 from app.engine.game.vision import VisionMixin
 from app.engine.game.world import WorldInteractionMixin
+from app.engine.game.artifacts import ArtifactsMixin
+from app.engine.game.duelist import DuelistMixin
+from app.engine.game.cleric import ClericMixin
 
 
 class GameInstance(
@@ -94,6 +97,9 @@ class GameInstance(
     ArmorAbilitiesMixin,
     TalentsMixin,
     RogueMixin,
+    ArtifactsMixin,
+    DuelistMixin,
+    ClericMixin,
     VisionMixin,
     SerializationMixin,
 ):

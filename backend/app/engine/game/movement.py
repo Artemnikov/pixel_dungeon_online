@@ -608,21 +608,20 @@ class MovementCombatMixin:
             return None
 
         dist = abs(player.pos.x - target_x) + abs(player.pos.y - target_y)
-        if not is_bow:
-            if not is_wand and not is_staff:
-                max_range = item.get_reach() if hasattr(item, "get_reach") else getattr(item, "range", 5)
-                if dist > max_range:
-                    return None
-            if is_wand or is_staff:
-                bfloor = self._get_or_create_floor(floor_id)
-                target_x, target_y = ballistica_trace(
-                    player.pos.x, player.pos.y, target_x, target_y,
-                    bfloor.flags, bfloor.width, bfloor.height,
-                    list(self._players_on_floor(floor_id)),
-                    list(bfloor.mobs.values()),
-                    player.id,
-                )
-            elif not self._is_in_los(player.pos, Position(x=target_x, y=target_y), floor_id=floor_id):
+        if is_wand or is_staff:
+            bfloor = self._get_or_create_floor(floor_id)
+            target_x, target_y = ballistica_trace(
+                player.pos.x, player.pos.y, target_x, target_y,
+                bfloor.flags, bfloor.width, bfloor.height,
+                list(self._players_on_floor(floor_id)),
+                list(bfloor.mobs.values()),
+                player.id,
+            )
+        else:
+            max_range = item.get_reach() if hasattr(item, "get_reach") else getattr(item, "range", 5)
+            if dist > max_range:
+                return None
+            if not self._is_in_los(player.pos, Position(x=target_x, y=target_y), floor_id=floor_id):
                 return None
 
         player.last_attack_time = current_time

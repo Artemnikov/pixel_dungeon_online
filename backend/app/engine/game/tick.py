@@ -262,6 +262,9 @@ class TickMixin:
 
             moved = bool(player.move_intent or player.path_queue)
             self.tick_rogue(player, dt, moved=moved)
+            self.tick_artifacts(player, dt)
+            self.tick_duelist(player, dt)
+            self.tick_cleric(player, dt)
 
             if moved:
                 player.stationary_ticks = 0
@@ -455,6 +458,10 @@ class TickMixin:
                     move_interval *= 2
                 if mob.has_buff("paralysis"):
                     move_interval = 9999
+                # TimekeepersHourglass: frozen mobs skip AI entirely.
+                if getattr(mob, "freeze_ticks", 0) > 0:
+                    mob.freeze_ticks -= 1
+                    continue
                 can_move = now - move_times.get(mob.id, 0.0) >= move_interval
 
                 if mob.has_buff("amok"):
@@ -1034,9 +1041,10 @@ class TickMixin:
         floor.respawn_counter = 0
 
         # DimensionalSundial: adjust respawn probability based on day/night
-        dn_mult = max(self._daynight_multiplier(active_players[0]) if active_players else 1.0, 0.25)
-        if random.random() >= dn_mult:
-            return
+        if active_players:
+            dn_mult = max(self._daynight_multiplier(active_players[0]), 0.25)
+            if random.random() >= dn_mult:
+                return
 
         universal_extra = random.random() < 0.01
         if universal_extra:

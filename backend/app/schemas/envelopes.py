@@ -56,5 +56,5 @@ class StateUpdateMessage(_Envelope):
     energy: int
     has_amulet: bool
     boss_lurking: bool
-    mapped_tiles: List[Tuple[int, int]]
+    mapped_tiles: Optional[List[Tuple[int, int]]] = None
     events: List[Any]

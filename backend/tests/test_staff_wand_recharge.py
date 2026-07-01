@@ -101,7 +101,7 @@ def test_mage_staff_zap_range_comes_from_wand():
     assert isinstance(staff, Staff)
     assert staff.imbued_wand is not None
     wand_reach = staff.imbued_wand.get_reach()
-    assert wand_reach == 4
+    assert wand_reach == 8
 
 
 def test_all_classes_start_with_scroll_of_identify():
