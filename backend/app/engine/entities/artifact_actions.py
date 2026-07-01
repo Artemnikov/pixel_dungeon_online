@@ -82,25 +82,47 @@ def action_energize(game, player, item, tx=None, ty=None) -> None:
 # ChaliceOfBlood
 # ---------------------------------------------------------------------------
 
+import math as _math
+
+
+def _min_prick_dmg(level: int) -> int:
+    return _math.ceil(3 + 2.5 * (level * level))
+
+
+def _max_prick_dmg(level: int) -> int:
+    return _math.floor(7 + 3.5 * (level * level))
+
+
+def _roll_prick_damage(level: int) -> int:
+    # SPD Random.NormalIntRange — mean-biased (average of two uniforms).
+    lo, hi = _min_prick_dmg(level), _max_prick_dmg(level)
+    return round((random.randint(lo, hi) + random.randint(lo, hi)) / 2)
+
+
 def action_prick(game, player, item, tx=None, ty=None) -> None:
     if not isinstance(item, ChaliceOfBlood):
         return
-    if item.level >= item.level_cap:
+    if item.level >= item.level_cap or item.cursed:
         return
-    cost = max(1, round(player.get_total_max_hp() * 0.10))
-    if player.hp <= cost:
-        game.add_event("MESSAGE", {"text": "You don't have enough health to prick yourself!"},
-                       floor_id=player.floor_id, player_id=player.id)
+    if player.has_buff("time_stasis"):   # SPD: unavailable while invulnerable
         return
-    player.take_damage(cost)
+    damage = _roll_prick_damage(item.level)
+    damage -= random.randint(player.get_dr_min(), player.get_dr_max())  # drRoll
+    if damage < 1:
+        damage = 1
+    player.take_damage(damage)
+    game.add_event("CHALICE_PRICK", {
+        "player": player.id, "item_id": item.id, "damage": damage,
+    }, floor_id=player.floor_id, source_player_id=player.id)
+    game.add_event("PLAY_SOUND", {"sound": "CURSED"}, floor_id=player.floor_id)
+    if player.is_downed or player.hp <= 0:
+        return   # death from friendly magic — no upgrade
     item.level += 1
     item.level_known = True
     item.on_upgrade()
-    game.add_event("CHALICE_PRICK", {
-        "player": player.id, "item_id": item.id,
-        "hp_cost": cost, "new_level": item.level,
+    game.add_event("CHALICE_UPGRADE", {
+        "player": player.id, "item_id": item.id, "new_level": item.level,
     }, floor_id=player.floor_id, source_player_id=player.id)
-    game.add_event("PLAY_SOUND", {"sound": "HIT"}, floor_id=player.floor_id)
 
 
 # ---------------------------------------------------------------------------

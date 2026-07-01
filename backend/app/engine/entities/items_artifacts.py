@@ -186,14 +186,19 @@ class ChaliceOfBlood(Artifact):
         base = super().actions(player)
         if player is None or not player.belongings.is_equipped(self.id) or self.cursed:
             return base
-        if self.level < self.level_cap:
+        if self.level < self.level_cap and not player.has_buff("time_stasis"):
             return [Action.PRICK] + base
         return base
 
+    def on_upgrade(self) -> None:
+        # SPD only swaps the sprite tier on upgrade; no stat field to change here.
+        pass
+
     def _info_lines(self, player: Optional["Player"] = None) -> List[str]:
         lines = super()._info_lines(player)
-        regen = 1 + self.level
-        lines.append(f"Regenerates {regen} HP every 10 seconds while equipped.")
+        from app.engine.game.artifacts import _chalice_heal_rate
+        rate = _chalice_heal_rate(self.level)
+        lines.append(f"Regenerates about {rate:.2f} HP per second while equipped.")
         return lines
 
 

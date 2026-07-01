@@ -32,6 +32,12 @@ _TALISMAN_RECHARGE = 1.0  # 1s per talisman charge (TalismanOfForesight, 100-cap
 _SPELLBOOK_RECHARGE = 90.0  # ~90s per charge (UnstableSpellbook; SPD ~80-120 turns)
 
 
+def _chalice_heal_rate(level: int) -> float:
+    """SPD ChaliceOfBlood heal rate: 5 / (10 - (1.33 + level*0.667)) HP per turn
+    (≈ HP/sec here) — ~0.58/1.07/1.5/1.88/2.5 at +0/+6/+8/+9/+10."""
+    return 5.0 / (10.0 - (1.33 + level * 0.667))
+
+
 def _gain_exp(item, amount: int) -> None:
     if item.level >= item.level_cap:
         return
@@ -144,20 +150,26 @@ class ArtifactsMixin:
     # ChaliceOfBlood — enhanced regen buff while equipped
     # -----------------------------------------------------------------------
     def _tick_chalice(self, player: Player, item: ChaliceOfBlood, dt: float) -> None:
-        if not hasattr(item, "_regen_accum"):
-            item._regen_accum = 0.0
-        item._regen_accum += dt
-        regen_interval = 10.0
-        while item._regen_accum >= regen_interval:
-            item._regen_accum -= regen_interval
-            heal = 1 + item.level
-            max_hp = player.get_total_max_hp()
-            if player.hp < max_hp:
-                player.hp = min(max_hp, player.hp + heal)
-                self.add_event("HEAL", {
-                    "target": player.id, "amount": heal,
-                    "x": player.pos.x, "y": player.pos.y,
-                }, floor_id=player.floor_id)
+        # SPD chaliceRegen: extra healing at 0.5..2.5 HP/turn (=HP/sec here),
+        # only while not starving and below max HP.
+        max_hp = player.get_total_max_hp()
+        if player.hp >= max_hp or player.hunger >= 450:
+            return
+        if not hasattr(item, "_heal_accum"):
+            item._heal_accum = 0.0
+        item._heal_accum += dt * _chalice_heal_rate(item.level)
+        healed = int(item._heal_accum)
+        if healed <= 0:
+            return
+        item._heal_accum -= healed
+        healed = min(healed, max_hp - player.hp)
+        if healed <= 0:
+            return
+        player.hp += healed
+        self.add_event("HEAL", {
+            "target": player.id, "amount": healed,
+            "x": player.pos.x, "y": player.pos.y,
+        }, floor_id=player.floor_id)
 
     # -----------------------------------------------------------------------
     # EtherealChains — passive recharge
