@@ -46,17 +46,22 @@ def test_dew_collection_caps_at_max_volume():
     assert ws.volume == Waterskin.MAX_VOLUME
 
 
-def test_dew_falls_through_to_normal_pickup_without_waterskin():
+def test_dew_drunk_on_the_spot_without_waterskin():
+    # SPD Dewdrop.doPickUp: with no (non-full) waterskin the drop is consumed
+    # immediately for 5% max HP each — it never enters the backpack.
     g = GameInstance("t1")
     p = g.add_player("p1", "Bob")
     _clear_starting_waterskin(p)
+    p.hp = 1
 
     floor = g._get_or_create_floor(p.floor_id)
     floor.items["dew1"] = Dewdrop(id="dew1", quantity=2, pos=Position(x=p.pos.x + 1, y=p.pos.y))
 
     g.move_entity("p1", 1, 0)
 
-    assert any(isinstance(i, Dewdrop) for i in p.inventory)
+    assert p.hp == 1 + round(p.get_total_max_hp() * 0.05 * 2)
+    assert "dew1" not in floor.items
+    assert all(not isinstance(i, Dewdrop) for i in p.inventory)
 
 
 def test_drink_heals_based_on_missing_hp():

@@ -108,6 +108,22 @@ def _trinket_stone_instead_of_seed(player: Player) -> bool:
     return random.random() < _PS.stone_instead_of_seed_chance(lvl)
 
 
+def _naturalism_level(trampler: Entity) -> int:
+    """SPD SandalsOfNature.Naturalism: equipped sandals grant +1..+4 loot
+    levels; a cursed pair means no grass loot at all (-1). A bagged pair
+    grants nothing (the buff only exists while equipped)."""
+    if not isinstance(trampler, Player):
+        return 0
+    sandals = trampler.belongings.artifact
+    if sandals is None or getattr(sandals, "kind", "") != "sandals_of_nature":
+        return 0
+    if sandals.cursed:
+        return -1
+    # SPD sandals cap at +3; the remake levels artifacts to +10, so clamp to
+    # keep the SPD loot ranges (seeds 1/25..1/9, dew 1/6..1/4).
+    return min(getattr(sandals, "level", 0), 3) + 1
+
+
 def roll_grass_loot(floor: FloorState, trampler: Entity) -> list:
     drops: list = []
 
@@ -116,13 +132,9 @@ def roll_grass_loot(floor: FloorState, trampler: Entity) -> list:
     if region in ("mining", "vault"):
         return drops
 
-    # Naturalism bonus from Sandals of Nature
-    naturalism = 0
-    if isinstance(trampler, Player):
-        for item in trampler.belongings.all_items():
-            if getattr(item, "artifact_type", None) == "sandals_of_nature":
-                naturalism = getattr(item, "naturalism_level", 0)
-                break
+    naturalism = _naturalism_level(trampler)
+    if naturalism < 0:
+        return drops  # cursed Sandals of Nature suppress all grass loot
 
     # PetrifiedSeed trinket: grass loot multiplier
     loot_mult = 1.0
@@ -174,18 +186,18 @@ def press_cell(floor: FloorState, pos: Tuple[int, int], trampler: Entity) -> dic
     tile = floor.grid[pos[1]][pos[0]]
 
     # --- Trample grass ------------------------------------------------------
+    # SPD HighGrass.trample keys off the huntress *class* (any subclass): she
+    # furrows high grass instead of flattening it, and furrowed grass survives
+    # her steps. Everyone else tramples both down to short grass.
     if tile in (TileType.HIGH_GRASS, TileType.FURROWED_GRASS):
-        is_warden = _is_warden(trampler)
         is_huntress = isinstance(trampler, Player) and trampler.class_type == "huntress"
 
         if tile == TileType.FURROWED_GRASS:
-            if not is_warden:
+            if not is_huntress:
                 floor.grid[pos[1]][pos[0]] = TileType.FLOOR_GRASS
                 result["tile_changed"] = True
-        elif tile == TileType.HIGH_GRASS:
-            if is_warden:
-                floor.grid[pos[1]][pos[0]] = TileType.FURROWED_GRASS
-            elif is_huntress:
+        else:
+            if is_huntress:
                 floor.grid[pos[1]][pos[0]] = TileType.FURROWED_GRASS
             else:
                 floor.grid[pos[1]][pos[0]] = TileType.FLOOR_GRASS
@@ -194,12 +206,11 @@ def press_cell(floor: FloorState, pos: Tuple[int, int], trampler: Entity) -> dic
         if result["tile_changed"]:
             floor.rebuild_flags()
 
-        # Roll loot from trampled grass (not from FURROWED_GRASS stepped by Warden)
+        # Loot and the Camouflage glyph only trigger on HIGH_GRASS (SPD rolls
+        # them in the non-furrowed branch, even when the huntress furrows).
         if tile == TileType.HIGH_GRASS:
             result["drops"] = roll_grass_loot(floor, trampler)
-
-        # Camouflage glyph check
-        _trigger_camouflage(trampler)
+            _trigger_camouflage(trampler)
 
         # Rejuvenating Steps check
         _trigger_rejuvenating_steps(floor, pos, trampler)

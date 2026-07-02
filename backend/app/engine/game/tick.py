@@ -509,7 +509,11 @@ class TickMixin:
                     target_player = None
                 elif target_player and isinstance(target_player, Player) and getattr(mob, "ai_state", "") in ("idle", "sleeping"):
                     dist = self._get_distance(mob.pos, target_player.pos)
-                    if dist > self._view_distance(mob):
+                    # SPD Mob.act(): enemyInFOV needs fieldOfView[enemy.pos],
+                    # so high grass and walls block noticing, not just range.
+                    if dist > self._view_distance(mob) or not self._is_in_los(
+                            mob.pos, target_player.pos, floor_id=floor_id,
+                            distance=self._view_distance(mob)):
                         target_player = None
                     else:
                         stealth = target_player.get_stealth()
@@ -526,7 +530,9 @@ class TickMixin:
 
                 if target_player and isinstance(target_player, Player) and getattr(mob, "ai_state", "") == "wandering":
                     dist = self._get_distance(mob.pos, target_player.pos)
-                    if dist > self._view_distance(mob):
+                    if dist > self._view_distance(mob) or not self._is_in_los(
+                            mob.pos, target_player.pos, floor_id=floor_id,
+                            distance=self._view_distance(mob)):
                         target_player = None
                     else:
                         stealth = target_player.get_stealth()

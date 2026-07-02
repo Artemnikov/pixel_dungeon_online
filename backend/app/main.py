@@ -443,6 +443,8 @@ async def game_websocket(websocket: WebSocket, game_id: str, class_type: str = "
                             player.gold += item.quantity
                             del floor.items[i_id]
                             game.add_event("PICKUP_GOLD", {"player": player.id, "amount": item.quantity}, floor_id=player.floor_id)
+                        elif isinstance(item, Dewdrop):
+                            game._pickup_dewdrop(player, floor, player.floor_id, i_id, item)
                         elif player.add_to_inventory(item):
                             del floor.items[i_id]
                             game.add_event("PICKUP", {"player": player.id, "item": item.name}, floor_id=player.floor_id)

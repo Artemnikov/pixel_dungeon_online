@@ -35,7 +35,7 @@ from app.engine.entities.buffs import add_buff, get_buff, has_buff, remove_buff
 from app.engine.entities.mobs import CrystalMimic, DM300, Goo, Shopkeeper, Wraith
 from app.engine.entities.subclasses import Talent
 from app.engine.systems.ballistica import ballistica_trace
-from app.engine.systems.combat import resolve_melee_attack, resolve_ranged_attack
+from app.engine.systems.combat import _dispel_stealth, resolve_melee_attack, resolve_ranged_attack
 from app.engine.systems.loot import roll_drops
 from app.engine.game.constants import KEY_TIME_TO_UNLOCK, MAX_FLOOR_ID
 from app.engine.game.terrain_effects import press_cell
@@ -110,6 +110,45 @@ class MovementCombatMixin:
             self.add_event("MESSAGE", {"text": "The crystal chest was a mimic!", "player": player.id}, floor_id=floor_id)
             return True
         return False
+
+    def _pickup_dewdrop(self, player, floor, floor_id: int, item_id: str, dew) -> None:
+        """SPD Dewdrop.doPickUp: a non-full waterskin collects the drop;
+        otherwise it is drunk on the spot (5% max HP per drop, Shielding Dew
+        overflow to a shield) and refused entirely when it would do nothing —
+        unless standing on an entrance/exit tile, which force-consumes it."""
+        waterskin = next(
+            (i for i in player.inventory if isinstance(i, Waterskin) and not i.is_full()),
+            None,
+        )
+        if waterskin is not None:
+            waterskin.volume = min(Waterskin.MAX_VOLUME, waterskin.volume + dew.quantity)
+            del floor.items[item_id]
+            self.add_event("COLLECT_DEW", {"player": player.id, "item": waterskin.id}, floor_id=floor_id)
+            return
+
+        max_hp = player.get_total_max_hp()
+        effect = round(max_hp * 0.05 * dew.quantity)
+        heal = min(max_hp - player.hp, effect)
+
+        shield = 0
+        shielding_dew = player.talent_info.level("shielding_dew")
+        if shielding_dew > 0:
+            max_shield = round(max_hp * 0.2 * shielding_dew)
+            cur_shield = player.get_shield("dew").amount if player.get_shield("dew") else 0
+            shield = min(effect - heal, max_shield - cur_shield)
+
+        tile = floor.grid[player.pos.y][player.pos.x]
+        force = tile in (TileType.STAIRS_UP, TileType.STAIRS_DOWN)
+        if heal <= 0 and shield <= 0 and not force:
+            return  # already full: leave the drop on the ground
+
+        if heal > 0:
+            player.hp += heal
+            self.add_event("HEAL", {"target": player.id, "amount": heal, "x": player.pos.x, "y": player.pos.y}, floor_id=floor_id)
+        if shield > 0:
+            player.add_shield("dew", shield, priority=0)
+        del floor.items[item_id]
+        self.add_event("PLAY_SOUND", {"sound": "DEWDROP"}, floor_id=floor_id, source_player_id=player.id)
 
     def _teleport_entity_to_free_cell(self, entity, floor, floor_id: int) -> None:
         import random as _random
@@ -502,15 +541,8 @@ class MovementCombatMixin:
                     self.add_event("PICKUP_GOLD", {"player": entity.id, "amount": item.quantity}, floor_id=floor_id)
                     continue
                 if isinstance(item, Dewdrop):
-                    waterskin = next(
-                        (i for i in entity.inventory if isinstance(i, Waterskin) and not i.is_full()),
-                        None,
-                    )
-                    if waterskin is not None:
-                        waterskin.volume = min(Waterskin.MAX_VOLUME, waterskin.volume + item.quantity)
-                        del floor.items[i_id]
-                        self.add_event("COLLECT_DEW", {"player": entity.id, "item": waterskin.id}, floor_id=floor_id)
-                        continue
+                    self._pickup_dewdrop(entity, floor, floor_id, i_id, item)
+                    continue
                 if isinstance(item, Key):
                     entity.add_key(item.key_id, floor_id, item.name)
                     del floor.items[i_id]
@@ -776,6 +808,10 @@ class MovementCombatMixin:
             effective_wand.handle_zap(ctx)
 
         if is_wand or is_staff:
+            # SPD Invisibility.dispel(): every zap breaks invisibility, even
+            # one aimed at empty ground (entity hits already dispel in the
+            # ranged resolver).
+            _dispel_stealth(player)
             wand_item = staff_wand if is_staff else item
             # Wand Preservation (mage T2): chance to not consume charge
             wp = player.talent_info.level("wand_preservation")

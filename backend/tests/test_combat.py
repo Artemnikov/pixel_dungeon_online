@@ -301,6 +301,7 @@ def test_no_crit_when_not_surprise():
         hp=50, max_hp=50,
         attack=2, defense=0, defense_skill=0,
         dr_min=0, dr_max=0,
+        ai_state="hunting",  # aware defender (unaware mobs are surprised per SPD)
     )
 
     # Non-surprise attack (defender CAN see attacker) -> no bonus

@@ -195,7 +195,9 @@ def test_polarized_curse_replaces_damage_with_1_5x_or_0(monkeypatch):
     p.belongings.weapon.enchantment = "polarized"
     p.belongings.weapon.cursed = True
     p.attack_skill = 1000
-    target = _mob(hp=100, max_hp=100, dr_min=0, dr_max=0)
+    # aware defender: keeps the accuracy rolls in the sequence below (an
+    # unaware mob would be surprise-auto-hit and consume fewer random calls)
+    target = _mob(hp=100, max_hp=100, dr_min=0, dr_max=0, ai_state="hunting")
     floor = g._get_or_create_floor(p.floor_id)
 
     # First call: hit/dmg rolls "random" but polarized_roll forced to 0.0
