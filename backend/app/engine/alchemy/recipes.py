@@ -18,9 +18,31 @@ from typing import Callable, List, Optional, Tuple
 
 from app.engine.entities.base import ItemBase
 from app.engine.entities.items_equip import EquipableItem
-from app.engine.entities.items_potions import Potion
-from app.engine.entities.items_scrolls import Scroll
+from app.engine.entities.items_potions import (
+    HealthPotion, PotionOfCleansing, PotionOfCorrosiveGas, PotionOfDivineInspiration,
+    PotionOfDragonsBreath, PotionOfEarthenArmor, PotionOfExperience, PotionOfFrost,
+    PotionOfHaste, PotionOfInvisibility, PotionOfLevitation, PotionOfLiquidFlame,
+    PotionOfMagicalSight, PotionOfMastery, PotionOfMindVision, PotionOfParalyticGas,
+    PotionOfPurity, PotionOfShielding, PotionOfShroudingFog, PotionOfSnapFreeze,
+    PotionOfStamina, PotionOfStormClouds, PotionOfStrength, PotionOfToxicGas, Potion,
+)
+from app.engine.entities.items_scrolls import (
+    ExoticScrollOfEnchantment, Scroll, ScrollOfAntiMagic, ScrollOfChallenge,
+    ScrollOfDivination, ScrollOfDread, ScrollOfForesight, ScrollOfIdentify,
+    ScrollOfLullaby, ScrollOfMagicMapping, ScrollOfMetamorphosis,
+    ScrollOfMirrorImage, ScrollOfMysticalEnergy, ScrollOfPassage,
+    ScrollOfPrismaticImage, ScrollOfPsionicBlast, ScrollOfRage,
+    ScrollOfRecharging, ScrollOfRemoveCurse, ScrollOfRetribution,
+    ScrollOfSirensSong, ScrollOfTeleportation, ScrollOfTerror,
+    ScrollOfTransmutation, ScrollOfUpgrade,
+)
 from app.engine.entities.items_wands import Wand
+from app.engine.entities.runestones import (
+    StoneOfAggression, StoneOfAugmentation, StoneOfBlast, StoneOfBlink,
+    StoneOfClairvoyance, StoneOfDeepSleep, StoneOfDetectMagic,
+    StoneOfEnchantment, StoneOfFear, StoneOfFlock, StoneOfIntuition,
+    StoneOfShock,
+)
 from app.engine.entities.trinkets import Trinket
 
 
@@ -97,3 +119,113 @@ class SimpleRecipe(Recipe):
         out.id = new_item_id()
         out.quantity = self.out_quantity
         return out
+
+
+# Scroll.ScrollToStone mapping (Scroll.java). Remake's StoneOfDetectMagic is
+# SPD's current RemoveCurse output.
+SCROLL_TO_STONE = {
+    ScrollOfIdentify: StoneOfIntuition,
+    ScrollOfLullaby: StoneOfDeepSleep,
+    ScrollOfMagicMapping: StoneOfClairvoyance,
+    ScrollOfMirrorImage: StoneOfFlock,
+    ScrollOfRetribution: StoneOfBlast,
+    ScrollOfRage: StoneOfAggression,
+    ScrollOfRecharging: StoneOfShock,
+    ScrollOfRemoveCurse: StoneOfDetectMagic,
+    ScrollOfTeleportation: StoneOfBlink,
+    ScrollOfTerror: StoneOfFear,
+    ScrollOfTransmutation: StoneOfAugmentation,
+    ScrollOfUpgrade: StoneOfEnchantment,
+}
+
+# ExoticPotion.regToExo (ExoticPotion.java). SPD PotionOfHealing == HealthPotion.
+POTION_TO_EXOTIC = {
+    PotionOfStrength: PotionOfMastery,
+    HealthPotion: PotionOfShielding,
+    PotionOfMindVision: PotionOfMagicalSight,
+    PotionOfFrost: PotionOfSnapFreeze,
+    PotionOfLiquidFlame: PotionOfDragonsBreath,
+    PotionOfToxicGas: PotionOfCorrosiveGas,
+    PotionOfHaste: PotionOfStamina,
+    PotionOfInvisibility: PotionOfShroudingFog,
+    PotionOfLevitation: PotionOfStormClouds,
+    PotionOfParalyticGas: PotionOfEarthenArmor,
+    PotionOfPurity: PotionOfCleansing,
+    PotionOfExperience: PotionOfDivineInspiration,
+}
+
+# ExoticScroll.regToExo (ExoticScroll.java). SPD's "ScrollOfEnchantment"
+# (choice of three enchants) is the remake's ExoticScrollOfEnchantment.
+SCROLL_TO_EXOTIC = {
+    ScrollOfUpgrade: ExoticScrollOfEnchantment,
+    ScrollOfIdentify: ScrollOfDivination,
+    ScrollOfRemoveCurse: ScrollOfAntiMagic,
+    ScrollOfMirrorImage: ScrollOfPrismaticImage,
+    ScrollOfRecharging: ScrollOfMysticalEnergy,
+    ScrollOfTeleportation: ScrollOfPassage,
+    ScrollOfLullaby: ScrollOfSirensSong,
+    ScrollOfMagicMapping: ScrollOfForesight,
+    ScrollOfRage: ScrollOfChallenge,
+    ScrollOfRetribution: ScrollOfPsionicBlast,
+    ScrollOfTerror: ScrollOfDread,
+    ScrollOfTransmutation: ScrollOfMetamorphosis,
+}
+
+
+class ScrollToStone(Recipe):
+    # Scroll -> 2 runestones, cost 0. Unidentified scrolls allowed; brewing
+    # identifies the scroll kind for the party (SPD showIdentify/identify).
+    def test_ingredients(self, game, units):
+        return len(units) == 1 and type(units[0]) in SCROLL_TO_STONE
+
+    def cost(self, units):
+        return 0
+
+    def brew(self, game, units):
+        if not self.test_ingredients(game, units):
+            return None
+        scroll = units[0]
+        game.identified_kinds.add(scroll.kind)
+        out = SCROLL_TO_STONE[type(scroll)](quantity=2)
+        out.id = new_item_id()
+        return out
+
+    def sample_output(self, game, units):
+        scroll = units[0]
+        if scroll.kind not in game.identified_kinds:
+            return None
+        out = SCROLL_TO_STONE[type(scroll)](quantity=2)
+        out.id = new_item_id()
+        return out
+
+
+class _ToExotic(Recipe):
+    MAPPING: dict = {}
+    COST: int = 0
+
+    def test_ingredients(self, game, units):
+        return len(units) == 1 and type(units[0]) in self.MAPPING
+
+    def cost(self, units):
+        return self.COST
+
+    def brew(self, game, units):
+        if not self.test_ingredients(game, units):
+            return None
+        return self.sample_output(game, units)
+
+    def sample_output(self, game, units):
+        out = self.MAPPING[type(units[0])]()
+        out.id = new_item_id()
+        out.quantity = 1
+        return out
+
+
+class PotionToExotic(_ToExotic):
+    MAPPING = POTION_TO_EXOTIC
+    COST = 4
+
+
+class ScrollToExotic(_ToExotic):
+    MAPPING = SCROLL_TO_EXOTIC
+    COST = 6

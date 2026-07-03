@@ -2,10 +2,16 @@
 import pytest
 
 from app.engine.alchemy.recipes import (
-    SimpleRecipe, is_kind_identified, usable_in_recipe,
+    PotionToExotic, ScrollToExotic, ScrollToStone, SimpleRecipe, is_kind_identified,
+    usable_in_recipe,
 )
+from app.engine.alchemy.registry import find_recipes
 from app.engine.entities.items_consumable import GooBlob, MysteryMeat
-from app.engine.entities.items_potions import HealthPotion, PotionOfFrost
+from app.engine.entities.items_potions import HealthPotion, PotionOfFrost, PotionOfShielding
+from app.engine.entities.items_scrolls import (
+    ExoticScrollOfEnchantment, ScrollOfRemoveCurse, ScrollOfUpgrade,
+)
+from app.engine.entities.runestones import StoneOfDetectMagic, StoneOfEnchantment
 from app.engine.entities.trinkets import RatSkull
 from app.engine.manager import GameInstance
 
@@ -68,3 +74,41 @@ def test_usable_in_recipe_bans_cursed():
     assert not usable_in_recipe(GooBlob(cursed=True))
     assert usable_in_recipe(RatSkull())
     assert not usable_in_recipe(RatSkull(cursed=True))
+
+
+def test_scroll_to_stone_mapping_and_identify(game):
+    r = ScrollToStone()
+    units = _units(ScrollOfRemoveCurse())
+    assert r.test_ingredients(game, units)   # unidentified scrolls ARE allowed
+    assert r.cost(units) == 0
+    assert r.sample_output(game, units) is None  # unknown kind -> '?' preview
+    out = r.brew(game, units)
+    assert isinstance(out, StoneOfDetectMagic) and out.quantity == 2
+    assert "scroll_of_remove_curse" in game.identified_kinds
+    assert isinstance(r.sample_output(game, units), StoneOfDetectMagic)
+
+
+def test_potion_to_exotic(game):
+    r = PotionToExotic()
+    units = _units(HealthPotion())
+    assert r.test_ingredients(game, units)
+    assert r.cost(units) == 4
+    assert isinstance(r.brew(game, units), PotionOfShielding)
+
+
+def test_scroll_to_exotic(game):
+    r = ScrollToExotic()
+    units = _units(ScrollOfUpgrade())
+    assert r.test_ingredients(game, units)
+    assert r.cost(units) == 6
+    assert isinstance(r.brew(game, units), ExoticScrollOfEnchantment)
+
+
+def test_find_recipes_scroll_matches_stone_and_exotic(game):
+    units = _units(ScrollOfUpgrade())
+    found = [type(r).__name__ for r in find_recipes(game, units)]
+    assert found == ["ScrollToStone", "ScrollToExotic"]  # Recipe.java order
+
+
+def test_find_recipes_empty_for_unknown_combo(game):
+    assert find_recipes(game, _units(GooBlob())) == []
