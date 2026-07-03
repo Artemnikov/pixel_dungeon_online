@@ -23,6 +23,8 @@ export default function useCanvasControls({
   myPlayerIdRef,
   hoveredCellRef,
   floorFadeRef,
+  gridRef,
+  onOpenAlchemyRef,
 }) {
   const dragStartRef = useRef({ x: 0, y: 0 });
   const dragStartPanRef = useRef({ x: 0, y: 0 });
@@ -225,7 +227,15 @@ export default function useCanvasControls({
 
       const myPlayer = entitiesRef?.current?.players?.[myPlayerIdRef?.current];
       const playerTile = myPlayer ? (myPlayer.targetPos || myPlayer.renderPos) : null;
-      const action = resolveTapAction({ tileX, tileY, playerTile, mobs: entitiesRef?.current?.mobs });
+      const action = resolveTapAction({
+        tileX, tileY, playerTile,
+        mobs: entitiesRef?.current?.mobs,
+        grid: gridRef?.current,
+      });
+      if (action.type === 'OPEN_ALCHEMY') {
+        onOpenAlchemyRef?.current?.();
+        return;
+      }
       if (action.type === 'MOVE_TO' || action.type === 'MOVE') isRefocusingRef.current = true;
       socketRef.current.send(JSON.stringify(action));
     };
@@ -247,7 +257,7 @@ export default function useCanvasControls({
       canvas.removeEventListener('touchmove', onTouchMove);
       canvas.removeEventListener('touchend', onTouchEnd);
     };
-  }, [enabled, canvasRef, socketRef, panOffsetRef, zoomRef, cameraLerpRef, isDraggingRef, isRefocusingRef, isPinchingRef, isCameraDetachedRef, detachedCameraRef, targetingModeRef, onTargetTapRef, examineModeRef, onExamineTapRef, entitiesRef, myPlayerIdRef, hoveredCellRef, floorFadeRef]);
+  }, [enabled, canvasRef, socketRef, panOffsetRef, zoomRef, cameraLerpRef, isDraggingRef, isRefocusingRef, isPinchingRef, isCameraDetachedRef, detachedCameraRef, targetingModeRef, onTargetTapRef, examineModeRef, onExamineTapRef, entitiesRef, myPlayerIdRef, hoveredCellRef, floorFadeRef, gridRef, onOpenAlchemyRef]);
 
   return { hasDraggedRef };
 }

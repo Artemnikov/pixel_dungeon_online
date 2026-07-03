@@ -1,4 +1,6 @@
-export function resolveTapAction({ tileX, tileY, playerTile, mobs }) {
+export const ALCHEMY_TILE_ID = 23; // BACKEND_TILE.ALCHEMY
+
+export function resolveTapAction({ tileX, tileY, playerTile, mobs, grid }) {
   if (!playerTile) {
     return { type: 'MOVE_TO', x: tileX, y: tileY };
   }
@@ -19,6 +21,10 @@ export function resolveTapAction({ tileX, tileY, playerTile, mobs }) {
     );
     if (npc) {
       return { type: 'NPC_INTERACT', npc_id: npc.id };
+    }
+    const tile = grid?.[tileY]?.[tileX];
+    if (tile === ALCHEMY_TILE_ID) {
+      return { type: 'OPEN_ALCHEMY' };
     }
   }
 
