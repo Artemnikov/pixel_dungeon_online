@@ -7,6 +7,11 @@ import type {
   SerializedItem,
   TrapInfo,
   CustomTileLayer,
+  AlchemyPreviewResultEvent,
+  AlchemyBrewedEvent,
+  AlchemyEnergizedEvent,
+  TrinketChoiceEvent,
+  ToolkitEnergizePromptEvent,
 } from '../types/contract';
 
 export type { Player, Mob, Difficulty, GameEvent, SerializedItem, TrapInfo, CustomTileLayer };
@@ -206,6 +211,12 @@ export interface HookProps {
   }) => void;
   onBossSlain?: (data: { mob: string; depth: number; badge_image: number }) => void;
   onPlayerDeath?: (data: { score_breakdown?: { kills: number; floors: number; gold: number }; can_resurrect?: boolean; victory?: boolean }) => void;
+  onAlchemyPreviewResult?: (data: AlchemyPreviewResultEvent['data']) => void;
+  onAlchemyBrewed?: (data: AlchemyBrewedEvent['data']) => void;
+  onAlchemyEnergized?: (data: AlchemyEnergizedEvent['data']) => void;
+  onTrinketChoice?: (data: TrinketChoiceEvent['data']) => void;
+  onToolkitEnergizePrompt?: (data: ToolkitEnergizePromptEvent['data']) => void;
+  onOpenAlchemy?: () => void;
 }
 
 export type HandlerCtx = Pick<
@@ -267,6 +278,12 @@ export type HandlerCtx = Pick<
   onEnchantChoiceAvailable?: HookProps['onEnchantChoiceAvailable'];
   onBossSlain?: HookProps['onBossSlain'];
   onPlayerDeath?: HookProps['onPlayerDeath'];
+  onAlchemyPreviewResult?: HookProps['onAlchemyPreviewResult'];
+  onAlchemyBrewed?: HookProps['onAlchemyBrewed'];
+  onAlchemyEnergized?: HookProps['onAlchemyEnergized'];
+  onTrinketChoice?: HookProps['onTrinketChoice'];
+  onToolkitEnergizePrompt?: HookProps['onToolkitEnergizePrompt'];
+  onOpenAlchemy?: HookProps['onOpenAlchemy'];
   depth?: number;
 };
 

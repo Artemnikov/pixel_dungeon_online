@@ -105,6 +105,8 @@ export interface SerializationExtras {
   description: string;
   /** Sprite cell for a potion/scroll's per-run appearance; only on those kinds. */
   appearance?: { col: number; row: number };
+  /** Alchemical energy this item converts to at a pot (energy.py). */
+  energy_value?: number;
 }
 
 /** An item as it actually arrives over the wire (model + serialization extras). */
@@ -886,6 +888,64 @@ export interface EnchantEvent {
   data: { player: string; item: string };
 }
 
+export interface PickupEnergyEvent {
+  type: 'PICKUP_ENERGY';
+  data: { player: string; amount: number };
+}
+
+export interface AlchemyPreviewRecipe {
+  recipe_index: number;
+  cost: number;
+  affordable: boolean;
+  output_kind: string | null;
+  output_name: string;
+  output_quantity: number;
+  known: boolean;
+}
+
+export interface AlchemyPreviewResultEvent {
+  type: 'ALCHEMY_PREVIEW_RESULT';
+  data: {
+    player: string;
+    ingredient_ids: string[];
+    recipes: AlchemyPreviewRecipe[];
+    available_energy: number;
+  };
+}
+
+export interface AlchemyBrewedEvent {
+  type: 'ALCHEMY_BREWED';
+  data: {
+    player: string; item_id: string; item_kind: string; item_name: string;
+    quantity: number; cost: number; energy: number;
+  };
+}
+
+export interface AlchemyEnergizedEvent {
+  type: 'ALCHEMY_ENERGIZED';
+  data: { player: string; amount: number; energy: number };
+}
+
+export interface TrinketChoiceEvent {
+  type: 'TRINKET_CHOICE';
+  data: { player: string; catalyst_id: string; kinds: string[] };
+}
+
+export interface ToolkitBrewEvent {
+  type: 'TOOLKIT_BREW';
+  data: { player: string; item_id: string; charges: number };
+}
+
+export interface ToolkitEnergizePromptEvent {
+  type: 'TOOLKIT_ENERGIZE_PROMPT';
+  data: { player: string; toolkit_id: string; max_levels: number };
+}
+
+export interface ToolkitEnergizedEvent {
+  type: 'TOOLKIT_ENERGIZED';
+  data: { player: string; toolkit_id: string; levels: number; level: number };
+}
+
 export type GameEvent =
   | AttackEvent
   | MissEvent
@@ -1007,7 +1067,15 @@ export type GameEvent =
   | MetabolismProcEvent
   | StenchProcEvent
   | EnchantChoiceAvailableEvent
-  | EnchantEvent;
+  | EnchantEvent
+  | PickupEnergyEvent
+  | AlchemyPreviewResultEvent
+  | AlchemyBrewedEvent
+  | AlchemyEnergizedEvent
+  | TrinketChoiceEvent
+  | ToolkitBrewEvent
+  | ToolkitEnergizePromptEvent
+  | ToolkitEnergizedEvent;
 
 export type GameEventType = GameEvent['type'];
 
@@ -1118,4 +1186,9 @@ export type ClientMessage =
   | { type: 'STONE_INTUITION_GUESS'; stone_id: string; item_id: string; guessed_kind: string }
   | { type: 'STONE_AUGMENT_CHOOSE'; stone_id: string; item_id: string; augment_type: string }
   | { type: 'CHOOSE_ENCHANT'; target_id: string; choice_index: number }
-  | { type: 'CONFIRM_CHASM_FALL'; x: number; y: number };
+  | { type: 'CONFIRM_CHASM_FALL'; x: number; y: number }
+  | { type: 'ALCHEMY_PREVIEW'; ingredient_ids: string[] }
+  | { type: 'ALCHEMY_BREW'; ingredient_ids: string[]; recipe_index: number }
+  | { type: 'ALCHEMY_ENERGIZE'; item_id: string; all_items: boolean }
+  | { type: 'ALCHEMY_TRINKET_CHOOSE'; catalyst_id: string; kind: string }
+  | { type: 'TOOLKIT_ENERGIZE'; toolkit_id: string; levels: number };

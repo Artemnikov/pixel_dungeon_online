@@ -15,7 +15,6 @@ export const ACTION_KEYS = {
   SUMMON: 'action.summon',
   DIRECT: 'action.direct',
   WEAR: 'action.wear',
-  ALCHEMIZE: 'action.alchemize',
   INSCRIBE: 'action.inscribe',
 };
 

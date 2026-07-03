@@ -175,6 +175,9 @@ export const ITEM_SPRITES = {
   "Rusty Key":        [7, 3],   // IRON_KEY (MISC_CONSUMABLE+7 = idx 55)
   "Key":              [7, 3],
   "Amulet of Yendor": [14, 4],  // AMULET = MISC_CONSUMABLE+13 = xy(1,4)+13 = idx 78 -> col14,row4
+  "Energy Crystal":   [3, 1],   // ENERGY (UNCOLLECTIBLE+1 = idx 19)
+  "Stewed Meat":      [2, 27],  // STEWED (FOOD+2 = idx 434)
+  "Meat Pie":         [7, 27],  // MEAT_PIE (FOOD+7 = idx 439)
 
   // Trinkets (TRINKETS section = xy(1,18) → [0,17], 17 trinkets + 1 catalyst)
   "Trinket Catalyst": [6, 4],   // TRINKET_CATA = MISC_CONSUMABLE+22 = [6,4]
@@ -255,6 +258,8 @@ const PLACEHOLDER_TYPE_BY_KIND_PREFIX = [
   ['ration', 'food'],
   ['pasty', 'food'],
   ['chargrilled_meat', 'food'],
+  ['stewed_meat', 'food'],
+  ['meat_pie', 'food'],
   ['dewdrop', 'dewdrop'],
   ['gold', 'gold'],
   ['wand', 'wand'],
@@ -399,6 +404,9 @@ const KIND_COORDS = {
   'chaotic_censer':       [14, 17],
   'ferret_tuft':          [15, 17],
   'cracked_spyglass':     [0, 18],
+  'energy_crystal':       [3, 1],
+  'stewed_meat':          [2, 27],
+  'meat_pie':             [7, 27],
 };
 
 export function coordsForKind(kind) {
@@ -406,6 +414,8 @@ export function coordsForKind(kind) {
   if (KIND_COORDS[kind]) return KIND_COORDS[kind];
   if (kind.startsWith('scroll_'))  return [0, 19];
   if (kind.startsWith('potion_'))  return [0, 22];
+  if (kind.startsWith('elixir_')) return [0, 22];
+  if (kind.endsWith('_brew'))     return [0, 22];
   if (kind.startsWith('ring_'))    return [0, 14];
   if (kind.startsWith('wand_'))    return [0, 13];
   if (kind.startsWith('armor'))    return [0, 11];
