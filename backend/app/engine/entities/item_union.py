@@ -235,6 +235,10 @@ from app.engine.entities.runestones import (
     StoneOfAggression, StoneOfFlock, StoneOfShock, StoneOfFear,
     StoneOfIntuition, StoneOfAugmentation, StoneOfDetectMagic, StoneOfEnchantment,
 )  # noqa: E402
+from app.engine.entities.items_bombs import (
+    Bomb, Firebomb, FrostBomb, SmokeBomb, FlashBangBomb, HolyBomb,
+    RegrowthBomb, WoollyBomb, Noisemaker, ArcaneBomb, ShrapnelBomb, MetalShard,
+)  # noqa: E402
 
 AnyItem = Annotated[
     Union[
@@ -281,6 +285,9 @@ AnyItem = Annotated[
         TenguMask, KingsCrown,
         Seed, Dewdrop, Waterskin, Amulet, Stone, Boomerang, ThrowableDagger, Throwable,
         EnergyCrystal,
+        Bomb, Firebomb, FrostBomb, SmokeBomb, FlashBangBomb, HolyBomb,
+        RegrowthBomb, WoollyBomb, Noisemaker, ArcaneBomb, ShrapnelBomb,
+        MetalShard,
         ArcaneStylus, MagicalInfusion,
         GooBlob, DwarfToken, Petal,
         Chest,

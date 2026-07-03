@@ -37,6 +37,10 @@ from app.engine.entities.runestones import (  # noqa: E402
     StoneOfAggression, StoneOfFlock, StoneOfShock, StoneOfFear,
     StoneOfDetectMagic, StoneOfIntuition, StoneOfEnchantment, StoneOfAugmentation,
 )
+from app.engine.entities.items_bombs import (  # noqa: E402
+    Bomb, Firebomb, FrostBomb, SmokeBomb, FlashBangBomb, HolyBomb,
+    RegrowthBomb, WoollyBomb, Noisemaker, ArcaneBomb, ShrapnelBomb, MetalShard,
+)
 from app.engine.entities.trinkets import (  # noqa: E402
     CrackedSpyglass, ChaoticCenser, DimensionalSundial, ExoticCrystals,
     EyeOfNewt, FerretTuft, MimicTooth, MossyClump, ParchmentScrap,
@@ -196,6 +200,20 @@ _CATALOG: List[tuple] = [
     ("kings_crown", "King's Crown", "misc", lambda: KingsCrown()),
     ("amulet", "Amulet of Yendor", "misc", lambda: Amulet()),
     ("energy_crystal", "Energy Crystal", "misc", lambda: EnergyCrystal(quantity=5)),
+
+    # Bombs
+    ("bomb", "Bomb", "misc", lambda: Bomb()),
+    ("firebomb", "Firebomb", "misc", lambda: Firebomb()),
+    ("frost_bomb", "Frost Bomb", "misc", lambda: FrostBomb()),
+    ("smoke_bomb", "Smoke Bomb", "misc", lambda: SmokeBomb()),
+    ("flashbang_bomb", "Flashbang", "misc", lambda: FlashBangBomb()),
+    ("holy_bomb", "Holy Bomb", "misc", lambda: HolyBomb()),
+    ("regrowth_bomb", "Regrowth Bomb", "misc", lambda: RegrowthBomb()),
+    ("woolly_bomb", "Woolly Bomb", "misc", lambda: WoollyBomb()),
+    ("noisemaker", "Noisemaker", "misc", lambda: Noisemaker()),
+    ("arcane_bomb", "Arcane Bomb", "misc", lambda: ArcaneBomb()),
+    ("shrapnel_bomb", "Shrapnel Bomb", "misc", lambda: ShrapnelBomb()),
+    ("metal_shard", "Metal Shard", "misc", lambda: MetalShard()),
 
     # Containers
     ("velvet_pouch", "Velvet Pouch", "container", lambda: VelvetPouch()),

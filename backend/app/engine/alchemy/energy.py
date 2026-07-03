@@ -5,6 +5,7 @@
 """energy_val(): SPD Item.energyVal() and its overrides."""
 from app.engine.alchemy.recipes import POTION_TO_EXOTIC, SCROLL_TO_EXOTIC
 from app.engine.entities.base import ItemBase
+from app.engine.entities.items_bombs import MetalShard
 from app.engine.entities.items_consumable import GooBlob, Seed
 from app.engine.entities.items_potions import (
     AquaBrew, ElixirOfHoneyedHealing, Potion, UnstableBrew,
@@ -81,4 +82,6 @@ def energy_val(game, item: ItemBase) -> int:
         if reg is not None:
             return (_base_val(game, reg) + 6) * q
         return _base_val(game, item.kind) * q
+    if isinstance(item, MetalShard):
+        return 3 * q  # MetalShard.java energyVal
     return 0

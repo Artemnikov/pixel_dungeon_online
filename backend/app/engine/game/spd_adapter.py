@@ -33,6 +33,7 @@ from app.engine.dungeon.generator import TileType
 from app.engine.entities.base import EntityType, Position
 from app.engine.entities.item_union import Chest
 from app.engine.entities.items_consumable import Amulet, Dewdrop, EnergyCrystal, Food, Gold, Key, Seed, Stone
+from app.engine.entities.items_bombs import Bomb, MetalShard
 from app.engine.entities.items_equip import Armor, ClothArmor, LeatherArmor, MailArmor, make_named_melee_weapon, PlateArmor, ScaleArmor
 from app.engine.entities.items_potions import HealthPotion
 from app.engine.entities.items_scrolls import Scroll
@@ -551,7 +552,8 @@ _DESCRIPTOR_ITEM_MAP = {
     "Food": lambda iid, pos: Food(id=iid, pos=pos, name="Food"),
     "EnergyCrystal": lambda iid, pos: EnergyCrystal(id=iid, pos=pos),
     "Potion": lambda iid, pos: HealthPotion(id=iid, pos=pos),
-    "Bomb": lambda iid, pos: Stone(id=iid, pos=pos, name="Bomb", damage=5, range=1),
+    "Bomb": lambda iid, pos: Bomb(id=iid, pos=pos),
+    "MetalShard": lambda iid, pos: MetalShard(id=iid, pos=pos),
     "Gold": lambda iid, pos: Gold(id=iid, pos=pos, name="Gold"),
     "Weapon": lambda iid, pos: Weapon(id=iid, pos=pos, name="Weapon", damage=2, range=1, strength_requirement=10, attack_cooldown=2.0),
     "Armor": lambda iid, pos: PlateArmor(id=iid, pos=pos),
