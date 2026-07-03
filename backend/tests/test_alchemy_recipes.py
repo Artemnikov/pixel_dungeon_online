@@ -7,11 +7,13 @@ from app.engine.alchemy.recipes import (
 )
 from app.engine.alchemy.registry import find_recipes
 from app.engine.entities.items_consumable import GooBlob, MysteryMeat
-from app.engine.entities.items_potions import HealthPotion, PotionOfFrost, PotionOfShielding
-from app.engine.entities.items_scrolls import (
-    ExoticScrollOfEnchantment, ScrollOfRemoveCurse, ScrollOfUpgrade,
+from app.engine.entities.items_potions import (
+    HealthPotion, PotionOfFrost, PotionOfMastery, PotionOfShielding, PotionOfStrength,
 )
-from app.engine.entities.runestones import StoneOfDetectMagic, StoneOfEnchantment
+from app.engine.entities.items_scrolls import (
+    ExoticScrollOfEnchantment, ScrollOfDivination, ScrollOfRemoveCurse, ScrollOfUpgrade,
+)
+from app.engine.entities.runestones import StoneOfBlast, StoneOfDetectMagic, StoneOfEnchantment
 from app.engine.entities.trinkets import RatSkull
 from app.engine.manager import GameInstance
 
@@ -279,3 +281,36 @@ def test_legacy_alchemize_action_removed(game):
     p = game.add_player("p1", "Bob")
     assert "ALCHEMIZE" not in TrinketCatalyst().actions(p)
     assert "ALCHEMIZE" not in GooBlob().actions(p)
+
+
+from app.engine.alchemy.energy import energy_val
+
+
+def test_energy_values_match_spd_table(game):
+    # Item.energyVal overrides: potion/scroll 6/q; exotic +4/+6; runestone 3/q;
+    # seed 2/q (starflower & rotberry 3/q); trinket 5; catalyst 6; food 0.
+    assert energy_val(game, HealthPotion(quantity=2)) == 12
+    assert energy_val(game, PotionOfShielding()) == 10          # exotic potion
+    assert energy_val(game, ScrollOfRemoveCurse()) == 6
+    assert energy_val(game, ScrollOfDivination()) == 12         # exotic scroll
+    assert energy_val(game, StoneOfBlast(quantity=3)) == 9
+    assert energy_val(game, Seed(name="Icecap Seed", plant_type="icecap")) == 2
+    assert energy_val(game, Seed(name="Starflower Seed", plant_type="starflower")) == 3
+    assert energy_val(game, Seed(name="Rotberry Seed", plant_type="rotberry")) == 3
+    assert energy_val(game, RatSkull()) == 5
+    assert energy_val(game, TrinketCatalyst()) == 6
+    assert energy_val(game, MysteryMeat()) == 0
+    assert energy_val(game, GooBlob()) == 0
+
+
+def test_energy_value_known_boost(game):
+    # ScrollOfUpgrade/Transmutation + PotionOfStrength/Experience are worth 10
+    # once their kind is identified (SPD isKnown() overrides).
+    assert energy_val(game, ScrollOfUpgrade()) == 6
+    game.identified_kinds.add("scroll_of_upgrade")
+    assert energy_val(game, ScrollOfUpgrade()) == 10
+    assert energy_val(game, PotionOfStrength()) == 6
+    game.identified_kinds.add("potion_of_strength")
+    assert energy_val(game, PotionOfStrength()) == 10
+    # exotic of a boosted-known base: (10 + 4) per unit
+    assert energy_val(game, PotionOfMastery()) == 14
