@@ -191,6 +191,8 @@ class ScrollToStone(Recipe):
         return out
 
     def sample_output(self, game, units):
+        if not self.test_ingredients(game, units):
+            return None
         scroll = units[0]
         if scroll.kind not in game.identified_kinds:
             return None
@@ -215,6 +217,8 @@ class _ToExotic(Recipe):
         return self.sample_output(game, units)
 
     def sample_output(self, game, units):
+        if not self.test_ingredients(game, units):
+            return None
         out = self.MAPPING[type(units[0])]()
         out.id = new_item_id()
         out.quantity = 1

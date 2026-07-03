@@ -112,3 +112,10 @@ def test_find_recipes_scroll_matches_stone_and_exotic(game):
 
 def test_find_recipes_empty_for_unknown_combo(game):
     assert find_recipes(game, _units(GooBlob())) == []
+
+
+def test_transmute_sample_output_none_for_non_matching(game):
+    from app.engine.entities.items_scrolls import ScrollOfEnchantment
+    assert ScrollToStone().sample_output(game, _units(ScrollOfEnchantment())) is None
+    assert PotionToExotic().sample_output(game, _units(GooBlob())) is None
+    assert ScrollToExotic().sample_output(game, _units(GooBlob())) is None
