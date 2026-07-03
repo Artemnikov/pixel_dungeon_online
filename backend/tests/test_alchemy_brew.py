@@ -170,6 +170,11 @@ def test_paid_catalyst_reopens_choice_without_energy(game_at_pot):
     choices = [e for e in g.events if e["type"] == "TRINKET_CHOICE"]
     assert len(choices) == 2 and choices[-1]["data"]["kinds"] == kinds
     assert p.energy == 0
+    # the preview must also show the re-open as free/affordable, or the
+    # client disables the Brew button and the free path is unreachable
+    g.alchemy_preview("p1", ["cat1"])
+    pv = _events(g, "ALCHEMY_PREVIEW_RESULT")[-1]["data"]
+    assert pv["recipes"][0]["cost"] == 0 and pv["recipes"][0]["affordable"]
 
 
 def test_preview_exotic_known_when_base_identified(game_at_pot):

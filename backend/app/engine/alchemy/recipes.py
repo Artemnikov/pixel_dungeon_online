@@ -427,7 +427,9 @@ class TrinketCatalystRecipe(Recipe):
         return len(units) == 1 and isinstance(units[0], TrinketCatalyst)
 
     def cost(self, units):
-        return 6
+        # An already-rolled catalyst re-opens its choice for free (re-collect);
+        # units are copies of the real stack, so rolled_kinds is visible here.
+        return 0 if units[0].rolled_kinds else 6
 
     def brew(self, game, units):
         return None
