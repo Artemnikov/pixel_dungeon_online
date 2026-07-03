@@ -202,6 +202,25 @@ class TrinketChoiceData(_EventData):
     kinds: List[str]
 
 
+class ToolkitBrewData(_EventData):
+    player: str
+    item_id: str
+    charges: int
+
+
+class ToolkitEnergizePromptData(_EventData):
+    player: str
+    toolkit_id: str
+    max_levels: int
+
+
+class ToolkitEnergizedData(_EventData):
+    player: str
+    toolkit_id: str
+    levels: int
+    level: int
+
+
 class ShopOpenData(_EventData):
     player: str
     npc: str
@@ -546,4 +565,7 @@ EVENT_MODELS = {
     "ALCHEMY_BREWED": AlchemyBrewedData,
     "ALCHEMY_ENERGIZED": AlchemyEnergizedData,
     "TRINKET_CHOICE": TrinketChoiceData,
+    "TOOLKIT_BREW": ToolkitBrewData,
+    "TOOLKIT_ENERGIZE_PROMPT": ToolkitEnergizePromptData,
+    "TOOLKIT_ENERGIZED": ToolkitEnergizedData,
 }

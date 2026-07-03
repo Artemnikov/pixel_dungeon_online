@@ -285,6 +285,12 @@ class AlchemyTrinketChoose(_ClientMessageBase):
     kind: str
 
 
+class ToolkitEnergize(_ClientMessageBase):
+    type: Literal["TOOLKIT_ENERGIZE"]
+    toolkit_id: str
+    levels: int = 1
+
+
 ClientMessage = Annotated[
     Union[
         Ping,
@@ -335,6 +341,7 @@ ClientMessage = Annotated[
         AlchemyBrew,
         AlchemyEnergize,
         AlchemyTrinketChoose,
+        ToolkitEnergize,
     ],
     Field(discriminator="type"),
 ]

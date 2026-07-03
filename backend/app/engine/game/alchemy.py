@@ -235,3 +235,26 @@ class AlchemyMixin:
             "item_name": trinket.name, "quantity": 1, "cost": 0,
             "energy": player.energy,
         }, floor_id=player.floor_id, player_id=player.id)
+
+    # --- toolkit energize (kit upgrade, 6 energy per level) ---------------------
+    def toolkit_energize(self, player_id: str, toolkit_id: str, levels: int) -> None:
+        player = self.players.get(player_id)
+        if not player:
+            return
+        kit = self._equipped_toolkit(player)
+        if kit is None or kit.id != toolkit_id:
+            return
+        max_levels = min(kit.level_cap - kit.level, player.energy // 6)
+        levels = max(0, min(levels, max_levels))
+        if levels <= 0:
+            self._alchemy_toast(player, "Not enough alchemical energy.")
+            return
+        player.energy -= 6 * levels
+        for _ in range(levels):
+            kit.level += 1
+            kit.level_known = True
+            kit.on_upgrade()
+        self.add_event("TOOLKIT_ENERGIZED", {
+            "player": player.id, "toolkit_id": kit.id,
+            "levels": levels, "level": kit.level,
+        }, floor_id=player.floor_id, player_id=player.id)

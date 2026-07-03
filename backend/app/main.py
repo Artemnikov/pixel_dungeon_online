@@ -526,6 +526,9 @@ async def game_websocket(websocket: WebSocket, game_id: str, class_type: str = "
             elif isinstance(message, msg.AlchemyTrinketChoose):
                 game.alchemy_trinket_choose(player_id, message.catalyst_id, message.kind)
 
+            elif isinstance(message, msg.ToolkitEnergize):
+                game.toolkit_energize(player_id, message.toolkit_id, message.levels)
+
             elif isinstance(message, msg.RangedAttack):
                 game.perform_ranged_attack(
                     player_id, message.item_id, message.target_x, message.target_y,
