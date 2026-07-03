@@ -11,6 +11,7 @@ Honeypot). Tasks 4-6 extend these lists.
 from typing import List
 
 from app.engine.alchemy.recipes import (
+    BREW_ELIXIR_ONE, BREW_ELIXIR_TWO,
     PotionToExotic, Recipe, ScrollToExotic, ScrollToStone,
 )
 
@@ -18,11 +19,24 @@ ONE_INGREDIENT_RECIPES: List[Recipe] = [
     ScrollToStone(),
     PotionToExotic(),
     ScrollToExotic(),
+    # phase 3: ArcaneResin, LiquidMetal
+    *BREW_ELIXIR_ONE,
+    # phase 3: MagicalInfusion..SummonElemental spells
+    # Task 5 appends: StewedMeat one
+    # Task 6 appends: TrinketCatalyst, UpgradeTrinket
 ]
 
-TWO_INGREDIENT_RECIPES: List[Recipe] = []
+TWO_INGREDIENT_RECIPES: List[Recipe] = [
+    # phase 4: Blandfruit.CookFruit; phase 2: Bomb.EnhanceBomb
+    *BREW_ELIXIR_TWO,
+    # needs Honeypot: ElixirOfHoneyedHealing
+    # phase 3: UnstableSpell..WildEnergy spells
+    # Task 5 appends: StewedMeat two
+]
 
-THREE_INGREDIENT_RECIPES: List[Recipe] = []
+THREE_INGREDIENT_RECIPES: List[Recipe] = [
+    # Task 5 appends: SeedToPotion, StewedMeat three, MeatPie
+]
 
 
 def find_recipes(game, units) -> List[Recipe]:

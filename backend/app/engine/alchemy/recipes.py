@@ -17,14 +17,19 @@ from dataclasses import dataclass, field
 from typing import Callable, List, Optional, Tuple
 
 from app.engine.entities.base import ItemBase
+from app.engine.entities.items_consumable import GooBlob, Seed
 from app.engine.entities.items_equip import EquipableItem
 from app.engine.entities.items_potions import (
-    HealthPotion, PotionOfCleansing, PotionOfCorrosiveGas, PotionOfDivineInspiration,
+    AquaBrew, BlizzardBrew, CausticBrew, ElixirOfAquaticRejuvenation,
+    ElixirOfArcaneArmor, ElixirOfDragonsBlood, ElixirOfFeatherFall,
+    ElixirOfIcyTouch, ElixirOfMight, ElixirOfToxicEssence, HealthPotion,
+    InfernalBrew, PotionOfCleansing, PotionOfCorrosiveGas, PotionOfDivineInspiration,
     PotionOfDragonsBreath, PotionOfEarthenArmor, PotionOfExperience, PotionOfFrost,
     PotionOfHaste, PotionOfInvisibility, PotionOfLevitation, PotionOfLiquidFlame,
     PotionOfMagicalSight, PotionOfMastery, PotionOfMindVision, PotionOfParalyticGas,
     PotionOfPurity, PotionOfShielding, PotionOfShroudingFog, PotionOfSnapFreeze,
     PotionOfStamina, PotionOfStormClouds, PotionOfStrength, PotionOfToxicGas, Potion,
+    ShockingBrew, UnstableBrew,
 )
 from app.engine.entities.items_scrolls import (
     ExoticScrollOfEnchantment, Scroll, ScrollOfAntiMagic, ScrollOfChallenge,
@@ -233,3 +238,81 @@ class PotionToExotic(_ToExotic):
 class ScrollToExotic(_ToExotic):
     MAPPING = SCROLL_TO_EXOTIC
     COST = 6
+
+
+# Seed plant_type -> potion (Potion.SeedToPotion.types). Remake "dreamfoil"
+# is SPD Mageroyal. Also consumed by SeedToPotion/UnstableBrew.
+SEED_TO_POTION = {
+    "blindweed": PotionOfInvisibility,
+    "dreamfoil": PotionOfPurity,
+    "earthroot": PotionOfParalyticGas,
+    "fadeleaf": PotionOfMindVision,
+    "firebloom": PotionOfLiquidFlame,
+    "icecap": PotionOfFrost,
+    "rotberry": PotionOfStrength,
+    "sorrowmoss": PotionOfToxicGas,
+    "starflower": PotionOfExperience,
+    "stormvine": PotionOfLevitation,
+    "sungrass": HealthPotion,
+    "swiftthistle": PotionOfHaste,
+}
+
+
+class UnstableBrewRecipe(Recipe):
+    # UnstableBrew.Recipe: any regular-or-exotic potion + any seed, cost 1.
+    def test_ingredients(self, game, units):
+        if len(units) != 2:
+            return False
+        potion = seed = False
+        for u in units:
+            if isinstance(u, Seed) and u.plant_type in SEED_TO_POTION:
+                seed = True
+            elif type(u) in POTION_TO_EXOTIC or type(u) in POTION_TO_EXOTIC.values():
+                potion = True
+        return potion and seed
+
+    def cost(self, units):
+        return 1
+
+    def brew(self, game, units):
+        if not self.test_ingredients(game, units):
+            return None
+        return self.sample_output(game, units)
+
+    def sample_output(self, game, units):
+        out = UnstableBrew()
+        out.id = new_item_id()
+        return out
+
+
+# Recipe.java one-ingredient brews/elixirs (each SPD <class>.Recipe block).
+BREW_ELIXIR_ONE = [
+    SimpleRecipe(inputs=[(PotionOfFrost, 1)], energy_cost=8,
+                 output_factory=BlizzardBrew),
+    SimpleRecipe(inputs=[(PotionOfLiquidFlame, 1)], energy_cost=12,
+                 output_factory=InfernalBrew),
+    SimpleRecipe(inputs=[(PotionOfStormClouds, 1)], energy_cost=8,
+                 output_factory=AquaBrew, out_quantity=8),
+    SimpleRecipe(inputs=[(PotionOfParalyticGas, 1)], energy_cost=10,
+                 output_factory=ShockingBrew),
+    SimpleRecipe(inputs=[(PotionOfDragonsBreath, 1)], energy_cost=10,
+                 output_factory=ElixirOfDragonsBlood),
+    SimpleRecipe(inputs=[(PotionOfSnapFreeze, 1)], energy_cost=6,
+                 output_factory=ElixirOfIcyTouch),
+    SimpleRecipe(inputs=[(PotionOfCorrosiveGas, 1)], energy_cost=8,
+                 output_factory=ElixirOfToxicEssence),
+    SimpleRecipe(inputs=[(PotionOfStrength, 1)], energy_cost=16,
+                 output_factory=ElixirOfMight),
+    SimpleRecipe(inputs=[(PotionOfLevitation, 1)], energy_cost=10,
+                 output_factory=ElixirOfFeatherFall),
+]
+
+BREW_ELIXIR_TWO = [
+    UnstableBrewRecipe(),
+    SimpleRecipe(inputs=[(PotionOfToxicGas, 1), (GooBlob, 1)], energy_cost=1,
+                 output_factory=CausticBrew),
+    SimpleRecipe(inputs=[(PotionOfEarthenArmor, 1), (GooBlob, 1)], energy_cost=8,
+                 output_factory=ElixirOfArcaneArmor),
+    SimpleRecipe(inputs=[(HealthPotion, 1), (GooBlob, 1)], energy_cost=6,
+                 output_factory=ElixirOfAquaticRejuvenation),
+]

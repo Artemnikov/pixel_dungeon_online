@@ -119,3 +119,63 @@ def test_transmute_sample_output_none_for_non_matching(game):
     assert ScrollToStone().sample_output(game, _units(ScrollOfEnchantment())) is None
     assert PotionToExotic().sample_output(game, _units(GooBlob())) is None
     assert ScrollToExotic().sample_output(game, _units(GooBlob())) is None
+
+
+from app.engine.alchemy import registry
+from app.engine.alchemy.recipes import UnstableBrewRecipe
+from app.engine.entities.items_consumable import Seed
+from app.engine.entities.items_potions import (
+    AquaBrew, BlizzardBrew, CausticBrew, ElixirOfAquaticRejuvenation,
+    ElixirOfArcaneArmor, ElixirOfDragonsBlood, ElixirOfFeatherFall,
+    ElixirOfIcyTouch, ElixirOfMight, ElixirOfToxicEssence, InfernalBrew,
+    PotionOfCorrosiveGas, PotionOfDragonsBreath, PotionOfEarthenArmor,
+    PotionOfFrost, PotionOfLevitation, PotionOfLiquidFlame, PotionOfParalyticGas,
+    PotionOfSnapFreeze, PotionOfStormClouds, PotionOfStrength, PotionOfToxicGas,
+    ShockingBrew, UnstableBrew,
+)
+
+# (input classes+quantities, cost, output class, out qty) — from each SPD
+# Recipe inner class; see plan Task 4 for the Java sources.
+SIMPLE_PARITY = [
+    ([(PotionOfFrost, 1)], 8, BlizzardBrew, 1),
+    ([(PotionOfLiquidFlame, 1)], 12, InfernalBrew, 1),
+    ([(PotionOfStormClouds, 1)], 8, AquaBrew, 8),
+    ([(PotionOfParalyticGas, 1)], 10, ShockingBrew, 1),
+    ([(PotionOfDragonsBreath, 1)], 10, ElixirOfDragonsBlood, 1),
+    ([(PotionOfSnapFreeze, 1)], 6, ElixirOfIcyTouch, 1),
+    ([(PotionOfCorrosiveGas, 1)], 8, ElixirOfToxicEssence, 1),
+    ([(PotionOfStrength, 1)], 16, ElixirOfMight, 1),
+    ([(PotionOfLevitation, 1)], 10, ElixirOfFeatherFall, 1),
+    ([(PotionOfToxicGas, 1), (GooBlob, 1)], 1, CausticBrew, 1),
+    ([(PotionOfEarthenArmor, 1), (GooBlob, 1)], 8, ElixirOfArcaneArmor, 1),
+    ([(HealthPotion, 1), (GooBlob, 1)], 6, ElixirOfAquaticRejuvenation, 1),
+]
+
+
+@pytest.mark.parametrize("inputs,cost,output_cls,out_qty", SIMPLE_PARITY)
+def test_brew_elixir_parity(game, inputs, cost, output_cls, out_qty):
+    units = []
+    for cls, qty in inputs:
+        for _ in range(qty):
+            item = cls()
+            game.identified_kinds.add(item.kind)
+            units.extend(_units(item))
+    matches = [r for r in registry.find_recipes(game, units)
+               if isinstance(r.sample_output(game, units), output_cls)]
+    assert len(matches) == 1, f"no unique recipe for {output_cls.__name__}"
+    r = matches[0]
+    assert r.cost(units) == cost
+    out = r.brew(game, units)
+    assert isinstance(out, output_cls) and out.quantity == out_qty
+
+
+def test_unstable_brew_needs_potion_plus_seed(game):
+    r = UnstableBrewRecipe()
+    game.identified_kinds.add("potion_of_frost")
+    seed = Seed(name="Sungrass Seed", plant_type="sungrass")
+    assert r.test_ingredients(game, _units(PotionOfFrost(), seed))
+    # exotic potions count too
+    assert r.test_ingredients(game, _units(PotionOfSnapFreeze(), seed))
+    assert not r.test_ingredients(game, _units(PotionOfFrost(), GooBlob()))
+    assert r.cost(_units(PotionOfFrost(), seed)) == 1
+    assert isinstance(r.brew(game, _units(PotionOfFrost(), seed)), UnstableBrew)
