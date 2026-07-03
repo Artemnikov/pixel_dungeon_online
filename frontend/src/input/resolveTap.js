@@ -1,4 +1,6 @@
-export const ALCHEMY_TILE_ID = 23; // BACKEND_TILE.ALCHEMY
+import { BACKEND_TILE } from '../rendering/sewers/constants';
+
+export const ALCHEMY_TILE_ID = BACKEND_TILE.ALCHEMY.id;
 
 export function resolveTapAction({ tileX, tileY, playerTile, mobs, grid }) {
   if (!playerTile) {

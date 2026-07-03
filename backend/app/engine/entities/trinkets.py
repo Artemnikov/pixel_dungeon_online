@@ -301,7 +301,8 @@ class TrinketCatalyst(ItemBase):
 
     @classmethod
     def energy_val(cls) -> int:
-        return 6
+        # SPD TrinketCatalyst has no energyVal override — it cannot be converted.
+        return 0
 
     # Rolled trinket choices pending at an alchemy pot (SPD TrinketCatalyst
     # rolledTrinkets — persisted so reconnecting mid-choice keeps the roll).

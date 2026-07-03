@@ -290,7 +290,7 @@ from app.engine.alchemy.energy import energy_val
 
 def test_energy_values_match_spd_table(game):
     # Item.energyVal overrides: potion/scroll 6/q; exotic +4/+6; runestone 3/q;
-    # seed 2/q (starflower & rotberry 3/q); trinket 5; catalyst 6; food 0.
+    # seed 2/q (starflower & rotberry 3/q); trinket 5; catalyst 0; food 0.
     assert energy_val(game, HealthPotion(quantity=2)) == 12
     assert energy_val(game, PotionOfShielding()) == 10          # exotic potion
     assert energy_val(game, ScrollOfRemoveCurse()) == 6
@@ -300,7 +300,7 @@ def test_energy_values_match_spd_table(game):
     assert energy_val(game, Seed(name="Starflower Seed", plant_type="starflower")) == 3
     assert energy_val(game, Seed(name="Rotberry Seed", plant_type="rotberry")) == 3
     assert energy_val(game, RatSkull()) == 5
-    assert energy_val(game, TrinketCatalyst()) == 6
+    assert energy_val(game, TrinketCatalyst()) == 0  # SPD: catalyst cannot be energized
     assert energy_val(game, MysteryMeat()) == 0
     assert energy_val(game, GooBlob()) == 3
     # Elixir/Brew overrides (Elixir.java & Brew.java: 12*q; UnstableBrew 8*q;

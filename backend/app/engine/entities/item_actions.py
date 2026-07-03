@@ -31,9 +31,9 @@ from typing import Optional
 from app.engine.dungeon.constants import TileType
 from app.engine.entities.base import Action, Position
 from app.engine.entities.runestones import Runestone
-from app.engine.entities.items_consumable import Seed, GooBlob, Waterskin
+from app.engine.entities.items_consumable import Seed, Waterskin
 from app.engine.entities.items_equip import SpiritBow
-from app.engine.entities.items_potions import Potion, HealthPotion, ElixirOfAquaticRejuvenation
+from app.engine.entities.items_potions import Potion
 from app.engine.entities.items_wands import Wand
 from app.engine.entities.runestone_actions import action_throw_runestone, action_use_stone
 from app.engine.entities.scroll_actions import action_read

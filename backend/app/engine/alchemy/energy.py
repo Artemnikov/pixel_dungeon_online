@@ -52,9 +52,9 @@ def _base_val(game, kind: str) -> int:
 def energy_val(game, item: ItemBase) -> int:
     q = item.quantity
     if isinstance(item, TrinketCatalyst):
-        return 6
+        return item.energy_val()
     if isinstance(item, Trinket):
-        return 5
+        return item.energy_val()
     if isinstance(item, (StoneOfEnchantment, StoneOfAugmentation)):
         return 5 * q  # both override energyVal() to 5*quantity in SPD
     if isinstance(item, Runestone):

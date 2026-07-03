@@ -158,6 +158,33 @@ def test_trinket_catalyst_rebrew_does_not_respend(game_at_pot):
     assert p.belongings.get_item("cat1").rolled_kinds == first
 
 
+def test_paid_catalyst_reopens_choice_without_energy(game_at_pot):
+    g, p = game_at_pot
+    p.add_to_inventory(TrinketCatalyst(id="cat1"))
+    p.energy = 6
+    g.alchemy_brew("p1", ["cat1"], 0)
+    assert p.energy == 0
+    kinds = list(p.belongings.get_item("cat1").rolled_kinds)
+    # broke: 0 energy — the already-paid choice must still re-open
+    g.alchemy_brew("p1", ["cat1"], 0)
+    choices = [e for e in g.events if e["type"] == "TRINKET_CHOICE"]
+    assert len(choices) == 2 and choices[-1]["data"]["kinds"] == kinds
+    assert p.energy == 0
+
+
+def test_preview_exotic_known_when_base_identified(game_at_pot):
+    g, p = game_at_pot
+    g.identified_kinds.add("health_potion")
+    p.add_to_inventory(HealthPotion(id="hp1"))
+    p.energy = 10
+    g.alchemy_preview("p1", ["hp1"])
+    pv = _events(g, "ALCHEMY_PREVIEW_RESULT")[-1]["data"]
+    exotic = next(r for r in pv["recipes"] if r["cost"] == 4)
+    assert exotic["known"] is True
+    assert exotic["output_kind"] == "potion_of_shielding"
+    assert exotic["output_name"] == "Potion of Shielding"
+
+
 def test_brewed_elixir_serializes_unmasked(game_at_pot):
     g, p = game_at_pot
     g.identified_kinds.add("health_potion")

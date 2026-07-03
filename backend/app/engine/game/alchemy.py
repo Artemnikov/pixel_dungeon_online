@@ -13,7 +13,9 @@ from collections import Counter
 from typing import List, Optional
 
 from app.engine.alchemy.energy import energy_val
-from app.engine.alchemy.recipes import TrinketCatalystRecipe, usable_in_recipe
+from app.engine.alchemy.recipes import (
+    POTION_TO_EXOTIC, SCROLL_TO_EXOTIC, TrinketCatalystRecipe, usable_in_recipe,
+)
 from app.engine.alchemy.registry import find_recipes
 from app.engine.dungeon.generator import TileType
 from app.engine.entities.base import Position
@@ -26,6 +28,12 @@ from app.engine.entities.trinkets import (
 
 MAX_SLOTS = 3
 _STALE = "Your ingredients changed — try again."
+
+# ExoticPotion/ExoticScroll.isKnown() mirror the BASE item's identification.
+_EXOTIC_TO_REG_KIND = {
+    exo.model_fields["kind"].default: reg.model_fields["kind"].default
+    for reg, exo in {**POTION_TO_EXOTIC, **SCROLL_TO_EXOTIC}.items()
+}
 
 
 class AlchemyMixin:
@@ -114,7 +122,8 @@ class AlchemyMixin:
                 # never hinge on identified_kinds.
                 known = (not isinstance(out, (Potion, Scroll))
                          or out.kind in ELIXIR_BREW_KINDS
-                         or out.kind in self.identified_kinds)
+                         or out.kind in self.identified_kinds
+                         or _EXOTIC_TO_REG_KIND.get(out.kind) in self.identified_kinds)
                 typ = "potion" if isinstance(out, Potion) else "scroll"
                 entry.update({
                     "output_kind": out.kind if known else None,
@@ -147,21 +156,30 @@ class AlchemyMixin:
             return
         recipe = recipes[recipe_index]
         cost = recipe.cost(units)
-        if cost > self.alchemy_available_energy(player):
-            self._alchemy_toast(player, "Not enough alchemical energy.")
-            return
 
         # Catalyst rolls choices instead of producing output; it is consumed
-        # only when the player picks a trinket (alchemy_trinket_choose).
+        # only when the player picks a trinket (alchemy_trinket_choose). A
+        # catalyst that already rolled re-opens its choice for free (SPD
+        # re-collect semantics) — the cost gate applies to the first roll only.
         if isinstance(recipe, TrinketCatalystRecipe):
             catalyst = player.belongings.backpack.find(ingredient_ids[0])
             if not catalyst.rolled_kinds:
+                if cost > self.alchemy_available_energy(player):
+                    self._alchemy_toast(player, "Not enough alchemical energy.")
+                    return
                 self._spend_energy(player, cost)
+                # SPD rolls via the Generator TRINKET deck (all-1 weights,
+                # decrementing) — 4 consecutive draws are distinct, matching
+                # random.sample over uniform kinds.
                 catalyst.rolled_kinds = _random.sample(_TRINKET_KINDS, 4)
             self.add_event("TRINKET_CHOICE", {
                 "player": player.id, "catalyst_id": catalyst.id,
                 "kinds": list(catalyst.rolled_kinds),
             }, floor_id=player.floor_id, player_id=player.id)
+            return
+
+        if cost > self.alchemy_available_energy(player):
+            self._alchemy_toast(player, "Not enough alchemical energy.")
             return
 
         output = recipe.brew(self, units)
