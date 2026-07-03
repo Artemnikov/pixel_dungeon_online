@@ -296,7 +296,6 @@ class Action:
     INFO = "INFO"
     STEALTH = "STEALTH"  # Cloak of Shadows: toggle invisibility
     WEAR = "WEAR"        # TengusMask: choose subclass
-    ALCHEMIZE = "ALCHEMIZE"  # GooBlob + HealthPotion at an Alchemy Pot -> Elixir of Aquatic Rejuvenation
     IMBUE = "IMBUE"      # MagesStaff: imbue a wand into the staff
     SUMMON = "SUMMON"    # DriedRose: summon the ghost ally
     DIRECT = "DIRECT"    # DriedRose: direct the ghost ally to a target

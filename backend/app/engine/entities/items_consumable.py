@@ -339,21 +339,14 @@ class MeatPie(Food):
 
 
 class GooBlob(ItemBase):
-    # Goo's death drop (SPD GooBlob): stackable quest reagent, used with a
-    # Health Potion at an Alchemy Pot to brew an Elixir of Aquatic Rejuvenation
-    # (see Action.ALCHEMIZE / action_alchemize).
+    # Goo's death drop (SPD GooBlob): stackable alchemy reagent (see
+    # app.engine.alchemy).
     kind: Literal["goo_blob"] = "goo_blob"
     name: str = "Goo Blob"
     type: str = "misc"
     category: ClassVar[str] = ItemCategory.MISC
     stackable: ClassVar[bool] = True
     DESC: ClassVar[str] = "A blob of black ooze left behind by Goo. Can be combined with a Health Potion at an Alchemy Pot."
-
-    def actions(self, player: Optional["Player"] = None) -> List[str]:
-        base = super().actions(player)
-        if player is not None and any(isinstance(it, HealthPotion) for it in player.inventory):
-            return [Action.ALCHEMIZE] + base
-        return base
 
     def value(self, identified: bool = False) -> int:
         return 30 * self.quantity

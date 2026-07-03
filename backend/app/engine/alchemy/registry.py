@@ -12,8 +12,8 @@ from typing import List
 
 from app.engine.alchemy.recipes import (
     BREW_ELIXIR_ONE, BREW_ELIXIR_TWO, MeatPieRecipe, SeedToPotionRecipe,
-    STEWED_ONE, STEWED_TWO, STEWED_THREE,
-    PotionToExotic, Recipe, ScrollToExotic, ScrollToStone,
+    STEWED_ONE, STEWED_TWO, STEWED_THREE, TrinketCatalystRecipe,
+    PotionToExotic, Recipe, ScrollToExotic, ScrollToStone, UpgradeTrinketRecipe,
 )
 
 ONE_INGREDIENT_RECIPES: List[Recipe] = [
@@ -24,7 +24,7 @@ ONE_INGREDIENT_RECIPES: List[Recipe] = [
     *BREW_ELIXIR_ONE,
     STEWED_ONE,
     # phase 3: MagicalInfusion..SummonElemental spells
-    # Task 6 appends: TrinketCatalyst, UpgradeTrinket
+    TrinketCatalystRecipe(), UpgradeTrinketRecipe(),
 ]
 
 TWO_INGREDIENT_RECIPES: List[Recipe] = [

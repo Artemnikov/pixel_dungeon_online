@@ -243,3 +243,39 @@ def test_seed_to_potion_cooking_hp_limiter(game, monkeypatch):
     # randint always 0 < counter, so the while-loop rerolls (via the
     # unpatched weighted pick) until the result is NOT a health potion.
     assert not isinstance(out, HealthPotion)
+
+
+from app.engine.alchemy.recipes import TrinketCatalystRecipe, UpgradeTrinketRecipe
+from app.engine.entities.trinkets import ParchmentScrap, TrinketCatalyst
+
+
+def test_trinket_catalyst_recipe(game):
+    r = TrinketCatalystRecipe()
+    units = _units(TrinketCatalyst())
+    assert r.test_ingredients(game, units)
+    assert r.cost(units) == 6
+    assert r.brew(game, units) is None       # choice flow, no direct output
+    assert r.sample_output(game, units) is None
+
+
+def test_upgrade_trinket_recipe(game):
+    r = UpgradeTrinketRecipe()
+    units = _units(ParchmentScrap(level=1))
+    assert r.test_ingredients(game, units)
+    assert r.cost(units) == 15               # ParchmentScrap: 10 + 5*level
+    out = r.brew(game, units)
+    assert isinstance(out, ParchmentScrap) and out.level == 2 and out.level_known
+    assert not r.test_ingredients(game, _units(ParchmentScrap(level=3)))
+
+
+def test_trinket_catalyst_has_rolled_kinds_field():
+    c = TrinketCatalyst()
+    assert c.rolled_kinds == []
+
+
+def test_legacy_alchemize_action_removed(game):
+    from app.engine.entities.item_actions import ITEM_ACTION_DISPATCH
+    assert "ALCHEMIZE" not in ITEM_ACTION_DISPATCH
+    p = game.add_player("p1", "Bob")
+    assert "ALCHEMIZE" not in TrinketCatalyst().actions(p)
+    assert "ALCHEMIZE" not in GooBlob().actions(p)

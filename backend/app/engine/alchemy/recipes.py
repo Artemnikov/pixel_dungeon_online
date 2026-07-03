@@ -51,7 +51,7 @@ from app.engine.entities.runestones import (
     StoneOfEnchantment, StoneOfFear, StoneOfFlock, StoneOfIntuition,
     StoneOfShock,
 )
-from app.engine.entities.trinkets import Trinket
+from app.engine.entities.trinkets import Trinket, TrinketCatalyst
 
 
 def new_item_id() -> str:
@@ -417,3 +417,41 @@ BREW_ELIXIR_TWO = [
     SimpleRecipe(inputs=[(HealthPotion, 1), (GooBlob, 1)], energy_cost=6,
                  output_factory=ElixirOfAquaticRejuvenation),
 ]
+
+
+class TrinketCatalystRecipe(Recipe):
+    # TrinketCatalyst.Recipe: cost 6. brew() returns None: the mixin rolls 4
+    # trinket kinds onto the catalyst and the catalyst is consumed only when
+    # the player picks one (survives disconnect, mirrors SPD's re-collect).
+    def test_ingredients(self, game, units):
+        return len(units) == 1 and isinstance(units[0], TrinketCatalyst)
+
+    def cost(self, units):
+        return 6
+
+    def brew(self, game, units):
+        return None
+
+    def sample_output(self, game, units):
+        return None
+
+
+class UpgradeTrinketRecipe(Recipe):
+    # Trinket.UpgradeTrinket: one trinket below level 3; costs its
+    # upgrade_energy_cost(); output is a fresh copy one level higher.
+    def test_ingredients(self, game, units):
+        return (len(units) == 1 and isinstance(units[0], Trinket)
+                and units[0].level < 3)
+
+    def cost(self, units):
+        return units[0].upgrade_energy_cost()
+
+    def brew(self, game, units):
+        if not self.test_ingredients(game, units):
+            return None
+        return self.sample_output(game, units)
+
+    def sample_output(self, game, units):
+        out = type(units[0])(level=units[0].level + 1, level_known=True)
+        out.id = new_item_id()
+        return out
