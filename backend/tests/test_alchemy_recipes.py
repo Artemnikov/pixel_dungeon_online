@@ -179,3 +179,67 @@ def test_unstable_brew_needs_potion_plus_seed(game):
     assert not r.test_ingredients(game, _units(PotionOfFrost(), GooBlob()))
     assert r.cost(_units(PotionOfFrost(), seed)) == 1
     assert isinstance(r.brew(game, _units(PotionOfFrost(), seed)), UnstableBrew)
+
+
+from app.engine.alchemy.recipes import MeatPieRecipe, SeedToPotionRecipe
+from app.engine.entities.items_consumable import (
+    ChargrilledMeat, MeatPie, Pasty, Ration, StewedMeat,
+)
+
+
+def test_new_food_nutrition_and_value():
+    # SPD: STEWED energy = HUNGRY/2 = 150; MeatPie = STARVING*2 = 900, value 40.
+    assert StewedMeat().energy == 150
+    assert MeatPie().energy == 900
+    assert MeatPie().value() == 40
+    assert StewedMeat(quantity=2).value(identified=True) == 16
+
+
+def test_stewed_meat_recipes(game):
+    one = _units(MysteryMeat())
+    two = _units(MysteryMeat(), MysteryMeat())
+    three = _units(MysteryMeat(), MysteryMeat(), MysteryMeat())
+    r1 = [r for r in find_recipes(game, one)
+          if isinstance(r.sample_output(game, one), StewedMeat)]
+    r2 = [r for r in find_recipes(game, two)
+          if isinstance(r.sample_output(game, two), StewedMeat)]
+    r3 = [r for r in find_recipes(game, three)
+          if isinstance(r.sample_output(game, three), StewedMeat)]
+    assert (r1[0].cost(one), r1[0].sample_output(game, one).quantity) == (1, 1)
+    assert (r2[0].cost(two), r2[0].sample_output(game, two).quantity) == (2, 2)
+    assert (r3[0].cost(three), r3[0].sample_output(game, three).quantity) == (2, 3)
+
+
+def test_meat_pie_recipe(game):
+    units = _units(Pasty(), Ration(), ChargrilledMeat())
+    r = MeatPieRecipe()
+    assert r.test_ingredients(game, units)
+    assert r.cost(units) == 6
+    assert isinstance(r.brew(game, units), MeatPie)
+    # SmallRation is not SPD's generic Food.class — must not qualify
+    from app.engine.entities.items_consumable import SmallRation
+    assert not r.test_ingredients(game, _units(Pasty(), SmallRation(), ChargrilledMeat()))
+
+
+def test_seed_to_potion_matching_seeds(game, monkeypatch):
+    import random
+    r = SeedToPotionRecipe()
+    seeds = _units(*(Seed(name="Icecap Seed", plant_type="icecap") for _ in range(3)))
+    assert r.test_ingredients(game, seeds)
+    assert r.cost(seeds) == 0
+    assert r.sample_output(game, seeds) is None  # '?' preview
+    out = r.brew(game, seeds)
+    assert isinstance(out, PotionOfFrost)
+    # single distinct seed type identifies the result for the party
+    assert "potion_of_frost" in game.identified_kinds
+
+
+def test_seed_to_potion_cooking_hp_limiter(game, monkeypatch):
+    r = SeedToPotionRecipe()
+    seeds = _units(*(Seed(name="Sungrass Seed", plant_type="sungrass") for _ in range(3)))
+    game.drop_counters["cooking_hp"] = 10  # limiter saturated: reroll always
+    monkeypatch.setattr("app.engine.alchemy.recipes._random.randint", lambda a, b: 0)
+    out = r.brew(game, seeds)
+    # randint always 0 < counter, so the while-loop rerolls (via the
+    # unpatched weighted pick) until the result is NOT a health potion.
+    assert not isinstance(out, HealthPotion)

@@ -24,7 +24,7 @@ from app.engine.entities.base import ItemBase
 from app.engine.entities.rings import RingOfAccuracy, RingOfEvasion, RingOfHaste, RingOfFuror, RingOfMight, RingOfTenacity, RingOfEnergy, RingOfArcana, RingOfSharpshooting
 from app.engine.entities.item_union import Bag, MagicalHolster, PotionBandolier, ScrollHolder, VelvetPouch
 from app.engine.entities.items_artifacts import BrokenSeal, CloakOfShadows, DriedRose, Petal
-from app.engine.entities.items_consumable import Amulet, Berry, Boomerang, ChargrilledMeat, Dewdrop, DwarfToken, EnergyCrystal, Food, GooBlob, Gold, Key, KingsCrown, MysteryMeat, Pasty, Ration, Seed, SmallRation, Stone, Throwable, ThrowableDagger, TenguMask, Waterskin, ArcaneStylus, MagicalInfusion
+from app.engine.entities.items_consumable import Amulet, Berry, Boomerang, ChargrilledMeat, Dewdrop, DwarfToken, EnergyCrystal, Food, GooBlob, Gold, Key, KingsCrown, MeatPie, MysteryMeat, Pasty, Ration, Seed, SmallRation, Stone, StewedMeat, Throwable, ThrowableDagger, TenguMask, Waterskin, ArcaneStylus, MagicalInfusion
 from app.engine.entities.items_equip import Armor, ClothArmor, LeatherArmor, MailArmor, ScaleArmor, PlateArmor, Artifact, Bow, SpiritBow, Dagger, MeleeWeapon, MissileWeapon, Ring, Staff, WornShortsword
 from app.engine.entities.items_potions import ElixirOfAquaticRejuvenation, FuryPotion, HealthPotion, Potion, PotionOfExperience, PotionOfFrost, PotionOfHaste, PotionOfInvisibility, PotionOfLevitation, PotionOfLiquidFlame, PotionOfMindVision, PotionOfParalyticGas, PotionOfPurity, PotionOfStrength, PotionOfToxicGas, RevivingPotion
 from app.engine.entities.items_scrolls import Scroll, ScrollOfIdentify, ScrollOfLullaby, ScrollOfMagicMapping, ScrollOfMetamorphosis, ScrollOfMirrorImage, ScrollOfRage, ScrollOfRecharging, ScrollOfRemoveCurse, ScrollOfRetribution, ScrollOfTeleportation, ScrollOfTerror, ScrollOfTransmutation, ScrollOfUpgrade, ScrollOfEnchantment, ExoticScrollOfEnchantment
@@ -176,6 +176,8 @@ _CATALOG: List[tuple] = [
     ("ration", "Ration", "food", lambda: Ration()),
     ("pasty", "Pasty", "food", lambda: Pasty()),
     ("chargrilled_meat", "Chargrilled Meat", "food", lambda: ChargrilledMeat()),
+    ("stewed_meat", "Stewed Meat", "food", lambda: StewedMeat()),
+    ("meat_pie", "Meat Pie", "food", lambda: MeatPie()),
     ("food", "Food", "food", lambda: Food(name="Food")),
 
     # Misc

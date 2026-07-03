@@ -17,7 +17,10 @@ from dataclasses import dataclass, field
 from typing import Callable, List, Optional, Tuple
 
 from app.engine.entities.base import ItemBase
-from app.engine.entities.items_consumable import GooBlob, Seed
+from app.engine.entities.items_consumable import (
+    ChargrilledMeat, FrozenCarpaccio, GooBlob, MeatPie, MysteryMeat, Pasty, Ration,
+    Seed, StewedMeat,
+)
 from app.engine.entities.items_equip import EquipableItem
 from app.engine.entities.items_potions import (
     AquaBrew, BlizzardBrew, CausticBrew, ElixirOfAquaticRejuvenation,
@@ -283,6 +286,104 @@ class UnstableBrewRecipe(Recipe):
         out = UnstableBrew()
         out.id = new_item_id()
         return out
+
+
+# StewedMeat.oneMeat/twoMeat/threeMeat (StewedMeat.java).
+STEWED_ONE = SimpleRecipe(inputs=[(MysteryMeat, 1)], energy_cost=1,
+                          output_factory=StewedMeat, out_quantity=1)
+STEWED_TWO = SimpleRecipe(inputs=[(MysteryMeat, 2)], energy_cost=2,
+                          output_factory=StewedMeat, out_quantity=2)
+STEWED_THREE = SimpleRecipe(inputs=[(MysteryMeat, 3)], energy_cost=2,
+                            output_factory=StewedMeat, out_quantity=3)
+
+
+class MeatPieRecipe(Recipe):
+    # MeatPie.Recipe: a pasty + a generic ration + any meat, cost 6. SPD's
+    # generic Food.class is the remake's Ration (SmallRation doesn't count).
+    _MEATS = (MysteryMeat, StewedMeat, ChargrilledMeat, FrozenCarpaccio)
+
+    def test_ingredients(self, game, units):
+        pasty = ration = meat = False
+        for u in units:
+            if isinstance(u, Pasty):
+                pasty = True
+            elif type(u) is Ration:
+                ration = True
+            elif isinstance(u, self._MEATS):
+                meat = True
+        return pasty and ration and meat
+
+    def cost(self, units):
+        return 6
+
+    def brew(self, game, units):
+        if not self.test_ingredients(game, units):
+            return None
+        return self.sample_output(game, units)
+
+    def sample_output(self, game, units):
+        out = MeatPie()
+        out.id = new_item_id()
+        return out
+
+
+# Generator.java POTION classes + defaultProbs — random pool for SeedToPotion.
+POTION_GEN_CLASSES = [
+    PotionOfStrength, HealthPotion, PotionOfMindVision, PotionOfFrost,
+    PotionOfLiquidFlame, PotionOfToxicGas, PotionOfHaste, PotionOfInvisibility,
+    PotionOfLevitation, PotionOfParalyticGas, PotionOfPurity, PotionOfExperience,
+]
+POTION_GEN_PROBS = [0, 3, 2, 1, 2, 1, 1, 1, 1, 1, 1, 1]
+
+
+def _random_gen_potion():
+    return _random.choices(POTION_GEN_CLASSES, weights=POTION_GEN_PROBS)[0]()
+
+
+class SeedToPotionRecipe(Recipe):
+    """Potion.SeedToPotion: 3 seeds -> a potion, cost 0.
+
+    2 distinct seed types: 1/4 chance of a random potion; 3 distinct: 1/2.
+    Otherwise the potion of a random ingredient's type. A single seed type
+    identifies the output. HealthPotion output is rate-limited by the
+    COOKING_HP counter (reroll chance grows each brewed health potion)."""
+
+    def test_ingredients(self, game, units):
+        return (len(units) == 3
+                and all(isinstance(u, Seed) and u.quantity >= 1
+                        and u.plant_type in SEED_TO_POTION for u in units))
+
+    def cost(self, units):
+        return 0
+
+    def brew(self, game, units):
+        if not self.test_ingredients(game, units):
+            return None
+        plant_types = []
+        for u in units:
+            if u.plant_type not in plant_types:
+                plant_types.append(u.plant_type)
+
+        if ((len(plant_types) == 2 and _random.randint(0, 3) == 0)
+                or (len(plant_types) == 3 and _random.randint(0, 1) == 0)):
+            result = _random_gen_potion()
+        else:
+            result = SEED_TO_POTION[_random.choice(units).plant_type]()
+
+        if len(plant_types) == 1:
+            game.identified_kinds.add(result.kind)
+
+        while (isinstance(result, HealthPotion)
+               and _random.randint(0, 9) < game.drop_counters.get("cooking_hp", 0)):
+            result = _random_gen_potion()
+        if isinstance(result, HealthPotion):
+            game.drop_counters["cooking_hp"] = game.drop_counters.get("cooking_hp", 0) + 1
+
+        result.id = new_item_id()
+        return result
+
+    def sample_output(self, game, units):
+        return None  # random output: '?' preview (SPD shows a placeholder)
 
 
 # Recipe.java one-ingredient brews/elixirs (each SPD <class>.Recipe block).
