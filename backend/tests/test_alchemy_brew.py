@@ -22,6 +22,18 @@ def _events(g, etype):
     return [e for e in g.events if e["type"] == etype]
 
 
+def _find_by_id(items, item_id):
+    # Recurse into sub-bags (e.g. the starting VelvetPouch auto-sorts
+    # runestones out of the top-level backpack list).
+    for i in items:
+        if i["id"] == item_id:
+            return i
+        found = _find_by_id(i.get("items") or [], item_id)
+        if found is not None:
+            return found
+    return None
+
+
 def test_gate_rejects_away_from_pot():
     g = GameInstance("t-gate")
     p = g.add_player("p1", "Bob")
@@ -158,3 +170,18 @@ def test_brewed_elixir_serializes_unmasked(game_at_pot):
     assert nodes, "elixir masked or missing from serialized inventory"
     assert nodes[0]["name"] == "Elixir of Aquatic Rejuvenation"
     assert "appearance" not in nodes[0]
+
+
+def test_serialized_energy_values_per_unit(game_at_pot):
+    g, p = game_at_pot
+    from app.engine.entities.items_potions import ElixirOfHoneyedHealing
+    from app.engine.entities.runestones import StoneOfBlast
+    p.add_to_inventory(ElixirOfHoneyedHealing(id="hh1", quantity=2))
+    p.add_to_inventory(StoneOfBlast(id="s1", quantity=3))
+    d = g._serialize_player(p)
+    # StoneOfBlast (a Runestone) auto-sorts into the starting VelvetPouch, so
+    # it isn't a top-level d["inventory"] entry -- search recursively.
+    hh = _find_by_id(d["inventory"], "hh1")
+    st = _find_by_id(d["inventory"], "s1")
+    assert (hh["energy_value"], hh["energy_value_one"]) == (8, 8)   # flat SPD override
+    assert (st["energy_value"], st["energy_value_one"]) == (9, 3)   # linear 3*q

@@ -1,6 +1,6 @@
 /* Full-screen alchemy station (SPD AlchemyScene). Energy blue = 0x44CCFF. */
 .alchemy-overlay {
-  position: absolute; inset: 0; z-index: 60;
+  position: absolute; inset: 0; z-index: 500;
   background: rgba(8, 10, 14, 0.92);
   display: flex; align-items: center; justify-content: center;
 }
@@ -59,7 +59,7 @@
    toolkit energize). `.choice-modal` itself is defined in choice-modal.css;
    this overlay class is only used by the alchemy flows. */
 .choice-modal-backdrop {
-  position: fixed; inset: 0; z-index: 70;
+  position: fixed; inset: 0; z-index: 500;
   display: flex; align-items: center; justify-content: center;
   background: rgba(0, 0, 0, 0.7);
 }

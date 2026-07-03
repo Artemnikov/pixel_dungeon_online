@@ -107,6 +107,8 @@ export interface SerializationExtras {
   appearance?: { col: number; row: number };
   /** Alchemical energy this item converts to at a pot (energy.py). */
   energy_value?: number;
+  /** Energy granted by converting exactly one unit (flat-valued items differ from energy_value/quantity). */
+  energy_value_one?: number;
 }
 
 /** An item as it actually arrives over the wire (model + serialization extras). */

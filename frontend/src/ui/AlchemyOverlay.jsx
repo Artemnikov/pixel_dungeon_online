@@ -46,6 +46,7 @@ export default function AlchemyOverlay({
       seen[id] = (seen[id] || 0) + 1;
       next.push(item && seen[id] <= item.quantity ? id : null);
     }
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- one-shot reconcile of slots with server inventory, guarded by inequality
     if (next.some((v, i) => v !== slots[i])) setSlots(next);
   }, [itemsById]);
 
@@ -175,7 +176,7 @@ export default function AlchemyOverlay({
               send({ type: 'ALCHEMY_ENERGIZE', item_id: energizeItem.id, all_items: false });
               setEnergizeItem(null);
             }}>
-              {t('alchemy.energizeOne', { value: Math.floor((energizeItem.energy_value || 0) / energizeItem.quantity) })}
+              {t('alchemy.energizeOne', { value: energizeItem.energy_value_one ?? (energizeItem.energy_value || 0) })}
             </button>
             {energizeItem.quantity > 1 && (
               <button onClick={() => {
