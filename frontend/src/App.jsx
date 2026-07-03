@@ -278,6 +278,11 @@ function App() {
     onStoneAugmentPickItem: modals.onStoneAugmentPickItem,
     onEnchantChoiceAvailable: modals.onEnchantChoiceAvailable,
     onGhostGearOpen: modals.onGhostGearOpen,
+    onAlchemyPreviewResult: modals.onAlchemyPreviewResult,
+    onAlchemyBrewed: modals.onAlchemyBrewed,
+    onTrinketChoice: modals.onTrinketChoice,
+    onToolkitEnergizePrompt: modals.onToolkitEnergizePrompt,
+    onOpenAlchemy: modals.onOpenAlchemy,
     onTalentUpgraded: talent.onTalentUpgraded,
     onBossSlain: (data) => {
       setBossSlainData(data);

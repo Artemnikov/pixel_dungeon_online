@@ -1,0 +1,65 @@
+/* Full-screen alchemy station (SPD AlchemyScene). Energy blue = 0x44CCFF. */
+.alchemy-overlay {
+  position: absolute; inset: 0; z-index: 60;
+  background: rgba(8, 10, 14, 0.92);
+  display: flex; align-items: center; justify-content: center;
+}
+.alchemy-panel {
+  display: flex; flex-direction: column; align-items: center; gap: 14px;
+  min-width: 280px; max-width: 420px; padding: 18px;
+  border: 2px solid #6b5334; background: #1a1410; border-radius: 6px;
+  color: #e8e0d0; font-family: inherit;
+}
+.alchemy-title { margin: 0; color: #ffd97a; }
+.alchemy-slots { display: flex; gap: 12px; }
+.alchemy-slot {
+  width: 56px; height: 56px; display: flex; align-items: center; justify-content: center;
+  background: #0d0a08; border: 2px solid #6b5334; border-radius: 4px;
+  color: #6b5334; font-size: 24px; cursor: pointer;
+}
+.alchemy-slot:hover { border-color: #ffd97a; }
+.alchemy-arrow { color: #6b5334; }
+.alchemy-outputs { width: 100%; display: flex; flex-direction: column; gap: 6px; }
+.alchemy-output-row {
+  display: flex; align-items: center; gap: 10px;
+  background: #0d0a08; border: 1px solid #3a2e1e; border-radius: 4px; padding: 6px 10px;
+}
+.alchemy-output-empty { justify-content: center; color: #8a7a5e; font-size: 13px; }
+.alchemy-output-name { flex: 1; }
+.alchemy-unknown {
+  width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center;
+  color: #8a7a5e; font-size: 22px;
+}
+.alchemy-cost { color: #44ccff; font-weight: bold; }
+.alchemy-cost-bad { color: #ff5544; }
+.alchemy-brew-btn, .alchemy-close-btn, .alchemy-energize-btn {
+  background: #2a2118; color: #ffd97a; border: 1px solid #6b5334;
+  border-radius: 4px; padding: 4px 12px; cursor: pointer;
+}
+.alchemy-brew-btn:disabled { color: #666; border-color: #3a2e1e; cursor: default; }
+.alchemy-footer { width: 100%; display: flex; align-items: center; justify-content: space-between; }
+.alchemy-energy { display: inline-flex; align-items: center; gap: 6px; color: #44ccff; }
+.alchemy-energize-btn { padding: 2px 8px; }
+.alchemy-brewed { animation: alchemy-puff 0.4s ease-out; }
+@keyframes alchemy-puff {
+  from { transform: scale(0.6); opacity: 0; filter: blur(2px); }
+  to   { transform: scale(1);   opacity: 1; filter: none; }
+}
+.alchemy-bubbles { position: absolute; bottom: 0; pointer-events: none; }
+.alchemy-bubbles-left { left: 8%; }
+.alchemy-bubbles-right { right: 8%; }
+.alchemy-trinket-row { display: flex; gap: 10px; justify-content: center; }
+.alchemy-trinket-btn {
+  width: 56px; height: 56px; display: flex; align-items: center; justify-content: center;
+  background: #0d0a08; border: 2px solid #6b5334; border-radius: 4px; cursor: pointer;
+}
+.alchemy-trinket-btn:hover { border-color: #ffd97a; }
+
+/* Backdrop for the small choice-modal confirm dialogs (energize / trinket /
+   toolkit energize). `.choice-modal` itself is defined in choice-modal.css;
+   this overlay class is only used by the alchemy flows. */
+.choice-modal-backdrop {
+  position: fixed; inset: 0; z-index: 70;
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(0, 0, 0, 0.7);
+}
