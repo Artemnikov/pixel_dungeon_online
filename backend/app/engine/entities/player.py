@@ -742,10 +742,10 @@ class Player(Entity):
         kit = self.belongings.artifact
         if not isinstance(kit, AlchemistsToolkit) or kit.cursed:
             return
-        kit._charge_accum += (2 + kit.level) * (exp_amount / self.max_exp())
-        while kit._charge_accum >= 1 and kit.charge < kit.charge_cap:
+        kit._exp_charge_accum += (2 + kit.level) * (exp_amount / self.max_exp())
+        while kit._exp_charge_accum >= 1 and kit.charge < kit.charge_cap:
             kit.charge += 1
-            kit._charge_accum -= 1
+            kit._exp_charge_accum -= 1
 
 
 # Legacy aliases — keep existing imports/constructors working during migration.

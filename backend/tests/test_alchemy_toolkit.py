@@ -83,3 +83,13 @@ def test_brew_action_emits_open_event(game_with_kit):
     g, p, kit = game_with_kit
     g.execute_item_action("p1", "kit1", "BREW")
     assert any(e["type"] == "TOOLKIT_BREW" for e in g.events)
+
+
+def test_exp_charge_accum_isolated_from_tick_timer(game_with_kit):
+    g, p, kit = game_with_kit
+    # The passive tick uses _charge_accum as a seconds timer; exp-based
+    # charging must not drain it as if it were energy points.
+    kit._charge_accum = 9.95
+    p.earn_exp(p.max_exp())
+    assert kit.charge == 2          # (2 + level 0) * 1.0 full level
+    assert kit._charge_accum == 9.95  # tick timer untouched

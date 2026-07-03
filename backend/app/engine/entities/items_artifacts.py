@@ -145,6 +145,9 @@ class AlchemistsToolkit(Artifact):
     level_cap: ClassVar[int] = 10
     exp: int = 0
     _charge_accum: float = 0.0
+    # Fractional exp-based energy (SPD kitEnergy.gainCharge); kept separate
+    # from _charge_accum, which the passive tick uses as a seconds timer.
+    _exp_charge_accum: float = 0.0
     DESC: ClassVar[str] = "A set of alchemical tools. It passively charges with alchemical energy, which can be used to brew items at any alchemy pot."
 
     def actions(self, player: Optional["Player"] = None) -> List[str]:
