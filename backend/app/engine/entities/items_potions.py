@@ -373,3 +373,15 @@ class UnstableBrew(Potion):
 
     def default_action(self) -> Optional[str]:
         return Action.THROW
+
+
+# SPD Elixir.isKnown()/Brew.isKnown() are always true: crafted potions are
+# never part of the per-run scrambled-identity pool, so serialization must
+# not mask them and they must not consume a per-run appearance index.
+ELIXIR_BREW_KINDS = frozenset({
+    "elixir_of_arcane_armor", "elixir_of_dragons_blood", "elixir_of_feather_fall",
+    "elixir_of_honeyed_healing", "elixir_of_icy_touch", "elixir_of_might",
+    "elixir_of_toxic_essence", "elixir_aqua_rejuv",
+    "aqua_brew", "blizzard_brew", "caustic_brew", "infernal_brew",
+    "shocking_brew", "unstable_brew",
+})

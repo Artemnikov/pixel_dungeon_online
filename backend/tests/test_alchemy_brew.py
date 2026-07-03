@@ -132,3 +132,29 @@ def test_energize_rejects_worthless(game_at_pot):
     g.alchemy_energize("p1", "b1", all_items=False)
     assert p.energy == 0
     assert p.belongings.get_item("b1") is not None
+
+
+def test_trinket_catalyst_rebrew_does_not_respend(game_at_pot):
+    g, p = game_at_pot
+    p.add_to_inventory(TrinketCatalyst(id="cat1"))
+    p.energy = 12
+    g.alchemy_brew("p1", ["cat1"], 0)
+    assert p.energy == 6
+    first = list(p.belongings.get_item("cat1").rolled_kinds)
+    g.alchemy_brew("p1", ["cat1"], 0)          # retry/double-click
+    assert p.energy == 6                        # no second charge
+    assert p.belongings.get_item("cat1").rolled_kinds == first
+
+
+def test_brewed_elixir_serializes_unmasked(game_at_pot):
+    g, p = game_at_pot
+    g.identified_kinds.add("health_potion")
+    p.add_to_inventory(GooBlob(id="b1"))
+    p.add_to_inventory(HealthPotion(id="hp1"))
+    p.energy = 6
+    g.alchemy_brew("p1", ["b1", "hp1"], 0)
+    d = g._serialize_player(p)
+    nodes = [i for i in d["inventory"] if i["kind"] == "elixir_aqua_rejuv"]
+    assert nodes, "elixir masked or missing from serialized inventory"
+    assert nodes[0]["name"] == "Elixir of Aquatic Rejuvenation"
+    assert "appearance" not in nodes[0]

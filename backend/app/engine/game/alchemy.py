@@ -12,15 +12,13 @@ import uuid as _uuid
 from collections import Counter
 from typing import List, Optional
 
-from app.engine.alchemy.energy import _ELIXIR_BREW_KINDS_12, energy_val
+from app.engine.alchemy.energy import energy_val
 from app.engine.alchemy.recipes import TrinketCatalystRecipe, usable_in_recipe
 from app.engine.alchemy.registry import find_recipes
 from app.engine.dungeon.generator import TileType
 from app.engine.entities.base import Position
 from app.engine.entities.items_artifacts import AlchemistsToolkit
-from app.engine.entities.items_potions import (
-    AquaBrew, ElixirOfHoneyedHealing, Potion, UnstableBrew,
-)
+from app.engine.entities.items_potions import ELIXIR_BREW_KINDS, Potion
 from app.engine.entities.items_scrolls import Scroll
 from app.engine.entities.trinkets import (
     _TRINKET_KINDS, TrinketCatalyst, trinket_class_for_kind,
@@ -96,7 +94,7 @@ class AlchemyMixin:
     # --- preview --------------------------------------------------------------
     def alchemy_preview(self, player_id: str, ingredient_ids: List[str]) -> None:
         player = self.players.get(player_id)
-        if not player:
+        if not player or not player.is_alive or player.is_downed:
             return
         units = self._resolve_units(player, ingredient_ids)
         recipes = find_recipes(self, units) if units else []
@@ -114,11 +112,8 @@ class AlchemyMixin:
                 # SPD Elixir.isKnown()/Brew.isKnown() always return true: these
                 # are crafted potions, not randomized-appearance ones, so they
                 # never hinge on identified_kinds.
-                always_known = (out.kind in _ELIXIR_BREW_KINDS_12
-                                 or isinstance(out, (AquaBrew, UnstableBrew,
-                                                      ElixirOfHoneyedHealing)))
                 known = (not isinstance(out, (Potion, Scroll))
-                         or always_known
+                         or out.kind in ELIXIR_BREW_KINDS
                          or out.kind in self.identified_kinds)
                 typ = "potion" if isinstance(out, Potion) else "scroll"
                 entry.update({
@@ -160,8 +155,8 @@ class AlchemyMixin:
         # only when the player picks a trinket (alchemy_trinket_choose).
         if isinstance(recipe, TrinketCatalystRecipe):
             catalyst = player.belongings.backpack.find(ingredient_ids[0])
-            self._spend_energy(player, cost)
             if not catalyst.rolled_kinds:
+                self._spend_energy(player, cost)
                 catalyst.rolled_kinds = _random.sample(_TRINKET_KINDS, 4)
             self.add_event("TRINKET_CHOICE", {
                 "player": player.id, "catalyst_id": catalyst.id,
@@ -191,7 +186,7 @@ class AlchemyMixin:
     # --- energize -----------------------------------------------------------------
     def alchemy_energize(self, player_id: str, item_id: str, all_items: bool) -> None:
         player = self.players.get(player_id)
-        if not player:
+        if not player or not player.is_alive or player.is_downed:
             return
         if not self.alchemy_gate_ok(player):
             self._alchemy_toast(player, "You need an alchemy pot to convert items.")
@@ -220,7 +215,7 @@ class AlchemyMixin:
     # --- trinket choice ----------------------------------------------------------
     def alchemy_trinket_choose(self, player_id: str, catalyst_id: str, kind: str) -> None:
         player = self.players.get(player_id)
-        if not player:
+        if not player or not player.is_alive or player.is_downed:
             return
         catalyst = player.belongings.backpack.find(catalyst_id)
         if not isinstance(catalyst, TrinketCatalyst) or not catalyst.rolled_kinds:
