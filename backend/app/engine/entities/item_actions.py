@@ -493,10 +493,21 @@ def action_alchemize(game, player, item, tx=None, ty=None) -> None:
     from app.engine.entities.trinkets import TrinketCatalyst, trinket_class_for_index
     import random as _random
 
+    def _adjacent_to_pot(game, player) -> bool:
+        floor = game._get_or_create_floor(player.floor_id)
+        px, py = player.pos.x, player.pos.y
+        for dx, dy in ((0, 0), (0, -1), (1, 0), (0, 1), (-1, 0)):
+            nx, ny = px + dx, py + dy
+            if (nx, ny) in floor.alchemy_pots:
+                return True
+            if 0 <= ny < len(floor.grid) and 0 <= nx < len(floor.grid[0]):
+                if floor.grid[ny][nx] == TileType.ALCHEMY:
+                    return True
+        return False
+
     # TrinketCatalyst -> random trinket (SPD TrinketCatalyst.Recipe)
     if isinstance(item, TrinketCatalyst):
-        floor = game._get_or_create_floor(player.floor_id)
-        if (player.pos.x, player.pos.y) not in floor.alchemy_pots:
+        if not _adjacent_to_pot(game, player):
             return
         detached = player.belongings.backpack.detach(item.id)
         if detached is None:
@@ -522,8 +533,7 @@ def action_alchemize(game, player, item, tx=None, ty=None) -> None:
                 upgrade_target = it
                 break
         if upgrade_target is not None and upgrade_target.level < upgrade_target.max_level:
-            floor = game._get_or_create_floor(player.floor_id)
-            if (player.pos.x, player.pos.y) not in floor.alchemy_pots:
+            if not _adjacent_to_pot(game, player):
                 return
             detached = player.belongings.backpack.detach(item.id)
             if detached is None:
@@ -537,8 +547,7 @@ def action_alchemize(game, player, item, tx=None, ty=None) -> None:
     # (SPD ElixirOfAquaticRejuvenation.Recipe). Requires standing on the pot.
     if not isinstance(item, GooBlob):
         return
-    floor = game._get_or_create_floor(player.floor_id)
-    if (player.pos.x, player.pos.y) not in floor.alchemy_pots:
+    if not _adjacent_to_pot(game, player):
         return
     health_potion = next((it for it in player.inventory if isinstance(it, HealthPotion)), None)
     if health_potion is None:
