@@ -31,6 +31,7 @@ from app.engine.game.constants import (
     SEWERS_MAX_FLOOR,
 )
 from app.engine.game.floor_state import FloorState
+from app.engine.game.alchemy import AlchemyMixin
 from app.engine.game.armor_abilities import ArmorAbilitiesMixin
 from app.engine.game.events import EventsMixin
 from app.engine.game.floors import FloorAccessMixin
@@ -73,6 +74,7 @@ class GameInstance(
     WorldInteractionMixin,
     MovementCombatMixin,
     ItemsMixin,
+    AlchemyMixin,
     PrisonBossMixin,
     GooAIMixin,
     EyeAIMixin,

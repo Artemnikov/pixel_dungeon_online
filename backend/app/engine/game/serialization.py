@@ -21,6 +21,7 @@ potion colours / scroll runes, shared per-run across the co-op party).
 
 from typing import Dict, Optional
 
+from app.engine.alchemy.energy import energy_val
 from app.engine.entities.item_union import Bag
 from app.engine.entities.player import Difficulty
 from app.engine.entities.locale_keys import item_locale_key, mob_locale_key
@@ -150,6 +151,7 @@ class SerializationMixin:
                     node["range"] = live.get_reach()
                 node["description"] = live.description(p)
                 node["value"] = live.value(identified=live.kind in self.identified_kinds)
+                node["energy_value"] = energy_val(self, live)
                 lk = item_locale_key(live)
                 if lk:
                     node["locale_key"] = lk

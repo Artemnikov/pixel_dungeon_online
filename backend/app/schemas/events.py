@@ -159,6 +159,49 @@ class PickupKeyData(_EventData):
     name: str
 
 
+class ToastData(_EventData):
+    text: str
+
+
+class AlchemyPreviewEntry(BaseModel):
+    recipe_index: int
+    cost: int
+    affordable: bool
+    output_kind: Optional[str] = None
+    output_name: str
+    output_quantity: int
+    known: bool
+
+
+class AlchemyPreviewResultData(_EventData):
+    player: str
+    ingredient_ids: List[str]
+    recipes: List[AlchemyPreviewEntry]
+    available_energy: int
+
+
+class AlchemyBrewedData(_EventData):
+    player: str
+    item_id: str
+    item_kind: str
+    item_name: str
+    quantity: int
+    cost: int
+    energy: int
+
+
+class AlchemyEnergizedData(_EventData):
+    player: str
+    amount: int
+    energy: int
+
+
+class TrinketChoiceData(_EventData):
+    player: str
+    catalyst_id: str
+    kinds: List[str]
+
+
 class ShopOpenData(_EventData):
     player: str
     npc: str
@@ -498,4 +541,9 @@ EVENT_MODELS = {
     "SPELL_SPRITE": SpellSpriteData,
     "EYE_CHARGE": EyeChargeData,
     "EYE_DEATH_RAY": EyeDeathRayData,
+    "TOAST": ToastData,
+    "ALCHEMY_PREVIEW_RESULT": AlchemyPreviewResultData,
+    "ALCHEMY_BREWED": AlchemyBrewedData,
+    "ALCHEMY_ENERGIZED": AlchemyEnergizedData,
+    "TRINKET_CHOICE": TrinketChoiceData,
 }
