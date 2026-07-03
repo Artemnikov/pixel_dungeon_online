@@ -13,7 +13,9 @@ from app.engine.entities.items_potions import (
 from app.engine.entities.items_scrolls import (
     ExoticScrollOfEnchantment, ScrollOfDivination, ScrollOfRemoveCurse, ScrollOfUpgrade,
 )
-from app.engine.entities.runestones import StoneOfBlast, StoneOfDetectMagic, StoneOfEnchantment
+from app.engine.entities.runestones import (
+    StoneOfAugmentation, StoneOfBlast, StoneOfDetectMagic, StoneOfEnchantment,
+)
 from app.engine.entities.trinkets import RatSkull
 from app.engine.manager import GameInstance
 
@@ -129,8 +131,8 @@ from app.engine.entities.items_consumable import Seed
 from app.engine.entities.items_potions import (
     AquaBrew, BlizzardBrew, CausticBrew, ElixirOfAquaticRejuvenation,
     ElixirOfArcaneArmor, ElixirOfDragonsBlood, ElixirOfFeatherFall,
-    ElixirOfIcyTouch, ElixirOfMight, ElixirOfToxicEssence, InfernalBrew,
-    PotionOfCorrosiveGas, PotionOfDragonsBreath, PotionOfEarthenArmor,
+    ElixirOfHoneyedHealing, ElixirOfIcyTouch, ElixirOfMight, ElixirOfToxicEssence,
+    InfernalBrew, PotionOfCorrosiveGas, PotionOfDragonsBreath, PotionOfEarthenArmor,
     PotionOfFrost, PotionOfLevitation, PotionOfLiquidFlame, PotionOfParalyticGas,
     PotionOfSnapFreeze, PotionOfStormClouds, PotionOfStrength, PotionOfToxicGas,
     ShockingBrew, UnstableBrew,
@@ -300,7 +302,18 @@ def test_energy_values_match_spd_table(game):
     assert energy_val(game, RatSkull()) == 5
     assert energy_val(game, TrinketCatalyst()) == 6
     assert energy_val(game, MysteryMeat()) == 0
-    assert energy_val(game, GooBlob()) == 0
+    assert energy_val(game, GooBlob()) == 3
+    # Elixir/Brew overrides (Elixir.java & Brew.java: 12*q; UnstableBrew 8*q;
+    # AquaBrew 12*(q/8); HoneyedHealing flat 8; enchant/augment stones 5*q).
+    assert energy_val(game, ElixirOfMight()) == 12
+    assert energy_val(game, ElixirOfAquaticRejuvenation(quantity=2)) == 24
+    assert energy_val(game, BlizzardBrew()) == 12
+    assert energy_val(game, UnstableBrew(quantity=2)) == 16
+    assert energy_val(game, AquaBrew(quantity=8)) == 12
+    assert energy_val(game, AquaBrew(quantity=4)) == 6
+    assert energy_val(game, ElixirOfHoneyedHealing(quantity=2)) == 8
+    assert energy_val(game, StoneOfEnchantment(quantity=2)) == 10
+    assert energy_val(game, StoneOfAugmentation()) == 5
 
 
 def test_energy_value_known_boost(game):
