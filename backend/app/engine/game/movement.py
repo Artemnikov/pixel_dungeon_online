@@ -26,7 +26,7 @@ from typing import Optional
 from app.engine.dungeon.generator import TileType
 from app.engine.entities.base import Faction, Position, is_immune
 from app.engine.entities.item_union import Chest
-from app.engine.entities.items_consumable import Amulet, Dewdrop, Gold, Key, Throwable, Waterskin
+from app.engine.entities.items_consumable import Amulet, Dewdrop, EnergyCrystal, Gold, Key, Throwable, Waterskin
 from app.engine.entities.items_equip import Bow, MissileWeapon, SpiritBow, Staff
 from app.engine.entities.items_potions import RevivingPotion
 from app.engine.entities.items_wands import Wand, ZapContext
@@ -539,6 +539,11 @@ class MovementCombatMixin:
                     entity.gold += item.quantity
                     del floor.items[i_id]
                     self.add_event("PICKUP_GOLD", {"player": entity.id, "amount": item.quantity}, floor_id=floor_id)
+                    continue
+                if isinstance(item, EnergyCrystal):
+                    entity.energy += item.quantity
+                    del floor.items[i_id]
+                    self.add_event("PICKUP_ENERGY", {"player": entity.id, "amount": item.quantity}, floor_id=floor_id)
                     continue
                 if isinstance(item, Dewdrop):
                     self._pickup_dewdrop(entity, floor, floor_id, i_id, item)

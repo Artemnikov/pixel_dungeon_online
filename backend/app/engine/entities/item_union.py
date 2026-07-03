@@ -280,6 +280,7 @@ AnyItem = Annotated[
         Key,
         TenguMask, KingsCrown,
         Seed, Dewdrop, Waterskin, Amulet, Stone, Boomerang, ThrowableDagger, Throwable,
+        EnergyCrystal,
         ArcaneStylus, MagicalInfusion,
         GooBlob, DwarfToken, Petal,
         Chest,

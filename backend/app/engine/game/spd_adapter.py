@@ -32,7 +32,7 @@ from app.engine.dungeon.spd_levelgen.traps import (
 from app.engine.dungeon.generator import TileType
 from app.engine.entities.base import EntityType, Position
 from app.engine.entities.item_union import Chest
-from app.engine.entities.items_consumable import Amulet, Dewdrop, Food, Gold, Key, Seed, Stone
+from app.engine.entities.items_consumable import Amulet, Dewdrop, EnergyCrystal, Food, Gold, Key, Seed, Stone
 from app.engine.entities.items_equip import Armor, ClothArmor, LeatherArmor, MailArmor, make_named_melee_weapon, PlateArmor, ScaleArmor
 from app.engine.entities.items_potions import HealthPotion
 from app.engine.entities.items_scrolls import Scroll
@@ -549,7 +549,7 @@ _DESCRIPTOR_ITEM_MAP = {
     "GuidePage": lambda iid, pos: Scroll(id=iid, pos=pos, name="Guide Page"),
     "DocumentPage": lambda iid, pos: Scroll(id=iid, pos=pos, name="Document Page"),
     "Food": lambda iid, pos: Food(id=iid, pos=pos, name="Food"),
-    "EnergyCrystal": lambda iid, pos: Stone(id=iid, pos=pos, name="Energy Crystal", damage=1, range=3),
+    "EnergyCrystal": lambda iid, pos: EnergyCrystal(id=iid, pos=pos),
     "Potion": lambda iid, pos: HealthPotion(id=iid, pos=pos),
     "Bomb": lambda iid, pos: Stone(id=iid, pos=pos, name="Bomb", damage=5, range=1),
     "Gold": lambda iid, pos: Gold(id=iid, pos=pos, name="Gold"),
@@ -561,10 +561,18 @@ _DESCRIPTOR_ITEM_MAP = {
 def _descriptor_to_item(descriptor: frozenset, cx: int, cy: int) -> Item:
     iid = str(uuid.uuid4())
     pos = Position(x=cx, y=cy)
+    item = None
     for key, factory in _DESCRIPTOR_ITEM_MAP.items():
         if key in descriptor:
-            return factory(iid, pos)
-    return HealthPotion(id=iid, pos=pos)
+            item = factory(iid, pos)
+            break
+    if item is None:
+        item = HealthPotion(id=iid, pos=pos)
+    # "qty:<n>" tags thread SPD drop quantities through the descriptor set.
+    for tag in descriptor:
+        if isinstance(tag, str) and tag.startswith("qty:"):
+            item.quantity = int(tag[4:])
+    return item
 
 
 def _convert_traps(gen_level: GenLevel, w: int) -> Dict[Tuple[int, int], TrapInfo]:

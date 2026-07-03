@@ -221,6 +221,20 @@ class Dewdrop(ItemBase):
     DESC: ClassVar[str] = "A drop of magical dew. It radiates healing energy."
 
 
+class EnergyCrystal(ItemBase):
+    # SPD EnergyCrystal: quantity == energy amount. Never sits in a bag — on
+    # pickup it converts straight into the player's alchemical energy
+    # (Gold/Dewdrop pickup pattern).
+    kind: Literal["energy_crystal"] = "energy_crystal"
+    name: str = "Energy Crystal"
+    type: str = "energy_crystal"
+    category: ClassVar[str] = ItemCategory.MISC
+    stackable: ClassVar[bool] = True
+    level_known: bool = True
+    cursed_known: bool = True
+    DESC: ClassVar[str] = "A small crystal of pure alchemical energy. It is absorbed the moment it is picked up."
+
+
 class Waterskin(ItemBase):
     kind: Literal["waterskin"] = "waterskin"
     name: str = "Waterskin"

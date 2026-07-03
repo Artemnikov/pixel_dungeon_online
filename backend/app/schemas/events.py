@@ -148,6 +148,11 @@ class PickupGoldData(_EventData):
     amount: int
 
 
+class PickupEnergyData(_EventData):
+    player: str
+    amount: int
+
+
 class PickupKeyData(_EventData):
     player: str
     key_id: str
@@ -444,6 +449,7 @@ EVENT_MODELS = {
     "DROP": DropData,
     "COLLECT_DEW": CollectDewData,
     "PICKUP_GOLD": PickupGoldData,
+    "PICKUP_ENERGY": PickupEnergyData,
     "GOLD_DROP": GoldDropData,
     "PICKUP_KEY": PickupKeyData,
     "SHOP_OPEN": ShopOpenData,
