@@ -288,7 +288,16 @@ def test_holy_bomb_bonus_vs_undead_only(game_with_player):
 def test_smoke_bomb_seeds_smoke_blob(game_with_player):
     g, p, floor = game_with_player
     cx, cy = p.pos.x + 4, p.pos.y
-    _force_open_block(floor, cx, cy)
+    _force_open_block(floor, cx, cy, 3)
     _place(floor, SmokeBomb(id="sb", fuse_ticks=1, pos=Position(x=cx, y=cy)))
     g.tick_bombs(floor, p.floor_id)
-    assert any(b for b in floor.blob_areas.values() if b["type"] != "fire")
+    fog = [b for b in floor.blob_areas.values() if b["type"] == "shrouding_fog"]
+    assert fog and all(v == 40 for v in fog[0]["volume"].values())
+    # the blob must actually tick: a mob standing in it gets blinded
+    from app.engine.entities.player import Mob
+    m = Mob(id="ms", name="Rat", pos=Position(x=cx, y=cy), hp=100, max_hp=100, faction="dungeon")
+    floor.mobs["ms"] = m
+    from app.engine.game.blobs import tick_blob_areas, GAS_TICK_INTERVAL
+    for _ in range(GAS_TICK_INTERVAL + 1):
+        tick_blob_areas({p.floor_id: floor}, {"p1": p})
+    assert m.has_buff("blindness")
