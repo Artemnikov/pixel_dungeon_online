@@ -105,6 +105,12 @@ export default function useGameSocket({
   onGhostGearOpen,
   onBossSlain,
   onPlayerDeath,
+  onAlchemyPreviewResult,
+  onAlchemyBrewed,
+  onAlchemyEnergized,
+  onTrinketChoice,
+  onToolkitEnergizePrompt,
+  onOpenAlchemy,
   onLoreNeeded,
 }: HookProps) {
   const depthRef = useRef(1);
@@ -223,6 +229,8 @@ export default function useGameSocket({
     onDM300FightStarted, onDwarfKingFightStarted, onDwarfKingPhase2, onYogFightStarted, onYogFinalPhase,
     onShopOpen, onImpDialogue, onGhostDialogue, onGhostQuestGiven, onGhostQuestComplete, onScrollSelectTarget, onGhostGearOpen, onBossSlain, onPlayerDeath,
     onStoneSelectTarget, onStoneIntuitionPickItem, onStoneIntuitionGuessKind, onStoneAugmentSelect, onStoneAugmentPickItem,
+    onAlchemyPreviewResult, onAlchemyBrewed, onAlchemyEnergized,
+    onTrinketChoice, onToolkitEnergizePrompt, onOpenAlchemy,
     depth: depthRef.current,
   };
 

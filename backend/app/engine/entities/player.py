@@ -703,7 +703,10 @@ class Player(Entity):
         # Award experience and apply any level-ups. Mirrors Hero.earnExp + updateHT:
         # each level grants +5 max HP and heals that gain. Returns True if at
         # least one level-up occurred (used to emit a LEVEL_UP event).
-        if amount <= 0 or self.level >= self.MAX_LEVEL:
+        if amount <= 0:
+            return False
+        self._toolkit_gain_charge(amount)
+        if self.level >= self.MAX_LEVEL:
             return False
         self.experience += amount
         leveled_up = False
@@ -731,6 +734,18 @@ class Player(Entity):
             if ring.levels_to_id <= 0:
                 ring.level_known = True
                 ring.cursed_known = True
+
+    def _toolkit_gain_charge(self, exp_amount: int) -> None:
+        """SPD AlchemistsToolkit.kitEnergy.gainCharge: (2 + kit level) energy
+        per hero level, accumulated fractionally per exp gain."""
+        from app.engine.entities.items_artifacts import AlchemistsToolkit
+        kit = self.belongings.artifact
+        if not isinstance(kit, AlchemistsToolkit) or kit.cursed:
+            return
+        kit._exp_charge_accum += (2 + kit.level) * (exp_amount / self.max_exp())
+        while kit._exp_charge_accum >= 1 and kit.charge < kit.charge_cap:
+            kit.charge += 1
+            kit._exp_charge_accum -= 1
 
 
 # Legacy aliases — keep existing imports/constructors working during migration.

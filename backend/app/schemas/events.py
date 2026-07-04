@@ -122,6 +122,10 @@ class MapPatchData(_EventData):
     tiles: List[_Tile]
 
 
+class ItemsDestroyedData(_EventData):
+    tiles: List[dict]
+
+
 class PickupData(_EventData):
     player: str
     item: str
@@ -148,10 +152,90 @@ class PickupGoldData(_EventData):
     amount: int
 
 
+class PickupEnergyData(_EventData):
+    player: str
+    amount: int
+
+
 class PickupKeyData(_EventData):
     player: str
     key_id: str
     name: str
+
+
+class ToastData(_EventData):
+    text: str
+
+
+class BombLitData(_EventData):
+    x: int
+    y: int
+    kind: str
+
+
+class BombBlastData(_EventData):
+    x: int
+    y: int
+    kind: str
+    cells: List[List[int]]
+
+
+class AlchemyPreviewEntry(BaseModel):
+    recipe_index: int
+    cost: int
+    affordable: bool
+    output_kind: Optional[str] = None
+    output_name: str
+    output_quantity: int
+    known: bool
+
+
+class AlchemyPreviewResultData(_EventData):
+    player: str
+    ingredient_ids: List[str]
+    recipes: List[AlchemyPreviewEntry]
+    available_energy: int
+
+
+class AlchemyBrewedData(_EventData):
+    player: str
+    item_id: str
+    item_kind: str
+    item_name: str
+    quantity: int
+    cost: int
+    energy: int
+
+
+class AlchemyEnergizedData(_EventData):
+    player: str
+    amount: int
+    energy: int
+
+
+class TrinketChoiceData(_EventData):
+    player: str
+    catalyst_id: str
+    kinds: List[str]
+
+
+class ToolkitBrewData(_EventData):
+    player: str
+    item_id: str
+    charges: int
+
+
+class ToolkitEnergizePromptData(_EventData):
+    player: str
+    toolkit_id: str
+    max_levels: int
+
+
+class ToolkitEnergizedData(_EventData):
+    player: str
+    toolkit_id: str
+    levels: int
+    level: int
 
 
 class ShopOpenData(_EventData):
@@ -440,10 +524,12 @@ EVENT_MODELS = {
     "DRINK": DrinkData,
     "READ": ReadData,
     "MAP_PATCH": MapPatchData,
+    "ITEMS_DESTROYED": ItemsDestroyedData,
     "PICKUP": PickupData,
     "DROP": DropData,
     "COLLECT_DEW": CollectDewData,
     "PICKUP_GOLD": PickupGoldData,
+    "PICKUP_ENERGY": PickupEnergyData,
     "GOLD_DROP": GoldDropData,
     "PICKUP_KEY": PickupKeyData,
     "SHOP_OPEN": ShopOpenData,
@@ -492,4 +578,14 @@ EVENT_MODELS = {
     "SPELL_SPRITE": SpellSpriteData,
     "EYE_CHARGE": EyeChargeData,
     "EYE_DEATH_RAY": EyeDeathRayData,
+    "TOAST": ToastData,
+    "ALCHEMY_PREVIEW_RESULT": AlchemyPreviewResultData,
+    "ALCHEMY_BREWED": AlchemyBrewedData,
+    "ALCHEMY_ENERGIZED": AlchemyEnergizedData,
+    "TRINKET_CHOICE": TrinketChoiceData,
+    "TOOLKIT_BREW": ToolkitBrewData,
+    "TOOLKIT_ENERGIZE_PROMPT": ToolkitEnergizePromptData,
+    "TOOLKIT_ENERGIZED": ToolkitEnergizedData,
+    "BOMB_LIT": BombLitData,
+    "BOMB_BLAST": BombBlastData,
 }

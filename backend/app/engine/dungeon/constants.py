@@ -22,6 +22,10 @@ class TileType:
     SECRET_DOOR = 20
     LOCKED_EXIT = 21
     OPEN_DOOR = 22
+    ALCHEMY = 23
+    WELL = 24
+    STATUE = 25
+    BOOKSHELF = 27
     FURROWED_GRASS = 30
     CRYSTAL_DOOR = 31
     BARRICADE = 32

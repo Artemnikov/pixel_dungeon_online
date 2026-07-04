@@ -31,9 +31,9 @@ from typing import Optional
 from app.engine.dungeon.constants import TileType
 from app.engine.entities.base import Action, Position
 from app.engine.entities.runestones import Runestone
-from app.engine.entities.items_consumable import Seed, GooBlob, Waterskin
+from app.engine.entities.items_consumable import Seed, Waterskin
 from app.engine.entities.items_equip import SpiritBow
-from app.engine.entities.items_potions import Potion, HealthPotion, ElixirOfAquaticRejuvenation
+from app.engine.entities.items_potions import Potion
 from app.engine.entities.items_wands import Wand
 from app.engine.entities.runestone_actions import action_throw_runestone, action_use_stone
 from app.engine.entities.scroll_actions import action_read
@@ -489,80 +489,6 @@ def action_imbue(game, player, item, tx=None, ty=None) -> None:
     }, floor_id=player.floor_id, source_player_id=player.id)
 
 
-def action_alchemize(game, player, item, tx=None, ty=None) -> None:
-    from app.engine.entities.trinkets import TrinketCatalyst, trinket_class_for_index
-    import random as _random
-
-    # TrinketCatalyst -> random trinket (SPD TrinketCatalyst.Recipe)
-    if isinstance(item, TrinketCatalyst):
-        floor = game._get_or_create_floor(player.floor_id)
-        if (player.pos.x, player.pos.y) not in floor.alchemy_pots:
-            return
-        detached = player.belongings.backpack.detach(item.id)
-        if detached is None:
-            return
-        if player.belongings.get_item(item.id) is None:
-            player.quickslot.convert_to_placeholder(item)
-        idx = _random.randint(0, 16)
-        trinket_cls = trinket_class_for_index(idx)
-        trinket = trinket_cls()
-        player.belongings.backpack.collect(trinket)
-        game.add_event("ALCHEMIZE", {"player": player.id, "item": trinket.id},
-                       floor_id=player.floor_id, source_player_id=player.id)
-        return
-
-    # Trinket upgrading: use a trinket copy on an alchemy pot while holding
-    # the same trinket to level it up.
-    from app.engine.entities.trinkets import Trinket as _TrinketCls
-    if isinstance(item, _TrinketCls):
-        # Find the same trinket in inventory (the one to upgrade)
-        upgrade_target = None
-        for it in player.inventory:
-            if it.id != item.id and type(it) is type(item):
-                upgrade_target = it
-                break
-        if upgrade_target is not None and upgrade_target.level < upgrade_target.max_level:
-            floor = game._get_or_create_floor(player.floor_id)
-            if (player.pos.x, player.pos.y) not in floor.alchemy_pots:
-                return
-            detached = player.belongings.backpack.detach(item.id)
-            if detached is None:
-                return
-            upgrade_target.level += 1
-            game.add_event("ALCHEMIZE", {"player": player.id, "item": upgrade_target.id},
-                           floor_id=player.floor_id, source_player_id=player.id)
-            return
-
-    # GooBlob + Health Potion at an Alchemy Pot -> Elixir of Aquatic Rejuvenation
-    # (SPD ElixirOfAquaticRejuvenation.Recipe). Requires standing on the pot.
-    if not isinstance(item, GooBlob):
-        return
-    floor = game._get_or_create_floor(player.floor_id)
-    if (player.pos.x, player.pos.y) not in floor.alchemy_pots:
-        return
-    health_potion = next((it for it in player.inventory if isinstance(it, HealthPotion)), None)
-    if health_potion is None:
-        return
-
-    blob = player.belongings.backpack.detach(item.id)
-    if blob is None:
-        return
-    potion = player.belongings.backpack.detach(health_potion.id)
-    if potion is None:
-        # roll back the detached blob
-        player.belongings.backpack.collect(blob)
-        return
-    if player.belongings.get_item(item.id) is None:
-        player.quickslot.convert_to_placeholder(blob)
-    if player.belongings.get_item(health_potion.id) is None:
-        player.quickslot.convert_to_placeholder(potion)
-
-    elixir = ElixirOfAquaticRejuvenation()
-    player.belongings.backpack.collect(elixir)
-    game.add_event("ALCHEMIZE", {"player": player.id, "item": elixir.id},
-                   floor_id=player.floor_id, source_player_id=player.id)
-
-
 def action_affix(game, player, item, tx=None, ty=None) -> None:
     armor = player.belongings.armor
     if armor is None:
@@ -630,6 +556,20 @@ def action_throw(game, player, item, tx=None, ty=None) -> None:
     # Seeds are planted, not thrown as items
     if isinstance(item, Seed):
         action_plant(game, player, item, tx, ty)
+        return
+    from app.engine.entities.items_bombs import Bomb as _Bomb
+    if isinstance(item, _Bomb):
+        floor = game._get_or_create_floor(player.floor_id)
+        if not (0 <= tx < floor.width and 0 <= ty < floor.height):
+            return
+        removed = player.belongings.backpack.detach(item.id)
+        if removed is None:
+            return
+        if player.belongings.get_item(item.id) is None:
+            player.quickslot.convert_to_placeholder(removed)
+        game.add_event("THROW", {"player": player.id, "item": item.id, "sound": "THROW"},
+                       floor_id=player.floor_id)
+        game.light_bomb(player, floor, player.floor_id, removed, tx, ty)
         return
     # Potions that shatter on impact and create area effects
     _FIRE_SHATTER = {"liquid_flame", "infernal_brew"}
@@ -1033,7 +973,6 @@ ITEM_ACTION_DISPATCH = {
     "GHOST_GEAR": action_ghost_gear,
     Action.EAT: action_eat_handler,
     Action.WEAR: action_wear,
-    Action.ALCHEMIZE: action_alchemize,
     Action.IMBUE: action_imbue,
     Action.INSCRIBE: action_inscribe,
     Action.OPEN: action_noop,

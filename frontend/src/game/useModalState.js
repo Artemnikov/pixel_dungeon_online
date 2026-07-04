@@ -59,6 +59,18 @@ export default function useModalState() {
   const [chasmPrompt, setChasmPrompt] = useState(null);
   const onChasmPrompt = (data) => setChasmPrompt(data);
 
+  const [alchemyOpen, setAlchemyOpen] = useState(false);
+  const [alchemyPreview, setAlchemyPreview] = useState(null);
+  const [alchemyBrewed, setAlchemyBrewed] = useState(null);
+  const [trinketChoice, setTrinketChoice] = useState(null);
+  const [toolkitEnergize, setToolkitEnergize] = useState(null);
+
+  const onAlchemyPreviewResult = (data) => setAlchemyPreview(data);
+  const onAlchemyBrewed = (data) => setAlchemyBrewed(data);
+  const onTrinketChoice = (data) => setTrinketChoice(data);
+  const onToolkitEnergizePrompt = (data) => setToolkitEnergize(data);
+  const onOpenAlchemy = () => setAlchemyOpen(true);
+
   return {
     showInventory, setShowInventory,
     useItemTarget, setUseItemTarget,
@@ -101,5 +113,15 @@ export default function useModalState() {
     onGhostGearOpen,
     chasmPrompt, setChasmPrompt,
     onChasmPrompt,
+    alchemyOpen, setAlchemyOpen,
+    alchemyPreview, setAlchemyPreview,
+    alchemyBrewed, setAlchemyBrewed,
+    trinketChoice, setTrinketChoice,
+    toolkitEnergize, setToolkitEnergize,
+    onAlchemyPreviewResult,
+    onAlchemyBrewed,
+    onTrinketChoice,
+    onToolkitEnergizePrompt,
+    onOpenAlchemy,
   };
 }

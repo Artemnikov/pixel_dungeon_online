@@ -51,6 +51,26 @@ def test_shop_floor_20_grants_no_free_bag():
     assert bag_kinds == set()
 
 
+def test_shop_can_stock_bombs():
+    # ShopRoom switch(Random.Int(4)) stocks a Bomb (1x) or DoubleBomb (2x) in
+    # 3/4 of shops; only the Honeypot case (1/4) falls back to Mystery Meat.
+    from app.engine.dungeon.spd_levelgen.shop_items import generate_shop_items
+    from app.engine.dungeon.spd_random import SPDRandom
+    from app.engine.entities.items_bombs import Bomb
+
+    saw_single = saw_double = False
+    for seed in range(40):
+        rng = SPDRandom()
+        rng.push_generator(seed)
+        items = generate_shop_items(rng, 6)
+        rng.pop_generator()
+        for b in (i for i in items if isinstance(i, Bomb)):
+            assert b.for_sale and b.value() == 15 * b.quantity
+            saw_single |= b.quantity == 1
+            saw_double |= b.quantity == 2
+    assert saw_single and saw_double     # both stock variants are reachable
+
+
 @pytest.mark.parametrize("depth", [6, 11, 16])
 def test_shop_floor_generation_is_deterministic(depth):
     g1 = GameInstance("shoptest_a")

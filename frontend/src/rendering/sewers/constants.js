@@ -53,6 +53,10 @@ export const BACKEND_TILE = {
   HIGH_GRASS: { id: 19, atlasIndex: null, seethrough: false },
   SECRET_DOOR: { id: 20, atlasIndex: atlasIndex(0, 5), seethrough: false },
   LOCKED_EXIT: { id: 21, atlasIndex: atlasIndex(8, 3), seethrough: false },
+  ALCHEMY: { id: 23, atlasIndex: atlasIndex(8, 7), seethrough: true },
+  WELL: { id: 24, atlasIndex: null, seethrough: true },
+  STATUE: { id: 25, atlasIndex: atlasIndex(0, 8), seethrough: true },
+  BOOKSHELF: { id: 27, atlasIndex: atlasIndex(12, 5), seethrough: false },
   FURROWED_GRASS: { id: 30, atlasIndex: null, seethrough: false },
   CRYSTAL_DOOR: { id: 31, atlasIndex: atlasIndex(3, 7), seethrough: false },
   // Destructible wooden obstacle (StorageRoom etc.) -- looks like a wall
@@ -146,9 +150,11 @@ export const WALL_INDEX = {
 
   WALL_INTERNAL: atlasIndex(0, 9),
   WALL_INTERNAL_DECO: atlasIndex(0, 10),
+  WALL_INTERNAL_WOODEN: atlasIndex(0, 11),
 
   WALL_OVERHANG: atlasIndex(0, 12),
   WALL_OVERHANG_DECO: atlasIndex(4, 12),
+  WALL_OVERHANG_WOODEN: atlasIndex(8, 12),
 
   DOOR_SIDEWAYS_OVERHANG: atlasIndex(0, 13),
   DOOR_SIDEWAYS_OVERHANG_CLOSED: atlasIndex(4, 13),
@@ -213,7 +219,8 @@ export const isWallTile = (tile) =>
   tile === BACKEND_TILE.WALL.id ||
   tile === BACKEND_TILE.WALL_DECO.id ||
   tile === BACKEND_TILE.SECRET_DOOR.id ||
-  tile === BACKEND_TILE.BARRICADE.id;
+  tile === BACKEND_TILE.BARRICADE.id ||
+  tile === BACKEND_TILE.BOOKSHELF.id;
 
 // Used ONLY by wall-autotile stitching: any tile that should visually
 // continue a wall surface. Out-of-bounds (-1) and unpainted VOID cells
@@ -225,7 +232,8 @@ export const isWallStitcheable = (tile) =>
   tile === BACKEND_TILE.WALL.id ||
   tile === BACKEND_TILE.WALL_DECO.id ||
   tile === BACKEND_TILE.SECRET_DOOR.id ||
-  tile === BACKEND_TILE.BARRICADE.id;
+  tile === BACKEND_TILE.BARRICADE.id ||
+  tile === BACKEND_TILE.BOOKSHELF.id;
 
 export const isDoorTile = (tile) =>
   tile === BACKEND_TILE.DOOR.id ||

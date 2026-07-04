@@ -26,6 +26,22 @@ import { TILE_SIZE, TILE_SCALE } from '../constants';
 // Matching below is substring-based (itemName.includes(key)), so more-specific keys must
 // be listed before the generic ones they contain (e.g. "Scroll Holder" before "Scroll").
 export const ITEM_SPRITES = {
+  // Bombs — items.png BOMBS row (ItemSpriteSheet.BOMBS = xy(1,6) = idx 80, so
+  // [col,row] = [idx%16, 5]). Listed before the generic "Bomb" so each enhanced
+  // bomb matches its own sprite first (substring match returns the first hit).
+  "Firebomb":         [2, 5],   // FIRE_BOMB
+  "Frost Bomb":       [3, 5],   // FROST_BOMB
+  "Regrowth Bomb":    [4, 5],   // REGROWTH_BOMB
+  "Smoke Bomb":       [5, 5],   // SMOKE_BOMB
+  "Flashbang":        [6, 5],   // FLASHBANG
+  "Holy Bomb":        [7, 5],   // HOLY_BOMB
+  "Woolly Bomb":      [8, 5],   // WOOLY_BOMB
+  "Noisemaker":       [9, 5],   // NOISEMAKER
+  "Arcane Bomb":     [10, 5],   // ARCANE_BOMB
+  "Shrapnel Bomb":   [11, 5],   // SHRAPNEL_BOMB
+  "Metal Shard":      [8, 29],  // SHARD (QUEST+8 = idx 472)
+  "Bomb":             [0, 5],   // BOMB (generic — keep last of the bomb block)
+
   // Weapons — [col,row] per docs/spd_items/07-item-sprites.md §1.
   // More-specific multi-word keys must precede shorter keys they contain
   // (e.g. "Worn Shortsword" before "Shortsword"/"Sword", "Battle Axe" before "Axe").
@@ -175,6 +191,9 @@ export const ITEM_SPRITES = {
   "Rusty Key":        [7, 3],   // IRON_KEY (MISC_CONSUMABLE+7 = idx 55)
   "Key":              [7, 3],
   "Amulet of Yendor": [14, 4],  // AMULET = MISC_CONSUMABLE+13 = xy(1,4)+13 = idx 78 -> col14,row4
+  "Energy Crystal":   [3, 1],   // ENERGY (UNCOLLECTIBLE+1 = idx 19)
+  "Stewed Meat":      [2, 27],  // STEWED (FOOD+2 = idx 434)
+  "Meat Pie":         [7, 27],  // MEAT_PIE (FOOD+7 = idx 439)
 
   // Trinkets (TRINKETS section = xy(1,18) → [0,17], 17 trinkets + 1 catalyst)
   "Trinket Catalyst": [6, 4],   // TRINKET_CATA = MISC_CONSUMABLE+22 = [6,4]
@@ -255,6 +274,8 @@ const PLACEHOLDER_TYPE_BY_KIND_PREFIX = [
   ['ration', 'food'],
   ['pasty', 'food'],
   ['chargrilled_meat', 'food'],
+  ['stewed_meat', 'food'],
+  ['meat_pie', 'food'],
   ['dewdrop', 'dewdrop'],
   ['gold', 'gold'],
   ['wand', 'wand'],
@@ -399,6 +420,9 @@ const KIND_COORDS = {
   'chaotic_censer':       [14, 17],
   'ferret_tuft':          [15, 17],
   'cracked_spyglass':     [0, 18],
+  'energy_crystal':       [3, 1],
+  'stewed_meat':          [2, 27],
+  'meat_pie':             [7, 27],
 };
 
 export function coordsForKind(kind) {
@@ -406,6 +430,8 @@ export function coordsForKind(kind) {
   if (KIND_COORDS[kind]) return KIND_COORDS[kind];
   if (kind.startsWith('scroll_'))  return [0, 19];
   if (kind.startsWith('potion_'))  return [0, 22];
+  if (kind.startsWith('elixir_')) return [0, 22];
+  if (kind.endsWith('_brew'))     return [0, 22];
   if (kind.startsWith('ring_'))    return [0, 14];
   if (kind.startsWith('wand_'))    return [0, 13];
   if (kind.startsWith('armor'))    return [0, 11];

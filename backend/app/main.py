@@ -436,15 +436,23 @@ async def game_websocket(websocket: WebSocket, game_id: str, class_type: str = "
                         if i.pos and i.pos.x == player.pos.x and i.pos.y == player.pos.y
                         and i.type != "grave" and not getattr(i, 'for_sale', False)
                     ]
-                    from app.engine.entities.items_consumable import Gold, Dewdrop
+                    from app.engine.entities.items_consumable import Gold, Dewdrop, EnergyCrystal
+                    from app.engine.entities.items_bombs import Bomb
                     for i_id in items_to_pickup:
                         item = floor.items[i_id]
                         if isinstance(item, Gold):
                             player.gold += item.quantity
                             del floor.items[i_id]
                             game.add_event("PICKUP_GOLD", {"player": player.id, "amount": item.quantity}, floor_id=player.floor_id)
+                        elif isinstance(item, EnergyCrystal):
+                            player.energy += item.quantity
+                            del floor.items[i_id]
+                            game.add_event("PICKUP_ENERGY", {"player": player.id, "amount": item.quantity}, floor_id=player.floor_id)
                         elif isinstance(item, Dewdrop):
                             game._pickup_dewdrop(player, floor, player.floor_id, i_id, item)
+                        elif isinstance(item, Bomb) and item.fuse_ticks is not None and \
+                                game.handle_bomb_pickup(player, floor, player.floor_id, i_id, item):
+                            pass
                         elif player.add_to_inventory(item):
                             del floor.items[i_id]
                             game.add_event("PICKUP", {"player": player.id, "item": item.name}, floor_id=player.floor_id)
@@ -509,6 +517,21 @@ async def game_websocket(websocket: WebSocket, game_id: str, class_type: str = "
 
             elif isinstance(message, msg.ConfirmChasmFall):
                 game.confirm_chasm_fall(player_id, message.x, message.y)
+
+            elif isinstance(message, msg.AlchemyPreview):
+                game.alchemy_preview(player_id, message.ingredient_ids)
+
+            elif isinstance(message, msg.AlchemyBrew):
+                game.alchemy_brew(player_id, message.ingredient_ids, message.recipe_index)
+
+            elif isinstance(message, msg.AlchemyEnergize):
+                game.alchemy_energize(player_id, message.item_id, message.all_items)
+
+            elif isinstance(message, msg.AlchemyTrinketChoose):
+                game.alchemy_trinket_choose(player_id, message.catalyst_id, message.kind)
+
+            elif isinstance(message, msg.ToolkitEnergize):
+                game.toolkit_energize(player_id, message.toolkit_id, message.levels)
 
             elif isinstance(message, msg.RangedAttack):
                 game.perform_ranged_attack(

@@ -47,22 +47,31 @@ def _artifact_gain_exp(item, amount: int) -> None:
 # ---------------------------------------------------------------------------
 
 def action_brew(game, player, item, tx=None, ty=None) -> None:
+    # Opens the alchemy overlay anywhere (SPD switches to AlchemyScene).
     if not isinstance(item, AlchemistsToolkit):
         return
-    if item.charge < 2:
+    if item.cursed or not player.belongings.is_equipped(item.id):
         return
-    # Stub: emit event so the client can open the brewing UI.
     game.add_event("TOOLKIT_BREW", {
         "player": player.id, "item_id": item.id, "charges": item.charge,
     }, floor_id=player.floor_id, player_id=player.id)
 
 
 def action_energize(game, player, item, tx=None, ty=None) -> None:
+    # SPD AC_ENERGIZE: spend 6 alchemical energy per toolkit level.
     if not isinstance(item, AlchemistsToolkit):
         return
-    # Stub: emit event so client can select items to convert to energy.
-    game.add_event("TOOLKIT_ENERGIZE", {
-        "player": player.id, "item_id": item.id,
+    if item.cursed or not player.belongings.is_equipped(item.id):
+        return
+    if item.level >= item.level_cap:
+        return
+    if player.energy < 6:
+        game.add_event("TOAST", {"text": "Not enough alchemical energy."},
+                       floor_id=player.floor_id, player_id=player.id)
+        return
+    max_levels = min(item.level_cap - item.level, player.energy // 6)
+    game.add_event("TOOLKIT_ENERGIZE_PROMPT", {
+        "player": player.id, "toolkit_id": item.id, "max_levels": max_levels,
     }, floor_id=player.floor_id, player_id=player.id)
 
 

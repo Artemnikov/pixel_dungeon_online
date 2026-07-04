@@ -24,7 +24,7 @@ from app.engine.entities.base import ItemBase
 from app.engine.entities.rings import RingOfAccuracy, RingOfEvasion, RingOfHaste, RingOfFuror, RingOfMight, RingOfTenacity, RingOfEnergy, RingOfArcana, RingOfSharpshooting
 from app.engine.entities.item_union import Bag, MagicalHolster, PotionBandolier, ScrollHolder, VelvetPouch
 from app.engine.entities.items_artifacts import BrokenSeal, CloakOfShadows, DriedRose, Petal
-from app.engine.entities.items_consumable import Amulet, Berry, Boomerang, ChargrilledMeat, Dewdrop, DwarfToken, Food, GooBlob, Gold, Key, KingsCrown, MysteryMeat, Pasty, Ration, Seed, SmallRation, Stone, Throwable, ThrowableDagger, TenguMask, Waterskin, ArcaneStylus, MagicalInfusion
+from app.engine.entities.items_consumable import Amulet, Berry, Boomerang, ChargrilledMeat, Dewdrop, DwarfToken, EnergyCrystal, Food, GooBlob, Gold, Key, KingsCrown, MeatPie, MysteryMeat, Pasty, Ration, Seed, SmallRation, Stone, StewedMeat, Throwable, ThrowableDagger, TenguMask, Waterskin, ArcaneStylus, MagicalInfusion
 from app.engine.entities.items_equip import Armor, ClothArmor, LeatherArmor, MailArmor, ScaleArmor, PlateArmor, Artifact, Bow, SpiritBow, Dagger, MeleeWeapon, MissileWeapon, Ring, Staff, WornShortsword
 from app.engine.entities.items_potions import ElixirOfAquaticRejuvenation, FuryPotion, HealthPotion, Potion, PotionOfExperience, PotionOfFrost, PotionOfHaste, PotionOfInvisibility, PotionOfLevitation, PotionOfLiquidFlame, PotionOfMindVision, PotionOfParalyticGas, PotionOfPurity, PotionOfStrength, PotionOfToxicGas, RevivingPotion
 from app.engine.entities.items_scrolls import Scroll, ScrollOfIdentify, ScrollOfLullaby, ScrollOfMagicMapping, ScrollOfMetamorphosis, ScrollOfMirrorImage, ScrollOfRage, ScrollOfRecharging, ScrollOfRemoveCurse, ScrollOfRetribution, ScrollOfTeleportation, ScrollOfTerror, ScrollOfTransmutation, ScrollOfUpgrade, ScrollOfEnchantment, ExoticScrollOfEnchantment
@@ -36,6 +36,10 @@ from app.engine.entities.runestones import (  # noqa: E402
     StoneOfBlast, StoneOfBlink, StoneOfDeepSleep, StoneOfClairvoyance,
     StoneOfAggression, StoneOfFlock, StoneOfShock, StoneOfFear,
     StoneOfDetectMagic, StoneOfIntuition, StoneOfEnchantment, StoneOfAugmentation,
+)
+from app.engine.entities.items_bombs import (  # noqa: E402
+    Bomb, Firebomb, FrostBomb, SmokeBomb, FlashBangBomb, HolyBomb,
+    RegrowthBomb, WoollyBomb, Noisemaker, ArcaneBomb, ShrapnelBomb, MetalShard,
 )
 from app.engine.entities.trinkets import (  # noqa: E402
     CrackedSpyglass, ChaoticCenser, DimensionalSundial, ExoticCrystals,
@@ -176,6 +180,8 @@ _CATALOG: List[tuple] = [
     ("ration", "Ration", "food", lambda: Ration()),
     ("pasty", "Pasty", "food", lambda: Pasty()),
     ("chargrilled_meat", "Chargrilled Meat", "food", lambda: ChargrilledMeat()),
+    ("stewed_meat", "Stewed Meat", "food", lambda: StewedMeat()),
+    ("meat_pie", "Meat Pie", "food", lambda: MeatPie()),
     ("food", "Food", "food", lambda: Food(name="Food")),
 
     # Misc
@@ -193,6 +199,21 @@ _CATALOG: List[tuple] = [
     ("tengu_mask", "Tengu's Mask", "misc", lambda: TenguMask()),
     ("kings_crown", "King's Crown", "misc", lambda: KingsCrown()),
     ("amulet", "Amulet of Yendor", "misc", lambda: Amulet()),
+    ("energy_crystal", "Energy Crystal", "misc", lambda: EnergyCrystal(quantity=5)),
+
+    # Bombs
+    ("bomb", "Bomb", "misc", lambda: Bomb()),
+    ("firebomb", "Firebomb", "misc", lambda: Firebomb()),
+    ("frost_bomb", "Frost Bomb", "misc", lambda: FrostBomb()),
+    ("smoke_bomb", "Smoke Bomb", "misc", lambda: SmokeBomb()),
+    ("flashbang_bomb", "Flashbang", "misc", lambda: FlashBangBomb()),
+    ("holy_bomb", "Holy Bomb", "misc", lambda: HolyBomb()),
+    ("regrowth_bomb", "Regrowth Bomb", "misc", lambda: RegrowthBomb()),
+    ("woolly_bomb", "Woolly Bomb", "misc", lambda: WoollyBomb()),
+    ("noisemaker", "Noisemaker", "misc", lambda: Noisemaker()),
+    ("arcane_bomb", "Arcane Bomb", "misc", lambda: ArcaneBomb()),
+    ("shrapnel_bomb", "Shrapnel Bomb", "misc", lambda: ShrapnelBomb()),
+    ("metal_shard", "Metal Shard", "misc", lambda: MetalShard()),
 
     # Containers
     ("velvet_pouch", "Velvet Pouch", "container", lambda: VelvetPouch()),

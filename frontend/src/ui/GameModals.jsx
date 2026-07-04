@@ -15,6 +15,8 @@ import RadialMenu from './RadialMenu';
 import WndStoneIntuition from './WndStoneIntuition';
 import WndStoneAugment from './WndStoneAugment';
 import WndChooseEnchant from './WndChooseEnchant';
+import AlchemyOverlay from './AlchemyOverlay';
+import WndTrinketChoice from './WndTrinketChoice';
 
 const SCROLL_PICKER_KEYS = {
   scroll_of_upgrade: 'modal.upgrade',
@@ -51,6 +53,11 @@ function GameModals({
     enchantChoiceData, setEnchantChoiceData,
     imbueWandData, setImbueWandData,
     openQuickslotPicker,
+    alchemyOpen, setAlchemyOpen,
+    alchemyPreview, setAlchemyPreview,
+    alchemyBrewed, setAlchemyBrewed,
+    trinketChoice, setTrinketChoice,
+    toolkitEnergize, setToolkitEnergize,
   } = modals;
 
   return (
@@ -323,6 +330,58 @@ function GameModals({
           }}
           onClose={() => setEnchantChoiceData(null)}
         />
+      )}
+
+      {alchemyOpen && (
+        <AlchemyOverlay
+          belongings={belongings}
+          gold={gold}
+          energy={energy}
+          strength={strength}
+          itemsById={itemsById}
+          preview={alchemyPreview}
+          brewed={alchemyBrewed}
+          send={send}
+          onClose={() => {
+            setAlchemyOpen(false);
+            setAlchemyPreview(null);
+            setAlchemyBrewed(null);
+          }}
+        />
+      )}
+
+      {trinketChoice && (
+        <WndTrinketChoice
+          kinds={trinketChoice.kinds}
+          onChoose={(kind) => {
+            send({ type: 'ALCHEMY_TRINKET_CHOOSE', catalyst_id: trinketChoice.catalyst_id, kind });
+            setTrinketChoice(null);
+          }}
+          onClose={() => setTrinketChoice(null)}
+        />
+      )}
+
+      {toolkitEnergize && (
+        <div className="choice-modal-backdrop" onClick={() => setToolkitEnergize(null)}>
+          <div className="choice-modal" onClick={e => e.stopPropagation()}>
+            <h3>{t('alchemy.toolkitEnergize')}</h3>
+            <button onClick={() => {
+              send({ type: 'TOOLKIT_ENERGIZE', toolkit_id: toolkitEnergize.toolkit_id, levels: 1 });
+              setToolkitEnergize(null);
+            }}>
+              {t('alchemy.toolkitEnergizeOne')}
+            </button>
+            {toolkitEnergize.max_levels > 1 && (
+              <button onClick={() => {
+                send({ type: 'TOOLKIT_ENERGIZE', toolkit_id: toolkitEnergize.toolkit_id, levels: toolkitEnergize.max_levels });
+                setToolkitEnergize(null);
+              }}>
+                {t('alchemy.toolkitEnergizeAll', { cost: 6 * toolkitEnergize.max_levels, levels: toolkitEnergize.max_levels })}
+              </button>
+            )}
+            <button onClick={() => setToolkitEnergize(null)}>{t('alchemy.cancel')}</button>
+          </div>
+        </div>
       )}
     </>
   );

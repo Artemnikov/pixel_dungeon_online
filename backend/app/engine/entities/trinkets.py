@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import ClassVar, List, Literal, Optional, TYPE_CHECKING
 
+from pydantic import Field
+
 from app.engine.entities.base import Action, ItemBase, ItemCategory
 from app.engine.entities.items_equip import EquipableItem, KindofMisc
 
@@ -299,11 +301,12 @@ class TrinketCatalyst(ItemBase):
 
     @classmethod
     def energy_val(cls) -> int:
-        return 6
+        # SPD TrinketCatalyst has no energyVal override — it cannot be converted.
+        return 0
 
-    def actions(self, player: Optional["Player"] = None) -> List[str]:
-        base = list(super().actions(player))
-        return [Action.ALCHEMIZE] + base
+    # Rolled trinket choices pending at an alchemy pot (SPD TrinketCatalyst
+    # rolledTrinkets — persisted so reconnecting mid-choice keeps the roll).
+    rolled_kinds: List[str] = Field(default_factory=list)
 
 
 _TRINKET_CLASSES = [

@@ -43,6 +43,7 @@ from typing import List
 from app.engine.dungeon.spd_levelgen.generator import _WEP_T1, _WEP_T2, _WEP_T3, _WEP_T4, _WEP_T5
 from app.engine.dungeon.spd_random import SPDRandom
 from app.engine.entities.item_union import MagicalHolster, PotionBandolier, ScrollHolder
+from app.engine.entities.items_bombs import Bomb
 from app.engine.entities.items_consumable import Food, Stone
 from app.engine.entities.items_equip import Armor, ClothArmor, LeatherArmor, MailArmor, ScaleArmor, PlateArmor, Artifact, make_named_melee_weapon, MissileWeapon, Ring
 from app.engine.entities.items_potions import HealthPotion
@@ -120,9 +121,18 @@ def generate_shop_items(rng: SPDRandom, depth: int) -> List[Item]:
         HealthPotion(),
         Food(name="Small Ration of Food"),
         Food(name="Small Ration of Food"),
-        # Bomb/DoubleBomb/Honeypot substitution
-        Food(name="Mystery Meat"),
     ]
+
+    # ShopRoom switch(Random.Int(4)): 0 -> Bomb, 1|2 -> DoubleBomb (a 2-stack
+    # Bomb), 3 -> Honeypot. Honeypot isn't modeled yet, so only its case keeps
+    # the prior Mystery Meat substitution.
+    bomb_roll = rng.IntMax(4)
+    if bomb_roll == 0:
+        items.append(Bomb(name="Bomb"))
+    elif bomb_roll in (1, 2):
+        items.append(Bomb(name="Bomb", quantity=2))
+    else:
+        items.append(Food(name="Mystery Meat"))
 
     # Rare item roll (Random.Int(10)): 0=wand, 1=ring, 2=artifact, the
     # remaining 7 (Stylus) buckets redistribute evenly to wand/ring.

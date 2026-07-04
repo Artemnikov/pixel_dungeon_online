@@ -414,6 +414,11 @@ class DM300(MobEntity):
     loot_table: List[DropEntry] = [
         DropEntry(item_kind="overloaded_charger", chance=1.0, max_global=0),
     ]
+    # DM300.die(): drops 2 shards 60% / 3 shards 30% / 4 shards 10% (avg 2.5),
+    # via Random.chances({0,0,6,3,1}). These are the Shrapnel Bomb reagent.
+    weighted_drops: List[WeightedCountDrop] = [
+        WeightedCountDrop(item_kind="metal_shard", weights=[0, 0, 6, 3, 1]),
+    ]
 
     def is_enraged(self) -> bool:
         return self.hp * 2 <= self.max_hp

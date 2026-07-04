@@ -9,7 +9,7 @@ the handler branches in main.py.
 an extra field (or one we've since dropped) still validates on its known fields.
 """
 
-from typing import Annotated, Literal, Optional, Union
+from typing import Annotated, List, Literal, Optional, Union
 
 from pydantic import BaseModel, ConfigDict, Field, TypeAdapter
 
@@ -262,6 +262,35 @@ class ConfirmChasmFall(_ClientMessageBase):
     y: int
 
 
+class AlchemyPreview(_ClientMessageBase):
+    type: Literal["ALCHEMY_PREVIEW"]
+    ingredient_ids: List[str]
+
+
+class AlchemyBrew(_ClientMessageBase):
+    type: Literal["ALCHEMY_BREW"]
+    ingredient_ids: List[str]
+    recipe_index: int
+
+
+class AlchemyEnergize(_ClientMessageBase):
+    type: Literal["ALCHEMY_ENERGIZE"]
+    item_id: str
+    all_items: bool = False
+
+
+class AlchemyTrinketChoose(_ClientMessageBase):
+    type: Literal["ALCHEMY_TRINKET_CHOOSE"]
+    catalyst_id: str
+    kind: str
+
+
+class ToolkitEnergize(_ClientMessageBase):
+    type: Literal["TOOLKIT_ENERGIZE"]
+    toolkit_id: str
+    levels: int = 1
+
+
 ClientMessage = Annotated[
     Union[
         Ping,
@@ -308,6 +337,11 @@ ClientMessage = Annotated[
         PickupFloor,
         Attack,
         ConfirmChasmFall,
+        AlchemyPreview,
+        AlchemyBrew,
+        AlchemyEnergize,
+        AlchemyTrinketChoose,
+        ToolkitEnergize,
     ],
     Field(discriminator="type"),
 ]

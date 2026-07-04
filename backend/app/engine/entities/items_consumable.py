@@ -221,6 +221,20 @@ class Dewdrop(ItemBase):
     DESC: ClassVar[str] = "A drop of magical dew. It radiates healing energy."
 
 
+class EnergyCrystal(ItemBase):
+    # SPD EnergyCrystal: quantity == energy amount. Never sits in a bag — on
+    # pickup it converts straight into the player's alchemical energy
+    # (Gold/Dewdrop pickup pattern).
+    kind: Literal["energy_crystal"] = "energy_crystal"
+    name: str = "Energy Crystal"
+    type: str = "energy_crystal"
+    category: ClassVar[str] = ItemCategory.MISC
+    stackable: ClassVar[bool] = True
+    level_known: bool = True
+    cursed_known: bool = True
+    DESC: ClassVar[str] = "A small crystal of pure alchemical energy. It is absorbed the moment it is picked up."
+
+
 class Waterskin(ItemBase):
     kind: Literal["waterskin"] = "waterskin"
     name: str = "Waterskin"
@@ -304,22 +318,35 @@ class FrozenCarpaccio(Food):
     DESC: ClassVar[str] = "Raw meat that has been frozen solid. Can be defrosted by cooking it."
 
 
+class StewedMeat(Food):
+    kind: Literal["stewed_meat"] = "stewed_meat"
+    name: str = "Stewed Meat"
+    energy: int = 150
+    DESC: ClassVar[str] = "Mystery meat, gently stewed at an alchemy pot. Safe to eat, if not very filling."
+
+    def value(self, identified: bool = False) -> int:
+        return 8 * self.quantity
+
+
+class MeatPie(Food):
+    kind: Literal["meat_pie"] = "meat_pie"
+    name: str = "Meat Pie"
+    energy: int = 900
+    DESC: ClassVar[str] = "A delicious pie cooked from meat, a pasty and a ration. Extremely filling."
+
+    def value(self, identified: bool = False) -> int:
+        return 40 * self.quantity
+
+
 class GooBlob(ItemBase):
-    # Goo's death drop (SPD GooBlob): stackable quest reagent, used with a
-    # Health Potion at an Alchemy Pot to brew an Elixir of Aquatic Rejuvenation
-    # (see Action.ALCHEMIZE / action_alchemize).
+    # Goo's death drop (SPD GooBlob): stackable alchemy reagent (see
+    # app.engine.alchemy).
     kind: Literal["goo_blob"] = "goo_blob"
     name: str = "Goo Blob"
     type: str = "misc"
     category: ClassVar[str] = ItemCategory.MISC
     stackable: ClassVar[bool] = True
     DESC: ClassVar[str] = "A blob of black ooze left behind by Goo. Can be combined with a Health Potion at an Alchemy Pot."
-
-    def actions(self, player: Optional["Player"] = None) -> List[str]:
-        base = super().actions(player)
-        if player is not None and any(isinstance(it, HealthPotion) for it in player.inventory):
-            return [Action.ALCHEMIZE] + base
-        return base
 
     def value(self, identified: bool = False) -> int:
         return 30 * self.quantity

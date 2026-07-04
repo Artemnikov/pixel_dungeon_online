@@ -1,6 +1,7 @@
 import AudioManager from '../audio/AudioManager';
 import { handleBossEvents } from './events/boss';
 import { handleWorldEvents } from './events/world';
+import { handleAlchemyEvents } from './events/alchemy';
 import { handlePlayerEvents } from './events/player';
 import { handleCombatEvents } from './events/combat';
 import { handleProgressionEvents } from './events/progression';
@@ -20,6 +21,7 @@ export function handleEvent(event: GameEvent, ctx: HandlerCtx): void {
 
   if (handleBossEvents(event, ctx)) return;
   if (handleWorldEvents(event, ctx)) return;
+  if (handleAlchemyEvents(event, ctx)) return;
   if (handlePlayerEvents(event, ctx)) return;
   if (handleCombatEvents(event, ctx)) return;
   handleProgressionEvents(event, ctx);

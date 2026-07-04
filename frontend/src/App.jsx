@@ -189,6 +189,7 @@ function App() {
   const floorFadeRef = useRef(null);
   const inspectPopupRef = useRef(null);
   const inspectSubRef = useRef(null);
+  const onOpenAlchemyRef = useRef(null);
 
   useEffect(() => { depthRef.current = depth; }, [depth]);
 
@@ -223,6 +224,7 @@ function App() {
 
   // --- domain hooks ---
   const modals = useModalState();
+  useEffect(() => { onOpenAlchemyRef.current = modals.onOpenAlchemy; });
   const talent = useTalentFlow({ gameState, selectedClass, myStats, send });
   const targeting = useTargetingExamine({
     entitiesRef, visionRef, myPlayerIdRef, gridRef,
@@ -278,6 +280,11 @@ function App() {
     onStoneAugmentPickItem: modals.onStoneAugmentPickItem,
     onEnchantChoiceAvailable: modals.onEnchantChoiceAvailable,
     onGhostGearOpen: modals.onGhostGearOpen,
+    onAlchemyPreviewResult: modals.onAlchemyPreviewResult,
+    onAlchemyBrewed: modals.onAlchemyBrewed,
+    onTrinketChoice: modals.onTrinketChoice,
+    onToolkitEnergizePrompt: modals.onToolkitEnergizePrompt,
+    onOpenAlchemy: modals.onOpenAlchemy,
     onTalentUpgraded: talent.onTalentUpgraded,
     onBossSlain: (data) => {
       setBossSlainData(data);
@@ -319,6 +326,7 @@ function App() {
     entitiesRef, myPlayerIdRef,
     hoveredCellRef,
     floorFadeRef,
+    gridRef, onOpenAlchemyRef,
   });
 
   useGameRenderer({
@@ -552,7 +560,11 @@ function App() {
     if (socketRef.current?.readyState === WebSocket.OPEN) {
       const myPlayer = entitiesRef.current.players[myPlayerIdRef.current];
       const playerTile = myPlayer ? (myPlayer.targetPos || myPlayer.renderPos) : null;
-      const action = resolveTapAction({ tileX, tileY, playerTile, mobs: entitiesRef.current.mobs });
+      const action = resolveTapAction({ tileX, tileY, playerTile, mobs: entitiesRef.current.mobs, grid: gridRef.current });
+      if (action.type === 'OPEN_ALCHEMY') {
+        modals.onOpenAlchemy();
+        return;
+      }
       if (action.type === 'MOVE_TO' || action.type === 'MOVE') isRefocusingRef.current = true;
       socketRef.current.send(JSON.stringify(action));
     }

@@ -1351,6 +1351,8 @@ class LaboratoryRoom(SpecialRoom):
             if level.map[pos] == terrain.EMPTY_SP and level.heaps.get(pos) is None:
                 break
 
+        level.drop(frozenset({"EnergyCrystal", "qty:5"}), pos)
+
         n = rng.NormalIntRange(1, 2)
         for _ in range(n):
             while True:
@@ -1739,7 +1741,7 @@ class SecretLaboratoryRoom(SecretRoom):
                 if level.map[pos] == terrain.EMPTY_SP and level.heaps.get(pos) is None:
                     break
             qty = rng.IntRange(3, 5)
-            level.drop(frozenset({"EnergyCrystal"}), pos)
+            level.drop(frozenset({"EnergyCrystal", f"qty:{qty}"}), pos)
 
         n = rng.IntRange(2, 3)
         weights = [w for _, w in _POTION_CHANCES]

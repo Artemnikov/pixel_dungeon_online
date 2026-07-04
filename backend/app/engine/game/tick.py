@@ -28,7 +28,7 @@ from app.engine.entities.base import Faction, is_immune, Position
 from app.engine.entities.items_consumable import ChargrilledMeat, FrozenCarpaccio, Gold, MysteryMeat
 from app.engine.entities.items_wands import Wand
 from app.engine.entities.player import Difficulty, Effect, Player
-from app.engine.entities.buffs import add_buff, get_buff, has_buff, process_buffs, remove_buff
+from app.engine.entities.buffs import add_buff, get_buff, has_buff, is_frozen, process_buffs, remove_buff
 from app.engine.entities.scroll_predicates import player_inventory_items
 from app.engine.game.blobs import tick_blob_areas
 from app.engine.entities.mobs import (
@@ -133,6 +133,8 @@ class TickMixin:
             removed = process_buffs(player.buffs, dt)
             if "invisibility" in removed or "shadows" in removed:
                 player.invisible = max(0, player.invisible - 1)
+            if "frost" in removed or "frozen" in removed:
+                self._frost_thaw(player, self._get_or_create_floor(player.floor_id))
             if "endure_tracker" in removed:
                 self._finalize_endure(player)
             bleed = get_buff(player.buffs, "bleeding")
@@ -152,6 +154,8 @@ class TickMixin:
                         continue
                     if "invisibility" in removed or "shadows" in removed:
                         mob.invisible = max(0, mob.invisible - 1)
+                    if "frost" in removed or "frozen" in removed:
+                        self._frost_thaw(mob, floor)
                     if "drowsy" in removed and mob.ai_state in ("idle", "wandering"):
                         mob.ai_state = "sleeping"
                     if "terror" in removed and mob.ai_state == "fleeing":
@@ -188,6 +192,7 @@ class TickMixin:
 
         for floor_id in active_ids:
             self._tick_tengu_blobs(self.floors[floor_id], floor_id)
+            self.tick_bombs(self.floors[floor_id], floor_id)
 
         self._emit_state_effects()
 
@@ -207,7 +212,7 @@ class TickMixin:
                 move_interval /= 2
             if player.has_buff("slow") or player.has_buff("chill"):
                 move_interval *= 2
-            if player.has_buff("paralysis"):
+            if player.has_buff("paralysis") or is_frozen(player.buffs):
                 move_interval = 9999
             from app.engine.entities.rings import haste_multiplier
             move_interval /= haste_multiplier(player)
@@ -462,6 +467,9 @@ class TickMixin:
                 # TimekeepersHourglass: frozen mobs skip AI entirely.
                 if getattr(mob, "freeze_ticks", 0) > 0:
                     mob.freeze_ticks -= 1
+                    continue
+                # SPD Frost paralyses: a frozen mob does nothing until it thaws.
+                if is_frozen(mob.buffs):
                     continue
                 can_move = now - move_times.get(mob.id, 0.0) >= move_interval
 
@@ -1112,6 +1120,16 @@ class TickMixin:
         "daze": "daze",
         "levitation": "levitation",
     }
+
+    def _frost_thaw(self, entity, floor):
+        # Frost.detach: a character that thaws while standing in water is left
+        # chilled (Chill for half of Frost's 10-turn duration).
+        if floor is None:
+            return
+        x, y = entity.pos.x, entity.pos.y
+        if 0 <= y < len(floor.grid) and 0 <= x < len(floor.grid[0]) \
+                and floor.grid[y][x] == TileType.FLOOR_WATER:
+            entity.add_buff("chill", duration=5.0, level=1, stack_mode="extend")
 
     def _check_state_buff(self, entity, x, y, floor_id):
         for buff_name, effect_type in self.STATE_BUFF_MAP.items():

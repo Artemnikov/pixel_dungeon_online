@@ -637,6 +637,24 @@
     "selectWeapon": "Выберите оружие для призрака",
     "selectArmor": "Выберите броню для призрака"
   },
+  "alchemy": {
+    "title": "Алхимия",
+    "hint": "Выберите ингредиенты для варки",
+    "noRecipe": "Эти ингредиенты нельзя объединить",
+    "brew": "Сварить",
+    "close": "Закрыть",
+    "cancel": "Отмена",
+    "energy": "Энергия",
+    "selectIngredient": "Выберите ингредиент",
+    "energizeSelect": "Преобразовать предмет в энергию",
+    "energizeOne": "Преобразовать 1 ({{value}} энергии)",
+    "energizeAll": "Преобразовать всё ({{value}} энергии)",
+    "chooseTrinket": "Выберите тринкет",
+    "later": "Позже",
+    "toolkitEnergize": "Зарядить набор алхимика?",
+    "toolkitEnergizeOne": "Потратить 6 энергии (+1 уровень)",
+    "toolkitEnergizeAll": "Потратить {{cost}} энергии (+{{levels}} уровней)"
+  },
   "admin": {
     "giveItem": "Выдать предмет",
     "searchItems": "Поиск предметов…",

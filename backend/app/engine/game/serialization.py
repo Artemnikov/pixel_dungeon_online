@@ -21,7 +21,9 @@ potion colours / scroll runes, shared per-run across the co-op party).
 
 from typing import Dict, Optional
 
+from app.engine.alchemy.energy import energy_val
 from app.engine.entities.item_union import Bag
+from app.engine.entities.items_potions import ELIXIR_BREW_KINDS
 from app.engine.entities.player import Difficulty
 from app.engine.entities.locale_keys import item_locale_key, mob_locale_key
 
@@ -98,11 +100,16 @@ class SerializationMixin:
             for it in items:
                 self._mask_item_dict(it)
         typ = d.get("type")
-        if typ in ("potion", "scroll", "ring"):
+        # Crafted elixirs/brews are always known (SPD Elixir.isKnown()/Brew.isKnown()):
+        # they never enter the per-run scrambled-identity pool, so they get neither a
+        # scrambled appearance nor name/kind masking.
+        if typ in ("potion", "scroll", "ring") and d.get("kind") not in ELIXIR_BREW_KINDS:
             # Attach the per-run colour/rune/gem sprite from the TRUE kind before
             # any masking collapses it. The visual keeps its colour after ID (SPD).
             d["appearance"] = self._appearance_for(d["kind"], typ)
-        if typ in ("potion", "scroll", "ring") and d.get("kind") not in self.identified_kinds:
+        if (typ in ("potion", "scroll", "ring")
+                and d.get("kind") not in ELIXIR_BREW_KINDS
+                and d.get("kind") not in self.identified_kinds):
             d["name"] = self._label_for(d["kind"], typ)
             d["kind"] = typ
             d.pop("effect", None)
@@ -150,6 +157,9 @@ class SerializationMixin:
                     node["range"] = live.get_reach()
                 node["description"] = live.description(p)
                 node["value"] = live.value(identified=live.kind in self.identified_kinds)
+                node["energy_value"] = energy_val(self, live)
+                unit = live if live.quantity <= 1 else live.model_copy(update={"quantity": 1})
+                node["energy_value_one"] = energy_val(self, unit)
                 lk = item_locale_key(live)
                 if lk:
                     node["locale_key"] = lk

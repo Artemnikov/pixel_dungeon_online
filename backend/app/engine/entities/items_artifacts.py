@@ -145,20 +145,32 @@ class AlchemistsToolkit(Artifact):
     level_cap: ClassVar[int] = 10
     exp: int = 0
     _charge_accum: float = 0.0
+    # Fractional exp-based energy (SPD kitEnergy.gainCharge); kept separate
+    # from _charge_accum, which the passive tick uses as a seconds timer.
+    _exp_charge_accum: float = 0.0
     DESC: ClassVar[str] = "A set of alchemical tools. It passively charges with alchemical energy, which can be used to brew items at any alchemy pot."
 
     def actions(self, player: Optional["Player"] = None) -> List[str]:
         base = super().actions(player)
         if player is None or not player.belongings.is_equipped(self.id) or self.cursed:
             return base
-        acts = []
-        if self.charge >= 2:
-            acts.append(Action.BREW)
-        acts.append(Action.ENERGIZE)
+        acts = [Action.BREW]
+        if self.level < self.level_cap:
+            acts.append(Action.ENERGIZE)
         return acts + base
 
+    def consume_energy(self, amount: int) -> int:
+        """Drain kit charge first; return the remainder still owed from the
+        player's energy (SPD AlchemistsToolkit.consumeEnergy)."""
+        remainder = amount - self.charge
+        self.charge = max(0, self.charge - amount)
+        return max(0, remainder)
+
     def on_upgrade(self) -> None:
-        self.charge_cap = min(self.charge_cap + 1, self.level_cap)
+        # SPD AlchemistsToolkit.upgrade(): chargeCap++ unconditionally — the
+        # kit's charge capacity is unrelated to level_cap (10 kit levels can
+        # push charge_cap well past its starting value of 10).
+        self.charge_cap += 1
 
 
 class CapeOfThorns(Artifact):

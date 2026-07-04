@@ -186,6 +186,9 @@ def _make_item(item_kind: str) -> Optional[ItemBase]:
         return TenguMask(name="Tengu's Mask")
     elif item_kind == "kings_crown":
         return KingsCrown(name="King's Crown")
+    elif item_kind == "metal_shard":
+        from app.engine.entities.items_bombs import MetalShard
+        return MetalShard()
     return None
 
 
