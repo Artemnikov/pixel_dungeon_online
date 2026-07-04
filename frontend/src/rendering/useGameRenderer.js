@@ -1,16 +1,36 @@
 import { useEffect } from 'react';
-import { TILE_SIZE, MOVE_DURATION, CAMERA_LERP } from '../constants';
+import { TILE_SIZE, MOVE_DURATION, CAMERA_LERP, FADE_DURATION } from '../constants';
 import { DEST_TILE_SIZE } from './sewers/constants';
 import { buildWaterClipPath, drawWaterBackground, getWaterTextureForDepth } from './sewers/draw';
 import { drawGrid, drawGridCaps } from './draw/grid';
+import { drawCustomTiles, drawCustomWalls } from './draw/customTiles';
+import { drawTorches } from './draw/torches';
 import { drawTerrainFeatures } from './draw/terrainFeatures';
 import { drawItems } from './draw/items';
 import { drawMobs } from './draw/mobs';
 import { drawPlayers } from './draw/players';
 import { advanceAndDrawProjectiles } from './draw/projectiles';
+import { advanceAndDrawMagicMissiles } from './draw/magicMissile';
 import { advanceAndDrawParticles } from './draw/particles';
+import { advanceAndDrawStaffAmbient } from './draw/staffAmbient';
 import { advanceAndDrawCheckedCells } from './draw/searchEffects';
+import { drawWarnedTiles } from './draw/warnedTiles';
 import { advanceAndDrawFloatingText } from './draw/floatingText';
+import { drawTransmuting } from './draw/transmuting';
+import { advanceAndDrawFlares } from './draw/flare';
+import { advanceAndDrawSpellSprites } from './draw/spellSprite';
+import { advanceAndDrawLightning } from './draw/lightning';
+import { advanceAndDrawShieldHalos } from './draw/shieldHalo';
+import { advanceAndDrawStateEffects } from './draw/states';
+import { advanceAndDrawSurprises } from './draw/surprise';
+import { advanceAndDrawScreenShake } from './draw/screenShake';
+import { advanceAndDrawBeams } from './draw/beam';
+import { advanceAndDrawBlobAreas, advanceAndDrawBlobParticles } from './draw/blobArea';
+import { advanceAndDrawSinkDrips } from './draw/sinkDrip';
+import { advanceAndDrawFloorFade } from './floorTransition';
+import { drawCharHealth } from './draw/charHealth';
+import { drawTargetHealthIndicator } from './draw/targetHealthIndicator';
+import { drawTargetedCell } from './draw/targetedCell';
 
 export default function useGameRenderer({
   canvasRef,
@@ -23,19 +43,41 @@ export default function useGameRenderer({
   openDoorsRef,
   projectilesRef,
   trapsRef,
+  customTilesRef,
+  customWallsRef,
+  torchesRef,
   mobAnimRef,
   dyingMobsRef,
   playerAnimRef,
   particlesRef,
   searchEffectsRef,
   floatingTextRef,
+  screenFlashRef,
+  warnedTilesRef,
   myPlayerIdRef,
   panOffsetRef,
   cameraLerpRef,
   zoomRef,
   isRefocusingRef,
   isDraggingRef,
+  isCameraDetachedRef,
+  detachedCameraRef,
   setCamera,
+  transmuteEffectsRef,
+  flareEffectsRef,
+  spellSpriteEffectsRef,
+  lightningRef,
+  shieldHaloRef,
+  stateEffectsRef,
+  magicMissileRef,
+  staffAmbientRef,
+  surpriseRef,
+  selectedEnemyIdRef,
+  hoveredCellRef,
+  screenShakeRef,
+  beamRef,
+  blobAreasRef,
+  floorFadeRef,
 }) {
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -52,6 +94,8 @@ export default function useGameRenderer({
       h: grid.length * DEST_TILE_SIZE,
     };
 
+    const detachedPlayerPosRef = { current: null };
+
     const updateAnimations = () => {
       const now = performance.now();
       const allEntities = [
@@ -66,13 +110,22 @@ export default function useGameRenderer({
           entity.renderPos.x = entity.animStartPos.x + (entity.targetPos.x - entity.animStartPos.x) * t;
           entity.renderPos.y = entity.animStartPos.y + (entity.targetPos.y - entity.animStartPos.y) * t;
         }
+        if (entity.fadeStartTime != null && entity.fadeStartAlpha != null && entity.fadeTargetAlpha != null) {
+          const ft = Math.min((now - entity.fadeStartTime) / FADE_DURATION, 1.0);
+          entity.fadeAlpha = entity.fadeStartAlpha + (entity.fadeTargetAlpha - entity.fadeStartAlpha) * ft;
+          if (ft >= 1.0) entity.fadeStartTime = null;
+        }
       });
     };
 
     const render = () => {
       if (grid.length === 0) return;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.imageSmoothingEnabled = false;
       updateAnimations();
+
+      const rect = canvas.getBoundingClientRect();
+      const lw = rect.width, lh = rect.height;
 
       if (isRefocusingRef.current) {
         panOffsetRef.current.x += (0 - panOffsetRef.current.x) * CAMERA_LERP;
@@ -88,20 +141,43 @@ export default function useGameRenderer({
       const myPlayer = entitiesRef.current.players[myPlayerIdRef.current];
 
       if (myPlayer) {
-        cameraX = myPlayer.renderPos.x * TILE_SIZE - canvas.width / 2 + TILE_SIZE / 2 + panOffsetRef.current.x;
-        cameraY = myPlayer.renderPos.y * TILE_SIZE - canvas.height / 2 + TILE_SIZE / 2 + panOffsetRef.current.y;
-
         const gridCols = grid[0]?.length ?? 0;
         const gridRows = grid.length;
         const z = zoomRef.current;
-        const PAN_BORDER = 3;
-        const halfW = (PAN_BORDER * (canvas.width / 2 - TILE_SIZE / 2)) / z;
-        const halfH = (PAN_BORDER * (canvas.height / 2 - TILE_SIZE / 2)) / z;
-        cameraX = Math.max(-halfW, Math.min(cameraX, gridCols * TILE_SIZE - canvas.width / z + halfW));
-        cameraY = Math.max(-halfH, Math.min(cameraY, gridRows * TILE_SIZE - canvas.height / z + halfH));
 
-        panOffsetRef.current.x = cameraX - (myPlayer.renderPos.x * TILE_SIZE - canvas.width / 2 + TILE_SIZE / 2);
-        panOffsetRef.current.y = cameraY - (myPlayer.renderPos.y * TILE_SIZE - canvas.height / 2 + TILE_SIZE / 2);
+        if (isCameraDetachedRef.current) {
+          const playerTile = myPlayer.targetPos || myPlayer.renderPos;
+          if (detachedPlayerPosRef.current &&
+              (detachedPlayerPosRef.current.x !== playerTile.x || detachedPlayerPosRef.current.y !== playerTile.y)) {
+            isCameraDetachedRef.current = false;
+            panOffsetRef.current = { x: 0, y: 0 };
+          }
+          detachedPlayerPosRef.current = playerTile;
+
+          if (isDraggingRef.current) {
+            cameraX = myPlayer.renderPos.x * TILE_SIZE - lw / 2 + TILE_SIZE / 2 + panOffsetRef.current.x;
+            cameraY = myPlayer.renderPos.y * TILE_SIZE - lh / 2 + TILE_SIZE / 2 + panOffsetRef.current.y;
+            detachedCameraRef.current.x = cameraX;
+            detachedCameraRef.current.y = cameraY;
+          } else {
+            cameraX = detachedCameraRef.current.x;
+            cameraY = detachedCameraRef.current.y;
+          }
+        } else {
+          cameraX = myPlayer.renderPos.x * TILE_SIZE - lw / 2 + TILE_SIZE / 2 + panOffsetRef.current.x;
+          cameraY = myPlayer.renderPos.y * TILE_SIZE - lh / 2 + TILE_SIZE / 2 + panOffsetRef.current.y;
+        }
+
+        const PAN_BORDER = 3;
+        const halfW = (PAN_BORDER * (lw / 2 - TILE_SIZE / 2)) / z;
+        const halfH = (PAN_BORDER * (lh / 2 - TILE_SIZE / 2)) / z;
+        cameraX = Math.max(-halfW, Math.min(cameraX, gridCols * TILE_SIZE - lw / z + halfW));
+        cameraY = Math.max(-halfH, Math.min(cameraY, gridRows * TILE_SIZE - lh / z + halfH));
+
+        if (!isCameraDetachedRef.current) {
+          panOffsetRef.current.x = cameraX - (myPlayer.renderPos.x * TILE_SIZE - lw / 2 + TILE_SIZE / 2);
+          panOffsetRef.current.y = cameraY - (myPlayer.renderPos.y * TILE_SIZE - lh / 2 + TILE_SIZE / 2);
+        }
 
         if (isDraggingRef.current) {
           cameraLerpRef.current.x = cameraX;
@@ -115,25 +191,58 @@ export default function useGameRenderer({
       setCamera({ x: cameraLerpRef.current.x, y: cameraLerpRef.current.y });
 
       ctx.save();
+      ctx.scale(canvas.width / lw, canvas.height / lh);
       const z = zoomRef.current;
-      ctx.translate(canvas.width / 2, canvas.height / 2);
+      ctx.translate(lw / 2, lh / 2);
       ctx.scale(z, z);
-      ctx.translate(-canvas.width / 2, -canvas.height / 2);
+      ctx.translate(-lw / 2, -lh / 2);
       ctx.translate(-cameraLerpRef.current.x, -cameraLerpRef.current.y);
+      advanceAndDrawScreenShake(ctx, { shakeRef: screenShakeRef });
 
       drawWaterBackground(ctx, waterTex, waterClipPath, gridBounds, performance.now());
       drawGrid(ctx, { grid, depth, assetImages, visionRef, openDoorsRef });
+      drawCustomTiles(ctx, { customTiles: customTilesRef.current, assetImages, visionRef });
       drawTerrainFeatures(ctx, assetImages.terrainFeatures, trapsRef.current, grid, visionRef);
+      advanceAndDrawBlobAreas(ctx, { blobAreasRef, visionRef });
+      advanceAndDrawBlobParticles(ctx, { blobAreasRef, visionRef, particlesRef });
+      advanceAndDrawSinkDrips(ctx, { grid, depth, visionRef, particlesRef });
+      if (warnedTilesRef) drawWarnedTiles(ctx, { ref: warnedTilesRef });
       drawItems(ctx, { entitiesRef, visionRef, assetImages });
       drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef, dyingMobsRef });
+      drawCharHealth(ctx, { entitiesRef, visionRef });
+      drawTargetHealthIndicator(ctx, { entitiesRef, visionRef, selectedEnemyIdRef });
       drawPlayers(ctx, { entitiesRef, visionRef, assetImages, playerAnimRef, myPlayerId });
-      drawGridCaps(ctx, { grid, depth, assetImages, visionRef });
+      drawCustomWalls(ctx, { customWalls: customWallsRef.current, assetImages, visionRef });
+      drawTorches(ctx, { torches: torchesRef.current, assetImages, visionRef });
+      advanceAndDrawStaffAmbient(ctx, staffAmbientRef, entitiesRef, visionRef, myPlayerId);
+      drawGridCaps(ctx, { grid, depth, assetImages, visionRef, openDoorsRef });
+      drawTargetedCell(ctx, { hoveredCellRef, assetImages });
       advanceAndDrawCheckedCells(ctx, { ref: searchEffectsRef });
       advanceAndDrawParticles(ctx, { particlesRef });
+      advanceAndDrawFlares(ctx, { flareRef: flareEffectsRef });
+      advanceAndDrawSpellSprites(ctx, { spellSpriteRef: spellSpriteEffectsRef, assetImages });
       advanceAndDrawFloatingText(ctx, { floatingTextRef });
+      advanceAndDrawSurprises(ctx, { surpriseRef });
+      advanceAndDrawShieldHalos(ctx, { haloRef: shieldHaloRef });
+      advanceAndDrawStateEffects(ctx, { stateEffectsRef });
+      drawTransmuting(ctx, { transmuteEffectsRef, assetImages });
       advanceAndDrawProjectiles(ctx, { projectilesRef, assetImages });
+      advanceAndDrawMagicMissiles(ctx, magicMissileRef);
+      advanceAndDrawBeams(ctx, { beamRef, assetImages });
+      advanceAndDrawLightning(ctx, { lightningRef });
 
       ctx.restore();
+
+      // Retribution screen flash: full-screen white overlay that fades in screen space.
+      if (screenFlashRef?.current?.until > performance.now()) {
+        const remaining = screenFlashRef.current.until - performance.now();
+        const alpha = Math.min(remaining / 100, 1) * 0.5;
+        ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
+
+      // Floor transition fade (black-out/hold/black-in overlay).
+      advanceAndDrawFloorFade(ctx, canvas, { fadeRef: floorFadeRef });
 
       // Vision loss: when the local player is dead, dim the screen but keep the
       // world visible so they can still spectate (alpha ramps 0 -> 0.55 over 2s).

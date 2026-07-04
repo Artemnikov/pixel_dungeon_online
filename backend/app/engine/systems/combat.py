@@ -35,17 +35,63 @@ def _preparation(attacker: "Entity", defender: "Entity") -> Optional[dict]:
     }
 
 
+# Remake states where SPD's Mob.enemySeen would be false: the mob has not
+# noticed its enemy yet, so any player attack on it counts as a sneak attack.
+_UNAWARE_AI_STATES = ("idle", "sleeping", "wandering", "passive")
+
+
+def _can_surprise_attack(attacker: "Entity", weapon=None) -> bool:
+    """SPD Hero.canSurpriseAttack: no sneak-attack bonus with a weapon whose
+    STR requirement isn't met, or with a Flail. Mobs/allies are unrestricted."""
+    if not hasattr(attacker, "belongings"):
+        return True
+    if weapon is None:
+        weapon = attacker.belongings.weapon
+    if weapon is None:
+        return True
+    if getattr(weapon, "name", "") == "Flail":
+        return False
+    get_str = getattr(attacker, "get_effective_strength", None)
+    if get_str is not None and getattr(weapon, "strength_requirement", 0) > get_str():
+        return False
+    return True
+
+
+def _is_surprise_attack(attacker: "Entity", defender: "Entity", is_in_los, weapon=None) -> bool:
+    """SPD Mob.surprisedBy(enemy, attacking=true): only mobs get surprised, and
+    only by players. True when the attacker is invisible, the mob never noticed
+    an enemy (enemySeen=false -> unaware ai_state here), or the attacker is
+    outside the mob's FOV."""
+    if getattr(defender, "ai_state", None) is None:
+        return False
+    if not hasattr(attacker, "belongings"):
+        return False
+    if not _can_surprise_attack(attacker, weapon):
+        return False
+    if getattr(attacker, "invisible", 0) > 0:
+        return True
+    if defender.ai_state in _UNAWARE_AI_STATES:
+        return True
+    return is_in_los is not None and not is_in_los(defender.pos, attacker.pos)
+
+
+def _alert_defender(defender: "Entity") -> None:
+    """SPD Mob.damage(): a sleeping mob that takes a hit wakes to WANDERING —
+    it starts searching but doesn't auto-locate an attacker it can't see."""
+    if getattr(defender, "ai_state", None) in ("idle", "sleeping"):
+        defender.ai_state = "wandering"
+
+
 def _dispel_stealth(attacker: "Entity") -> None:
-    """Attacking breaks stealth: clear invisibility, the cloak's sustained
-    stealth flag, and Preparation."""
+    """Attacking breaks invisibility: clear the invisibility buffs and the
+    cloak's sustained stealth flag. Preparation (Assassin) is NOT cleared
+    here — it persists across stealth windows per design."""
     if getattr(attacker, "invisible", 0) > 0:
         attacker.invisible = 0
     attacker.remove_buff("invisibility")
     attacker.remove_buff("shadows")
     if getattr(attacker, "cloak_stealth_active", False):
         attacker.cloak_stealth_active = False
-    if hasattr(attacker, "prep_seconds"):
-        attacker.prep_seconds = 0.0
 
 
 def _roll_damage(attacker: "Entity", result: dict, prep: Optional[dict] = None) -> int:
@@ -91,28 +137,6 @@ def _apply_talent_multipliers(effective: int, attacker: "Entity", defender: "Ent
     if ti is None:
         return effective
 
-    # Risk Reward (warrior T4 berserker): +dmg based on missing HP
-    rr = ti.level("risk_reward")
-    if rr > 0:
-        hp_ratio = attacker.hp / max(attacker.get_total_max_hp(), 1)
-        mult = 1.0 + rr * 0.1 * (1 - hp_ratio)
-        effective = int(effective * mult)
-
-    # Deadly Followup (warrior T4 gladiator): +dmg based on combo count
-    df = ti.level("deadly_followup")
-    if df > 0:
-        combo = getattr(attacker, "combo_count", 0)
-        if combo > 0:
-            mult = 1.0 + df * 0.04 * combo
-            effective = int(effective * mult)
-
-    # Lethal Hit (warrior T2 gladiator): bonus at high combo
-    lh = ti.level("lethal_hit")
-    if lh > 0:
-        combo = getattr(attacker, "combo_count", 0)
-        if combo >= 4:
-            effective = int(effective * (1.0 + lh * 0.1))
-
     # Followup Strike (huntress T1): +dmg on melee after ranged hit
     if not is_ranged:
         fs = ti.level("followup_strike")
@@ -145,6 +169,18 @@ def _apply_post_dr_multipliers(raw_damage: int, attacker: "Entity", defender: "E
 
     effective = _apply_talent_multipliers(effective, attacker, defender, result, is_ranged)
 
+    # Endure (warrior armor ability): release banked damage over the next
+    # few outgoing hits.
+    endure_hits = getattr(attacker, "endure_hits_left", 0)
+    endure_bonus = getattr(attacker, "endure_damage_bonus", 0.0)
+    if endure_hits > 0 and endure_bonus > 0:
+        per_hit = endure_bonus / endure_hits
+        effective += int(per_hit)
+        attacker.endure_damage_bonus -= per_hit
+        attacker.endure_hits_left -= 1
+        if attacker.endure_hits_left <= 0:
+            attacker.endure_damage_bonus = 0.0
+
     vuln = getattr(defender, "vulnerable", 0)
     if vuln > 0:
         effective = int(effective * 1.33)
@@ -153,12 +189,21 @@ def _apply_post_dr_multipliers(raw_damage: int, attacker: "Entity", defender: "E
     if defender.has_buff("death_mark"):
         effective = int(effective * 1.25)
 
+    # Degrade: reduces equipment effectiveness (15% less damage dealt).
+    if attacker.has_buff("degrade"):
+        effective = int(effective * 0.85)
+
     return effective
 
 
 def _check_grim(attacker: "Entity", defender: "Entity", result: dict):
     """Grim enchantment: % max-HP execute scaling with missing HP."""
-    grim_chance = attacker.grim_max_chance
+    from app.engine.entities.weapon_enchants import enraged_catalyst_bonus
+
+    # Enraged Catalyst (warrior T3 berserker): while raging, boost any
+    # enchantment proc chance (here: Grim) scaled by current Berserk power.
+    grim_chance = attacker.grim_max_chance + enraged_catalyst_bonus(attacker)
+
     if grim_chance <= 0 or not defender.is_alive:
         return 0
     hp_ratio = defender.hp / max(defender.max_hp, 1)
@@ -180,7 +225,7 @@ def _check_kinetic(attacker: "Entity", raw_damage: int, defender: "Entity", hp_b
     if not defender.is_alive and hp_before > 0:
         overflow = raw_damage - hp_before
         if overflow > 0:
-            attacker.conserved_damage += overflow
+            attacker.conserved_damage += int(overflow)
 
 
 def resolve_melee_attack(
@@ -190,6 +235,11 @@ def resolve_melee_attack(
     tile_x: int,
     tile_y: int,
     is_in_los: Optional[Callable[["Position", "Position"], bool]] = None,
+    dmg_multi: float = 1.0,
+    dmg_bonus: int = 0,
+    guaranteed_hit: bool = False,
+    floor=None,
+    add_event=None,
 ) -> dict:
     result = {
         "hit": False,
@@ -204,17 +254,35 @@ def resolve_melee_attack(
     if not attacker.is_alive or not defender.is_alive:
         return result
 
-    # Invisible attacker: always surprise attack (auto-hit)
-    if getattr(attacker, "invisible", 0) > 0:
+    # Invisible attacker: always hits (SPD Char.hit INFINITE_ACCURACY),
+    # provided the wielded weapon allows sneak attacks.
+    if guaranteed_hit:
+        result["hit"] = True
+    elif getattr(attacker, "invisible", 0) > 0 and _can_surprise_attack(attacker):
         result["surprise"] = True
         result["hit"] = True
-    # Surprise attack: if defender can't see attacker, auto-hit
-    elif is_in_los and not is_in_los(defender.pos, attacker.pos):
+    # Sneak attack: mob never noticed the attacker, or can't see them.
+    elif _is_surprise_attack(attacker, defender, is_in_los):
         result["surprise"] = True
+        result["hit"] = True
+    elif getattr(attacker, "is_admin", False):
         result["hit"] = True
     else:
-        acu_roll = random.random() * attacker.attack_skill
-        def_roll = random.random() * defender.get_effective_defense_skill()
+        atk_acc = attacker.attack_skill
+        if attacker.has_buff("hex"):
+            atk_acc = int(atk_acc * 0.75)
+        if attacker.has_buff("daze"):
+            atk_acc = int(atk_acc * 0.5)
+        def_ev = defender.get_effective_defense_skill()
+        if defender.has_buff("hex"):
+            def_ev = int(def_ev * 0.75)
+        if hasattr(attacker, "belongings"):
+            from app.engine.entities.rings import accuracy_multiplier
+            atk_acc = int(atk_acc * accuracy_multiplier(attacker))
+        if attacker.has_buff("wayward_buff"):
+            atk_acc //= 2
+        acu_roll = random.random() * atk_acc
+        def_roll = random.random() * def_ev
         if acu_roll < def_roll:
             result["missed"] = True
             result["defense_verb"] = defender.defense_verb
@@ -235,36 +303,137 @@ def resolve_melee_attack(
         return result
 
     dmg_roll = _roll_damage(attacker, result, prep)
+    # ThirteenLeafClover trinket: alters damage roll toward extremes
+    if hasattr(attacker, "belongings"):
+        from app.engine.entities.trinkets import ThirteenLeafClover as _TLC
+        from app.engine.entities.trinkets import trinket_level
+        tlc_lvl = trinket_level(attacker, "thirteen_leaf_clover")
+        if tlc_lvl >= 0 and random.random() < _TLC.alter_damage_chance(tlc_lvl):
+            if random.random() < 0.6:
+                dmg_roll = attacker.get_damage_max()
+            else:
+                dmg_roll = attacker.get_damage_min()
+    dmg_roll = int((dmg_roll + dmg_bonus) * dmg_multi)
+    if attacker.has_buff("weakness"):
+        dmg_roll = round(dmg_roll * 0.67)
+    if attacker.has_buff("bless") and getattr(defender, "faction", None) == "enemy":
+        dmg_roll = round(dmg_roll * 1.2)
     dr_roll = random.randint(defender.get_dr_min(), defender.get_dr_max())
     raw_damage = max(0, dmg_roll - dr_roll)
 
     # Invisibility dispel on attack
     _dispel_stealth(attacker)
 
-    # Pre-DR defense proc (glyphs, abilities)
+    # Defense proc (abilities + glyphs)
     if hasattr(defender, "defense_proc") and raw_damage > 0:
         raw_damage = defender.defense_proc(raw_damage, attacker, floor_mobs, tile_x, tile_y)
         if raw_damage <= 0:
             return result
 
+    # Armor glyph proc
+    armor = getattr(getattr(defender, "belongings", None), "armor", None)
+    if armor is not None:
+        g = armor.enchantment
+        if g is not None and g.type not in ("none", None):
+            from app.engine.entities.armor_glyphs import apply_glyph_proc
+            raw_damage = apply_glyph_proc(
+                g.type, defender, attacker, armor,
+                raw_damage, floor_mobs, tile_x, tile_y, floor,
+                add_event=add_event,
+            )
+            if raw_damage <= 0:
+                return result
+
+    weapon = getattr(getattr(attacker, "belongings", None), "weapon", None)
+
+    # Polarized curse: replaces the hit with either 1.5x or 0x damage.
+    if weapon is not None and weapon.cursed and weapon.enchantment == "polarized" and raw_damage > 0:
+        from app.engine.entities.weapon_enchants import polarized_roll
+        raw_damage = int(raw_damage * polarized_roll())
+
     # Post-DR multipliers (melee = not ranged)
     effective_damage = _apply_post_dr_multipliers(raw_damage, attacker, defender, result, is_ranged=False)
     if prep is not None:
         effective_damage = int(effective_damage * prep["dmg_mult"])
+    if getattr(attacker, "is_admin", False):
+        effective_damage *= 4
+    if hasattr(defender, "belongings"):
+        from app.engine.entities.rings import tenacity_multiplier
+        effective_damage = int(effective_damage * tenacity_multiplier(defender))
 
     hp_before = defender.hp
     actual_damage = defender.take_damage(max(0, effective_damage))
     result["damage"] = actual_damage
+    _alert_defender(defender)
 
-    # Grim execute check (inverse: grim is on the ATTACKER's weapon)
-    if attacker.grim_max_chance > 0 and actual_damage > 0:
+    # Grim enchant: % max-HP execute scaling with missing HP.
+    if weapon is not None and weapon.enchantment == "grim" and actual_damage > 0:
+        from app.engine.entities.weapon_enchants import grim_chance
+        attacker.grim_max_chance = grim_chance(weapon.buffed_lvl())
         _check_grim(attacker, defender, result)
+        attacker.grim_max_chance = 0.0
 
-    # Kinetic overflow
-    _check_kinetic(attacker, raw_damage, defender, hp_before)
+    # Kinetic enchant: overflow damage beyond fatality is conserved.
+    if weapon is not None and weapon.enchantment == "kinetic":
+        _check_kinetic(attacker, raw_damage, defender, hp_before)
 
     if hasattr(attacker, "attack_proc") and actual_damage > 0:
         attacker.attack_proc(defender)
+        pending = getattr(attacker, "_pending_sound", None)
+        if pending:
+            add_event("PLAY_SOUND", {"sound": pending}, floor_id=getattr(attacker, "floor_id", 0))
+            attacker._pending_sound = None
+
+    # Other weapon enchants/curses (vampiric, blocking, elastic, shocking,
+    # sacrificial, displacing, annoying, unstable).
+    if weapon is not None and weapon.enchantment and actual_damage > 0:
+        from app.engine.entities.weapon_enchants import apply_enchant_proc
+        apply_enchant_proc(
+            weapon.enchantment, attacker, defender, weapon,
+            raw_damage, actual_damage, hp_before, result,
+            floor_mobs, tile_x, tile_y, floor,
+            add_event=add_event,
+        )
+
+    # Empowered Strike (battlemage T3): after the imbued wand gains a charge
+    # (from a prior melee hit), the next staff melee deals bonus damage and
+    # plays HIT_STRONG at 0.75 vol / 1.2 pitch (SPD MagesStaff.proc).
+    if actual_damage > 0:
+        es_buff = attacker.remove_buff("empowered_strike_tracker")
+        if es_buff is not None:
+            es_level = getattr(es_buff, "level", 1)
+            mult = 1.0 + es_level / 6.0
+            bonus = int(actual_damage * (mult - 1.0))
+            if bonus > 0:
+                actual_damage += defender.take_damage(bonus)
+                result["damage"] = actual_damage
+            surprised = getattr(defender, "surprised", False) or result.get("surprise", False)
+            if not surprised and add_event:
+                add_event("PLAY_SOUND", {"sound": "HIT_STRONG", "rate": 1.2}, floor_id=getattr(attacker, "floor_id", 0))
+
+    # Battlemage staff proc: melee hits with the Mage's Staff trigger the
+    # imbued wand's onHit effect (SPD MagesStaff.proc), AND restore one
+    # charge (up to max). If a charge was restored, also apply Empowered
+    # Strike tracker so the next staff hit gets the bonus.
+    if actual_damage > 0:
+        subclass_info = getattr(attacker, "subclass_info", None)
+        if subclass_info is not None and subclass_info.subclass == "battlemage":
+            from app.engine.entities.items_equip import Staff
+            from app.engine.entities.items_wands import Wand
+            w = getattr(getattr(attacker, "belongings", None), "weapon", None)
+            if isinstance(w, Staff) and w.imbued_wand is not None:
+                wand = w.imbued_wand
+                charged = wand.charges < wand.max_charges
+                if charged:
+                    wand.gain_charge(0.5)
+                    es_talent = getattr(attacker, "talent_info", None)
+                    if es_talent is not None and es_talent.level("empowered_strike") > 0:
+                        attacker.add_buff("empowered_strike_tracker", duration=10.0, level=es_talent.level("empowered_strike"))
+                wand.on_hit(
+                    attacker, defender, actual_damage,
+                    floor_mobs=floor_mobs, tile_x=tile_x, tile_y=tile_y,
+                    floor=floor, add_event=add_event,
+                )
 
     return result
 
@@ -291,15 +460,27 @@ def resolve_ranged_attack(
     if not attacker.is_alive or not defender.is_alive:
         return result
 
-    if getattr(attacker, "invisible", 0) > 0:
+    if getattr(attacker, "invisible", 0) > 0 and _can_surprise_attack(attacker, weapon=item):
         result["surprise"] = True
         result["hit"] = True
-    elif is_in_los and not is_in_los(defender.pos, attacker.pos):
+    elif _is_surprise_attack(attacker, defender, is_in_los, weapon=item):
         result["surprise"] = True
+        result["hit"] = True
+    elif getattr(attacker, "is_admin", False):
         result["hit"] = True
     else:
-        acu_roll = random.random() * attacker.attack_skill
-        def_roll = random.random() * defender.get_effective_defense_skill()
+        attack_skill = attacker.attack_skill
+        if attacker.has_buff("hex"):
+            attack_skill = int(attack_skill * 0.75)
+        proj_momentum = getattr(attacker, "subclass_info", None) and attacker.subclass_info.talent_info.level("projectile_momentum")
+        if proj_momentum and getattr(attacker, "freerun_seconds", 0) > 0:
+            attack_skill *= 1 + proj_momentum / 2
+        def_ev = defender.get_effective_defense_skill()
+        if defender.has_buff("hex"):
+            def_ev = int(def_ev * 0.75)
+        acc_mult = getattr(item, "acc_factor", 1.0)
+        acu_roll = random.random() * attack_skill * acc_mult
+        def_roll = random.random() * def_ev
         if acu_roll < def_roll:
             result["missed"] = True
             result["defense_verb"] = defender.defense_verb
@@ -310,6 +491,12 @@ def resolve_ranged_attack(
     result["crit"] = result["surprise"]
 
     dmg_roll = _roll_damage(attacker, result)
+    proj_momentum = getattr(attacker, "subclass_info", None) and attacker.subclass_info.talent_info.level("projectile_momentum")
+    if proj_momentum and getattr(attacker, "freerun_seconds", 0) > 0:
+        dmg_roll = round(dmg_roll * (1 + 0.15 * proj_momentum))
+    if hasattr(attacker, "belongings"):
+        from app.engine.entities.rings import sharpshooting_damage_bonus
+        dmg_roll += sharpshooting_damage_bonus(attacker)
     dr_roll = random.randint(defender.get_dr_min(), defender.get_dr_max())
     raw_damage = max(0, dmg_roll - dr_roll)
 
@@ -324,10 +511,13 @@ def resolve_ranged_attack(
 
     # Post-DR multipliers (ranged)
     effective_damage = _apply_post_dr_multipliers(raw_damage, attacker, defender, result, is_ranged=True)
+    if getattr(attacker, "is_admin", False):
+        effective_damage *= 4
 
     hp_before = defender.hp
     actual_damage = defender.take_damage(max(0, effective_damage))
     result["damage"] = actual_damage
+    _alert_defender(defender)
 
     if attacker.grim_max_chance > 0 and actual_damage > 0:
         _check_grim(attacker, defender, result)
@@ -336,5 +526,9 @@ def resolve_ranged_attack(
 
     if hasattr(attacker, "attack_proc") and actual_damage > 0:
         attacker.attack_proc(defender)
+        pending = getattr(attacker, "_pending_sound", None)
+        if pending:
+            add_event("PLAY_SOUND", {"sound": pending}, floor_id=getattr(attacker, "floor_id", 0))
+            attacker._pending_sound = None
 
     return result

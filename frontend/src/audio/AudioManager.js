@@ -6,6 +6,9 @@ import hitArrowSound from '../assets/pixel-dungeon/audio/hit_arrow.mp3';
 import hitSlashSound from '../assets/pixel-dungeon/audio/hit_slash.mp3';
 import hitBodySound from '../assets/pixel-dungeon/audio/hit.mp3';
 import hitStrongSound from '../assets/sounds/hit_strong.mp3';
+import hitStabSound from '../assets/sounds/hit_stab.mp3';
+import hitCrushSound from '../assets/sounds/hit_crush.mp3';
+import hitParrySound from '../assets/sounds/hit_parry.mp3';
 import healthWarnSound from '../assets/pixel-dungeon/audio/health_warn.mp3';
 import clickSound from '../assets/pixel-dungeon/audio/click.mp3';
 import itemSound from '../assets/sounds/item.mp3';
@@ -14,11 +17,33 @@ import secretSound from '../assets/sounds/secret.mp3';
 import waterStepSound from '../assets/sounds/water.mp3';
 import grassStepSound from '../assets/sounds/grass.mp3';
 import descendSound from '../assets/pixel-dungeon/audio/descend.mp3';
+import fallingSound from '../assets/pixel-dungeon/audio/falling.mp3';
 import drinkSound from '../assets/sounds/drink.mp3';
 import throwSound from '../assets/sounds/miss.mp3';
 import levelUpSound from '../assets/sounds/levelup.mp3';
 import trapSound from '../assets/sounds/trap.mp3';
-import { effectiveSfxVolume } from '../menu/menuSettings';
+import chargeupSound from '../assets/pixel-dungeon/audio/chargeup.mp3';
+import burningSound from '../assets/pixel-dungeon/audio/burning.mp3';
+import bossSound from '../assets/pixel-dungeon/audio/boss.mp3';
+import ghostSound from '../assets/pixel-dungeon/audio/ghost.mp3';
+import alertSound from '../assets/pixel-dungeon/audio/alert.mp3';
+import unlockSound from '../assets/sounds/unlock.mp3';
+import readSound from '../assets/sounds/read.mp3';
+import raySound from '../assets/sounds/ray.mp3';
+import blastSound from '../assets/sounds/blast.mp3';
+import lightningSound from '../assets/sounds/lightning.mp3';
+import puffSound from '../assets/sounds/puff.mp3';
+import goldSound from '../assets/pixel-dungeon/audio/gold.mp3';
+import dewdropSound from '../assets/pixel-dungeon/audio/dewdrop.mp3';
+import lullabySound from '../assets/sounds/lullaby.mp3';
+import challengeSound from '../assets/sounds/challenge.mp3';
+import teleportSound from '../assets/sounds/teleport.mp3';
+import meldSound from '../assets/sounds/meld.mp3';
+import gasSound from '../assets/sounds/gas.mp3';
+import shatterSound from '../assets/sounds/shatter.mp3';
+import bonesSound from '../assets/sounds/bones.mp3';
+import sheepSound from '../assets/sounds/sheep.mp3';
+import { effectiveSfxVolume, subscribe } from '../menu/menuSettings';
 
 class AudioManager {
     constructor() {
@@ -32,6 +57,8 @@ class AudioManager {
         this.masterGain.gain.value = effectiveSfxVolume();
         this.masterGain.connect(this.audioCtx.destination);
 
+        subscribe(() => { this.masterGain.gain.value = effectiveSfxVolume(); });
+
         this.loadSound('ATTACK_BOW', atkBowSound);
         this.loadSound('THROW', throwSound);
         this.loadSound('MISS', throwSound);
@@ -42,6 +69,9 @@ class AudioManager {
         this.loadSound('STEP_GRASS', grassStepSound);
         this.loadSound('HIT_ARROW', hitArrowSound);
         this.loadSound('HIT_SLASH', hitSlashSound);
+        this.loadSound('HIT_STAB', hitStabSound);
+        this.loadSound('HIT_CRUSH', hitCrushSound);
+        this.loadSound('HIT_PARRY', hitParrySound);
         this.loadSound('HIT_STRONG', hitStrongSound);
         this.loadSound('HIT_BODY', hitBodySound);
         this.loadSound('HEALTH_WARN', healthWarnSound);
@@ -50,9 +80,31 @@ class AudioManager {
         this.loadSound('DEATH', deathSound);
         this.loadSound('SECRET', secretSound);
         this.loadSound('STAIRS_DOWN', descendSound);
+        this.loadSound('FALLING', fallingSound);
         this.loadSound('DRINK', drinkSound);
         this.loadSound('LEVELUP', levelUpSound);
         this.loadSound('TRAP', trapSound);
+        this.loadSound('CHARGEUP', chargeupSound);
+        this.loadSound('BURNING', burningSound);
+        this.loadSound('BOSS', bossSound);
+        this.loadSound('GHOST', ghostSound);
+        this.loadSound('ALERT', alertSound);
+        this.loadSound('UNLOCK', unlockSound);
+        this.loadSound('READ', readSound);
+        this.loadSound('RAY', raySound);
+        this.loadSound('BLAST', blastSound);
+        this.loadSound('LIGHTNING', lightningSound);
+        this.loadSound('PUFF', puffSound);
+        this.loadSound('GOLD', goldSound);
+        this.loadSound('DEWDROP', dewdropSound);
+        this.loadSound('LULLABY', lullabySound);
+        this.loadSound('CHALLENGE', challengeSound);
+        this.loadSound('TELEPORT', teleportSound);
+        this.loadSound('MELD', meldSound);
+        this.loadSound('GAS', gasSound);
+        this.loadSound('SHATTER', shatterSound);
+        this.loadSound('BONES', bonesSound);
+        this.loadSound('SHEEP', sheepSound);
 
         const doorSounds = import.meta.glob('../assets/sounds/door_open.mp3', { eager: true, query: '?url' });
         const doorUrl = doorSounds['../assets/sounds/door_open.mp3']?.default;
@@ -127,6 +179,30 @@ class AudioManager {
             case 'DOOR_OPEN':
                 this.playTone(300, 'triangle', 0.15, 0.2);
                 this.playTone(200, 'triangle', 0.25, 0.15, 0.1);
+                break;
+            case 'TOMB':
+                this.playTone(80, 'sine', 0.6, 0.3);
+                this.playTone(60, 'sine', 0.6, 0.2, 0.15);
+                this.playNoise(0.3, 0.15, 'lowpass', 200);
+                break;
+            case 'CHARMS':
+                this.playTone(660, 'sine', 0.15, 0.15);
+                this.playTone(880, 'sine', 0.15, 0.15, 0.08);
+                this.playTone(1100, 'sine', 0.12, 0.2, 0.16);
+                break;
+            case 'LOCKED':
+                this.playTone(250, 'square', 0.08, 0.12);
+                this.playTone(200, 'square', 0.08, 0.08, 0.06);
+                break;
+            case 'CURSE':
+                this.playTone(120, 'sawtooth', 0.3, 0.4);
+                this.playTone(90, 'sawtooth', 0.4, 0.3, 0.1);
+                this.playNoise(0.2, 0.15, 'lowpass', 400);
+                break;
+            case 'HEAL':
+                this.playTone(500, 'sine', 0.2, 0.15);
+                this.playTone(700, 'sine', 0.2, 0.15, 0.1);
+                this.playTone(900, 'sine', 0.3, 0.1, 0.2);
                 break;
             default:
                 // console.log(`Sound not found: ${soundName}`);

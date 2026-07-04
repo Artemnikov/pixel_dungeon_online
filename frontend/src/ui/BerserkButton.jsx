@@ -1,7 +1,10 @@
+import { useTranslation } from 'react-i18next';
+
 export default function BerserkButton({
   berserkPower,
   onTriggerBerserk,
 }) {
+  const { t } = useTranslation();
   if (!berserkPower || berserkPower <= 0) return null;
 
   const pct = Math.min(1, berserkPower);
@@ -14,9 +17,9 @@ export default function BerserkButton({
         className={`berserk-btn ${ready ? 'berserk-btn-ready' : ''}`}
         onClick={() => ready && onTriggerBerserk?.()}
         disabled={!ready}
-        title={ready ? 'Trigger Berserk!' : `Rage: ${Math.round(pct * 100)}%`}
+        title={ready ? t('combat.triggerBerserk') : t('combat.ragePct', { pct: Math.round(pct * 100) })}
       >
-        <div className="berserk-btn-label">{ready ? 'BERSERK!' : 'Rage'}</div>
+        <div className="berserk-btn-label">{ready ? t('combat.berserk') : t('combat.rage')}</div>
         <div className="berserk-btn-bar">
           <div className="berserk-btn-fill" style={{ width: `${pct * 100}%` }} />
         </div>

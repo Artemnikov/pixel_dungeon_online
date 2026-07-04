@@ -1,9 +1,13 @@
-from collections import deque
+from collections import defaultdict, deque
+from typing import Dict
 
-from app.engine.dungeon.generator import RoomKind, TileType, TrapType
+from app.engine.dungeon.constants import RoomKind, TileType, TrapType
 from app.engine.manager import GameInstance
 
 
+# Matches terrain_flags.py's PASSABLE set exactly (everything flagged
+# PASSABLE there is walkable -- traps and embers don't block movement,
+# they just trigger/burn on entry).
 WALKABLE_TILES = {
     TileType.FLOOR,
     TileType.DOOR,
@@ -15,6 +19,12 @@ WALKABLE_TILES = {
     TileType.FLOOR_GRASS,
     TileType.EMPTY_DECO,
     TileType.HIGH_GRASS,
+    TileType.FURROWED_GRASS,
+    TileType.EMBERS,
+    TileType.SECRET_TRAP,
+    TileType.TRAP,
+    TileType.INACTIVE_TRAP,
+    TileType.OPEN_DOOR,
 }
 
 
@@ -39,7 +49,7 @@ def _is_in_safe_room(rooms, x, y):
     return rooms[0].contains(x, y) or rooms[-1].contains(x, y)
 
 
-def _reachable_from_start(grid, start):
+def _reachable_from_start(grid, start, walkable=WALKABLE_TILES):
     q = deque([start])
     visited = {start}
 
@@ -51,7 +61,7 @@ def _reachable_from_start(grid, start):
                 continue
             if (nx, ny) in visited:
                 continue
-            if grid[ny][nx] not in WALKABLE_TILES:
+            if grid[ny][nx] not in walkable:
                 continue
             visited.add((nx, ny))
             q.append((nx, ny))
@@ -69,7 +79,10 @@ def test_sewers_room_allocation_and_layout_contracts():
 
         assert 4 <= len(room_ids_by_kind[RoomKind.STANDARD]) <= 6
         assert 1 <= len(room_ids_by_kind[RoomKind.SPECIAL]) <= 2
-        assert len(room_ids_by_kind[RoomKind.HIDDEN]) == 2
+        # SecretRoom.secretsForFloor(1) == 0 in the original (RegularLevel
+        # never rolls secret rooms on the very first floor) -- depth 1 is
+        # the only sewers depth with a deterministic hidden-room count.
+        assert len(room_ids_by_kind[RoomKind.HIDDEN]) == 0
 
         assert meta["layout_kind"] in {"loop", "figure_eight"}
 
@@ -85,8 +98,10 @@ def test_sewers_room_allocation_and_layout_contracts():
 def test_sewers_doors_keys_and_hidden_connections_contracts():
     game = GameInstance("sewers-doors")
 
+    # Depth 3 (not 1): SecretRoom.secretsForFloor(1) == 0, so depth 1 never
+    # has a hidden room to exercise the hidden-connection checks below.
     for _ in range(25):
-        floor = game.generate_floor(1)
+        floor = game.generate_floor(3)
         room_by_id = {room.room_id: room for room in floor.rooms}
         room_ids_by_kind = floor.generation_meta["room_ids_by_kind"]
 
@@ -98,15 +113,13 @@ def test_sewers_doors_keys_and_hidden_connections_contracts():
 
         assert door_positions
 
+        # Note: a door's neighbours aren't always a `floor.rooms` member --
+        # floor.rooms intentionally excludes ConnectionRoom (corridor/tunnel)
+        # segments (see spd_adapter.gen_level_to_floor_state, matching the
+        # original's "corridors are implicit" convention), and a door can
+        # legitimately sit between two tunnel segments. A walkable neighbour
+        # on at least one side is the real, tile-grid-based structural check.
         for x, y, _ in door_positions:
-            room_neighbors = [room for room in floor.rooms if room.is_perimeter(x, y)]
-            assert room_neighbors, f"Door at {(x, y)} is not on room perimeter"
-
-            # SPD-style builders place some doors directly between two
-            # adjacent rooms (shared edge, no corridor between them). A
-            # door just needs a walkable neighbour on at least one side —
-            # whether that neighbour is corridor or room interior doesn't
-            # matter for playability.
             has_walkable_side = False
             for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
                 nx, ny = x + dx, y + dy
@@ -117,18 +130,24 @@ def test_sewers_doors_keys_and_hidden_connections_contracts():
                     break
             assert has_walkable_side, f"Door at {(x, y)} has no walkable side"
 
+        # Standard rooms must be connected to the rest of the floor, but not
+        # necessarily via a literal DOOR tile: SewerPipeRoom-to-SewerPipeRoom
+        # links paint as plain WATER (DoorType.WATER, no door tile -- see
+        # RegularPainter._paint_doors), and same-size StandardRooms can fuse
+        # via an open wall with no door at all (room_merges). Reachability
+        # from the stairs is the real, tile-agnostic invariant.
+        stairs_up = _find_tile(floor.grid, TileType.STAIRS_UP)
+        assert stairs_up is not None
+        reachable = _reachable_from_start(floor.grid, stairs_up)
         for room_id in room_ids_by_kind[RoomKind.STANDARD]:
             room = room_by_id[room_id]
-            visible_doors = []
-            for y in range(room.y, room.y + room.height):
-                for xw in (room.x - 1, room.x + room.width):
-                    if floor.grid[y][xw] in (TileType.DOOR, TileType.LOCKED_DOOR):
-                        visible_doors.append((xw, y))
-            for x in range(room.x, room.x + room.width):
-                for yw in (room.y - 1, room.y + room.height):
-                    if floor.grid[yw][x] in (TileType.DOOR, TileType.LOCKED_DOOR):
-                        visible_doors.append((x, yw))
-            assert visible_doors, f"Standard room {room_id} has no visible doors"
+            room_cells = (
+                (x, y)
+                for y in range(room.y, room.y + room.height)
+                for x in range(room.x, room.x + room.width)
+            )
+            assert any(cell in reachable for cell in room_cells), \
+                f"Standard room {room_id} is not reachable from the entrance"
 
         hidden_door_positions = set(floor.hidden_doors.keys())
         for room_id in room_ids_by_kind[RoomKind.HIDDEN]:
@@ -141,18 +160,54 @@ def test_sewers_doors_keys_and_hidden_connections_contracts():
             assert room_hidden, f"Hidden room {room_id} does not connect via hidden door"
 
         if floor.locked_doors:
-            key_items = [item for item in floor.items.values() if getattr(item, "type", "") == "key"]
-            key_by_key_id = {item.key_id: item for item in key_items}
+            # key_id is a per-depth category (Key.key_id), not a per-door
+            # identifier -- a floor with two same-type locks (e.g. two
+            # "iron" vaults) drops two separate, stackable key items sharing
+            # that id. Group by id rather than collapsing into one.
+            #
+            # A key can also turn up *inside* an unrelated special room's
+            # treasure chest: GenLevel.find_prize_item() (TrapsRoom/
+            # ConsumableRoom etc.'s prize()) pulls a random queued
+            # itemsToSpawn descriptor, which can be the very IronKey/
+            # CrystalKey another room's paint() just queued -- faithful to
+            # the original Level.findPrizeItem(). The key's reachability
+            # then depends on the chest's position, not a standalone pos.
+            keys_by_id: Dict[str, list] = defaultdict(list)
+            for item in floor.items.values():
+                if getattr(item, "type", "") == "key":
+                    keys_by_id[item.key_id].append(item)
+                elif getattr(item, "kind", "") == "chest":
+                    for sub in item.contents:
+                        if getattr(sub, "type", "") == "key":
+                            keys_by_id[sub.key_id].append(item)  # reachability uses the chest's pos
 
+            # Note: a vault's perimeter can have several CRYSTAL_DOOR/
+            # LOCKED_DOOR tiles (multiple "windows" into one room) all
+            # opened by the same single key -- tile count isn't key count,
+            # so this only checks "at least one key per lock category
+            # exists and is reachable", not an exact tiles-needed tally.
+            lock_ids_needed = set(floor.locked_doors.values())
+
+            # Treat every lock tile -- SECRET_DOOR, and BARRICADE -- as
+            # passable: a floor can have more than one independent vault/
+            # lock, a key can sit past a hidden door or a burnable barricade
+            # (StorageRoom etc.), and none of that should block a key's
+            # reachability check (searching/fire are always available to the
+            # player; this checks eventual solvability, not "in plain sight").
+            lock_tiles = WALKABLE_TILES | {
+                TileType.LOCKED_DOOR, TileType.CRYSTAL_DOOR, TileType.LOCKED_EXIT,
+                TileType.SECRET_DOOR, TileType.BARRICADE,
+            }
             stairs_up = _find_tile(floor.grid, TileType.STAIRS_UP)
             assert stairs_up is not None
-            reachable = _reachable_from_start(floor.grid, stairs_up)
+            reachable = _reachable_from_start(floor.grid, stairs_up, lock_tiles)
 
-            for _, key_id in floor.locked_doors.items():
-                assert key_id in key_by_key_id
-                key_item = key_by_key_id[key_id]
-                assert key_item.pos is not None
-                assert (key_item.pos.x, key_item.pos.y) in reachable
+            for key_id in lock_ids_needed:
+                keys = keys_by_id.get(key_id, [])
+                assert keys, f"No {key_id!r} key found for its lock"
+                for key_item in keys:
+                    assert key_item.pos is not None
+                    assert (key_item.pos.x, key_item.pos.y) in reachable
 
 
 def test_sewers_terrain_and_trap_contracts():
@@ -170,12 +225,16 @@ def test_sewers_terrain_and_trap_contracts():
             for x, tile in enumerate(row):
                 if _is_in_safe_room(floor.rooms, x, y):
                     continue
-                if tile not in (TileType.FLOOR, TileType.FLOOR_WATER, TileType.FLOOR_GRASS):
+                # HIGH_GRASS counts as grass terrain too: the painter
+                # promotes some painted GRASS cells to HIGH_GRASS based on
+                # neighbour density (RegularPainter._paint_grass), so
+                # excluding it from the ratio undercounts the Patch fill.
+                if tile not in (TileType.FLOOR, TileType.FLOOR_WATER, TileType.FLOOR_GRASS, TileType.HIGH_GRASS):
                     continue
                 terrain_total += 1
                 if tile == TileType.FLOOR_WATER:
                     water_total += 1
-                elif tile == TileType.FLOOR_GRASS:
+                elif tile in (TileType.FLOOR_GRASS, TileType.HIGH_GRASS):
                     grass_total += 1
 
         assert 1 <= len(floor.traps) <= 3

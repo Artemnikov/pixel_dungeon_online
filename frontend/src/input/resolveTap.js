@@ -1,4 +1,8 @@
-export function resolveTapAction({ tileX, tileY, playerTile }) {
+import { BACKEND_TILE } from '../rendering/sewers/constants';
+
+export const ALCHEMY_TILE_ID = BACKEND_TILE.ALCHEMY.id;
+
+export function resolveTapAction({ tileX, tileY, playerTile, mobs, grid }) {
   if (!playerTile) {
     return { type: 'MOVE_TO', x: tileX, y: tileY };
   }
@@ -11,6 +15,19 @@ export function resolveTapAction({ tileX, tileY, playerTile }) {
 
   if (chebyshev === 0) {
     return { type: 'WAIT' };
+  }
+
+  if (chebyshev <= 1) {
+    const npc = mobs && Object.values(mobs).find(
+      m => m.type === 'npc' && Math.round(m.pos.x) === tileX && Math.round(m.pos.y) === tileY
+    );
+    if (npc) {
+      return { type: 'NPC_INTERACT', npc_id: npc.id };
+    }
+    const tile = grid?.[tileY]?.[tileX];
+    if (tile === ALCHEMY_TILE_ID) {
+      return { type: 'OPEN_ALCHEMY' };
+    }
   }
 
   if (chebyshev === 1) {

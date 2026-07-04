@@ -23,7 +23,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from pydantic import BaseModel
 
-from app.engine.entities.base import Mob, Player
+from app.engine.entities.player import Mob, Player
 
 
 class _Contract(BaseModel):

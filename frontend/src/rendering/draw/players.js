@@ -1,5 +1,10 @@
-import { TILE_SIZE, TILE_SCALE, PLAYER_ATTACK_DURATION, PLAYER_OPERATE_DURATION } from '../../constants';
+import { TILE_SIZE, TILE_SCALE, ENTITY_LIFT, PLAYER_ATTACK_DURATION, PLAYER_OPERATE_DURATION, PLAYER_READ_DURATION } from '../../constants';
 import { drawWhiteSilhouette } from './flash';
+import { drawShieldHalo } from './shieldHalo';
+
+function pixelRound(value, pixelWidth) {
+  return Math.ceil(value * pixelWidth) / pixelWidth;
+}
 
 export function drawPlayers(ctx, { entitiesRef, visionRef, assetImages, playerAnimRef, myPlayerId }) {
   Object.values(entitiesRef.current.players).forEach(player => {
@@ -7,7 +12,7 @@ export function drawPlayers(ctx, { entitiesRef, visionRef, assetImages, playerAn
     if (!isPlayerVisible) return;
 
     const x = player.renderPos.x * TILE_SIZE;
-    const y = player.renderPos.y * TILE_SIZE;
+    const y = player.renderPos.y * TILE_SIZE - ENTITY_LIFT;
 
     // Map class -> sheet key directly. assetImages[key] is null until that sheet
     // loads, and the `if (playerSprite)` guard below skips drawing until then, so
@@ -16,34 +21,44 @@ export function drawPlayers(ctx, { entitiesRef, visionRef, assetImages, playerAn
     const playerSprite = assetImages[CLASS_KEYS[player.class_type] || 'warrior'];
 
     if (playerSprite) {
+      const armorType = player.armor_type || 'plate';
+      const armorRows = {
+        cloth: 11,
+        leather: 11,
+        mail: 11,
+        scale: 11,
+        plate: 11
+      };
+      // Note: Currently all armors share row 11 in the sprite sheet.
+      // If specific variations are added to items.png later, they can be mapped here.
+      
       ctx.save();
 
-      // Rogue stealth: render an invisible hero translucently (fully see-through
-      // for others, ghosted for yourself so you can still track your position).
-      if (player.invisible > 0) {
-        ctx.globalAlpha = player.id === myPlayerId ? 0.45 : 0.0;
+      if (player.fadeAlpha != null && player.fadeAlpha < 1) {
+        ctx.globalAlpha = player.fadeAlpha;
       }
 
       const RUN_FRAMES    = [2, 3, 4, 5, 6, 7];
       const IDLE_FRAMES   = [0, 0, 0, 1, 0, 0, 1, 1];
-      const ATTACK_FRAMES = [13, 14, 15, 0]; // ~15fps swing (frames 13,14,15,idle)
-      const DIE_FRAMES    = [8, 9, 10, 11, 12, 11]; // SPD HeroSprite die animation
-      const OPERATE_FRAMES = [16, 17, 16, 17]; // SPD HeroSprite operate (drink) @8fps
+      const ATTACK_FRAMES = [13, 14, 15, 0];
+      const DIE_FRAMES    = [8, 9, 10, 11, 12, 11];
+      const OPERATE_FRAMES = [16, 17, 16, 17];
+      const READ_FRAMES = [19, 20, 20, 20, 20, 20, 20, 20, 20, 19];
 
       const now = performance.now();
       const anim = (playerAnimRef && playerAnimRef.current[player.id]) || {};
       const isAttacking = !player.is_downed && anim.attackUntil && now < anim.attackUntil;
       const isOperating = !player.is_downed && !isAttacking && anim.operateUntil && now < anim.operateUntil;
+      const isReading = !player.is_downed && !isAttacking && !isOperating && anim.readUntil && now < anim.readUntil;
       const isFlashing = anim.flashUntil && now < anim.flashUntil;
 
-      const isMoving = !player.is_downed && !isAttacking && !isOperating && player.targetPos && (
+      const isMoving = !player.is_downed && !isAttacking && !isOperating && !isReading && player.targetPos && (
         Math.abs(player.targetPos.x - player.renderPos.x) > 0.05 ||
         Math.abs(player.targetPos.y - player.renderPos.y) > 0.05
       );
 
       let frameIndex;
       if (player.is_downed) {
-        // Play the death animation once @20fps, then hold the final corpse frame.
         const elapsed = now - (player.deathStart || now);
         const fi = Math.min(Math.floor(elapsed / 50), DIE_FRAMES.length - 1);
         frameIndex = DIE_FRAMES[fi];
@@ -55,6 +70,10 @@ export function drawPlayers(ctx, { entitiesRef, visionRef, assetImages, playerAn
         const elapsed = now - (anim.operateUntil - PLAYER_OPERATE_DURATION);
         const fi = Math.min(Math.floor(elapsed / (PLAYER_OPERATE_DURATION / OPERATE_FRAMES.length)), OPERATE_FRAMES.length - 1);
         frameIndex = OPERATE_FRAMES[fi];
+      } else if (isReading) {
+        const elapsed = now - (anim.readUntil - PLAYER_READ_DURATION);
+        const fi = Math.min(Math.floor(elapsed / (PLAYER_READ_DURATION / READ_FRAMES.length)), READ_FRAMES.length - 1);
+        frameIndex = READ_FRAMES[fi];
       } else if (isMoving) {
         frameIndex = RUN_FRAMES[Math.floor(now / 50) % RUN_FRAMES.length];
       } else {
@@ -79,13 +98,34 @@ export function drawPlayers(ctx, { entitiesRef, visionRef, assetImages, playerAn
       ctx.restore();
     }
 
+    // SPD-style CharHealthIndicator for other players (1px bar, 4/6 width, centered above sprite)
     if (player.id !== myPlayerId && !player.is_downed) {
-      const hpBarWidth = TILE_SIZE - 4;
-      const playerHpPercent = player.hp / player.max_hp;
-      ctx.fillStyle = '#111';
-      ctx.fillRect(x + 2, y - 12, hpBarWidth, 4);
-      ctx.fillStyle = player.heal_left > 0 ? '#f1c40f' : '#2ecc71';
-      ctx.fillRect(x + 2, y - 12, hpBarWidth * playerHpPercent, 4);
+      const hp = player.hp || 0;
+      const maxHp = player.max_hp || 1;
+      const shield = (player.shields || []).reduce((sum, s) => sum + (s.amount || 0), 0);
+
+      if (hp < maxHp || shield > 0) {
+        const max = Math.max(hp + shield, maxHp);
+        let healthPct = hp / max;
+        let shieldPct = (hp + shield) / max;
+
+        const barW = TILE_SIZE * (4 / 6);
+        const barX = x + (TILE_SIZE - barW) / 2;
+        const barY = y - 2;
+
+        const pxW = barW;
+
+        ctx.fillStyle = '#cc0000';
+        ctx.fillRect(barX, barY, barW, 1);
+
+        const shldW = barW * pixelRound(shieldPct, pxW);
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(barX, barY, shldW, 1);
+
+        const hpW = barW * pixelRound(healthPct, pxW);
+        ctx.fillStyle = '#00ee00';
+        ctx.fillRect(barX, barY, hpW, 1);
+      }
     }
 
     if (player.id !== myPlayerId) {
@@ -93,6 +133,11 @@ export function drawPlayers(ctx, { entitiesRef, visionRef, assetImages, playerAn
       ctx.font = '10px Arial';
       ctx.textAlign = 'center';
       ctx.fillText(player.name, x + TILE_SIZE / 2, y - 15);
+    }
+
+    const totalShield = (player.shields || []).reduce((sum, s) => sum + (s.amount || 0), 0);
+    if (totalShield > 0) {
+      drawShieldHalo(ctx, x + TILE_SIZE / 2, y, totalShield, player.fadeAlpha ?? 1);
     }
   });
 }

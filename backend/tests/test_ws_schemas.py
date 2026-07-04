@@ -75,6 +75,7 @@ def test_init_first_connect_keys_match():
     init = InitMessage(player_id="p1", depth=1, grid=[[0]], width=1, height=1, traps=[])
     assert set(init.model_dump(exclude_none=True)) == {
         "type", "player_id", "depth", "grid", "width", "height", "traps",
+        "custom_tiles", "custom_walls", "torches",
     }
 
 
@@ -82,17 +83,21 @@ def test_init_floor_change_omits_player_id():
     init = InitMessage(depth=2, grid=[[0]], width=1, height=1, traps=[])
     dumped = init.model_dump(exclude_none=True)
     assert "player_id" not in dumped
-    assert set(dumped) == {"type", "depth", "grid", "width", "height", "traps"}
+    assert set(dumped) == {
+        "type", "depth", "grid", "width", "height", "traps",
+        "custom_tiles", "custom_walls", "torches",
+    }
 
 
 def test_state_update_keys_match():
     update = StateUpdateMessage(
         depth=1, difficulty="normal", players=[], mobs=[], items=[],
-        visible_tiles=[], traps=[], gold=0, energy=0, events=[],
+        visible_tiles=[], traps=[], gold=0, energy=0, has_amulet=False,
+        boss_lurking=False, events=[],
     )
     assert set(update.model_dump(exclude_none=True)) == {
         "type", "depth", "difficulty", "players", "mobs", "items",
-        "visible_tiles", "traps", "gold", "energy", "events",
+        "visible_tiles", "traps", "gold", "energy", "has_amulet", "boss_lurking", "events",
     }
 
 
@@ -102,7 +107,8 @@ def test_state_update_passes_nested_payloads_through_untouched():
     event = {"type": "ATTACK", "data": {"source": "a", "target": "b"}}
     update = StateUpdateMessage(
         depth=1, difficulty="normal", players=[player], mobs=[], items=[item],
-        visible_tiles=[[1, 2]], traps=[], gold=5, energy=3, events=[event],
+        visible_tiles=[[1, 2]], traps=[], gold=5, energy=3, has_amulet=True,
+        boss_lurking=False, events=[event],
     )
     dumped = update.model_dump(exclude_none=True)
     assert dumped["players"][0] == player

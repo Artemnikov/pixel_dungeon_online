@@ -1,0 +1,297 @@
+/* --- Level-up banner --- */
+.levelup-banner {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 500;
+  background: #2a2a35;
+  border: 2px solid #ffe070;
+  border-radius: 8px;
+  cursor: pointer;
+  animation: levelup-banner-in 0.3s ease-out;
+}
+@keyframes levelup-banner-in {
+  from { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+.levelup-banner-content {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 20px;
+}
+.levelup-text {
+  color: #ffe070;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 16px;
+  font-weight: bold;
+}
+.levelup-milestone {
+  color: #5af;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 13px;
+}
+.levelup-pts {
+  color: #8f8;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 12px;
+}
+.levelup-hint {
+  color: #666;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 11px;
+  margin-left: auto;
+}
+.levelup-banner:hover {
+  border-color: #ffe0a0;
+  background: #333340;
+}
+
+/* --- Boss slain banner (floating, no dark overlay) --- */
+.boss-slain-root {
+  position: fixed; inset: 0; z-index: 600;
+  pointer-events: none;
+  animation: boss-slain-fadein 0.3s ease-out;
+}
+@keyframes boss-slain-fadein {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.boss-slain-badge {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) translateY(-72px);
+  background: transparent url('../assets/pixel-dungeon/interfaces/badges.png') no-repeat;
+  image-rendering: pixelated;
+  animation: boss-slain-badge-in 0.25s ease-out;
+}
+@keyframes boss-slain-badge-in {
+  from { opacity: 0; transform: translate(-50%, -50%) translateY(-72px) scale(1.5); }
+  to { opacity: 1; transform: translate(-50%, -50%) translateY(-72px) scale(1); }
+}
+.boss-slain-banner {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: transparent url('../assets/pixel-dungeon/interfaces/banners.png') no-repeat;
+  image-rendering: pixelated;
+  animation: boss-slain-banner-in 0.3s ease-out;
+}
+@keyframes boss-slain-banner-in {
+  from { opacity: 0; filter: brightness(2); }
+  to { opacity: 1; filter: brightness(1); }
+}
+
+/* In-game menu (Escape) */
+.game-menu-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.6);
+}
+.game-menu {
+  background: #26252b;
+  border: 2px solid #0d0d11;
+  border-radius: 8px;
+  padding: 24px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 220px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.6);
+}
+.game-menu-title {
+  color: #ffe070;
+  margin: 0 0 8px;
+  font-size: 20px;
+  text-align: center;
+  font-family: monospace;
+}
+.game-menu-btn {
+  padding: 10px 16px;
+  font-family: monospace;
+  font-size: 16px;
+  color: #fff;
+  background: linear-gradient(#4a4a52, #313139);
+  border: 2px solid #1c1c22;
+  border-radius: 6px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12), 0 2px 0 rgba(0, 0, 0, 0.5);
+  cursor: pointer;
+  transition: filter 0.1s, transform 0.05s;
+}
+.game-menu-btn:hover { filter: brightness(1.2); }
+.game-menu-btn:active { transform: translateY(1px); }
+.game-menu-btn.accent { color: #ffe070; font-weight: bold; }
+.game-menu-btn.danger { color: #ff6b6b; }
+
+/* Rankings screen (SPD-style end-of-run summary) */
+.rankings-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+  background: rgba(0,0,0,0.7);
+}
+.rankings-pane {
+  background: #1a1a22;
+  border: 2px solid #333;
+  border-radius: 8px;
+  padding: 24px;
+  max-width: 420px;
+  width: 90%;
+  max-height: 85vh;
+  overflow-y: auto;
+  color: #ccc;
+  font-family: 'Courier New', Courier, monospace;
+}
+.rankings-title {
+  font-size: 24px;
+  color: #ffe070;
+  text-align: center;
+  margin: 0 0 8px;
+  letter-spacing: 2px;
+}
+.rankings-score {
+  text-align: center;
+  font-size: 16px;
+  color: #ffcc33;
+  margin-bottom: 16px;
+}
+.rankings-stats {
+  border: 1px solid #333;
+  border-radius: 4px;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+  background: rgba(255,255,255,0.04);
+}
+.rankings-stat-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 3px 0;
+  font-size: 12px;
+}
+.rankings-stat-label {
+  color: #888;
+}
+.rankings-stat-value {
+  color: #ddd;
+}
+.rankings-section-title {
+  font-size: 14px;
+  color: #aaa;
+  margin: 12px 0 6px;
+  border-bottom: 1px solid #333;
+  padding-bottom: 4px;
+}
+.rankings-talents,
+.rankings-items {
+  margin-bottom: 12px;
+}
+.rankings-talent-row,
+.rankings-item-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 2px 4px;
+  font-size: 11px;
+  color: #bbb;
+}
+.rankings-talent-name {
+  color: #ddd;
+}
+.rankings-talent-level {
+  color: #ffcc33;
+  font-size: 10px;
+  letter-spacing: 1px;
+}
+.rankings-empty {
+  font-size: 11px;
+  color: #666;
+  font-style: italic;
+  padding: 4px;
+}
+.rankings-buttons {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 16px;
+}
+.rankings-btn {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 14px;
+  padding: 8px 20px;
+  color: #fff;
+  background: #3a3a3a;
+  border: 2px solid #6a6a6a;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.rankings-btn:hover {
+  filter: brightness(1.2);
+}
+
+/* --- score breakdown (game over + victory) --- */
+.game-over-score {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  background: rgba(0,0,0,0.5);
+  border: 1px solid #555;
+  padding: 12px 20px;
+  min-width: 200px;
+  pointer-events: auto;
+}
+.game-over-score__row {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  font: 13px monospace;
+  color: #ffffcc;
+}
+.game-over-actions {
+  display: flex;
+  gap: 12px;
+  pointer-events: auto;
+}
+.game-over-btn {
+  font: 14px monospace;
+  background: rgba(0,0,0,0.7);
+  color: #fff;
+  border: 1px solid #888;
+  padding: 6px 16px;
+  cursor: pointer;
+}
+.game-over-btn:hover { border-color: #fff; }
+
+/* --- VictoryScreen --- */
+.victory-screen {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  z-index: 50;
+  opacity: 0;
+  transition: opacity 2s ease-in;
+}
+.victory-screen--shown { opacity: 1; }
+.victory-screen__title {
+  font: bold 48px monospace;
+  color: #ffd700;
+  text-shadow: 0 2px 6px #000;
+  letter-spacing: 2px;
+}
+.victory-screen__subtitle {
+  font: 16px monospace;
+  color: #ffffcc;
+  text-shadow: 0 1px 4px #000;
+}

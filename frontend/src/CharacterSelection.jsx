@@ -1,10 +1,5 @@
-// "Choose Your Hero" screen — a faithful re-implementation of Shattered Pixel
-// Dungeon's HeroSelectScene: the selected class's splash-art banner fills the
-// background with left/right vignette fades, a row of small pixel class busts
-// (cropped at frame 0,90,12,15 of each hero sprite sheet) lets you pick, and the
-// hero's name + original short description show in the left UI column. The
-// remake-specific difficulty + name controls are kept in the same column.
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import './heroSelect.css';
 import AudioManager from './audio/AudioManager';
 import Icon from './menu/Icon';
@@ -23,28 +18,10 @@ import mageSheet from './assets/pixel-dungeon/sprites/mage.png';
 import rogueSheet from './assets/pixel-dungeon/sprites/rogue.png';
 import huntressSheet from './assets/pixel-dungeon/sprites/huntress.png';
 
-// class bust frame within the 256x128 hero sprite sheet (from HeroSelectScene.HeroBtn)
 const HERO_FRAME = { x: 0, y: 90, w: 12, h: 15 };
 const SHEET_W = 256, SHEET_H = 128;
 
-const HEROES = [
-  {
-    id: 'warrior', name: 'Warrior', sheet: warriorSheet, splash: warriorSplash,
-    desc: 'The Warrior endures extra damage with shielding granted by his broken seal. The seal can be moved between armors and transfers a single upgrade.',
-  },
-  {
-    id: 'mage', name: 'Mage', sheet: mageSheet, splash: mageSplash,
-    desc: "The Mage is an arcane expert and carries a magical staff that's stronger than a wand. The staff can be imbued with any wand the Mage finds.",
-  },
-  {
-    id: 'rogue', name: 'Rogue', sheet: rogueSheet, splash: rogueSplash,
-    desc: 'The Rogue can evade enemies and strike from invisibility using his cloak of shadows. He also detects secrets and traps from a greater distance.',
-  },
-  {
-    id: 'huntress', name: 'Huntress', sheet: huntressSheet, splash: huntressSplash,
-    desc: 'The Huntress is a master of thrown weapons and has a magical bow with infinite arrows. She also travels through tall grass without trampling it.',
-  },
-];
+const HERO_IDS = ['warrior', 'mage', 'rogue', 'huntress'];
 
 function HeroBust({ sheet, scale = 3, selected }) {
   const f = HERO_FRAME;
@@ -66,15 +43,25 @@ function HeroBust({ sheet, scale = 3, selected }) {
 }
 
 const CharacterSelection = ({ onSelect }) => {
+  const { t } = useTranslation();
   const [selectedClass, setSelectedClass] = useState('warrior');
   const [difficulty, setDifficulty] = useState('normal');
+  const [strongerBosses, setStrongerBosses] = useState(false);
   const [playerName, setPlayerName] = useState('');
   const [landscape, setLandscape] = useState(
     typeof window !== 'undefined' ? window.innerWidth > window.innerHeight : true
   );
   const audioRef = useRef(null);
 
-  const hero = HEROES.find(h => h.id === selectedClass) || HEROES[0];
+  const heroId = HERO_IDS.includes(selectedClass) ? selectedClass : 'warrior';
+
+  const HEROES = [
+    { id: 'warrior', sheet: warriorSheet, splash: warriorSplash },
+    { id: 'mage', sheet: mageSheet, splash: mageSplash },
+    { id: 'rogue', sheet: rogueSheet, splash: rogueSplash },
+    { id: 'huntress', sheet: huntressSheet, splash: huntressSplash },
+  ];
+  const hero = HEROES.find(h => h.id === heroId) || HEROES[0];
 
   useEffect(() => {
     const onResize = () => setLandscape(window.innerWidth > window.innerHeight);
@@ -82,7 +69,6 @@ const CharacterSelection = ({ onSelect }) => {
     return () => window.removeEventListener('resize', onResize);
   }, []);
 
-  // theme music (loops; volume from settings) — carried over from the previous screen
   useEffect(() => {
     const audio = new Audio(themeMusic);
     audio.loop = true;
@@ -107,19 +93,20 @@ const CharacterSelection = ({ onSelect }) => {
   const start = () => {
     AudioManager.play('CLICK');
     if (audioRef.current) { audioRef.current.pause(); audioRef.current.currentTime = 0; }
-    new Audio(descendSound).play().catch(() => {});
-    onSelect(selectedClass, difficulty, playerName.trim());
+    const descendAudio = new Audio(descendSound);
+    descendAudio.volume = effectiveMusicVolume();
+    descendAudio.play().catch(() => {});
+    onSelect(selectedClass, difficulty, playerName.trim(), strongerBosses);
   };
 
   return (
     <div className={`hero-select ${landscape ? 'landscape' : 'portrait'}`}>
-      {/* splash-art banner background; keyed so the brighten-in animation replays on change */}
       <img key={hero.id} className="hero-splash" src={hero.splash} alt="" />
       <div className="hero-vignette-left" />
       <div className="hero-vignette-right" />
 
       <div className="hero-ui">
-        <h1 className="hero-title">Choose Your Hero</h1>
+        <h1 className="hero-title">{t('hero.title')}</h1>
 
         <div className="hero-busts">
           {HEROES.map(h => (
@@ -127,19 +114,19 @@ const CharacterSelection = ({ onSelect }) => {
               key={h.id}
               className={`hero-bust-btn ${selectedClass === h.id ? 'selected' : ''}`}
               onClick={() => pick(h.id)}
-              aria-label={h.name}
+              aria-label={t(`hero.classes.${h.id}.name`)}
             >
               <HeroBust sheet={h.sheet} selected={selectedClass === h.id} />
             </button>
           ))}
         </div>
 
-        <h2 className="hero-name">{hero.name}</h2>
-        <p className="hero-desc">{hero.desc}</p>
+        <h2 className="hero-name">{t(`hero.classes.${heroId}.name`)}</h2>
+        <p className="hero-desc">{t(`hero.classes.${heroId}.desc`)}</p>
 
         <div className="hero-options">
           <div className="hero-difficulty">
-            <span className="hero-opt-label">Difficulty</span>
+            <span className="hero-opt-label">{t('hero.difficulty')}</span>
             <div className="hero-diff-btns">
               {['easy', 'normal', 'hard'].map(d => (
                 <button
@@ -147,15 +134,23 @@ const CharacterSelection = ({ onSelect }) => {
                   className={`hero-diff-btn ${difficulty === d ? 'active' : ''}`}
                   onClick={() => { AudioManager.play('CLICK'); setDifficulty(d); }}
                 >
-                  {d.toUpperCase()}
+                  {t(`hero.${d}`)}
                 </button>
               ))}
             </div>
           </div>
+          <label className="hero-challenge-toggle">
+            <input
+              type="checkbox"
+              checked={strongerBosses}
+              onChange={(e) => { AudioManager.play('CLICK'); setStrongerBosses(e.target.checked); }}
+            />
+            {t('hero.strongerBosses')}
+          </label>
           <input
             className="hero-name-input"
             type="text"
-            placeholder="Name (optional)"
+            placeholder={t('hero.namePlaceholder')}
             maxLength={20}
             value={playerName}
             onChange={e => setPlayerName(e.target.value)}
@@ -164,7 +159,7 @@ const CharacterSelection = ({ onSelect }) => {
 
         <button className="hero-start-btn" onClick={start}>
           <Icon name="ENTER" scale={2} />
-          <span>Enter Dungeon</span>
+          <span>{t('hero.enterDungeon')}</span>
         </button>
       </div>
     </div>

@@ -1,3 +1,17 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 ArtemNikov
+#
+# Adapted from Shattered Pixel Dungeon (C) 2014-2024 Evan Debenham
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+# See the GNU General Public License for more details.
+#
 """Client state serialization and per-run identification masking.
 
 Builds the per-player game-state snapshot sent over the WebSocket, and scrambles
@@ -7,13 +21,24 @@ potion colours / scroll runes, shared per-run across the co-op party).
 
 from typing import Dict, Optional
 
-from app.engine.entities.base import Bag, Difficulty
+from app.engine.alchemy.energy import energy_val
+from app.engine.entities.item_union import Bag
+from app.engine.entities.items_potions import ELIXIR_BREW_KINDS
+from app.engine.entities.player import Difficulty
+from app.engine.entities.locale_keys import item_locale_key, mob_locale_key
 
 
 class SerializationMixin:
     def change_difficulty(self, new_level: str):
         if new_level in [Difficulty.EASY, Difficulty.NORMAL, Difficulty.HARD]:
             self.difficulty = new_level
+
+    KNOWN_CHALLENGES = {"stronger_bosses"}
+
+    def set_challenges(self, challenges_str: str):
+        self.challenges = {
+            c for c in challenges_str.split(",") if c in self.KNOWN_CHALLENGES
+        }
 
     # --- identification masking -------------------------------------------
     # Per-run scrambled display names for still-unidentified consumable kinds
@@ -25,7 +50,9 @@ class SerializationMixin:
                       "Indigo", "Magenta", "Bistre", "Charcoal", "Silver", "Ivory"]
     _SCROLL_LABELS = ["Kaunan", "Sowilo", "Laguz", "Yngvi", "Gyfu", "Raido",
                       "Isaz", "Mannaz", "Naudiz", "Berkanan", "Odal", "Tiwaz"]
-    _APPEARANCE_ROW = {"potion": 22, "scroll": 19}
+    _RING_GEMS = ["garnet", "ruby", "topaz", "emerald", "onyx", "opal",
+                  "tourmaline", "sapphire", "amethyst", "quartz", "agate", "diamond"]
+    _APPEARANCE_ROW = {"potion": 22, "scroll": 19, "ring": 14}
 
     def _kind_index(self, kind: str, typ: str) -> int:
         # Stable per-run colour/rune index for a potion/scroll kind. Assigns the
@@ -41,11 +68,20 @@ class SerializationMixin:
 
     def _label_for(self, kind: str, typ: str) -> str:
         if kind not in self.kind_labels:
-            pool = self._POTION_LABELS if typ == "potion" else self._SCROLL_LABELS
+            if typ == "potion":
+                pool = self._POTION_LABELS
+            elif typ == "scroll":
+                pool = self._SCROLL_LABELS
+            else:
+                pool = self._RING_GEMS
             idx = self._kind_index(kind, typ)
             word = pool[idx] if idx < len(pool) else kind
-            self.kind_labels[kind] = (f"{word} Potion" if typ == "potion"
-                                      else f"Scroll of {word}")
+            if typ == "potion":
+                self.kind_labels[kind] = f"{word} Potion"
+            elif typ == "scroll":
+                self.kind_labels[kind] = f"Scroll of {word}"
+            else:
+                self.kind_labels[kind] = f"Ring of {word.title()}"
         return self.kind_labels[kind]
 
     def _appearance_for(self, kind: str, typ: str) -> dict:
@@ -54,7 +90,7 @@ class SerializationMixin:
         return {"col": self._kind_index(kind, typ), "row": self._APPEARANCE_ROW[typ]}
 
     def _mask_item_dict(self, d: Optional[dict]) -> Optional[dict]:
-        # Recursively obscure unidentified potion/scroll types in a serialized
+        # Recursively obscure unidentified potion/scroll/ring types in a serialized
         # item dict: scramble the name, collapse `kind` to the generic category so
         # the client can't read the subtype, and hide subtype fields.
         if not d:
@@ -64,21 +100,29 @@ class SerializationMixin:
             for it in items:
                 self._mask_item_dict(it)
         typ = d.get("type")
-        if typ in ("potion", "scroll"):
-            # Attach the per-run colour/rune sprite from the TRUE kind before any
-            # masking collapses it. The bottle keeps its colour after ID (SPD).
+        # Crafted elixirs/brews are always known (SPD Elixir.isKnown()/Brew.isKnown()):
+        # they never enter the per-run scrambled-identity pool, so they get neither a
+        # scrambled appearance nor name/kind masking.
+        if typ in ("potion", "scroll", "ring") and d.get("kind") not in ELIXIR_BREW_KINDS:
+            # Attach the per-run colour/rune/gem sprite from the TRUE kind before
+            # any masking collapses it. The visual keeps its colour after ID (SPD).
             d["appearance"] = self._appearance_for(d["kind"], typ)
-        if d.get("type") in ("potion", "scroll") and d.get("kind") not in self.identified_kinds:
-            d["name"] = self._label_for(d["kind"], d["type"])
-            d["kind"] = d["type"]
+        if (typ in ("potion", "scroll", "ring")
+                and d.get("kind") not in ELIXIR_BREW_KINDS
+                and d.get("kind") not in self.identified_kinds):
+            d["name"] = self._label_for(d["kind"], typ)
+            d["kind"] = typ
             d.pop("effect", None)
+            d.pop("buff_class", None)
             d["level_known"] = False
+            d.pop("locale_key", None)
             if "description" in d:
-                d["description"] = (
-                    "You'll have to drink it to find out what it does."
-                    if d["type"] == "potion"
-                    else "You'll have to read it to find out what it does."
-                )
+                if typ == "potion":
+                    d["description"] = "You'll have to drink it to find out what it does."
+                elif typ == "scroll":
+                    d["description"] = "You'll have to read it to find out what it does."
+                else:
+                    d["description"] = "You'll have to wear it to find out what it does."
         return d
 
     def _serialize_player(self, p) -> dict:
@@ -109,7 +153,16 @@ class SerializationMixin:
             if live is not None:
                 node["actions"] = live.actions(p)
                 node["default_action"] = live.default_action()
+                if hasattr(live, "get_reach"):
+                    node["range"] = live.get_reach()
                 node["description"] = live.description(p)
+                node["value"] = live.value(identified=live.kind in self.identified_kinds)
+                node["energy_value"] = energy_val(self, live)
+                unit = live if live.quantity <= 1 else live.model_copy(update={"quantity": 1})
+                node["energy_value_one"] = energy_val(self, unit)
+                lk = item_locale_key(live)
+                if lk:
+                    node["locale_key"] = lk
             self._mask_item_dict(node)
 
         belongings = d.get("belongings", {})
@@ -121,10 +174,43 @@ class SerializationMixin:
             process(it)
         process(d.get("equipped_weapon"))
         process(d.get("equipped_wearable"))
+        hunger = d.get("hunger", 0.0)
+        d["hunger_pct"] = round(min(1.0, hunger / 450.0), 3)
+
+        # Find an adjacent hostile mob (attack target for auto-attack UI)
+        attack_target = None
+        try:
+            floor = self._get_or_create_floor(p.floor_id)
+            for mob in floor.mobs.values():
+                if (
+                    mob.is_alive
+                    and mob.faction == "dungeon"
+                    and abs(mob.pos.x - p.pos.x) + abs(mob.pos.y - p.pos.y) <= 1
+                ):
+                    attack_target = {"id": mob.id, "name": mob.name, "kind": mob.type}
+                    break
+        except Exception:
+            pass
+        d["attack_target"] = attack_target
         return d
 
     def _serialize_floor_item(self, item) -> dict:
-        return self._mask_item_dict(item.model_dump())
+        d = item.model_dump()
+        d["value"] = item.value(identified=item.kind in self.identified_kinds)
+        # SPD's Heap.info(): show the item's flavour text + stats in examine.
+        # Floor items have no owning player context, so pass None.
+        d["description"] = item.description(None)
+        lk = item_locale_key(item)
+        if lk:
+            d["locale_key"] = lk
+        return self._mask_item_dict(d)
+
+    def _serialize_mob(self, mob) -> dict:
+        d = mob.model_dump()
+        lk = mob_locale_key(mob)
+        if lk:
+            d["locale_key"] = lk
+        return d
 
     def get_state(self, player_id: Optional[str] = None):
         # Occupancy-based open doors and entity positions may have changed since
@@ -144,7 +230,7 @@ class SerializationMixin:
                 return {
                     "depth": player.floor_id,
                     "players": [self._serialize_player(p) for p in floor_players],
-                    "mobs": [m.model_dump() for m in floor.mobs.values() if m.is_alive],
+                    "mobs": [self._serialize_mob(m) for m in floor.mobs.values() if m.is_alive and not getattr(m, 'disguised', False)],
                     "items": [self._serialize_floor_item(i) for i in floor.items.values() if i.pos],
                     "visible_tiles": all_tiles,
                     "open_doors": self._get_open_doors(floor),
@@ -152,10 +238,14 @@ class SerializationMixin:
                     "width": floor.width,
                     "height": floor.height,
                     "traps": admin_traps,
+                    "custom_tiles": floor.custom_tiles,
+                    "custom_walls": floor.custom_walls,
+                    "torches": floor.torches,
                 }
 
             visible_tiles = self.get_visible_tiles(
-                player.pos, radius=self._view_distance(player), floor_id=player.floor_id)
+                player.pos, radius=self._view_distance(player), floor_id=player.floor_id,
+                viewer_id=player.id)
             visible_set = set(visible_tiles)
 
             player_traps = [
@@ -164,28 +254,66 @@ class SerializationMixin:
                 if (x, y) in visible_set and not t.hidden
             ]
 
+            # SPD MindVision: while active, every mob's 3x3 neighbourhood is
+            # revealed regardless of walls/FOV.
+            # EyeOfNewt trinket: permanent passive mind-vision radius.
+            mind_vision_set = set()
+            from app.engine.entities.trinkets import EyeOfNewt as _EyeOfNewt
+            from app.engine.entities.trinkets import trinket_level
+            eon_lvl = trinket_level(player, "eye_of_newt")
+            if eon_lvl >= 0:
+                mv_radius = _EyeOfNewt.mind_vision_radius(eon_lvl)
+                for m in floor.mobs.values():
+                    if not m.is_alive:
+                        continue
+                    for dx in range(-mv_radius, mv_radius + 1):
+                        for dy in range(-mv_radius, mv_radius + 1):
+                            mind_vision_set.add((m.pos.x + dx, m.pos.y + dy))
+            if player.has_buff("mind_vision"):
+                for m in floor.mobs.values():
+                    if not m.is_alive:
+                        continue
+                    for dx in (-1, 0, 1):
+                        for dy in (-1, 0, 1):
+                            mind_vision_set.add((m.pos.x + dx, m.pos.y + dy))
+
+            # SPD heap.seen: first-discovery latch, set once an item's cell
+            # enters FOV.
+            for i in floor.items.values():
+                if i.pos and (i.pos.x, i.pos.y) in visible_set:
+                    i.seen = True
+
             return {
                 "depth": player.floor_id,
                 "players": [self._serialize_player(p) for p in floor_players],
-                "mobs": [m.model_dump() for m in floor.mobs.values() if m.is_alive and (m.pos.x, m.pos.y) in visible_set],
+                "mobs": [self._serialize_mob(m) for m in floor.mobs.values() if m.is_alive
+                         and not getattr(m, 'disguised', False)
+                         and ((m.pos.x, m.pos.y) in visible_set or (m.pos.x, m.pos.y) in mind_vision_set)],
                 "items": [self._serialize_floor_item(i) for i in floor.items.values() if i.pos and (i.pos.x, i.pos.y) in visible_set],
                 "visible_tiles": visible_tiles,
+                "mapped_tiles": floor.mapped_tiles if floor.mapped else [],
                 "open_doors": self._get_open_doors(floor),
                 "grid": floor.grid,
                 "width": floor.width,
                 "height": floor.height,
                 "traps": player_traps,
+                "custom_tiles": floor.custom_tiles,
+                "custom_walls": floor.custom_walls,
+                "torches": floor.torches,
             }
 
         floor = self._get_or_create_floor(self.depth)
         return {
             "depth": self.depth,
             "players": [self._serialize_player(p) for p in self._players_on_floor(self.depth)],
-            "mobs": [m.model_dump() for m in floor.mobs.values() if m.is_alive],
+            "mobs": [self._serialize_mob(m) for m in floor.mobs.values() if m.is_alive],
             "items": [self._serialize_floor_item(i) for i in floor.items.values() if i.pos],
             "open_doors": self._get_open_doors(floor),
             "grid": floor.grid,
             "width": floor.width,
             "height": floor.height,
             "traps": [],
+            "custom_tiles": floor.custom_tiles,
+            "custom_walls": floor.custom_walls,
+            "torches": floor.torches,
         }

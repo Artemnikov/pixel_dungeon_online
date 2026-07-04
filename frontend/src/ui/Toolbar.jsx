@@ -1,12 +1,26 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 ArtemNikov
+//
+// Adapted from Shattered Pixel Dungeon (C) 2014-2024 Evan Debenham
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU General Public License for more details.
+//
 import { useEffect, useRef } from 'react';
 import AudioManager from '../audio/AudioManager';
-import itemsSpriteSrc from '../assets/pixel-dungeon/sprites/items.png';
-import toolbarSpriteSrc from '../assets/pixel-dungeon/interfaces/toolbar.png';
-import iconsSpriteSrc from '../assets/pixel-dungeon/interfaces/icons.png';
 import { coordsForItem } from '../rendering/sprites';
 import { itemRects } from '../rendering/spriteRects';
+import { centeredItemCrop } from '../rendering/itemCrop';
+import { MAX_DPR } from '../constants';
 
-const S = 3;
+const S_DESKTOP = 2;
+const S_MOBILE = 2.5;
 
 const BTN_INVENTORY = { x: 0, y: 0, w: 24, h: 26, iconX: 160, iconY: 0, iconW: 16, iconH: 16 };
 const BTN_WAIT      = { x: 24, y: 0, w: 20, h: 26, iconX: 176, iconY: 0, iconW: 16, iconH: 16 };
@@ -32,57 +46,57 @@ export default function Toolbar({
   equippedItems = {},
   targetingMode = false,
   swappedQuickslots = false,
+  assetImages,
   onWait,
   onSearch,
   onInventory,
   onQuickBag,
   onSlotClick,
   onSlotDoubleClick,
+  onSlotLongPress,
+  onSlotContextMenu,
   onSwap,
 }) {
+  const S = interfaceSize > 0 ? S_DESKTOP : S_MOBILE;
+  const isMobile = interfaceSize === 0;
   const canvasRef = useRef(null);
   const areasRef = useRef(makeButtonAreas());
   const imgsRef = useRef({ toolbar: null, items: null, icons: null });
-  const imgsLoaded = useRef(false);
   const animFrame = useRef(null);
   const touchTimerRef = useRef(null);
   const longPressFiredRef = useRef(false);
+  const zoomRef = useRef(1);
+  const baseDprRef = useRef(window.devicePixelRatio || 1);
 
   useEffect(() => {
-    const toolbarImg = new Image();
-    const itemsImg = new Image();
-    const iconsImg = new Image();
-    let loaded = 0;
-    const check = () => { if (++loaded >= 3) imgsLoaded.current = true; };
-    toolbarImg.onload = check;
-    itemsImg.onload = check;
-    iconsImg.onload = check;
-    toolbarImg.src = toolbarSpriteSrc;
-    itemsImg.src = itemsSpriteSrc;
-    iconsImg.src = iconsSpriteSrc;
-    if (toolbarImg.complete && toolbarImg.naturalWidth > 0) check();
-    if (itemsImg.complete && itemsImg.naturalWidth > 0) check();
-    if (iconsImg.complete && iconsImg.naturalWidth > 0) check();
-    imgsRef.current = { toolbar: toolbarImg, items: itemsImg, icons: iconsImg };
-  }, []);
+    const { toolbar, items, icons } = assetImages || {};
+    if (toolbar && items && icons) {
+      imgsRef.current = { toolbar, items, icons };
+    }
+  }, [assetImages]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const quickslotsToShow = 4 +
-      (canvasWidth > 152 * S ? 1 : 0) +
-      (canvasWidth > 170 * S ? 1 : 0);
+    const rawDPR = window.devicePixelRatio || 1;
+    const cappedDPR = Math.min(rawDPR, MAX_DPR);
+    zoomRef.current = baseDprRef.current / rawDPR;
+    const zoomScale = zoomRef.current;
 
-    const startingSlot = quickSwapper && quickslotsToShow < 6
-      ? (swappedQuickslots ? 3 : 0) : 0;
-    const endingSlot = quickSwapper && quickslotsToShow < 6
-      ? startingSlot + 2 : Math.min(startingSlot + quickslotsToShow - 1, 5);
-    const finalQuickslots = endingSlot - startingSlot + 1;
-    const showSwap = quickSwapper && quickslotsToShow < 6;
+    const quickslotsToShow = isMobile
+      ? 4
+      : 4 + (canvasWidth > 152 * S ? 1 : 0) + (canvasWidth > 170 * S ? 1 : 0);
+
+    const startingSlot = isMobile
+      ? 0
+      : (quickSwapper && quickslotsToShow < 6 ? (swappedQuickslots ? 3 : 0) : 0);
+    const endingSlot = isMobile
+      ? 3
+      : (quickSwapper && quickslotsToShow < 6 ? startingSlot + 2 : Math.min(startingSlot + quickslotsToShow - 1, 5));
+    const showSwap = !isMobile && quickSwapper && quickslotsToShow < 6;
 
     const btnW = BTN_INVENTORY.w + TOOL_PAD;
-    const btnH = BTN_INVENTORY.h + TOOL_PAD;
 
     const qsWidths = [];
     for (let i = startingSlot; i <= endingSlot; i++) {
@@ -104,8 +118,10 @@ export default function Toolbar({
     if (showSwap) totalW += SWAP_BTN.w + TOOL_PAD;
 
     const height = (BTN_INVENTORY.h + TOOL_PAD) * S;
-    canvas.width = Math.ceil(totalW) * S;
-    canvas.height = height;
+    canvas.width = Math.ceil(totalW) * S * cappedDPR;
+    canvas.height = height * cappedDPR;
+    canvas.style.width = `${Math.ceil(totalW) * S * zoomScale}px`;
+    canvas.style.height = `${height * zoomScale}px`;
 
     animFrame.current = requestAnimationFrame(render);
     return () => cancelAnimationFrame(animFrame.current);
@@ -123,8 +139,9 @@ export default function Toolbar({
       ctx.imageSmoothingEnabled = false;
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+      const sc = S * cappedDPR;
       const areas = makeButtonAreas();
-      const yOff = TOOL_PAD * S;
+      const yOff = TOOL_PAD * sc;
 
       function drawTool(spec, dx, dy, dw, dh) {
         if (!ti.complete) return;
@@ -133,10 +150,10 @@ export default function Toolbar({
 
       function drawIcon(spec, dx, dy) {
         if (!ti.complete) return;
-        const iw = spec.iconW * S;
-        const ih = spec.iconH * S;
-        const cx = dx + (spec.w * S - iw) / 2;
-        const cy = dy + (spec.h * S - ih) / 2;
+        const iw = spec.iconW * sc;
+        const ih = spec.iconH * sc;
+        const cx = dx + (spec.w * sc - iw) / 2;
+        const cy = dy + (spec.h * sc - ih) / 2;
         ctx.drawImage(ti, spec.iconX, spec.iconY, spec.iconW, spec.iconH, cx, cy, iw, ih);
       }
 
@@ -178,13 +195,13 @@ export default function Toolbar({
           const coords = coordsForItem(item);
           if (!coords) continue;
           const rect = itemRects.get(coords[0], coords[1]);
-          const rx = rect ? rect.rx : 0;
-          const ry = rect ? rect.ry : 0;
-          const sw = rect ? Math.min(rect.w, tiny) : tiny;
-          const sh = rect ? Math.min(rect.h, tiny) : tiny;
-          const px = (btnArea.x + previewPos[i].x) * sc;
-          const py = (btnArea.y + previewPos[i].y) * sc;
-          ctx.drawImage(ii, coords[0] * 16 + rx, coords[1] * 16 + ry, sw, sh, px, py, sw * sc, sh * sc);
+          const clamped = rect
+            ? { rx: rect.rx, ry: rect.ry, w: Math.min(rect.w, tiny), h: Math.min(rect.h, tiny) }
+            : null;
+          const { sx, sy, sw, sh, dw, dh, offsetX, offsetY } = centeredItemCrop(clamped, tiny * sc, tiny);
+          const px = (btnArea.x + previewPos[i].x) * sc + offsetX;
+          const py = (btnArea.y + previewPos[i].y) * sc + offsetY;
+          ctx.drawImage(ii, coords[0] * 16 + sx, coords[1] * 16 + sy, sw, sh, px, py, dw, dh);
         }
       }
 
@@ -199,16 +216,45 @@ export default function Toolbar({
         const ry = rect ? rect.ry : 0;
         const sw = rect ? rect.w : 16;
         const sh = rect ? rect.h : 16;
-        const padL = borderL * S;
-        const padR = borderR * S;
+        const padL = borderL * sc;
+        const padR = borderR * sc;
         const availW = slotW - padL - padR;
         const availH = slotH;
-        const ix = dx + padL + (availW - sw * S) / 2;
-        const iy = dy + (availH - sh * S) / 2;
-        ctx.drawImage(ii, coords[0] * 16 + rx, coords[1] * 16 + ry, sw, sh, ix, iy, sw * S, sh * S);
+        const ix = dx + padL + (availW - sw * sc) / 2;
+        const iy = dy + (availH - sh * sc) / 2;
+        if (item.is_placeholder) ctx.globalAlpha = 0.35;
+        ctx.drawImage(ii, coords[0] * 16 + rx, coords[1] * 16 + ry, sw, sh, ix, iy, sw * sc, sh * sc);
+        if (item.is_placeholder) ctx.globalAlpha = 1.0;
+        if (!item.is_placeholder && item.quantity > 1) {
+          const qs = 7 * sc;
+          ctx.font = `bold ${qs}px monospace`;
+          ctx.textBaseline = 'top';
+          ctx.textAlign = 'right';
+          const ox = 2 * sc;
+          const oy = 2 * sc;
+          const rx2 = dx + padL + availW;
+          const ty = dy;
+          ctx.fillStyle = '#000';
+          ctx.fillText(String(item.quantity), rx2 - ox + sc, ty + oy + sc);
+          ctx.fillStyle = '#fff';
+          ctx.fillText(String(item.quantity), rx2 - ox, ty + oy);
+        }
       }
 
-      const sc = S;
+      function isArmedSlot(item) {
+        if (!item || !targetingMode) return false;
+        if (typeof targetingMode === 'string') return item.id === targetingMode;
+        if (typeof targetingMode === 'object' && targetingMode.itemId) return item.id === targetingMode.itemId;
+        return false;
+      }
+
+      function drawArmedHighlight(dx, dy, dw, dh) {
+        ctx.save();
+        ctx.strokeStyle = '#f1c40f';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(dx + 1, dy + 1, dw - 2, dh - 2);
+        ctx.restore();
+      }
 
       if (interfaceSize > 0) {
         let right = canvas.width / sc;
@@ -243,6 +289,7 @@ export default function Toolbar({
           const a = areas.quickslots[qIdx];
           const spec = drawQuickslotFrame(i, a.x * sc, yOff + a.y * sc, a.w * sc, a.h * sc);
           drawItemSprite(items[i], a.x * sc, yOff + a.y * sc, a.w * sc, a.h * sc, spec.borderL, spec.borderR);
+          if (isArmedSlot(items[i])) drawArmedHighlight(a.x * sc, yOff + a.y * sc, a.w * sc, a.h * sc);
         }
       } else {
         let right = canvas.width / sc;
@@ -287,6 +334,7 @@ export default function Toolbar({
           areas.quickslots.forEach((a, idx) => {
             const spec = drawQuickslotFrame(startingSlot + idx, a.x * sc, yOff + a.y * sc, a.w * sc, a.h * sc);
             drawItemSprite(items[startingSlot + idx], a.x * sc, yOff + a.y * sc, a.w * sc, a.h * sc, spec.borderL, spec.borderR);
+            if (isArmedSlot(items[startingSlot + idx])) drawArmedHighlight(a.x * sc, yOff + a.y * sc, a.w * sc, a.h * sc);
           });
 
           if (showSwap && areas.swap) {
@@ -333,6 +381,7 @@ export default function Toolbar({
           areas.quickslots.forEach((a, idx) => {
             const spec = drawQuickslotFrame(startingSlot + idx, a.x * sc, yOff + a.y * sc, a.w * sc, a.h * sc);
             drawItemSprite(items[startingSlot + idx], a.x * sc, yOff + a.y * sc, a.w * sc, a.h * sc, spec.borderL, spec.borderR);
+            if (isArmedSlot(items[startingSlot + idx])) drawArmedHighlight(a.x * sc, yOff + a.y * sc, a.w * sc, a.h * sc);
           });
 
           if (showSwap && areas.swap) {
@@ -354,26 +403,40 @@ export default function Toolbar({
 
       areasRef.current = areas;
     }
-  }, [mode, interfaceSize, flipToolbar, quickSwapper, swappedQuickslots, canvasWidth, items, equippedItems, targetingMode]);
+  }, [mode, interfaceSize, S, isMobile, flipToolbar, quickSwapper, swappedQuickslots, canvasWidth, items, equippedItems, targetingMode]);
 
   const handlePointerDown = (e) => {
-    if (e.pointerType !== 'touch' || !onQuickBag) return;
+    if (e.pointerType !== 'touch') return;
     const canvas = canvasRef.current;
     if (!canvas) return;
     const rect = canvas.getBoundingClientRect();
-    const mx = (e.clientX - rect.left) / S;
-    const my = (e.clientY - rect.top) / S;
+    const div = S * zoomRef.current;
+    const mx = (e.clientX - rect.left) / div;
+    const my = (e.clientY - rect.top) / div;
     const areas = areasRef.current;
 
     function hit(a) { return a && mx >= a.x && mx <= a.x + a.w && my >= a.y && my <= a.y + a.h; }
 
-    if (hit(areas.inventory)) {
+    if (onQuickBag && hit(areas.inventory)) {
       longPressFiredRef.current = false;
       touchTimerRef.current = setTimeout(() => {
         longPressFiredRef.current = true;
         AudioManager.play('CLICK');
         if (onQuickBag) onQuickBag();
       }, 500);
+      return;
+    }
+
+    for (let i = 0; i < areas.quickslots.length; i++) {
+      if (hit(areas.quickslots[i])) {
+        longPressFiredRef.current = false;
+        touchTimerRef.current = setTimeout(() => {
+          longPressFiredRef.current = true;
+          AudioManager.play('CLICK');
+          if (onSlotLongPress) onSlotLongPress(items[i], i);
+        }, 500);
+        return;
+      }
     }
   };
 
@@ -386,8 +449,9 @@ export default function Toolbar({
     if (!canvas) return;
     if (longPressFiredRef.current) { longPressFiredRef.current = false; return; }
     const rect = canvas.getBoundingClientRect();
-    const mx = (e.clientX - rect.left) / S;
-    const my = (e.clientY - rect.top) / S;
+    const div = S * zoomRef.current;
+    const mx = (e.clientX - rect.left) / div;
+    const my = (e.clientY - rect.top) / div;
     const areas = areasRef.current;
 
     function hit(a) { return a && mx >= a.x && mx <= a.x + a.w && my >= a.y && my <= a.y + a.h; }
@@ -423,12 +487,34 @@ export default function Toolbar({
     }
   };
 
+  const handleContextMenu = (e) => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const div = S * zoomRef.current;
+    const mx = (e.clientX - rect.left) / div;
+    const my = (e.clientY - rect.top) / div;
+    const areas = areasRef.current;
+
+    function hit(a) { return a && mx >= a.x && mx <= a.x + a.w && my >= a.y && my <= a.y + a.h; }
+
+    for (let i = 0; i < areas.quickslots.length; i++) {
+      if (hit(areas.quickslots[i])) {
+        e.preventDefault();
+        AudioManager.play('CLICK');
+        if (onSlotContextMenu) onSlotContextMenu(items[i], i);
+        return;
+      }
+    }
+  };
+
   const handleDoubleClick = (e) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const rect = canvas.getBoundingClientRect();
-    const mx = (e.clientX - rect.left) / S;
-    const my = (e.clientY - rect.top) / S;
+    const div = S * zoomRef.current;
+    const mx = (e.clientX - rect.left) / div;
+    const my = (e.clientY - rect.top) / div;
     const areas = areasRef.current;
 
     function hit(a) { return a && mx >= a.x && mx <= a.x + a.w && my >= a.y && my <= a.y + a.h; }
@@ -448,6 +534,7 @@ export default function Toolbar({
       className="toolbar-canvas"
       onClick={handleClick}
       onDoubleClick={handleDoubleClick}
+      onContextMenu={handleContextMenu}
       onPointerDown={handlePointerDown}
       onPointerUp={handlePointerUp}
       onPointerLeave={handlePointerUp}

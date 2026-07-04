@@ -1,12 +1,28 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 ArtemNikov
+#
+# Adapted from Shattered Pixel Dungeon (C) 2014-2024 Evan Debenham
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+# See the GNU General Public License for more details.
+#
 from __future__ import annotations
 
 import uuid as _uuid
+import random as _random
 from typing import Annotated, ClassVar, Literal, Optional, List, Dict, Tuple, Union
 
-from pydantic import BaseModel, Field, computed_field
+from pydantic import BaseModel, Field, computed_field, model_validator, SerializeAsAny
 
 from app.engine.entities.buffs import Buff, add_buff, remove_buff, has_buff, get_buff
-from app.engine.entities.subclasses import SubclassInfo, TalentInfo
+from app.engine.entities.subclasses import SubclassInfo, TalentInfo, Talent
+from app.engine.entities.weapon_defs import WEAPON_DEFS
 
 
 class EntityType:
@@ -29,6 +45,10 @@ class Shield(BaseModel):
     amount: int = 0
     decay: int = 1  # min(1, amount/decay) removed per tick
     name: str = ""  # logical id for identifying a specific shield
+
+
+def is_immune(entity, effect: str) -> bool:
+    return effect in getattr(entity, "immunities", [])
 
 
 class Entity(BaseModel):
@@ -64,7 +84,16 @@ class Entity(BaseModel):
     # Status effect fields (mutated by attack_proc/defense_proc)
     bleed_amount: int = 0
     bleed_turns: int = 0
-    ooze_amount: int = 0
+    ooze_amount: int = 0       # remaining ooze "turns" (caustic DoT)
+    ooze_cooldown: int = 0     # ticks until the next ooze damage application
+
+    # Burning DoT: accumulating tick timer (seconds) for ~1s burn intervals
+    burning_accum: float = 0.0
+    burning_total_seconds: float = 0.0  # total time burning (for inventory destruction)
+
+    # Poison / Corrosion DoT: accumulating tick timer (seconds) for ~1s intervals
+    poison_accum: float = 0.0
+    corrosion_accum: float = 0.0
 
     # Shields (absorption layers)
     shields: List[Shield] = Field(default_factory=list)
@@ -85,6 +114,10 @@ class Entity(BaseModel):
     # Generic buff system
     buffs: List[Buff] = Field(default_factory=list)
 
+    def __setattr__(self, name, value):
+        if name in ("hp", "hp_bracket") and value is not None:
+            value = int(value)
+        super().__setattr__(name, value)
 
     def add_buff(self, buff_type: str, duration: float, level: int = 0, source_id: str = None, stack_mode: str = "replace") -> Buff:
         result = add_buff(self.buffs, buff_type, duration, level, source_id, stack_mode)
@@ -112,6 +145,13 @@ class Entity(BaseModel):
         prep = self.get_buff("preparation")
         if prep:
             base += 2
+        # Armor glyph: Obfuscation (passive stealth when equipped)
+        from app.engine.entities.armor_glyphs import stealth_boost
+        belongings = getattr(self, "belongings", None)
+        if belongings is not None:
+            armor = getattr(belongings, "armor", None)
+            if armor is not None:
+                base += stealth_boost(self, armor)
         return base
 
     def get_dr_min(self) -> int:
@@ -133,6 +173,9 @@ class Entity(BaseModel):
 
     def get_damage_max(self) -> int:
         return self.damage_max
+
+    def get_surprise_damage_floor(self) -> float:
+        return 0.0
 
     def get_effective_defense_skill(self) -> int:
         return self.defense_skill
@@ -175,6 +218,11 @@ class Entity(BaseModel):
     def decay_shields(self):
         active = []
         for s in self.shields:
+            if s.name == "broken_seal":
+                # Doesn't decay over time; removed explicitly when no enemies
+                # are nearby (see TickMixin).
+                active.append(s)
+                continue
             s.amount -= max(1, s.amount // max(1, s.decay))
             if s.amount > 0:
                 active.append(s)
@@ -214,24 +262,29 @@ class ItemCategory:
     SCROLL = "scroll"
     SEED = "seed"
     STONE = "stone"
+    RUNESTONE = "runestone"
     FOOD = "food"
     GOLD = "gold"
     KEY = "key"
     MISC = "misc"
     BAG = "bag"
+    TRINKET = "trinket"
     SCENERY = "scenery"
+    STYLUS = "stylus"
 
 # Sort order inside a bag (mirrors SPD's itemComparator grouping by category).
 CATEGORY_ORDER = [
     ItemCategory.WEAPON, ItemCategory.ARMOR, ItemCategory.RING, ItemCategory.ARTIFACT,
     ItemCategory.WAND, ItemCategory.SCROLL, ItemCategory.POTION, ItemCategory.SEED,
-    ItemCategory.STONE, ItemCategory.FOOD, ItemCategory.KEY, ItemCategory.GOLD,
-    ItemCategory.MISC, ItemCategory.BAG, ItemCategory.SCENERY,
+    ItemCategory.STONE, ItemCategory.RUNESTONE, ItemCategory.FOOD, ItemCategory.KEY,
+    ItemCategory.GOLD, ItemCategory.TRINKET, ItemCategory.MISC, ItemCategory.BAG,
+    ItemCategory.SCENERY,
 ]
 
 class Action:
     DROP = "DROP"
     THROW = "THROW"
+    USE = "USE"
     EQUIP = "EQUIP"
     UNEQUIP = "UNEQUIP"
     DRINK = "DRINK"
@@ -242,9 +295,38 @@ class Action:
     AFFIX = "AFFIX"
     INFO = "INFO"
     STEALTH = "STEALTH"  # Cloak of Shadows: toggle invisibility
+    WEAR = "WEAR"        # TengusMask: choose subclass
+    IMBUE = "IMBUE"      # MagesStaff: imbue a wand into the staff
+    SUMMON = "SUMMON"    # DriedRose: summon the ghost ally
+    DIRECT = "DIRECT"    # DriedRose: direct the ghost ally to a target
+    SHOOT = "SHOOT"      # SpiritBow: fire an arrow
+    INSCRIBE = "INSCRIBE"  # ArcaneStylus: inscribe a glyph on armor
+    # Artifact actions
+    BREW = "BREW"          # AlchemistsToolkit
+    ENERGIZE = "ENERGIZE"  # AlchemistsToolkit
+    PRICK = "PRICK"        # ChaliceOfBlood
+    CAST = "CAST"          # EtherealChains
+    BLESS = "BLESS"        # HolyTome
+    SNACK = "SNACK"        # HornOfPlenty
+    STORE = "STORE"        # HornOfPlenty
+    BEACON_SET = "BEACON_SET"      # LloydsBeacon
+    BEACON_RETURN = "BEACON_RETURN"  # LloydsBeacon
+    STEAL = "STEAL"        # MasterThievesArmband
+    PLANT_SEED = "PLANT_SEED"    # SandalsOfNature
+    IDENTIFY_SEED = "IDENTIFY_SEED"  # SandalsOfNature
+    UNLOCK = "UNLOCK"      # SkeletonKey
+    KEY_REVEAL = "KEY_REVEAL"    # SkeletonKey
+    SCRY = "SCRY"          # TalismanOfForesight
+    FREEZE = "FREEZE"      # TimekeepersHourglass (halt mobs)
+    STASIS = "STASIS"      # TimekeepersHourglass (self invuln/untargetable)
+    BOOK_READ = "BOOK_READ"      # UnstableSpellbook
+    BOOK_READ_RESOLVE = "BOOK_READ_RESOLVE"  # UnstableSpellbook exotic choice
+    BOOK_INFUSE = "BOOK_INFUSE"  # UnstableSpellbook (feed a scroll to level up)
 
 # Actions that require the player to pick a target cell before resolving.
-TARGETED_ACTIONS = {Action.THROW, Action.ZAP}
+TARGETED_ACTIONS = {Action.THROW, Action.ZAP, Action.DIRECT, Action.SHOOT,
+                    Action.CAST, Action.STEAL, Action.PLANT_SEED,
+                    Action.UNLOCK, Action.KEY_REVEAL}
 
 
 def _new_id() -> str:
@@ -268,9 +350,19 @@ class ItemBase(BaseModel):
     cursed_known: bool = False
     unique: bool = False
     kept_though_lost: bool = False
+    # Sitting on a Shopkeeper's stock pile (SPD's Heap.Type.FOR_SALE) — not
+    # auto-picked-up by walking over it; bought via SHOP_BUY instead.
+    for_sale: bool = False
+
+    # First-discovery latch: set true once this floor item's cell enters a
+    # player's FOV (mirrors SPD's Heap.seen).
+    seen: bool = False
 
     # Type-intrinsic, so kept off the wire as ClassVars.
     stackable: ClassVar[bool] = False
+    # True for Bag (a container). Kept as a flag so base need not import Bag,
+    # which lives in the item_union module (avoids an import cycle).
+    is_bag: ClassVar[bool] = False
     category: ClassVar[str] = ItemCategory.MISC
     # Flavour text shown in the item info window (SPD's Item.desc()).
     DESC: ClassVar[str] = ""
@@ -302,7 +394,7 @@ class ItemBase(BaseModel):
     def is_similar(self, other: "ItemBase") -> bool:
         return (
             type(self) is type(other)
-            and not isinstance(self, Bag)
+            and not self.is_bag
             and self.level == other.level
             and self.name == other.name
         )
@@ -321,1013 +413,34 @@ class ItemBase(BaseModel):
         self.quantity -= amount
         return clone
 
-
-class EquipableItem(ItemBase):
-    strength_requirement: int = 10
-
-    def actions(self, player: Optional["Player"] = None) -> List[str]:
-        base = super().actions(player)
-        equipped = bool(player and player.belongings.is_equipped(self.id))
-        return [Action.UNEQUIP if equipped else Action.EQUIP] + base
-
-    def default_action(self) -> Optional[str]:
-        return Action.EQUIP
-
-    def _info_lines(self, player: Optional["Player"] = None) -> List[str]:
-        lines: List[str] = []
-        req = f"It requires {self.strength_requirement} points of strength."
-        if player is not None and player.strength < self.strength_requirement:
-            req += f" Which is more than your {player.strength} points."
-        lines.append(req)
-        if self.level_known and self.level != 0:
-            sign = "+" if self.level > 0 else ""
-            lines.append(f"It is currently upgraded to {sign}{self.level}.")
-        if self.cursed_known and self.cursed:
-            lines.append("It is cursed, and you can't remove it.")
-        return lines
-
-
-class KindOfWeapon(EquipableItem):
-    type: str = "weapon"
-    category: ClassVar[str] = ItemCategory.WEAPON
-    damage: int = 1
-    range: int = 1
-    attack_cooldown: float = 1.0
-    enchantment: Optional[str] = None
-    projectile_type: Optional[str] = None
-    # On surprise attacks, damage floor is raised by this fraction of the range
-    surprise_damage_floor: float = 0.0
-
-
-class MeleeWeapon(KindOfWeapon):
-    kind: Literal["melee_weapon"] = "melee_weapon"
-    DESC: ClassVar[str] = "A reliable melee weapon. Equip it to strike enemies in close combat."
-
-
-class Dagger(MeleeWeapon):
-    kind: Literal["dagger"] = "dagger"
-    name: str = "Dagger"
-    damage: int = 2
-    attack_cooldown: float = 0.84
-    strength_requirement: int = 9
-    surprise_damage_floor: float = 0.75
-    DESC: ClassVar[str] = "A quick dagger. Surprise attacks deal more consistent damage."
-
-
-class WornShortsword(MeleeWeapon):
-    kind: Literal["worn_shortsword"] = "worn_shortsword"
-    name: str = "Worn Shortsword"
-    damage: int = 2
-    attack_cooldown: float = 1.2
-    strength_requirement: int = 10
-    DESC: ClassVar[str] = "A basic shortsword, somewhat the worse for wear. All warriors start with one."
-
-
-class Bow(KindOfWeapon):
-    kind: Literal["bow"] = "bow"
-    name: str = "Bow"
-    range: int = 6
-    projectile_type: str = "arrow"
-    DESC: ClassVar[str] = "A ranged weapon that fires arrows at distant foes. Equip it, then target an enemy to shoot."
-
-
-class Staff(KindOfWeapon):
-    kind: Literal["staff"] = "staff"
-    name: str = "Staff"
-    range: int = 4
-    magic_damage: int = 0
-    charges: int = 4
-    projectile_type: str = "magic_bolt"
-    DESC: ClassVar[str] = "A magical staff that hurls bolts of energy at a distance."
-
-
-class MissileWeapon(KindOfWeapon):
-    kind: Literal["missile_weapon"] = "missile_weapon"
-    stackable: ClassVar[bool] = True
-    DESC: ClassVar[str] = "A thrown weapon. Hurl it at an enemy from afar."
-
-    def default_action(self) -> Optional[str]:
-        return Action.THROW
-
-
-class ArmorEnchantment(BaseModel):
-    type: str = "none"
-    level: int = 0
-
-
-class Armor(EquipableItem):
-    kind: Literal["armor"] = "armor"
-    type: str = "wearable"
-    category: ClassVar[str] = ItemCategory.ARMOR
-    tier: int = 1
-    enchantment: ArmorEnchantment = Field(default_factory=ArmorEnchantment)
-    DESC: ClassVar[str] = "Worn armor that absorbs a portion of incoming damage. Equip it for protection."
-
-    def dr_min(self, upgrade_level: int = 0) -> int:
-        return upgrade_level
-
-    def dr_max(self, upgrade_level: int = 0) -> int:
-        return self.tier * (2 + upgrade_level)
-
-
-class KindofMisc(EquipableItem):
-    pass
-
-
-class Ring(KindofMisc):
-    kind: Literal["ring"] = "ring"
-    type: str = "ring"
-    category: ClassVar[str] = ItemCategory.RING
-    DESC: ClassVar[str] = "A magical ring that grants a passive bonus while worn."
-
-
-class Artifact(KindofMisc):
-    kind: Literal["artifact"] = "artifact"
-    type: str = "artifact"
-    category: ClassVar[str] = ItemCategory.ARTIFACT
-    charge: int = 0
-    charge_cap: int = 100
-    DESC: ClassVar[str] = "A unique artifact with a special power that grows as you use it."
-
-
-class Wand(ItemBase):
-    kind: Literal["wand"] = "wand"
-    type: str = "wand"
-    category: ClassVar[str] = ItemCategory.WAND
-    damage: int = 0
-    charges: int = 2
-    max_charges: int = 2
-    range: int = 4
-    projectile_type: str = "magic_bolt"
-    DESC: ClassVar[str] = "A wand of magical power. Zap an enemy to spend a charge; charges recover over time."
-
-    def actions(self, player: Optional["Player"] = None) -> List[str]:
-        return [Action.ZAP] + super().actions(player)
-
-    def default_action(self) -> Optional[str]:
-        return Action.ZAP
-
-    def _info_lines(self, player: Optional["Player"] = None) -> List[str]:
-        return [f"It currently holds {self.charges} of {self.max_charges} charges."]
-
-
-class Potion(ItemBase):
-    kind: Literal["potion"] = "potion"
-    type: str = "potion"
-    category: ClassVar[str] = ItemCategory.POTION
-    stackable: ClassVar[bool] = True
-    effect: str = ""
-    # Shown only once the potion's type is identified; the masked generic text is
-    # substituted server-side for unidentified potions.
-    DESC: ClassVar[str] = "A magical potion. Drink it to release its effect."
-
-    def actions(self, player: Optional["Player"] = None) -> List[str]:
-        return [Action.DRINK] + super().actions(player)
-
-    def default_action(self) -> Optional[str]:
-        return Action.DRINK
-
-
-class HealthPotion(Potion):
-    kind: Literal["health_potion"] = "health_potion"
-    name: str = "Health Potion"
-    effect: str = "regen"
-    DESC: ClassVar[str] = "Drinking this potion restores a good portion of your health over a short time."
-
-
-class RevivingPotion(Potion):
-    kind: Literal["reviving_potion"] = "reviving_potion"
-    name: str = "Reviving Potion"
-    effect: str = "revive"
-    DESC: ClassVar[str] = "A potent elixir that can bring a fallen hero back from the brink."
-
-
-class FuryPotion(Potion):
-    kind: Literal["fury_potion"] = "fury_potion"
-    name: str = "Potion of Fury"
-    effect: str = "fury"
-    DESC: ClassVar[str] = "Drinking this potion fills you with rage, empowering your attacks for a short time."
-
-
-class Scroll(ItemBase):
-    kind: Literal["scroll"] = "scroll"
-    type: str = "scroll"
-    category: ClassVar[str] = ItemCategory.SCROLL
-    stackable: ClassVar[bool] = True
-    DESC: ClassVar[str] = "A magical scroll inscribed with arcane runes. Read it to invoke its power."
-
-    def actions(self, player: Optional["Player"] = None) -> List[str]:
-        return [Action.READ] + super().actions(player)
-
-    def default_action(self) -> Optional[str]:
-        return Action.READ
-
-
-class Gold(ItemBase):
-    kind: Literal["gold"] = "gold"
-    type: str = "gold"
-    category: ClassVar[str] = ItemCategory.GOLD
-    stackable: ClassVar[bool] = True
-    DESC: ClassVar[str] = "A pile of gold coins. Spend it at shops scattered through the dungeon."
-
-
-class Food(ItemBase):
-    kind: Literal["food"] = "food"
-    type: str = "food"
-    category: ClassVar[str] = ItemCategory.FOOD
-    stackable: ClassVar[bool] = True
-    DESC: ClassVar[str] = "Edible provisions. Eat it to stave off hunger."
-
-    def default_action(self) -> Optional[str]:
-        return Action.EAT
-
-
-class Key(ItemBase):
-    kind: Literal["key"] = "key"
-    type: str = "key"
-    category: ClassVar[str] = ItemCategory.KEY
-    key_id: str = ""
-    DESC: ClassVar[str] = "A key that unlocks a matching door or chest somewhere on this floor."
-
-
-class BrokenSeal(Artifact):
-    kind: Literal["broken_seal"] = "broken_seal"
-    name: str = "Broken Seal"
-    charge: int = 0
-    charge_cap: int = 100
-    DESC: ClassVar[str] = "A broken seal from the warrior's armor. It can be affixed to armor to provide shielding as you fight."
-
-    def actions(self, player: Optional["Player"] = None) -> List[str]:
-        base = super().actions(player)
-        equipped = bool(player and player.belongings.is_equipped(self.id))
-        if not equipped:
-            return base
-        has_armor = bool(player and player.belongings.armor is not None)
-        if has_armor:
-            return [Action.AFFIX, Action.UNEQUIP] + base
-        return [Action.UNEQUIP] + base
-
-
-class CloakOfShadows(Artifact):
-    # The Rogue's signature artifact. Toggling STEALTH turns the hero invisible,
-    # draining one charge every few seconds (see tick.py's cloak drain). It self-
-    # levels with use (charge_cap grows 3 -> 10). Charge regenerates while not
-    # stealthed. Mirrors SPD's CloakOfShadows; turn-based timers are recast as
-    # real seconds for this engine.
-    kind: Literal["cloak_of_shadows"] = "cloak_of_shadows"
-    name: str = "Cloak of Shadows"
-    type: str = "artifact"
-    unique: bool = True
-    charge: int = 3
-    charge_cap: int = 3
-    level_cap: ClassVar[int] = 10
-    exp: int = 0
-    DESC: ClassVar[str] = (
-        "This cloak is an heirloom, passed down from generation to generation. "
-        "Activate it to vanish into the shadows; striking from stealth lands a "
-        "guaranteed, more powerful surprise attack."
-    )
-
-    def actions(self, player: Optional["Player"] = None) -> List[str]:
-        base = super().actions(player)
-        if player is None:
-            return base
-        light_cloak = player.talent_info.has("light_cloak")
-        usable = (player.belongings.is_equipped(self.id) or light_cloak) and not self.cursed
-        has_charge = self.charge > 0 or player.cloak_stealth_active
-        if usable and has_charge:
-            return [Action.STEALTH] + base
-        return base
-
-    def default_action(self) -> Optional[str]:
-        return Action.STEALTH
-
-    def _info_lines(self, player: Optional["Player"] = None) -> List[str]:
-        lines = super()._info_lines(player)
-        lines.append(f"The cloak holds {self.charge} of {self.charge_cap} charges.")
-        return lines
-
-    def on_upgrade(self) -> None:
-        self.charge_cap = min(self.charge_cap + 1, self.level_cap)
-
-
-class ScrollOfRage(Scroll):
-    kind: Literal["scroll_of_rage"] = "scroll_of_rage"
-    name: str = "Scroll of Rage"
-    DESC: ClassVar[str] = "A scroll that fills you with fury. Read it in the heat of battle to deliver devastating attacks."
-
-    def actions(self, player: Optional["Player"] = None) -> List[str]:
-        return [Action.READ, Action.THROW, Action.DROP]
-
-
-class Throwable(ItemBase):
-    kind: Literal["throwable"] = "throwable"
-    type: str = "throwable"
-    category: ClassVar[str] = ItemCategory.STONE
-    damage: int = 1
-    range: int = 5
-    consumable: bool = True
-    projectile_type: str = "users_projectile"
-    DESC: ClassVar[str] = "A thrown item. Hurl it at a target to deal damage."
-
-    def actions(self, player: Optional["Player"] = None) -> List[str]:
-        return [Action.THROW, Action.DROP]
-
-    def default_action(self) -> Optional[str]:
-        return Action.THROW
-
-
-class Stone(Throwable):
-    kind: Literal["stone"] = "stone"
-    name: str = "Stone"
-    damage: int = 1
-    range: int = 5
-    consumable: bool = True
-    projectile_type: str = "stone"
-
-
-class Boomerang(Throwable):
-    kind: Literal["boomerang"] = "boomerang"
-    name: str = "Boomerang"
-    damage: int = 3
-    range: int = 6
-    consumable: bool = False
-    projectile_type: str = "boomerang"
-
-
-class ThrowableDagger(Throwable):
-    kind: Literal["throwable_dagger"] = "throwable_dagger"
-    name: str = "Throwable Dagger"
-    damage: int = 4
-    range: int = 4
-    consumable: bool = True
-    projectile_type: str = "dagger"
-
-
-class Seed(ItemBase):
-    kind: Literal["seed"] = "seed"
-    type: str = "seed"
-    category: ClassVar[str] = ItemCategory.SEED
-    stackable: ClassVar[bool] = True
-    plant_type: str = "sungrass"
-    DESC: ClassVar[str] = "A magical seed. Plant it to release its effect."
-
-
-class MysteryMeat(Food):
-    kind: Literal["mystery_meat"] = "mystery_meat"
-    name: str = "Mystery Meat"
-    DESC: ClassVar[str] = "Raw meat from a defeated creature. Eat it to restore some health — if you dare."
-
-
-class Dewdrop(ItemBase):
-    kind: Literal["dewdrop"] = "dewdrop"
-    name: str = "Dewdrop"
-    type: str = "dewdrop"
-    category: ClassVar[str] = ItemCategory.POTION
-    stackable: ClassVar[bool] = True
-    DESC: ClassVar[str] = "A drop of magical dew. It radiates healing energy."
-
-
-class Berry(Food):
-    kind: Literal["berry"] = "berry"
-    name: str = "Berry"
-    DESC: ClassVar[str] = "A sweet berry. Restores a small amount of food."
-
-
-class Scenery(ItemBase):
-    # Non-pickable floor decoration (e.g. graves). Mirrors SPD heaps that aren't
-    # collectable. Kept out of AnyItem since it only ever lives on the ground.
-    kind: Literal["scenery"] = "scenery"
-    type: str = "scenery"
-    category: ClassVar[str] = ItemCategory.SCENERY
-
-
-class Bag(ItemBase):
-    kind: Literal["bag"] = "bag"
-    type: str = "bag"
-    category: ClassVar[str] = ItemCategory.BAG
-    unique: bool = True
-    capacity: int = 20
-    items: List["AnyItem"] = Field(default_factory=list)
-    DESC: ClassVar[str] = "A container that expands how much you can carry. Open it to view its contents."
-
-    # None => general backpack (accepts everything). A set => a specialised
-    # sub-bag that only accepts those item categories (SPD's pouches/holders).
-    accepts: ClassVar[Optional[set]] = None
-
-    def default_action(self) -> Optional[str]:
-        return Action.OPEN
-
-    # --- queries -----------------------------------------------------------
-    def _local_get(self, item_id: str) -> Optional["ItemBase"]:
-        return next((i for i in self.items if i.id == item_id), None)
-
-    def find(self, item_id: str) -> Optional["ItemBase"]:
-        local = self._local_get(item_id)
-        if local is not None:
-            return local
-        for sub in self.items:
-            if isinstance(sub, Bag):
-                found = sub.find(item_id)
-                if found is not None:
-                    return found
-        return None
-
-    def contains(self, item_id: str) -> bool:
-        return self.find(item_id) is not None
-
-    def _used_slots(self) -> int:
-        # Sub-bags expand storage in SPD rather than consuming a slot.
-        return len([i for i in self.items if not isinstance(i, Bag)])
-
-    def can_hold(self, item: "ItemBase") -> bool:
-        if isinstance(item, Bag) and self.accepts is not None:
-            return False  # specialised pouches can't nest bags
-        if self.accepts is not None and item.category not in self.accepts:
-            return False
-        if item.stackable:
-            for it in self.items:
-                if it.is_similar(item):
-                    return True
-        return self._used_slots() < self.capacity
-
-    # --- mutations ---------------------------------------------------------
-    def _sort(self) -> None:
-        self.items.sort(key=lambda i: CATEGORY_ORDER.index(i.category)
-                        if i.category in CATEGORY_ORDER else len(CATEGORY_ORDER))
-
-    def collect(self, item: "ItemBase") -> bool:
-        if item.quantity <= 0:
-            return True
-        # Prefer a matching specialised sub-bag (SPD auto-sorts into pouches).
-        for sub in self.items:
-            if isinstance(sub, Bag) and sub.can_hold(item) and sub.collect(item):
-                return True
-        if item.stackable:
-            for it in self.items:
-                if it.is_similar(item):
-                    it.merge(item)
-                    return True
-        if not self.can_hold(item):
-            return False
-        self.items.append(item)
-        self._sort()
-        return True
-
-    def detach(self, item_id: str) -> Optional["ItemBase"]:
-        # Remove a single unit (splits a stack), recursing into sub-bags.
-        item = self._local_get(item_id)
-        if item is None:
-            for sub in self.items:
-                if isinstance(sub, Bag):
-                    r = sub.detach(item_id)
-                    if r is not None:
-                        return r
-            return None
-        if item.stackable and item.quantity > 1:
-            return item.split(1)
-        self.items.remove(item)
-        return item
-
-    def detach_all(self, item_id: str) -> Optional["ItemBase"]:
-        item = self._local_get(item_id)
-        if item is not None:
-            self.items.remove(item)
-            return item
-        for sub in self.items:
-            if isinstance(sub, Bag):
-                r = sub.detach_all(item_id)
-                if r is not None:
-                    return r
-        return None
-
-    def grab_items(self, source: "Bag") -> None:
-        # Pull every item this (specialised) bag accepts out of `source`.
-        if self.accepts is None:
-            return
-        movable = [i for i in list(source.items)
-                   if not isinstance(i, Bag) and i.category in self.accepts]
-        for it in movable:
-            source.items.remove(it)
-            self.collect(it)
-
-
-class VelvetPouch(Bag):
-    kind: Literal["velvet_pouch"] = "velvet_pouch"
-    name: str = "Velvet Pouch"
-    accepts: ClassVar[Optional[set]] = {ItemCategory.SEED, ItemCategory.STONE}
-
-
-class ScrollHolder(Bag):
-    kind: Literal["scroll_holder"] = "scroll_holder"
-    name: str = "Scroll Holder"
-    accepts: ClassVar[Optional[set]] = {ItemCategory.SCROLL}
-
-
-class MagicalHolster(Bag):
-    kind: Literal["magical_holster"] = "magical_holster"
-    name: str = "Magical Holster"
-    accepts: ClassVar[Optional[set]] = {ItemCategory.WAND, ItemCategory.STONE}
-
-
-class PotionBandolier(Bag):
-    kind: Literal["potion_bandolier"] = "potion_bandolier"
-    name: str = "Potion Bandolier"
-    accepts: ClassVar[Optional[set]] = {ItemCategory.POTION}
-
-
-# Discriminated union of everything that can live inside a Bag / equip slot.
-# Keyed by `kind`, so member order is irrelevant and nested items serialize as
-# their concrete type. Server never validates inbound items, so this exists only
-# for clean outbound dumps + a stable client contract.
-AnyItem = Annotated[
-    Union[
-        MeleeWeapon, Dagger, WornShortsword, Bow, Staff, MissileWeapon,
-        Armor, Ring, Artifact, BrokenSeal, CloakOfShadows, Wand,
-        HealthPotion, RevivingPotion, FuryPotion, Potion, Scroll, ScrollOfRage, Gold, Food, MysteryMeat, Berry, Key,
-        Seed, Dewdrop, Stone, Boomerang, ThrowableDagger, Throwable,
-        VelvetPouch, ScrollHolder, MagicalHolster, PotionBandolier, Bag,
-    ],
-    Field(discriminator="kind"),
-]
-
-
-# --- quickslots ------------------------------------------------------------
-QUICKSLOT_SIZE = 6
-
-
-class QuickSlotEntry(BaseModel):
-    item_id: Optional[str] = None
-    is_placeholder: bool = False
-    placeholder_kind: Optional[str] = None  # re-bind target when a like item returns
-
-
-class QuickSlot(BaseModel):
-    slots: List[QuickSlotEntry] = Field(
-        default_factory=lambda: [QuickSlotEntry() for _ in range(QUICKSLOT_SIZE)]
-    )
-
-    def index_of(self, item_id: str) -> int:
-        return next((i for i, s in enumerate(self.slots) if s.item_id == item_id), -1)
-
-    def clear_item(self, item_id: str) -> None:
-        for s in self.slots:
-            if s.item_id == item_id:
-                s.item_id = None
-                s.is_placeholder = False
-                s.placeholder_kind = None
-
-    def set_slot(self, index: int, item: "ItemBase") -> None:
-        if not (0 <= index < len(self.slots)):
-            return
-        self.clear_item(item.id)
-        self.slots[index] = QuickSlotEntry(item_id=item.id)
-
-    def convert_to_placeholder(self, item: "ItemBase") -> None:
-        # Stackable depleted: keep the slot reserved by kind (SPD placeholders).
-        for s in self.slots:
-            if s.item_id == item.id:
-                s.item_id = None
-                s.is_placeholder = True
-                s.placeholder_kind = item.kind
-
-    def replace_placeholder(self, item: "ItemBase") -> None:
-        for s in self.slots:
-            if s.is_placeholder and s.placeholder_kind == item.kind:
-                s.item_id = item.id
-                s.is_placeholder = False
-                s.placeholder_kind = None
-                return
-
-
-# --- belongings ------------------------------------------------------------
-class Belongings(BaseModel):
-    backpack: Bag = Field(default_factory=lambda: Bag(id="backpack", name="Backpack"))
-    weapon: Optional[AnyItem] = None
-    armor: Optional[AnyItem] = None
-    artifact: Optional[AnyItem] = None
-    misc: Optional[AnyItem] = None
-    ring: Optional[AnyItem] = None
-
-    def equipped_slots(self) -> List[Optional["ItemBase"]]:
-        return [self.weapon, self.armor, self.artifact, self.misc, self.ring]
-
-    def is_equipped(self, item_id: str) -> bool:
-        return any(s is not None and s.id == item_id for s in self.equipped_slots())
-
-    def all_items(self):
-        for s in self.equipped_slots():
-            if s is not None:
-                yield s
-        yield from self._iter_bag(self.backpack)
-
-    def _iter_bag(self, bag: "Bag"):
-        for it in bag.items:
-            yield it
-            if isinstance(it, Bag):
-                yield from self._iter_bag(it)
-
-    def get_item(self, item_id: str) -> Optional["ItemBase"]:
-        for s in self.equipped_slots():
-            if s is not None and s.id == item_id:
-                return s
-        return self.backpack.find(item_id)
-
-    def slot_name_for(self, item: "ItemBase") -> Optional[str]:
-        if isinstance(item, KindOfWeapon):
-            return "weapon"
-        if isinstance(item, Armor):
-            return "armor"
-        if isinstance(item, Ring):
-            return "ring"
-        if isinstance(item, Artifact):
-            return "artifact"
-        if isinstance(item, KindofMisc):
-            return "misc"
-        return None
-
-
-Bag.model_rebuild()
-Belongings.model_rebuild()
-
-
-class Difficulty:
-    EASY = "easy"
-    NORMAL = "normal"
-    HARD = "hard"
-
-
-class CharacterClass:
-    WARRIOR = "warrior"
-    MAGE = "mage"
-    ROGUE = "rogue"
-    HUNTRESS = "huntress"
-
-
-class Effect(BaseModel):
-    # A generic active buff/debuff, mirroring SPD's Buff + BuffIndicator. `icon`
-    # is the index into the buffs.png icon sheet (see BuffIndicator constants).
-    key: str
-    name: str
-    icon: int
-    remaining: float = 0.0
-    duration: float = 0.0
-
-class DropEntry(BaseModel):
-    item_kind: str
-    chance: float
-    max_global: int = 0
-
-class Mob(Entity):
-    type: str = EntityType.MOB
-    faction: str = Faction.DUNGEON
-    ai_state: str = "idle"
-    target_id: Optional[str] = None
-    difficulty: str = Difficulty.NORMAL
-    exp: int = 1
-    loot_table: List[DropEntry] = Field(default_factory=list)
-    flying: bool = False
-    properties: List[str] = Field(default_factory=list)
-    attack_range: int = 1
-    # Attack speed is an independent property from movement `speed` (mirrors SPD,
-    # where a mob's attackDelay and moveSpeed are separate). Baselined to the
-    # player's standard weapon cadence so a basic mob trades blow-for-blow rather
-    # than landing several hits between player swings. Faster movers (e.g. Crab,
-    # speed=2.0) still chase quicker but attack at this normal rate.
-    attack_cooldown: float = 3.0
-    # Delay before a mob's FIRST strike after reaching its target, so the player
-    # gets a beat to react on contact rather than being hit instantly. `engaged`
-    # is runtime state tracking whether the mob is currently in attack range (used
-    # to arm the windup once per engagement); see GameInstance.update_tick.
-    aggro_windup: float = 1.0
-    engaged: bool = False
-    # Summoned ally (e.g. Rogue's Shadow Clone): the owning player's id and the
-    # remaining real-time lifespan in seconds (0 = permanent until killed).
-    owner_id: Optional[str] = None
-    summon_lifespan: float = 0.0
-
-class Player(Entity):
-    type: str = EntityType.PLAYER
-    faction: str = Faction.PLAYER
-    class_type: str = CharacterClass.WARRIOR # Default
-    experience: int = 0
-    level: int = 1
-    active_effects: List[Effect] = []
-    floor_id: int = 1
-    strength: int = 10
-    belongings: Belongings = Field(default_factory=Belongings)
-    quickslot: QuickSlot = Field(default_factory=QuickSlot)
-    gold: int = 0
-    energy: int = 0
-    websocket_id: Optional[str] = None
-    is_downed: bool = False
-    death_processed: bool = False
-    # Over-time healing, mirroring SPD's Healing buff. Each application heals
-    # `heal_pct_per_tick` of the remaining `heal_left` (plus a flat amount), with a
-    # minimum of 1, until exhausted. `heal_cooldown` throttles applications so heals
-    # land at a readable cadence rather than every 20Hz tick.
-    heal_left: float = 0.0
-    heal_pct_per_tick: float = 0.0
-    heal_flat_per_tick: float = 0.0
-    heal_cooldown: int = 0
-    # Throttles the passive +10/s healing while standing in a floor's entrance room.
-    room_heal_cooldown: int = 0
-    path_queue: List[Tuple[int, int]] = []
-    move_intent: Optional[Tuple[int, int]] = None
-    last_auto_move_time: float = 0.0
-    is_admin: bool = False
-
-    # Subclass and talents
-    subclass_info: SubclassInfo = Field(default_factory=SubclassInfo)
-
-    # Berserker rage (0.0 – 1.0 + endless_rage bonus)
-    berserk_power: float = 0.0
-    berserk_active: bool = False
-    berserk_cooldown: int = 0
-    # Rampage (warrior T4 berserker): kill-stack damage bonus
-    rampage_stacks: int = 0
-    # Last action type (for followup strike tracking)
-    _last_action: str = ""
-
-    # Gladiator combo
-    combo_count: int = 0
-    combo_timer: float = 0.0
-    combo_max: int = 10  # enhanced by talents
-
-    # Armor ability charge (0–100, shared resource for Leap/Shockwave/Endure)
-    armor_charge: int = 0
-
-    # Armor ability selected by player (Leap/Shockwave/Endure), set via talent
-    armor_ability: str = ""
-
-    # Broken Seal was affixed to armor (permanently consumed)
-    seal_affixed: bool = False
-
-    # --- Rogue ----------------------------------------------------------------
-    # Cloak of Shadows sustained stealth: while active the hero is invisible and
-    # the cloak bleeds charge (see tick.py). `_cloak_drain_accum` accumulates
-    # real seconds toward the next charge drain; `_cloak_recharge_accum` toward
-    # the next regenerated charge while not stealthed.
-    cloak_stealth_active: bool = False
-    _cloak_drain_accum: float = 0.0
-    _cloak_recharge_accum: float = 0.0
-    # Assassin Preparation: real seconds spent invisible this stealth window.
-    # Drives the surprise damage tier / KO threshold / blink range (see combat).
-    prep_seconds: float = 0.0
-    # Freerunner Momentum: stacks build per move and decay while standing still;
-    # spending them grants a short freerun (speed + evasion).
-    momentum_stacks: int = 0
-    _momentum_decay_accum: float = 0.0
-    freerun_seconds: float = 0.0
-
-    @property
-    def talent_info(self):
-        return self.subclass_info.talent_info
-
-    # Backward-compat views over Belongings so existing engine/UI code and the
-    # current front-end snapshot keep working until the SPD-style UI lands.
-    # `inventory` returns the live backpack list, so .append/.pop/.remove still
-    # mutate the real store; rebind sites (= []) were migrated to belongings.
-    @computed_field
-    @property
-    def inventory(self) -> List[AnyItem]:
-        return self.belongings.backpack.items
-
-    @computed_field
-    @property
-    def equipped_weapon(self) -> Optional[AnyItem]:
-        return self.belongings.weapon
-
-    @computed_field
-    @property
-    def equipped_wearable(self) -> Optional[AnyItem]:
-        return self.belongings.armor
-
-    def take_damage(self, amount: int):
-        if self.is_admin:
-            return 0
-        if self.is_downed:
-            return 0
-
-        # Enraged Catalyst (warrior T2 berserker): gain berserk power on damage taken
-        if self.subclass_info.subclass == "berserker":
-            ec = self.subclass_info.talent_info.level("enraged_catalyst")
-            if ec > 0:
-                from app.engine.entities.buffs import add_buff as _add_buff
-                endless_level = self.subclass_info.talent_info.level("endless_rage")
-                max_power = 1.0 + 0.1667 * endless_level
-                power_gain = (amount / max(self.get_total_max_hp() * 4, 1)) * (1 + ec * 0.5)
-                self.berserk_power = min(max_power, self.berserk_power + power_gain)
-
-        self.hp -= amount
-        if self.hp <= 0:
-            self.hp = 0
-            self.is_downed = True
-            self.is_alive = False
-        return max(0, amount)
-
-    def get_total_attack(self) -> int:
-        w = self.belongings.weapon
-        bonus = w.damage if isinstance(w, KindOfWeapon) else 0
-        return self.attack + bonus
-
-    def get_damage_min(self) -> int:
-        w = self.belongings.weapon
-        base = w.damage if isinstance(w, KindOfWeapon) else self.damage_min
-        # Sub-Atk (warrior T3): flat +1 per point if subclass is chosen
-        if self.subclass_info.subclass is not None:
-            base += self.subclass_info.talent_info.level("sub_atk")
-        return base
-
-    def get_damage_max(self) -> int:
-        w = self.belongings.weapon
-        base = w.damage if isinstance(w, KindOfWeapon) else self.damage_max
-        if self.subclass_info.subclass is not None:
-            base += self.subclass_info.talent_info.level("sub_atk")
-        return base
-
-    def get_surprise_damage_floor(self) -> float:
-        w = self.belongings.weapon
-        if isinstance(w, KindOfWeapon):
-            return w.surprise_damage_floor
-        return 0.0
-
-    def get_dr_min(self) -> int:
-        a = self.belongings.armor
-        if a is not None and isinstance(a, Armor):
-            base = a.dr_min(a.level)
-            deficit = max(0, a.strength_requirement - self.strength)
-            # Light Armor (warrior T1): reduce STR penalty
-            la = self.subclass_info.talent_info.level("light_armor")
-            if la > 0:
-                deficit = max(0, deficit - la)
-            return max(0, base - 2 * deficit)
+    def value(self, identified: bool = False) -> int:
+        # SPD's Item.value(): base price for shop sell-back. `identified` is
+        # whether this item's *kind* has been identified this run (used by
+        # potions/scrolls whose price depends on identification, not just
+        # this instance's level/curse state).
         return 0
 
-    def get_dr_max(self) -> int:
-        a = self.belongings.armor
-        if a is not None and isinstance(a, Armor):
-            base = a.dr_max(a.level)
-            deficit = max(0, a.strength_requirement - self.strength)
-            la = self.subclass_info.talent_info.level("light_armor")
-            if la > 0:
-                deficit = max(0, deficit - la)
-            return max(0, base - 2 * deficit)
-        return 0
 
-    def get_effective_defense_skill(self) -> int:
-        base = self.defense_skill
-        a = self.belongings.armor
-        if a is not None:
-            deficit = max(0, a.strength_requirement - self.strength)
-            # Light Armor (warrior T1): reduce STR penalty
-            la = self.subclass_info.talent_info.level("light_armor")
-            if la > 0:
-                deficit = max(0, deficit - la)
-            if deficit > 0:
-                base = int(base / (1.5 ** deficit))
-        # Sub-Def (warrior T3): flat +2 per point if subclass chosen
-        if self.subclass_info.subclass is not None:
-            base += 2 * self.subclass_info.talent_info.level("sub_def")
-        return base
-
-    def set_heal(self, amount: float, percent_per_tick: float, flat_per_tick: float):
-        # Multiple healing sources don't stack; they combine the best of each
-        # property (mirrors Healing.setHeal in the original game).
-        self.heal_left = max(self.heal_left, amount)
-        self.heal_pct_per_tick = max(self.heal_pct_per_tick, percent_per_tick)
-        self.heal_flat_per_tick = max(self.heal_flat_per_tick, flat_per_tick)
-        self.heal_cooldown = 0  # first tick applies immediately
-
-    def get_view_distance(self) -> int:
-        base = self.view_distance
-        fs = self.subclass_info.talent_info.level("farsight")
-        if fs > 0:
-            base += fs * 2
-        return base
-
-    def get_total_max_hp(self) -> int:
-        return self.max_hp
-
-    def add_to_inventory(self, item: ItemBase) -> bool:
-        ok = self.belongings.backpack.collect(item)
-        if ok:
-            self.quickslot.replace_placeholder(item)
-        return ok
-
-    def equip_item(self, item_id: str) -> bool:
-        item = self.belongings.backpack.find(item_id)
-        if item is None or not isinstance(item, EquipableItem):
-            return False
-        slot = self.belongings.slot_name_for(item)
-        if slot is None:
-            return False
-        self.belongings.backpack.detach_all(item_id)
-        prev = getattr(self.belongings, slot)
-        setattr(self.belongings, slot, item)
-        if prev is not None:
-            self.belongings.backpack.collect(prev)
-        return True
-
-    def unequip_item(self, item_id: str) -> bool:
-        for slot in ("weapon", "armor", "artifact", "misc", "ring"):
-            cur = getattr(self.belongings, slot)
-            if cur is not None and cur.id == item_id:
-                if cur.cursed and cur.cursed_known:
-                    return False  # cursed gear can't be removed (SPD)
-                if not self.belongings.backpack.can_hold(cur):
-                    return False
-                setattr(self.belongings, slot, None)
-                self.belongings.backpack.collect(cur)
-                return True
-        return False
-
-    def get_talent_damage_bonus(self) -> float:
-        """Return a flat damage bonus from talents (added to damage roll)."""
-        bonus = 0
-
-        # Rampage (warrior T4 berserker): +1 damage per stack
-        if self.subclass_info.subclass == "berserker":
-            bonus += self.rampage_stacks
-
-        return bonus
-
-    def attack_proc(self, target) -> None:
-        if self.subclass_info.subclass == "berserker":
-            from app.engine.entities.buffs import add_buff
-            endless_level = self.subclass_info.talent_info.level("endless_rage")
-            max_power = 1.0 + 0.1667 * endless_level
-            power_gain = 0.05
-            self.berserk_power = min(max_power, self.berserk_power + power_gain)
-            # Rampage: decaying stack gain
-            if self.rampage_stacks > 0:
-                self.rampage_stacks = max(0, self.rampage_stacks - 1)
-        if self.subclass_info.subclass == "gladiator":
-            # Combo cap from talents
-            self.combo_max = 10
-            ec = self.subclass_info.talent_info.level("enhanced_combo")
-            if ec > 0:
-                self.combo_max += 2 * ec
-            sc = self.subclass_info.talent_info.level("savage_capacity")
-            if sc > 0:
-                self.combo_max += 2 * sc
-            self.combo_count = min(self.combo_count + 1, self.combo_max)
-            self.combo_timer = 5.0
-            # Combo Shield (gladiator T2): shield per combo
-            cs = self.subclass_info.talent_info.level("combo_shield")
-            if cs > 0 and self.combo_count >= 3:
-                shield_amt = cs * (self.combo_count // 3)
-                if shield_amt > 0:
-                    self.add_shield("combo_shield", shield_amt, priority=1, decay=600)
-
-    def defense_proc(self, raw_damage: int, attacker, floor_mobs: dict, tile_x: int, tile_y: int) -> int:
-        from app.engine.entities.buffs import has_buff
-        if has_buff(self.buffs, "endure"):
-            raw_damage = max(0, raw_damage - int(raw_damage * 0.3))
-
-        # Iron Will (warrior T1): DR based on missing HP%
-        iw = self.subclass_info.talent_info.level("iron_will")
-        if iw > 0:
-            hp_ratio = self.hp / max(self.get_total_max_hp(), 1)
-            dr_pct = iw * 0.05 * (1 - hp_ratio)
-            raw_damage = max(0, raw_damage - int(raw_damage * dr_pct))
-
-        # Protective Shadows (rogue T1): DR while invisible
-        ps = self.subclass_info.talent_info.level("protective_shadows")
-        if ps > 0 and self.invisible > 0:
-            dr_pct = 0.08 * ps
-            raw_damage = max(0, raw_damage - int(raw_damage * dr_pct))
-
-        return raw_damage
-
-    MAX_LEVEL: ClassVar[int] = 30
-
-    def max_exp(self) -> int:
-        # Mirrors Hero.maxExp(lvl) = 5 + lvl*5 in the original game.
-        return 5 + self.level * 5
-
-    def earn_exp(self, amount: int) -> bool:
-        # Award experience and apply any level-ups. Mirrors Hero.earnExp + updateHT:
-        # each level grants +5 max HP and heals that gain. Returns True if at
-        # least one level-up occurred (used to emit a LEVEL_UP event).
-        if amount <= 0 or self.level >= self.MAX_LEVEL:
-            return False
-        self.experience += amount
-        leveled_up = False
-        while self.experience >= self.max_exp() and self.level < self.MAX_LEVEL:
-            self.experience -= self.max_exp()
-            self.level += 1
-            self.max_hp += 5
-            self.hp += 5
-            self.attack_skill += 1
-            self.defense_skill += 1
-            leveled_up = True
-        if self.level >= self.MAX_LEVEL:
-            self.experience = 0
-        return leveled_up
+def _tiered_value(tier: int, level: int, level_known: bool, cursed: bool, cursed_known: bool) -> int:
+    # Shared by MeleeWeapon/Armor: SPD's `20 * tier` formula with
+    # cursed/level price modifiers.
+    price = 20 * tier
+    if cursed_known and cursed:
+        price /= 2
+    if level_known and level > 0:
+        price *= (level + 1)
+    return max(1, round(price))
 
 
-# Legacy aliases — keep existing imports/constructors working during migration.
-Item = ItemBase
-Weapon = MeleeWeapon
-Wearable = Armor
+def _charm_value(level: int, level_known: bool, cursed: bool, cursed_known: bool) -> int:
+    # Shared by Wand/Ring: SPD's flat 75 base with cursed/level price modifiers.
+    price = 75
+    if cursed and cursed_known:
+        price /= 2
+    if level_known:
+        if level > 0:
+            price *= (level + 1)
+        elif level < 0:
+            price /= (1 - level)
+    return max(1, round(price))
+

@@ -7,7 +7,9 @@ import uuid
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from app.engine.manager import GameInstance, CharacterClass
-from app.engine.entities.base import Position, Weapon, Bow, Mob, Faction
+from app.engine.entities.base import Position, Faction
+from app.engine.entities.items_equip import Bow
+from app.engine.entities.player import Mob
 
 def test_audio_events():
     print("Setting up GameInstance...")
@@ -84,7 +86,7 @@ def test_audio_events():
 
     print("\n--- Testing Ranged Hit Sound (Magic Staff) ---")
     # Equip Staff
-    from app.engine.entities.base import Staff
+    from app.engine.entities.items_equip import Staff
     staff = Staff(id="staff-1", name="Test Staff", pos=Position(x=0,y=0), damage=2, magic_damage=5, strength_requirement=10, attack_cooldown=0, charges=10)
     player.belongings.weapon = staff
     

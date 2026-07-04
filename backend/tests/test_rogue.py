@@ -2,13 +2,19 @@
 Preparation, Freerunner Momentum, and talent/subclass gating."""
 
 from app.engine.manager import GameInstance
-from app.engine.entities.base import Mob as MobEntity, Position
-from app.engine.entities.subclasses import Subclass, Talent
+from app.engine.entities.base import Position
+from app.engine.entities.player import Mob as MobEntity
+from app.engine.entities.subclasses import Subclass, Talent, ArmorAbilityType
 from app.engine.systems.combat import resolve_melee_attack
 from app.engine.game.rogue import (
     prep_tier, prep_blink_range, prep_ko_threshold,
     CLOAK_DRAIN_INTERVAL, CLOAK_RECHARGE_INTERVAL, MOMENTUM_DECAY_INTERVAL,
 )
+
+
+def _level_up(game, player, level):
+    player.level = level
+    game.on_talent_level_up(player)
 
 
 def _rogue(game, pid="rogue"):
@@ -248,3 +254,99 @@ def test_deathly_durability_barrier_on_marked_kill():
     mob.add_buff("death_mark", duration=5.0)
     g.process_death_mark_kill(p, mob, floor, p.floor_id)
     assert p.get_shield("death_mark") is not None
+
+
+# --- talent tier gating (T1-T4) --------------------------------------------
+def test_rogue_tier3_locked_without_subclass():
+    g = GameInstance("t")
+    p = _rogue(g)
+    _level_up(g, p, 13)
+    assert g.talent_points_available(p, 3) == 0
+
+
+def test_rogue_tier3_unlocked_with_subclass():
+    g = GameInstance("t")
+    p = _rogue(g)
+    _level_up(g, p, 13)
+    g.choose_subclass(p.id, Subclass.ASSASSIN)
+    assert g.talent_points_available(p, 3) == 1
+
+
+def test_rogue_tier4_locked_without_armor_ability():
+    g = GameInstance("t")
+    p = _rogue(g)
+    _level_up(g, p, 21)
+    g.choose_subclass(p.id, Subclass.ASSASSIN)
+    assert g.talent_points_available(p, 4) == 0
+
+
+def test_rogue_choose_armor_ability_all_three():
+    for ability in (ArmorAbilityType.SMOKE_BOMB, ArmorAbilityType.DEATH_MARK, ArmorAbilityType.SHADOW_CLONE):
+        g = GameInstance("t")
+        p = _rogue(g)
+        _level_up(g, p, 25)
+        g.choose_subclass(p.id, Subclass.ASSASSIN)
+        assert g.choose_armor_ability(p.id, ability) is True
+        assert p.armor_ability == ability
+        assert g.talent_points_available(p, 4) == 5
+
+
+def test_rogue_t4_talent_gated_to_chosen_ability():
+    g = GameInstance("t")
+    p = _rogue(g)
+    _level_up(g, p, 22)
+    g.choose_subclass(p.id, Subclass.ASSASSIN)
+    g.choose_armor_ability(p.id, ArmorAbilityType.SMOKE_BOMB)
+    # Smoke Bomb talent: allowed.
+    assert g.upgrade_talent(p.id, Talent.HASTY_RETREAT) is True
+    # Death Mark talent: not allowed under Smoke Bomb.
+    assert g.upgrade_talent(p.id, Talent.DOUBLE_MARK) is False
+    # HEROIC_ENERGY: universal T4, allowed regardless of ability.
+    assert g.upgrade_talent(p.id, Talent.HEROIC_ENERGY) is True
+
+
+# --- Body Replacement (Ninja Log) -------------------------------------------
+def test_body_replacement_spawns_ninja_log():
+    g = GameInstance("t")
+    p = _rogue(g)
+    p.armor_charge = 100
+    p.talent_info.talents[Talent.BODY_REPLACEMENT] = 2
+    floor = _place_player_on_floor(g, p)
+    origin = (p.pos.x, p.pos.y)
+    tx, ty = _passable_neighbor(floor, p.pos.x, p.pos.y)
+    g.use_armor_ability(p.id, "smoke_bomb", tx, ty)
+    logs = [m for m in floor.mobs.values() if m.type == "ninja_log"]
+    assert len(logs) == 1
+    assert (logs[0].pos.x, logs[0].pos.y) == origin
+    assert logs[0].max_hp == 40
+
+
+# --- Inscribed Stealth -------------------------------------------------------
+def test_inscribed_stealth_grants_invisibility_on_scroll_read():
+    from app.engine.entities.item_actions import action_read
+    from app.engine.entities.items_scrolls import Scroll
+
+    g = GameInstance("t")
+    p = _rogue(g)
+    p.talent_info.talents[Talent.INSCRIBED_STEALTH] = 1
+    scroll = Scroll(id="s1", name="Scroll of Identify")
+    p.belongings.backpack.items.append(scroll)
+    action_read(g, p, scroll)
+    assert p.invisible > 0
+
+
+# --- Wide Search --------------------------------------------------------------
+def test_wide_search_widens_distance():
+    g = GameInstance("t")
+    p = _rogue(g)
+    p.talent_info.talents[Talent.WIDE_SEARCH] = 1
+    floor = g._get_or_create_floor(p.floor_id)
+    p.pos = Position(x=5, y=5)
+    g.search(p.id)
+    events = [e for e in g.events if e.get("type") == "SEARCH"]
+    assert events
+    cells = events[-1]["data"]["cells"]
+    # At +1, search is circular with radius 3 -> includes a cell at distance 3
+    # along an axis, but not the (3,3) corner.
+    assert [8, 5] in cells
+    assert [8, 8] not in cells

@@ -15,7 +15,25 @@ class Buff(BaseModel):
     stack_mode: str = "replace"  # "replace" | "extend" | "stack"
 
 
+# SPD Frost = full paralysis: a frozen char cannot move or act (Frost.paralysed++).
+# Both names occur in the remake -- "frost" (potions/snap-freeze) and "frozen"
+# (bombs, frost trap) -- and both root the character.
+FREEZE_BUFFS = ("frost", "frozen")
+
+
+def is_frozen(buffs: list[Buff]) -> bool:
+    return any(b.type in FREEZE_BUFFS for b in buffs)
+
+
 def add_buff(buffs: list[Buff], buff_type: str, duration: float, level: int = 0, source_id: Optional[str] = None, stack_mode: str = "replace") -> Buff:
+    # Cold and fire are mutually exclusive on a character: Frost.attachTo /
+    # Chill.attachTo detach Burning, and Frost overrides (is immune to) Chill.
+    # Fire does NOT thaw frost (Burning.attachTo only detaches Chill), so we
+    # don't clear frost when burning is applied.
+    if buff_type in FREEZE_BUFFS:
+        for opposed in ("burning", "chill", "chilled"):
+            remove_buff(buffs, opposed)
+
     existing = next((b for b in buffs if b.type == buff_type), None)
     if existing:
         if stack_mode == "replace":

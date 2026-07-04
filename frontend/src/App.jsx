@@ -1,14 +1,16 @@
-import { useEffect, useRef, useState } from 'react';
-import './App.css';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import './styles/index.css';
 
 import CharacterSelection from './CharacterSelection';
 import MainMenu from './menu/MainMenu';
 import cursorMouseUrl from './assets/cursors/cursor_mouse.png';
+import cursorMouse2xUrl from './assets/cursors/cursor_mouse@2x.png';
 import cursorControllerUrl from './assets/cursors/cursor_controller.png';
+import cursorController2xUrl from './assets/cursors/cursor_controller@2x.png';
 
-import { TILE_SIZE } from './constants';
+import { TILE_SIZE, TILE_SCALE, MIN_ZOOM, MAX_DPR } from './constants';
 import useAudioUnlock from './audio/useAudioUnlock';
-import AudioManager from './audio/AudioManager';
 import useMusicByDepth from './audio/useMusicByDepth';
 import useAssetImages from './rendering/useAssetImages';
 import useGameRenderer from './rendering/useGameRenderer';
@@ -16,34 +18,37 @@ import useGameSocket from './net/useGameSocket';
 import useKeyboardControls from './input/useKeyboardControls';
 import useCanvasControls from './input/useCanvasControls';
 import { resolveTapAction } from './input/resolveTap';
-import { describeCell } from './input/describeCell';
+import { isFloorFadeActive } from './rendering/floorTransition';
+import LoreOverlay from './ui/LoreOverlay';
+import { getLoreForDepth } from './game/loreTexts';
 import useDebugApi from './dev/useDebugApi';
-import { getApiBaseUrl } from './config/urls';
+
+import useModalState from './game/useModalState';
+import useTalentFlow from './game/useTalentFlow';
+import useTargetingExamine from './game/useTargetingExamine';
 
 import StatusPane from './ui/StatusPane';
-import Toolbar from './ui/Toolbar';
-import InventoryPane from './ui/InventoryPane';
-import WndBag from './ui/WndBag';
-import WndQuickBag from './ui/WndQuickBag';
-import RadialMenu from './ui/RadialMenu';
-import WndUseItem from './ui/WndUseItem';
-import RightClickMenu from './ui/RightClickMenu';
+import BossHealthBar from './ui/BossHealthBar';
+import KeyDisplay from './ui/KeyDisplay';
+import DangerIndicator from './ui/DangerIndicator';
+import SideTags from './ui/SideTags';
+import AttackIndicator from './ui/AttackIndicator';
+import LootIndicator from './ui/LootIndicator';
+import ResumeIndicator from './ui/ResumeIndicator';
+import ActionIndicator from './ui/ActionIndicator';
+import GameLog from './ui/GameLog';
+import ToastOverlay from './ui/ToastOverlay';
 import LoadingOverlay from './ui/LoadingOverlay';
-import GameOverScreen from './ui/GameOverScreen';
-import GameMenu from './ui/GameMenu';
-import TalentPane from './ui/TalentPane';
-import SubclassChoice from './ui/SubclassChoice';
-import ArmorAbilityChoice from './ui/ArmorAbilityChoice';
-import AbilityButton from './ui/AbilityButton';
-import BerserkButton from './ui/BerserkButton';
-import PrepStrikeButton from './ui/PrepStrikeButton';
-import ComboDisplay from './ui/ComboDisplay';
-import LevelUpBanner from './ui/LevelUpBanner';
+import GameHud from './ui/GameHud';
+import GameModals from './ui/GameModals';
+import TalentLayer from './ui/TalentLayer';
+import GameOverlay from './ui/GameOverlay';
+import BossSlainBanner from './ui/BossSlainBanner';
+import WndInfoBuff from './ui/WndInfoBuff';
 
 // Live viewport position of an inspect-popup anchor (a world tile, or a mob we follow
 // by its renderPos). Returns { left, top, below } or null when the popup should hide
-// (mob gone/out of view, or the anchor panned off the visible canvas). Pure so it can
-// be called from the per-frame rAF loop without reading refs during render.
+// (mob gone/out of view, or the anchor panned off the visible canvas).
 function inspectScreenPos(canvas, cam, zoom, anchor, mobs, visible) {
   if (!canvas || !anchor) return null;
   let wx, wyTop, wyBottom;
@@ -61,76 +66,74 @@ function inspectScreenPos(canvas, cam, zoom, anchor, mobs, visible) {
     wyBottom = (anchor.y + 1) * TILE_SIZE;
   }
   const rect = canvas.getBoundingClientRect();
-  const cw = canvas.width, ch = canvas.height;
+  const cw = rect.width, ch = rect.height;
   const left = rect.left + (wx - cam.x - cw / 2) * zoom + cw / 2;
   const topY = rect.top + (wyTop - cam.y - ch / 2) * zoom + ch / 2;
   const bottomY = rect.top + (wyBottom - cam.y - ch / 2) * zoom + ch / 2;
-  // Hide once the anchor is panned off the visible canvas.
   if (left < rect.left || left > rect.right || bottomY < rect.top || topY > rect.bottom) return null;
   const below = topY < rect.top + 70;
   return { left, top: below ? bottomY + 6 : topY - 6, below };
 }
 
 function App() {
+  const { t } = useTranslation();
   // --- screen flow / session state ---
   const [gameState, setGameState] = useState('WELCOME');
   const [selectedClass, setSelectedClass] = useState('warrior');
   const [playerName, setPlayerName] = useState('');
   const [difficulty, setDifficulty] = useState('normal');
+  const [challenges, setChallenges] = useState('');
   const [gameId] = useState('default-lobby');
-  // Stable per-run identity so a dropped socket can reconnect to the same hero.
-  // A fresh id is minted when a new run starts (see startGame); persisted so a
-  // page reload mid-run could resume the same session server-side.
   const [sessionId, setSessionId] = useState(
     () => sessionStorage.getItem('opd_session') || ''
   );
-  // 'connected' | 'reconnecting' | null — drives the reconnect banner.
   const [connectionStatus, setConnectionStatus] = useState(null);
 
   // --- game state ---
   const [grid, setGrid] = useState([]);
   const [myPlayerId, setMyPlayerId] = useState(null);
-  const [viewport, setViewport] = useState({ width: window.innerWidth, height: window.innerHeight });
-  const [showInventory, setShowInventory] = useState(false);
-  // Open info+actions popup (item) and right-click context menu ({item,x,y}).
-  const [useItemTarget, setUseItemTarget] = useState(null);
-  const [ctxMenu, setCtxMenu] = useState(null);
+  const [viewport, setViewport] = useState({
+    width: window.innerWidth,
+    height: window.innerHeight,
+    dpr: Math.min(window.devicePixelRatio || 1, MAX_DPR),
+  });
   const [inventory, setInventory] = useState([]);
   const [equippedItems, setEquippedItems] = useState({ weapon: null, wearable: null });
   const [belongings, setBelongings] = useState(null);
   const [quickslot, setQuickslot] = useState(null);
-  const [targetingMode, setTargetingMode] = useState(false);
-  // Examine mode: 1st search trigger arms it (click a cell to inspect), 2nd trigger
-  // performs the reveal. Mirrors the original's btnSearch examine→search two-step.
-  const [examineMode, setExamineMode] = useState(false);
-  // Inspect popup: { name, sub, left, top, below } positioned over the inspected cell.
-  const [inspectInfo, setInspectInfo] = useState(null);
   const [myStats, setMyStats] = useState({ hp: 0, maxHp: 10, name: '' });
+  const [bossInfo, setBossInfo] = useState(null);
+  const [bossFightActive, setBossFightActive] = useState(false);
+  const [bossBleeding, setBossBleeding] = useState(false);
   const [depth, setDepth] = useState(1);
   const [, setCamera] = useState({ x: 0, y: 0 });
-  const getInitialInterfaceSize = () => {
-    const w = window.innerWidth;
-    const h = window.innerHeight;
-    return (w > h && Math.min(w / 360, h / 200) >= 2) ? 2 : 0;
-  };
-  const [interfaceSize, setInterfaceSize] = useState(getInitialInterfaceSize());
   const [gold, setGold] = useState(0);
   const [energy, setEnergy] = useState(0);
-  const [showQuickBag, setShowQuickBag] = useState(false);
-  const [radialOpen, setRadialOpen] = useState(false);
-  const [swappedQuickslots, setSwappedQuickslots] = useState(false);
-  const [gameMenuOpen, setGameMenuOpen] = useState(false);
-  const [showTalentPane, setShowTalentPane] = useState(false);
-  const [talentDefs, setTalentDefs] = useState(null);
-  const [talentDefsLoading, setTalentDefsLoading] = useState(false);
-  const [talentDefsError, setTalentDefsError] = useState(null);
-  const [talentPoints, setTalentPoints] = useState({});
-  const [showSubclassChoice, setShowSubclassChoice] = useState(false);
-  const [subclassOptions, setSubclassOptions] = useState([]);
-  const [showArmorAbilityChoice, setShowArmorAbilityChoice] = useState(false);
-  const [armorAbilityOptions, setArmorAbilityOptions] = useState([]);
-  const [showLevelUpBanner, setShowLevelUpBanner] = useState(false);
-  const [levelUpData, setLevelUpData] = useState({});
+  const [hasAmulet, setHasAmulet] = useState(false);
+  const [bossLurking, setBossLurking] = useState(false);
+  const [exitPos, setExitPos] = useState(null);
+  const [scoreBreakdown, setScoreBreakdown] = useState(null);
+  const [canResurrect, setCanResurrect] = useState(false);
+  const [isVictory, setIsVictory] = useState(false);
+  const [ghostQuestGiven, setGhostQuestGiven] = useState(false);
+  const [showBossSlainBanner, setShowBossSlainBanner] = useState(false);
+  const [bossSlainData, setBossSlainData] = useState(null);
+  const [loreOverlay, setLoreOverlay] = useState(null);
+  const [inspectBuff, setInspectBuff] = useState(null);
+  const loreFinishRef = useRef(null);
+
+  const handleLoreNeeded = useCallback((depth, finishTransition) => {
+    const lore = getLoreForDepth(depth);
+    loreFinishRef.current = () => {
+      setLoreOverlay(null);
+      finishTransition();
+    };
+    setLoreOverlay({ depth, body: lore.body });
+  }, []);
+
+  const handleLoreDismiss = useCallback(() => {
+    loreFinishRef.current?.();
+  }, []);
 
   // --- shared refs ---
   const canvasRef = useRef(null);
@@ -138,43 +141,57 @@ function App() {
   const gridRef = useRef([]);
   const entitiesRef = useRef({ players: {}, mobs: {} });
   const myPlayerIdRef = useRef(null);
-  const targetingModeRef = useRef(false);
-  // Latest targeting-tap resolver, shared with the touch handler (canvas has
-  // touch-action:none, so taps don't fire onClick — see resolveTargetingTap).
-  const onTargetTapRef = useRef(null);
-  const onOpenTalentsRef = useRef(() => setShowTalentPane(v => !v));
-  useEffect(() => { onOpenTalentsRef.current = () => setShowTalentPane(v => !v); }, []);
-  // Examine-mode state + tap resolver, shared with the touch handler (same pattern
-  // as targeting, since the canvas has touch-action:none so taps don't fire onClick).
-  const examineModeRef = useRef(false);
-  const onExamineTapRef = useRef(null);
-  const inspectPopupRef = useRef(null);
-  const inspectSubRef = useRef(null);
   const projectilesRef = useRef([]);
   const visionRef = useRef({ visible: new Set(), discovered: new Set() });
   const openDoorsRef = useRef(new Set());
   const musicRef = useRef(null);
   const panOffsetRef = useRef({ x: 0, y: 0 });
   const cameraLerpRef = useRef({ x: 0, y: 0 });
-  const zoomRef = useRef(1.0);
+  const TILE_SCREEN = TILE_SIZE * TILE_SCALE; // 64px per tile at zoom=1
+  const zoomRef = useRef(
+    window.innerWidth < TILE_SCREEN * 10
+      ? Math.max(MIN_ZOOM, window.innerWidth / (TILE_SCREEN * 10))
+      : 1.0
+  );
   const isDraggingRef = useRef(false);
   const isRefocusingRef = useRef(false);
   const isPinchingRef = useRef(false);
+  const isCameraDetachedRef = useRef(false);
+  const detachedCameraRef = useRef({ x: 0, y: 0 });
   const wasDownedRef = useRef(false);
   const mobAnimRef = useRef({});
   const dyingMobsRef = useRef({});
   const playerAnimRef = useRef({});
   const particlesRef = useRef([]);
   const searchEffectsRef = useRef([]);
+  const warnedTilesRef = useRef(null);
   const floatingTextRef = useRef([]);
+  const transmuteEffectsRef = useRef([]);
+  const flareEffectsRef = useRef([]);
+  const spellSpriteEffectsRef = useRef([]);
+  const magicMissileRef = useRef([]);
+  const staffAmbientRef = useRef([]);
+  const screenFlashRef = useRef(null);
+  const screenShakeRef = useRef(null);
+  const beamRef = useRef([]);
+  const blobAreasRef = useRef({});
+  const lightningRef = useRef([]);
+  const shieldHaloRef = useRef([]);
+  const stateEffectsRef = useRef([]);
+  const surpriseRef = useRef([]);
+  const selectedEnemyIdRef = useRef(null);
+  const hoveredCellRef = useRef(null);
   const trapsRef = useRef([]);
+  const customTilesRef = useRef([]);
+  const customWallsRef = useRef([]);
+  const torchesRef = useRef([]);
   const depthRef = useRef(1);
-  const gameMenuOpenRef = useRef(false);
+  const floorFadeRef = useRef(null);
+  const inspectPopupRef = useRef(null);
+  const inspectSubRef = useRef(null);
+  const onOpenAlchemyRef = useRef(null);
 
-  useEffect(() => { targetingModeRef.current = targetingMode; }, [targetingMode]);
-  useEffect(() => { examineModeRef.current = examineMode; }, [examineMode]);
   useEffect(() => { depthRef.current = depth; }, [depth]);
-  useEffect(() => { gameMenuOpenRef.current = gameMenuOpen; }, [gameMenuOpen]);
 
   const wrapperRef = useRef(null);
 
@@ -184,324 +201,415 @@ function App() {
     const observer = new ResizeObserver((entries) => {
       for (const entry of entries) {
         const { width, height } = entry.contentRect;
-        setViewport({ width: Math.round(width), height: Math.round(height) });
+        setViewport({
+          width: Math.round(width),
+          height: Math.round(height),
+          dpr: Math.min(window.devicePixelRatio || 1, MAX_DPR),
+        });
       }
     });
     observer.observe(wrapper);
     return () => observer.disconnect();
   }, []);
 
-  useEffect(() => {
-    const canFitFullUI = Math.min(viewport.width / 360, viewport.height / 200) >= 2;
-    const detected = (viewport.width > viewport.height && canFitFullUI) ? 2 : 0;
-    setInterfaceSize(detected);
-  }, [viewport]);
+  const canFitFullUI = Math.min(viewport.width / 360, viewport.height / 200) >= 2;
+  const interfaceSize = (viewport.width > viewport.height && canFitFullUI) ? 2 : 0;
 
-  const [isFullscreen, setIsFullscreen] = useState(false);
-
-  const toggleFullscreen = () => {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().catch(() => {});
-    } else {
-      document.exitFullscreen().catch(() => {});
+  // Define send early — domain hooks below need it; safe because it only reads socketRef (a ref)
+  const send = useCallback((msg) => {
+    if (socketRef.current?.readyState === WebSocket.OPEN) {
+      socketRef.current.send(JSON.stringify(msg));
     }
-  };
-
-  useEffect(() => {
-    const handler = () => setIsFullscreen(!!document.fullscreenElement);
-    document.addEventListener('fullscreenchange', handler);
-    return () => document.removeEventListener('fullscreenchange', handler);
   }, []);
 
-  // Sync talentPoints from myStats (updated every STATE_UPDATE)
-  useEffect(() => {
-    if (myStats.talentPoints) setTalentPoints(myStats.talentPoints);
-  }, [myStats.talentPoints]);
+  // --- domain hooks ---
+  const modals = useModalState();
+  useEffect(() => { onOpenAlchemyRef.current = modals.onOpenAlchemy; });
+  const talent = useTalentFlow({ gameState, selectedClass, myStats, send });
+  const targeting = useTargetingExamine({
+    entitiesRef, visionRef, myPlayerIdRef, gridRef,
+    equippedItems, send, trapsRef,
+  });
 
-  // Fetch talent definitions when class or game state changes
-  useEffect(() => {
-    if (gameState !== 'PLAYING') return;
-    const classType = myStats.classType || selectedClass;
-    setTalentDefsLoading(true);
-    setTalentDefsError(null);
-    fetch(`${getApiBaseUrl()}/api/talents/${classType}`)
-      .then(r => {
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        return r.json();
-      })
-      .then(data => {
-        setTalentDefs(data);
-        setTalentDefsLoading(false);
-      })
-      .catch(e => {
-        setTalentDefsError(e.message);
-        setTalentDefsLoading(false);
-      });
-  }, [gameState, selectedClass, myStats.classType]);
-
+  // --- infra hooks ---
   useDebugApi({
     gridRef, entitiesRef, visionRef, openDoorsRef,
     myPlayerIdRef, panOffsetRef, cameraLerpRef, zoomRef, depthRef,
   });
-
-  // --- infra hooks ---
   useAudioUnlock();
   const assetImages = useAssetImages();
-  useMusicByDepth({ enabled: gameState === 'PLAYING', depth, musicRef });
+  useMusicByDepth({ enabled: true, menu: gameState !== 'PLAYING', depth, bossFightActive: bossFightActive && !!bossInfo, bossBleeding, bossLurking, tense: ghostQuestGiven && depth <= 5, amuletObtained: hasAmulet, musicRef });
 
-  useGameSocket({
+  const { sendSelectScrollTarget, sendStoneTarget } = useGameSocket({
     enabled: gameState === 'PLAYING',
-    gameId, sessionId, selectedClass, difficulty, playerName,
+    gameId, sessionId, selectedClass, difficulty, challenges, playerName,
     setConnectionStatus,
     socketRef, gridRef, myPlayerIdRef, entitiesRef,
     visionRef, openDoorsRef, projectilesRef,
-    trapsRef,
-    mobAnimRef, dyingMobsRef, playerAnimRef, particlesRef, searchEffectsRef, floatingTextRef, wasDownedRef,
+    trapsRef, customTilesRef, customWallsRef, torchesRef,
+    mobAnimRef, dyingMobsRef, playerAnimRef, particlesRef, searchEffectsRef, floatingTextRef, screenFlashRef, screenShakeRef, wasDownedRef, warnedTilesRef, transmuteEffectsRef, flareEffectsRef, spellSpriteEffectsRef, lightningRef, shieldHaloRef, stateEffectsRef, magicMissileRef, staffAmbientRef, surpriseRef, selectedEnemyIdRef, beamRef, blobAreasRef,
+    cameraLerpRef, isCameraDetachedRef, floorFadeRef,
     setGrid, setDepth, setMyPlayerId, setInventory,
-    setEquippedItems, setMyStats, setDifficulty,
-    setGold, setEnergy, setBelongings, setQuickslot,
-    onLevelUp: (data) => {
-      if (data.talent_points) setTalentPoints(data.talent_points);
-      setLevelUpData(data);
-      setShowLevelUpBanner(true);
+    setEquippedItems, setMyStats, setDifficulty, setBossInfo,
+    setGold, setEnergy, setHasAmulet, setBossLurking, setExitPos, setBelongings, setQuickslot,
+    onLoreNeeded: handleLoreNeeded,
+    onLevelUp: talent.onLevelUp,
+    onSubclassChoiceAvailable: talent.onSubclassChoiceAvailable,
+    onArmorAbilityChoiceAvailable: talent.onArmorAbilityChoiceAvailable,
+    onGooFightStarted: () => setBossFightActive(true),
+    onTenguFightStarted: () => setBossFightActive(true),
+    onDM300FightStarted: () => setBossFightActive(true),
+    onDwarfKingFightStarted: () => setBossFightActive(true),
+    onDwarfKingPhase2: () => setBossBleeding(true),
+    onYogFightStarted: () => setBossFightActive(true),
+    onYogFinalPhase: () => setBossBleeding(true),
+    onMetamorphOpen: talent.onMetamorphOpen,
+    onMetamorphOptions: talent.onMetamorphOptions,
+    onShopOpen: modals.onShopOpen,
+    onImpDialogue: modals.onImpDialogue,
+    onGhostDialogue: modals.onGhostDialogue,
+    onChasmPrompt: modals.onChasmPrompt,
+    onGhostQuestGiven: () => setGhostQuestGiven(true),
+    onGhostQuestComplete: () => setGhostQuestGiven(false),
+    onImbueWandChoiceAvailable: modals.onImbueWand,
+    onScrollSelectTarget: modals.onScrollSelectTarget,
+    onStoneSelectTarget: modals.onStoneSelectTarget,
+    onStoneIntuitionPickItem: modals.onStoneIntuitionPickItem,
+    onStoneIntuitionGuessKind: modals.onStoneIntuitionGuessKind,
+    onStoneAugmentSelect: modals.onStoneAugmentSelect,
+    onStoneAugmentPickItem: modals.onStoneAugmentPickItem,
+    onEnchantChoiceAvailable: modals.onEnchantChoiceAvailable,
+    onGhostGearOpen: modals.onGhostGearOpen,
+    onAlchemyPreviewResult: modals.onAlchemyPreviewResult,
+    onAlchemyBrewed: modals.onAlchemyBrewed,
+    onTrinketChoice: modals.onTrinketChoice,
+    onToolkitEnergizePrompt: modals.onToolkitEnergizePrompt,
+    onOpenAlchemy: modals.onOpenAlchemy,
+    onTalentUpgraded: talent.onTalentUpgraded,
+    onBossSlain: (data) => {
+      setBossSlainData(data);
+      setShowBossSlainBanner(true);
+      setBossFightActive(false);
+      setBossBleeding(false);
     },
-    onSubclassChoiceAvailable: (data) => {
-      setSubclassOptions(data.options);
-      setShowSubclassChoice(true);
-    },
-    onArmorAbilityChoiceAvailable: (data) => {
-      setArmorAbilityOptions(data.options);
-      setShowArmorAbilityChoice(true);
-    },
-    onTalentUpgraded: ({ talent }) => {
-      if (!talentDefs) return;
-      for (const [tierKey, tierData] of Object.entries(talentDefs.tiers)) {
-        if (tierData.talents.some(tt => tt.id === talent)) {
-          setTalentPoints(prev => ({
-            ...prev,
-            [tierKey]: Math.max(0, (prev[tierKey] || 0) - 1),
-          }));
-          AudioManager.play('LEVELUP', 1.2);
-          return;
-        }
-      }
+    onPlayerDeath: (data) => {
+      setScoreBreakdown(data.score_breakdown || null);
+      setCanResurrect(!!data.can_resurrect);
+      setIsVictory(!!data.victory);
     },
   });
+
+  const [isBusy, setIsBusy] = useState(false);
+  useEffect(() => {
+    const id = setInterval(() => {
+      const me = entitiesRef.current?.players?.[myPlayerIdRef.current];
+      const anim = playerAnimRef.current?.[myPlayerIdRef.current];
+      setIsBusy(!!me && !!anim && (
+        (anim.attackUntil || 0) > performance.now()
+        || (anim.operateUntil || 0) > performance.now()
+        || (anim.readUntil || 0) > performance.now()
+      ));
+    }, 50);
+    return () => clearInterval(id);
+  }, []);
 
   const { hasDraggedRef } = useCanvasControls({
     enabled: gameState === 'PLAYING',
     canvasRef, socketRef,
     panOffsetRef, zoomRef, cameraLerpRef,
     isDraggingRef, isRefocusingRef, isPinchingRef,
-    targetingModeRef, onTargetTapRef,
-    examineModeRef, onExamineTapRef,
+    isCameraDetachedRef, detachedCameraRef,
+    targetingModeRef: targeting.targetingModeRef,
+    onTargetTapRef: targeting.onTargetTapRef,
+    examineModeRef: targeting.examineModeRef,
+    onExamineTapRef: targeting.onExamineTapRef,
     entitiesRef, myPlayerIdRef,
+    hoveredCellRef,
+    floorFadeRef,
+    gridRef, onOpenAlchemyRef,
   });
 
   useGameRenderer({
-    canvasRef, grid, myPlayerId, depth, assetImages,
+    canvasRef, grid, myPlayerId, depth, assetImages, floorFadeRef,
     entitiesRef, visionRef, openDoorsRef, projectilesRef,
-    trapsRef,
-    mobAnimRef, dyingMobsRef, playerAnimRef, particlesRef, searchEffectsRef, floatingTextRef, myPlayerIdRef,
+    trapsRef, customTilesRef, customWallsRef, torchesRef,
+    mobAnimRef, dyingMobsRef, playerAnimRef, particlesRef, searchEffectsRef, floatingTextRef, screenFlashRef, screenShakeRef, myPlayerIdRef, warnedTilesRef, transmuteEffectsRef, flareEffectsRef, spellSpriteEffectsRef, lightningRef, shieldHaloRef, stateEffectsRef, magicMissileRef, staffAmbientRef, surpriseRef, selectedEnemyIdRef, hoveredCellRef, beamRef, blobAreasRef,
     panOffsetRef, cameraLerpRef, zoomRef,
     isRefocusingRef, isDraggingRef,
+    isCameraDetachedRef, detachedCameraRef,
     setCamera,
   });
 
-  // --- send helpers ---
-  // Drop (don't throw) sends while the socket is closed/reconnecting.
-  const sendMessage = (msg) => {
-    if (socketRef.current?.readyState === WebSocket.OPEN) {
-      socketRef.current.send(JSON.stringify(msg));
-    }
-  };
-  const equipItem = (itemId) => sendMessage({ type: 'EQUIP_ITEM', item_id: itemId });
-  const dropItem = (itemId) => sendMessage({ type: 'DROP_ITEM', item_id: itemId });
-  const useItem = (itemId) => sendMessage({ type: 'USE_ITEM', item_id: itemId });
+  // --- item action dispatch ---
+  const TARGETED_ACTIONS = ['THROW', 'ZAP', 'DIRECT', 'SHOOT'];
 
-  // --- SPD-style generic item-action dispatch ---
-  const TARGETED_ACTIONS = ['THROW', 'ZAP'];
-  const send = (msg) => {
-    if (socketRef.current?.readyState === WebSocket.OPEN) {
-      socketRef.current.send(JSON.stringify(msg));
-    }
-  };
-  // Resolve a targeting-mode tap (THROW/ZAP aim, or a kept-armed ranged weapon)
-  // against the tapped cell. Shared by the mouse onClick path and the touch path.
-  const resolveTargetingTap = (tileX, tileY) => {
-    const tm = targetingModeRef.current;
-    console.log('resolveTargetingTap', { tm, tileX, tileY });
-    // Ability targeting
-    if (tm && typeof tm === 'object' && tm.ability) {
-      send({ type: 'USE_ARMOR_ABILITY', ability: tm.ability, target_x: tileX, target_y: tileY });
-      setTargetingMode(false);
-      return;
-    }
-    // Preparation strike targeting
-    if (tm && typeof tm === 'object' && tm.prepStrike) {
-      send({ type: 'PREPARATION_STRIKE', target_x: tileX, target_y: tileY });
-      setTargetingMode(false);
-      return;
-    }
-    // New SPD-style path: an item action awaiting a target cell.
-    if (tm && typeof tm === 'object' && tm.action) {
-      console.log('Sending EXECUTE_ITEM_ACTION', { item_id: tm.itemId, action: tm.action, target_x: tileX, target_y: tileY });
-      send({ type: 'EXECUTE_ITEM_ACTION', item_id: tm.itemId, action: tm.action, target_x: tileX, target_y: tileY });
-      setTargetingMode(false);
-      return;
-    }
-    // Legacy path: equipped ranged weapon kept armed for repeat fire.
-    const weaponId = typeof tm === 'string' ? tm : equippedItems.weapon?.id;
-    if (weaponId) {
-      send({ type: 'RANGED_ATTACK', item_id: weaponId, target_x: tileX, target_y: tileY });
-      // Keep armed for repeat fire only when already in "always armed" mode (tm===true),
-      // not when a single action was selected from toolbar (tm is a string item ID).
-      setTargetingMode(typeof tm === 'string' ? false : true);
-    }
-  };
-  useEffect(() => { onTargetTapRef.current = resolveTargetingTap; });
+  const equipItem = useCallback((itemId) => send({ type: 'EQUIP_ITEM', item_id: itemId }), [send]);
 
-  const executeItemAction = (itemId, action, tx, ty) => {
+  const executeItemAction = useCallback((itemId, action, tx, ty) => {
     if (TARGETED_ACTIONS.includes(action) && tx === undefined) {
-      // Needs a target cell: enter targeting, resolve on the next canvas click.
-      setTargetingMode({ itemId, action });
-      setShowInventory(false);
+      targeting.setTargetingMode({ itemId, action });
+      modals.setShowInventory(false);
       return;
     }
     send({ type: 'EXECUTE_ITEM_ACTION', item_id: itemId, action, target_x: tx, target_y: ty });
-  };
+  }, [send]); // targeting.setTargetingMode and modals.setShowInventory are stable setters
 
-  const TARGETED_ABILITIES = ['heroic_leap', 'smoke_bomb', 'death_mark'];
-
-  const sendUseAbility = (ability) => {
-    if (TARGETED_ABILITIES.includes(ability)) {
-      setTargetingMode({ ability });
-      return;
-    }
-    send({ type: 'USE_ARMOR_ABILITY', ability });
-  };
-
-  const sendTriggerBerserk = () => {
-    send({ type: 'TRIGGER_BERSERK' });
-  };
-
-  const sendPrepStrike = () => {
-    setTargetingMode({ prepStrike: true });
-  };
-  const handleQuickBag = () => setShowQuickBag(true);
-  const handleSwap = () => setSwappedQuickslots(v => !v);
-  const handleRadialSelect = () => setRadialOpen(true);
-
-  const assignQuickslot = (itemId) => {
+  const assignQuickslot = useCallback((itemId) => {
     const slots = quickslot?.slots || [];
     let idx = slots.findIndex(s => !s.item_id);
     if (idx < 0) idx = 0;
     send({ type: 'SET_QUICKSLOT', index: idx, item_id: itemId });
-  };
-  // Flatten belongings into an id->item map for quickslot resolution.
-  const itemsById = {};
-  if (belongings) {
+  }, [quickslot, send]);
+
+  // --- toolbar handlers ---
+  const handleToolbarClick = useCallback((item) => {
+    if (!item) return;
+    if (item.type === 'potion') {
+      send({ type: 'USE_ITEM', item_id: item.id });
+      return;
+    }
+    if (item.type === 'weapon') {
+      if (item.kind === 'staff') {
+        if (targeting.targetingMode && typeof targeting.targetingMode === 'object' && targeting.targetingMode.itemId === item.id) {
+          targeting.setTargetingMode(false);
+        } else if (item.default_action) {
+          executeItemAction(item.id, item.default_action);
+        }
+        return;
+      }
+      if (item.default_action && TARGETED_ACTIONS.includes(item.default_action)) {
+        executeItemAction(item.id, item.default_action);
+        return;
+      }
+      const isEquipped = equippedItems.weapon && equippedItems.weapon.id === item.id;
+      if (!isEquipped) {
+        equipItem(item.id);
+        if (item.range && item.range > 1) {
+          targeting.setTargetingMode(item.id);
+        } else {
+          targeting.setTargetingMode(false);
+        }
+      } else if (item.range && item.range > 1) {
+        targeting.setTargetingMode(prev => !prev);
+      }
+    } else if (item.type === 'wearable') {
+      equipItem(item.id);
+    } else if (item.type === 'throwable') {
+      if (targeting.targetingMode && typeof targeting.targetingMode === 'object' && targeting.targetingMode.itemId === item.id) {
+        targeting.setTargetingMode(false);
+      } else {
+        targeting.setTargetingMode({ itemId: item.id, action: 'THROW' });
+      }
+    } else if (item.type === 'wand') {
+      if (targeting.targetingMode && typeof targeting.targetingMode === 'object' && targeting.targetingMode.itemId === item.id) {
+        targeting.setTargetingMode(false);
+      } else {
+        executeItemAction(item.id, 'ZAP');
+      }
+    } else if (item.default_action) {
+      executeItemAction(item.id, item.default_action);
+    }
+  }, [send, executeItemAction, equipItem, equippedItems, targeting.targetingMode, targeting.setTargetingMode]);
+
+  const handleToolbarDoubleClick = useCallback((item) => {
+    if (!item) return;
+    const isTargeted = item.type === 'wand'
+      || item.type === 'throwable'
+      || (item.type === 'weapon' && item.range && item.range > 1)
+      || item.kind === 'staff';
+    if (!isTargeted) return;
+
+    const myPlayer = entitiesRef.current.players[myPlayerIdRef.current];
+    if (!myPlayer) return;
+
+    let nearestMob = null;
+    let minDist = item.range + 1;
+
+    Object.values(entitiesRef.current.mobs).forEach(mob => {
+      if (!visionRef.current.visible.has(`${Math.round(mob.renderPos.x)},${Math.round(mob.renderPos.y)}`)) return;
+      const dx = mob.renderPos.x - myPlayer.renderPos.x;
+      const dy = mob.renderPos.y - myPlayer.renderPos.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist <= item.range && dist < minDist) {
+        minDist = dist;
+        nearestMob = mob;
+      }
+    });
+
+    if (nearestMob) {
+      const tx = Math.round(nearestMob.renderPos.x);
+      const ty = Math.round(nearestMob.renderPos.y);
+      if (item.default_action && TARGETED_ACTIONS.includes(item.default_action)) {
+        send({ type: 'EXECUTE_ITEM_ACTION', item_id: item.id, action: item.default_action, target_x: tx, target_y: ty });
+      } else {
+        send({ type: 'RANGED_ATTACK', item_id: item.id, target_x: tx, target_y: ty });
+      }
+    }
+  }, [send]);
+
+  const itemsById = useMemo(() => {
+    const map = {};
+    if (!belongings) return map;
     ['weapon', 'armor', 'artifact', 'misc', 'ring'].forEach(k => {
-      if (belongings[k]) itemsById[belongings[k].id] = belongings[k];
+      if (belongings[k]) map[belongings[k].id] = belongings[k];
     });
     const walk = (bag) => {
       (bag?.items || []).forEach(it => {
-        itemsById[it.id] = it;
+        map[it.id] = it;
         if (it.items) walk(it);
       });
     };
     walk(belongings.backpack);
-  }
-  const triggerSearch = () => {
+    return map;
+  }, [belongings]);
+
+  const handleEscape = useCallback(() => {
+    if (targeting.examineModeRef.current || targeting.targetingModeRef.current) {
+      targeting.setExamineMode(false);
+      targeting.setTargetingMode(false);
+      targeting.clearInspect();
+    } else if (talent.showSubclassChoice) {
+      talent.setShowSubclassChoice(false);
+    } else if (talent.showArmorAbilityChoice) {
+      talent.setShowArmorAbilityChoice(false);
+    } else if (talent.showTalentPane) {
+      talent.setShowTalentPane(false);
+      talent.setUpgradedTalentId(null);
+    } else if (!modals.gameMenuOpenRef.current) {
+      modals.setGameMenuOpen(true);
+    }
+  }, [talent.showSubclassChoice, talent.showArmorAbilityChoice, talent.showTalentPane]);
+
+  const resetForRestart = useCallback(() => {
+    if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
+      socketRef.current.close();
+    }
+    entitiesRef.current = { players: {}, mobs: {} };
+    visionRef.current = { visible: new Set(), discovered: new Set() };
+    myPlayerIdRef.current = null;
+    wasDownedRef.current = false;
+    setMyPlayerId(null);
+    setGrid([]);
+    setMyStats({ hp: 0, maxHp: 10, name: '' });
+    setBossInfo(null);
+    setBossFightActive(false);
+    setBossBleeding(false);
+    setBossLurking(false);
+    setShowBossSlainBanner(false);
+    setBossSlainData(null);
+    setInventory([]);
+    setConnectionStatus(null);
+    setScoreBreakdown(null);
+    setCanResurrect(false);
+    setIsVictory(false);
+    talent.resetMetamorph();
+  }, [talent.resetMetamorph]);
+
+  const handleLeaveGame = useCallback(() => {
+    resetForRestart();
+    modals.setGameMenuOpen(false);
+    setGameState('WELCOME');
+  }, [resetForRestart]);
+
+  useKeyboardControls({
+    socketRef, inventory, setShowInventory: modals.setShowInventory,
+    handleToolbarClick, handleToolbarDoubleClick,
+    onExamineOrReveal: targeting.handleExamineOrReveal, onCancelModes: handleEscape,
+    triggerWait: () => send({ type: 'WAIT' }),
+    isRefocusingRef, isDraggingRef, floorFadeRef,
+    quickslot, itemsById,
+    onRadialSelect: modals.handleRadialSelect,
+    gameMenuOpenRef: modals.gameMenuOpenRef,
+    showItemBrowserRef: modals.showItemBrowserRef,
+    onOpenTalents: () => talent.setShowTalentPane(v => !v),
+    onOpenItemBrowser: () => {
+      if (!myStats.isAdmin) return;
+      modals.setShowItemBrowser(v => !v);
+    },
+  });
+
+  const handleCanvasClick = useCallback((e) => {
+    if (isFloorFadeActive(floorFadeRef)) return;
+    if (hasDraggedRef.current) return;
+    if (!canvasRef.current) return;
+
+    const rect = canvasRef.current.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const clickY = e.clientY - rect.top;
+
+    const cw = rect.width, ch = rect.height;
+    const z = zoomRef.current;
+    const worldX = (clickX - cw / 2) / z + cameraLerpRef.current.x + cw / 2;
+    const worldY = (clickY - ch / 2) / z + cameraLerpRef.current.y + ch / 2;
+
+    const tileX = Math.floor(worldX / TILE_SIZE);
+    const tileY = Math.floor(worldY / TILE_SIZE);
+
+    if (targeting.examineModeRef.current) {
+      targeting.resolveExamineTap(tileX, tileY);
+      return;
+    }
+
+    targeting.clearInspect();
+
+    if (targeting.targetingModeRef.current) {
+      targeting.resolveTargetingTap(tileX, tileY);
+      return;
+    }
+
     if (socketRef.current?.readyState === WebSocket.OPEN) {
-      socketRef.current.send(JSON.stringify({ type: 'SEARCH' }));
+      const myPlayer = entitiesRef.current.players[myPlayerIdRef.current];
+      const playerTile = myPlayer ? (myPlayer.targetPos || myPlayer.renderPos) : null;
+      const action = resolveTapAction({ tileX, tileY, playerTile, mobs: entitiesRef.current.mobs, grid: gridRef.current });
+      if (action.type === 'OPEN_ALCHEMY') {
+        modals.onOpenAlchemy();
+        return;
+      }
+      if (action.type === 'MOVE_TO' || action.type === 'MOVE') isRefocusingRef.current = true;
+      socketRef.current.send(JSON.stringify(action));
     }
-  };
+  }, []);
 
-  // Magnifying-glass / E / Search button: 1st trigger arms examine mode, 2nd performs
-  // the reveal. (In examine mode, tapping a cell inspects it and exits — see
-  // resolveExamineTap.) Mirrors the original Toolbar.btnSearch examine→search two-step.
-  const clearInspect = () => {
-    setInspectInfo(null);
-  };
+  const isDesktop = interfaceSize > 0;
+  const isMac = /Macintosh|MacIntel|MacPPC|Mac68K/.test(navigator.userAgent);
+  const mouseCursorVal = isMac
+    ? `url(${cursorMouse2xUrl}) 2 2, pointer`
+    : `image-set(url(${cursorMouseUrl}) 1x, url(${cursorMouse2xUrl}) 2x) 1 1, pointer`;
+  const controllerCursorVal = isMac
+    ? `url(${cursorController2xUrl}) 16 16, crosshair`
+    : `image-set(url(${cursorControllerUrl}) 1x, url(${cursorController2xUrl}) 2x) 8 8, crosshair`;
 
-  const handleExamineOrReveal = () => {
-    clearInspect();
-    if (examineModeRef.current) {
-      setExamineMode(false);
-      triggerSearch();
-    } else {
-      setTargetingMode(false);
-      setExamineMode(true);
-    }
-  };
+  // Destructure targeting values used in JSX so the linter doesn't flag object-property
+  // accesses on a hook return that contains refs.
+  const {
+    targetingMode, examineMode, inspectInfo,
+    handleExamineOrReveal,
+    sendUseAbility, sendUseComboMove, sendPrepStrike,
+  } = targeting;
 
-  const sendUpgradeTalent = (talent) => send({ type: 'UPGRADE_TALENT', talent });
-  const handleChooseSubclass = (subclass) => {
-    send({ type: 'CHOOSE_SUBCLASS', subclass });
-    setShowTalentPane(false);
-  };
-  const handleChooseArmorAbility = (abilityTalentId) => {
-    sendUpgradeTalent(abilityTalentId);
-    setShowTalentPane(false);
-  };
-
-  const handleEscape = () => {
-    if (examineModeRef.current || targetingModeRef.current) {
-      setExamineMode(false);
-      setTargetingMode(false);
-      clearInspect();
-    } else if (showSubclassChoice) {
-      setShowSubclassChoice(false);
-    } else if (showArmorAbilityChoice) {
-      setShowArmorAbilityChoice(false);
-    } else if (showTalentPane) {
-      setShowTalentPane(false);
-    } else if (!gameMenuOpenRef.current) {
-      setGameMenuOpen(true);
-    }
-  };
-
-  // Examine-mode tap: open a small popup naming whatever is in the cell, anchored to it
-  // (the live screen position is recomputed each frame by computeInspectPos so it sticks
-  // to the tile/mob as the camera or that mob moves), then leave examine mode.
-  const resolveExamineTap = (tileX, tileY) => {
-    const info = describeCell({
-      tileX, tileY, gridRef, entitiesRef, visionRef,
-      myPlayerId: myPlayerIdRef.current,
-    });
-    setExamineMode(false);
-    if (!info) { clearInspect(); return; }
-    setInspectInfo({ name: info.name, sub: info.sub, anchor: info.anchor });
-  };
-  useEffect(() => { onExamineTapRef.current = resolveExamineTap; });
-
-  // While a popup is open, drive it every frame: reposition from the live camera + anchor
-  // (so it sticks to its tile/mob), refresh a mob's HP, and handle auto-dismiss. Done in a
-  // rAF (not render) so we don't read refs during render. Dismissal is timestamp-based:
-  // the popup stays alive for DISMISS_MS after the last "activity" — for a mob that's its
-  // last HP change, so you can watch a fight and it fades 3s after the final hit; for a
-  // tile it's the inspect itself (fixed 3s). A vanished mob dismisses immediately.
+  // Drive the inspect popup every frame: reposition from live camera, update mob HP,
+  // hide off-screen, auto-dismiss after 3s of no activity.
+  const clearInspectRef = useRef(null);
+  useEffect(() => { clearInspectRef.current = targeting.clearInspect; });
   useEffect(() => {
     if (!inspectInfo) return;
     const anchor = inspectInfo.anchor;
     const DISMISS_MS = 3000;
     let raf;
     let lastSub;
-    let lastActive = performance.now();
+    let lastActive = 0;
+    let ticked = false;
     const tick = () => {
       const now = performance.now();
-
-      // Resolve the live secondary line (a mob's current HP), and bump the activity
-      // timestamp whenever it changes so active combat keeps the popup on screen.
+      if (!ticked) { lastActive = now; ticked = true; }
       let sub = inspectInfo.sub;
       if (anchor.type === 'mob') {
         const mob = entitiesRef.current.mobs[anchor.id];
-        if (!mob) { setInspectInfo(null); return; } // mob gone (killed/despawned)
+        if (!mob) { clearInspectRef.current(); return; }
         sub = mob.hp != null && mob.max_hp != null ? `HP ${mob.hp}/${mob.max_hp}` : null;
       }
       if (sub !== lastSub) { lastSub = sub; lastActive = now; }
-      if (now - lastActive > DISMISS_MS) { setInspectInfo(null); return; }
+      if (now - lastActive > DISMISS_MS) { clearInspectRef.current(); return; }
 
       const el = inspectPopupRef.current;
       if (el) {
@@ -529,163 +637,24 @@ function App() {
     return () => cancelAnimationFrame(raf);
   }, [inspectInfo]);
 
-  const triggerWait = () => {
-    if (socketRef.current?.readyState === WebSocket.OPEN) {
-      socketRef.current.send(JSON.stringify({ type: 'WAIT' }));
+  const toolbarItems = useMemo(() => Array.from({ length: 6 }).map((_, i) => {
+    const slot = quickslot?.slots?.[i];
+    if (!slot) return null;
+    if (slot.item_id) return itemsById[slot.item_id] || null;
+    if (slot.is_placeholder && slot.placeholder_kind) {
+      return { id: null, kind: slot.placeholder_kind, name: '', type: null, is_placeholder: true };
     }
-  };
-
-  // --- interaction handlers (touch multiple states → keep here) ---
-  const handleCanvasClick = (e) => {
-    if (hasDraggedRef.current) return;
-    if (!canvasRef.current) return;
-
-    const rect = canvasRef.current.getBoundingClientRect();
-    const clickX = e.clientX - rect.left;
-    const clickY = e.clientY - rect.top;
-
-    const cw = canvasRef.current.width, ch = canvasRef.current.height;
-    const z = zoomRef.current;
-    const worldX = (clickX - cw / 2) / z + cameraLerpRef.current.x + cw / 2;
-    const worldY = (clickY - ch / 2) / z + cameraLerpRef.current.y + ch / 2;
-
-    const tileX = Math.floor(worldX / TILE_SIZE);
-    const tileY = Math.floor(worldY / TILE_SIZE);
-
-    if (examineModeRef.current) {
-      resolveExamineTap(tileX, tileY);
-      return;
-    }
-
-    // Any non-examine tap dismisses a lingering inspect popup.
-    clearInspect();
-
-    if (targetingModeRef.current) {
-      resolveTargetingTap(tileX, tileY);
-      return;
-    }
-
-    if (socketRef.current?.readyState === WebSocket.OPEN) {
-      const myPlayer = entitiesRef.current.players[myPlayerIdRef.current];
-      const playerTile = myPlayer ? (myPlayer.targetPos || myPlayer.renderPos) : null;
-      const action = resolveTapAction({ tileX, tileY, playerTile });
-      if (action.type === 'MOVE_TO' || action.type === 'MOVE') isRefocusingRef.current = true;
-      socketRef.current.send(JSON.stringify(action));
-    }
-  };
-
-  const handleToolbarClick = (item) => {
-    if (!item) {
-      setShowInventory(true);
-      return;
-    }
-    if (item.type === 'potion') {
-      useItem(item.id);
-      return;
-    }
-    if (item.type === 'weapon') {
-      const isEquipped = equippedItems.weapon && equippedItems.weapon.id === item.id;
-
-      if (!isEquipped) {
-        equipItem(item.id);
-        if (item.range && item.range > 1) {
-          setTargetingMode(item.id);
-        } else {
-          setTargetingMode(false);
-        }
-      } else if (item.range && item.range > 1) {
-        setTargetingMode(prev => !prev);
-      }
-    } else if (item.type === 'wearable') {
-      equipItem(item.id);
-    } else if (item.type === 'throwable') {
-      if (targetingMode && typeof targetingMode === 'object' && targetingMode.itemId === item.id) {
-        setTargetingMode(false);
-      } else {
-        setTargetingMode({ itemId: item.id, action: 'THROW' });
-      }
-    }
-  };
-
-  const handleToolbarDoubleClick = (item) => {
-    const isRangedWeapon = item && item.type === 'weapon' && item.range && item.range > 1;
-    const isThrowable = item && item.type === 'throwable';
-    if (!isRangedWeapon && !isThrowable) return;
-
-    const myPlayer = entitiesRef.current.players[myPlayerIdRef.current];
-    if (!myPlayer) return;
-
-    let nearestMob = null;
-    let minDist = item.range + 1;
-
-    Object.values(entitiesRef.current.mobs).forEach(mob => {
-      if (!visionRef.current.visible.has(`${Math.round(mob.renderPos.x)},${Math.round(mob.renderPos.y)}`)) return;
-      const dx = mob.renderPos.x - myPlayer.renderPos.x;
-      const dy = mob.renderPos.y - myPlayer.renderPos.y;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      if (dist <= item.range && dist < minDist) {
-        minDist = dist;
-        nearestMob = mob;
-      }
-    });
-
-    if (nearestMob) {
-      const tx = Math.round(nearestMob.renderPos.x);
-      const ty = Math.round(nearestMob.renderPos.y);
-      // Throwables fire via the generic THROW action; equipped ranged weapons use RANGED_ATTACK.
-      if (isThrowable) {
-        send({ type: 'EXECUTE_ITEM_ACTION', item_id: item.id, action: 'THROW', target_x: tx, target_y: ty });
-      } else {
-        send({ type: 'RANGED_ATTACK', item_id: item.id, target_x: tx, target_y: ty });
-      }
-    }
-  };
-
-  useKeyboardControls({
-    socketRef, inventory, setShowInventory,
-    handleToolbarClick, handleToolbarDoubleClick,
-    onExamineOrReveal: handleExamineOrReveal, onCancelModes: handleEscape,
-    triggerWait,
-    isRefocusingRef, isDraggingRef,
-    quickslot, itemsById,
-    onRadialSelect: handleRadialSelect,
-    gameMenuOpenRef,
-    onOpenTalents: () => setShowTalentPane(v => !v),
-  });
-
-  // Reset transient game state on death so a fresh run starts clean (no stale
-  // corpse, dim overlay, or game-over flag carried over from the previous run).
-  const resetForRestart = () => {
-    if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
-      socketRef.current.close();
-    }
-    entitiesRef.current = { players: {}, mobs: {} };
-    visionRef.current = { visible: new Set(), discovered: new Set() };
-    myPlayerIdRef.current = null;
-    wasDownedRef.current = false;
-    setMyPlayerId(null);
-    setGrid([]);
-    setMyStats({ hp: 0, maxHp: 10, name: '' });
-    setInventory([]);
-    setConnectionStatus(null);
-  };
-
-  const handleLeaveGame = () => {
-    resetForRestart();
-    setGameMenuOpen(false);
-    setGameState('WELCOME');
-  };
-
-  const isDesktop = interfaceSize > 0;
+    return null;
+  }), [quickslot, itemsById]);
 
   // --- screen flow ---
   if (gameState === 'WELCOME') {
     return (
       <>
-        <title>SPD Online — Play Shattered Pixel Dungeon in your browser</title>
-        <meta name="description" content="Play the roguelike dungeon crawler Shattered Pixel Dungeon online, for free in your browser. Multiplayer real-time, no download required." />
+        <title>{t('app.titleWelcome')}</title>
+        <meta name="description" content={t('app.descWelcome')} />
         <div className={isDesktop ? 'desktop-mode' : ''}
-             style={isDesktop ? { '--cursor-mouse': `url(${cursorMouseUrl}) 1 1, pointer` } : {}}>
+             style={isDesktop ? { '--cursor-mouse': mouseCursorVal } : {}}>
           <MainMenu onStart={() => setGameState('SELECT')} />
         </div>
       </>
@@ -695,16 +664,15 @@ function App() {
   if (gameState === 'SELECT') {
     return (
       <>
-        <title>SPD Online — Choose your class</title>
-        <meta name="description" content="Select your hero class — Warrior, Mage, Rogue, or Archer — and descend into the dungeon." />
+        <title>{t('app.titleSelect')}</title>
+        <meta name="description" content={t('app.descSelect')} />
         <div className={isDesktop ? 'desktop-mode' : ''}
-             style={isDesktop ? { '--cursor-mouse': `url(${cursorMouseUrl}) 1 1, pointer` } : {}}>
-          <CharacterSelection onSelect={(c, d, n) => {
+             style={isDesktop ? { '--cursor-mouse': mouseCursorVal } : {}}>
+          <CharacterSelection onSelect={(c, d, n, strongerBosses) => {
             setSelectedClass(c);
             setDifficulty(d);
+            setChallenges(strongerBosses ? 'stronger_bosses' : '');
             setPlayerName(n);
-            // Fresh identity for the new run so we spawn a new hero rather than
-            // rebinding to a previous (possibly dead) one.
             const newSession = crypto.randomUUID();
             sessionStorage.setItem('opd_session', newSession);
             setSessionId(newSession);
@@ -714,263 +682,227 @@ function App() {
       </>
     );
   }
-  const cursorStyle = (targetingMode || examineMode)
-    ? isDesktop
-      ? `url(${cursorControllerUrl}) 8 8, crosshair`
-      : 'crosshair'
-    : isDesktop
-      ? `url(${cursorMouseUrl}) 1 1, auto`
-      : 'default';
 
-  // Toolbar quickslots mirror the real quickslot state (as in the original game),
-  // resolving each slot's item id against the flattened belongings.
-  const toolbarItems = Array.from({ length: 6 }).map((_, i) => {
-    const slot = quickslot?.slots?.[i];
-    return slot && slot.item_id ? (itemsById[slot.item_id] || null) : null;
-  });
+  const cursorStyle = (targetingMode || examineMode)
+    ? isDesktop ? controllerCursorVal : 'crosshair'
+    : isDesktop ? mouseCursorVal.replace(', pointer', ', auto') : 'default';
 
   return (
     <>
-      <title>SPD Online — Floor {depth}</title>
-      <meta name="description" content={`Playing SPD Online — exploring floor ${depth} of the dungeon.`} />
+      <title>{t('app.titlePlaying', { depth })}</title>
+      <meta name="description" content={t('app.descPlaying', { depth })} />
       <div className={`game-container ${isDesktop ? 'desktop-mode' : ''}`}
-           style={isDesktop ? { '--cursor-mouse': `url(${cursorMouseUrl}) 1 1, pointer` } : {}}>
-      <LoadingOverlay visible={grid.length === 0} />
+           style={isDesktop ? { '--cursor-mouse': mouseCursorVal } : {}}>
 
-      {connectionStatus === 'reconnecting' && (
-        <div className="reconnect-banner" role="status">
-          Connection lost — reconnecting…
-        </div>
-      )}
+        <LoadingOverlay visible={grid.length === 0} />
 
-      <StatusPane myStats={myStats} depth={depth} onSearch={handleExamineOrReveal} />
+        {connectionStatus === 'reconnecting' && (
+          <div className="reconnect-banner" role="status">
+            {t('app.reconnecting')}
+          </div>
+        )}
 
-      <div className="canvas-wrapper" ref={wrapperRef}>
-        <canvas
-          ref={canvasRef}
-          width={viewport.width}
-          height={viewport.height}
-          className="game-canvas"
-          style={{ cursor: cursorStyle }}
-          onClick={handleCanvasClick}
-        />
-      </div>
+        <BossHealthBar boss={bossInfo} bleeding={bossBleeding} interfaceSize={interfaceSize} assetImages={assetImages} />
+        <KeyDisplay keys={myStats.keys} depth={depth} />
 
-      {inspectInfo && (
-        <div
-          ref={inspectPopupRef}
-          className="inspect-popup"
-          style={{
-            position: 'fixed',
-            left: 0,
-            top: 0,
-            display: 'none',
-            transform: 'translate(-50%, -100%)',
-            background: 'rgba(0, 0, 0, 0.85)',
-            border: '1px solid #6a6a6a',
-            borderRadius: 3,
-            padding: '3px 7px',
-            color: '#ffffff',
-            font: '11px monospace',
-            lineHeight: 1.25,
-            whiteSpace: 'nowrap',
-            textAlign: 'center',
-            pointerEvents: 'none',
-            zIndex: 60,
-          }}
-        >
-          <div style={{ fontWeight: 'bold' }}>{inspectInfo.name}</div>
-          {/* Uncontrolled (no React child) so the rAF loop can update the live HP text
-              without React clobbering it on the next per-frame re-render. */}
-          <div ref={inspectSubRef} style={{ color: '#bdbdbd', display: 'none' }} />
-        </div>
-      )}
+        <SideTags>
+          <AttackIndicator
+            myStats={myStats}
+            onAttack={(targetId) => send({ type: 'ATTACK', target_id: targetId })}
+          />
+          <ActionIndicator
+            myStats={myStats}
+            onAction={(action) => {
+              const weapon = myStats?.belongings?.weapon;
+              if (weapon) executeItemAction(weapon.id, action);
+            }}
+          />
+          <LootIndicator
+            entitiesRef={entitiesRef}
+            myPlayerIdRef={myPlayerIdRef}
+            onPickup={() => send({ type: 'PICKUP_FLOOR' })}
+          />
+          <ResumeIndicator
+            myStats={myStats}
+            onResume={() => send({ type: 'RESUME' })}
+          />
+          <DangerIndicator
+            visionRef={visionRef}
+            entitiesRef={entitiesRef}
+            myPlayerIdRef={myPlayerIdRef}
+            onCycleEnemy={() => {
+              const visible = visionRef.current.visible;
+              if (!visible) return;
+              const hostile = Object.values(entitiesRef.current.mobs).filter(m =>
+                m.faction === 'enemy' && visible.has(`${Math.round(m.renderPos.x)},${Math.round(m.renderPos.y)}`)
+              );
+              if (hostile.length === 0) return;
+              const pos = (hostile[0].targetPos || hostile[0].renderPos);
+              const lw = canvasRef.current?.getBoundingClientRect()?.width || window.innerWidth;
+              const lh = canvasRef.current?.getBoundingClientRect()?.height || window.innerHeight;
+              const z = zoomRef.current;
+              cameraLerpRef.current = {
+                x: Math.round(pos.x) * TILE_SIZE + TILE_SIZE / 2 - lw / 2 / z,
+                y: Math.round(pos.y) * TILE_SIZE + TILE_SIZE / 2 - lh / 2 / z,
+              };
+              panOffsetRef.current = { x: 0, y: 0 };
+              isRefocusingRef.current = false;
+              isCameraDetachedRef.current = false;
+            }}
+          />
+        </SideTags>
 
-      {/* Bottom-right HUD: toolbar, then the inventory pane below it
-          (toggled open/closed with 'f' or the bag button). */}
-      <div className="hud-bottom">
-        <Toolbar
-          mode={interfaceSize > 0 ? 'group' : 'split'}
+        <StatusPane
+          myStats={myStats}
           interfaceSize={interfaceSize}
-          flipToolbar={false}
-          quickSwapper={!isDesktop}
+          depth={depth}
+          exitPos={exitPos}
+          isAdmin={myStats.isAdmin}
+          onSearch={handleExamineOrReveal}
+          hasTalentPoints={Object.values(talent.talentPoints || {}).some(p => p > 0)}
+          gold={gold}
+          onOpenTalentPane={() => talent.setShowTalentPane(true)}
+          onTeleport={(floor) => send({ type: 'ADMIN_TELEPORT', target_floor: floor })}
+          isBusy={isBusy}
+          onBuffClick={(buff) => setInspectBuff(buff)}
+          assetImages={assetImages}
+        />
+
+        <div className="canvas-wrapper" ref={wrapperRef}>
+          <canvas
+            ref={canvasRef}
+            width={Math.round(viewport.width * viewport.dpr)}
+            height={Math.round(viewport.height * viewport.dpr)}
+            className="game-canvas"
+            style={{ cursor: cursorStyle }}
+            onClick={handleCanvasClick}
+          />
+        </div>
+
+        {inspectInfo && (
+          <div
+            ref={inspectPopupRef}
+            className="inspect-popup"
+            style={{ display: 'none' }}
+          >
+            <span className="inspect-popup-name">{inspectInfo.name}</span>
+            <span className="inspect-popup-sub" ref={inspectSubRef} style={{ display: 'none' }} />
+          </div>
+        )}
+
+        {inspectBuff && (
+          <WndInfoBuff
+            buff={inspectBuff}
+            onClose={() => setInspectBuff(null)}
+          />
+        )}
+
+        <GameHud
+          interfaceSize={interfaceSize}
+          isDesktop={isDesktop}
           canvasWidth={viewport.width}
-          items={toolbarItems}
+          assetImages={assetImages}
+          toolbarItems={toolbarItems}
           equippedItems={equippedItems}
           targetingMode={targetingMode}
-          swappedQuickslots={swappedQuickslots}
-          onWait={triggerWait}
-          onSearch={handleExamineOrReveal}
-          onInventory={() => setShowInventory(v => !v)}
-          onQuickBag={handleQuickBag}
-          onSlotClick={handleToolbarClick}
-          onSlotDoubleClick={handleToolbarDoubleClick}
-          onSwap={handleSwap}
-        />
-        <AbilityButton
-          armorAbility={myStats.armorAbility || null}
-          armorCharge={myStats.armorCharge || 0}
-          onUseAbility={sendUseAbility}
-        />
-        <BerserkButton
-          berserkPower={myStats.berserkPower || 0}
-          onTriggerBerserk={sendTriggerBerserk}
-        />
-        <PrepStrikeButton
-          subclass={myStats.subclass}
-          invisible={myStats.invisible || 0}
-          prepSeconds={myStats.prepSeconds || 0}
-          onPrepStrike={sendPrepStrike}
-        />
-        <ComboDisplay
-          subclass={myStats.subclass}
-          comboCount={myStats.comboCount || 0}
-        />
-        {showInventory && (isDesktop ? (
-          <InventoryPane
-            belongings={belongings}
-            gold={gold}
-            energy={energy}
-            strength={myStats.strength}
-            onOpenItem={setUseItemTarget}
-            onContextMenu={(item, x, y) => setCtxMenu({ item, x, y })}
-            onDefaultAction={(item) => executeItemAction(item.id, item.default_action)}
-          />
-        ) : (
-          <WndBag
-            belongings={belongings}
-            gold={gold}
-            energy={energy}
-            strength={myStats.strength}
-            onOpenItem={setUseItemTarget}
-            onContextMenu={(item, x, y) => setCtxMenu({ item, x, y })}
-            onDefaultAction={(item) => executeItemAction(item.id, item.default_action)}
-            onClose={() => setShowInventory(false)}
-          />
-        ))}
-      </div>
-
-      <button className="fullscreen-btn" onClick={toggleFullscreen} title={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}>
-        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          {isFullscreen ? (
-            <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3" />
-          ) : (
-            <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />
-          )}
-        </svg>
-      </button>
-
-      {useItemTarget && (
-        <WndUseItem
-          item={itemsById[useItemTarget.id] || useItemTarget}
-          onAction={executeItemAction}
-          onAssignQuickslot={assignQuickslot}
-          onClose={() => setUseItemTarget(null)}
-        />
-      )}
-
-      {ctxMenu && (
-        <RightClickMenu
-          item={itemsById[ctxMenu.item.id] || ctxMenu.item}
-          x={ctxMenu.x}
-          y={ctxMenu.y}
-          onAction={executeItemAction}
-          onAssignQuickslot={assignQuickslot}
-          onClose={() => setCtxMenu(null)}
-        />
-      )}
-
-      {showQuickBag && (
-        <WndQuickBag
+          swappedQuickslots={modals.swappedQuickslots}
+          showInventory={modals.showInventory}
           belongings={belongings}
-          onUse={(itemId, action) => executeItemAction(itemId, action)}
-          onClose={() => setShowQuickBag(false)}
-        />
-      )}
-
-      {radialOpen && (
-        <RadialMenu
-          items={toolbarItems}
-          size={isDesktop ? 200 : 140}
-          onSelect={(idx) => { handleToolbarClick(toolbarItems[idx], idx); }}
-          onClose={() => setRadialOpen(false)}
-        />
-      )}
-
-      {showSubclassChoice && (
-        <SubclassChoice
-          options={subclassOptions}
-          onChoose={(sc) => {
-            handleChooseSubclass(sc);
-            setShowSubclassChoice(false);
+          gold={gold}
+          energy={energy}
+          strength={myStats.strength}
+          myStats={myStats}
+          onWait={() => send({ type: 'WAIT' })}
+          onSearch={handleExamineOrReveal}
+          onInventory={() => modals.setShowInventory(v => !v)}
+          onQuickBag={modals.handleQuickBag}
+          onSwap={modals.handleSwap}
+          onSlotClick={(item, idx) => {
+            if (!item || item.is_placeholder || item.default_action == null) {
+              modals.openQuickslotPicker(idx);
+            } else {
+              handleToolbarClick(item);
+            }
           }}
-          onSkip={() => setShowSubclassChoice(false)}
+          onSlotDoubleClick={handleToolbarDoubleClick}
+          onSlotLongPress={(item, idx) => modals.openQuickslotPicker(idx)}
+          onSlotContextMenu={(item, idx) => modals.openQuickslotPicker(idx)}
+          onUseAbility={sendUseAbility}
+          onTriggerBerserk={() => send({ type: 'TRIGGER_BERSERK' })}
+          onPrepStrike={sendPrepStrike}
+          onUseComboMove={sendUseComboMove}
+          onOpenItem={modals.setUseItemTarget}
+          onContextMenu={(item, x, y) => modals.setCtxMenu({ item, x, y })}
+          onDefaultAction={(item) => executeItemAction(item.id, item.default_action)}
+          onCloseInventory={() => modals.setShowInventory(false)}
         />
-      )}
 
-      {showArmorAbilityChoice && (
-        <ArmorAbilityChoice
-          options={armorAbilityOptions}
-          abilitySelectors={talentDefs?.ability_selectors || {}}
-          onChoose={(tid) => {
-            handleChooseArmorAbility(tid);
-            setShowArmorAbilityChoice(false);
-          }}
-          onSkip={() => setShowArmorAbilityChoice(false)}
+        <GameLog />
+        <ToastOverlay />
+
+        {showBossSlainBanner && bossSlainData && (
+          <BossSlainBanner
+            badgeImage={bossSlainData.badge_image}
+            onDismiss={() => setShowBossSlainBanner(false)}
+          />
+        )}
+
+        <GameModals
+          modals={modals}
+          itemsById={itemsById}
+          toolbarItems={toolbarItems}
+          belongings={belongings}
+          gold={gold}
+          energy={energy}
+          strength={myStats.strength}
+          isDesktop={isDesktop}
+          executeItemAction={executeItemAction}
+          assignQuickslot={assignQuickslot}
+          sendSelectScrollTarget={sendSelectScrollTarget}
+          sendStoneTarget={sendStoneTarget}
+          send={send}
+          handleToolbarClick={handleToolbarClick}
         />
-      )}
 
-      {showLevelUpBanner && levelUpData && gameState === 'PLAYING' && (
-        <LevelUpBanner
-          level={levelUpData.level}
-          tierUnlocked={levelUpData.tier_unlocked}
-          talentPoints={talentPoints}
-          canChooseSubclass={levelUpData.can_choose_subclass}
-          canChooseArmorAbility={levelUpData.can_choose_armor_ability}
-          onOpenTalents={() => {
-            setShowTalentPane(true);
-            onOpenTalentsRef.current();
-          }}
-          onDismiss={() => setShowLevelUpBanner(false)}
+        <TalentLayer
+          talent={talent}
+          myStats={myStats}
+          gameState={gameState}
+          showItemBrowser={modals.showItemBrowser}
+          setShowItemBrowser={modals.setShowItemBrowser}
+          itemCatalog={modals.itemCatalog}
+          send={send}
         />
-      )}
 
-      {showTalentPane && (
-        <TalentPane
-          talentDefs={talentDefs}
-          talentLevels={myStats.talentLevels || {}}
-          talentPoints={talentPoints}
-          level={myStats.level || 1}
-          subclass={myStats.subclass || null}
-          armorAbility={myStats.armorAbility || null}
-          abilityTier4={talentDefs?.ability_tier4 || {}}
-          onUpgradeTalent={sendUpgradeTalent}
-          onChooseSubclass={handleChooseSubclass}
-          onChooseArmorAbility={handleChooseArmorAbility}
-          onClose={() => {
-            setShowSubclassChoice(false);
-            setShowArmorAbilityChoice(false);
-            setShowTalentPane(false);
-          }}
-          loading={talentDefsLoading}
-          error={talentDefsError}
-        />
-      )}
+        {loreOverlay && (
+          <LoreOverlay key={loreOverlay.depth} depth={loreOverlay.depth} body={loreOverlay.body} onContinue={handleLoreDismiss} />
+        )}
 
-      {gameMenuOpen && (
-        <GameMenu
-          onClose={() => setGameMenuOpen(false)}
+        <GameOverlay
+          gameMenuOpen={modals.gameMenuOpen}
+          onCloseMenu={() => modals.setGameMenuOpen(false)}
           onLeaveGame={handleLeaveGame}
-        />
-      )}
-
-      {!!myStats.isDowned && (
-        <GameOverScreen
+          isDowned={myStats.isDowned}
+          playerName={myStats.name}
+          classType={myStats.classType}
+          level={myStats.level}
+          depth={depth}
+          gold={gold}
+          subclass={myStats.subclass}
+          armorAbility={myStats.armorAbility}
+          talentLevels={myStats.talentLevels}
+          talentDefs={talent.talentDefs}
+          inventory={inventory}
+          selectedClass={selectedClass}
+          scoreBreakdown={scoreBreakdown}
+          canResurrect={canResurrect}
+          isVictory={isVictory}
+          onResurrect={() => send({ type: 'RESURRECT' })}
           onNewGame={() => { resetForRestart(); setGameState('SELECT'); }}
           onMenu={() => { resetForRestart(); setGameState('WELCOME'); }}
+          challenges={challenges}
         />
-      )}
-    </div>
+      </div>
     </>
   );
 }

@@ -1,27 +1,26 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import AudioManager from '../audio/AudioManager';
+import { MAX_DPR } from '../constants';
+import WndHero from './WndHero';
 
-import statusPaneImg from '../assets/pixel-dungeon/interfaces/status_pane.png';
-import buffsImg from '../assets/pixel-dungeon/interfaces/buffs.png';
-import warriorSheet from '../assets/pixel-dungeon/sprites/warrior.png';
-import mageSheet from '../assets/pixel-dungeon/sprites/mage.png';
-import rogueSheet from '../assets/pixel-dungeon/sprites/rogue.png';
-import huntressSheet from '../assets/pixel-dungeon/sprites/huntress.png';
+const DPR = Math.min(window.devicePixelRatio || 1, MAX_DPR);
 
-// Pixel-faithful reproduction of SPD's StatusPane (small / mobile layout).
-// Native coordinates are taken straight from StatusPane.java and scaled up by
-// SCALE. All sprites are drawn with smoothing off so they stay crisp pixels.
-const SCALE = 3;
-const PANE_W = 90;   // a touch wider than the 82px bg so the buff row fits
-const PANE_H = 38;
+const PANE_W_LARGE = 160;
+const PANE_H_LARGE = 39;
+const PANE_W_SMALL = 82;
+const PANE_H_SMALL = 38;
 
-// status_pane.png source regions (small UI), from StatusPane.java
-const BG = { x: 0, y: 0, w: 82, h: 38 };
-const HP_FILL = { x: 0, y: 40, w: 50, h: 4 };
-const EXP_FILL = { x: 0, y: 48, w: 17, h: 4 };
+const BG_LARGE = { y: 64, h: 39, left: 33, right: 4, stretchSrcW: 4 };
+const BG_SMALL = { y: 0,  h: 38, left: 32, right: 5, stretchSrcW: 45 };
 
-// Avatar = 12x15 crop of the class sprite sheet at frame index 1 (x=12), row =
-// armour tier (0 when unarmoured). Mirrors HeroSprite.avatar().
+const HP_FILL_LARGE   = { x: 0, y: 103, w: 128, h: 9 };
+const HP_SHIELD_LARGE = { x: 0, y: 112, w: 128, h: 9 };
+const EXP_FILL_LARGE  = { x: 0, y: 121, w: 128, h: 7 };
+const HP_FILL_SMALL   = { x: 0, y: 40, w: 50, h: 4 };
+const HP_SHIELD_SMALL = { x: 0, y: 44, w: 50, h: 4 };
+const EXP_FILL_SMALL  = { x: 0, y: 48, w: 17, h: 4 };
+
 const FRAME_W = 12;
 const FRAME_H = 15;
 
@@ -30,20 +29,12 @@ const FRAME_H = 15;
 // mirrors SPD HeroSprite.avatar(), which shifts the frame by tiers().get(tier).
 const MAX_ARMOR_TIER = 6;
 
-// buffs.png is sliced into 7x7 cells; 128/7 = 18 columns. icon idx -> (col,row).
 const BUFF_SIZE = 7;
 const BUFF_COLS = 18;
+const MAX_BUFFS = 14; // matches SPD's BuffIndicator.maxBuffs default
 
-// 1.5 blinks/sec, like StatusPane.FLASH_RATE.
 const FLASH_RATE = Math.PI * 1.5;
 const WARNING_COLORS = ['#660000', '#cc0000', '#660000'];
-
-const CLASS_SHEETS = {
-  warrior: warriorSheet,
-  mage: mageSheet,
-  rogue: rogueSheet,
-  huntress: huntressSheet,
-};
 
 function lerpColor(t, colors) {
   // t in [0,1] across the colors array (matches ColorMath.interpolate).
@@ -61,48 +52,41 @@ function lerpColor(t, colors) {
   return `rgb(${r},${g},${bl})`;
 }
 
-export default function StatusPane({ myStats, depth, onSearch }) {
+export default function StatusPane({ myStats, depth, exitPos, isAdmin, onSearch, hasTalentPoints, gold, onOpenTalentPane, onTeleport, isBusy, onBuffClick, interfaceSize, assetImages }) {
+  const [showHeroInfo, setShowHeroInfo] = useState(false);
+  const isLarge = interfaceSize > 0;
+  const SCALE = isLarge ? 3 : 2;
+  const PANE_W = isLarge ? PANE_W_LARGE : PANE_W_SMALL;
+  const PANE_H = isLarge ? PANE_H_LARGE : PANE_H_SMALL;
+  const hpFill = isLarge ? HP_FILL_LARGE : HP_FILL_SMALL;
+  const hpShield = isLarge ? HP_SHIELD_LARGE : HP_SHIELD_SMALL;
+  const expFill = isLarge ? EXP_FILL_LARGE : EXP_FILL_SMALL;
+  const BG = isLarge ? BG_LARGE : BG_SMALL;
+  const { t } = useTranslation();
+  const [showFloorPicker, setShowFloorPicker] = useState(false);
   const canvasRef = useRef(null);
   const imagesRef = useRef({});
-  const imgsLoadedRef = useRef(false);
   const statsRef = useRef(myStats);
+  const exitPosRef = useRef(exitPos);
   const starsRef = useRef([]);
   const prevLevelRef = useRef(myStats.level || 1);
   const warningRef = useRef(0);
+  const talentBlinkRef = useRef(0);
+  const hasPtsRef = useRef(false);
+  useEffect(() => { hasPtsRef.current = !!hasTalentPoints; }, [hasTalentPoints]);
 
   useEffect(() => { statsRef.current = myStats; }, [myStats]);
+  useEffect(() => { exitPosRef.current = exitPos; }, [exitPos]);
 
   useEffect(() => {
-    const sources = { status: statusPaneImg, buffs: buffsImg, ...CLASS_SHEETS };
-    const entries = Object.entries(sources);
-    let loaded = 0;
-    let errored = 0;
-    const total = entries.length;
-    const checkDone = () => {
-      if (loaded + errored === total) imgsLoadedRef.current = true;
-    };
-    entries.forEach(([key, src]) => {
-      const img = new Image();
-      img.onload = () => { loaded++; checkDone(); };
-      img.onerror = () => {
-        errored++;
-        console.error(`[StatusPane] failed to load image: ${key} (${src})`);
-        checkDone();
-      };
-      img.src = src;
-      if (img.complete && img.naturalWidth > 0) {
-        img.onload = null;
-        loaded++;
-        checkDone();
-      } else if (img.complete && img.naturalWidth === 0) {
-        img.onerror = null;
-        errored++;
-        console.error(`[StatusPane] broken image: ${key} (${src})`);
-        checkDone();
-      }
-      imagesRef.current[key] = img;
-    });
-  }, []);
+    const imgs = imagesRef.current;
+    if (assetImages?.statusPane) imgs.status = assetImages.statusPane;
+    if (assetImages?.buffs) imgs.buffs = assetImages.buffs;
+    if (assetImages?.warrior) imgs.warrior = assetImages.warrior;
+    if (assetImages?.mage) imgs.mage = assetImages.mage;
+    if (assetImages?.rogue) imgs.rogue = assetImages.rogue;
+    if (assetImages?.huntress) imgs.huntress = assetImages.huntress;
+  }, [assetImages]);
 
   useEffect(() => {
     let raf;
@@ -112,18 +96,23 @@ export default function StatusPane({ myStats, depth, onSearch }) {
     avatarCanvas.height = FRAME_H;
 
     const draw = (now) => {
+      let ctx;
       try {
         const dt = (now - last) / 1000;
         last = now;
         const canvas = canvasRef.current;
-        const ctx = canvas?.getContext('2d');
+        ctx = canvas?.getContext('2d');
         const imgs = imagesRef.current;
         if (!ctx) { raf = requestAnimationFrame(draw); return; }
 
         const s = statsRef.current || {};
         const hp = Math.max(0, Math.ceil(s.hp ?? 0));
+        const shield = Math.max(0, Math.floor(s.shield ?? 0));
         const maxHp = Math.max(1, s.maxHp ?? 1);
-        const hpPct = Math.min(1, hp / maxHp);
+        const rawHpPct = Math.min(1, hp / maxHp);
+        const rawShieldPct = Math.min(1, (hp + shield) / maxHp);
+        const hpPct = rawHpPct;
+        const drawShieldPct = rawShieldPct;
         const exp = s.exp ?? 0;
         const maxExp = Math.max(1, s.maxExp ?? 10);
         const expPct = Math.min(1, exp / maxExp);
@@ -143,24 +132,32 @@ export default function StatusPane({ myStats, depth, onSearch }) {
         }
         prevLevelRef.current = level;
 
+        if (hasPtsRef.current) {
+          talentBlinkRef.current = (talentBlinkRef.current + dt * FLASH_RATE) % 2;
+        } else {
+          talentBlinkRef.current = 0;
+        }
+
         ctx.imageSmoothingEnabled = false;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        // Fallback background: always visible even before pixel-art images load.
-        ctx.fillStyle = '#161616';
-        ctx.fillRect(0, 0, BG.w * SCALE, BG.h * SCALE);
-
-        // Draw a subtle placeholder grid so the HUD area is never empty.
-        ctx.strokeStyle = '#2a2a2a';
-        ctx.lineWidth = 1;
-        ctx.strokeRect(0, 0, BG.w * SCALE, BG.h * SCALE);
+        ctx.save();
+        ctx.scale(DPR, DPR);
 
         const statusImg = imgs.status;
         if (statusImg?.complete && statusImg?.naturalWidth > 0) {
-          ctx.drawImage(statusImg, BG.x, BG.y, BG.w, BG.h, 0, 0, BG.w * SCALE, BG.h * SCALE);
+          const leftW = BG.left * SCALE;
+          const rightW = BG.right * SCALE;
+          const stretchW = (PANE_W - BG.left - BG.right) * SCALE;
+          const srcStretchX = BG.left;
+          const srcRightX = BG.left + BG.stretchSrcW;
+          ctx.drawImage(statusImg, 0, BG.y, BG.left, BG.h, 0, 0, leftW, PANE_H * SCALE);
+          ctx.drawImage(statusImg, srcStretchX, BG.y, BG.stretchSrcW, BG.h, leftW, 0, stretchW, PANE_H * SCALE);
+          ctx.drawImage(statusImg, srcRightX, BG.y, BG.right, BG.h, leftW + stretchW, 0, rightW, PANE_H * SCALE);
         }
 
-        // --- Avatar ---
+        ctx.fillStyle = '#161616';
+        ctx.fillRect(9 * SCALE, 8 * SCALE, FRAME_W * SCALE, FRAME_H * SCALE);
+
         if (sheet?.complete && sheet?.naturalWidth > 0) {
           const ac = avatarCanvas.getContext('2d');
           ac.imageSmoothingEnabled = false;
@@ -173,7 +170,7 @@ export default function StatusPane({ myStats, depth, onSearch }) {
             ac.fillStyle = 'rgba(0,0,0,0.5)';
             ac.fillRect(0, 0, FRAME_W, FRAME_H);
             ac.globalCompositeOperation = 'source-over';
-          } else if (hpPct < 0.334) {
+          } else if (rawHpPct < 0.334) {
             warningRef.current = (warningRef.current + dt * 5 * (0.4 - hpPct)) % 1;
             ac.globalCompositeOperation = 'source-atop';
             ac.fillStyle = lerpColor(warningRef.current, WARNING_COLORS);
@@ -181,45 +178,168 @@ export default function StatusPane({ myStats, depth, onSearch }) {
             ac.fillRect(0, 0, FRAME_W, FRAME_H);
             ac.globalAlpha = 1;
             ac.globalCompositeOperation = 'source-over';
+          } else if (hasPtsRef.current && talentBlinkRef.current > 0) {
+            ac.globalCompositeOperation = 'source-atop';
+            ac.fillStyle = '#ffff00';
+            ac.globalAlpha = Math.abs(Math.cos(talentBlinkRef.current * FLASH_RATE)) * 0.5;
+            ac.fillRect(0, 0, FRAME_W, FRAME_H);
+            ac.globalAlpha = 1;
+            ac.globalCompositeOperation = 'source-over';
           }
           ctx.drawImage(avatarCanvas, 9 * SCALE, 8 * SCALE, FRAME_W * SCALE, FRAME_H * SCALE);
         }
 
-        // --- HP bar + text ---
-        if (statusImg?.complete && statusImg?.naturalWidth > 0 && hpPct > 0) {
-          ctx.drawImage(statusImg, HP_FILL.x, HP_FILL.y, HP_FILL.w, HP_FILL.h,
-            30 * SCALE, 2 * SCALE, HP_FILL.w * hpPct * SCALE, HP_FILL.h * SCALE);
+        // --- Compass needle pointing toward floor exit ---
+        const ep = exitPosRef.current;
+        const heroPos = statsRef.current?.pos;
+        if (ep && heroPos) {
+          const angle = Math.atan2(ep[1] - heroPos.y, ep[0] - heroPos.x);
+          const cx = (9 + FRAME_W / 2) * SCALE;
+          const cy = (8 + FRAME_H / 2) * SCALE;
+          ctx.save();
+          ctx.translate(cx, cy);
+          ctx.rotate(angle);
+          ctx.strokeStyle = '#ffff00';
+          ctx.lineWidth = 1.5;
+          ctx.beginPath();
+          ctx.moveTo(0, 0);
+          ctx.lineTo(6 * SCALE / 3, 0);
+          ctx.stroke();
+          ctx.fillStyle = '#ffff00';
+          ctx.beginPath();
+          ctx.arc(0, 0, 1.2, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
         }
-        ctx.font = `${4 * SCALE}px monospace`;
-        ctx.textBaseline = 'middle';
-        ctx.textAlign = 'center';
-        ctx.fillStyle = 'rgba(255,255,255,0.85)';
-        ctx.fillText(`${hp}/${maxHp}`, (30 + HP_FILL.w / 2) * SCALE, 4.5 * SCALE);
 
-        // --- EXP bar + level ---
-        if (statusImg?.complete && statusImg?.naturalWidth > 0 && expPct > 0) {
-          ctx.drawImage(statusImg, EXP_FILL.x, EXP_FILL.y, EXP_FILL.w, EXP_FILL.h,
-            2 * SCALE, 30 * SCALE, EXP_FILL.w * expPct * SCALE, EXP_FILL.h * SCALE);
+        // --- CircleArc (action timer around avatar) ---
+        const nowSec = performance.now() / 1000;
+        const sweep = 1 - (nowSec % 1);
+        ctx.save();
+        ctx.strokeStyle = '#808080';
+        ctx.lineWidth = 4.25 * SCALE / 3;
+        ctx.translate((9 + FRAME_W / 2) * SCALE, (8 + FRAME_H / 2) * SCALE);
+        ctx.rotate(-Math.PI / 2);
+        ctx.beginPath();
+        ctx.arc(0, 0, 18 * SCALE / 3, 0, Math.PI * 2 * sweep);
+        ctx.stroke();
+        ctx.restore();
+
+        // --- BusyIndicator (rotating dots around center when busy) ---
+        if (isBusy) {
+          const busyX = isLarge ? (9 + FRAME_W / 2) * SCALE : 6 * SCALE;
+          const busyY = isLarge ? (8 + FRAME_H / 2) * SCALE : 35 * SCALE;
+          const angle = nowSec * 3;
+          ctx.save();
+          ctx.translate(busyX, busyY);
+          for (let i = 0; i < 4; i++) {
+            const a = angle + (i / 4) * Math.PI * 2;
+            const r = isLarge ? 22 * SCALE / 3 : 5 * SCALE;
+            const dx = Math.cos(a) * r;
+            const dy = Math.sin(a) * r;
+            const dotSize = isLarge ? 1.5 * SCALE / 3 : 1.5 * SCALE;
+            ctx.fillStyle = '#808080';
+            ctx.globalAlpha = 0.3 + 0.7 * (0.5 + 0.5 * Math.sin(a - angle));
+            ctx.beginPath();
+            ctx.arc(dx, dy, dotSize, 0, Math.PI * 2);
+            ctx.fill();
+          }
+          ctx.restore();
+          ctx.globalAlpha = 1;
         }
-        ctx.fillStyle = '#ffffaa';
-        ctx.fillText(`${level}`, 25.5 * SCALE, 31.5 * SCALE);
 
-        // --- Buff indicators ---
         const buffsSheet = imgs.buffs;
         if (buffsSheet?.complete && buffsSheet?.naturalWidth > 0) {
-          effects.forEach((eff, i) => {
+          effects.slice(0, MAX_BUFFS).forEach((eff, i) => {
             const idx = eff.icon ?? 0;
             const col = idx % BUFF_COLS;
             const row = Math.floor(idx / BUFF_COLS);
+            const bx = (31 + i * (BUFF_SIZE + 1)) * SCALE;
+            const by = isLarge ? 0 : 8 * SCALE;
+            const bw = BUFF_SIZE * SCALE;
+            const bh = BUFF_SIZE * SCALE;
             ctx.globalAlpha = 0.85;
             ctx.drawImage(buffsSheet,
               col * BUFF_SIZE, row * BUFF_SIZE, BUFF_SIZE, BUFF_SIZE,
-              (31 + i * (BUFF_SIZE + 1)) * SCALE, 9 * SCALE, BUFF_SIZE * SCALE, BUFF_SIZE * SCALE);
+              bx, by, bw, bh);
             ctx.globalAlpha = 1;
+            // Duration fade overlay (grey from bottom, SPD BuffIcon.iconFadePercent)
+            if (eff.duration > 0 && eff.remaining != null) {
+              const fade = Math.max(0, Math.min(1, eff.remaining / eff.duration));
+              if (fade < 1) {
+                ctx.fillStyle = '#000';
+                ctx.globalAlpha = 0.35 * (1 - fade);
+                ctx.fillRect(bx, by + bh * (1 - fade), bw, bh * fade);
+                ctx.globalAlpha = 1;
+              }
+            }
           });
         }
 
-        // --- Level-up star particles ---
+        if (statusImg?.complete && statusImg?.naturalWidth > 0) {
+          if (isLarge) {
+            if (drawShieldPct > 0) {
+              ctx.drawImage(statusImg,
+                hpShield.x, hpShield.y, hpShield.w, hpShield.h,
+                30 * SCALE, 19 * SCALE, hpShield.w * drawShieldPct * SCALE, hpShield.h * SCALE);
+            }
+            if (hpPct > 0) {
+              ctx.drawImage(statusImg,
+                hpFill.x, hpFill.y, hpFill.w, hpFill.h,
+                30 * SCALE, 19 * SCALE, hpFill.w * hpPct * SCALE, hpFill.h * SCALE);
+            }
+          } else {
+            if (drawShieldPct > 0) {
+              ctx.drawImage(statusImg,
+                hpShield.x, hpShield.y, hpShield.w, hpShield.h,
+                33 * SCALE, 2 * SCALE, hpShield.w * drawShieldPct * SCALE, hpShield.h * SCALE);
+            }
+            if (hpPct > 0) {
+              ctx.drawImage(statusImg,
+                hpFill.x, hpFill.y, hpFill.w, hpFill.h,
+                33 * SCALE, 2 * SCALE, hpFill.w * hpPct * SCALE, hpFill.h * SCALE);
+            }
+          }
+        }
+
+        const hpLabel = shield > 0 ? `${hp}+${shield}/${maxHp}` : `${hp}/${maxHp}`;
+        ctx.font = `${(isLarge ? 4 : 2.5) * SCALE}px monospace`;
+        ctx.textBaseline = 'middle';
+        ctx.globalAlpha = 0.6;
+        ctx.fillStyle = '#ffffff';
+        if (isLarge) {
+          ctx.textAlign = 'center';
+          ctx.fillText(hpLabel, (30 + 64) * SCALE, (19 + 4.5) * SCALE);
+        } else {
+          ctx.textAlign = 'left';
+          ctx.fillText(hpLabel, (30 + 1) * SCALE, (2 + 2) * SCALE);
+        }
+        ctx.globalAlpha = 1;
+
+        if (statusImg?.complete && statusImg?.naturalWidth > 0 && expPct > 0) {
+          ctx.drawImage(statusImg,
+            expFill.x, expFill.y, expFill.w, expFill.h,
+            isLarge ? 30 * SCALE : 2 * SCALE,
+            isLarge ? 30 * SCALE : 30 * SCALE,
+            expFill.w * expPct * SCALE, expFill.h * SCALE);
+        }
+
+        ctx.globalAlpha = 0.6;
+        ctx.fillStyle = '#ffffaa';
+        ctx.font = `${(isLarge ? 4 : 2.5) * SCALE}px monospace`;
+        ctx.textAlign = isLarge ? 'center' : 'left';
+        ctx.fillText(`${exp}/${maxExp}`, isLarge ? (30 + 64) * SCALE : (2 + 1) * SCALE, (30 + 3.5) * SCALE);
+        ctx.globalAlpha = 1;
+
+        ctx.fillStyle = '#ffffaa';
+        if (isLarge) {
+          ctx.fillText(t('ui.lv', { level }), 15 * SCALE, 34 * SCALE);
+        } else {
+          ctx.font = `${(isLarge ? 4 : 3) * SCALE}px monospace`;
+          ctx.textAlign = 'center';
+          ctx.fillText(level.toString(), 25.5 * SCALE, 31.5 * SCALE);
+        }
+
         const stars = starsRef.current;
         for (let i = stars.length - 1; i >= 0; i--) {
           const st = stars[i];
@@ -233,34 +353,102 @@ export default function StatusPane({ myStats, depth, onSearch }) {
           ctx.fillRect(st.x, st.y, 2 * SCALE, 2 * SCALE);
           ctx.globalAlpha = 1;
         }
-      } catch (err) {
-        console.error('[StatusPane] render error:', err);
+        ctx.restore();
+      } catch {
+        ctx?.restore();
       }
       raf = requestAnimationFrame(draw);
     };
 
     raf = requestAnimationFrame(draw);
     return () => cancelAnimationFrame(raf);
-  }, []);
+  }, [t, isBusy, SCALE, isLarge, PANE_W, PANE_H, hpFill, hpShield, expFill, BG]);
+
+  const floorNumbers = [];
+  for (let i = 1; i <= 26; i++) floorNumbers.push(i);
 
   return (
+  <>
     <div className="top-left-hud">
-      <canvas
-        ref={canvasRef}
-        width={PANE_W * SCALE}
-        height={PANE_H * SCALE}
-        className="status-pane-canvas"
-      />
       <div className="status-pane-footer">
-        <span className="status-floor-label">floor: {depth}</span>
+        <span
+          className={`status-floor-label${isAdmin ? ' status-floor-label--admin' : ''}`}
+          onClick={(e) => {
+            if (!isAdmin) return;
+            e.stopPropagation();
+            AudioManager.play('CLICK');
+            setShowFloorPicker(v => !v);
+          }}
+        >
+          {t('ui.floor', { depth })}{isAdmin ? ' ▾' : ''}
+        </span>
+        {showFloorPicker && (
+          <div className="floor-picker" onClick={(e) => e.stopPropagation()}>
+            {floorNumbers.map(f => (
+              <div
+                key={f}
+                className={`floor-picker__item${f === depth ? ' floor-picker__item--current' : ''}`}
+                onClick={() => {
+                  AudioManager.play('CLICK');
+                  onTeleport?.(f);
+                  setShowFloorPicker(false);
+                }}
+              >
+                {f}
+              </div>
+            ))}
+          </div>
+        )}
         <button
           type="button"
           className="search-btn"
-          onClick={() => { AudioManager.play('CLICK'); onSearch(); }}
+          onClick={(e) => { e.stopPropagation(); AudioManager.play('CLICK'); onSearch(); }}
         >
-          Search (E)
+          {t('ui.search')}
         </button>
       </div>
+      <canvas
+        ref={canvasRef}
+        width={PANE_W * SCALE * DPR}
+        height={PANE_H * SCALE * DPR}
+        style={{ width: PANE_W * SCALE, height: PANE_H * SCALE }}
+        className="status-pane-canvas"
+        onClick={(e) => {
+          const x = e.nativeEvent.offsetX;
+          const y = e.nativeEvent.offsetY;
+          const ax = 9 * SCALE, ay = 8 * SCALE;
+          const aw = FRAME_W * SCALE, ah = FRAME_H * SCALE;
+          if (x >= ax && x < ax + aw && y >= ay && y < ay + ah) {
+            AudioManager.play('CLICK');
+            setShowHeroInfo(true);
+            return;
+          }
+          // Buff icon hit test — icons are at y = (isLarge ? 0 : 8*SCALE), x = (31 + i*(BUFF_SIZE+1))*SCALE
+          const effects = statsRef.current?.effects || [];
+          const buffsYOffset = isLarge ? 0 : 8 * SCALE;
+          for (let i = 0; i < Math.min(effects.length, MAX_BUFFS); i++) {
+            const bx = (31 + i * (BUFF_SIZE + 1)) * SCALE;
+            const by = buffsYOffset;
+            const bw = BUFF_SIZE * SCALE;
+            const bh = BUFF_SIZE * SCALE;
+            if (x >= bx && x < bx + bw && y >= by && y < by + bh) {
+              AudioManager.play('CLICK');
+              onBuffClick?.(effects[i]);
+              return;
+            }
+          }
+        }}
+      />
     </div>
+    {showHeroInfo && (
+      <WndHero
+        myStats={myStats}
+        depth={depth}
+        gold={gold}
+        onOpenTalents={onOpenTalentPane}
+        onClose={() => setShowHeroInfo(false)}
+      />
+    )}
+  </>
   );
 }

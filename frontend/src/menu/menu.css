@@ -178,6 +178,17 @@
   cursor: pointer;
 }
 .opd-toggle.on { background: #27ae60; color: #fff; border-color: #1e8449; }
+.opd-lang-select {
+  flex: 1;
+  padding: 5px 8px;
+  font-family: monospace;
+  color: #ccc;
+  background: #3a3a42;
+  border: 1px solid #1c1c22;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.opd-lang-select:focus { outline: none; border-color: #f1c40f; }
 
 /* changelog / guide */
 .opd-changelog-entry, .opd-guide-section { margin-bottom: 16px; }
@@ -193,6 +204,9 @@
 .opd-about p { color: #ddd; margin: 10px 0; }
 .opd-about-links a { color: #5dade2; text-decoration: none; }
 .opd-about-links a:hover { text-decoration: underline; }
+.opd-about-copy { color: #777; font-size: 12px; margin-top: 16px; }
+.opd-about-copy a { color: #777; text-decoration: none; }
+.opd-about-copy a:hover { color: #5dade2; }
 
 /* empty states */
 .opd-empty { text-align: center; padding: 24px 0; color: #ccc; }

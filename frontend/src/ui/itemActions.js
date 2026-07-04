@@ -1,15 +1,28 @@
-// Shared helpers for rendering an item's action list in the info popup
-// (WndUseItem) and the right-click context menu (RightClickMenu).
-export const ACTION_LABELS = {
-  EQUIP: 'Equip', UNEQUIP: 'Unequip', DROP: 'Drop', THROW: 'Throw',
-  DRINK: 'Drink', READ: 'Read', ZAP: 'Zap', EAT: 'Eat', OPEN: 'Open',
-  AFFIX: 'Affix', STEALTH: 'Stealth',
+export const ACTION_KEYS = {
+  EQUIP: 'action.equip',
+  UNEQUIP: 'action.unequip',
+  DROP: 'action.drop',
+  THROW: 'action.throw',
+  DRINK: 'action.drink',
+  READ: 'action.read',
+  ZAP: 'action.zap',
+  IMBUE: 'action.imbue',
+  EAT: 'action.eat',
+  OPEN: 'action.open',
+  AFFIX: 'action.affix',
+  STEALTH: 'action.stealth',
+  GHOST_GEAR: 'action.ghostGear',
+  SUMMON: 'action.summon',
+  DIRECT: 'action.direct',
+  WEAR: 'action.wear',
+  INSCRIBE: 'action.inscribe',
 };
 
-export const actionLabel = (a) => ACTION_LABELS[a] || a;
+export const actionLabel = (a, t) => {
+  const key = ACTION_KEYS[a];
+  return key ? t(key) : a;
+};
 
-// Order an item's actions with its default action first, matching SPD's
-// RightClickMenu/WndUseItem (which surface the default action prominently).
 export function orderedActions(item) {
   const actions = [...(item.actions || [])];
   const def = item.default_action;
@@ -20,7 +33,7 @@ export function orderedActions(item) {
 }
 
 export function titleColor(item) {
-  if (item.level_known && item.level > 0) return '#5fd35f';
-  if (item.level_known && item.level < 0) return '#e06666';
+  if (item.level_known && item.level > 0) return '#44ff44';
+  if (item.level_known && item.level < 0) return '#ff4444';
   return '#f1c40f';
 }

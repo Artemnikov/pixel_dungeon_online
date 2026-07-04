@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { TILE_SIZE, MIN_ZOOM, MAX_ZOOM } from '../constants';
+import { isFloorFadeActive } from '../rendering/floorTransition';
 import { resolveTapAction } from './resolveTap';
 
 export default function useCanvasControls({
@@ -12,12 +13,18 @@ export default function useCanvasControls({
   isDraggingRef,
   isRefocusingRef,
   isPinchingRef,
+  isCameraDetachedRef,
+  detachedCameraRef,
   targetingModeRef,
   onTargetTapRef,
   examineModeRef,
   onExamineTapRef,
   entitiesRef,
   myPlayerIdRef,
+  hoveredCellRef,
+  floorFadeRef,
+  gridRef,
+  onOpenAlchemyRef,
 }) {
   const dragStartRef = useRef({ x: 0, y: 0 });
   const dragStartPanRef = useRef({ x: 0, y: 0 });
@@ -33,14 +40,44 @@ export default function useCanvasControls({
     if (!canvas) return;
 
     const onMouseDown = (e) => {
+      if (isFloorFadeActive(floorFadeRef)) return;
       dragStartRef.current = { x: e.clientX, y: e.clientY };
-      dragStartPanRef.current = { ...panOffsetRef.current };
+      if (isCameraDetachedRef.current) {
+        const rect = canvas.getBoundingClientRect();
+        const myPlayer = entitiesRef.current?.players?.[myPlayerIdRef.current];
+        if (myPlayer) {
+          const lw = rect.width, lh = rect.height;
+          const effectivePan = {
+            x: cameraLerpRef.current.x - (myPlayer.renderPos.x * TILE_SIZE - lw / 2 + TILE_SIZE / 2),
+            y: cameraLerpRef.current.y - (myPlayer.renderPos.y * TILE_SIZE - lh / 2 + TILE_SIZE / 2),
+          };
+          dragStartPanRef.current = effectivePan;
+          panOffsetRef.current = effectivePan;
+        }
+      } else {
+        dragStartPanRef.current = { ...panOffsetRef.current };
+      }
       isDraggingRef.current = true;
       hasDraggedRef.current = false;
       isRefocusingRef.current = false;
+      isCameraDetachedRef.current = true;
+      detachedCameraRef.current = { ...cameraLerpRef.current };
     };
 
     const onMouseMove = (e) => {
+      // Track hovered cell for targeting crosshair.
+      const rect = canvas.getBoundingClientRect();
+      const cw = rect.width, ch = rect.height;
+      const worldX = (e.clientX - rect.left - cw / 2) / zoomRef.current + cameraLerpRef.current.x + cw / 2;
+      const worldY = (e.clientY - rect.top - ch / 2) / zoomRef.current + cameraLerpRef.current.y + ch / 2;
+      const tileX = Math.floor(worldX / TILE_SIZE);
+      const tileY = Math.floor(worldY / TILE_SIZE);
+      if (targetingModeRef?.current) {
+        if (hoveredCellRef) hoveredCellRef.current = { x: tileX, y: tileY };
+      } else if (hoveredCellRef?.current) {
+        hoveredCellRef.current = null;
+      }
+
       if (!isDraggingRef.current) return;
       const dx = e.clientX - dragStartRef.current.x;
       const dy = e.clientY - dragStartRef.current.y;
@@ -52,14 +89,14 @@ export default function useCanvasControls({
       };
     };
 
-    const onMouseUp = () => { isDraggingRef.current = false; hasDraggedRef.current = false; };
+    const onMouseUp = () => { isDraggingRef.current = false; };
 
     const onWheel = (e) => {
       e.preventDefault();
       const rect = canvas.getBoundingClientRect();
       const cursorX = e.clientX - rect.left;
       const cursorY = e.clientY - rect.top;
-      const cw = canvas.width, ch = canvas.height;
+      const cw = rect.width, ch = rect.height;
       const oldZoom = zoomRef.current;
       const factor = e.deltaY < 0 ? 1.1 : 0.9;
       const newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, oldZoom * factor));
@@ -69,6 +106,7 @@ export default function useCanvasControls({
     };
 
     const onTouchStart = (e) => {
+      if (isFloorFadeActive(floorFadeRef)) return;
       if (e.touches.length === 2) {
         isPinchingRef.current = true;
         const t1 = e.touches[0], t2 = e.touches[1];
@@ -86,15 +124,45 @@ export default function useCanvasControls({
         isPinchingRef.current = false;
         const t = e.touches[0];
         dragStartRef.current = { x: t.clientX, y: t.clientY };
-        dragStartPanRef.current = { ...panOffsetRef.current };
+        if (isCameraDetachedRef.current) {
+          const rect = canvas.getBoundingClientRect();
+          const myPlayer = entitiesRef.current?.players?.[myPlayerIdRef.current];
+          if (myPlayer) {
+            const lw = rect.width, lh = rect.height;
+            const effectivePan = {
+              x: cameraLerpRef.current.x - (myPlayer.renderPos.x * TILE_SIZE - lw / 2 + TILE_SIZE / 2),
+              y: cameraLerpRef.current.y - (myPlayer.renderPos.y * TILE_SIZE - lh / 2 + TILE_SIZE / 2),
+            };
+            dragStartPanRef.current = effectivePan;
+            panOffsetRef.current = effectivePan;
+          }
+        } else {
+          dragStartPanRef.current = { ...panOffsetRef.current };
+        }
         isDraggingRef.current = true;
         hasDraggedRef.current = false;
         isRefocusingRef.current = false;
+        isCameraDetachedRef.current = true;
+        detachedCameraRef.current = { ...cameraLerpRef.current };
       }
     };
 
     const onTouchMove = (e) => {
       e.preventDefault();
+      // Track touch position for targeting crosshair.
+      const touch = e.touches[0];
+      if (touch && hoveredCellRef) {
+        const rect = canvas.getBoundingClientRect();
+        const cw = rect.width, ch = rect.height;
+        const worldX = (touch.clientX - rect.left - cw / 2) / zoomRef.current + cameraLerpRef.current.x + cw / 2;
+        const worldY = (touch.clientY - rect.top - ch / 2) / zoomRef.current + cameraLerpRef.current.y + ch / 2;
+        const tileX = Math.floor(worldX / TILE_SIZE);
+        const tileY = Math.floor(worldY / TILE_SIZE);
+        if (targetingModeRef?.current) {
+          hoveredCellRef.current = { x: tileX, y: tileY };
+        }
+      }
+
       if (e.touches.length === 2 && isPinchingRef.current) {
         const t1 = e.touches[0], t2 = e.touches[1];
         const rect = canvas.getBoundingClientRect();
@@ -103,7 +171,7 @@ export default function useCanvasControls({
           pinchStartZoomRef.current * (dist / pinchStartDistRef.current)));
         const midX = (t1.clientX + t2.clientX) / 2 - rect.left;
         const midY = (t1.clientY + t2.clientY) / 2 - rect.top;
-        const cw = canvas.width, ch = canvas.height;
+        const cw = rect.width, ch = rect.height;
         const z0 = pinchStartZoomRef.current;
         const mx0 = pinchMidStartRef.current.x, my0 = pinchMidStartRef.current.y;
         panOffsetRef.current = {
@@ -133,12 +201,13 @@ export default function useCanvasControls({
       isPinchingRef.current = false;
       if (hasDraggedRef.current || e.changedTouches.length === 0) return;
       if (socketRef.current?.readyState !== WebSocket.OPEN) return;
+      if (isFloorFadeActive(floorFadeRef)) return;
 
       const t = e.changedTouches[0];
       const rect = canvas.getBoundingClientRect();
       const clickX = t.clientX - rect.left;
       const clickY = t.clientY - rect.top;
-      const cw = canvas.width, ch = canvas.height;
+      const cw = rect.width, ch = rect.height;
       const z = zoomRef.current;
       const worldX = (clickX - cw / 2) / z + cameraLerpRef.current.x + cw / 2;
       const worldY = (clickY - ch / 2) / z + cameraLerpRef.current.y + ch / 2;
@@ -158,8 +227,16 @@ export default function useCanvasControls({
 
       const myPlayer = entitiesRef?.current?.players?.[myPlayerIdRef?.current];
       const playerTile = myPlayer ? (myPlayer.targetPos || myPlayer.renderPos) : null;
-      const action = resolveTapAction({ tileX, tileY, playerTile });
-      if (action.type === 'MOVE_TO') isRefocusingRef.current = true;
+      const action = resolveTapAction({
+        tileX, tileY, playerTile,
+        mobs: entitiesRef?.current?.mobs,
+        grid: gridRef?.current,
+      });
+      if (action.type === 'OPEN_ALCHEMY') {
+        onOpenAlchemyRef?.current?.();
+        return;
+      }
+      if (action.type === 'MOVE_TO' || action.type === 'MOVE') isRefocusingRef.current = true;
       socketRef.current.send(JSON.stringify(action));
     };
 
@@ -180,7 +257,7 @@ export default function useCanvasControls({
       canvas.removeEventListener('touchmove', onTouchMove);
       canvas.removeEventListener('touchend', onTouchEnd);
     };
-  }, [enabled, canvasRef, socketRef, panOffsetRef, zoomRef, cameraLerpRef, isDraggingRef, isRefocusingRef, isPinchingRef, targetingModeRef, onTargetTapRef, examineModeRef, onExamineTapRef, entitiesRef, myPlayerIdRef]);
+  }, [enabled, canvasRef, socketRef, panOffsetRef, zoomRef, cameraLerpRef, isDraggingRef, isRefocusingRef, isPinchingRef, isCameraDetachedRef, detachedCameraRef, targetingModeRef, onTargetTapRef, examineModeRef, onExamineTapRef, entitiesRef, myPlayerIdRef, hoveredCellRef, floorFadeRef, gridRef, onOpenAlchemyRef]);
 
   return { hasDraggedRef };
 }

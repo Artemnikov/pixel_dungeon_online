@@ -1,3 +1,17 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 ArtemNikov
+//
+// Adapted from Shattered Pixel Dungeon (C) 2014-2024 Evan Debenham
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU General Public License for more details.
+//
 import itemsSrc from '../assets/pixel-dungeon/sprites/items.png';
 import { coordsForItem } from '../rendering/sprites';
 import { itemRects, useRectsReady } from '../rendering/spriteRects';
@@ -13,7 +27,7 @@ import { itemRects, useRectsReady } from '../rendering/spriteRects';
 export default function ItemIcon({ item, size = 32, coords: override }) {
   const ready = useRectsReady(itemRects);
   if (!override && !item) return null;
-  const coords = override || coordsForItem(item) || [8, 13];
+  const coords = override || coordsForItem(item) || [0, 0];
   const [col, row] = coords;
   const scale = size / 16;
 
@@ -28,6 +42,7 @@ export default function ItemIcon({ item, size = 32, coords: override }) {
     <div
       className="item-icon"
       style={{
+        position: 'relative',
         width: w * scale,
         height: h * scale,
         backgroundImage: `url(${itemsSrc})`,

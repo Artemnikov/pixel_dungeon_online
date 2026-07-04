@@ -1,27 +1,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Set, Tuple
 
-from app.engine.dungeon.constants import RoomKind, TrapType
-
-
-@dataclass
-class SewersProfile:
-    STANDARD_ROOMS_MIN: int = 4
-    STANDARD_ROOMS_MAX: int = 6
-    SPECIAL_ROOMS_MIN: int = 1
-    SPECIAL_ROOMS_MAX: int = 2
-    HIDDEN_ROOMS_COUNT: int = 2
-
-    depth: int = 1
-    BASE_HIDDEN_DOOR_CHANCE: float = 0.1
-    WATER_RATIO: float = 0.30
-    GRASS_RATIO: float = 0.20
-
-    TRAPS_MIN: int = 1
-    TRAPS_MAX: int = 3
-    TRAP_TYPES: Tuple[str, ...] = (TrapType.WORN_DART,)
+from app.engine.dungeon.constants import RoomKind
 
 
 @dataclass
@@ -67,44 +49,3 @@ class TrapInfo:
     trap_type: str
     hidden: bool = True
     active: bool = True
-
-
-@dataclass
-class Edge:
-    a: int
-    b: int
-    secret: bool = False
-    locked_room_id: Optional[int] = None
-
-
-@dataclass
-class DoorInfo:
-    x: int
-    y: int
-    room_id: int
-    actual_tile: int
-    can_hide: bool
-    force_hidden: bool
-    hidden: bool = False
-
-
-@dataclass
-class SewersGenerationMetadata:
-    region: str
-    layout_kind: str
-    room_ids_by_kind: Dict[str, List[int]]
-    room_connections: List[Tuple[int, int]]
-    hidden_doors: Dict[Tuple[int, int], int]
-    locked_doors: Dict[Tuple[int, int], str]
-    key_spawns: Dict[str, Tuple[int, int]]
-    traps: Dict[Tuple[int, int], TrapInfo]
-    start_room_id: int
-    end_room_id: int
-    seed: int = 0
-
-
-@dataclass
-class SewersGenerationResult:
-    grid: List[List[int]]
-    rooms: List[Room]
-    metadata: SewersGenerationMetadata

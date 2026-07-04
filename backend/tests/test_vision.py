@@ -9,7 +9,8 @@ never penetrates a solid wall (the defect the old Bresenham trace had).
 import pytest
 
 from app.engine.manager import GameInstance, FloorState
-from app.engine.entities.base import Position, Mob
+from app.engine.entities.base import Position
+from app.engine.entities.player import Mob
 from app.engine.dungeon.constants import TileType
 from app.engine.mechanics import shadowcaster
 
@@ -174,3 +175,39 @@ def test_view_distance_zero_is_sightless():
     pos = Position(x=10, y=10)
     visible = set(game.get_visible_tiles(pos, radius=0))
     assert visible == {(10, 10)}  # only own tile
+
+
+def test_mobs_in_fov_filters_by_visibility_and_faction():
+    grid = _open_grid(20, 20)
+    # Wall segment hiding (15, 10) from the player at (10, 10).
+    grid[10][12] = TileType.WALL
+    game = _game_with_grid(grid)
+
+    player = game.add_player("p1", "Tester")
+    player.pos = Position(x=10, y=10)
+    floor = game.floors[game.depth]
+
+    visible_mob = Mob(
+        id="m1", name="Rat1", pos=Position(x=11, y=10),
+        hp=10, max_hp=10, attack=1, defense=0, faction="dungeon")
+    hidden_mob = Mob(
+        id="m2", name="Rat2", pos=Position(x=15, y=10),
+        hp=10, max_hp=10, attack=1, defense=0, faction="dungeon")
+    floor.mobs["m1"] = visible_mob
+    floor.mobs["m2"] = hidden_mob
+
+    found = game._mobs_in_fov(player, floor, game.depth)
+    found_ids = {m.id for m in found}
+    assert found_ids == {"m1"}
+
+    # Ally-faction mob in FOV: excluded by default, included with include_allies.
+    ally_mob = Mob(
+        id="m3", name="Mirror Image", pos=Position(x=9, y=10),
+        hp=10, max_hp=10, attack=1, defense=0, faction="player")
+    floor.mobs["m3"] = ally_mob
+
+    found = game._mobs_in_fov(player, floor, game.depth)
+    assert "m3" not in {m.id for m in found}
+
+    found = game._mobs_in_fov(player, floor, game.depth, include_allies=True)
+    assert "m3" in {m.id for m in found}
