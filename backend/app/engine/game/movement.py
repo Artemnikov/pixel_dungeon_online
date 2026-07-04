@@ -32,7 +32,7 @@ from app.engine.entities.items_equip import Bow, MissileWeapon, SpiritBow, Staff
 from app.engine.entities.items_potions import RevivingPotion
 from app.engine.entities.items_wands import Wand, ZapContext
 from app.engine.entities.player import Mob as MobEntity, Player, Weapon
-from app.engine.entities.buffs import add_buff, get_buff, has_buff, remove_buff
+from app.engine.entities.buffs import add_buff, get_buff, has_buff, is_frozen, remove_buff
 from app.engine.entities.mobs import CrystalMimic, DM300, Goo, Shopkeeper, Wraith
 from app.engine.entities.subclasses import Talent
 from app.engine.systems.ballistica import ballistica_trace
@@ -232,6 +232,12 @@ class MovementCombatMixin:
             return
 
         if isinstance(entity, Player) and entity.is_downed:
+            return
+
+        # SPD Frost roots the character (paralysed++): a frozen player can't move
+        # or attack, and a frozen mob can neither step nor strike (mob attacks are
+        # move_entity calls into the target's tile, so this gates those too).
+        if is_frozen(entity.buffs):
             return
 
         new_x = entity.pos.x + dx
