@@ -1,3 +1,17 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 ArtemNikov
+#
+# Adapted from Shattered Pixel Dungeon (C) 2014-2024 Evan Debenham
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+# See the GNU General Public License for more details.
+#
 """Vision / line-of-sight / pathfinding for GameInstance.
 
 Shadowcasting-based FOV (mirrors Shattered Pixel Dungeon), per-tick caches, and
@@ -15,7 +29,8 @@ from app.engine.game.floor_state import FloorState
 
 class VisionMixin:
     def _find_nearest_player(self, pos: Position, floor_id: int):
-        candidates = [p for p in self._players_on_floor(floor_id) if p.is_alive and not p.is_downed]
+        candidates = [p for p in self._players_on_floor(floor_id)
+                      if p.is_alive and not p.is_downed and not p.has_buff("time_stasis")]
         if not candidates:
             return None
 
@@ -28,36 +43,40 @@ class VisionMixin:
                 nearest = player
         return nearest
 
+    def _find_nearest_entity(self, pos: Position, floor_id: int, exclude_id: str):
+        """Nearest alive entity (Player or Mob) on `floor_id`, excluding
+        `exclude_id`. Used for Amok-buffed mobs, which (per SPD) target the
+        nearest creature of any faction rather than only players."""
+        candidates: List = [
+            p for p in self._players_on_floor(floor_id)
+            if p.id != exclude_id and p.is_alive and not p.is_downed
+            and not p.has_buff("time_stasis")
+        ]
+        floor = self.floors.get(floor_id)
+        if floor is not None:
+            candidates.extend(
+                m for m in floor.mobs.values()
+                if m.id != exclude_id and m.is_alive
+            )
+
+        nearest = None
+        min_dist = float("inf")
+        for entity in candidates:
+            distance = self._get_distance(pos, entity.pos)
+            if distance < min_dist:
+                min_dist = distance
+                nearest = entity
+        return nearest
+
     def _get_distance(self, p1: Position, p2: Position) -> int:
         return abs(p1.x - p2.x) + abs(p1.y - p2.y)
 
-    def _is_door_open(self, floor: FloorState, x: int, y: int) -> bool:
-        for player in self.players.values():
-            if player.floor_id == floor.floor_id and player.pos.x == x and player.pos.y == y:
-                return True
-        for mob in floor.mobs.values():
-            if mob.is_alive and mob.pos.x == x and mob.pos.y == y:
-                return True
-        for item in floor.items.values():
-            if item.pos and item.pos.x == x and item.pos.y == y:
-                return True
-        return False
-
     def _get_open_doors(self, floor: FloorState):
-        occupied = set()
-        for player in self.players.values():
-            if player.floor_id == floor.floor_id:
-                occupied.add((player.pos.x, player.pos.y))
-        for mob in floor.mobs.values():
-            if mob.is_alive:
-                occupied.add((mob.pos.x, mob.pos.y))
-        for item in floor.items.values():
-            if item.pos:
-                occupied.add((item.pos.x, item.pos.y))
         return [
-            [x, y] for x, y in occupied
-            if 0 <= x < floor.width and 0 <= y < floor.height
-            and floor.grid[y][x] == TileType.DOOR
+            [x, y]
+            for y in range(floor.height)
+            for x in range(floor.width)
+            if floor.grid[y][x] == TileType.OPEN_DOOR
         ]
 
     def _invalidate_fov_cache(self):
@@ -68,23 +87,41 @@ class VisionMixin:
 
     def _view_distance(self, entity) -> int:
         """Resolve an entity's effective vision radius. Single hook point for
-        future Light/Blindness/Farsight buffs (mirrors SPD
-        Level.updateFieldOfView's viewDist scaling). Clamped to the
-        shadowcaster's supported range; missing field defaults to SPD's 8."""
+        Light/Blindness/Farsight buffs, per-floor overrides, and the EyeOfNewt
+        trinket's vision-range multiplier (mirrors SPD Level.updateFieldOfView's
+        viewDist scaling). Clamped to the shadowcaster's supported range; missing
+        field defaults to SPD's 8."""
+        from app.engine.entities.trinkets import EyeOfNewt as _EyeOfNewt
+        from app.engine.entities.trinkets import trinket_level
+
+        # Per-floor override (e.g. YogDzewa fight shrinking level.viewDistance)
+        # takes precedence over the entity's own view distance, mirroring SPD
+        # where level.viewDistance is forced onto the hero directly.
+        floor_id = getattr(entity, "floor_id", None)
+        if floor_id is not None:
+            floor = self.floors.get(floor_id)
+            if floor is not None and floor.view_distance is not None:
+                return max(0, min(floor.view_distance, shadowcaster.MAX_DISTANCE))
+
         dist = getattr(entity, "view_distance", 8)
         # Farsight talent: check for dynamic override
         get_view = getattr(entity, "get_view_distance", None)
         if get_view:
             dist = get_view()
+        # EyeOfNewt trinket: multiply vision range (reduces FOV radius)
+        lvl = trinket_level(entity, "eye_of_newt")
+        if lvl >= 0:
+            mult = _EyeOfNewt.vision_range_multiplier(lvl)
+            dist = int(dist * mult)
         return max(0, min(dist, shadowcaster.MAX_DISTANCE))
 
     def _effective_blocking(self, floor: "FloorState", viewer_id: Optional[str] = None) -> List[bool]:
         """Flat (y*w+x) LOS-blocking map with open doors cleared and Warden
         exception for high grass.
 
-        SPD bakes door open-state into losBlocking; here doors are statically
-        LOS-blocking in flags and "open" when occupied (_is_door_open), so we
-        derive the effective map per tick and memoise it.
+        SPD bakes door open-state into losBlocking; here DOOR tiles are always
+        LOS-blocking and OPEN_DOOR tiles (22) are not, so we just read the flag
+        map directly without any occupancy-based override.
 
         If `viewer_id` is a Warden, HIGH_GRASS and FURROWED_GRASS cells do not
         block LOS."""
@@ -112,8 +149,6 @@ class VisionMixin:
             base = y * w
             for x in range(w):
                 block = row[x] if row else True
-                if block and grid_row[x] == TileType.DOOR and self._is_door_open(floor, x, y):
-                    block = False
                 # Warden sees through high/furrowed grass
                 if block and is_warden and grid_row[x] in (TileType.HIGH_GRASS, TileType.FURROWED_GRASS):
                     block = False
@@ -154,7 +189,7 @@ class VisionMixin:
         fov = self._fov_from(p1, floor, distance, viewer_id=viewer_id)
         return fov[p2.y * floor.width + p2.x]
 
-    def _get_next_step_to(self, start: Position, target: Position, floor_id: Optional[int] = None) -> Optional[tuple]:
+    def _get_next_step_to(self, start: Position, target: Position, floor_id: Optional[int] = None, flying: bool = False) -> Optional[tuple]:
         floor = self._get_or_create_floor(floor_id or self.depth)
 
         queue = [(start.x, start.y, [])]
@@ -174,7 +209,7 @@ class VisionMixin:
                     0 <= nx < floor.width
                     and 0 <= ny < floor.height
                     and floor.flags
-                    and floor.flags.passable[ny][nx]
+                    and (floor.flags.passable[ny][nx] or (flying and floor.flags.avoid[ny][nx]))
                     and (nx, ny) not in visited
                 ):
                     if dx != 0 and dy != 0:
@@ -210,7 +245,10 @@ class VisionMixin:
                     0 <= nx < floor.width
                     and 0 <= ny < floor.height
                     and floor.flags
-                    and floor.flags.passable[ny][nx]
+                    and (
+                        floor.flags.passable[ny][nx]
+                        or (floor.grid[ny][nx] == TileType.CHASM and (nx, ny) == (target.x, target.y))
+                    )
                     and (nx, ny) not in visited
                 ):
                     # Diagonal corner-cut allowed (SPD-faithful): no orthogonal check.
@@ -220,16 +258,57 @@ class VisionMixin:
                 break
         return []
 
+    def _mobs_in_fov(self, player, floor: "FloorState", floor_id: int, include_allies: bool = False) -> List:
+        """Living mobs visible to `player` on `floor`, for AOE scrolls (Lullaby,
+        Terror, Retribution, Rage). Excludes ally-faction mobs (e.g. shadow
+        allies, mirror images) unless `include_allies=True`."""
+        from app.engine.entities.base import Faction
+
+        visible = set(self.get_visible_tiles(
+            player.pos, radius=self._view_distance(player), floor_id=floor_id,
+            viewer_id=player.id))
+
+        result = []
+        for mob in floor.mobs.values():
+            if not mob.is_alive:
+                continue
+            if (mob.pos.x, mob.pos.y) not in visible:
+                continue
+            if not include_allies and mob.faction == Faction.PLAYER:
+                continue
+            result.append(mob)
+        return result
+
     def get_visible_tiles(self, pos: Position, radius: int = 8, floor_id: Optional[int] = None, viewer_id: Optional[str] = None) -> List[Tuple[int, int]]:
         """Tiles visible from `pos` within `radius`, via recursive shadowcasting
         (matches SPD). The circular cutoff comes from the shadowcaster's ROUNDING
         table, not a separate dist_sq test."""
         floor = self._get_or_create_floor(floor_id or self.depth)
-
-        distance = max(0, min(radius, shadowcaster.MAX_DISTANCE))
-        fov = self._fov_from(pos, floor, distance, viewer_id=viewer_id)
-
         w, h = floor.width, floor.height
+
+        # SPD: a blinded (or "shadows"-debuffed) character has no shadowcast
+        # FOV at all -- only the "discoverable" sense-radius fallback below.
+        viewer = self.players.get(viewer_id) if viewer_id else None
+        blind = viewer is not None and viewer.has_buff("blindness")
+
+        if blind:
+            fov = [False] * (w * h)
+        else:
+            distance = max(0, min(radius, shadowcaster.MAX_DISTANCE))
+            fov = self._fov_from(pos, floor, distance, viewer_id=viewer_id)
+
+        if blind and floor.flags is not None:
+            for dy in (-1, 0, 1):
+                ny = pos.y + dy
+                if not (0 <= ny < h):
+                    continue
+                for dx in (-1, 0, 1):
+                    nx = pos.x + dx
+                    if not (0 <= nx < w):
+                        continue
+                    if floor.flags.discoverable[ny][nx]:
+                        fov[ny * w + nx] = True
+
         visible = []
         for y in range(h):
             base = y * w

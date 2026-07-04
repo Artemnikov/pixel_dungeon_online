@@ -1,3 +1,17 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 ArtemNikov
+#
+# Adapted from Shattered Pixel Dungeon (C) 2014-2024 Evan Debenham
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+# See the GNU General Public License for more details.
+#
 """Rogue class mechanics for GameInstance.
 
 Ports SPD's Rogue systems into the real-time engine:
@@ -17,7 +31,8 @@ real-time design.
 
 from typing import Optional
 
-from app.engine.entities.base import Player, Position
+from app.engine.entities.base import Position
+from app.engine.entities.player import Player
 from app.engine.entities.buffs import add_buff
 
 
@@ -194,8 +209,17 @@ class RogueMixin:
         from app.engine.entities.subclasses import Subclass
         if player.subclass_info.subclass != Subclass.FREERUNNER:
             return
-        if player.freerun_seconds > 0:
+        speedy_stealth = player.talent_info.level("speedy_stealth")
+
+        # Speedy Stealth: gain 2 momentum/tick passively while invisible.
+        if speedy_stealth >= 1 and player.invisible > 0:
+            player.momentum_stacks = min(player.momentum_stacks + 2, MOMENTUM_MAX)
+            player._momentum_decay_accum = 0.0
+
+        # Speedy Stealth (2+): active dash duration doesn't tick down while stealthed.
+        if player.freerun_seconds > 0 and not (speedy_stealth >= 2 and player.invisible > 0):
             player.freerun_seconds = max(0.0, player.freerun_seconds - dt)
+
         if moved or player.momentum_stacks <= 0:
             return
         player._momentum_decay_accum += dt
@@ -215,7 +239,8 @@ class RogueMixin:
         cripple on the victim and nearby enemies)."""
         if not mob.has_buff("death_mark"):
             return
-        from app.engine.entities.base import Player as PlayerCls, Faction
+        from app.engine.entities.base import Faction
+        from app.engine.entities.player import Player as PlayerCls
         if not isinstance(killer, PlayerCls):
             return
         ti = killer.talent_info

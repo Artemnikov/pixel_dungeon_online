@@ -4,12 +4,15 @@ const PROJECTILE_ROTATION_SPEED = 0.15;
 
 const PROJECTILE_SPRITE_MAP = {
   arrow: [0, 9],
-  magic_bolt: [0, 13],
+  spirit_arrow: [8, 1],
   users_projectile: [3, 9],
   stone: [3, 9],
   boomerang: [12, 9],
   dagger: [2, 9],
+  shuriken: [3, 9],
 };
+
+const NON_ROTATING_PROJECTILES = new Set(['arrow', 'spirit_arrow']);
 
 export function advanceAndDrawProjectiles(ctx, { projectilesRef, assetImages }) {
   const finishedIndices = [];
@@ -30,7 +33,9 @@ export function advanceAndDrawProjectiles(ctx, { projectilesRef, assetImages }) 
       finishedIndices.push(index);
     }
 
-    proj.rotation += PROJECTILE_ROTATION_SPEED;
+    if (!NON_ROTATING_PROJECTILES.has(proj.type)) {
+      proj.rotation += PROJECTILE_ROTATION_SPEED;
+    }
 
     if (itemsImg) {
       const spriteSize = TILE_SIZE / TILE_SCALE;
@@ -40,7 +45,12 @@ export function advanceAndDrawProjectiles(ctx, { projectilesRef, assetImages }) 
 
       ctx.save();
       ctx.translate(proj.x, proj.y);
-      ctx.rotate(proj.rotation);
+      if (NON_ROTATING_PROJECTILES.has(proj.type)) {
+        const angle = Math.atan2(proj.targetY - proj.startY, proj.targetX - proj.startX) + Math.PI / 4;
+        ctx.rotate(angle);
+      } else {
+        ctx.rotate(proj.rotation);
+      }
       ctx.drawImage(
         itemsImg,
         sx, sy,

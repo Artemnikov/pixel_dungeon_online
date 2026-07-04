@@ -1,5 +1,5 @@
-from app.engine.dungeon.generator import TileType
-from app.engine.entities.base import Key
+from app.engine.dungeon.constants import TileType
+from app.engine.entities.items_consumable import Key
 from app.engine.manager import GameInstance
 
 
@@ -28,10 +28,14 @@ def _find_adjacent_walkable(floor, x, y):
 
 
 def _find_floor_with_locked_door(max_tries=60):
+    # Filter to "iron" locks specifically: a CRYSTAL_DOOR (Vault room) or
+    # LOCKED_EXIT (goo_door) unlock to a different tile (FLOOR / STAIRS_DOWN,
+    # see World._try_unlock_locked_door) than the LOCKED_DOOR -> OPEN_DOOR
+    # path this test exercises.
     for idx in range(max_tries):
         game = GameInstance(f"locked-sewers-{idx}")
         floor = game._get_or_create_floor(1)
-        if floor.locked_doors:
+        if any(key_id == "iron" for key_id in floor.locked_doors.values()):
             return game, floor
     return None, None
 
@@ -74,7 +78,9 @@ def test_locked_door_requires_matching_key_and_unlocks_with_patch():
 
     floor.mobs = {}
 
-    (door_x, door_y), key_id = next(iter(floor.locked_doors.items()))
+    (door_x, door_y), key_id = next(
+        (pos, k) for pos, k in floor.locked_doors.items() if k == "iron"
+    )
 
     player = game.add_player("p-lock", "Unlocker")
 
@@ -82,7 +88,7 @@ def test_locked_door_requires_matching_key_and_unlocks_with_patch():
     assert neighbor is not None
     player.pos.x, player.pos.y = neighbor
 
-    player.belongings.backpack.items = [item for item in player.inventory if not (isinstance(item, Key) and item.key_id == key_id)]
+    assert player.key_count(key_id, floor.floor_id) == 0
 
     game.flush_events()
     game.move_entity(player.id, door_x - player.pos.x, door_y - player.pos.y)
@@ -90,13 +96,17 @@ def test_locked_door_requires_matching_key_and_unlocks_with_patch():
     assert (player.pos.x, player.pos.y) == neighbor
     assert floor.grid[door_y][door_x] == TileType.LOCKED_DOOR
 
-    player.inventory.append(Key(id="test-key", name="Rusty Key", key_id=key_id))
+    player.add_key(key_id, floor.floor_id, "Rusty Key")
 
     game.move_entity(player.id, door_x - player.pos.x, door_y - player.pos.y)
 
-    assert (player.pos.x, player.pos.y) == (door_x, door_y)
+    # Bumping a locked door with the matching key spends the action
+    # unlocking it (move_entity._try_unlock_locked_door always `return`s
+    # without calling entity.move) -- the player steps through on a
+    # separate, later move, same as the original's two-turn unlock+walk.
+    assert (player.pos.x, player.pos.y) == neighbor
     assert floor.grid[door_y][door_x] == TileType.DOOR
-    assert not any(isinstance(item, Key) and item.key_id == key_id for item in player.inventory)
+    assert player.key_count(key_id, floor.floor_id) == 0
 
     events = game.flush_events()
     map_patches = [e for e in events if e["type"] == "MAP_PATCH"]

@@ -31,10 +31,13 @@ import type {
   WornShortsword,
   BrokenSeal,
   ScrollOfRage,
+  ScrollOfMetamorphosis,
   Gold,
   Food,
   MysteryMeat,
   Key,
+  TenguMask,
+  KingsCrown,
   Seed,
   Stone,
   Boomerang,
@@ -73,10 +76,13 @@ export type GeneratedItem =
   | Potion
   | Scroll
   | ScrollOfRage
+  | ScrollOfMetamorphosis
   | Gold
   | Food
   | MysteryMeat
   | Key
+  | TenguMask
+  | KingsCrown
   | Seed
   | Stone
   | Boomerang
@@ -99,6 +105,10 @@ export interface SerializationExtras {
   description: string;
   /** Sprite cell for a potion/scroll's per-run appearance; only on those kinds. */
   appearance?: { col: number; row: number };
+  /** Alchemical energy this item converts to at a pot (energy.py). */
+  energy_value?: number;
+  /** Energy granted by converting exactly one unit (flat-valued items differ from energy_value/quantity). */
+  energy_value_one?: number;
 }
 
 /** An item as it actually arrives over the wire (model + serialization extras). */
@@ -160,12 +170,31 @@ export interface DamageEvent {
     crit?: boolean;
     grim_proc?: boolean;
     bleed?: boolean;
+    projectile?: string;
+    splash_count?: number;
+    source_x?: number;
+    source_y?: number;
+    beam_type?: string;
+  };
+}
+
+export interface SpellSpriteEvent {
+  type: 'SPELL_SPRITE';
+  data: {
+    index: number;
+    x: number;
+    y: number;
   };
 }
 
 export interface DeathEvent {
   type: 'DEATH';
-  data: { target: string };
+  data: {
+    target: string;
+    score_breakdown?: { kills: number; floors: number; gold: number };
+    can_resurrect?: boolean;
+    victory?: boolean;
+  };
 }
 
 export interface MoveEvent {
@@ -184,6 +213,11 @@ export interface RangedAttackEvent {
     projectile: string;
     crit: boolean;
     grim_proc: boolean;
+    beam_type?: string;
+    target_hp_ratio?: number;
+    sound?: string;
+    is_wand?: boolean;
+    is_bow?: boolean;
     /** Serialized thrown item, present for thrown inventory items (not wands). */
     item?: SerializedItem;
   };
@@ -191,7 +225,18 @@ export interface RangedAttackEvent {
 
 export interface PlaySoundEvent {
   type: 'PLAY_SOUND';
-  data: { sound: string };
+  data: { sound: string; rate?: number; x?: number; y?: number };
+}
+
+export interface ShockingProcEvent {
+  type: 'SHOCKING_PROC';
+  data: {
+    source: string;
+    defender: string;
+    defender_x: number;
+    defender_y: number;
+    chain_targets: Array<{ id: string; x: number; y: number }>;
+  };
 }
 
 export interface SearchEvent {
@@ -212,7 +257,19 @@ export interface HealEvent {
 
 export interface TrapTriggeredEvent {
   type: 'TRAP_TRIGGERED';
-  data: { player: string; trap: string; damage: number };
+  data: { player: string; trap: string; damage: number; x?: number; y?: number };
+}
+
+/** Single lightning arc from source cell to target cell. */
+export interface LightningArcEvent {
+  type: 'LIGHTNING_ARC';
+  data: { source_x: number; source_y: number; target_x: number; target_y: number };
+}
+
+/** DM-300 stepped on an inactive trap and gained a barrier. */
+export interface DM300TrapStepEvent {
+  type: 'DM300_TRAP_STEP';
+  data: { mob: string; x: number; y: number };
 }
 
 export interface DrinkEvent {
@@ -222,12 +279,37 @@ export interface DrinkEvent {
 
 export interface ReadEvent {
   type: 'READ';
-  data: { player: string; item: string };
+  data: { player: string; item: string; sound?: string; visual?: string };
+}
+
+export interface TeleportEvent {
+  type: 'TELEPORT';
+  data: { player: string; from_x: number; from_y: number; x: number; y: number };
+}
+
+export interface MirrorImageEvent {
+  type: 'MIRROR_IMAGE';
+  data: { player: string; clones: { id: string; x: number; y: number }[] };
+}
+
+export interface MessageEvent {
+  type: 'MESSAGE';
+  data: { text: string; color?: string };
+}
+
+export interface ToastEvent {
+  type: 'TOAST';
+  data: { text: string };
 }
 
 export interface MapPatchEvent {
   type: 'MAP_PATCH';
   data: { tiles: TilePatch[] };
+}
+
+export interface ChasmPromptEvent {
+  type: 'CHASM_PROMPT';
+  data: { x: number; y: number };
 }
 
 export interface PickupEvent {
@@ -237,12 +319,101 @@ export interface PickupEvent {
 
 export interface DropEvent {
   type: 'DROP';
+  data: { player: string; item: string; item_name: string };
+}
+
+/** Gold dropped on ground by mob death — triggers coin particles. */
+export interface GoldDropEvent {
+  type: 'GOLD_DROP';
+  data: { x: number; y: number };
+}
+
+/** Waterskin auto-collects a Dewdrop underfoot (mirrors Waterskin.collect()). */
+export interface CollectDewEvent {
+  type: 'COLLECT_DEW';
   data: { player: string; item: string };
+}
+
+/** Gold pile picked up — added directly to the gold counter, not the inventory. */
+export interface PickupGoldEvent {
+  type: 'PICKUP_GOLD';
+  data: { player: string; amount: number };
+}
+
+/** Key picked up — added directly to the per-floor key counter, not the inventory. */
+export interface PickupKeyEvent {
+  type: 'PICKUP_KEY';
+  data: { player: string; key_id: string; name: string };
+}
+
+/** Player interacted with a Shopkeeper NPC — opens the shop window. */
+export interface ShopOpenEvent {
+  type: 'SHOP_OPEN';
+  data: { player: string; npc: string; stock: SerializedItem[]; gold: number };
+}
+
+/** Player bought an item from a Shopkeeper. */
+export interface ShopBuyEvent {
+  type: 'SHOP_BUY';
+  data: { player: string; item: string; price: number };
+}
+
+/** Player sold an item to a Shopkeeper. */
+export interface ShopSellEvent {
+  type: 'SHOP_SELL';
+  data: { player: string; item: string; price: number };
+}
+
+/** Imp NPC dialogue (quest offer / reminder / reward-ready). */
+export interface ImpDialogueEvent {
+  type: 'IMP_DIALOGUE';
+  data: { player: string; npc: string; text: string; can_claim: boolean; tokens?: number | null };
+}
+
+/** Player claimed the Imp's quest reward; the Imp despawns. */
+export interface ImpRewardEvent {
+  type: 'IMP_REWARD';
+  data: { player: string; npc: string; item: string };
+}
+
+/** Ghost NPC dialogue (quest offer / reminder / reward-ready). */
+export interface GhostDialogueEvent {
+  type: 'GHOST_DIALOGUE';
+  data: {
+    player: string; npc: string; text: string; can_claim: boolean;
+    weapon?: SerializedItem | null; armor?: SerializedItem | null;
+  };
+}
+
+/** Player claimed the Ghost's quest reward (weapon or armor); the Ghost despawns. */
+export interface GhostRewardEvent {
+  type: 'GHOST_REWARD';
+  data: { player: string; npc: string; item: string };
+}
+
+export interface GhostSummonEvent {
+  type: 'GHOST_SUMMON';
+  data: { player: string; ghost_id: string; x: number; y: number };
+}
+
+export interface GhostDirectEvent {
+  type: 'GHOST_DIRECT';
+  data: { player: string; ghost_id: string; x: number; y: number };
+}
+
+export interface GhostGearOpenEvent {
+  type: 'GHOST_GEAR_OPEN';
+  data: {
+    player: string; rose_id: string; ghost_id: string;
+    ghost_hp: number; ghost_max_hp: number;
+    weapon?: Record<string, unknown> | null;
+    armor?: Record<string, unknown> | null;
+  };
 }
 
 export interface StairsDownEvent {
   type: 'STAIRS_DOWN';
-  data: { player: string };
+  data: { player: string; first_visit: boolean };
 }
 
 export interface StairsUpEvent {
@@ -258,6 +429,26 @@ export interface ReviveEvent {
 export interface UnlockEvent {
   type: 'UNLOCK';
   data: { player: string; x: number; y: number };
+}
+
+export interface LockedEvent {
+  type: 'LOCKED';
+  data: { player: string; x: number; y: number };
+}
+
+export interface OpenChestEvent {
+  type: 'OPEN_CHEST';
+  data: { player: string; x: number; y: number; chest_type: string };
+}
+
+export interface CrystalChestShatterEvent {
+  type: 'CRYSTAL_CHEST_SHATTER';
+  data: { x: number; y: number };
+}
+
+export interface SpawnMobEvent {
+  type: 'SPAWN_MOB';
+  data: { mob: Record<string, unknown> };
 }
 
 export interface LevelUpEvent {
@@ -280,6 +471,16 @@ export interface SubclassChoiceAvailableEvent {
 export interface ArmorAbilityChoiceAvailableEvent {
   type: 'ARMOR_ABILITY_CHOICE_AVAILABLE';
   data: { player: string; options: string[] };
+}
+
+export interface ImbueWandChoiceAvailableEvent {
+  type: 'IMBUE_WAND_CHOICE_AVAILABLE';
+  data: { player: string; staff_id: string; candidates: string[] };
+}
+
+export interface ImbueWandDoneEvent {
+  type: 'IMBUE_WAND_DONE';
+  data: { player: string; staff_id: string; old_wand_id: string };
 }
 
 export interface SubclassChosenEvent {
@@ -342,6 +543,423 @@ export interface ShieldEvent {
 }
 
 /** Every event the server can place in `STATE_UPDATE.events`. */
+export interface MetamorphOpenEvent {
+  type: 'METAMORPH_OPEN';
+  data: { player: string };
+}
+
+export interface MetamorphOptionsEvent {
+  type: 'METAMORPH_OPTIONS';
+  data: { player: string; old_talent: string; options: string[] };
+}
+
+export interface TalentMetamorphedEvent {
+  type: 'TALENT_METAMORPHED';
+  data: { player: string; old_talent: string; new_talent: string };
+}
+
+/** Scroll item-selector flow: server asks the player to pick a target item
+ * for a scroll (e.g. Scroll of Upgrade). `candidates` lists valid item ids. */
+export interface ScrollSelectTargetEvent {
+  type: 'SCROLL_SELECT_TARGET';
+  data: { player: string; scroll_id: string; scroll_kind: string; candidates: string[] };
+}
+
+/** Stone item-selector flow: server asks the player to pick a target item
+ * for a stone (e.g. Stone of Detect Magic, Stone of Enchantment). */
+export interface StoneSelectTargetEvent {
+  type: 'STONE_SELECT_TARGET';
+  data: { player: string; stone_id: string; stone_kind: string; candidates: string[] };
+}
+
+/** Stone of Intuition: server asks the player to pick an unidentified item. */
+export interface StoneIntuitionPickItemEvent {
+  type: 'STONE_INTUITION_PICK_ITEM';
+  data: { player: string; stone_id: string; candidates: string[] };
+}
+
+/** Stone of Intuition: after item is chosen, server sends possible kind names. */
+export interface StoneIntuitionGuessKindEvent {
+  type: 'STONE_INTUITION_GUESS_KIND';
+  data: { player: string; stone_id: string; item_id: string; possible_kinds: string[] };
+}
+
+/** Stone of Augmentation: server asks the player to pick a weapon or armor. */
+export interface StoneAugmentPickItemEvent {
+  type: 'STONE_AUGMENT_PICK_ITEM';
+  data: { player: string; stone_id: string; candidates: string[] };
+}
+
+/** Boss was slain — shows "BOSS SLAIN" banner + badge icon. */
+export interface BossSlainEvent {
+  type: 'BOSS_SLAIN';
+  data: { mob: string; depth: number; badge_image: number };
+}
+
+/** Goo boss: pumped-up charge telegraph. `tiles` lists the threatened cells
+ * (cleared with an empty array when the charge is released or cancelled). */
+export interface GooChargeEvent {
+  type: 'GOO_CHARGE';
+  data: { mob: string; tiles: [number, number][]; duration_ms?: number };
+}
+
+/** Goo boss crossed the 50% HP enrage threshold. */
+export interface GooEnrageEvent {
+  type: 'GOO_ENRAGE';
+  data: { mob: string };
+}
+
+/** Goo boss noticed the hero — the fight begins (mirrors SPD's Goo.notice()/seal()). */
+export interface GooFightStartedEvent {
+  type: 'GOO_FIGHT_STARTED';
+  data: { mob: string };
+}
+
+/** DM-300 noticed the hero — the fight begins. */
+export interface DM300FightStartedEvent {
+  type: 'DM300_FIGHT_STARTED';
+  data: { mob: string };
+}
+
+/** Dwarf King noticed the hero — the fight begins. */
+export interface DwarfKingFightStartedEvent {
+  type: 'DWARF_KING_FIGHT_STARTED';
+  data: { mob: string };
+}
+
+/** Dwarf King enters phase 2 (HP <= 200). */
+export interface DwarfKingPhase2Event {
+  type: 'DWARF_KING_PHASE2';
+  data: { mob: string };
+}
+
+/** Dwarf King enters phase 3 (HP <= 100). */
+export interface DwarfKingPhase3Event {
+  type: 'DWARF_KING_PHASE3';
+  data: { mob: string };
+}
+
+/** Yog-Dzewa noticed the hero — the fight begins. */
+export interface YogFightStartedEvent {
+  type: 'YOG_FIGHT_STARTED';
+  data: { mob: string };
+}
+
+/** Yog-Dzewa entered a new phase. */
+export interface YogPhaseChangeEvent {
+  type: 'YOG_PHASE_CHANGE';
+  data: { mob: string; phase: number };
+}
+
+/** Yog-Dzewa entered the final phase (phase 5). */
+export interface YogFinalPhaseEvent {
+  type: 'YOG_FINAL_PHASE';
+  data: { mob: string };
+}
+
+/** Tengu spawns and the prison cell seals behind it (mirrors PrisonBossLevel's START -> FIGHT_START). */
+export interface TenguFightStartedEvent {
+  type: 'TENGU_FIGHT_STARTED';
+  data: { mob: string };
+}
+
+/** Evil Eye begins charging its death gaze. */
+export interface EyeChargeEvent {
+  type: 'EYE_CHARGE';
+  data: { mob: string; target_x: number; target_y: number };
+}
+
+/** Evil Eye fires its death gaze beam. */
+export interface EyeDeathRayEvent {
+  type: 'EYE_DEATH_RAY';
+  data: { mob: string; source_x: number; source_y: number; target_x: number; target_y: number };
+}
+
+/** Necromancer zaps a cell — summon, heal, or buff its NecroSkeleton (mirrors NecromancerSprite.zap). */
+export interface ZapSummonEvent {
+  type: 'ZAP_SUMMON';
+  data: { mob: string; x: number; y: number };
+}
+
+/** Necromancer's NecroSkeleton appears/teleports to a cell. */
+export interface NecroSummonEvent {
+  type: 'NECRO_SUMMON';
+  data: { necromancer: string; skeleton: string; x: number; y: number };
+}
+
+/** Tengu boss teleports away after dropping into a new HP/8 bracket (Tengu.jump()). */
+export interface TenguJumpEvent {
+  type: 'TENGU_JUMP';
+  data: { mob: string; x: number; y: number };
+}
+
+/** Tengu throws a bomb that detonates after a 3-turn countdown. */
+export interface TenguBombEvent {
+  type: 'TENGU_BOMB';
+  data: { mob: string; x: number; y: number; timer: number };
+}
+
+/** Tengu bomb countdown tick (SPD: "3...", "2...", "1..." floating text). */
+export interface TenguBombCountdownEvent {
+  type: 'TENGU_BOMB_COUNTDOWN';
+  data: { mob: string; x: number; y: number; count: number };
+}
+
+/** Tengu's bomb detonates, dealing radius-2 AoE damage. */
+export interface TenguBlastEvent {
+  type: 'TENGU_BLAST';
+  data: { mob: string; x: number; y: number };
+}
+
+/** Tengu breathes fire in a 3-cell line toward its target. */
+export interface TenguFireEvent {
+  type: 'TENGU_FIRE';
+  data: { mob: string; cells: Vec2[] };
+}
+
+/** Tengu calls down a lightning cross centered on its target. */
+export interface TenguShockerEvent {
+  type: 'TENGU_SHOCKER';
+  data: { mob: string; cells: Vec2[] };
+}
+
+/** Persistent blob area (fire, gas, electricity) state update. */
+export interface BlobUpdateEvent {
+  type: 'BLOB_UPDATE';
+  data: { id: string; type: string; cells: [number, number, number][] };
+}
+
+/** Blob area fully depleted. */
+export interface BlobDepletedEvent {
+  type: 'BLOB_DEPLETED';
+  data: { id: string };
+}
+
+/** State effect (burning, frozen, etc.) triggered from buff. */
+export interface StateEffectEvent {
+  type: 'STATE_EFFECT';
+  data: { entity_id: string; effect: string; x: number; y: number };
+}
+
+/** FireImbue activated — flame burst around player. */
+export interface FireImbueActivatedEvent {
+  type: 'FIRE_IMBUE_ACTIVATED';
+  data: { player: string; x: number; y: number };
+}
+
+/** Inferno blob activated — green fire burst. */
+export interface InfernoActivatedEvent {
+  type: 'INFERNO_ACTIVATED';
+  data: { x: number; y: number };
+}
+
+/** Sacrificial fire — blue flame particles. */
+export interface SacrificialFireEvent {
+  type: 'SACRIFICIAL_FIRE';
+  data: { x: number; y: number };
+}
+
+/** Potion of Liquid Flame shatter — orange flame burst. */
+export interface FlameBurstEvent {
+  type: 'FLAME_BURST';
+  data: { x: number; y: number };
+}
+
+/** Grass terrain changed (trampled/regrown) — region-colored leaf particles. */
+export interface LeafBurstEvent {
+  type: 'LEAF_BURST';
+  data: { x: number; y: number };
+}
+
+/** Sheep spawned from Stone of Flock at each sheep position. */
+export interface FlockEvent {
+  type: 'FLOCK';
+  data: { sheep: Array<{ id: string; x: number; y: number }> };
+}
+
+/** Wool particle burst at a single cell (Stone of Flock). */
+export interface WoolBurstEvent {
+  type: 'WOOL_BURST';
+  data: { x: number; y: number };
+}
+
+/** A thrown bomb's fuse ignites, or an armed Noisemaker re-alerts, at a cell. */
+export interface BombLitEvent {
+  type: 'BOMB_LIT';
+  data: { x: number; y: number; kind: string };
+}
+
+/** A bomb detonates: blast centered at (x,y) covering the affected `cells`. */
+export interface BombBlastEvent {
+  type: 'BOMB_BLAST';
+  data: { x: number; y: number; kind: string; cells: [number, number][] };
+}
+
+// --- weapon enchant / armor glyph proc events --------------------------------
+
+export interface VampiricProcEvent {
+  type: 'VAMPIRIC_PROC';
+  data: { source: string; heal: number };
+}
+
+export interface BlockingProcEvent {
+  type: 'BLOCKING_PROC';
+  data: { source: string; shield: number };
+}
+
+export interface ElasticProcEvent {
+  type: 'ELASTIC_PROC';
+  data: { target: string; from_x: number; from_y: number; to_x: number; to_y: number };
+}
+
+export interface BloomingProcEvent {
+  type: 'BLOOMING_PROC';
+  data: { source: string; defender: string; cells: [number, number][] };
+}
+
+export interface CorruptProcEvent {
+  type: 'CORRUPT_PROC';
+  data: { source: string; target: string };
+}
+
+export interface CharmProcEvent {
+  type: 'CHARM_PROC';
+  data: { source: string; target: string };
+}
+
+export interface ExplosiveProcEvent {
+  type: 'EXPLOSIVE_PROC';
+  data: { x: number; y: number; radius: number };
+}
+
+// --- armor glyph proc events -------------------------------------------------
+
+export interface RepulsionProcEvent {
+  type: 'REPULSION_PROC';
+  data: { target: string; from_x: number; from_y: number; to_x: number; to_y: number };
+}
+
+export interface ViscosityProcEvent {
+  type: 'VISCOSITY_PROC';
+  data: { defender: string; deferred: number };
+}
+
+export interface PotentialProcEvent {
+  type: 'POTENTIAL_PROC';
+  data: { defender: string };
+}
+
+export interface EntanglementProcEvent {
+  type: 'ENTANGLEMENT_PROC';
+  data: { defender: string; absorb: number };
+}
+
+export interface ThornsProcEvent {
+  type: 'THORNS_PROC';
+  data: { defender: string; attacker: string; bleed: number };
+}
+
+export interface AntiEntropyProcEvent {
+  type: 'ANTI_ENTROPY_PROC';
+  data: { defender: string; x: number; y: number };
+}
+
+export interface CorrosionProcEvent {
+  type: 'CORROSION_PROC';
+  data: { defender: string; x: number; y: number };
+}
+
+export interface DisplacementProcEvent {
+  type: 'DISPLACEMENT_PROC';
+  data: { defender: string; attacker: string };
+}
+
+export interface MetabolismProcEvent {
+  type: 'METABOLISM_PROC';
+  data: { defender: string; heal: number };
+}
+
+export interface StenchProcEvent {
+  type: 'STENCH_PROC';
+  data: { defender: string; x: number; y: number };
+}
+
+// --- scroll / exotic items --------------------------------------------------
+
+export interface EnchantChoiceAvailableEvent {
+  type: 'ENCHANT_CHOICE_AVAILABLE';
+  data: {
+    player: string;
+    scroll_id: string;
+    target_id: string;
+    is_weapon: boolean;
+    options: string[];
+  };
+}
+
+export interface EnchantEvent {
+  type: 'ENCHANT';
+  data: { player: string; item: string };
+}
+
+export interface PickupEnergyEvent {
+  type: 'PICKUP_ENERGY';
+  data: { player: string; amount: number };
+}
+
+export interface AlchemyPreviewRecipe {
+  recipe_index: number;
+  cost: number;
+  affordable: boolean;
+  output_kind: string | null;
+  output_name: string;
+  output_quantity: number;
+  known: boolean;
+}
+
+export interface AlchemyPreviewResultEvent {
+  type: 'ALCHEMY_PREVIEW_RESULT';
+  data: {
+    player: string;
+    ingredient_ids: string[];
+    recipes: AlchemyPreviewRecipe[];
+    available_energy: number;
+  };
+}
+
+export interface AlchemyBrewedEvent {
+  type: 'ALCHEMY_BREWED';
+  data: {
+    player: string; item_id: string; item_kind: string; item_name: string;
+    quantity: number; cost: number; energy: number;
+  };
+}
+
+export interface AlchemyEnergizedEvent {
+  type: 'ALCHEMY_ENERGIZED';
+  data: { player: string; amount: number; energy: number };
+}
+
+export interface TrinketChoiceEvent {
+  type: 'TRINKET_CHOICE';
+  data: { player: string; catalyst_id: string; kinds: string[] };
+}
+
+export interface ToolkitBrewEvent {
+  type: 'TOOLKIT_BREW';
+  data: { player: string; item_id: string; charges: number };
+}
+
+export interface ToolkitEnergizePromptEvent {
+  type: 'TOOLKIT_ENERGIZE_PROMPT';
+  data: { player: string; toolkit_id: string; max_levels: number };
+}
+
+export interface ToolkitEnergizedEvent {
+  type: 'TOOLKIT_ENERGIZED';
+  data: { player: string; toolkit_id: string; levels: number; level: number };
+}
+
 export type GameEvent =
   | AttackEvent
   | MissEvent
@@ -356,8 +974,23 @@ export type GameEvent =
   | DrinkEvent
   | ReadEvent
   | MapPatchEvent
+  | ChasmPromptEvent
   | PickupEvent
   | DropEvent
+  | GoldDropEvent
+  | CollectDewEvent
+  | PickupGoldEvent
+  | PickupKeyEvent
+  | ShopOpenEvent
+  | ShopBuyEvent
+  | ShopSellEvent
+  | ImpDialogueEvent
+  | ImpRewardEvent
+  | GhostDialogueEvent
+  | GhostRewardEvent
+  | GhostSummonEvent
+  | GhostDirectEvent
+  | GhostGearOpenEvent
   | StairsDownEvent
   | StairsUpEvent
   | ReviveEvent
@@ -375,7 +1008,90 @@ export type GameEvent =
   | ShadowCloneEvent
   | ShieldEvent
   | SubclassChoiceAvailableEvent
-  | ArmorAbilityChoiceAvailableEvent;
+  | ArmorAbilityChoiceAvailableEvent
+  | ImbueWandChoiceAvailableEvent
+  | ImbueWandDoneEvent
+  | MetamorphOpenEvent
+  | MetamorphOptionsEvent
+  | TalentMetamorphedEvent
+  | ScrollSelectTargetEvent
+  | StoneSelectTargetEvent
+  | StoneIntuitionPickItemEvent
+  | StoneIntuitionGuessKindEvent
+  | StoneAugmentPickItemEvent
+  | GooChargeEvent
+  | GooEnrageEvent
+  | GooFightStartedEvent
+  | DM300FightStartedEvent
+  | DwarfKingFightStartedEvent
+  | DwarfKingPhase2Event
+  | DwarfKingPhase3Event
+  | YogFightStartedEvent
+  | YogPhaseChangeEvent
+  | YogFinalPhaseEvent
+  | TenguFightStartedEvent
+  | EyeChargeEvent
+  | EyeDeathRayEvent
+  | ZapSummonEvent
+  | NecroSummonEvent
+  | TenguJumpEvent
+  | TenguBombEvent
+  | TenguBombCountdownEvent
+  | TenguBlastEvent
+  | TenguFireEvent
+  | TenguShockerEvent
+  | TeleportEvent
+  | MirrorImageEvent
+  | MessageEvent
+  | ToastEvent
+  | BossSlainEvent
+  | ShockingProcEvent
+  | BlobUpdateEvent
+  | BlobDepletedEvent
+  | StateEffectEvent
+  | FireImbueActivatedEvent
+  | InfernoActivatedEvent
+  | SacrificialFireEvent
+  | FlameBurstEvent
+  | LeafBurstEvent
+  | FlockEvent
+  | WoolBurstEvent
+  | BombLitEvent
+  | BombBlastEvent
+  | SpellSpriteEvent
+  | LockedEvent
+  | OpenChestEvent
+  | CrystalChestShatterEvent
+  | SpawnMobEvent
+  | LightningArcEvent
+  | DM300TrapStepEvent
+  | VampiricProcEvent
+  | BlockingProcEvent
+  | ElasticProcEvent
+  | BloomingProcEvent
+  | CorruptProcEvent
+  | CharmProcEvent
+  | ExplosiveProcEvent
+  | RepulsionProcEvent
+  | ViscosityProcEvent
+  | PotentialProcEvent
+  | EntanglementProcEvent
+  | ThornsProcEvent
+  | AntiEntropyProcEvent
+  | CorrosionProcEvent
+  | DisplacementProcEvent
+  | MetabolismProcEvent
+  | StenchProcEvent
+  | EnchantChoiceAvailableEvent
+  | EnchantEvent
+  | PickupEnergyEvent
+  | AlchemyPreviewResultEvent
+  | AlchemyBrewedEvent
+  | AlchemyEnergizedEvent
+  | TrinketChoiceEvent
+  | ToolkitBrewEvent
+  | ToolkitEnergizePromptEvent
+  | ToolkitEnergizedEvent;
 
 export type GameEventType = GameEvent['type'];
 
@@ -389,8 +1105,24 @@ export interface InitMessage {
   width: number;
   height: number;
   traps: TrapInfo[];
+  /** Decorative custom tilemaps (e.g. GooNest), cosmetic only. */
+  custom_tiles?: CustomTileLayer[];
+  /** Custom wall overlays rendered above characters (e.g. SewerExitOverhang). */
+  custom_walls?: CustomTileLayer[];
+  /** Cosmetic flame VFX positions (SPD's Torch Emitter+Halo), e.g. flanking Goo's boss exit. */
+  torches?: [number, number][];
   /** Only present on the very first INIT after connecting. */
   player_id?: string;
+}
+
+/** A decorative tilemap overlay (e.g. GooBossRoom's GooNest). */
+export interface CustomTileLayer {
+  texture: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  tiles: number[][];
 }
 
 /** The 20Hz per-player snapshot (main.py:168). */
@@ -402,9 +1134,12 @@ export interface StateUpdateMessage {
   mobs: Mob[];
   items: SerializedItem[];
   visible_tiles: Vec2[];
+  mapped_tiles?: Vec2[];
   traps: TrapInfo[];
   gold: number;
   energy: number;
+  has_amulet: boolean;
+  boss_lurking: boolean;
   events: GameEvent[];
   /**
    * Read defensively by the client but not currently forwarded in STATE_UPDATE;
@@ -449,4 +1184,27 @@ export type ClientMessage =
   | { type: 'UPGRADE_TALENT'; talent: string }
   | { type: 'USE_ARMOR_ABILITY'; ability: string; target_x?: number; target_y?: number }
   | { type: 'TRIGGER_BERSERK' }
-  | { type: 'PREPARATION_STRIKE'; target_x: number; target_y: number };
+  | { type: 'PREPARATION_STRIKE'; target_x: number; target_y: number }
+  | { type: 'CHOOSE_IMBUE_WAND'; staff_id: string; wand_id: string }
+  | { type: 'EQUIP_GHOST_ITEM'; rose_id: string; slot: 'weapon' | 'armor'; item_id?: string }
+  | { type: 'METAMORPH_CHOOSE'; talent: string }
+  | { type: 'METAMORPH_REPLACE'; old_talent: string; new_talent: string }
+  | { type: 'ADMIN_TELEPORT'; target_floor: number }
+  | { type: 'ADMIN_LEVEL_UP' }
+  | { type: 'ADMIN_GIVE_ITEM'; item_kind: string }
+  | { type: 'NPC_INTERACT'; npc_id: string }
+  | { type: 'SHOP_BUY'; npc_id: string; item_id: string }
+  | { type: 'SHOP_SELL'; item_id: string }
+  | { type: 'IMP_CLAIM_REWARD'; npc_id: string }
+  | { type: 'SELECT_SCROLL_TARGET'; scroll_id: string; item_id: string }
+  | { type: 'SELECT_STONE_TARGET'; stone_id: string; item_id: string }
+  | { type: 'STONE_INTUITION_CHOOSE_ITEM'; stone_id: string; item_id: string }
+  | { type: 'STONE_INTUITION_GUESS'; stone_id: string; item_id: string; guessed_kind: string }
+  | { type: 'STONE_AUGMENT_CHOOSE'; stone_id: string; item_id: string; augment_type: string }
+  | { type: 'CHOOSE_ENCHANT'; target_id: string; choice_index: number }
+  | { type: 'CONFIRM_CHASM_FALL'; x: number; y: number }
+  | { type: 'ALCHEMY_PREVIEW'; ingredient_ids: string[] }
+  | { type: 'ALCHEMY_BREW'; ingredient_ids: string[]; recipe_index: number }
+  | { type: 'ALCHEMY_ENERGIZE'; item_id: string; all_items: boolean }
+  | { type: 'ALCHEMY_TRINKET_CHOOSE'; catalyst_id: string; kind: string }
+  | { type: 'TOOLKIT_ENERGIZE'; toolkit_id: string; levels: number };

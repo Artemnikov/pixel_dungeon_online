@@ -9,7 +9,7 @@ the handler branches in main.py.
 an extra field (or one we've since dropped) still validates on its known fields.
 """
 
-from typing import Annotated, Literal, Optional, Union
+from typing import Annotated, List, Literal, Optional, Union
 
 from pydantic import BaseModel, ConfigDict, Field, TypeAdapter
 
@@ -56,7 +56,7 @@ class ExecuteItemAction(_ClientMessageBase):
 class SetQuickslot(_ClientMessageBase):
     type: Literal["SET_QUICKSLOT"]
     index: int
-    item_id: str
+    item_id: Optional[str] = None
 
 
 class UseQuickslot(_ClientMessageBase):
@@ -111,6 +111,18 @@ class UpgradeTalent(_ClientMessageBase):
     talent: str
 
 
+class ChooseArmorAbility(_ClientMessageBase):
+    type: Literal["CHOOSE_ARMOR_ABILITY"]
+    ability: str
+
+
+class UseComboMove(_ClientMessageBase):
+    type: Literal["USE_COMBO_MOVE"]
+    move: str
+    target_x: Optional[int] = None
+    target_y: Optional[int] = None
+
+
 class UseArmorAbility(_ClientMessageBase):
     type: Literal["USE_ARMOR_ABILITY"]
     ability: str
@@ -126,6 +138,157 @@ class PreparationStrike(_ClientMessageBase):
     type: Literal["PREPARATION_STRIKE"]
     target_x: int
     target_y: int
+
+
+class MetamorphChoose(_ClientMessageBase):
+    type: Literal["METAMORPH_CHOOSE"]
+    talent: str
+
+
+class MetamorphReplace(_ClientMessageBase):
+    type: Literal["METAMORPH_REPLACE"]
+    old_talent: str
+    new_talent: str
+
+
+class AdminTeleport(_ClientMessageBase):
+    type: Literal["ADMIN_TELEPORT"]
+    target_floor: int
+
+
+class AdminLevelUp(_ClientMessageBase):
+    type: Literal["ADMIN_LEVEL_UP"]
+
+
+class AdminGiveItem(_ClientMessageBase):
+    type: Literal["ADMIN_GIVE_ITEM"]
+    item_kind: str
+
+
+class NpcInteract(_ClientMessageBase):
+    type: Literal["NPC_INTERACT"]
+    npc_id: str
+
+
+class ShopBuy(_ClientMessageBase):
+    type: Literal["SHOP_BUY"]
+    npc_id: str
+    item_id: str
+
+
+class ShopSell(_ClientMessageBase):
+    type: Literal["SHOP_SELL"]
+    item_id: str
+
+
+class ImpClaimReward(_ClientMessageBase):
+    type: Literal["IMP_CLAIM_REWARD"]
+    npc_id: str
+
+
+class GhostClaimReward(_ClientMessageBase):
+    type: Literal["GHOST_CLAIM_REWARD"]
+    npc_id: str
+    choice: Literal["weapon", "armor"]
+
+
+class ChooseImbueWand(_ClientMessageBase):
+    type: Literal["CHOOSE_IMBUE_WAND"]
+    staff_id: str
+    wand_id: str
+
+
+class EquipGhostItem(_ClientMessageBase):
+    type: Literal["EQUIP_GHOST_ITEM"]
+    rose_id: str
+    slot: Literal["weapon", "armor"]
+    item_id: Optional[str] = None  # None = unequip
+
+
+class SelectScrollTarget(_ClientMessageBase):
+    type: Literal["SELECT_SCROLL_TARGET"]
+    scroll_id: str
+    item_id: str
+
+
+class SelectStoneTarget(_ClientMessageBase):
+    type: Literal["SELECT_STONE_TARGET"]
+    stone_id: str
+    item_id: str
+
+
+class StoneIntuitionChooseItem(_ClientMessageBase):
+    type: Literal["STONE_INTUITION_CHOOSE_ITEM"]
+    stone_id: str
+    item_id: str
+
+
+class StoneIntuitionGuess(_ClientMessageBase):
+    type: Literal["STONE_INTUITION_GUESS"]
+    stone_id: str
+    item_id: str
+    guessed_kind: str
+
+
+class StoneAugmentChoose(_ClientMessageBase):
+    type: Literal["STONE_AUGMENT_CHOOSE"]
+    stone_id: str
+    item_id: str
+    augment_type: str
+
+
+class ChooseEnchant(_ClientMessageBase):
+    type: Literal["CHOOSE_ENCHANT"]
+    target_id: str
+    choice_index: int
+
+
+class Resume(_ClientMessageBase):
+    type: Literal["RESUME"]
+
+
+class PickupFloor(_ClientMessageBase):
+    type: Literal["PICKUP_FLOOR"]
+
+
+class Attack(_ClientMessageBase):
+    type: Literal["ATTACK"]
+    target_id: str
+
+
+class ConfirmChasmFall(_ClientMessageBase):
+    type: Literal["CONFIRM_CHASM_FALL"]
+    x: int
+    y: int
+
+
+class AlchemyPreview(_ClientMessageBase):
+    type: Literal["ALCHEMY_PREVIEW"]
+    ingredient_ids: List[str]
+
+
+class AlchemyBrew(_ClientMessageBase):
+    type: Literal["ALCHEMY_BREW"]
+    ingredient_ids: List[str]
+    recipe_index: int
+
+
+class AlchemyEnergize(_ClientMessageBase):
+    type: Literal["ALCHEMY_ENERGIZE"]
+    item_id: str
+    all_items: bool = False
+
+
+class AlchemyTrinketChoose(_ClientMessageBase):
+    type: Literal["ALCHEMY_TRINKET_CHOOSE"]
+    catalyst_id: str
+    kind: str
+
+
+class ToolkitEnergize(_ClientMessageBase):
+    type: Literal["TOOLKIT_ENERGIZE"]
+    toolkit_id: str
+    levels: int = 1
 
 
 ClientMessage = Annotated[
@@ -147,9 +310,38 @@ ClientMessage = Annotated[
         Wait,
         ChooseSubclass,
         UpgradeTalent,
+        ChooseArmorAbility,
+        UseComboMove,
         UseArmorAbility,
         TriggerBerserk,
         PreparationStrike,
+        MetamorphChoose,
+        MetamorphReplace,
+        AdminTeleport,
+        AdminLevelUp,
+        AdminGiveItem,
+        NpcInteract,
+        ShopBuy,
+        ShopSell,
+        ImpClaimReward,
+        GhostClaimReward,
+        SelectScrollTarget,
+        SelectStoneTarget,
+        StoneIntuitionChooseItem,
+        StoneIntuitionGuess,
+        StoneAugmentChoose,
+        ChooseImbueWand,
+        EquipGhostItem,
+        ChooseEnchant,
+        Resume,
+        PickupFloor,
+        Attack,
+        ConfirmChasmFall,
+        AlchemyPreview,
+        AlchemyBrew,
+        AlchemyEnergize,
+        AlchemyTrinketChoose,
+        ToolkitEnergize,
     ],
     Field(discriminator="type"),
 ]

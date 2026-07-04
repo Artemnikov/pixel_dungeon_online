@@ -1,0 +1,119 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.window {
+  background: #1a1a2e;
+  border: 2px solid #4a4a6a;
+  border-radius: 8px;
+  padding: 20px;
+  min-width: 300px;
+  color: #ccc;
+  font-family: monospace;
+}
+
+.title {
+  margin: 0 0 12px;
+  font-size: 16px;
+  text-align: center;
+  color: #b8d4ff;
+}
+
+.hpBar {
+  position: relative;
+  height: 18px;
+  background: #333;
+  border: 1px solid #555;
+  border-radius: 3px;
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+
+.hpBarFill {
+  height: 100%;
+  background: #44aa44;
+  transition: width 0.3s;
+}
+
+.hpText {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  color: #fff;
+  text-shadow: 1px 1px 0 #000;
+}
+
+.slot {
+  margin-bottom: 12px;
+}
+
+.slot label {
+  display: block;
+  font-size: 12px;
+  color: #888;
+  margin-bottom: 4px;
+  text-transform: uppercase;
+}
+
+.itemRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.itemName {
+  flex: 1;
+  font-size: 14px;
+  color: #ddd;
+}
+
+.itemStats {
+  font-size: 11px;
+  color: #999;
+}
+
+.emptySlot {
+  flex: 1;
+  font-size: 13px;
+  color: #666;
+  font-style: italic;
+}
+
+.actionBtn {
+  background: #3a3a5a;
+  border: 1px solid #5a5a7a;
+  color: #ccc;
+  padding: 4px 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.actionBtn:hover {
+  background: #5a5a7a;
+}
+
+.closeBtn {
+  display: block;
+  margin: 16px auto 0;
+  background: #3a3a5a;
+  border: 1px solid #5a5a7a;
+  color: #ccc;
+  padding: 6px 24px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.closeBtn:hover {
+  background: #5a5a7a;
+}

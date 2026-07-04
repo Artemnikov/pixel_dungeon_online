@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { getSewerTerrainInstructions } from './terrainMapper.js';
-import { BACKEND_TILE, QUADRANT, TERRAIN_INDEX, WALL_INDEX, isGrassTile, isWallTile } from './constants.js';
+import { BACKEND_TILE, QUADRANT, TERRAIN_INDEX, WALL_INDEX, CHASM_INDEX, isGrassTile, isWallTile } from './constants.js';
 
 const gridOfIds = (tileId, width = 3, height = 3) =>
   Array.from({ length: height }, () => Array.from({ length: width }, () => tileId));
@@ -27,18 +27,23 @@ test('maps base terrain IDs to non-empty instruction sets', () => {
   }
 });
 
-test('water mapping produces quadrant composition and shoreline on isolated water', () => {
+test('water surrounded by floor renders the fully-stitched shore tile', () => {
   const grid = gridOfIds(BACKEND_TILE.FLOOR.id);
   grid[1][1] = BACKEND_TILE.FLOOR_WATER.id;
 
   const instructions = getSewerTerrainInstructions(grid, 1, 1, BACKEND_TILE.FLOOR_WATER.id);
-  const quadrantInstructions = instructions.filter((item) => item.quadrant !== QUADRANT.FULL);
 
-  assert.equal(quadrantInstructions.length, 4);
-  assert.ok(
-    quadrantInstructions.some((item) => Object.values(TERRAIN_INDEX.WATER_EDGE).includes(item.srcIndex)),
-    'isolated water should include shoreline quadrants'
-  );
+  assert.equal(instructions.length, 1);
+  assert.equal(instructions[0].quadrant, QUADRANT.FULL);
+  assert.equal(instructions[0].srcIndex, TERRAIN_INDEX.WATER_STITCH_BASE + 15);
+});
+
+test('water surrounded by water renders no overlay (mask 0)', () => {
+  const grid = gridOfIds(BACKEND_TILE.FLOOR_WATER.id, 5, 5);
+
+  const instructions = getSewerTerrainInstructions(grid, 2, 2, BACKEND_TILE.FLOOR_WATER.id);
+
+  assert.equal(instructions.length, 0);
 });
 
 test('grass center uses center tiles when surrounded by grass', () => {
@@ -60,7 +65,7 @@ test('top-facing door (walls L+R, floor above) renders the regular door sprite',
   const instructions = getSewerTerrainInstructions(grid, 1, 1, BACKEND_TILE.DOOR.id);
 
   assert.equal(instructions.length, 1);
-  assert.equal(instructions[0].srcIndex, BACKEND_TILE.DOOR.atlasIndex);
+  assert.equal(instructions[0].srcIndex, WALL_INDEX.RAISED_DOOR);
 });
 
 test('side door (wall above) renders the RAISED_DOOR_SIDEWAYS body sprite', () => {
@@ -80,6 +85,17 @@ test('side locked door also uses RAISED_DOOR_SIDEWAYS body (state shown via over
   grid[2][1] = BACKEND_TILE.WALL.id;
 
   const instructions = getSewerTerrainInstructions(grid, 1, 1, BACKEND_TILE.LOCKED_DOOR.id);
+
+  assert.equal(instructions.length, 1);
+  assert.equal(instructions[0].srcIndex, WALL_INDEX.RAISED_DOOR_SIDEWAYS);
+});
+
+test('open side door still renders RAISED_DOOR_SIDEWAYS body (open state shown via wall caps, not this sprite)', () => {
+  const grid = gridOfIds(BACKEND_TILE.FLOOR.id);
+  grid[0][1] = BACKEND_TILE.WALL.id;
+  grid[2][1] = BACKEND_TILE.WALL.id;
+
+  const instructions = getSewerTerrainInstructions(grid, 1, 1, BACKEND_TILE.OPEN_DOOR.id, new Set(['1,1']));
 
   assert.equal(instructions.length, 1);
   assert.equal(instructions[0].srcIndex, WALL_INDEX.RAISED_DOOR_SIDEWAYS);
@@ -133,4 +149,33 @@ test('isGrassTile accepts both regular and high grass', () => {
   assert.equal(isGrassTile(BACKEND_TILE.FLOOR_GRASS.id), true);
   assert.equal(isGrassTile(BACKEND_TILE.HIGH_GRASS.id), true);
   assert.equal(isGrassTile(BACKEND_TILE.FLOOR.id), false);
+});
+
+test('CHASM stitches to the base void tile when nothing recognizable is above it', () => {
+  const grid = gridOfIds(BACKEND_TILE.CHASM.id);
+  const instructions = getSewerTerrainInstructions(grid, 1, 1, BACKEND_TILE.CHASM.id);
+  assert.equal(instructions.length, 1);
+  assert.equal(instructions[0].srcIndex, CHASM_INDEX.BASE);
+  assert.equal(instructions[0].quadrant, QUADRANT.FULL);
+});
+
+test('CHASM stitches to the floor variant under a floor tile', () => {
+  const grid = gridOfIds(BACKEND_TILE.CHASM.id);
+  grid[0][1] = BACKEND_TILE.FLOOR.id;
+  const instructions = getSewerTerrainInstructions(grid, 1, 1, BACKEND_TILE.CHASM.id);
+  assert.equal(instructions[0].srcIndex, CHASM_INDEX.FLOOR);
+});
+
+test('CHASM stitches to the wall variant under a wall tile', () => {
+  const grid = gridOfIds(BACKEND_TILE.CHASM.id);
+  grid[0][1] = BACKEND_TILE.WALL.id;
+  const instructions = getSewerTerrainInstructions(grid, 1, 1, BACKEND_TILE.CHASM.id);
+  assert.equal(instructions[0].srcIndex, CHASM_INDEX.WALL);
+});
+
+test('CHASM stitches to the water variant under a water tile', () => {
+  const grid = gridOfIds(BACKEND_TILE.CHASM.id);
+  grid[0][1] = BACKEND_TILE.FLOOR_WATER.id;
+  const instructions = getSewerTerrainInstructions(grid, 1, 1, BACKEND_TILE.CHASM.id);
+  assert.equal(instructions[0].srcIndex, CHASM_INDEX.WATER);
 });

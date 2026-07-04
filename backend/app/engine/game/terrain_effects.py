@@ -1,17 +1,47 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 ArtemNikov
+#
+# Adapted from Shattered Pixel Dungeon (C) 2014-2024 Evan Debenham
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+# See the GNU General Public License for more details.
+#
 import random
 import uuid
 from typing import List, Optional, Tuple
 
 from app.engine.dungeon.constants import TileType
-from app.engine.entities.base import (
-    Berry,
-    Dewdrop,
-    Position,
-    Seed,
-    Player,
-    Entity,
-)
+from app.engine.entities.base import Position, Entity
+from app.engine.entities.items_consumable import Berry, Dewdrop, Seed
+from app.engine.entities.player import Player
 from app.engine.game.floor_state import FloorState
+
+
+GRASS_TILES = {TileType.FLOOR_GRASS, TileType.EMPTY_DECO, TileType.EMBERS,
+               TileType.HIGH_GRASS, TileType.FURROWED_GRASS}
+
+
+def plant_grass(floor: FloorState, x: int, y: int, furrow: bool = False):
+    """Plant grass at (x,y). Sets FURROWED_GRASS if furrow=True and regen off,
+    else HIGH_GRASS. Only on empty/deco/embers/grass/furrowed tiles."""
+    from app.engine.dungeon.constants import TileType
+    if not (0 <= x < floor.width and 0 <= y < floor.height):
+        return
+    t = floor.grid[y][x]
+    if t not in GRASS_TILES:
+        return
+    if floor.plants and (x, y) in floor.plants:
+        return
+    if furrow:
+        floor.grid[y][x] = TileType.FURROWED_GRASS
+    else:
+        floor.grid[y][x] = TileType.HIGH_GRASS
 
 
 def _plant_seed_at(floor: FloorState, pos: Tuple[int, int], plant_type: str):
@@ -60,6 +90,40 @@ def _drop_berry(floor: FloorState, pos: Tuple[int, int]):
     return berry.id
 
 
+def _trinket_grass_loot_mult(player: Player) -> float:
+    from app.engine.entities.trinkets import PetrifiedSeed as _PS
+    from app.engine.entities.trinkets import trinket_level
+    lvl = trinket_level(player, "petrified_seed")
+    if lvl < 0:
+        return 1.0
+    return _PS.grass_loot_multiplier(lvl)
+
+
+def _trinket_stone_instead_of_seed(player: Player) -> bool:
+    from app.engine.entities.trinkets import PetrifiedSeed as _PS
+    from app.engine.entities.trinkets import trinket_level
+    lvl = trinket_level(player, "petrified_seed")
+    if lvl < 0:
+        return False
+    return random.random() < _PS.stone_instead_of_seed_chance(lvl)
+
+
+def _naturalism_level(trampler: Entity) -> int:
+    """SPD SandalsOfNature.Naturalism: equipped sandals grant +1..+4 loot
+    levels; a cursed pair means no grass loot at all (-1). A bagged pair
+    grants nothing (the buff only exists while equipped)."""
+    if not isinstance(trampler, Player):
+        return 0
+    sandals = trampler.belongings.artifact
+    if sandals is None or getattr(sandals, "kind", "") != "sandals_of_nature":
+        return 0
+    if sandals.cursed:
+        return -1
+    # SPD sandals cap at +3; the remake levels artifacts to +10, so clamp to
+    # keep the SPD loot ranges (seeds 1/25..1/9, dew 1/6..1/4).
+    return min(getattr(sandals, "level", 0), 3) + 1
+
+
 def roll_grass_loot(floor: FloorState, trampler: Entity) -> list:
     drops: list = []
 
@@ -68,21 +132,30 @@ def roll_grass_loot(floor: FloorState, trampler: Entity) -> list:
     if region in ("mining", "vault"):
         return drops
 
-    # Naturalism bonus from Sandals of Nature
-    naturalism = 0
+    naturalism = _naturalism_level(trampler)
+    if naturalism < 0:
+        return drops  # cursed Sandals of Nature suppress all grass loot
+
+    # PetrifiedSeed trinket: grass loot multiplier
+    loot_mult = 1.0
     if isinstance(trampler, Player):
-        for item in trampler.belongings.all_items():
-            if getattr(item, "artifact_type", None) == "sandals_of_nature":
-                naturalism = getattr(item, "naturalism_level", 0)
-                break
+        loot_mult = _trinket_grass_loot_mult(trampler)
 
     # Seeds: 1/(25 - naturalism*4) chance
-    seed_chance = 1.0 / max(1, 25 - naturalism * 4)
-    if random.random() < seed_chance:
+    seed_chance = 1.0 / max(1, 25 - naturalism * 4) * loot_mult
+    if isinstance(trampler, Player) and _trinket_stone_instead_of_seed(trampler):
+        from app.engine.entities.items_consumable import Stone as StoneItem
+        stone = StoneItem(
+            id=str(uuid.uuid4()),
+            pos=Position(x=trampler.pos.x, y=trampler.pos.y),
+            damage=1, range=5,
+        )
+        floor.items[stone.id] = stone
+    elif random.random() < seed_chance:
         _drop_seed(floor, (trampler.pos.x, trampler.pos.y))
 
     # Dewdrops: 1/(6 - naturalism/2) chance
-    dew_chance = 1.0 / max(1, 6 - naturalism / 2)
+    dew_chance = 1.0 / max(1, 6 - naturalism / 2) * loot_mult
     if region == "sewers":
         dew_chance /= 2  # GRASS-feeling floors in sewers
     if random.random() < dew_chance:
@@ -97,7 +170,7 @@ def roll_grass_loot(floor: FloorState, trampler: Entity) -> list:
         if talent_level > 0:
             berry_floor = getattr(floor, "floor_id", 1)
             berry_rate = max(0.0, 1.0 - (berry_floor - 2) * 0.02 * talent_level)
-            if berry_rate > 0 and random.random() < berry_rate * 0.01:
+            if berry_rate > 0 and random.random() < berry_rate * 0.01 * loot_mult:
                 _drop_berry(floor, (trampler.pos.x, trampler.pos.y))
 
     return drops
@@ -113,18 +186,18 @@ def press_cell(floor: FloorState, pos: Tuple[int, int], trampler: Entity) -> dic
     tile = floor.grid[pos[1]][pos[0]]
 
     # --- Trample grass ------------------------------------------------------
+    # SPD HighGrass.trample keys off the huntress *class* (any subclass): she
+    # furrows high grass instead of flattening it, and furrowed grass survives
+    # her steps. Everyone else tramples both down to short grass.
     if tile in (TileType.HIGH_GRASS, TileType.FURROWED_GRASS):
-        is_warden = _is_warden(trampler)
         is_huntress = isinstance(trampler, Player) and trampler.class_type == "huntress"
 
         if tile == TileType.FURROWED_GRASS:
-            if not is_warden:
+            if not is_huntress:
                 floor.grid[pos[1]][pos[0]] = TileType.FLOOR_GRASS
                 result["tile_changed"] = True
-        elif tile == TileType.HIGH_GRASS:
-            if is_warden:
-                floor.grid[pos[1]][pos[0]] = TileType.FURROWED_GRASS
-            elif is_huntress:
+        else:
+            if is_huntress:
                 floor.grid[pos[1]][pos[0]] = TileType.FURROWED_GRASS
             else:
                 floor.grid[pos[1]][pos[0]] = TileType.FLOOR_GRASS
@@ -133,12 +206,11 @@ def press_cell(floor: FloorState, pos: Tuple[int, int], trampler: Entity) -> dic
         if result["tile_changed"]:
             floor.rebuild_flags()
 
-        # Roll loot from trampled grass (not from FURROWED_GRASS stepped by Warden)
+        # Loot and the Camouflage glyph only trigger on HIGH_GRASS (SPD rolls
+        # them in the non-furrowed branch, even when the huntress furrows).
         if tile == TileType.HIGH_GRASS:
             result["drops"] = roll_grass_loot(floor, trampler)
-
-        # Camouflage glyph check
-        _trigger_camouflage(trampler)
+            _trigger_camouflage(trampler)
 
         # Rejuvenating Steps check
         _trigger_rejuvenating_steps(floor, pos, trampler)
@@ -204,9 +276,14 @@ def _trigger_plant_effect(floor: FloorState, pos: Tuple[int, int], plant, activa
         "earthroot": lambda: activator.add_buff("barkskin", duration=6.0, level=3),
         "firebloom": lambda: _explode_fire(floor, pos),
         "icecap": lambda: _freeze_area(floor, pos),
-        "sorrowmoss": lambda: _create_gas(floor, pos, 4.0),
+        "sorrowmoss": lambda: _create_gas(floor, pos, 4, "toxic_gas"),
         "dreamfoil": lambda: _cure_debuffs(activator),
         "fadeleaf": lambda: _teleport_activator(floor, activator),
+        "rotberry": lambda: activator.add_buff("bless", duration=20.0, level=1),
+        "starflower": lambda: activator.add_buff("well_fed", duration=50.0, level=1),
+        "stormvine": lambda: _teleport_activator(floor, activator),
+        "blindweed": lambda: activator.add_buff("blindness", duration=10.0, level=1),
+        "swiftthistle": lambda: activator.add_buff("haste", duration=3.0, level=1),
     }
 
     effect = effects.get(plant_type)
@@ -220,14 +297,20 @@ def _heal_activator(entity: Entity, duration: float):
 
 
 def _explode_fire(floor: FloorState, pos: Tuple[int, int]):
+    blob_id = f"firebloom_{pos[0]}_{pos[1]}"
+    cells = set()
+    volume = {}
     for dy in (-1, 0, 1):
         for dx in (-1, 0, 1):
             nx, ny = pos[0] + dx, pos[1] + dy
             if 0 <= nx < floor.width and 0 <= ny < floor.height:
                 tile = floor.grid[ny][nx]
-                if tile == TileType.FLOOR_GRASS or tile == TileType.HIGH_GRASS or tile == TileType.FURROWED_GRASS:
-                    floor.grid[ny][nx] = TileType.FLOOR
-    floor.rebuild_flags()
+                flamable = floor.flags.flamable[ny][nx] if floor.flags else False
+                if flamable or tile == TileType.FLOOR or tile == TileType.EMPTY_DECO:
+                    cells.add((nx, ny))
+                    volume[(nx, ny)] = 2
+    if cells:
+        floor.blob_areas[blob_id] = {"type": "fire", "cells": cells, "volume": volume}
 
 
 def _freeze_area(floor: FloorState, pos: Tuple[int, int]):
@@ -241,13 +324,28 @@ def _freeze_area(floor: FloorState, pos: Tuple[int, int]):
     floor.rebuild_flags()
 
 
-def _create_gas(floor: FloorState, pos: Tuple[int, int], strength: float):
-    pass
+def _create_gas(floor: FloorState, pos: Tuple[int, int], strength: int, gas_type: str = "toxic_gas"):
+    blob_id = f"{gas_type}_{pos[0]}_{pos[1]}"
+    cells = set()
+    volume = {}
+    for dy in (-1, 0, 1):
+        for dx in (-1, 0, 1):
+            nx, ny = pos[0] + dx, pos[1] + dy
+            if 0 <= nx < floor.width and 0 <= ny < floor.height:
+                if floor.flags and not floor.flags.solid[ny][nx]:
+                    cells.add((nx, ny))
+                    volume[(nx, ny)] = strength
+    if cells:
+        for bid in list(floor.blob_areas.keys()):
+            b = floor.blob_areas[bid]
+            if b.get("type") == gas_type and b.get("cells", set()) & cells:
+                del floor.blob_areas[bid]
+        floor.blob_areas[blob_id] = {"type": gas_type, "cells": cells, "volume": volume}
 
 
 def _cure_debuffs(entity: Entity):
-    entity.remove_buff("poison")
-    entity.remove_buff("blind")
+    for debuff in ("poison", "blindness", "bleeding", "weakness", "slow", "cripple", "burning", "chill", "frost"):
+        entity.remove_buff(debuff)
 
 
 def _teleport_activator(floor: FloorState, entity: Entity):

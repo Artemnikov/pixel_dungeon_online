@@ -1,9 +1,9 @@
-// Overlay panel shown on top of the animated title (the parallax keeps running
-// behind it). Mirrors how SPD opens windows/scenes from the title menu.
+import { useTranslation } from 'react-i18next';
 import AudioManager from './../audio/AudioManager';
 import Icon from './Icon';
 
 export default function Panel({ title, icon, onClose, children, wide = false }) {
+  const { t } = useTranslation();
   return (
     <div className="opd-panel-overlay" onClick={onClose}>
       <div
@@ -15,7 +15,7 @@ export default function Panel({ title, icon, onClose, children, wide = false }) 
           <h2>{title}</h2>
           <button
             className="opd-panel-close"
-            aria-label="Close"
+            aria-label={t('menu.close')}
             onClick={() => { AudioManager.play('CLICK'); onClose(); }}
           >
             <Icon name="CLOSE" scale={2} />

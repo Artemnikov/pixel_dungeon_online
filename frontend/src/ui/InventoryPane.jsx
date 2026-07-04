@@ -1,8 +1,23 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 ArtemNikov
+//
+// Adapted from Shattered Pixel Dungeon (C) 2014-2024 Evan Debenham
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU General Public License for more details.
+//
 import { useRef, useState } from 'react';
 import AudioManager from '../audio/AudioManager';
 import ItemIcon from './ItemIcon';
 import ItemGlyph from './ItemGlyph';
 import { HOLDER_SPRITES } from '../rendering/sprites';
+import useEntityName from './useEntityName';
 
 // SPD-style persistent inventory pane (port of InventoryPane.java). Shows the
 // five equip slots + an inline gold/energy readout, bag tabs for nested bags,
@@ -11,15 +26,18 @@ import { HOLDER_SPRITES } from '../rendering/sprites';
 // each slot mirrors SPD's ItemSlot (equipped tint, unidentified/curse tint,
 // strength-requirement badge, upgrade level).
 const EQUIP_SLOTS = [
-  { key: 'weapon', label: 'Wep' },
-  { key: 'armor', label: 'Arm' },
-  { key: 'artifact', label: 'Art' },
-  { key: 'misc', label: 'Misc' },
-  { key: 'ring', label: 'Ring' },
+  { key: 'weapon', labelKey: 'slot.wep' },
+  { key: 'armor', labelKey: 'slot.arm' },
+  { key: 'artifact', labelKey: 'slot.art' },
+  { key: 'misc', labelKey: 'slot.misc' },
+  { key: 'ring', labelKey: 'slot.ring' },
 ];
 
-const EQUIPPABLE_TYPES = new Set(['weapon', 'wearable', 'ring', 'artifact']);
+const EQUIPPABLE_TYPES = new Set(['weapon', 'wearable', 'ring', 'artifact', 'trinket']);
 const LONG_PRESS_MS = 450;
+
+// All Bag subtypes (generic backpack + the SPD-style category pouches/holsters).
+const BAG_KINDS = new Set(['bag', 'velvet_pouch', 'scroll_holder', 'magical_holster', 'potion_bandolier']);
 
 function levelText(item) {
   if (!item || !item.level_known || !item.level) return null;
@@ -51,9 +69,10 @@ function strBadge(item, strength) {
   return { text: `:${req}`, cls: strength != null && strength < req ? 'str-bad' : 'str-ok' };
 }
 
-function ItemSlot({ item, holderKey, equipped, strength, empty, onOpen, onContext, onDefaultAction }) {
+function ItemSlot({ item, holderKey, equipped, strength, empty, onOpen, onContext, onDefaultAction, selectMode, onSelectItem, itemFilter }) {
   const timerRef = useRef(null);
   const longFiredRef = useRef(false);
+  const itemName = useEntityName(item);
 
   if (empty || !item) {
     // Empty equip slots show SPD's placeholder holder sprite; empty backpack
@@ -70,20 +89,26 @@ function ItemSlot({ item, holderKey, equipped, strength, empty, onOpen, onContex
 
   const openContext = (clientX, clientY) => onContext(item, clientX, clientY);
 
+  const selectable = selectMode && itemFilter ? itemFilter(item) : item.default_action != null;
+
   const handleClick = () => {
     if (longFiredRef.current) { longFiredRef.current = false; return; }
     AudioManager.play('CLICK');
+    if (selectMode) {
+      if (selectable) onSelectItem(item);
+      return;
+    }
     onOpen(item);
   };
 
   return (
     <button
-      className={`inv-slot filled ${equipped ? 'equipped' : ''} ${tintClass(item)}`}
-      title={item.name}
+      className={`inv-slot filled ${equipped ? 'equipped' : ''} ${tintClass(item)} ${selectMode && !selectable ? 'inv-slot-unselectable' : ''}`}
+      title={itemName}
       onClick={handleClick}
-      onAuxClick={(e) => { if (e.button === 1) { e.preventDefault(); if (item.default_action) onDefaultAction(item); } }}
-      onContextMenu={(e) => { e.preventDefault(); AudioManager.play('CLICK'); openContext(e.clientX, e.clientY); }}
-      onPointerDown={(e) => {
+      onAuxClick={selectMode ? undefined : (e) => { if (e.button === 1) { e.preventDefault(); if (item.default_action) onDefaultAction(item); } }}
+      onContextMenu={selectMode ? undefined : (e) => { e.preventDefault(); AudioManager.play('CLICK'); openContext(e.clientX, e.clientY); }}
+      onPointerDown={selectMode ? undefined : (e) => {
         if (e.pointerType !== 'touch') return;
         longFiredRef.current = false;
         timerRef.current = setTimeout(() => {
@@ -91,12 +116,17 @@ function ItemSlot({ item, holderKey, equipped, strength, empty, onOpen, onContex
           openContext(e.clientX, e.clientY);
         }, LONG_PRESS_MS);
       }}
-      onPointerUp={() => { clearTimeout(timerRef.current); }}
-      onPointerLeave={() => { clearTimeout(timerRef.current); }}
+      onPointerUp={selectMode ? undefined : () => { clearTimeout(timerRef.current); }}
+      onPointerLeave={selectMode ? undefined : () => { clearTimeout(timerRef.current); }}
     >
       <ItemIcon item={item} size={32} />
       <ItemGlyph item={item} />
-      {item.quantity > 1 && <span className="inv-qty">{item.quantity}</span>}
+      {item.kind === 'waterskin'
+        ? <span className="inv-qty">{item.volume}/20</span>
+        : item.quantity > 1 && <span className="inv-qty">{item.quantity}</span>}
+      {item.kind?.startsWith('wand_') && item.max_charges > 0 && (
+        <span className="inv-qty">{item.charges}/{item.max_charges}</span>
+      )}
       {badge && <span className={`inv-str ${badge.cls}`}>{badge.text}</span>}
       {levelText(item) && (
         <span className={`inv-level ${item.level > 0 ? 'up' : 'down'}`}>{levelText(item)}</span>
@@ -106,11 +136,11 @@ function ItemSlot({ item, holderKey, equipped, strength, empty, onOpen, onContex
   );
 }
 
-export default function InventoryPane({ belongings, gold, energy, strength, onOpenItem, onContextMenu, onDefaultAction }) {
+export default function InventoryPane({ belongings, gold, energy, strength, onOpenItem, onContextMenu, onDefaultAction, selectMode, onSelectItem, itemFilter }) {
   const backpack = (belongings && belongings.backpack) || { items: [], capacity: 20 };
 
   // Bag tabs: backpack first, then any nested bags it contains.
-  const nestedBags = (backpack.items || []).filter(i => i.kind === 'bag');
+  const nestedBags = (backpack.items || []).filter(i => BAG_KINDS.has(i.kind));
   const bags = [backpack, ...nestedBags];
 
   const [activeBagId, setActiveBagId] = useState(backpack.id);
@@ -119,7 +149,7 @@ export default function InventoryPane({ belongings, gold, energy, strength, onOp
   const effectiveBagId = bags.some(b => b.id === activeBagId) ? activeBagId : backpack.id;
 
   const activeBag = bags.find(b => b.id === effectiveBagId) || backpack;
-  const items = (activeBag.items || []).filter(i => i.kind !== 'bag');
+  const items = (activeBag.items || []).filter(i => !BAG_KINDS.has(i.kind));
   const capacity = activeBag.capacity || 20;
   const emptyCount = Math.max(0, capacity - items.length);
 
@@ -138,28 +168,32 @@ export default function InventoryPane({ belongings, gold, energy, strength, onOp
             onOpen={onOpenItem}
             onContext={onContextMenu}
             onDefaultAction={onDefaultAction}
+            selectMode={selectMode}
+            onSelectItem={onSelectItem}
+            itemFilter={itemFilter}
           />
         ))}
-        <div className="inv-currency">
-          <span className="inv-gold">{gold ?? 0}<i className="inv-gold-icon" /></span>
-          {energy > 0 && <span className="inv-energy">{energy}<i className="inv-energy-icon" /></span>}
+        <div className="inv-equip-right">
+          <div className="inv-currency">
+            <span className="inv-gold">{gold ?? 0}<i className="inv-gold-icon" /></span>
+            {energy > 0 && <span className="inv-energy">{energy}<i className="inv-energy-icon" /></span>}
+          </div>
+          {bags.length > 1 && (
+            <div className="inv-bag-tabs">
+              {bags.map(b => (
+                <button
+                  key={b.id}
+                  className={`inv-bag-tab ${b.id === effectiveBagId ? 'active' : ''}`}
+                  onClick={() => { AudioManager.play('CLICK'); setActiveBagId(b.id); }}
+                  title={b.name || 'Backpack'}
+                >
+                  <ItemIcon item={b.id === backpack.id ? { name: 'Backpack', type: 'bag' } : b} size={20} />
+                </button>
+              ))}
+            </div>
+          )}
         </div>
       </div>
-
-      {bags.length > 1 && (
-        <div className="inv-bag-tabs">
-          {bags.map(b => (
-            <button
-              key={b.id}
-              className={`inv-bag-tab ${b.id === effectiveBagId ? 'active' : ''}`}
-              onClick={() => { AudioManager.play('CLICK'); setActiveBagId(b.id); }}
-              title={b.name || 'Backpack'}
-            >
-              <ItemIcon item={b.id === backpack.id ? { name: 'Backpack', type: 'bag' } : b} size={20} />
-            </button>
-          ))}
-        </div>
-      )}
 
       <div className="inv-grid">
         {items.map(item => (
@@ -171,6 +205,9 @@ export default function InventoryPane({ belongings, gold, energy, strength, onOp
             onOpen={onOpenItem}
             onContext={onContextMenu}
             onDefaultAction={onDefaultAction}
+            selectMode={selectMode}
+            onSelectItem={onSelectItem}
+            itemFilter={itemFilter}
           />
         ))}
         {Array.from({ length: emptyCount }).map((_, i) => (

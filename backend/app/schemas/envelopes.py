@@ -12,7 +12,7 @@ byte-identical keys to the old hand-built dicts (e.g. INIT only carries `player_
 on first connect, where it's set; floor-change INIT leaves it None -> excluded).
 """
 
-from typing import Any, Dict, List, Literal, Optional
+from typing import Any, Dict, List, Literal, Optional, Tuple
 
 from pydantic import BaseModel, ConfigDict
 
@@ -34,8 +34,13 @@ class InitMessage(_Envelope):
     width: int
     height: int
     traps: List[Dict[str, Any]]
+    custom_tiles: List[Dict[str, Any]] = []
+    custom_walls: List[Dict[str, Any]] = []
+    torches: List[Tuple[int, int]] = []
     # Only set on the very first INIT after connecting; omitted on floor change.
     player_id: Optional[str] = None
+    entrance_pos: Optional[Tuple[int, int]] = None
+    exit_pos: Optional[Tuple[int, int]] = None
 
 
 class StateUpdateMessage(_Envelope):
@@ -49,4 +54,7 @@ class StateUpdateMessage(_Envelope):
     traps: List[Dict[str, Any]]
     gold: int
     energy: int
+    has_amulet: bool
+    boss_lurking: bool
+    mapped_tiles: Optional[List[Tuple[int, int]]] = None
     events: List[Any]

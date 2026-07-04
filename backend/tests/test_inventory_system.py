@@ -1,11 +1,14 @@
 """Unit tests for the ported SPD inventory system: stacking, nested category
 bags, equip slots, quickslot placeholders, and curse handling."""
 import pytest
-from app.engine.entities.base import (
-    Player, Position, Belongings, Bag, PotionBandolier, ScrollHolder,
-    MeleeWeapon, Armor, Ring, Wand, HealthPotion, RevivingPotion, Scroll,
-    QuickSlot, Action,
-)
+from app.engine.entities.base import Position, Action
+from app.engine.entities.item_union import Bag, PotionBandolier, ScrollHolder, VelvetPouch
+from app.engine.entities.items_consumable import Seed, GooBlob, Stone
+from app.engine.entities.items_equip import MeleeWeapon, Armor, Ring
+from app.engine.entities.items_potions import HealthPotion, RevivingPotion
+from app.engine.entities.items_scrolls import Scroll
+from app.engine.entities.items_wands import Wand
+from app.engine.entities.player import Player, Belongings, QuickSlot
 
 
 def make_player(strength=10):
@@ -77,6 +80,26 @@ def test_grab_items_pulls_matching():
     holder.grab_items(p.belongings.backpack)
     assert holder.contains("s1") and holder.contains("s2")
     assert all(i.category != "scroll" for i in p.belongings.backpack.items)
+
+
+def test_velvet_pouch_capacity_is_19():
+    assert VelvetPouch(id="vp").capacity == 19
+
+
+def test_velvet_pouch_holds_seeds_and_goo_blob_not_throwables():
+    p = make_player()
+    p.add_to_inventory(VelvetPouch(id="vp"))
+    p.add_to_inventory(Seed(id="seed1", name="Seed"))
+    p.add_to_inventory(GooBlob(id="goo1"))
+    p.add_to_inventory(Stone(id="stone1"))
+
+    pouch = p.belongings.backpack.find("vp")
+    assert pouch.contains("seed1") and pouch.contains("goo1")
+    # Throwables share SPD's old "stone" naming but are a different category
+    # here (Throwable weapons, not Runestones) -- they must stay in the
+    # backpack, not get swept into the seed pouch.
+    assert not pouch.contains("stone1")
+    assert any(i.id == "stone1" for i in p.belongings.backpack.items)
 
 
 def test_capacity_limit():

@@ -1,6 +1,8 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import AudioManager from '../audio/AudioManager';
 import ItemIcon from './ItemIcon';
+import useEntityName from './useEntityName';
 
 const LONG_PRESS_MS = 450;
 
@@ -43,10 +45,11 @@ function filteredQuickItems(backpack, belongings) {
 }
 
 export default function WndQuickBag({ belongings, onUse, onClose }) {
-  const itemsRef = useRef([]);
-  useEffect(() => {
-    itemsRef.current = filteredQuickItems(belongings?.backpack, belongings);
-  }, [belongings]);
+  const { t } = useTranslation();
+  const items = useMemo(
+    () => filteredQuickItems(belongings?.backpack, belongings),
+    [belongings]
+  );
 
   useEffect(() => {
     const onKey = (e) => { if (e.key === 'Escape') onClose(); };
@@ -60,12 +63,10 @@ export default function WndQuickBag({ belongings, onUse, onClose }) {
     if (item.default_action) onUse(item.id, item.default_action);
   };
 
-  const items = itemsRef.current;
-
   return (
     <div className="wnd-overlay wnd-qb-overlay" onClick={onClose}>
       <div className="wnd-qb" onClick={(e) => e.stopPropagation()}>
-        <div className="wnd-qb-title">Quick-use</div>
+        <div className="wnd-qb-title">{t('ui.quickUse')}</div>
         <div className="wnd-qb-grid">
           {items.map(item => (
             <QuickItemButton key={item.id} item={item} onClick={handleClick} />
@@ -77,6 +78,7 @@ export default function WndQuickBag({ belongings, onUse, onClose }) {
 }
 
 function QuickItemButton({ item, onClick }) {
+  const itemName = useEntityName(item);
   const timerRef = useRef(null);
   const longFiredRef = useRef(false);
 
@@ -106,7 +108,7 @@ function QuickItemButton({ item, onClick }) {
       onPointerLeave={handlePointerUp}
     >
       <ItemIcon item={item} size={24} />
-      <span className="wnd-qb-item-name">{item.name}</span>
+      <span className="wnd-qb-item-name">{itemName}</span>
     </button>
   );
 }

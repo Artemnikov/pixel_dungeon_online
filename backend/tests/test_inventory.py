@@ -1,18 +1,20 @@
 import pytest
-from app.engine.entities.base import Player, Weapon, Armor, Position
+from app.engine.entities.base import Position
+from app.engine.entities.items_equip import KindOfWeapon, Armor
+from app.engine.entities.player import Player
 from app.engine.manager import GameInstance
 
 def test_player_inventory_limit():
     player = Player(id="p1", name="Test", pos=Position(x=0,y=0), hp=20, max_hp=20, attack=1, defense=0)
     for i in range(20):
-        assert player.add_to_inventory(Weapon(id=f"w{i}", name=f"Sword {i}", damage=1, range=1, strength_requirement=0)) is True
+        assert player.add_to_inventory(KindOfWeapon(id=f"w{i}", name=f"Sword {i}", damage=1, range=1, strength_requirement=0)) is True
     
     # 21st item should fail
-    assert player.add_to_inventory(Weapon(id="w21", name="Sword 21", damage=1, range=1, strength_requirement=0)) is False
+    assert player.add_to_inventory(KindOfWeapon(id="w21", name="Sword 21", damage=1, range=1, strength_requirement=0)) is False
 
 def test_player_equip_weapon():
     player = Player(id="p1", name="Test", pos=Position(x=0,y=0), hp=20, max_hp=20, attack=5, defense=0, strength=10)
-    weapon = Weapon(id="w1", name="Pro Sword", damage=10, range=1, strength_requirement=5)
+    weapon = KindOfWeapon(id="w1", name="Pro Sword", damage=10, range=1, strength_requirement=5)
     player.add_to_inventory(weapon)
     
     assert player.get_total_attack() == 5
@@ -22,7 +24,7 @@ def test_player_equip_weapon():
 
 def test_player_equip_strength_requirement():
     player = Player(id="p1", name="Test", pos=Position(x=0,y=0), hp=20, max_hp=20, attack=5, defense=0, strength=5)
-    heavy_weapon = Weapon(id="w1", name="Heavy Axe", damage=10, range=1, strength_requirement=10)
+    heavy_weapon = KindOfWeapon(id="w1", name="Heavy Axe", damage=10, range=1, strength_requirement=10)
     player.add_to_inventory(heavy_weapon)
     
     assert player.equip_item("w1") is True  # can equip with STR deficit (penalties apply)
@@ -51,7 +53,7 @@ def test_item_pickup_in_game():
     # Manually place an item
     item_id = "test-item"
     item_pos = Position(x=player.pos.x + 1, y=player.pos.y)
-    item = Weapon(id=item_id, name="Test Sword", pos=item_pos, damage=5, range=1, strength_requirement=0)
+    item = KindOfWeapon(id=item_id, name="Test Sword", pos=item_pos, damage=5, range=1, strength_requirement=0)
     floor.items[item_id] = item
     
     # Move player to item
@@ -59,6 +61,17 @@ def test_item_pickup_in_game():
     
     assert player.pos.x == item_pos.x
     assert player.pos.y == item_pos.y
-    assert len(player.inventory) == 1
-    assert player.inventory[0].id == item_id
+    assert any(it.id == item_id for it in player.inventory)
     assert item_id not in floor.items
+
+def test_special_items_serialization():
+    from app.engine.entities.items_consumable import TenguMask, KingsCrown
+    player = Player(id="p1", name="Test", pos=Position(x=0,y=0), hp=20, max_hp=20, attack=1, defense=0)
+    player.add_to_inventory(TenguMask(id="mask1"))
+    player.add_to_inventory(KingsCrown(id="crown1"))
+    
+    data = player.model_dump()
+    
+    assert any(item["kind"] == "tengu_mask" and item["id"] == "mask1" for item in data["inventory"])
+    assert any(item["kind"] == "kings_crown" and item["id"] == "crown1" for item in data["inventory"])
+

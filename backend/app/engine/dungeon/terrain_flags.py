@@ -6,7 +6,7 @@ Floor instead of scanning hardcoded tile-ID sets — matches how SPD separates
 terrain identity (tile ID) from terrain behaviour (flag bits).
 """
 
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 from app.engine.dungeon.constants import TileType
 
@@ -47,10 +47,31 @@ TILE_FLAGS = {
     TileType.EMPTY_DECO:   PASSABLE,
     TileType.HIGH_GRASS:   PASSABLE | LOS_BLOCKING | FLAMABLE,
     TileType.FURROWED_GRASS: PASSABLE | LOS_BLOCKING | FLAMABLE,
+    TileType.EMBERS:        PASSABLE,
     TileType.SECRET_DOOR:  LOS_BLOCKING | SOLID | SECRET,
     TileType.SECRET_TRAP:  PASSABLE | SECRET,
     TileType.TRAP:         PASSABLE,
     TileType.INACTIVE_TRAP: PASSABLE,
+    TileType.OPEN_DOOR:    PASSABLE,
+    # SOLID only, NOT LOS-blocking, in every region (Terrain.java:119-123:
+    # flags[REGION_DECO] = flags[STATUE] = SOLID). Sewers floors additionally
+    # mark these flamable -- see the region-gated pass in build_flag_maps.
+    TileType.REGION_DECO:     SOLID,
+    TileType.REGION_DECO_ALT: SOLID,
+    # Terrain.java:100: flags[BARRICADE] = FLAMABLE | SOLID | LOS_BLOCKING --
+    # a destructible wooden obstacle (StorageRoom/MassGraveRoom/etc.'s entrance),
+    # not a permanent wall. Burns to EMBERS via the generic flammable-tile path
+    # in blobs.py (no per-tile override needed, same as the Java default).
+    TileType.BARRICADE:       FLAMABLE | SOLID | LOS_BLOCKING,
+    # SPD Terrain.java: flags[CHASM] = AVOID | PIT. Not PASSABLE (normal
+    # pathfinding/AI route around it like a wall) and not LOS_BLOCKING (you
+    # can see across/down an open pit).
+    TileType.ALCHEMY:     SOLID,
+    TileType.WELL:        AVOID,
+    TileType.STATUE:      SOLID,
+    TileType.BOOKSHELF:   FLAMABLE | SOLID | LOS_BLOCKING,
+    TileType.CRYSTAL_DOOR: SOLID,
+    TileType.CHASM:       AVOID | PIT,
 }
 
 
@@ -96,11 +117,14 @@ _CIRCLE8: Tuple[Tuple[int, int], ...] = (
 )
 
 
-def build_flag_maps(grid: List[List[int]]) -> FloorFlagMaps:
+def build_flag_maps(grid: List[List[int]], region: Optional[str] = None) -> FloorFlagMaps:
     """Derive all bool arrays from the grid's raw tile IDs.
 
     Mirrors SPD Level.buildFlagMaps() + cleanWalls(). Call once after the
     painter finishes writing the grid, and again whenever a tile mutates.
+
+    `region` is optional and only affects REGION_DECO/REGION_DECO_ALT
+    flamability (see Pass 1b) -- every other caller can omit it.
     """
     height = len(grid)
     width = len(grid[0]) if height > 0 else 0
@@ -119,6 +143,17 @@ def build_flag_maps(grid: List[List[int]]) -> FloorFlagMaps:
             maps.avoid[y][x]        = bool(f & AVOID)
             maps.liquid[y][x]       = bool(f & LIQUID)
             maps.pit[y][x]          = bool(f & PIT)
+
+    # Pass 1b: SewerLevel.buildFlagMaps() override (SewerLevel.java:186-194) --
+    # only on sewers floors, REGION_DECO/REGION_DECO_ALT (barrel props) also
+    # become flamable. Every other region leaves them SOLID-only (inert
+    # rubble/stalactite/cage visuals in prison/caves/city/halls).
+    if region == "sewers":
+        for y in range(height):
+            row = grid[y]
+            for x in range(width):
+                if row[x] == TileType.REGION_DECO or row[x] == TileType.REGION_DECO_ALT:
+                    maps.flamable[y][x] = True
 
     # Pass 2: force the map border to be impassable/solid/LOS-blocking so
     # nothing ever pathfinds off the grid, regardless of what generation did.

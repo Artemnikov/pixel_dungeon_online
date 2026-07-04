@@ -3,6 +3,7 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Dict, Tuple, Optional
 import asyncio
@@ -45,13 +46,13 @@ class ConnectionManager:
         # game_id -> {websocket: player_id}
         self.active_connections: Dict[str, Dict[WebSocket, str]] = {}
         self.game_instances: Dict[str, GameInstance] = {}
-        self.last_sent_floor: Dict[str, Dict[str, int]] = {}
+        self.last_sent_floor: Dict[str, Dict[str, Tuple[int, int]]] = {}
         # game_id -> {session_id: player_id} — stable identity across reconnects.
         self.sessions: Dict[str, Dict[str, str]] = {}
         # game_id -> {player_id: monotonic deadline} — players awaiting reconnect.
         self.disconnect_deadline: Dict[str, Dict[str, float]] = {}
 
-    async def connect(self, game_id: str, websocket: WebSocket, session_id: str) -> Tuple[str, bool]:
+    async def connect(self, game_id: str, websocket: WebSocket, session_id: str, seed: str = "") -> Tuple[str, bool]:
         """Accept a connection and resolve its player identity.
 
         Returns (player_id, is_new). When the session already maps to a player
@@ -59,9 +60,9 @@ class ConnectionManager:
         inventory/HP/depth/position) instead of spawning a fresh one.
         """
         await websocket.accept()
-        if game_id not in self.active_connections:
+        if game_id not in self.game_instances:
             self.active_connections[game_id] = {}
-            self.game_instances[game_id] = GameInstance(game_id)
+            self.game_instances[game_id] = GameInstance(game_id, seed=seed or None)
             self.last_sent_floor[game_id] = {}
             self.sessions[game_id] = {}
             self.disconnect_deadline[game_id] = {}
@@ -86,7 +87,10 @@ class ConnectionManager:
         game = self.game_instances[game_id]
         state = game.get_state(player_id)
         player_floor = state.get("depth", 1)
+        floor = game._get_or_create_floor(player_floor)
+        map_version = getattr(floor, "map_version", 0)
 
+        floor = game._get_or_create_floor(player_floor)
         init = InitMessage(
             player_id=player_id,
             depth=player_floor,
@@ -94,9 +98,14 @@ class ConnectionManager:
             width=state["width"],
             height=state["height"],
             traps=state.get("traps", []),
+            custom_tiles=state.get("custom_tiles", []),
+            custom_walls=state.get("custom_walls", []),
+            torches=state.get("torches", []),
+            entrance_pos=getattr(floor, 'entrance_pos', None),
+            exit_pos=getattr(floor, 'exit_pos', None),
         )
         await websocket.send_json(init.model_dump(exclude_none=True))
-        self.last_sent_floor.setdefault(game_id, {})[player_id] = player_floor
+        self.last_sent_floor.setdefault(game_id, {})[player_id] = (player_floor, map_version)
 
 
     def disconnect(self, game_id: str, websocket: WebSocket):
@@ -161,7 +170,8 @@ class ConnectionManager:
             game = self.game_instances[game_id]
             game.update_tick()
             events = game.flush_events()
-            
+            dead_connections = []
+
             for connection, player_id in self.active_connections[game_id].items():
                 try:
                     if player_id not in game.players:
@@ -169,22 +179,36 @@ class ConnectionManager:
 
                     state = game.get_state(player_id)
                     player_floor = state.get("depth", 1)
-                    previous_floor = self.last_sent_floor.setdefault(game_id, {}).get(player_id)
-                    
-                    if previous_floor != player_floor:
+                    floor = game._get_or_create_floor(player_floor)
+                    map_version = getattr(floor, "map_version", 0)
+                    previous = self.last_sent_floor.setdefault(game_id, {}).get(player_id)
+
+                    if previous != (player_floor, map_version):
+                        floor = game._get_or_create_floor(player_floor)
                         init = InitMessage(
                             depth=player_floor,
                             grid=state["grid"],
                             width=state["width"],
                             height=state["height"],
                             traps=state.get("traps", []),
+                            custom_tiles=state.get("custom_tiles", []),
+                            custom_walls=state.get("custom_walls", []),
+                            torches=state.get("torches", []),
+                            entrance_pos=getattr(floor, 'entrance_pos', None),
+                            exit_pos=getattr(floor, 'exit_pos', None),
                         )
                         await connection.send_json(init.model_dump(exclude_none=True))
-                        self.last_sent_floor[game_id][player_id] = player_floor
+                        self.last_sent_floor[game_id][player_id] = (player_floor, map_version)
 
                     player_obj = game.players.get(player_id)
                     gold = player_obj.gold if player_obj else 0
                     energy = player_obj.energy if player_obj else 0
+                    from app.engine.entities.items_consumable import Amulet
+                    has_amulet = (
+                        any(isinstance(it, Amulet) for it in player_obj.belongings.all_items())
+                        if player_obj else False
+                    )
+                    boss_lurking = game._boss_lurking_on_floor(player_floor)
 
                     update = StateUpdateMessage(
                         depth=player_floor,
@@ -196,12 +220,18 @@ class ConnectionManager:
                         traps=state.get("traps", []),
                         gold=gold,
                         energy=energy,
+                        has_amulet=has_amulet,
+                        boss_lurking=boss_lurking,
+                        mapped_tiles=state.get("mapped_tiles", []),
                         events=game.filter_events_for_player(events, player_id),
                     )
                     await connection.send_json(update.model_dump(exclude_none=True))
                 except Exception as e:
                     print(f"Error broadcasting to {player_id}: {e}")
-                    pass
+                    dead_connections.append(connection)
+
+            for conn in dead_connections:
+                self.disconnect(game_id, conn)
 
 manager = ConnectionManager()
 
@@ -210,13 +240,22 @@ async def root():
     return {"message": "Online Pixel Dungeon Server is running"}
 
 
+@app.get("/api/items/catalog")
+async def get_items_catalog():
+    from app.engine.entities.item_catalog import get_item_catalog
+
+    return get_item_catalog()
+
+
 @app.get("/api/talents/{class_type}")
 async def get_talents(class_type: str):
     from app.engine.entities.subclasses import (
-        TALENT_DEFS, TALENT_CLASS_REQ, ABILITY_TALENTS, TIER_UNLOCK_LEVELS,
+        TALENT_DEFS, TALENT_TITLES, TALENT_DESCRIPTIONS,
+        TALENT_CLASS_REQ, ABILITY_TALENTS, TIER_UNLOCK_LEVELS,
         TIER_MAX_POINTS, CLASS_SUBCLASSES,
+        T4_ABILITY_TALENTS, CLASS_ARMOR_ABILITIES, Talent,
     )
-    from app.engine.entities.base import CharacterClass
+    from app.engine.entities.player import CharacterClass
 
     valid = {CharacterClass.WARRIOR, CharacterClass.MAGE, CharacterClass.ROGUE, CharacterClass.HUNTRESS}
     if class_type not in valid:
@@ -227,6 +266,10 @@ async def get_talents(class_type: str):
     own_subclasses = set(CLASS_SUBCLASSES.get(class_type, ()))
 
     def _belongs_to_class(tid: str, sreq: Optional[str]) -> bool:
+        # HEROIC_ENERGY is a shared T4 universal talent, available to any class
+        # once T4 is unlocked (see TALENT_CLASS_REQ comment).
+        if tid == Talent.HEROIC_ENERGY:
+            return True
         if TALENT_CLASS_REQ.get(tid) == class_type:
             return True
         if sreq is not None and sreq in own_subclasses:
@@ -241,6 +284,8 @@ async def get_talents(class_type: str):
 
         entry = {
             "id": talent_id,
+            "name": TALENT_TITLES.get(talent_id, talent_id),
+            "description": TALENT_DESCRIPTIONS.get(talent_id, ""),
             "max_pts": max_pts,
             "tier": tier,
             "subclass": subclass_req,
@@ -263,15 +308,32 @@ async def get_talents(class_type: str):
     # those with subclass_req=None). Subclass-gated T4 talents appear in the
     # tier list with their subclass field and are NOT duplicated here.
     ability_to_talents: dict = {}
+    universal_t4: list = []
+    has_t4_mapping = False
     for tid, (_, t, sreq) in TALENT_DEFS.items():
         if t != 4 or sreq is not None or not _belongs_to_class(tid, sreq):
             continue
-        for ability_tid, ability in ABILITY_TALENTS.items():
-            _, _, asr = TALENT_DEFS.get(ability_tid, (0, 0, None))
-            a_req = TALENT_CLASS_REQ.get(ability_tid)
-            if a_req == class_type or (asr and asr in own_subclasses):
+        ability = T4_ABILITY_TALENTS.get(tid)
+        if ability is not None:
+            has_t4_mapping = True
+            ability_to_talents.setdefault(ability, []).append(tid)
+        else:
+            universal_t4.append(tid)
+
+    if has_t4_mapping:
+        # Append the class's universal T4 talent(s) (e.g. Heroic Energy) to
+        # every armor ability's talent list, per SPD's ArmorAbility.talents().
+        for ability in CLASS_ARMOR_ABILITIES.get(class_type, ()):
+            for tid in universal_t4:
                 ability_to_talents.setdefault(ability, []).append(tid)
-                break
+    else:
+        for tid in universal_t4:
+            for ability_tid, ability in ABILITY_TALENTS.items():
+                _, _, asr = TALENT_DEFS.get(ability_tid, (0, 0, None))
+                a_req = TALENT_CLASS_REQ.get(ability_tid)
+                if a_req == class_type or (asr and asr in own_subclasses):
+                    ability_to_talents.setdefault(ability, []).append(tid)
+                    break
 
     ability_selectors: dict = {}
     for tid, ability in ABILITY_TALENTS.items():
@@ -282,20 +344,46 @@ async def get_talents(class_type: str):
     return {
         "class": class_type,
         "subclasses": list(own_subclasses),
+        "armor_abilities": list(CLASS_ARMOR_ABILITIES.get(class_type, ())),
         "tiers": {k: tiers[k] for k in sorted(tiers.keys(), key=int)},
         "ability_selectors": ability_selectors,
         "ability_tier4": ability_to_talents,
     }
 
+@app.post("/dev/xp/{game_id}/{player_id}/{amount}")
+async def dev_grant_xp(game_id: str, player_id: str, amount: int):
+    game = manager.game_instances.get(game_id)
+    if not game:
+        return {"error": "game not found"}
+    player = game.players.get(player_id)
+    if not player:
+        return {"error": "player not found"}
+    leveled = player.earn_exp(amount)
+    if leveled:
+        game.on_talent_level_up(player)
+    # Debug: check serialized state
+    state = game.get_state(player_id)
+    serialized_player = next((p for p in state.get("players", []) if p.get("id") == player_id), None)
+    return {
+        "leveled": leveled,
+        "level": player.level,
+        "xp": player.experience,
+        "talent_points": player.subclass_info.talent_points,
+        "serialized_level": serialized_player.get("level") if serialized_player else None,
+        "serialized_talents": serialized_player.get("subclass_info", {}).get("talent_info", {}).get("talents") if serialized_player else None,
+        "serialized_talent_points": serialized_player.get("subclass_info", {}).get("talent_points") if serialized_player else None,
+    }
+
 @app.websocket("/ws/game/{game_id}")
-async def game_websocket(websocket: WebSocket, game_id: str, class_type: str = "warrior", difficulty: str = "normal", name: str = None, admin_secret: str = "", session: str = None):
+async def game_websocket(websocket: WebSocket, game_id: str, class_type: str = "warrior", difficulty: str = "normal", name: str = None, admin_secret: str = "", session: str = None, seed: str = "", challenges: str = ""):
     session_id = session or str(uuid.uuid4())
-    player_id, is_new = await manager.connect(game_id, websocket, session_id)
+    player_id, is_new = await manager.connect(game_id, websocket, session_id, seed=seed)
 
     game = manager.game_instances[game_id]
     if is_new:
         if game.player_count == 0: # First player sets difficulty
             game.change_difficulty(difficulty)
+            game.set_challenges(challenges)
 
         is_admin = bool(admin_secret and admin_secret == os.environ.get("ADMIN_SECRET", "admin"))
         player_name = "admin" if is_admin else (name.strip()[:20] if name and name.strip() else f"Player_{player_id[:4]}")
@@ -333,6 +421,42 @@ async def game_websocket(websocket: WebSocket, game_id: str, class_type: str = "
             elif isinstance(message, msg.MoveStop):
                 game.set_move_intent(player_id, 0, 0)
 
+            elif isinstance(message, msg.Resume):
+                if player_id in game.players:
+                    player = game.players[player_id]
+                    if player.path_queue:
+                        player.last_auto_move_time = 0.0
+
+            elif isinstance(message, msg.PickupFloor):
+                if player_id in game.players:
+                    player = game.players[player_id]
+                    floor = game._get_or_create_floor(player.floor_id)
+                    items_to_pickup = [
+                        i_id for i_id, i in floor.items.items()
+                        if i.pos and i.pos.x == player.pos.x and i.pos.y == player.pos.y
+                        and i.type != "grave" and not getattr(i, 'for_sale', False)
+                    ]
+                    from app.engine.entities.items_consumable import Gold, Dewdrop, EnergyCrystal
+                    from app.engine.entities.items_bombs import Bomb
+                    for i_id in items_to_pickup:
+                        item = floor.items[i_id]
+                        if isinstance(item, Gold):
+                            player.gold += item.quantity
+                            del floor.items[i_id]
+                            game.add_event("PICKUP_GOLD", {"player": player.id, "amount": item.quantity}, floor_id=player.floor_id)
+                        elif isinstance(item, EnergyCrystal):
+                            player.energy += item.quantity
+                            del floor.items[i_id]
+                            game.add_event("PICKUP_ENERGY", {"player": player.id, "amount": item.quantity}, floor_id=player.floor_id)
+                        elif isinstance(item, Dewdrop):
+                            game._pickup_dewdrop(player, floor, player.floor_id, i_id, item)
+                        elif isinstance(item, Bomb) and item.fuse_ticks is not None and \
+                                game.handle_bomb_pickup(player, floor, player.floor_id, i_id, item):
+                            pass
+                        elif player.add_to_inventory(item):
+                            del floor.items[i_id]
+                            game.add_event("PICKUP", {"player": player.id, "item": item.name}, floor_id=player.floor_id)
+
             elif isinstance(message, msg.MoveTo):
                 if player_id in game.players:
                     player = game.players[player_id]
@@ -367,8 +491,47 @@ async def game_websocket(websocket: WebSocket, game_id: str, class_type: str = "
             elif isinstance(message, msg.UseItem):
                 game.use_item(player_id, message.item_id)
 
+            elif isinstance(message, msg.SelectScrollTarget):
+                game.select_scroll_target(player_id, message.scroll_id, message.item_id)
+
+            elif isinstance(message, msg.ChooseImbueWand):
+                game.imbue_wand(player_id, message.staff_id, message.wand_id)
+
+            elif isinstance(message, msg.EquipGhostItem):
+                game.equip_ghost_item(
+                    player_id, message.rose_id, message.slot, message.item_id,
+                )
+
             elif isinstance(message, msg.ChangeDifficulty):
                 game.change_difficulty(message.difficulty)
+
+            elif isinstance(message, msg.Attack):
+                if player_id in game.players:
+                    player = game.players[player_id]
+                    floor = game._get_or_create_floor(player.floor_id)
+                    mob = floor.mobs.get(message.target_id)
+                    if mob and mob.is_alive:
+                        dx = mob.pos.x - player.pos.x
+                        dy = mob.pos.y - player.pos.y
+                        game.move_entity(player_id, dx, dy)
+
+            elif isinstance(message, msg.ConfirmChasmFall):
+                game.confirm_chasm_fall(player_id, message.x, message.y)
+
+            elif isinstance(message, msg.AlchemyPreview):
+                game.alchemy_preview(player_id, message.ingredient_ids)
+
+            elif isinstance(message, msg.AlchemyBrew):
+                game.alchemy_brew(player_id, message.ingredient_ids, message.recipe_index)
+
+            elif isinstance(message, msg.AlchemyEnergize):
+                game.alchemy_energize(player_id, message.item_id, message.all_items)
+
+            elif isinstance(message, msg.AlchemyTrinketChoose):
+                game.alchemy_trinket_choose(player_id, message.catalyst_id, message.kind)
+
+            elif isinstance(message, msg.ToolkitEnergize):
+                game.toolkit_energize(player_id, message.toolkit_id, message.levels)
 
             elif isinstance(message, msg.RangedAttack):
                 game.perform_ranged_attack(
@@ -385,7 +548,14 @@ async def game_websocket(websocket: WebSocket, game_id: str, class_type: str = "
                 game.choose_subclass(player_id, message.subclass)
 
             elif isinstance(message, msg.UpgradeTalent):
-                game.upgrade_talent(player_id, message.talent)
+                if not game.upgrade_talent(player_id, message.talent):
+                    print(f"Upgrade talent failed for {player_id}: {message.talent}")
+
+            elif isinstance(message, msg.ChooseArmorAbility):
+                game.choose_armor_ability(player_id, message.ability)
+
+            elif isinstance(message, msg.UseComboMove):
+                game.use_combo_move(player_id, message.move, message.target_x, message.target_y)
 
             elif isinstance(message, msg.UseArmorAbility):
                 game.use_armor_ability(player_id, message.ability, message.target_x, message.target_y)
@@ -395,6 +565,51 @@ async def game_websocket(websocket: WebSocket, game_id: str, class_type: str = "
 
             elif isinstance(message, msg.PreparationStrike):
                 game.preparation_strike(player_id, message.target_x, message.target_y)
+
+            elif isinstance(message, msg.MetamorphChoose):
+                game.metamorph_choose(player_id, message.talent)
+
+            elif isinstance(message, msg.MetamorphReplace):
+                game.metamorph_replace(player_id, message.old_talent, message.new_talent)
+
+            elif isinstance(message, msg.AdminTeleport):
+                game.admin_teleport(player_id, message.target_floor)
+
+            elif isinstance(message, msg.AdminLevelUp):
+                game.admin_level_up(player_id)
+
+            elif isinstance(message, msg.AdminGiveItem):
+                game.admin_give_item(player_id, message.item_kind)
+
+            elif isinstance(message, msg.NpcInteract):
+                game.npc_interact(player_id, message.npc_id)
+
+            elif isinstance(message, msg.ShopBuy):
+                game.shop_buy(player_id, message.npc_id, message.item_id)
+
+            elif isinstance(message, msg.ShopSell):
+                game.shop_sell(player_id, message.item_id)
+
+            elif isinstance(message, msg.ImpClaimReward):
+                game.imp_claim_reward(player_id, message.npc_id)
+
+            elif isinstance(message, msg.GhostClaimReward):
+                game.ghost_claim_reward(player_id, message.npc_id, message.choice)
+
+            elif isinstance(message, msg.SelectStoneTarget):
+                game.select_stone_target(player_id, message.stone_id, message.item_id)
+
+            elif isinstance(message, msg.StoneIntuitionChooseItem):
+                game.stone_intuition_pick(player_id, message.stone_id, message.item_id)
+
+            elif isinstance(message, msg.StoneIntuitionGuess):
+                game.stone_intuition_guess(player_id, message.stone_id, message.item_id, message.guessed_kind)
+
+            elif isinstance(message, msg.StoneAugmentChoose):
+                game.stone_augment_choose(player_id, message.stone_id, message.item_id, message.augment_type)
+
+            elif isinstance(message, msg.ChooseEnchant):
+                game.choose_enchant(player_id, message.target_id, message.choice_index)
 
     except WebSocketDisconnect:
         # Keep the hero alive for the reconnect grace window (see reaper); the

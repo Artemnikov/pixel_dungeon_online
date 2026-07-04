@@ -7,7 +7,16 @@ identification of potion/scroll kinds.
 
 from typing import Optional
 
-from app.engine.entities import item_actions
+from app.engine.entities import item_actions, scroll_actions
+from app.engine.entities.base import Position
+from app.engine.entities.runestones import Runestone
+from app.engine.entities.items_wands import Wand
+from app.engine.entities.player import QuickSlotEntry
+from app.engine.entities.runestone_actions import (
+    apply_stone_augment, apply_stone_intuition_guess, apply_stone_intuition_pick,
+    apply_stone_target,
+)
+from app.engine.entities.scroll_predicates import PREDICATE
 
 
 class ItemsMixin:
@@ -15,26 +24,24 @@ class ItemsMixin:
     def execute_item_action(self, player_id: str, item_id: str, action: str,
                             target_x: Optional[int] = None, target_y: Optional[int] = None):
         player = self.players.get(player_id)
-        print(f"[execute_item_action] player={player_id}, item={item_id}, action={action}, tx={target_x}, ty={target_y}")
         if not player or not player.is_alive or player.is_downed:
-            print(f"[execute_item_action] BAIL: player invalid (alive={player.is_alive if player else 'N/A'}, downed={player.is_downed if player else 'N/A'})")
             return
         item = player.belongings.get_item(item_id)
         if item is None:
-            print(f"[execute_item_action] BAIL: item not found (id={item_id})")
             return
-        print(f"[execute_item_action] found item: {item.name} ({type(item).__name__}), actions={item.actions(player)}")
         if action not in item.actions(player):
-            print(f"[execute_item_action] BAIL: action {action} not in item actions {item.actions(player)}")
             return
         handler = item_actions.ITEM_ACTION_DISPATCH.get(action)
-        print(f"[execute_item_action] dispatching to handler={handler}")
         if handler is not None:
             handler(self, player, item, target_x, target_y)
 
-    def set_quickslot(self, player_id: str, index: int, item_id: str):
+    def set_quickslot(self, player_id: str, index: int, item_id: Optional[str]):
         player = self.players.get(player_id)
         if not player:
+            return
+        if item_id is None:
+            if 0 <= index < len(player.quickslot.slots):
+                player.quickslot.slots[index] = QuickSlotEntry()
             return
         item = player.belongings.get_item(item_id)
         if item is not None:
@@ -66,6 +73,178 @@ class ItemsMixin:
         action = item.default_action()
         if action:
             self.execute_item_action(player_id, item_id, action, target_x, target_y)
+
+    def select_scroll_target(self, player_id: str, scroll_id: str, item_id: str):
+        player = self.players.get(player_id)
+        if not player:
+            return
+        scroll = player.belongings.get_item(scroll_id)
+        if scroll is None:
+            # Scroll may have been pre-consumed (unidentified path). Use pending state.
+            kind = getattr(player, "_pending_scroll_kind", None)
+            scroll_id_ = getattr(player, "_pending_scroll_id", None)
+            if kind is None or scroll_id_ != scroll_id:
+                return
+            scroll = type("_PendingScroll", (), {"id": scroll_id, "kind": kind})()
+        predicate = PREDICATE.get(scroll.kind)
+        if predicate is None:
+            return
+        target = player.belongings.get_item(item_id)
+        if target is None or not predicate(target, self):
+            return
+        scroll_actions.apply_scroll_target(self, player, scroll, target)
+        player._pending_scroll_kind = None
+        player._pending_scroll_id = None
+
+    def select_stone_target(self, player_id: str, stone_id: str, item_id: str):
+        player = self.players.get(player_id)
+        if not player:
+            return
+        stone = player.belongings.get_item(stone_id)
+        if stone is None:
+            return
+        if stone.kind == "magical_infusion":
+            self.use_magical_infusion(player_id, item_id, infusion_id=stone_id)
+            return
+        if stone.kind == "arcane_stylus":
+            target = player.belongings.get_item(item_id)
+            if target is None:
+                return
+            item_actions.apply_stylus_target(self, player, stone, target)
+            return
+        if not isinstance(stone, Runestone):
+            return
+        target = player.belongings.get_item(item_id)
+        if target is None:
+            return
+        apply_stone_target(self, player, stone, target)
+
+    def stone_intuition_pick(self, player_id: str, stone_id: str, item_id: str):
+        player = self.players.get(player_id)
+        if not player:
+            return
+        apply_stone_intuition_pick(self, player, stone_id, item_id)
+
+    def stone_intuition_guess(self, player_id: str, stone_id: str, item_id: str,
+                               guessed_kind: str):
+        player = self.players.get(player_id)
+        if not player:
+            return
+        apply_stone_intuition_guess(self, player, stone_id, item_id, guessed_kind)
+
+    def stone_augment_choose(self, player_id: str, stone_id: str, item_id: str,
+                              augment_type: str):
+        player = self.players.get(player_id)
+        if not player:
+            return
+        apply_stone_augment(self, player, stone_id, item_id, augment_type)
+
+    def imbue_wand(self, player_id: str, staff_id: str, wand_id: str):
+        """Handle imbue wand choice from IMBUE_WAND_CHOICE_AVAILABLE dialog."""
+        player = self.players.get(player_id)
+        if not player:
+            return
+        staff = player.belongings.get_item(staff_id)
+        if staff is None or staff.kind != "staff":
+            return
+        wand = player.belongings.get_item(wand_id)
+        if wand is None or not isinstance(wand, Wand):
+            return
+        player.belongings.backpack.detach(wand.id)
+        displaced = staff.imbue_wand(wand, player)
+        if displaced is not None:
+            floor = self._get_or_create_floor(player.floor_id)
+            displaced.pos = Position(x=player.pos.x, y=player.pos.y)
+            floor.items[displaced.id] = displaced
+        # Notify client of the change
+        player.quickslot.clear_item(wand_id)
+        self.add_event("IMBUE_WAND_DONE", {
+            "player": player.id,
+            "staff_id": staff_id,
+            "old_wand_id": wand_id,
+        }, floor_id=player.floor_id, source_player_id=player.id)
+
+    def equip_ghost_item(self, player_id: str, rose_id: str, slot: str,
+                         item_id: Optional[str] = None):
+        from app.engine.entities.items_artifacts import DriedRose
+        from app.engine.entities.items_equip import Armor, MeleeWeapon
+        player = self.players.get(player_id)
+        if not player or not player.is_alive or player.is_downed:
+            return
+        rose = player.belongings.get_item(rose_id)
+        if not isinstance(rose, DriedRose) or not rose.has_ghost():
+            return
+
+        if item_id is None:
+            if slot == "weapon" and rose.weapon:
+                player.belongings.backpack.collect(rose.weapon)
+                rose.weapon = None
+            elif slot == "armor" and rose.armor:
+                player.belongings.backpack.collect(rose.armor)
+                rose.armor = None
+            return
+
+        item = player.belongings.get_item(item_id)
+        if item is None:
+            return
+
+        if slot == "weapon":
+            if not isinstance(item, MeleeWeapon):
+                return
+            if item.cursed:
+                return
+            if item.strength_requirement > rose.ghost_strength():
+                return
+            player.belongings.backpack.detach(item.id)
+            if rose.weapon:
+                player.belongings.backpack.collect(rose.weapon)
+            rose.weapon = item
+        elif slot == "armor":
+            if not isinstance(item, Armor):
+                return
+            if item.cursed:
+                return
+            if item.strength_requirement > rose.ghost_strength():
+                return
+            player.belongings.backpack.detach(item.id)
+            if rose.armor:
+                player.belongings.backpack.collect(rose.armor)
+            rose.armor = item
+
+    def choose_enchant(self, player_id: str, target_id: str, choice_index: int):
+        """Handle exotic Scroll of Enchantment choice."""
+        player = self.players.get(player_id)
+        if not player:
+            return
+        from app.engine.entities.scroll_actions import choose_enchant_apply
+        choose_enchant_apply(self, player, choice_index)
+
+    def use_magical_infusion(self, player_id: str, item_id: str, infusion_id: Optional[str] = None):
+        """MagicalInfusion: upgrade a weapon/armor by 1 level."""
+        player = self.players.get(player_id)
+        if not player:
+            return
+        item = player.belongings.get_item(item_id)
+        if item is None:
+            return
+        if infusion_id:
+            infusion = player.belongings.get_item(infusion_id)
+        else:
+            infusion = next((it for it in player.belongings.all_items() if it.kind == "magical_infusion"), None)
+        if infusion is None:
+            return
+        if not getattr(item, "is_upgradable", lambda: True)():
+            return
+        item.level += 1
+        item.level_known = True
+        player.remove_buff("degrade")
+        # Consume one infusion
+        detached = player.belongings.backpack.detach(infusion.id)
+        if detached is not None and player.belongings.get_item(infusion.id) is None:
+            player.quickslot.convert_to_placeholder(detached)
+        self.add_event("MESSAGE", {"text": f"Your {item.name} glows with magical energy and upgrades!"},
+                       floor_id=player.floor_id, player_id=player.id)
+        self.add_event("PLAY_SOUND", {"sound": "LEVELUP"}, floor_id=player.floor_id)
 
     def identify_kind(self, item):
         # Reveal a potion/scroll kind for the whole party (co-op shared knowledge).

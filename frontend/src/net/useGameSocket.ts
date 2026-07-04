@@ -1,183 +1,21 @@
-import { useEffect } from 'react';
-import type { Dispatch, SetStateAction } from 'react';
-import { TILE_SIZE, PLAYER_ATTACK_DURATION, PLAYER_OPERATE_DURATION, HIT_CONNECT_DELAY, FLASH_DURATION } from '../constants';
+import { useEffect, useRef } from 'react';
 import { getWsBaseUrl } from '../config/urls';
-import AudioManager from '../audio/AudioManager';
-import { spawnBlood, spawnCritSparkle, spawnDust, spawnGrimShadow, spawnHeal } from '../rendering/draw/particles';
-import { spawnCheckedCells } from '../rendering/draw/searchEffects';
-import { spawnFloatingText } from '../rendering/draw/floatingText';
-import { coordsForItem } from '../rendering/sprites';
 import { sendMessage } from './send';
-import type {
-  Player,
-  Mob,
-  Difficulty,
-  GameEvent,
-  ServerMessage,
-  SerializedItem,
-  TrapInfo,
-} from '../types/contract';
+import { syncState } from './syncState';
+import { handleEvent } from './handleEvent';
+import { startFloorFade } from '../rendering/floorTransition';
+import { TILE_SIZE, FLOOR_FADE_OUT_MS } from '../constants';
+import type { ServerMessage, InitMessage, StateUpdateMessage } from '../types/contract';
+import type { HookProps, HandlerCtx } from './types';
 
-// Blood color per mob (default red; Goo bleeds green like its acidic body).
-const BLOOD_COLORS: Record<string, string> = { Goo: '#8eb300' };
+const HEARTBEAT_INTERVAL_MS = 15000;
+const WATCHDOG_TIMEOUT_MS = 30000;
+const RECONNECT_BASE_MS = 500;
+const RECONNECT_MAX_MS = 10000;
 
-// Reconnect/heartbeat tuning.
-const HEARTBEAT_INTERVAL_MS = 15000; // app-level PING cadence
-const WATCHDOG_TIMEOUT_MS = 30000;   // force-reconnect if silent this long
-const RECONNECT_BASE_MS = 500;       // first backoff delay
-const RECONNECT_MAX_MS = 10000;      // backoff cap
-
-// --- client-side render augmentation ---------------------------------------
-// The server entities (Player/Mob) gain interpolation/animation bookkeeping once
-// they live in the local entity store. These fields never cross the socket.
-
-interface RenderVec {
-  x: number;
-  y: number;
-}
-
-interface RenderPlayer extends Player {
-  renderPos: RenderVec;
-  animStartPos: RenderVec;
-  animStartTime: number | null;
-  targetPos?: RenderVec;
-  facing: string;
-  flipX: boolean;
-  deathStart: number | null;
-}
-
-interface RenderMob extends Mob {
-  renderPos: RenderVec;
-  animStartPos: RenderVec;
-  animStartTime: number | null;
-  targetPos?: RenderVec;
-  facing: string;
-  // Set by the shared attacker-facing logic (ATTACK event) which runs for mobs too,
-  // even though the mob renderer doesn't currently consume it.
-  flipX?: boolean;
-}
-
-type DyingMob = RenderMob & { deathStart: number };
-
-interface AnimState {
-  attackUntil?: number;
-  flashUntil?: number;
-  operateUntil?: number;
-}
-
-interface Projectile {
-  x: number;
-  y: number;
-  startX: number;
-  startY: number;
-  targetX: number;
-  targetY: number;
-  type: string;
-  spriteCoords: unknown;
-  progress: number;
-  rotation: number;
-  finished: boolean;
-}
-
-interface EntitiesState {
-  players: Record<string, RenderPlayer>;
-  mobs: Record<string, RenderMob>;
-  items: SerializedItem[];
-}
-
-interface VisionState {
-  visible: Set<string>;
-  discovered: Set<string>;
-}
-
-interface Ref<T> {
-  current: T;
-}
-
-interface MyStats {
-  hp: number;
-  maxHp: number;
-  name: string;
-  isDowned: boolean | undefined;
-  isRegen: boolean;
-  exp: number;
-  level: number;
-  maxExp: number;
-  effects: Player['active_effects'];
-  classType: string;
-  armorTier: number;
-  strength: number;
-  subclass?: string | null;
-  armorAbility?: string | null;
-  armorCharge?: number;
-  berserkPower?: number;
-  invisible?: number;
-  prepSeconds?: number;
-  comboCount?: number;
-  talentLevels?: Record<string, number>;
-  talentPoints?: Record<string, number>;
-}
-
-interface HookProps {
-  enabled: boolean;
-  gameId: string;
-  sessionId: string;
-  selectedClass: string;
-  difficulty: string;
-  playerName: string;
-  setConnectionStatus?: (status: string) => void;
-  socketRef: Ref<WebSocket | null>;
-  gridRef: Ref<number[][]>;
-  myPlayerIdRef: Ref<string | null>;
-  entitiesRef: Ref<EntitiesState>;
-  visionRef: Ref<VisionState>;
-  openDoorsRef: Ref<Set<string>>;
-  projectilesRef: Ref<Projectile[]>;
-  trapsRef: Ref<TrapInfo[]>;
-  mobAnimRef: Ref<Record<string, AnimState>>;
-  dyingMobsRef: Ref<Record<string, DyingMob>>;
-  playerAnimRef: Ref<Record<string, AnimState>>;
-  particlesRef: Ref<unknown[]>;
-  searchEffectsRef: Ref<unknown[]>;
-  floatingTextRef: Ref<unknown[]>;
-  wasDownedRef: Ref<boolean | undefined>;
-  setGrid: Dispatch<SetStateAction<number[][]>>;
-  setDepth: (depth: number) => void;
-  setMyPlayerId: (id: string) => void;
-  setInventory: (items: Player['inventory']) => void;
-  setEquippedItems: (e: { weapon: Player['equipped_weapon']; wearable: Player['equipped_wearable'] }) => void;
-  setMyStats: (stats: MyStats) => void;
-  setDifficulty: (difficulty: Difficulty) => void;
-  setGold?: (gold: number) => void;
-  setEnergy?: (energy: number) => void;
-  setBelongings?: (belongings: Player['belongings'] | null) => void;
-  setQuickslot?: (quickslot: Player['quickslot'] | null) => void;
-  onLevelUp?: (data: { level: number; tier_unlocked?: number | null; talent_points?: Record<string, number>; can_choose_subclass: boolean; can_choose_armor_ability: boolean }) => void;
-  onSubclassChoiceAvailable?: (data: { options: string[] }) => void;
-  onArmorAbilityChoiceAvailable?: (data: { options: string[] }) => void;
-  onTalentUpgraded?: (data: { talent: string; level: number }) => void;
-}
-
-type HandlerCtx = Pick<
-  HookProps,
-  | 'myPlayerIdRef'
-  | 'gridRef'
-  | 'setGrid'
-  | 'entitiesRef'
-  | 'visionRef'
-  | 'projectilesRef'
-  | 'mobAnimRef'
-  | 'dyingMobsRef'
-  | 'playerAnimRef'
-  | 'particlesRef'
-  | 'searchEffectsRef'
-  | 'floatingTextRef'
-> & {
-  onLevelUp?: HookProps['onLevelUp'];
-  onSubclassChoiceAvailable?: HookProps['onSubclassChoiceAvailable'];
-  onArmorAbilityChoiceAvailable?: HookProps['onArmorAbilityChoiceAvailable'];
-  onTalentUpgraded?: HookProps['onTalentUpgraded'];
-};
+// Stairs/chasm events that should fade-and-snap the camera on floor change. A future
+// CHASM_FALL_START call site adds itself here once the chasm-fall mechanic lands.
+const FLOOR_CHANGE_EVENT_TYPES = new Set(['STAIRS_DOWN', 'STAIRS_UP']);
 
 export default function useGameSocket({
   enabled,
@@ -185,6 +23,7 @@ export default function useGameSocket({
   sessionId,
   selectedClass,
   difficulty,
+  challenges,
   playerName,
   setConnectionStatus,
   socketRef,
@@ -195,13 +34,33 @@ export default function useGameSocket({
   openDoorsRef,
   projectilesRef,
   trapsRef,
+  customTilesRef,
+  customWallsRef,
+  torchesRef,
   mobAnimRef,
   dyingMobsRef,
   playerAnimRef,
   particlesRef,
   searchEffectsRef,
   floatingTextRef,
+  screenFlashRef,
+  transmuteEffectsRef,
+  flareEffectsRef,
+  spellSpriteEffectsRef,
+  lightningRef,
+  shieldHaloRef,
+  stateEffectsRef,
+  magicMissileRef,
+  screenShakeRef,
+  beamRef,
+  blobAreasRef,
+  surpriseRef,
+  selectedEnemyIdRef,
+  warnedTilesRef,
   wasDownedRef,
+  floorFadeRef,
+  cameraLerpRef,
+  isCameraDetachedRef,
   setGrid,
   setDepth,
   setMyPlayerId,
@@ -209,20 +68,56 @@ export default function useGameSocket({
   setEquippedItems,
   setMyStats,
   setDifficulty,
+  setBossInfo,
   setGold,
   setEnergy,
+  setHasAmulet,
+  setBossLurking,
+  setExitPos,
   setBelongings,
   setQuickslot,
   onLevelUp,
   onSubclassChoiceAvailable,
   onArmorAbilityChoiceAvailable,
+  onImbueWandChoiceAvailable,
   onTalentUpgraded,
+  onMetamorphOpen,
+  onMetamorphOptions,
+  onGooFightStarted,
+  onTenguFightStarted,
+  onChasmPrompt,
+  onDM300FightStarted,
+  onDwarfKingFightStarted,
+  onDwarfKingPhase2,
+  onYogFightStarted,
+  onYogFinalPhase,
+  onShopOpen,
+  onImpDialogue,
+  onGhostDialogue,
+  onGhostQuestGiven,
+  onGhostQuestComplete,
+  onScrollSelectTarget,
+  onStoneSelectTarget,
+  onStoneIntuitionPickItem,
+  onStoneIntuitionGuessKind,
+  onStoneAugmentSelect,
+  onStoneAugmentPickItem,
+  onGhostGearOpen,
+  onBossSlain,
+  onPlayerDeath,
+  onAlchemyPreviewResult,
+  onAlchemyBrewed,
+  onAlchemyEnergized,
+  onTrinketChoice,
+  onToolkitEnergizePrompt,
+  onOpenAlchemy,
+  onLoreNeeded,
 }: HookProps) {
+  const depthRef = useRef(1);
+
   useEffect(() => {
     if (!enabled) return;
 
-    // Per-mount reconnect state. Refs would survive remounts; locals are scoped
-    // to this effect run and torn down by the cleanup below.
     let attempt = 0;
     let intentionalClose = false;
     let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
@@ -239,7 +134,6 @@ export default function useGameSocket({
     const scheduleReconnect = () => {
       if (intentionalClose || !enabled) return;
       status('reconnecting');
-      // Exponential backoff with jitter, capped. Retries indefinitely.
       const delay = Math.min(RECONNECT_BASE_MS * 2 ** attempt, RECONNECT_MAX_MS);
       const jittered = delay / 2 + Math.random() * (delay / 2);
       attempt += 1;
@@ -254,7 +148,8 @@ export default function useGameSocket({
       const urlParams = new URLSearchParams(window.location.search);
       const adminSecret = urlParams.get('admin_secret') || '';
       const adminParam = adminSecret ? `&admin_secret=${encodeURIComponent(adminSecret)}` : '';
-      const ws = new WebSocket(`${wsBaseUrl}/ws/game/${gameId}?class_type=${selectedClass}&difficulty=${difficulty}${nameParam}${adminParam}${sessionParam}`);
+      const challengesParam = challenges ? `&challenges=${encodeURIComponent(challenges)}` : '';
+      const ws = new WebSocket(`${wsBaseUrl}/ws/game/${gameId}?class_type=${selectedClass}&difficulty=${difficulty}${challengesParam}${nameParam}${adminParam}${sessionParam}`);
       socketRef.current = ws;
 
       ws.onopen = () => {
@@ -263,14 +158,11 @@ export default function useGameSocket({
         status('connected');
         clearTimers();
         heartbeatTimer = setInterval(() => {
-          if (ws.readyState === WebSocket.OPEN) {
-            sendMessage(ws, { type: 'PING' });
-          }
+          if (ws.readyState === WebSocket.OPEN) sendMessage(ws, { type: 'PING' });
         }, HEARTBEAT_INTERVAL_MS);
-        // Watchdog: a silent socket (no frames, incl. PONG) is treated as dead.
         watchdogTimer = setInterval(() => {
           if (Date.now() - lastMsgAt > WATCHDOG_TIMEOUT_MS) {
-            try { ws.close(); } catch { /* will fall through to onclose */ }
+            try { ws.close(); } catch { /* falls through to onclose */ }
           }
         }, WATCHDOG_TIMEOUT_MS / 2);
       };
@@ -282,219 +174,160 @@ export default function useGameSocket({
         scheduleReconnect();
       };
 
-      ws.onmessage = (event) => {
-        lastMsgAt = Date.now();
-        const data = JSON.parse(event.data) as ServerMessage;
-        if (data.type === 'PONG') return;
-        if (data.type === 'INIT') {
+      // INIT only arrives on floor change (or first connect) — see main.py's
+      // last_sent_floor check. We don't yet know at INIT-receipt time whether this
+      // floor change came from stairs (fade) or an admin/debug warp (no fade), so the
+      // grid swap is always stashed here and only actually applied from
+      // applyStateUpdate below, once we've seen the paired STATE_UPDATE's events.
+      let pendingInit: InitMessage | null = null;
+      // While true, the fade-out is mid-flight: any STATE_UPDATE/INIT arriving before
+      // the deferred apply fires gets folded into the pending payload instead of being
+      // applied (and instead of triggering a second, overlapping fade).
+      let deferredApplyPending = false;
+
+      const applyInit = (data: InitMessage) => {
         setGrid(data.grid);
         gridRef.current = data.grid;
         visionRef.current.discovered = new Set();
         trapsRef.current = data.traps || [];
-        if (typeof data.depth === 'number') setDepth(data.depth);
+        customTilesRef.current = data.custom_tiles || [];
+        customWallsRef.current = data.custom_walls || [];
+        torchesRef.current = data.torches || [];
+        if (typeof data.depth === 'number') { setDepth(data.depth); depthRef.current = data.depth; }
         if (data.player_id) {
           setMyPlayerId(data.player_id);
           myPlayerIdRef.current = data.player_id;
         }
-        return;
-      }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        if (setExitPos) setExitPos((data as any).exit_pos || null);
+      };
 
-      if (data.type !== 'STATE_UPDATE') return;
+      const applyStateUpdate = (data: StateUpdateMessage) => {
+        if (typeof data.depth === 'number') { setDepth(data.depth); depthRef.current = data.depth; }
+        if (data.difficulty) setDifficulty(data.difficulty);
+        if (typeof data.gold === 'number' && setGold) setGold(data.gold);
+        if (typeof data.energy === 'number' && setEnergy) setEnergy(data.energy);
+        if (typeof data.has_amulet === 'boolean' && setHasAmulet) setHasAmulet(data.has_amulet);
+        if (typeof data.boss_lurking === 'boolean' && setBossLurking) setBossLurking(data.boss_lurking);
 
-      if (typeof data.depth === 'number') setDepth(data.depth);
-      if (data.difficulty) setDifficulty(data.difficulty);
-      if (typeof data.gold === 'number' && setGold) setGold(data.gold);
-      if (typeof data.energy === 'number' && setEnergy) setEnergy(data.energy);
-      if (data.traps) trapsRef.current = data.traps;
+        syncState(data, {
+          myPlayerIdRef, gridRef, entitiesRef, visionRef, openDoorsRef, trapsRef,
+          dyingMobsRef, wasDownedRef,
+          setInventory, setEquippedItems, setMyStats, setBossInfo, setBelongings, setQuickslot,
+        });
 
-      // Sync players
-      const currentServerPlayerIds = new Set(data.players.map(p => p.id));
-      Object.keys(entitiesRef.current.players).forEach(id => {
-        if (!currentServerPlayerIds.has(id)) {
-          delete entitiesRef.current.players[id];
+  const handlerCtx: HandlerCtx = {
+    myPlayerIdRef, gridRef, setGrid, entitiesRef, visionRef,
+    projectilesRef, mobAnimRef, dyingMobsRef, playerAnimRef, particlesRef,
+    searchEffectsRef, floatingTextRef, screenFlashRef, screenShakeRef,
+    transmuteEffectsRef, warnedTilesRef, flareEffectsRef, spellSpriteEffectsRef,
+    lightningRef, shieldHaloRef, stateEffectsRef, magicMissileRef,
+    surpriseRef, selectedEnemyIdRef, beamRef, blobAreasRef,
+    onLevelUp, onSubclassChoiceAvailable, onArmorAbilityChoiceAvailable,
+    onImbueWandChoiceAvailable, onTalentUpgraded,
+    onMetamorphOpen, onMetamorphOptions, onGooFightStarted, onTenguFightStarted, onChasmPrompt,
+    onDM300FightStarted, onDwarfKingFightStarted, onDwarfKingPhase2, onYogFightStarted, onYogFinalPhase,
+    onShopOpen, onImpDialogue, onGhostDialogue, onGhostQuestGiven, onGhostQuestComplete, onScrollSelectTarget, onGhostGearOpen, onBossSlain, onPlayerDeath,
+    onStoneSelectTarget, onStoneIntuitionPickItem, onStoneIntuitionGuessKind, onStoneAugmentSelect, onStoneAugmentPickItem,
+    onAlchemyPreviewResult, onAlchemyBrewed, onAlchemyEnergized,
+    onTrinketChoice, onToolkitEnergizePrompt, onOpenAlchemy,
+    depth: depthRef.current,
+  };
+
+        if (data.events) {
+          data.events.forEach(ev => handleEvent(ev, handlerCtx));
         }
-      });
+      };
 
-      data.players.forEach(p => {
-        if (p.id === myPlayerIdRef.current) {
-          setInventory(p.inventory || []);
-          setEquippedItems({
-            weapon: p.equipped_weapon,
-            wearable: p.equipped_wearable,
-          });
-          if (setBelongings) setBelongings(p.belongings || null);
-          if (setQuickslot) setQuickslot(p.quickslot || null);
-          // Death sound is played for all players (incl. local) by the entity-sync
-          // transition below, so it is not duplicated here.
-          wasDownedRef.current = p.is_downed;
-          setMyStats({
-            hp: p.hp,
-            maxHp: p.max_hp,
-            name: p.name,
-            isDowned: p.is_downed,
-            isRegen: (p.heal_left || 0) > 0,
-            exp: p.experience || 0,
-            level: p.level || 1,
-            maxExp: 5 + (p.level || 1) * 5,
-            effects: p.active_effects || [],
-            classType: p.class_type || 'warrior',
-            armorTier: (() => { const a = p.belongings?.armor; return a && 'tier' in a ? a.tier ?? 0 : 0; })(),
-            strength: p.strength ?? 10,
-            subclass: p.subclass_info?.subclass || null,
-            armorAbility: p.armor_ability || null,
-            armorCharge: p.armor_charge || 0,
-            berserkPower: p.berserk_power || 0,
-            invisible: p.invisible || 0,
-            prepSeconds: p.prep_seconds || 0,
-            comboCount: p.combo_count || 0,
-            talentLevels: p.subclass_info?.talent_info?.talents || {},
-            talentPoints: p.subclass_info?.talent_points || {},
-          });
+      // Camera snap-then-pan (SPD GameScene.java): force-offset cameraLerpRef one tile
+      // in the direction the player just dropped from/rose to, on top of the player's
+      // raw movement delta (which keeps any existing pan/zoom offset intact); the
+      // existing CAMERA_LERP exponential settle in useGameRenderer pulls it back onto
+      // the player next frame, reading as "drop down" / "rise up" into view.
+      const snapCameraForFloorChange = (direction: 'down' | 'up', newPos: { x: number; y: number }) => {
+        if (isCameraDetachedRef) isCameraDetachedRef.current = false;
+        if (!cameraLerpRef?.current) return;
+        const me = entitiesRef.current.players[myPlayerIdRef.current ?? ''];
+        const oldPos = me?.renderPos ?? newPos;
+        const dx = (newPos.x - oldPos.x) * TILE_SIZE;
+        const dy = (newPos.y - oldPos.y) * TILE_SIZE;
+        const snapTileOffset = direction === 'down' ? -TILE_SIZE : TILE_SIZE;
+        cameraLerpRef.current.x += dx;
+        cameraLerpRef.current.y += dy + snapTileOffset;
+      };
+
+      ws.onmessage = (event) => {
+        lastMsgAt = Date.now();
+        const data = JSON.parse(event.data) as ServerMessage;
+        if (data.type === 'PONG') return;
+
+        if (data.type === 'INIT') {
+          pendingInit = data;
+          return;
         }
 
-        if (!entitiesRef.current.players[p.id]) {
-          entitiesRef.current.players[p.id] = {
-            ...p,
-            renderPos: { x: p.pos.x, y: p.pos.y },
-            animStartPos: { x: p.pos.x, y: p.pos.y },
-            animStartTime: null,
-            facing: 'RIGHT',
-            flipX: false,
-            deathStart: p.is_downed ? performance.now() : null,
-          };
-        } else {
-          const existing = entitiesRef.current.players[p.id];
-          // Only restart the movement animation when the server position actually changed.
-          // STATE_UPDATE arrives at 20Hz but a travel step lands every ~150ms; resetting the
-          // interpolation every tick would rubber-band the sprite before it reaches the tile.
-          const moved = !existing.targetPos
-            || existing.targetPos.x !== p.pos.x || existing.targetPos.y !== p.pos.y;
-          if (moved) {
-            const currentTarget = existing.targetPos || existing.renderPos;
-            const dx = p.pos.x - currentTarget.x;
-            const dy = p.pos.y - currentTarget.y;
+        if (data.type !== 'STATE_UPDATE') return;
 
-            if (Math.abs(dx) >= Math.abs(dy)) {
-              if (dx > 0) { existing.facing = 'RIGHT'; existing.flipX = false; }
-              else if (dx < 0) { existing.facing = 'LEFT'; existing.flipX = true; }
-            } else {
-              if (dy > 0) existing.facing = 'DOWN';
-              else if (dy < 0) existing.facing = 'UP';
-            }
+        console.log('[WS] STATE_UPDATE', data.players.length, 'players, my level:', data.players.find(p => p.id === myPlayerIdRef.current)?.level);
 
-            existing.animStartPos = { x: existing.renderPos.x, y: existing.renderPos.y };
-            existing.animStartTime = performance.now();
-            existing.targetPos = p.pos;
-          }
-          existing.name = p.name;
-          existing.hp = p.hp;
-          existing.max_hp = p.max_hp;
-          existing.equipped_wearable = p.equipped_wearable;
-          // Start the death animation (and death sound) the instant a player dies.
-          if (p.is_downed && !existing.is_downed) {
-            existing.deathStart = performance.now();
-            const localPlayer = p.id === myPlayerIdRef.current;
-            const visible = visionRef.current?.visible;
-            if (localPlayer || visible?.has(`${p.pos.x},${p.pos.y}`)) {
-              AudioManager.play('DEATH');
+        // A fade triggered by an earlier tick is still mid-flight (screen is fading to
+        // black / held black); drop intermediate ticks rather than risk them being
+        // applied mid-fade or racing the deferred apply below.
+        if (deferredApplyPending) return;
+
+        const floorChangeEvent = data.events?.find(
+          ev => FLOOR_CHANGE_EVENT_TYPES.has(ev.type) && (ev as { data: { player: string } }).data.player === myPlayerIdRef.current,
+        );
+
+        if (!floorChangeEvent) {
+          // Steady state (most ticks), or a non-stairs depth change (admin teleport,
+          // resurrect, etc.) — apply any stashed INIT immediately, no fade.
+          if (pendingInit) {
+            const isFirstConnect = !!pendingInit.player_id;
+            const initDepth = pendingInit.depth;
+            if (isCameraDetachedRef) isCameraDetachedRef.current = false;
+            applyInit(pendingInit);
+            pendingInit = null;
+            // First connection to depth 1 = new game. Show lore chain over the
+            // rendered world (Dungeon intro → Sewers intro → game is revealed).
+            if (isFirstConnect && initDepth === 1 && onLoreNeeded) {
+              onLoreNeeded(1, () => {});
             }
           }
-          existing.is_downed = p.is_downed;
-          existing.heal_left = p.heal_left;
-          existing.class_type = p.class_type;
+          applyStateUpdate(data);
+          return;
         }
-      });
 
-      // Sync mobs
-      const currentServerMobIds = new Set(data.mobs.map(m => m.id));
+        // Stairs/chasm floor change: fade out, then swap grid+position+camera while
+        // the screen is fully black, then let the fade play back in. Input is gated
+        // client-side for the whole fade window via isFloorFadeActive(floorFadeRef).
+        // If this is first descent into a new region, show lore text before the fade.
+        const direction = floorChangeEvent.type === 'STAIRS_UP' ? 'up' : 'down';
+        const initToApply = pendingInit;
+        pendingInit = null;
+        const newPos = data.players.find(p => p.id === myPlayerIdRef.current)?.pos;
+        deferredApplyPending = true;
 
-      // Snapshot mobs that die this tick before the sync removes them,
-      // otherwise the DEATH event handler below finds an empty entity map.
-      if (data.events) {
-        data.events.forEach(ev => {
-          if (ev.type !== 'DEATH') return;
-          const id = ev.data.target;
-          const mob = entitiesRef.current.mobs[id];
-          if (mob && !dyingMobsRef.current[id]) {
-            dyingMobsRef.current[id] = {
-              ...mob,
-              renderPos: { ...mob.renderPos },
-              deathStart: performance.now(),
-            };
-          }
-        });
-      }
+        const finishTransition = () => {
+          if (floorFadeRef) startFloorFade(floorFadeRef, direction);
+          setTimeout(() => {
+            deferredApplyPending = false;
+            if (initToApply) applyInit(initToApply);
+            applyStateUpdate(data);
+            if (newPos) snapCameraForFloorChange(direction, newPos);
+          }, FLOOR_FADE_OUT_MS);
+        };
 
-      Object.keys(entitiesRef.current.mobs).forEach(id => {
-        if (!currentServerMobIds.has(id)) {
-          delete entitiesRef.current.mobs[id];
-        }
-      });
+        const needsLore = floorChangeEvent.type === 'STAIRS_DOWN'
+          && floorChangeEvent.data.first_visit
+          && [1, 6, 11, 16, 21].includes(data.depth);
 
-      data.mobs.forEach(m => {
-        if (!entitiesRef.current.mobs[m.id]) {
-          entitiesRef.current.mobs[m.id] = {
-            ...m,
-            renderPos: { x: m.pos.x, y: m.pos.y },
-            animStartPos: { x: m.pos.x, y: m.pos.y },
-            animStartTime: null,
-            facing: 'RIGHT',
-          };
+        if (needsLore && onLoreNeeded) {
+          onLoreNeeded(data.depth, finishTransition);
         } else {
-          const existing = entitiesRef.current.mobs[m.id];
-          // Only restart the movement animation when the server position actually changed
-          // (see player guard above) so the mob glides instead of rubber-banding.
-          const moved = !existing.targetPos
-            || existing.targetPos.x !== m.pos.x || existing.targetPos.y !== m.pos.y;
-          if (moved) {
-            const currentTarget = existing.targetPos || existing.renderPos;
-            if (m.pos.x > currentTarget.x) existing.facing = 'RIGHT';
-            else if (m.pos.x < currentTarget.x) existing.facing = 'LEFT';
-
-            existing.animStartPos = { x: existing.renderPos.x, y: existing.renderPos.y };
-            existing.animStartTime = performance.now();
-            existing.targetPos = m.pos;
-          }
-          existing.hp = m.hp;
+          finishTransition();
         }
-      });
-
-      entitiesRef.current.items = data.items || [];
-
-      if (data.visible_tiles) {
-        const newVisible = new Set(data.visible_tiles.map(t => `${t[0]},${t[1]}`));
-        visionRef.current.visible = newVisible;
-        newVisible.forEach(t => visionRef.current.discovered.add(t));
-      }
-
-      const myPlayer = data.players.find(p => p.id === myPlayerIdRef.current);
-      if (myPlayer?.is_admin && gridRef.current.length > 0) {
-        const allTiles = new Set<string>();
-        for (let y = 0; y < gridRef.current.length; y++) {
-          for (let x = 0; x < gridRef.current[0].length; x++) {
-            allTiles.add(`${x},${y}`);
-          }
-        }
-        visionRef.current.visible = allTiles;
-        allTiles.forEach(t => visionRef.current.discovered.add(t));
-      }
-
-      if (data.open_doors) {
-        openDoorsRef.current = new Set(data.open_doors.map(d => `${d[0]},${d[1]}`));
-      }
-
-      if (data.events) {
-        data.events.forEach(event => {
-          handleEvent(event, {
-            myPlayerIdRef, gridRef, setGrid, entitiesRef, visionRef,
-            projectilesRef, mobAnimRef, dyingMobsRef, playerAnimRef, particlesRef,
-            searchEffectsRef, floatingTextRef,
-            onLevelUp, onSubclassChoiceAvailable, onArmorAbilityChoiceAvailable, onTalentUpgraded,
-          });
-        });
-      }
-    };
-
+      };
     }
 
     connect();
@@ -504,351 +337,26 @@ export default function useGameSocket({
       clearTimers();
       if (reconnectTimer) { clearTimeout(reconnectTimer); reconnectTimer = null; }
       const ws = socketRef.current;
-      // Close on the way out even if still CONNECTING (avoids a leaked socket).
       if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING)) {
         ws.close();
       }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [enabled, gameId, sessionId]);
-}
 
-function handleEvent(event: GameEvent, {
-  myPlayerIdRef, gridRef, setGrid, entitiesRef, visionRef,
-  projectilesRef, mobAnimRef, dyingMobsRef, playerAnimRef, particlesRef,
-  searchEffectsRef, floatingTextRef,
-  onLevelUp, onSubclassChoiceAvailable, onArmorAbilityChoiceAvailable, onTalentUpgraded,
-}: HandlerCtx) {
-  if (event.type === 'PLAY_SOUND') {
-    AudioManager.play(event.data.sound);
-    return;
-  }
-
-  if (event.type === 'SEARCH') {
-    // Reveal/search feedback (searcher-only event): the hero plays the operate
-    // hand-raise pose and a cyan CheckedCell ring sweeps outward over the searched
-    // cells, mirroring Hero.search() -> sprite.operate() + GameScene.effectOverFog().
-    const pid = event.data.player;
-    if (playerAnimRef && entitiesRef.current.players[pid]) {
-      if (!playerAnimRef.current[pid]) playerAnimRef.current[pid] = {};
-      playerAnimRef.current[pid].operateUntil = performance.now() + PLAYER_OPERATE_DURATION;
+  const sendSelectScrollTarget = (scrollId: string, itemId: string) => {
+    const ws = socketRef.current;
+    if (ws?.readyState === WebSocket.OPEN) {
+      sendMessage(ws, { type: 'SELECT_SCROLL_TARGET', scroll_id: scrollId, item_id: itemId });
     }
-    if (searchEffectsRef) {
-      spawnCheckedCells(searchEffectsRef, event.data.cells, event.data.x, event.data.y);
+  };
+
+  const sendStoneTarget = (stoneId: string, itemId: string) => {
+    const ws = socketRef.current;
+    if (ws?.readyState === WebSocket.OPEN) {
+      sendMessage(ws, { type: 'SELECT_STONE_TARGET', stone_id: stoneId, item_id: itemId });
     }
-    return;
-  }
+  };
 
-  if (event.type === 'DRINK') {
-    const pid = event.data.player;
-    const isLocal = pid === myPlayerIdRef.current;
-    const drinker = entitiesRef.current.players[pid];
-    const visible = visionRef?.current?.visible;
-    if (isLocal || (drinker && visible?.has(`${drinker.pos.x},${drinker.pos.y}`))) {
-      AudioManager.play('DRINK');
-    }
-    // Play the "operate" gesture (raise item) on the drinker, mirroring
-    // Potion.drink() -> hero.sprite.operate() in the original game.
-    if (playerAnimRef && entitiesRef.current.players[pid]) {
-      if (!playerAnimRef.current[pid]) playerAnimRef.current[pid] = {};
-      playerAnimRef.current[pid].operateUntil = performance.now() + PLAYER_OPERATE_DURATION;
-    }
-    return;
-  }
-
-  if (event.type === 'HEAL') {
-    // Green "+N" rising number plus upward sparkles, mirroring the original's
-    // FloatingText.HEALING and Speck.HEALING when the Healing buff ticks.
-    const cx = event.data.x * TILE_SIZE + TILE_SIZE / 2;
-    const cy = event.data.y * TILE_SIZE; // above the sprite's feet
-    if (floatingTextRef) {
-      spawnFloatingText(floatingTextRef, cx, cy, `+${event.data.amount}`, '#2ecc71');
-    }
-    if (particlesRef) {
-      spawnHeal(particlesRef, cx, cy + TILE_SIZE / 2, 4);
-    }
-    return;
-  }
-
-  if (event.type === 'TRAP_TRIGGERED') {
-    const player = entitiesRef.current.players[event.data.player];
-    if (player) {
-      const cx = player.renderPos.x * TILE_SIZE + TILE_SIZE / 2;
-      const cy = player.renderPos.y * TILE_SIZE;
-
-      AudioManager.play('TRAP');
-
-      if (event.data.damage > 0 && floatingTextRef) {
-        spawnFloatingText(floatingTextRef, cx, cy, `-${event.data.damage}`, '#e74c3c');
-      }
-
-      if (particlesRef) {
-        spawnDust(particlesRef, cx, cy + TILE_SIZE / 2, 8);
-      }
-    }
-    return;
-  }
-
-  if (event.type === 'MAP_PATCH' && event.data?.tiles) {
-    setGrid(prev => {
-      if (!prev || prev.length === 0) return prev;
-      const next = prev.map(row => row.slice());
-      event.data.tiles.forEach(tilePatch => {
-        const { x, y, tile } = tilePatch;
-        if (y >= 0 && y < next.length && x >= 0 && x < next[y].length) {
-          next[y][x] = tile;
-        }
-      });
-      gridRef.current = next;
-      return next;
-    });
-    return;
-  }
-
-  if (event.type === 'MOVE') {
-    const tileX = event.data.x;
-    const tileY = event.data.y;
-    const tileType = gridRef.current[tileY]?.[tileX];
-    const isDoor = tileType === 3;
-
-    if (event.data.entity === myPlayerIdRef.current) {
-      if (isDoor) {
-        AudioManager.play('DOOR_OPEN');
-      } else if (tileType) {
-        AudioManager.playStep(tileType);
-      } else {
-        AudioManager.play('MOVE');
-      }
-    } else {
-      const visible = visionRef?.current?.visible;
-      if (visible?.has(`${tileX},${tileY}`)) {
-        if (isDoor) {
-          AudioManager.play('DOOR_OPEN');
-        } else {
-          AudioManager.play(event.type);
-        }
-      }
-    }
-    return;
-  }
-
-  if (event.type === 'RANGED_ATTACK') {
-    const startX = event.data.x * TILE_SIZE + TILE_SIZE / 2;
-    const startY = event.data.y * TILE_SIZE + TILE_SIZE / 2;
-    const targetX = event.data.target_x * TILE_SIZE + TILE_SIZE / 2;
-    const targetY = event.data.target_y * TILE_SIZE + TILE_SIZE / 2;
-
-    // Thrown inventory items carry their own item data so they fly as the real
-    // item sprite; wands/arrows fall back to the generic projectile sprite map.
-    const thrownItem = event.data.item;
-    const spriteCoords = thrownItem ? coordsForItem(thrownItem) : null;
-
-    projectilesRef.current.push({
-      x: startX,
-      y: startY,
-      startX,
-      startY,
-      targetX,
-      targetY,
-      type: event.data.projectile || 'arrow',
-      spriteCoords,
-      progress: 0,
-      rotation: 0,
-      finished: false,
-    });
-
-    const src = event.data.source;
-    const isLocal = src === myPlayerIdRef.current;
-    const visible = visionRef?.current?.visible;
-    if (isLocal || visible?.has(`${event.data.x},${event.data.y}`)) {
-      if (thrownItem) {
-        AudioManager.play('THROW');
-      } else if (event.data.projectile === 'magic_bolt') {
-        AudioManager.play('ATTACK_MAGIC');
-      } else {
-        AudioManager.play('ATTACK_BOW');
-      }
-    }
-    return;
-  }
-
-  if (event.type === 'PICKUP' && event.data.player === myPlayerIdRef.current) {
-    AudioManager.play('PICKUP');
-    return;
-  }
-
-  if (event.type === 'STAIRS_DOWN' && event.data.player === myPlayerIdRef.current) {
-    AudioManager.play('STAIRS_DOWN');
-    return;
-  }
-
-  if (event.type === 'ATTACK') {
-    const src = event.data.source;
-    const tgt = event.data.target;
-    const damage = event.data.damage || 0;
-    const now = performance.now();
-
-    const srcMob = entitiesRef.current.mobs[src];
-    const srcPlayer = entitiesRef.current.players[src];
-    const srcEntity = srcMob || srcPlayer;
-    const tgtEntity = entitiesRef.current.mobs[tgt] || entitiesRef.current.players[tgt];
-
-    // 1) Play the attacker's swing.
-    if (srcMob) {
-      if (!mobAnimRef.current[src]) mobAnimRef.current[src] = {};
-      const attackDuration = srcMob.name === 'Goo' ? 300 : srcMob.name === 'Scorpio' ? 200 : srcMob.name === 'Rat' ? 333 : srcMob.name === 'Snake' ? 333 : 250;
-      mobAnimRef.current[src].attackUntil = now + attackDuration;
-    } else if (srcPlayer && playerAnimRef) {
-      if (!playerAnimRef.current[src]) playerAnimRef.current[src] = {};
-      playerAnimRef.current[src].attackUntil = now + PLAYER_ATTACK_DURATION;
-    }
-
-    // 2) Turn the attacker to face the target (mirrors CharSprite.turnTo).
-    if (srcEntity && tgtEntity) {
-      const dx = tgtEntity.renderPos.x - srcEntity.renderPos.x;
-      if (dx > 0) { srcEntity.facing = 'RIGHT'; srcEntity.flipX = false; }
-      else if (dx < 0) { srcEntity.facing = 'LEFT'; srcEntity.flipX = true; }
-    }
-
-    // 3) Hit reaction (flash + blood) when the swing connects.
-    if (damage > 0 && tgtEntity) {
-      const sc = srcEntity ? {
-        x: srcEntity.renderPos.x * TILE_SIZE + TILE_SIZE / 2,
-        y: srcEntity.renderPos.y * TILE_SIZE + TILE_SIZE / 2,
-      } : null;
-      const tc = {
-        x: tgtEntity.renderPos.x * TILE_SIZE + TILE_SIZE / 2,
-        y: tgtEntity.renderPos.y * TILE_SIZE + TILE_SIZE / 2,
-      };
-      const isMobTarget = !!entitiesRef.current.mobs[tgt];
-      const maxHp = tgtEntity.max_hp || 1;
-      const color = BLOOD_COLORS[tgtEntity.name] || '#bb0000';
-      const isCrit = event.data.crit;
-      const isGrim = event.data.grim_proc;
-
-      setTimeout(() => {
-        const flashDuration = isCrit ? FLASH_DURATION * 2 : FLASH_DURATION;
-        const flashUntil = performance.now() + flashDuration;
-        if (isMobTarget) {
-          if (!mobAnimRef.current[tgt]) mobAnimRef.current[tgt] = {};
-          mobAnimRef.current[tgt].flashUntil = flashUntil;
-          if (particlesRef) {
-            const awayAngle = sc ? Math.atan2(tc.y - sc.y, tc.x - sc.x) : -Math.PI / 2;
-            if (isCrit) {
-              const critCount = Math.min(Math.round(14 * Math.sqrt(damage / maxHp)), 14);
-              spawnBlood(particlesRef, tc.x, tc.y, awayAngle, critCount, '#ffcc00');
-              spawnCritSparkle(particlesRef, tc.x, tc.y, 10);
-              spawnFloatingText(floatingTextRef, tc.x, tc.y - TILE_SIZE / 2, 'CRIT!', '#ffcc00');
-            } else {
-              const count = Math.min(Math.round(9 * Math.sqrt(damage / maxHp)), 9);
-              spawnBlood(particlesRef, tc.x, tc.y, awayAngle, count, color);
-            }
-            if (isGrim) {
-              spawnGrimShadow(particlesRef, tc.x, tc.y, 8);
-            }
-          }
-        } else if (playerAnimRef) {
-          if (!playerAnimRef.current[tgt]) playerAnimRef.current[tgt] = {};
-          playerAnimRef.current[tgt].flashUntil = flashUntil;
-          if (isCrit && floatingTextRef) {
-            spawnFloatingText(floatingTextRef, tc.x, tc.y - TILE_SIZE / 2, 'CRIT!', '#ffcc00');
-          }
-          if (isGrim && floatingTextRef) {
-            spawnGrimShadow(particlesRef, tc.x, tc.y, 8);
-          }
-        }
-      }, HIT_CONNECT_DELAY);
-    }
-    return;
-  }
-
-  if (event.type === 'MISS') {
-    const tgt = event.data.target;
-    const verb = event.data.defense_verb || 'dodged';
-    const target = entitiesRef.current.mobs[tgt] || entitiesRef.current.players[tgt];
-    if (target) {
-      const visible = visionRef?.current?.visible;
-      const tx = Math.round(target.renderPos.x);
-      const ty = Math.round(target.renderPos.y);
-      const isVisible = visible?.has(`${tx},${ty}`);
-      const isLocal = tgt === myPlayerIdRef.current;
-      if (isLocal || isVisible) {
-        const cx = target.renderPos.x * TILE_SIZE + TILE_SIZE / 2;
-        const cy = target.renderPos.y * TILE_SIZE;
-        if (floatingTextRef) {
-          spawnFloatingText(floatingTextRef, cx, cy, verb, '#ffffff');
-        }
-        AudioManager.play('MISS');
-      }
-    }
-    return;
-  }
-
-  if (event.type === 'DAMAGE') {
-    const tgt = event.data.target;
-    const tgtEntity = entitiesRef.current.mobs[tgt] || entitiesRef.current.players[tgt];
-    if (!tgtEntity) return;
-    const isGrim = event.data.grim_proc;
-    const isCrit = event.data.crit;
-    const amount = event.data.amount || 0;
-    const tc = {
-      x: tgtEntity.renderPos.x * TILE_SIZE + TILE_SIZE / 2,
-      y: tgtEntity.renderPos.y * TILE_SIZE + TILE_SIZE / 2,
-    };
-    if (amount > 0 && floatingTextRef) {
-      const color = isCrit ? '#ffcc00' : '#ff6666';
-      const text = isCrit ? `${amount} CRIT!` : `-${amount}`;
-      spawnFloatingText(floatingTextRef, tc.x, tc.y - TILE_SIZE / 2, text, color);
-    }
-    if (isGrim && particlesRef) {
-      spawnGrimShadow(particlesRef, tc.x, tc.y, 8);
-    }
-    if (isCrit && floatingTextRef) {
-      spawnFloatingText(floatingTextRef, tc.x, tc.y - TILE_SIZE / 2, 'CRIT!', '#ffcc00');
-    }
-    return;
-  }
-
-  if (event.type === 'DEATH') {
-    const id = event.data.target;
-    const mob = entitiesRef.current.mobs[id];
-    if (mob) {
-      dyingMobsRef.current[id] = { ...mob, renderPos: { ...mob.renderPos }, deathStart: performance.now() };
-    }
-    return;
-  }
-
-  if (event.type === 'LEVEL_UP') {
-    if (event.data.player === myPlayerIdRef.current) {
-      onLevelUp?.({
-        level: event.data.level,
-        tier_unlocked: event.data.tier_unlocked,
-        talent_points: event.data.talent_points,
-        can_choose_subclass: event.data.can_choose_subclass,
-        can_choose_armor_ability: event.data.can_choose_armor_ability,
-      });
-    }
-    return;
-  }
-
-  if (event.type === 'SUBCLASS_CHOICE_AVAILABLE') {
-    if (event.data.player === myPlayerIdRef.current) {
-      onSubclassChoiceAvailable?.({ options: event.data.options });
-    }
-    return;
-  }
-
-  if (event.type === 'ARMOR_ABILITY_CHOICE_AVAILABLE') {
-    if (event.data.player === myPlayerIdRef.current) {
-      onArmorAbilityChoiceAvailable?.({ options: event.data.options });
-    }
-    return;
-  }
-
-  if (event.type === 'TALENT_UPGRADED') {
-    if (event.data.player === myPlayerIdRef.current) {
-      onTalentUpgraded?.({ talent: event.data.talent, level: event.data.level });
-    }
-    return;
-  }
+  return { sendSelectScrollTarget, sendStoneTarget };
 }

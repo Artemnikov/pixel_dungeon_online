@@ -1,3 +1,17 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 ArtemNikov
+#
+# Adapted from Shattered Pixel Dungeon (C) 2014-2024 Evan Debenham
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+# See the GNU General Public License for more details.
+#
 """Module-level gameplay constants for the game engine.
 
 Extracted from manager.py so the per-concern mixin modules can import them
@@ -5,14 +19,34 @@ without pulling in the whole GameInstance. manager.py re-exports these for
 backward-compatible imports.
 """
 
-MAX_FLOOR_ID = 50
+MAX_FLOOR_ID = 26
 SEWERS_MAX_FLOOR = 4
+PRISON_MAX_FLOOR = 9
 
 AUTO_MOVE_INTERVAL = 0.15
+KEY_TIME_TO_UNLOCK = 1.0
+
+# How many consecutive blocked steps a queued MOVE_TO path tolerates (a mob
+# briefly standing on the next tile) before giving up on the route.
+PATH_BLOCKED_GIVE_UP_TICKS = 6
 
 HEAL_TICK_INTERVAL = 20
 ROOM_HEAL_AMOUNT = 10
 PASSIVE_REGEN_INTERVAL = 10
+
+# Scroll of Recharging aftereffect: multiplier applied to passive wand regen
+# rate while the "recharging" buff is active (SPD: Recharging buff speeds up
+# wand charge regeneration for 30 turns).
+RECHARGING_REGEN_MULTIPLIER = 3.0
+
+# Caustic ooze (SPD Ooze): DURATION=20 turns, ~1 dmg/turn vs the depth-5 Goo,
+# washed off by stepping into water. Ticks are throttled so the real-time loop
+# applies roughly one point of damage per in-game "turn".
+OOZE_DURATION = 20
+OOZE_TICK_INTERVAL = 20  # ticks (~1s at 20Hz) between ooze damage applications
+
+# Goo water-heal cadence: ticks between each +heal_inc while standing in water.
+GOO_WATER_HEAL_INTERVAL = 20
 
 # Respawn timer: 50 turns (ticks) base
 RESPAWN_TURNS = 50

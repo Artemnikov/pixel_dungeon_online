@@ -1,13 +1,15 @@
 import {
   BACKEND_TILE,
+  CHASM_INDEX,
   QUADRANT,
   QUADRANT_NEIGHBORS,
   TERRAIN_INDEX,
   WALL_INDEX,
   hashCell,
   isGrassTile,
-  isWallStitcheable,
-  isWaterTile,
+  isSidewaysDoor,
+  isWallTile,
+  isWaterStitcheable,
 } from './constants.js';
 
 const getTile = (grid, x, y) => {
@@ -31,14 +33,6 @@ const shouldUseCornerType = (grid, x, y, matcher, quadrant) => {
 };
 
 const getFloorBase = (x, y) => pickVariant(TERRAIN_INDEX.FLOOR_VARIANTS, x, y);
-
-const tileInstr = (asset) => ({
-  srcIndex: asset.atlasIndex,
-  quadrant: QUADRANT.FULL,
-  ...(asset.rotate    != null && { rotate:    asset.rotate }),
-  ...(asset.srcOffset != null && { srcOffset: asset.srcOffset }),
-  ...(asset.crop      != null && { crop:      asset.crop }),
-});
 
 const getTerrainQuadrants = (grid, x, y, matcher, centerVariants, edgeByQuadrant, salt) => {
   const center = pickVariant(centerVariants, x, y, salt);
@@ -82,29 +76,49 @@ export const getSewerTerrainInstructions = (grid, x, y, tile, openDoors = new Se
     ];
   }
 
-  if (tile === BACKEND_TILE.DOOR.id || tile === BACKEND_TILE.LOCKED_DOOR.id) {
+  if (tile === BACKEND_TILE.DOOR.id || tile === BACKEND_TILE.OPEN_DOOR.id || tile === BACKEND_TILE.LOCKED_DOOR.id || tile === BACKEND_TILE.LOCKED_EXIT.id || tile === BACKEND_TILE.CRYSTAL_DOOR.id) {
     // Side door: when the cell above is a wall, the door is set into a
-    // vertical wall and uses the dedicated side-door body sprite. Mirrors
-    // SPD DungeonTileSheet.getRaisedDoorTile.
-    if (isWallStitcheable(getTile(grid, x, y - 1))) {
+    // vertical wall and always uses the side-door body sprite, regardless of
+    // open/closed/locked state — SPD's getRaisedDoorTile has no open-state
+    // branch here. The open/closed visual instead comes entirely from the
+    // wall cap above (DOOR_SIDEWAYS vs nothing) and the overhang cap on this
+    // same cell (DOOR_SIDEWAYS_OVERHANG vs _CLOSED), both in wallMapper.js.
+    if (isSidewaysDoor(grid, x, y, getTile)) {
       return [{ srcIndex: WALL_INDEX.RAISED_DOOR_SIDEWAYS, quadrant: QUADRANT.FULL }];
     }
-    // Top-facing door: regular door sprite. Adjacent-wall stitching is
-    // handled by wallMapper.getSewerCap (DOOR_OVERHANG family).
-    const base = tile === BACKEND_TILE.LOCKED_DOOR.id
-      ? BACKEND_TILE.LOCKED_DOOR
-      : (openDoors.has(`${x},${y}`) ? BACKEND_TILE.OPEN_DOOR : BACKEND_TILE.DOOR);
-    return [tileInstr(base)];
+    // Top-facing door: raised 3D door sprite (SPD's RAISED_DOOR family).
+    // Adjacent-wall stitching is handled by wallMapper.getSewerCap
+    // (DOOR_OVERHANG family).
+    const srcIndex = tile === BACKEND_TILE.CRYSTAL_DOOR.id
+      ? WALL_INDEX.RAISED_DOOR_CRYSTAL
+      : (tile === BACKEND_TILE.LOCKED_DOOR.id || tile === BACKEND_TILE.LOCKED_EXIT.id
+        ? WALL_INDEX.RAISED_DOOR_LOCKED
+        : (tile === BACKEND_TILE.OPEN_DOOR.id ? WALL_INDEX.RAISED_DOOR_OPEN
+          : (openDoors.has(`${x},${y}`) ? WALL_INDEX.RAISED_DOOR_OPEN : WALL_INDEX.RAISED_DOOR)));
+    return [{ srcIndex, quadrant: QUADRANT.FULL }];
   }
 
   if (tile === BACKEND_TILE.FLOOR_WATER.id) {
-    const out = [];
-    for (const q of [QUADRANT.TL, QUADRANT.TR, QUADRANT.BL, QUADRANT.BR]) {
-      if (!shouldUseCornerType(grid, x, y, isWaterTile, q)) {
-        out.push({ srcIndex: TERRAIN_INDEX.WATER_EDGE[q], quadrant: q });
-      }
+    let mask = 0;
+    if (isWaterStitcheable(getTile(grid, x, y - 1))) mask |= 1;  // top
+    if (isWaterStitcheable(getTile(grid, x + 1, y))) mask |= 2;  // right
+    if (isWaterStitcheable(getTile(grid, x, y + 1))) mask |= 4;  // bottom
+    if (isWaterStitcheable(getTile(grid, x - 1, y))) mask |= 8;  // left
+    if (mask === 0) return [];
+    return [{ srcIndex: TERRAIN_INDEX.WATER_STITCH_BASE + mask, quadrant: QUADRANT.FULL }];
+  }
+
+  if (tile === BACKEND_TILE.CHASM.id) {
+    const above = getTile(grid, x, y - 1);
+    let srcIndex = CHASM_INDEX.BASE;
+    if (isWallTile(above)) {
+      srcIndex = CHASM_INDEX.WALL;
+    } else if (above === BACKEND_TILE.FLOOR_WATER.id) {
+      srcIndex = CHASM_INDEX.WATER;
+    } else if (above !== BACKEND_TILE.VOID.id && above !== BACKEND_TILE.CHASM.id) {
+      srcIndex = CHASM_INDEX.FLOOR;
     }
-    return out;
+    return [{ srcIndex, quadrant: QUADRANT.FULL }];
   }
 
   if (tile === BACKEND_TILE.FLOOR_GRASS.id) {
@@ -121,6 +135,33 @@ export const getSewerTerrainInstructions = (grid, x, y, tile, openDoors = new Se
       )
     );
     return instructions;
+  }
+
+  if (tile === BACKEND_TILE.EMBERS.id) {
+    return [{ srcIndex: BACKEND_TILE.EMBERS.atlasIndex, quadrant: QUADRANT.FULL }];
+  }
+
+  if (tile === BACKEND_TILE.ALCHEMY.id) {
+    return [{ srcIndex: BACKEND_TILE.ALCHEMY.atlasIndex, quadrant: QUADRANT.FULL }];
+  }
+
+  if (tile === BACKEND_TILE.WELL.id) {
+    return [{ srcIndex: getFloorBase(x, y), quadrant: QUADRANT.FULL }];
+  }
+
+  if (tile === BACKEND_TILE.STATUE.id) {
+    return [{ srcIndex: BACKEND_TILE.STATUE.atlasIndex, quadrant: QUADRANT.FULL }];
+  }
+
+  if (tile === BACKEND_TILE.REGION_DECO.id) {
+    // Barrel prop -- solid but not a wall (see Gap 1), single fixed sprite,
+    // no per-cell variant hashing needed (REGION_DECO/REGION_DECO_ALT are
+    // already two distinct tile identities).
+    return [{ srcIndex: BACKEND_TILE.REGION_DECO.atlasIndex, quadrant: QUADRANT.FULL }];
+  }
+
+  if (tile === BACKEND_TILE.REGION_DECO_ALT.id) {
+    return [{ srcIndex: BACKEND_TILE.REGION_DECO_ALT.atlasIndex, quadrant: QUADRANT.FULL }];
   }
 
   if (tile === BACKEND_TILE.EMPTY_DECO.id) {

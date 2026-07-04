@@ -1,3 +1,17 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// Copyright (C) 2026 ArtemNikov
+//
+// Adapted from Shattered Pixel Dungeon (C) 2014-2024 Evan Debenham
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+// See the GNU General Public License for more details.
+//
 /*
  * SPD-style wall rendering.
  *
@@ -65,7 +79,9 @@ export const getRaisedWallFace = (grid, x, y, tile) => {
 
   const base = tile === BACKEND_TILE.WALL_DECO.id
     ? pickAlt(WALL_INDEX.RAISED_WALL_DECO, WALL_INDEX.RAISED_WALL_DECO_ALT, x, y)
-    : pickAlt(WALL_INDEX.RAISED_WALL, WALL_INDEX.RAISED_WALL_ALT, x, y);
+    : tile === BACKEND_TILE.BOOKSHELF.id
+      ? WALL_INDEX.RAISED_WALL_BOOKSHELF
+      : pickAlt(WALL_INDEX.RAISED_WALL, WALL_INDEX.RAISED_WALL_ALT, x, y);
 
   let mask = 0;
   if (!isWallStitcheable(right)) mask += 1;  // open to the right
@@ -88,7 +104,9 @@ export const getInternalWallTop = (grid, x, y, tile) => {
 
   const base = tile === BACKEND_TILE.WALL_DECO.id
     ? WALL_INDEX.WALL_INTERNAL_DECO
-    : WALL_INDEX.WALL_INTERNAL;
+    : tile === BACKEND_TILE.BOOKSHELF.id
+      ? WALL_INDEX.WALL_INTERNAL_WOODEN
+      : WALL_INDEX.WALL_INTERNAL;
 
   let mask = 0;
   if (!isWallStitcheable(right))      mask += 1;
@@ -114,7 +132,9 @@ export const getWallOverhang = (grid, x, y) => {
 
   const base = below === BACKEND_TILE.WALL_DECO.id
     ? WALL_INDEX.WALL_OVERHANG_DECO
-    : WALL_INDEX.WALL_OVERHANG;
+    : below === BACKEND_TILE.BOOKSHELF.id
+      ? WALL_INDEX.WALL_OVERHANG_WOODEN
+      : WALL_INDEX.WALL_OVERHANG;
 
   let mask = 0;
   if (!isWallStitcheable(rightBelow)) mask += 1;
@@ -136,9 +156,9 @@ export const getDoorSidewaysOverhang = (grid, x, y, tile, openDoors) => {
   const leftBelow = getTile(grid, x - 1, y + 1);
 
   let base;
-  if (tile === BACKEND_TILE.LOCKED_DOOR.id) {
+  if (tile === BACKEND_TILE.LOCKED_DOOR.id || tile === BACKEND_TILE.LOCKED_EXIT.id || tile === BACKEND_TILE.CRYSTAL_DOOR.id) {
     base = WALL_INDEX.DOOR_SIDEWAYS_OVERHANG_LOCKED;
-  } else if (openDoors?.has(`${x},${y}`)) {
+  } else if (tile === BACKEND_TILE.OPEN_DOOR.id || openDoors?.has(`${x},${y}`)) {
     base = WALL_INDEX.DOOR_SIDEWAYS_OVERHANG;
   } else {
     base = WALL_INDEX.DOOR_SIDEWAYS_OVERHANG_CLOSED;
@@ -151,25 +171,25 @@ export const getDoorSidewaysOverhang = (grid, x, y, tile, openDoors) => {
 };
 
 /**
- * Wall-only cap (WALL_INTERNAL / WALL_OVERHANG). Drawn AFTER entities so
- * walls partially obscure characters, mirroring the upper portion of SPD's
- * DungeonWallsTilemap. Door-related caps live in `getSewerDoorCap` and
- * render in the base pass — characters are never obscured by doors.
+ * Wall and door cap (WALL_INTERNAL / WALL_OVERHANG / DOOR_*). Drawn AFTER
+ * entities so walls and door overhangs partially obscure characters, mirroring
+ * the upper portion of SPD's DungeonWallsTilemap.
+ * Door overhangs were moved from the base pass to here (SPD's native order).
  */
-export const getSewerCap = (grid, x, y, tile) => {
-  const below = getTile(grid, x, y + 1);
+export const getSewerCap = (grid, x, y, tile, openDoors) => {
+  const doorCap = getSewerDoorCap(grid, x, y, tile, openDoors);
+  if (doorCap != null) return doorCap;
 
+  const below = getTile(grid, x, y + 1);
   if (!isWallStitcheable(below)) return null;
   if (isWallTile(tile)) return getInternalWallTop(grid, x, y, tile);
-  if (isDoorTile(tile)) return null;
   return getWallOverhang(grid, x, y);
 };
 
 /**
- * Door-only cap. Drawn in the base pass (BEFORE entities), so a character
- * standing on a door cell or in the floor cell above a door always renders
- * on top of the door art. `openDoors` is a Set of "x,y" strings of doors
- * currently in the open state.
+ * Door-only cap. Drawn AFTER entities so door overhangs partially obscure
+ * characters, mirroring SPD's DungeonWallsTilemap z-order (SPD-native).
+ * `openDoors` is a Set of "x,y" strings of doors currently in the open state.
  */
 export const getSewerDoorCap = (grid, x, y, tile, openDoors) => {
   const below = getTile(grid, x, y + 1);
@@ -181,14 +201,19 @@ export const getSewerDoorCap = (grid, x, y, tile, openDoors) => {
   }
 
   if (isDoorTile(below)) {
+    const isOpen = below === BACKEND_TILE.OPEN_DOOR.id || openDoors?.has(`${x},${y + 1}`);
+
     if (isWallTile(tile)) {
-      // Wall above a sideways door — vertical-wall cap with doorway.
-      return below === BACKEND_TILE.LOCKED_DOOR.id
-        ? WALL_INDEX.DOOR_SIDEWAYS_LOCKED
-        : WALL_INDEX.DOOR_SIDEWAYS;
+      // Wall above a door — SPD Block A: unconditional DOOR_SIDEWAYS
+      // for closed/locked doors (no side-wall check). NULL_TILE for open
+      // doors so the open doorway is unobstructed.
+      if (isOpen) return null;
+      if (below === BACKEND_TILE.LOCKED_DOOR.id || below === BACKEND_TILE.LOCKED_EXIT.id || below === BACKEND_TILE.CRYSTAL_DOOR.id)
+        return WALL_INDEX.DOOR_SIDEWAYS_LOCKED;
+      return WALL_INDEX.DOOR_SIDEWAYS;
     }
+
     // Floor above a top-facing door — the door-top cap sprite.
-    const isOpen = openDoors?.has(`${x},${y + 1}`);
     return isOpen ? WALL_INDEX.DOOR_OVERHANG_OPEN : WALL_INDEX.DOOR_OVERHANG;
   }
 

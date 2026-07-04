@@ -1,0 +1,122 @@
+/* Bottom HUD & Toolbar */
+.game-hud-bottom {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  pointer-events: none;
+  /* Let clicks pass through empty areas */
+}
+
+.toolbar-container {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  pointer-events: auto;
+}
+
+.toolbar {
+  display: flex;
+  flex-direction: row;
+  /* Explicitly horizontal */
+  gap: 5px;
+  background: rgba(0, 0, 0, 0.8);
+  padding: 5px;
+  border-radius: 8px;
+  border: 2px solid #444;
+}
+
+.toolbar-slot {
+  width: 50px;
+  height: 50px;
+  background: #222;
+  border: 2px solid #555;
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  cursor: pointer;
+  position: relative;
+  transition: all 0.1s;
+}
+
+.toolbar-slot:hover {
+  border-color: #f1c40f;
+  background: #333;
+}
+
+.toolbar-slot:active {
+  transform: scale(0.95);
+}
+
+.slot-number {
+  color: #555;
+  font-size: 10px;
+  position: absolute;
+  top: 2px;
+  left: 4px;
+}
+
+.toolbar-item-sprite {
+  width: 32px;
+  height: 32px;
+  overflow: hidden;
+  /* crop the overflow from scale */
+  margin-bottom: 2px;
+}
+
+.toolbar-item-name {
+  font-size: 8px;
+  color: #ccc;
+  white-space: nowrap;
+  overflow: hidden;
+  max-width: 46px;
+}
+
+.inventory-toggle-btn-bottom {
+  width: 54px;
+  /* Match toolbar height + padding */
+  height: 54px;
+  font-size: 24px;
+  background: #333;
+  border: 4px solid #555;
+  /* Match toolbar border style roughly */
+  color: white;
+  border-radius: 8px;
+  cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transition: all 0.2s;
+}
+
+.inventory-toggle-btn-bottom:hover {
+  background: #444;
+  border-color: #777;
+  transform: scale(1.05);
+}
+
+/* --- Quickslot bar --- */
+.quickslot-bar { display: flex; gap: 4px; margin: 4px 0; }
+.quickslot {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  background: #1c1c22;
+  border: 2px solid #3a3a44;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  cursor: pointer;
+}
+.quickslot.filled:hover { border-color: #f1c40f; }
+.quickslot.active { border-color: #f1c40f; box-shadow: 0 0 8px rgba(241,196,15,0.6); }
+.quickslot.placeholder { border-style: dashed; opacity: 0.6; }
