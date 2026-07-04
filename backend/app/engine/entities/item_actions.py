@@ -557,6 +557,20 @@ def action_throw(game, player, item, tx=None, ty=None) -> None:
     if isinstance(item, Seed):
         action_plant(game, player, item, tx, ty)
         return
+    from app.engine.entities.items_bombs import Bomb as _Bomb
+    if isinstance(item, _Bomb):
+        floor = game._get_or_create_floor(player.floor_id)
+        if not (0 <= tx < floor.width and 0 <= ty < floor.height):
+            return
+        removed = player.belongings.backpack.detach(item.id)
+        if removed is None:
+            return
+        if player.belongings.get_item(item.id) is None:
+            player.quickslot.convert_to_placeholder(removed)
+        game.add_event("THROW", {"player": player.id, "item": item.id, "sound": "THROW"},
+                       floor_id=player.floor_id)
+        game.light_bomb(player, floor, player.floor_id, removed, tx, ty)
+        return
     # Potions that shatter on impact and create area effects
     _FIRE_SHATTER = {"liquid_flame", "infernal_brew"}
     _GAS_SHATTER = {"toxic_gas", "paralytic_gas", "corrosive_gas", "shrouding_fog",

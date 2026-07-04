@@ -74,3 +74,49 @@ def test_adapter_maps_bomb_and_shard():
     assert b2.quantity == 2
     s = _descriptor_to_item(frozenset({"MetalShard"}), 1, 1)
     assert isinstance(s, MetalShard)
+
+
+from app.engine.entities.base import Position
+
+
+@pytest.fixture
+def game_with_player():
+    g = GameInstance("t-bombs-run")
+    p = g.add_player("p1", "Bob")
+    return g, p, g._get_or_create_floor(p.floor_id)
+
+
+def _events(g, etype):
+    return [e for e in g.events if e["type"] == etype]
+
+
+def test_throw_lights_bomb_on_floor(game_with_player):
+    g, p, floor = game_with_player
+    p.add_to_inventory(Bomb(id="b1", quantity=2))
+    tx, ty = p.pos.x + 1, p.pos.y
+    g.execute_item_action("p1", "b1", "THROW", tx, ty)
+    lit = [i for i in floor.items.values() if isinstance(i, Bomb) and i.fuse_ticks]
+    assert len(lit) == 1
+    assert lit[0].fuse_ticks == Bomb.FUSE_TICKS and lit[0].quantity == 1
+    assert p.belongings.get_item("b1").quantity == 1     # one unit detached
+    assert _events(g, "BOMB_LIT")[-1]["data"]["kind"] == "bomb"
+
+
+def test_fuse_ticks_down_and_explodes(game_with_player):
+    g, p, floor = game_with_player
+    bomb = Bomb(id="bf", fuse_ticks=2, pos=Position(x=p.pos.x + 2, y=p.pos.y))
+    floor.items["bf"] = bomb
+    g.tick_bombs(floor, p.floor_id)
+    assert floor.items["bf"].fuse_ticks == 1
+    g.tick_bombs(floor, p.floor_id)
+    assert "bf" not in floor.items                        # exploded, consumed
+    assert _events(g, "BOMB_BLAST")
+
+
+def test_pickup_snuffs_lit_bomb(game_with_player):
+    g, p, floor = game_with_player
+    floor.items["bl"] = Bomb(id="bl", fuse_ticks=30, pos=Position(x=p.pos.x + 1, y=p.pos.y))
+    g.move_entity("p1", 1, 0)
+    assert "bl" not in floor.items
+    picked = next(i for i in p.inventory if isinstance(i, Bomb))
+    assert picked.fuse_ticks is None                      # snuffed (SPD)

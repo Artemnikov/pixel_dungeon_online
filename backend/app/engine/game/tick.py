@@ -188,6 +188,7 @@ class TickMixin:
 
         for floor_id in active_ids:
             self._tick_tengu_blobs(self.floors[floor_id], floor_id)
+            self.tick_bombs(self.floors[floor_id], floor_id)
 
         self._emit_state_effects()
 

@@ -163,6 +163,19 @@ class ToastData(_EventData):
     text: str
 
 
+class BombLitData(_EventData):
+    x: int
+    y: int
+    kind: str
+
+
+class BombBlastData(_EventData):
+    x: int
+    y: int
+    kind: str
+    cells: List[List[int]]
+
+
 class AlchemyPreviewEntry(BaseModel):
     recipe_index: int
     cost: int
@@ -568,4 +581,6 @@ EVENT_MODELS = {
     "TOOLKIT_BREW": ToolkitBrewData,
     "TOOLKIT_ENERGIZE_PROMPT": ToolkitEnergizePromptData,
     "TOOLKIT_ENERGIZED": ToolkitEnergizedData,
+    "BOMB_LIT": BombLitData,
+    "BOMB_BLAST": BombBlastData,
 }

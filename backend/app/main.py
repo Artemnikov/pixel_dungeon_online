@@ -437,6 +437,7 @@ async def game_websocket(websocket: WebSocket, game_id: str, class_type: str = "
                         and i.type != "grave" and not getattr(i, 'for_sale', False)
                     ]
                     from app.engine.entities.items_consumable import Gold, Dewdrop, EnergyCrystal
+                    from app.engine.entities.items_bombs import Bomb
                     for i_id in items_to_pickup:
                         item = floor.items[i_id]
                         if isinstance(item, Gold):
@@ -449,6 +450,9 @@ async def game_websocket(websocket: WebSocket, game_id: str, class_type: str = "
                             game.add_event("PICKUP_ENERGY", {"player": player.id, "amount": item.quantity}, floor_id=player.floor_id)
                         elif isinstance(item, Dewdrop):
                             game._pickup_dewdrop(player, floor, player.floor_id, i_id, item)
+                        elif isinstance(item, Bomb) and item.fuse_ticks is not None and \
+                                game.handle_bomb_pickup(player, floor, player.floor_id, i_id, item):
+                            pass
                         elif player.add_to_inventory(item):
                             del floor.items[i_id]
                             game.add_event("PICKUP", {"player": player.id, "item": item.name}, floor_id=player.floor_id)

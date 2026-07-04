@@ -32,6 +32,7 @@ from app.engine.game.constants import (
 )
 from app.engine.game.floor_state import FloorState
 from app.engine.game.alchemy import AlchemyMixin
+from app.engine.game.bombs import BombsMixin
 from app.engine.game.armor_abilities import ArmorAbilitiesMixin
 from app.engine.game.events import EventsMixin
 from app.engine.game.floors import FloorAccessMixin
@@ -75,6 +76,7 @@ class GameInstance(
     MovementCombatMixin,
     ItemsMixin,
     AlchemyMixin,
+    BombsMixin,
     PrisonBossMixin,
     GooAIMixin,
     EyeAIMixin,

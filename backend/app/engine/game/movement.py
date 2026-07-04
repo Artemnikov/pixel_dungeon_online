@@ -26,6 +26,7 @@ from typing import Optional
 from app.engine.dungeon.generator import TileType
 from app.engine.entities.base import Faction, Position, is_immune
 from app.engine.entities.item_union import Chest
+from app.engine.entities.items_bombs import Bomb
 from app.engine.entities.items_consumable import Amulet, Dewdrop, EnergyCrystal, Gold, Key, Throwable, Waterskin
 from app.engine.entities.items_equip import Bow, MissileWeapon, SpiritBow, Staff
 from app.engine.entities.items_potions import RevivingPotion
@@ -553,6 +554,9 @@ class MovementCombatMixin:
                     del floor.items[i_id]
                     self.add_event("PICKUP_KEY", {"player": entity.id, "key_id": item.key_id, "name": item.name}, floor_id=floor_id)
                     continue
+                if isinstance(item, Bomb) and item.fuse_ticks is not None:
+                    if self.handle_bomb_pickup(entity, floor, floor_id, i_id, item):
+                        continue
                 if entity.add_to_inventory(item):
                     del floor.items[i_id]
                     self.add_event("PICKUP", {"player": entity.id, "item": item.name}, floor_id=floor_id)
