@@ -13,6 +13,8 @@ from typing import List, Tuple
 
 from app.engine.entities.base import Position
 from app.engine.entities.items_bombs import Bomb, Noisemaker
+from app.engine.entities.items_equip import EquipableItem
+from app.engine.entities.items_wands import Wand
 
 
 def _normal_int_range(lo: int, hi: int) -> int:
@@ -56,27 +58,28 @@ class BombsMixin:
 
         depth = floor_id
         victims = [e for e in self._explosion_victims(floor, floor_id, cells)]
-        for ch in victims:
-            if not ch.is_alive:
-                continue
-            dmg = _normal_int_range(4 + depth, 12 + 3 * depth)
-            if not bomb.PIERCES_ARMOR:
-                dmg -= _random.randint(ch.get_dr_min(), ch.get_dr_max())
-            if dmg > 0:
-                taken = ch.take_damage(dmg)
-                self.add_event("DAMAGE", {"target": ch.id, "amount": taken},
-                               floor_id=floor_id)
-                if not ch.is_alive and ch.id in floor.mobs:
-                    # Mirrors _blast_effect (runestone_actions.py): die() ->
-                    # DEATH event -> handle_mob_death -> roll_drops, exactly.
-                    from app.engine.systems.loot import roll_drops
-                    ch.die(floor_mobs=floor.mobs, tile_x=ch.pos.x, tile_y=ch.pos.y,
-                           players=list(self._players_on_floor(floor_id)))
-                    self.add_event("DEATH", {"target": ch.id}, floor_id=floor_id)
-                    self.handle_mob_death(ch, floor, floor_id)
-                    for drop in roll_drops(ch, self.drop_counters, ch.pos.x, ch.pos.y,
-                                            players=list(self._players_on_floor(floor_id))):
-                        floor.items[drop.id] = drop
+        if bomb.DEALS_BASE_DAMAGE:
+            for ch in victims:
+                if not ch.is_alive:
+                    continue
+                dmg = _normal_int_range(4 + depth, 12 + 3 * depth)
+                if not bomb.PIERCES_ARMOR:
+                    dmg -= _random.randint(ch.get_dr_min(), ch.get_dr_max())
+                if dmg > 0:
+                    taken = ch.take_damage(dmg)
+                    self.add_event("DAMAGE", {"target": ch.id, "amount": taken},
+                                   floor_id=floor_id)
+                    if not ch.is_alive and ch.id in floor.mobs:
+                        # Mirrors _blast_effect (runestone_actions.py): die() ->
+                        # DEATH event -> handle_mob_death -> roll_drops, exactly.
+                        from app.engine.systems.loot import roll_drops
+                        ch.die(floor_mobs=floor.mobs, tile_x=ch.pos.x, tile_y=ch.pos.y,
+                               players=list(self._players_on_floor(floor_id)))
+                        self.add_event("DEATH", {"target": ch.id}, floor_id=floor_id)
+                        self.handle_mob_death(ch, floor, floor_id)
+                        for drop in roll_drops(ch, self.drop_counters, ch.pos.x, ch.pos.y,
+                                                players=list(self._players_on_floor(floor_id))):
+                            floor.items[drop.id] = drop
 
         self._bomb_effect(floor, floor_id, bomb, cells, victims)
 
@@ -107,6 +110,9 @@ class BombsMixin:
             if item.pos is None or (item.pos.x, item.pos.y) not in cells:
                 continue
             if getattr(item, "for_sale", False) or item.type in ("grave", "chest", "scenery"):
+                continue
+            # Heap.explode: unique/upgradable/equipable items survive explosions.
+            if item.unique or isinstance(item, (EquipableItem, Wand)):
                 continue
             if isinstance(item, Bomb):
                 chained.append(item)      # detonated after this blast resolves

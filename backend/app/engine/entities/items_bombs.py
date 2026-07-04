@@ -32,6 +32,9 @@ class Bomb(ItemBase):
     DESTRUCTIVE: ClassVar[bool] = True
     FUSE_TICKS: ClassVar[int] = 40            # 2 SPD turns at 20Hz
     PIERCES_ARMOR: ClassVar[bool] = False
+    # RegrowthBomb is SPD's only damage-free bomb; Arcane/Shrapnel roll the
+    # same base formula in their Java overrides, reproduced by the core loop.
+    DEALS_BASE_DAMAGE: ClassVar[bool] = True
     DESC: ClassVar[str] = "A crude but powerful explosive. Throwing it lights the fuse; the blast harms everything nearby and tears up the terrain."
 
     def actions(self, player: Optional["Player"] = None) -> List[str]:
@@ -103,6 +106,7 @@ class RegrowthBomb(Bomb):
     name: str = "Regrowth Bomb"
     EXPLOSION_RANGE: ClassVar[int] = 3
     DESTRUCTIVE: ClassVar[bool] = False
+    DEALS_BASE_DAMAGE: ClassVar[bool] = False
     DESC: ClassVar[str] = "Instead of exploding violently, this bomb showers the area with healing energy and fresh growth."
 
     def value(self, identified: bool = False) -> int:

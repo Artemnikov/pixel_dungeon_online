@@ -195,3 +195,36 @@ def test_non_destructive_bomb_spares_items_and_terrain(game_with_player):
     g.tick_bombs(floor, p.floor_id)
     assert "loot2" in floor.items
     assert floor.grid[cy][cx + 1] == TileType.BARRICADE
+
+
+def test_regrowth_bomb_deals_no_damage(game_with_player):
+    g, p, floor = game_with_player
+    from app.engine.entities.player import Mob
+    cx, cy = p.pos.x + 3, p.pos.y
+    from app.engine.dungeon.generator import TileType
+    for x in range(cx - 3, cx + 4):
+        for y in range(cy - 3, cy + 4):
+            if 0 <= x < floor.width and 0 <= y < floor.height:
+                floor.grid[y][x] = TileType.FLOOR
+    floor.rebuild_flags()
+    m = Mob(id="mr", name="Rat", pos=Position(x=cx + 1, y=cy), hp=100, max_hp=100, faction="dungeon")
+    floor.mobs["mr"] = m
+    _place(floor, RegrowthBomb(id="rnd", fuse_ticks=1, pos=Position(x=cx, y=cy)))
+    g.tick_bombs(floor, p.floor_id)
+    assert m.hp == 100                      # SPD: regrowth bomb never harms
+
+
+def test_explosion_spares_equipment_and_uniques(game_with_player):
+    g, p, floor = game_with_player
+    from app.engine.dungeon.generator import TileType
+    cx, cy = p.pos.x + 3, p.pos.y
+    for x in range(cx - 2, cx + 3):
+        floor.grid[cy][x] = TileType.FLOOR
+    floor.rebuild_flags()
+    from app.engine.entities.items_equip import Dagger
+    from app.engine.entities.items_wands import WandOfMagicMissile
+    _place(floor, Dagger(id="dg", pos=Position(x=cx - 1, y=cy)))
+    _place(floor, WandOfMagicMissile(id="wd", pos=Position(x=cx + 1, y=cy)))
+    _place(floor, Bomb(id="beq", fuse_ticks=1, pos=Position(x=cx, y=cy)))
+    g.tick_bombs(floor, p.floor_id)
+    assert "dg" in floor.items and "wd" in floor.items
