@@ -122,6 +122,10 @@ class MapPatchData(_EventData):
     tiles: List[_Tile]
 
 
+class ItemsDestroyedData(_EventData):
+    tiles: List[dict]
+
+
 class PickupData(_EventData):
     player: str
     item: str
@@ -520,6 +524,7 @@ EVENT_MODELS = {
     "DRINK": DrinkData,
     "READ": ReadData,
     "MAP_PATCH": MapPatchData,
+    "ITEMS_DESTROYED": ItemsDestroyedData,
     "PICKUP": PickupData,
     "DROP": DropData,
     "COLLECT_DEW": CollectDewData,

@@ -120,3 +120,78 @@ def test_pickup_snuffs_lit_bomb(game_with_player):
     assert "bl" not in floor.items
     picked = next(i for i in p.inventory if isinstance(i, Bomb))
     assert picked.fuse_ticks is None                      # snuffed (SPD)
+
+
+from app.engine.dungeon.generator import TileType
+
+
+def _place(floor, item):
+    floor.items[item.id] = item
+    return item
+
+
+def test_explosion_damages_entities_in_radius(game_with_player):
+    g, p, floor = game_with_player
+    # Force open floor at the bomb/mob cells: procedural gen is seeded from
+    # the fixture's fixed game_id, so it's not guaranteed open by default.
+    floor.grid[p.pos.y][p.pos.x + 2] = TileType.FLOOR
+    floor.grid[p.pos.y][p.pos.x + 3] = TileType.FLOOR
+    floor.rebuild_flags()
+    from app.engine.entities.player import Mob
+    m = Mob(id="m1", name="Rat", pos=Position(x=p.pos.x + 3, y=p.pos.y),
+            hp=100, max_hp=100, faction="dungeon")
+    floor.mobs["m1"] = m
+    bomb = _place(floor, Bomb(id="bx", fuse_ticks=1,
+                              pos=Position(x=p.pos.x + 2, y=p.pos.y)))
+    p_hp = p.hp
+    g.tick_bombs(floor, p.floor_id)
+    # depth 1: dmg in [5..15] mean-biased, mob has no DR
+    assert 100 - m.hp >= 5
+    # player 2 tiles away from center with base range 1 -> untouched
+    assert p.hp == p_hp
+
+
+def test_explosion_destroys_floor_items_and_chains(game_with_player):
+    g, p, floor = game_with_player
+    cx, cy = p.pos.x + 3, p.pos.y
+    # Force open floor across the blast neighborhood (see comment in the
+    # radius-damage test above re: fixed fixture seed).
+    floor.grid[cy][cx - 1] = TileType.FLOOR
+    floor.grid[cy][cx] = TileType.FLOOR
+    floor.grid[cy][cx + 1] = TileType.FLOOR
+    floor.rebuild_flags()
+    _place(floor, Bomb(id="bA", fuse_ticks=1, pos=Position(x=cx, y=cy)))
+    _place(floor, Bomb(id="bB", pos=Position(x=cx + 1, y=cy)))      # unlit neighbor
+    from app.engine.entities.items_consumable import GooBlob
+    _place(floor, GooBlob(id="loot", pos=Position(x=cx - 1, y=cy)))
+    g.tick_bombs(floor, p.floor_id)
+    assert "bA" not in floor.items
+    assert "bB" not in floor.items          # chain-detonated
+    assert "loot" not in floor.items        # destroyed
+    assert len(_events(g, "BOMB_BLAST")) == 2
+
+
+def test_explosion_destroys_flammable_terrain(game_with_player):
+    g, p, floor = game_with_player
+    cx, cy = p.pos.x + 3, p.pos.y
+    floor.grid[cy][cx + 1] = TileType.BARRICADE
+    floor.grid[cy - 1][cx] = TileType.HIGH_GRASS
+    floor.rebuild_flags()
+    _place(floor, Bomb(id="bt", fuse_ticks=1, pos=Position(x=cx, y=cy)))
+    g.tick_bombs(floor, p.floor_id)
+    assert floor.grid[cy][cx + 1] != TileType.BARRICADE
+    assert floor.grid[cy - 1][cx] != TileType.HIGH_GRASS
+    assert _events(g, "MAP_PATCH")
+
+
+def test_non_destructive_bomb_spares_items_and_terrain(game_with_player):
+    g, p, floor = game_with_player
+    cx, cy = p.pos.x + 3, p.pos.y
+    floor.grid[cy][cx + 1] = TileType.BARRICADE
+    floor.rebuild_flags()
+    from app.engine.entities.items_consumable import GooBlob
+    _place(floor, GooBlob(id="loot2", pos=Position(x=cx - 1, y=cy)))
+    _place(floor, RegrowthBomb(id="br", fuse_ticks=1, pos=Position(x=cx, y=cy)))
+    g.tick_bombs(floor, p.floor_id)
+    assert "loot2" in floor.items
+    assert floor.grid[cy][cx + 1] == TileType.BARRICADE
