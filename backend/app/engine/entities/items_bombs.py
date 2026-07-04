@@ -32,6 +32,9 @@ class Bomb(ItemBase):
     DESTRUCTIVE: ClassVar[bool] = True
     FUSE_TICKS: ClassVar[int] = 40            # 2 SPD turns at 20Hz
     PIERCES_ARMOR: ClassVar[bool] = False
+    # Shrapnel alone hits by line-of-sight (ShadowCaster) instead of the
+    # flood-fill BFS every other bomb uses; see BombsMixin._explosion_cells.
+    USES_LOS: ClassVar[bool] = False
     # RegrowthBomb is SPD's only damage-free bomb; Arcane/Shrapnel roll the
     # same base formula in their Java overrides, reproduced by the core loop.
     DEALS_BASE_DAMAGE: ClassVar[bool] = True
@@ -150,6 +153,7 @@ class ShrapnelBomb(Bomb):
     name: str = "Shrapnel Bomb"
     EXPLOSION_RANGE: ClassVar[int] = 8
     DESTRUCTIVE: ClassVar[bool] = False
+    USES_LOS: ClassVar[bool] = True
     DESC: ClassVar[str] = "This bomb sprays deadly shrapnel over everything in sight of the blast."
 
     def value(self, identified: bool = False) -> int:

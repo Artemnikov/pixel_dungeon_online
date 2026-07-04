@@ -11,9 +11,10 @@ Honeypot). Tasks 4-6 extend these lists.
 from typing import List
 
 from app.engine.alchemy.recipes import (
-    BREW_ELIXIR_ONE, BREW_ELIXIR_TWO, MeatPieRecipe, SeedToPotionRecipe,
-    STEWED_ONE, STEWED_TWO, STEWED_THREE, TrinketCatalystRecipe,
-    PotionToExotic, Recipe, ScrollToExotic, ScrollToStone, UpgradeTrinketRecipe,
+    BREW_ELIXIR_ONE, BREW_ELIXIR_TWO, EnhanceBombRecipe, MeatPieRecipe,
+    SeedToPotionRecipe, STEWED_ONE, STEWED_TWO, STEWED_THREE,
+    TrinketCatalystRecipe, PotionToExotic, Recipe, ScrollToExotic, ScrollToStone,
+    UpgradeTrinketRecipe,
 )
 
 ONE_INGREDIENT_RECIPES: List[Recipe] = [
@@ -28,7 +29,8 @@ ONE_INGREDIENT_RECIPES: List[Recipe] = [
 ]
 
 TWO_INGREDIENT_RECIPES: List[Recipe] = [
-    # phase 4: Blandfruit.CookFruit; phase 2: Bomb.EnhanceBomb
+    # phase 4: Blandfruit.CookFruit
+    EnhanceBombRecipe(),
     *BREW_ELIXIR_TWO,
     STEWED_TWO,
     # needs Honeypot: ElixirOfHoneyedHealing

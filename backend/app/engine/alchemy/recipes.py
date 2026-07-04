@@ -51,6 +51,10 @@ from app.engine.entities.runestones import (
     StoneOfEnchantment, StoneOfFear, StoneOfFlock, StoneOfIntuition,
     StoneOfShock,
 )
+from app.engine.entities.items_bombs import (
+    ArcaneBomb, Bomb, Firebomb, FlashBangBomb, FrostBomb, HolyBomb, MetalShard,
+    Noisemaker, RegrowthBomb, ShrapnelBomb, SmokeBomb, WoollyBomb,
+)
 from app.engine.entities.trinkets import Trinket, TrinketCatalyst
 
 
@@ -417,6 +421,61 @@ BREW_ELIXIR_TWO = [
     SimpleRecipe(inputs=[(HealthPotion, 1), (GooBlob, 1)], energy_cost=6,
                  output_factory=ElixirOfAquaticRejuvenation),
 ]
+
+
+# Bomb.EnhanceBomb.validIngredients / bombCosts (Bomb.java) as
+# {ingredient class: (enhanced bomb class, energy cost)}. Remake's HealthPotion
+# is SPD's PotionOfHealing.
+ENHANCE_BOMB_INGREDIENTS = {
+    PotionOfFrost: (FrostBomb, 0),
+    ScrollOfMirrorImage: (WoollyBomb, 0),
+    PotionOfLiquidFlame: (Firebomb, 1),
+    ScrollOfRage: (Noisemaker, 1),
+    PotionOfInvisibility: (SmokeBomb, 2),
+    ScrollOfRecharging: (FlashBangBomb, 2),
+    HealthPotion: (RegrowthBomb, 3),
+    ScrollOfRemoveCurse: (HolyBomb, 3),
+    GooBlob: (ArcaneBomb, 6),
+    MetalShard: (ShrapnelBomb, 6),
+}
+
+
+class EnhanceBombRecipe(Recipe):
+    # Bomb.EnhanceBomb: a plain Bomb + one enhancing ingredient -> the matching
+    # enhanced bomb. SPD requires the base to be exactly Bomb (getClass().equals
+    # Bomb.class), so an already-enhanced bomb can't be re-enhanced.
+    @staticmethod
+    def _ingredient(units):
+        for u in units:
+            if type(u) in ENHANCE_BOMB_INGREDIENTS:
+                return u
+        return None
+
+    def test_ingredients(self, game, units):
+        if len(units) != 2:
+            return False
+        if not all(is_kind_identified(game, u) for u in units):
+            return False
+        has_bomb = any(type(u) is Bomb for u in units)
+        return has_bomb and self._ingredient(units) is not None
+
+    def cost(self, units):
+        ing = self._ingredient(units)
+        return ENHANCE_BOMB_INGREDIENTS[type(ing)][1] if ing else 0
+
+    def brew(self, game, units):
+        if not self.test_ingredients(game, units):
+            return None
+        return self.sample_output(game, units)
+
+    def sample_output(self, game, units):
+        ing = self._ingredient(units)
+        if ing is None:
+            return None
+        out = ENHANCE_BOMB_INGREDIENTS[type(ing)][0]()
+        out.id = new_item_id()
+        out.quantity = 1
+        return out
 
 
 class TrinketCatalystRecipe(Recipe):

@@ -292,7 +292,12 @@ def test_smoke_bomb_seeds_smoke_blob(game_with_player):
     _place(floor, SmokeBomb(id="sb", fuse_ticks=1, pos=Position(x=cx, y=cy)))
     g.tick_bombs(floor, p.floor_id)
     fog = [b for b in floor.blob_areas.values() if b["type"] == "shrouding_fog"]
-    assert fog and all(v == 40 for v in fog[0]["volume"].values())
+    assert fog
+    vol = fog[0]["volume"]
+    # Every reachable cell holds 40; unspent budget (1000-40*cells) piles onto
+    # the center so the fog lingers (SmokeBomb.java centerVolume).
+    assert all(v >= 40 for v in vol.values())
+    assert vol[(cx, cy)] == 40 + (1000 - 40 * len(vol))
     # the blob must actually tick: a mob standing in it gets blinded
     from app.engine.entities.player import Mob
     m = Mob(id="ms", name="Rat", pos=Position(x=cx, y=cy), hp=100, max_hp=100, faction="dungeon")
@@ -315,6 +320,9 @@ def test_woolly_bomb_spawns_sheep(game_with_player):
     sheep = [m for m in floor.mobs.values() if m.name == "Sheep"]
     assert len(sheep) >= 3
     assert all(s.has_buff("sheep_timer") for s in sheep)
+    # Depth 1 (non-boss): Sheep.initialize(200) +/- 2 jitter, far longer than a
+    # Stone of Flock sheep (8) -- woolly bombs make lasting barriers.
+    assert all(197 <= s.get_buff("sheep_timer").remaining <= 202 for s in sheep)
 
 
 def test_flashbang_quarter_damage_plus_paralysis(game_with_player):
@@ -329,6 +337,42 @@ def test_flashbang_quarter_damage_plus_paralysis(game_with_player):
     assert m.has_buff("paralysis")
     # base blast + quarter bonus: at depth 1 total stays well under 40
     assert 0 < (1000 - m.hp) < 40
+
+
+def test_shrapnel_bomb_blocked_by_line_of_sight(game_with_player):
+    # ShrapnelBomb hits by LOS, not flood-fill BFS: a wall directly between the
+    # blast and a target spares it, even though a BFS path wraps around the wall.
+    g, p, floor = game_with_player
+    from app.engine.entities.player import Mob
+    cx, cy = p.pos.x + 6, p.pos.y
+    _force_open_block(floor, cx, cy, 3)
+    floor.grid[cy][cx + 1] = TileType.WALL          # wall on the sightline
+    floor.rebuild_flags()
+    walled = Mob(id="mw", name="Rat", pos=Position(x=cx + 2, y=cy),
+                 hp=100, max_hp=100, faction="dungeon")
+    seen = Mob(id="ms", name="Rat", pos=Position(x=cx, y=cy + 2),
+               hp=100, max_hp=100, faction="dungeon")
+    floor.mobs.update({"mw": walled, "ms": seen})
+    _place(floor, ShrapnelBomb(id="shr", fuse_ticks=1, pos=Position(x=cx, y=cy)))
+    g.tick_bombs(floor, p.floor_id)
+    assert walled.hp == 100                          # behind the wall: spared
+    assert seen.hp < 100                             # open line of sight: hit
+
+
+def test_dm300_drops_metal_shards():
+    # DM-300.die() drops 2-4 MetalShards (Random.chances{0,0,6,3,1}), the
+    # Shrapnel Bomb reagent -- confirm the loot lands in that range and hits
+    # every count across seeds.
+    import random
+    from app.engine.entities.mobs import DM300
+    from app.engine.systems.loot import roll_drops
+    seen = set()
+    for seed in range(60):
+        random.seed(seed)
+        dm = DM300(id=f"dm{seed}", pos=Position(x=1, y=1))
+        shards = [d for d in roll_drops(dm, {}, 1, 1) if isinstance(d, MetalShard)]
+        seen.add(len(shards))
+    assert seen == {2, 3, 4}
 
 
 def test_noisemaker_arms_then_triggers_on_contact(game_with_player):
@@ -356,3 +400,95 @@ def test_armed_noisemaker_detonates_on_pickup(game_with_player):
     g.move_entity("p1", 1, 0)
     assert "nm2" not in floor.items
     assert not any(isinstance(i, Noisemaker) for i in p.inventory)
+
+
+def test_regrowth_bomb_grows_grass_and_heals_allies(game_with_player):
+    g, p, floor = game_with_player
+    from app.engine.entities.player import Mob
+    from app.engine.entities.base import Faction
+    cx, cy = p.pos.x + 4, p.pos.y
+    _force_open_block(floor, cx, cy, 3)                    # FLOOR is grass-able
+    # Injured, poisoned player and an injured allied mob within blast range.
+    p.pos = Position(x=cx + 1, y=cy)
+    p.hp = 1
+    p.add_buff("poison", duration=5.0, level=1)
+    ally = Mob(id="al", name="Ghost", pos=Position(x=cx - 1, y=cy),
+               hp=1, max_hp=50, faction=Faction.PLAYER)
+    ally.add_buff("bleeding", duration=5.0, level=1)
+    floor.mobs["al"] = ally
+    _place(floor, RegrowthBomb(id="rg", fuse_ticks=1, pos=Position(x=cx, y=cy)))
+    g.tick_bombs(floor, p.floor_id)
+    assert p.heal_left > 0 and not p.has_buff("poison")    # healed + cured
+    assert ally.hp == ally.max_hp and not ally.has_buff("bleeding")
+    assert floor.grid[cy][cx] == TileType.HIGH_GRASS       # blanketed in grass
+    assert _events(g, "MAP_PATCH")
+
+
+def test_regrowth_bomb_leaves_enemies_unhealed(game_with_player):
+    g, p, floor = game_with_player
+    from app.engine.entities.player import Mob
+    cx, cy = p.pos.x + 4, p.pos.y
+    _force_open_block(floor, cx, cy, 3)
+    enemy = Mob(id="en", name="Rat", pos=Position(x=cx + 1, y=cy),
+                hp=1, max_hp=100, faction="dungeon")
+    floor.mobs["en"] = enemy
+    _place(floor, RegrowthBomb(id="rg2", fuse_ticks=1, pos=Position(x=cx, y=cy)))
+    g.tick_bombs(floor, p.floor_id)
+    assert enemy.hp == 1                                   # dungeon faction: no heal
+
+
+# --- Bomb.EnhanceBomb recipe (Bomb.java) ------------------------------------
+from app.engine.alchemy.recipes import ENHANCE_BOMB_INGREDIENTS, EnhanceBombRecipe
+from app.engine.entities.items_consumable import GooBlob
+from app.engine.entities.items_potions import (
+    HealthPotion, PotionOfFrost, PotionOfInvisibility, PotionOfLiquidFlame,
+)
+from app.engine.entities.items_scrolls import (
+    ScrollOfMirrorImage, ScrollOfRage, ScrollOfRecharging, ScrollOfRemoveCurse,
+)
+
+
+def _rec_units(*items):
+    out = []
+    for it in items:
+        u = it.model_copy(deep=True)
+        u.quantity = 1
+        out.append(u)
+    return out
+
+
+def test_enhance_bomb_maps_every_ingredient(game):
+    r = EnhanceBombRecipe()
+    for ing_cls, (bomb_cls, energy) in ENHANCE_BOMB_INGREDIENTS.items():
+        ing = ing_cls()
+        game.identified_kinds.add(ing.kind)               # always-identified reqs
+        units = _rec_units(Bomb(), ing)
+        assert r.test_ingredients(game, units), ing_cls.__name__
+        assert r.cost(units) == energy, ing_cls.__name__
+        out = r.brew(game, units)
+        assert isinstance(out, bomb_cls) and out.quantity == 1, ing_cls.__name__
+
+
+def test_enhance_bomb_needs_identified_ingredient(game):
+    r = EnhanceBombRecipe()
+    units = _rec_units(Bomb(), PotionOfFrost())           # frost potion unknown
+    assert not r.test_ingredients(game, units)
+    game.identified_kinds.add(PotionOfFrost().kind)
+    assert r.test_ingredients(game, _rec_units(Bomb(), PotionOfFrost()))
+
+
+def test_enhance_bomb_requires_plain_base_bomb(game):
+    # SPD getClass().equals(Bomb.class): an already-enhanced bomb can't be a base.
+    r = EnhanceBombRecipe()
+    game.identified_kinds.add(PotionOfLiquidFlame().kind)
+    assert not r.test_ingredients(game, _rec_units(Firebomb(), PotionOfLiquidFlame()))
+    assert r.test_ingredients(game, _rec_units(Bomb(), PotionOfLiquidFlame()))
+
+
+def test_enhance_bomb_found_via_registry(game):
+    from app.engine.alchemy.registry import find_recipes
+    units = _rec_units(Bomb(), GooBlob())                 # GooBlob always identified
+    recipes = find_recipes(game, units)
+    assert any(isinstance(r, EnhanceBombRecipe) for r in recipes)
+    out = next(r for r in recipes if isinstance(r, EnhanceBombRecipe)).brew(game, units)
+    assert isinstance(out, ArcaneBomb)

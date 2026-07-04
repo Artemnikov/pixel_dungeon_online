@@ -69,6 +69,26 @@ def test_preview_and_brew_elixir(game_at_pot):
     assert brewed["item_kind"] == "elixir_aqua_rejuv" and brewed["cost"] == 6
 
 
+def test_preview_and_brew_enhance_bomb(game_at_pot):
+    # Bomb.EnhanceBomb through the mixin: a plain Bomb + GooBlob -> ArcaneBomb.
+    from app.engine.entities.items_bombs import ArcaneBomb, Bomb
+    g, p = game_at_pot
+    p.add_to_inventory(Bomb(id="bmb"))
+    p.add_to_inventory(GooBlob(id="gb"))
+    p.energy = 6
+
+    g.alchemy_preview("p1", ["bmb", "gb"])
+    pv = _events(g, "ALCHEMY_PREVIEW_RESULT")[-1]["data"]
+    entry = next(e for e in pv["recipes"] if e["output_kind"] == "arcane_bomb")
+    assert entry["cost"] == 6 and entry["affordable"]
+
+    g.alchemy_brew("p1", ["bmb", "gb"], entry["recipe_index"])
+    assert p.energy == 0
+    assert p.belongings.get_item("bmb") is None
+    assert p.belongings.get_item("gb") is None
+    assert len([i for i in p.inventory if isinstance(i, ArcaneBomb)]) == 1
+
+
 def test_brew_insufficient_energy_no_mutation(game_at_pot):
     g, p = game_at_pot
     g.identified_kinds.add("health_potion")

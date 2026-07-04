@@ -160,6 +160,7 @@ class BombsMixin:
             "holy_bomb": self._effect_holy_bomb,
             "woolly_bomb": self._effect_woolly_bomb,
             "flashbang_bomb": self._effect_flashbang,
+            "regrowth_bomb": self._effect_regrowth_bomb,
         }.get(bomb.kind)
         if handler:
             handler(floor, floor_id, bomb, cells, victims)
@@ -197,17 +198,24 @@ class BombsMixin:
                     del floor.blob_areas[bid]
 
     def _effect_smoke_bomb(self, floor, floor_id, bomb, cells, victims) -> None:
-        # SmokeBomb.java: SmokeScreen vol 40 per cell -> shrouding fog blob.
+        # SmokeBomb.java: SmokeScreen vol 40 per cell, then whatever of the
+        # 1000-unit (40*25) budget is left unspent when fewer than 25 cells are
+        # reachable gets dumped onto the center so the fog lingers there.
         # Blob type mirrors _shatter_gas's gas_type for the Shrouding Fog
         # potion (item_actions.py: item.effect == "shrouding_fog") so this
         # blob is indistinguishable from a thrown potion's, for blobs.py.
+        cx, cy = bomb.pos.x, bomb.pos.y
         open_cells = {c for c in cells
                       if floor.flags and not floor.flags.solid[c[1]][c[0]]}
         if not open_cells:
             return
+        volume = {c: 40 for c in open_cells}
+        excess = 1000 - 40 * len(open_cells)
+        if excess > 0 and (cx, cy) in volume:
+            volume[(cx, cy)] += excess
         floor.blob_areas[f"smoke_{bomb.id}"] = {
             "type": "shrouding_fog", "cells": set(open_cells),
-            "volume": {c: 40 for c in open_cells},
+            "volume": volume,
         }
         self.add_event("PLAY_SOUND", {"sound": "GAS"}, floor_id=floor_id)
 
@@ -239,8 +247,11 @@ class BombsMixin:
         # WoollyBomb.java: sheep on every reachable cell within range+2. Uses
         # the blast's own BFS connectivity (via _explosion_cells_radius)
         # rather than a raw diamond so sheep don't appear through walls.
+        from app.engine.dungeon.spd_levelgen.run_state import is_boss_level
         cx, cy = bomb.pos.x, bomb.pos.y
         cells4 = self._explosion_cells_radius(floor, cx, cy, bomb.EXPLOSION_RANGE + 2)
+        # Sheep.initialize(bossLevel ? 20 : 200) + Random.Float(-2, 2) jitter.
+        base_life = 20.0 if is_boss_level(floor_id) else 200.0
         placed = []
         for nx, ny in cells4:
             if floor.flags and (floor.flags.solid[ny][nx] or floor.flags.pit[ny][nx]):
@@ -256,7 +267,7 @@ class BombsMixin:
             sheep = MobEntity(id=sheep_id, name="Sheep", type="npc",
                               pos=Position(x=nx, y=ny), hp=0, max_hp=0,
                               speed=0, faction=Faction.PLAYER)
-            sheep.add_buff("sheep_timer", duration=10.0, level=1)
+            sheep.add_buff("sheep_timer", duration=base_life + _random.uniform(-2, 2), level=1)
             floor.mobs[sheep_id] = sheep
             placed.append({"id": sheep_id, "x": nx, "y": ny})
             self.add_event("WOOL_BURST", {"x": nx, "y": ny}, floor_id=floor_id)
@@ -290,8 +301,79 @@ class BombsMixin:
                     floor.items[drop.id] = drop
         self.add_event("PLAY_SOUND", {"sound": "LIGHTNING"}, floor_id=floor_id)
 
+    # PotionOfHealing.cure debuff set (PotionOfHealing.java): cleared from every
+    # player-aligned char caught in a Regrowth Bomb.
+    _REGROWTH_CURES = ("poison", "cripple", "weakness", "vulnerable", "bleeding",
+                       "blindness", "drowsy", "slow", "vertigo")
+
+    def _effect_regrowth_bomb(self, floor, floor_id, bomb, cells, victims) -> None:
+        # RegrowthBomb.java: heal + cure allies caught in the blast, blanket the
+        # reachable area in grass, and plant a few random seeds. SPD seeds a
+        # Regrowth blob that grows grass over time; the remake grows it directly
+        # (WandOfRegrowth parity). SPD's grass candidate set includes EMPTY
+        # (== remake FLOOR), so grow there too rather than reuse plant_grass,
+        # whose GRASS_TILES excludes plain floor.
+        from app.engine.entities.base import Faction
+        from app.engine.entities.player import Player
+        from app.engine.dungeon.generator import TileType
+        from app.engine.game.terrain_effects import _plant_seed_at
+
+        for ch in victims:
+            if not ch.is_alive or getattr(ch, "faction", None) != Faction.PLAYER:
+                continue
+            for b in self._REGROWTH_CURES:
+                ch.remove_buff(b)
+            if isinstance(ch, Player):
+                ch.set_heal(round(0.8 * ch.get_total_max_hp() + 14), 0.25, 0.0)
+            elif ch.max_hp > 0:
+                ch.hp = ch.max_hp
+
+        growable = {TileType.FLOOR, TileType.FLOOR_GRASS, TileType.EMPTY_DECO,
+                    TileType.EMBERS, TileType.HIGH_GRASS, TileType.FURROWED_GRASS}
+        patches, candidates = [], []
+        for (x, y) in cells:
+            if floor.grid[y][x] not in growable or (x, y) in floor.plants:
+                continue
+            occupied = any(m.is_alive and m.pos.x == x and m.pos.y == y
+                           for m in floor.mobs.values()) or any(
+                pl.pos.x == x and pl.pos.y == y
+                for pl in self._players_on_floor(floor_id))
+            if not occupied:
+                candidates.append((x, y))
+            if floor.grid[y][x] != TileType.HIGH_GRASS:
+                floor.grid[y][x] = TileType.HIGH_GRASS
+                patches.append({"x": x, "y": y, "tile": TileType.HIGH_GRASS})
+        if patches:
+            floor.rebuild_flags()
+            self.add_event("MAP_PATCH", {"tiles": patches}, floor_id=floor_id)
+
+        # 2-3 random seeds (SPD Random.chances{0,0,2,1}: index 2 w=2, index 3 w=1).
+        seed_types = ("sungrass", "earthroot", "firebloom", "icecap", "sorrowmoss",
+                      "dreamfoil", "fadeleaf", "rotberry", "starflower", "stormvine",
+                      "blindweed", "swiftthistle")
+        n_plants = _random.choices([2, 3], weights=[2, 1])[0]
+        _random.shuffle(candidates)
+        for pos in candidates[:n_plants]:
+            _plant_seed_at(floor, pos, _random.choice(seed_types))
+        self.add_event("PLAY_SOUND", {"sound": "PUFF"}, floor_id=floor_id)
+
     def _explosion_cells(self, floor, cx: int, cy: int, bomb) -> List[Tuple[int, int]]:
+        if getattr(bomb, "USES_LOS", False):
+            return self._los_explosion_cells(floor, cx, cy, bomb.EXPLOSION_RANGE)
         return self._explosion_cells_radius(floor, cx, cy, bomb.EXPLOSION_RANGE)
+
+    def _los_explosion_cells(self, floor, cx: int, cy: int, radius: int) -> List[Tuple[int, int]]:
+        # ShrapnelBomb.java: cast a losBlocking field of view from the blast and
+        # hit everything in line of sight up to `radius` — unlike the flood-fill
+        # BFS, shrapnel does not wrap around walls/corners.
+        from app.engine.mechanics import shadowcaster
+        blocking = self._effective_blocking(floor)
+        fov = shadowcaster.compute_fov(blocking, floor.width, floor.height, cx, cy, radius)
+        w = floor.width
+        x0, x1 = max(0, cx - radius), min(floor.width - 1, cx + radius)
+        y0, y1 = max(0, cy - radius), min(floor.height - 1, cy + radius)
+        return [(x, y) for y in range(y0, y1 + 1) for x in range(x0, x1 + 1)
+                if fov[y * w + x]]
 
     def _explosion_cells_radius(self, floor, cx: int, cy: int, radius: int) -> List[Tuple[int, int]]:
         # BFS distance map over non-solid cells (SPD also lets the blast
