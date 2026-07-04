@@ -228,3 +228,67 @@ def test_explosion_spares_equipment_and_uniques(game_with_player):
     _place(floor, Bomb(id="beq", fuse_ticks=1, pos=Position(x=cx, y=cy)))
     g.tick_bombs(floor, p.floor_id)
     assert "dg" in floor.items and "wd" in floor.items
+
+
+def _force_open_block(floor, cx, cy, radius=2):
+    # Force open floor around the blast: procedural gen is seeded from the
+    # fixture's fixed game_id, so it's not guaranteed open by default (see
+    # comment in the radius-damage test above re: the same fixture quirk).
+    for x in range(cx - radius, cx + radius + 1):
+        for y in range(cy - radius, cy + radius + 1):
+            if 0 <= x < floor.width and 0 <= y < floor.height:
+                floor.grid[y][x] = TileType.FLOOR
+    floor.rebuild_flags()
+
+
+def test_firebomb_seeds_fire_blob(game_with_player):
+    g, p, floor = game_with_player
+    cx, cy = p.pos.x + 4, p.pos.y
+    _force_open_block(floor, cx, cy)
+    _place(floor, Firebomb(id="fb", fuse_ticks=1, pos=Position(x=cx, y=cy)))
+    g.tick_bombs(floor, p.floor_id)
+    fires = [b for b in floor.blob_areas.values() if b["type"] == "fire"]
+    assert fires and len(fires[0]["cells"]) >= 5
+
+
+def test_frost_bomb_freezes_and_douses(game_with_player):
+    g, p, floor = game_with_player
+    from app.engine.entities.player import Mob
+    cx, cy = p.pos.x + 4, p.pos.y
+    _force_open_block(floor, cx, cy)
+    m = Mob(id="mf", name="Rat", pos=Position(x=cx + 1, y=cy), hp=100, max_hp=100, faction="dungeon")
+    floor.mobs["mf"] = m
+    floor.blob_areas["firez"] = {"type": "fire", "cells": {(cx, cy)}, "volume": {(cx, cy): 5}}
+    _place(floor, FrostBomb(id="frb", fuse_ticks=1, pos=Position(x=cx, y=cy)))
+    g.tick_bombs(floor, p.floor_id)
+    assert m.has_buff("frozen")
+    assert not any(b["type"] == "fire" and b["cells"] & {(cx, cy)}
+                   for b in floor.blob_areas.values())
+
+
+def test_holy_bomb_bonus_vs_undead_only(game_with_player):
+    g, p, floor = game_with_player
+    from app.engine.entities.player import Mob
+    import random
+    random.seed(0)  # deterministic rolls (both mobs' base+bonus draw from
+                     # the shared RNG; see tests/test_goo_boss.py for precedent)
+    cx, cy = p.pos.x + 4, p.pos.y
+    _force_open_block(floor, cx, cy)
+    undead = Mob(id="mu", name="Skeleton", pos=Position(x=cx + 1, y=cy),
+                 hp=1000, max_hp=1000, faction="dungeon", properties=["UNDEAD"])
+    living = Mob(id="ml", name="Rat", pos=Position(x=cx - 1, y=cy),
+                 hp=1000, max_hp=1000, faction="dungeon")
+    floor.mobs.update({"mu": undead, "ml": living})
+    _place(floor, HolyBomb(id="hb", fuse_ticks=1, pos=Position(x=cx, y=cy)))
+    g.tick_bombs(floor, p.floor_id)
+    # undead take the base roll plus a separate 50% holy roll
+    assert (1000 - undead.hp) > (1000 - living.hp)
+
+
+def test_smoke_bomb_seeds_smoke_blob(game_with_player):
+    g, p, floor = game_with_player
+    cx, cy = p.pos.x + 4, p.pos.y
+    _force_open_block(floor, cx, cy)
+    _place(floor, SmokeBomb(id="sb", fuse_ticks=1, pos=Position(x=cx, y=cy)))
+    g.tick_bombs(floor, p.floor_id)
+    assert any(b for b in floor.blob_areas.values() if b["type"] != "fire")

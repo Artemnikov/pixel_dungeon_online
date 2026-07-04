@@ -127,7 +127,85 @@ class BombsMixin:
 
     def _bomb_effect(self, floor, floor_id: int, bomb, cells, victims) -> None:
         # Per-kind effects: Tasks 4-6 dispatch on bomb.kind here.
-        pass
+        handler = {
+            "firebomb": self._effect_firebomb,
+            "frost_bomb": self._effect_frost_bomb,
+            "smoke_bomb": self._effect_smoke_bomb,
+            "holy_bomb": self._effect_holy_bomb,
+        }.get(bomb.kind)
+        if handler:
+            handler(floor, floor_id, bomb, cells, victims)
+
+    def _effect_firebomb(self, floor, floor_id, bomb, cells, victims) -> None:
+        # Firebomb.java: Fire blob vol 10 per open cell + BURNING sound.
+        open_cells = {c for c in cells
+                      if floor.flags and not floor.flags.solid[c[1]][c[0]]}
+        if not open_cells:
+            return
+        for bid in list(floor.blob_areas.keys()):
+            b = floor.blob_areas[bid]
+            if b.get("type") == "fire" and b.get("cells", set()) & open_cells:
+                del floor.blob_areas[bid]
+        floor.blob_areas[f"firebomb_{bomb.id}"] = {
+            "type": "fire", "cells": set(open_cells),
+            "volume": {c: 10 for c in open_cells},
+        }
+        self.add_event("PLAY_SOUND", {"sound": "BURNING"}, floor_id=floor_id)
+
+    def _effect_frost_bomb(self, floor, floor_id, bomb, cells, victims) -> None:
+        # FrostBomb.java: Freezing blob + Frost 2 turns on chars. Remake:
+        # frozen buff + douse overlapping fire blob cells.
+        for ch in victims:
+            if ch.is_alive:
+                ch.add_buff("frozen", duration=2.0, level=1)
+        for bid in list(floor.blob_areas.keys()):
+            b = floor.blob_areas[bid]
+            if b.get("type") == "fire":
+                b["cells"] = set(b["cells"]) - set(cells)
+                for c in list(b.get("volume", {})):
+                    if c in cells:
+                        del b["volume"][c]
+                if not b["cells"]:
+                    del floor.blob_areas[bid]
+
+    def _effect_smoke_bomb(self, floor, floor_id, bomb, cells, victims) -> None:
+        # SmokeBomb.java: SmokeScreen vol 40 per cell -> shrouding fog blob.
+        # Blob type mirrors _shatter_gas's gas_type for the Shrouding Fog
+        # potion (item_actions.py: item.effect == "shrouding_fog") so this
+        # blob is indistinguishable from a thrown potion's, for blobs.py.
+        open_cells = {c for c in cells
+                      if floor.flags and not floor.flags.solid[c[1]][c[0]]}
+        if not open_cells:
+            return
+        floor.blob_areas[f"smoke_{bomb.id}"] = {
+            "type": "shrouding_fog", "cells": set(open_cells),
+            "volume": {c: 40 for c in open_cells},
+        }
+        self.add_event("PLAY_SOUND", {"sound": "GAS"}, floor_id=floor_id)
+
+    def _effect_holy_bomb(self, floor, floor_id, bomb, cells, victims) -> None:
+        # HolyBomb.java: +50% of a fresh base roll to UNDEAD/DEMONIC, no DR.
+        depth = floor_id
+        for ch in victims:
+            props = getattr(ch, "properties", [])
+            if not ch.is_alive or not ("UNDEAD" in props or "DEMONIC" in props):
+                continue
+            bonus = round(_normal_int_range(4 + depth, 12 + 3 * depth) * 0.5)
+            taken = ch.take_damage(bonus)
+            self.add_event("DAMAGE", {"target": ch.id, "amount": taken},
+                           floor_id=floor_id)
+            if not ch.is_alive and ch.id in floor.mobs:
+                # Mirrors explode_bomb's own death sequence (Task 3):
+                # die() -> DEATH event -> handle_mob_death -> roll_drops.
+                from app.engine.systems.loot import roll_drops
+                ch.die(floor_mobs=floor.mobs, tile_x=ch.pos.x, tile_y=ch.pos.y,
+                       players=list(self._players_on_floor(floor_id)))
+                self.add_event("DEATH", {"target": ch.id}, floor_id=floor_id)
+                self.handle_mob_death(ch, floor, floor_id)
+                for drop in roll_drops(ch, self.drop_counters, ch.pos.x, ch.pos.y,
+                                        players=list(self._players_on_floor(floor_id))):
+                    floor.items[drop.id] = drop
+        self.add_event("PLAY_SOUND", {"sound": "READ"}, floor_id=floor_id)
 
     def _explosion_cells(self, floor, cx: int, cy: int, bomb) -> List[Tuple[int, int]]:
         # BFS distance map over non-solid cells (SPD also lets the blast
