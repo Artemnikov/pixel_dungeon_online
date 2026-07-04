@@ -28,6 +28,9 @@ class BombsMixin:
             item = floor.items.get(item_id)
             if not isinstance(item, Bomb) or item.fuse_ticks is None:
                 continue
+            if isinstance(item, Noisemaker) and item.armed:
+                self._noisemaker_tick(floor, floor_id, item)
+                continue
             item.fuse_ticks -= 1
             if item.fuse_ticks > 0:
                 continue
@@ -37,9 +40,32 @@ class BombsMixin:
                 self.explode_bomb(floor, floor_id, item)
 
     def _arm_noisemaker(self, floor, floor_id: int, bomb) -> None:
-        # Filled in fully in Task 5; arming keeps the fuse alive.
         bomb.armed = True
         bomb.fuse_ticks = 120  # 6 SPD turns between alerts
+        self.add_event("PLAY_SOUND", {"sound": "ALERT"}, floor_id=floor_id)
+
+    def _noisemaker_tick(self, floor, floor_id: int, bomb) -> None:
+        # Armed: detonate when any char stands on our cell; otherwise count
+        # down to the next alert that beckons every mob (Noisemaker.java).
+        bx, by = bomb.pos.x, bomb.pos.y
+        occupied = any(m.is_alive and m.pos.x == bx and m.pos.y == by
+                       for m in floor.mobs.values())
+        occupied = occupied or any(
+            p.is_alive and not p.is_downed and p.pos.x == bx and p.pos.y == by
+            for p in self._players_on_floor(floor_id))
+        if occupied:
+            self.explode_bomb(floor, floor_id, bomb)
+            return
+        bomb.fuse_ticks -= 1
+        if bomb.fuse_ticks <= 0:
+            bomb.fuse_ticks = 120
+            self.add_event("PLAY_SOUND", {"sound": "ALERT"}, floor_id=floor_id)
+            self.add_event("BOMB_LIT", {"x": bx, "y": by, "kind": bomb.kind},
+                           floor_id=floor_id)
+            for m in floor.mobs.values():
+                if m.is_alive and m.faction == "dungeon":
+                    m.last_known_target_pos = Position(x=bx, y=by)
+                    m.ai_state = "hunting"
 
     def explode_bomb(self, floor, floor_id: int, bomb) -> None:
         # Remove first: chain detonations must never recurse into this bomb.
@@ -132,6 +158,8 @@ class BombsMixin:
             "frost_bomb": self._effect_frost_bomb,
             "smoke_bomb": self._effect_smoke_bomb,
             "holy_bomb": self._effect_holy_bomb,
+            "woolly_bomb": self._effect_woolly_bomb,
+            "flashbang_bomb": self._effect_flashbang,
         }.get(bomb.kind)
         if handler:
             handler(floor, floor_id, bomb, cells, victims)
@@ -207,11 +235,68 @@ class BombsMixin:
                     floor.items[drop.id] = drop
         self.add_event("PLAY_SOUND", {"sound": "READ"}, floor_id=floor_id)
 
+    def _effect_woolly_bomb(self, floor, floor_id, bomb, cells, victims) -> None:
+        # WoollyBomb.java: sheep on every reachable cell within range+2. Uses
+        # the blast's own BFS connectivity (via _explosion_cells_radius)
+        # rather than a raw diamond so sheep don't appear through walls.
+        cx, cy = bomb.pos.x, bomb.pos.y
+        cells4 = self._explosion_cells_radius(floor, cx, cy, bomb.EXPLOSION_RANGE + 2)
+        placed = []
+        for nx, ny in cells4:
+            if floor.flags and (floor.flags.solid[ny][nx] or floor.flags.pit[ny][nx]):
+                continue
+            if any(m.pos.x == nx and m.pos.y == ny for m in floor.mobs.values()):
+                continue
+            if any(pl.pos.x == nx and pl.pos.y == ny
+                   for pl in self._players_on_floor(floor_id)):
+                continue
+            sheep_id = str(_uuid.uuid4())
+            from app.engine.entities.base import Faction
+            from app.engine.entities.player import Mob as MobEntity
+            sheep = MobEntity(id=sheep_id, name="Sheep", type="npc",
+                              pos=Position(x=nx, y=ny), hp=0, max_hp=0,
+                              speed=0, faction=Faction.PLAYER)
+            sheep.add_buff("sheep_timer", duration=10.0, level=1)
+            floor.mobs[sheep_id] = sheep
+            placed.append({"id": sheep_id, "x": nx, "y": ny})
+            self.add_event("WOOL_BURST", {"x": nx, "y": ny}, floor_id=floor_id)
+        if placed:
+            self.add_event("FLOCK", {"sheep": placed}, floor_id=floor_id)
+        self.add_event("PLAY_SOUND", {"sound": "PUFF"}, floor_id=floor_id)
+        self.add_event("PLAY_SOUND", {"sound": "SHEEP"}, floor_id=floor_id)
+
+    def _effect_flashbang(self, floor, floor_id, bomb, cells, victims) -> None:
+        # FlashBangBomb.java: extra quarter-roll electric damage + 10-turn
+        # paralysis + lightning arcs.
+        depth = floor_id
+        for ch in victims:
+            if not ch.is_alive:
+                continue
+            dmg = round(_normal_int_range(4 + depth, 12 + 3 * depth) / 4)
+            taken = ch.take_damage(dmg)
+            ch.add_buff("paralysis", duration=10.0, level=1)
+            self.add_event("DAMAGE", {"target": ch.id, "amount": taken,
+                                      "projectile": "lightning"}, floor_id=floor_id)
+            if not ch.is_alive and ch.id in floor.mobs:
+                # Mirrors explode_bomb's own death sequence (Task 3):
+                # die() -> DEATH event -> handle_mob_death -> roll_drops.
+                from app.engine.systems.loot import roll_drops
+                ch.die(floor_mobs=floor.mobs, tile_x=ch.pos.x, tile_y=ch.pos.y,
+                       players=list(self._players_on_floor(floor_id)))
+                self.add_event("DEATH", {"target": ch.id}, floor_id=floor_id)
+                self.handle_mob_death(ch, floor, floor_id)
+                for drop in roll_drops(ch, self.drop_counters, ch.pos.x, ch.pos.y,
+                                        players=list(self._players_on_floor(floor_id))):
+                    floor.items[drop.id] = drop
+        self.add_event("PLAY_SOUND", {"sound": "LIGHTNING"}, floor_id=floor_id)
+
     def _explosion_cells(self, floor, cx: int, cy: int, bomb) -> List[Tuple[int, int]]:
+        return self._explosion_cells_radius(floor, cx, cy, bomb.EXPLOSION_RANGE)
+
+    def _explosion_cells_radius(self, floor, cx: int, cy: int, radius: int) -> List[Tuple[int, int]]:
         # BFS distance map over non-solid cells (SPD also lets the blast
         # reach flammable solids like doors — handled with the destruction
         # pass in Task 3 by including flamable cells as traversable).
-        radius = bomb.EXPLOSION_RANGE
         seen = {(cx, cy)}
         frontier = [(cx, cy)]
         for _ in range(radius):

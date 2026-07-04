@@ -301,3 +301,58 @@ def test_smoke_bomb_seeds_smoke_blob(game_with_player):
     for _ in range(GAS_TICK_INTERVAL + 1):
         tick_blob_areas({p.floor_id: floor}, {"p1": p})
     assert m.has_buff("blindness")
+
+
+def test_woolly_bomb_spawns_sheep(game_with_player):
+    g, p, floor = game_with_player
+    cx, cy = p.pos.x + 4, p.pos.y
+    # Sheep placement reaches EXPLOSION_RANGE+2 == 4 tiles out; force that
+    # whole neighborhood open (fixed fixture seed puts walls here otherwise,
+    # see comment on _force_open_block above).
+    _force_open_block(floor, cx, cy, 4)
+    _place(floor, WoollyBomb(id="wb", fuse_ticks=1, pos=Position(x=cx, y=cy)))
+    g.tick_bombs(floor, p.floor_id)
+    sheep = [m for m in floor.mobs.values() if m.name == "Sheep"]
+    assert len(sheep) >= 3
+    assert all(s.has_buff("sheep_timer") for s in sheep)
+
+
+def test_flashbang_quarter_damage_plus_paralysis(game_with_player):
+    g, p, floor = game_with_player
+    from app.engine.entities.player import Mob
+    cx, cy = p.pos.x + 4, p.pos.y
+    _force_open_block(floor, cx, cy)
+    m = Mob(id="mz", name="Rat", pos=Position(x=cx + 1, y=cy), hp=1000, max_hp=1000, faction="dungeon")
+    floor.mobs["mz"] = m
+    _place(floor, FlashBangBomb(id="fl", fuse_ticks=1, pos=Position(x=cx, y=cy)))
+    g.tick_bombs(floor, p.floor_id)
+    assert m.has_buff("paralysis")
+    # base blast + quarter bonus: at depth 1 total stays well under 40
+    assert 0 < (1000 - m.hp) < 40
+
+
+def test_noisemaker_arms_then_triggers_on_contact(game_with_player):
+    g, p, floor = game_with_player
+    from app.engine.entities.player import Mob
+    cx, cy = p.pos.x + 4, p.pos.y
+    nm = _place(floor, Noisemaker(id="nm", fuse_ticks=1, pos=Position(x=cx, y=cy)))
+    g.tick_bombs(floor, p.floor_id)
+    assert nm.armed and "nm" in floor.items          # armed, not exploded
+    m = Mob(id="mn", name="Rat", pos=Position(x=cx + 3, y=cy), hp=100, max_hp=100, faction="dungeon")
+    floor.mobs["mn"] = m
+    for _ in range(120):                              # alert period
+        g.tick_bombs(floor, p.floor_id)
+    assert m.last_known_target_pos is not None        # beckoned
+    m.pos = Position(x=cx, y=cy)                      # steps onto it
+    g.tick_bombs(floor, p.floor_id)
+    assert "nm" not in floor.items                    # detonated
+    assert m.hp < 100
+
+
+def test_armed_noisemaker_detonates_on_pickup(game_with_player):
+    g, p, floor = game_with_player
+    nm = _place(floor, Noisemaker(id="nm2", armed=True, fuse_ticks=50,
+                                  pos=Position(x=p.pos.x + 1, y=p.pos.y)))
+    g.move_entity("p1", 1, 0)
+    assert "nm2" not in floor.items
+    assert not any(isinstance(i, Noisemaker) for i in p.inventory)
