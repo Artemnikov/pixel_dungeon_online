@@ -40,9 +40,17 @@ def test_enhanced_bomb_flags_match_java():
 
 
 def test_bomb_prices_match_java():
-    assert Firebomb().value() == 50 and HolyBomb().value() == 50
-    assert SmokeBomb().value() == 60
-    assert ShrapnelBomb().value() == 70
+    # value() overrides in items/bombs/*.java: 20+30=50 default,
+    # SmokeBomb/Noisemaker 20+40=60, ShrapnelBomb 20+50=70.
+    prices = {
+        Firebomb: 50, FrostBomb: 50, FlashBangBomb: 50, HolyBomb: 50,
+        RegrowthBomb: 50, WoollyBomb: 50, ArcaneBomb: 50,
+        SmokeBomb: 60, Noisemaker: 60,
+        ShrapnelBomb: 70,
+    }
+    for cls, price in prices.items():
+        assert cls().value() == price, cls.__name__
+        assert cls(quantity=2).value() == 2 * price, cls.__name__
 
 
 def test_lit_and_unlit_bombs_do_not_merge():

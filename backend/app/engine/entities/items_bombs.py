@@ -126,7 +126,7 @@ class Noisemaker(Bomb):
     DESC: ClassVar[str] = "Instead of exploding immediately, this bomb arms itself and blares noise, luring monsters toward it. It detonates when something reaches it."
 
     def value(self, identified: bool = False) -> int:
-        return 50 * self.quantity
+        return 60 * self.quantity
 
 
 class ArcaneBomb(Bomb):
