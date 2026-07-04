@@ -496,6 +496,32 @@ export function spawnCoin(particlesRef, cx, cy, count = 5) {
   }
 }
 
+// Bomb explosion burst, mirroring BlastParticle.FACTORY from the original: a
+// radial spray of bright additive motes flung out from the blast that shrink and
+// fade from a hot core color to a darker one. `color`/`colorEnd` tint the blast
+// so enhanced bombs read differently (frost cyan, holy gold, arcane violet, ...).
+export function spawnBombBlast(particlesRef, cx, cy, count = 24, color = '#FFDD66', colorEnd = '#992200') {
+  for (let i = 0; i < count; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const speed = 30 + Math.random() * 80;
+    const life = 0.3 + Math.random() * 0.35;
+    const size = 3 + Math.floor(Math.random() * 3);
+    particlesRef.current.push({
+      x: cx + (Math.random() - 0.5) * 6,
+      y: cy + (Math.random() - 0.5) * 6,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      life,
+      maxLife: life,
+      size,
+      color,
+      colorEnd,
+      additive: true,
+      gravity: false,
+    });
+  }
+}
+
 export function advanceAndDrawParticles(ctx, { particlesRef }) {
   const now = performance.now();
   if (lastNow == null) lastNow = now;

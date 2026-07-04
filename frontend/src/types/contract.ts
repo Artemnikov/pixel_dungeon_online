@@ -783,6 +783,18 @@ export interface WoolBurstEvent {
   data: { x: number; y: number };
 }
 
+/** A thrown bomb's fuse ignites, or an armed Noisemaker re-alerts, at a cell. */
+export interface BombLitEvent {
+  type: 'BOMB_LIT';
+  data: { x: number; y: number; kind: string };
+}
+
+/** A bomb detonates: blast centered at (x,y) covering the affected `cells`. */
+export interface BombBlastEvent {
+  type: 'BOMB_BLAST';
+  data: { x: number; y: number; kind: string; cells: [number, number][] };
+}
+
 // --- weapon enchant / armor glyph proc events --------------------------------
 
 export interface VampiricProcEvent {
@@ -1044,6 +1056,8 @@ export type GameEvent =
   | LeafBurstEvent
   | FlockEvent
   | WoolBurstEvent
+  | BombLitEvent
+  | BombBlastEvent
   | SpellSpriteEvent
   | LockedEvent
   | OpenChestEvent

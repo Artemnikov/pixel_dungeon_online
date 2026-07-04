@@ -26,6 +26,22 @@ import { TILE_SIZE, TILE_SCALE } from '../constants';
 // Matching below is substring-based (itemName.includes(key)), so more-specific keys must
 // be listed before the generic ones they contain (e.g. "Scroll Holder" before "Scroll").
 export const ITEM_SPRITES = {
+  // Bombs — items.png BOMBS row (ItemSpriteSheet.BOMBS = xy(1,6) = idx 80, so
+  // [col,row] = [idx%16, 5]). Listed before the generic "Bomb" so each enhanced
+  // bomb matches its own sprite first (substring match returns the first hit).
+  "Firebomb":         [2, 5],   // FIRE_BOMB
+  "Frost Bomb":       [3, 5],   // FROST_BOMB
+  "Regrowth Bomb":    [4, 5],   // REGROWTH_BOMB
+  "Smoke Bomb":       [5, 5],   // SMOKE_BOMB
+  "Flashbang":        [6, 5],   // FLASHBANG
+  "Holy Bomb":        [7, 5],   // HOLY_BOMB
+  "Woolly Bomb":      [8, 5],   // WOOLY_BOMB
+  "Noisemaker":       [9, 5],   // NOISEMAKER
+  "Arcane Bomb":     [10, 5],   // ARCANE_BOMB
+  "Shrapnel Bomb":   [11, 5],   // SHRAPNEL_BOMB
+  "Metal Shard":      [8, 29],  // SHARD (QUEST+8 = idx 472)
+  "Bomb":             [0, 5],   // BOMB (generic — keep last of the bomb block)
+
   // Weapons — [col,row] per docs/spd_items/07-item-sprites.md §1.
   // More-specific multi-word keys must precede shorter keys they contain
   // (e.g. "Worn Shortsword" before "Shortsword"/"Sword", "Battle Axe" before "Axe").
