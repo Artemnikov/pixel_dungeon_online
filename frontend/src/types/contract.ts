@@ -1183,7 +1183,7 @@ export type ClientMessage =
   | { type: 'EQUIP_ITEM'; item_id: string }
   | { type: 'DROP_ITEM'; item_id: string }
   | { type: 'USE_ITEM'; item_id: string }
-  | { type: 'RANGED_ATTACK'; item_id: string; target_x: number; target_y: number }
+  | { type: 'RANGED_ATTACK'; item_id: string; target_x: number; target_y: number; target_entity_id?: string | null }
   | { type: 'CHANGE_DIFFICULTY'; difficulty: Difficulty }
   | { type: 'SEARCH' }
   | { type: 'WAIT' }

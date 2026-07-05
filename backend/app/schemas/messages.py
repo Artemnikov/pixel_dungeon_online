@@ -86,6 +86,7 @@ class RangedAttack(_ClientMessageBase):
     item_id: str
     target_x: int
     target_y: int
+    target_entity_id: Optional[str] = None
 
 
 class ChangeDifficulty(_ClientMessageBase):
