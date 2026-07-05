@@ -12,8 +12,9 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 // See the GNU General Public License for more details.
 //
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import AudioManager from '../audio/AudioManager';
+import { slotTooltipText } from './slotTooltip';
 import { coordsForItem } from '../rendering/sprites';
 import { itemRects } from '../rendering/spriteRects';
 import { centeredItemCrop } from '../rendering/itemCrop';
@@ -67,6 +68,7 @@ export default function Toolbar({
   const longPressFiredRef = useRef(false);
   const zoomRef = useRef(1);
   const baseDprRef = useRef(window.devicePixelRatio || 1);
+  const [tooltip, setTooltip] = useState(null); // { text, x } | null
 
   useEffect(() => {
     const { toolbar, items, icons } = assetImages || {};
@@ -528,18 +530,45 @@ export default function Toolbar({
     }
   };
 
+  const handlePointerMove = (e) => {
+    if (e.pointerType === 'touch') return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const div = S * zoomRef.current;
+    const mx = (e.clientX - rect.left) / div;
+    const my = (e.clientY - rect.top) / div;
+    const areas = areasRef.current;
+    const hit = (a) => a && mx >= a.x && mx <= a.x + a.w && my >= a.y && my <= a.y + a.h;
+
+    for (let i = 0; i < areas.quickslots.length; i++) {
+      if (hit(areas.quickslots[i])) {
+        const text = slotTooltipText(items[i], i);
+        setTooltip(text ? { text, x: e.clientX - rect.left } : null);
+        return;
+      }
+    }
+    setTooltip(null);
+  };
+
   return (
-    <canvas
-      ref={canvasRef}
-      className="toolbar-canvas"
-      onClick={handleClick}
-      onDoubleClick={handleDoubleClick}
-      onContextMenu={handleContextMenu}
-      onPointerDown={handlePointerDown}
-      onPointerUp={handlePointerUp}
-      onPointerLeave={handlePointerUp}
-      onPointerCancel={handlePointerUp}
-      style={{ imageRendering: 'pixelated', display: 'block' }}
-    />
+    <div className="toolbar-wrap" style={{ position: 'relative' }}>
+      <canvas
+        ref={canvasRef}
+        className="toolbar-canvas"
+        onClick={handleClick}
+        onDoubleClick={handleDoubleClick}
+        onContextMenu={handleContextMenu}
+        onPointerDown={handlePointerDown}
+        onPointerUp={handlePointerUp}
+        onPointerMove={handlePointerMove}
+        onPointerLeave={(e) => { handlePointerUp(e); setTooltip(null); }}
+        onPointerCancel={handlePointerUp}
+        style={{ imageRendering: 'pixelated', display: 'block' }}
+      />
+      {tooltip && (
+        <div className="toolbar-tooltip" style={{ left: tooltip.x }}>{tooltip.text}</div>
+      )}
+    </div>
   );
 }
