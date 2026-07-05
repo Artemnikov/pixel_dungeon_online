@@ -26,6 +26,7 @@ import useDebugApi from './dev/useDebugApi';
 import useModalState from './game/useModalState';
 import useTalentFlow from './game/useTalentFlow';
 import useTargetingExamine from './game/useTargetingExamine';
+import { pickAutoAimTarget } from './game/autoAim';
 
 import StatusPane from './ui/StatusPane';
 import BossHealthBar from './ui/BossHealthBar';
@@ -228,7 +229,7 @@ function App() {
   const talent = useTalentFlow({ gameState, selectedClass, myStats, send });
   const targeting = useTargetingExamine({
     entitiesRef, visionRef, myPlayerIdRef, gridRef,
-    equippedItems, send, trapsRef,
+    equippedItems, send, trapsRef, selectedEnemyIdRef,
   });
 
   // --- infra hooks ---
@@ -422,27 +423,20 @@ function App() {
     const myPlayer = entitiesRef.current.players[myPlayerIdRef.current];
     if (!myPlayer) return;
 
-    let nearestMob = null;
-    let minDist = item.range + 1;
-
-    Object.values(entitiesRef.current.mobs).forEach(mob => {
-      if (!visionRef.current.visible.has(`${Math.round(mob.renderPos.x)},${Math.round(mob.renderPos.y)}`)) return;
-      const dx = mob.renderPos.x - myPlayer.renderPos.x;
-      const dy = mob.renderPos.y - myPlayer.renderPos.y;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      if (dist <= item.range && dist < minDist) {
-        minDist = dist;
-        nearestMob = mob;
-      }
-    });
-
-    if (nearestMob) {
-      const tx = Math.round(nearestMob.renderPos.x);
-      const ty = Math.round(nearestMob.renderPos.y);
+    // SPD QuickSlotButton.autoAim: prefer the remembered/locked target, else
+    // the nearest visible mob in range.
+    const pick = pickAutoAimTarget(
+      selectedEnemyIdRef.current,
+      entitiesRef.current.mobs,
+      visionRef.current.visible,
+      { x: myPlayer.renderPos.x, y: myPlayer.renderPos.y },
+      item.range,
+    );
+    if (pick) {
       if (item.default_action && TARGETED_ACTIONS.includes(item.default_action)) {
-        send({ type: 'EXECUTE_ITEM_ACTION', item_id: item.id, action: item.default_action, target_x: tx, target_y: ty });
+        send({ type: 'EXECUTE_ITEM_ACTION', item_id: item.id, action: item.default_action, target_x: pick.x, target_y: pick.y });
       } else {
-        send({ type: 'RANGED_ATTACK', item_id: item.id, target_x: tx, target_y: ty });
+        send({ type: 'RANGED_ATTACK', item_id: item.id, target_x: pick.x, target_y: pick.y, target_entity_id: pick.id });
       }
     }
   }, [send]);
