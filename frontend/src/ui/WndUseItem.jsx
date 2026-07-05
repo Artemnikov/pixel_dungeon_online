@@ -6,7 +6,7 @@ import { actionLabel, orderedActions, titleColor } from './itemActions';
 import { statLines } from './WndInfoItem';
 import useEntityName from './useEntityName';
 
-export default function WndUseItem({ item, onAction, onAssignQuickslot, onClose }) {
+export default function WndUseItem({ item, onAction, onAssignQuickslot, onClose, onOpenJournal }) {
   const { t } = useTranslation();
   useEffect(() => {
     const onKey = (e) => { if (e.key === 'Escape') onClose(); };
@@ -36,6 +36,15 @@ export default function WndUseItem({ item, onAction, onAssignQuickslot, onClose 
           <span style={{ color: titleColor(item) }}>
             {itemName}{level ? ` ${level}` : ''}
           </span>
+          {onOpenJournal && (
+            <button
+              className="wnd-item-journal"
+              aria-label={t('journal.guide', 'Guide')}
+              onClick={() => { AudioManager.play('CLICK'); onOpenJournal(); }}
+            >
+              i
+            </button>
+          )}
         </div>
 
         {item.description && (

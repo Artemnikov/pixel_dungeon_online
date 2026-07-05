@@ -850,6 +850,7 @@ function App() {
           energy={energy}
           strength={myStats.strength}
           isDesktop={isDesktop}
+          depth={depth}
           executeItemAction={executeItemAction}
           assignQuickslot={assignQuickslot}
           sendSelectScrollTarget={sendSelectScrollTarget}

@@ -38,6 +38,7 @@
   font-family: 'Courier New', Courier, monospace;
 }
 .wnd-item-title { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: bold; }
+.wnd-item-journal { margin-left: auto; width: 18px; height: 18px; flex: 0 0 auto; line-height: 16px; font-style: italic; font-weight: bold; border-radius: 50%; cursor: pointer; }
 .wnd-item-desc { margin: 10px 0; font-size: 12px; line-height: 1.5; color: #d8d8d8; white-space: pre-wrap; }
 .wnd-item-actions { display: flex; flex-wrap: wrap; gap: 6px; }
 .wnd-item-actions button, .rc-menu button {

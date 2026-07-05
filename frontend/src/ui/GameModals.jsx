@@ -4,6 +4,7 @@ import AudioManager from '../audio/AudioManager';
 import WndBag from './WndBag';
 import WndUseItem from './WndUseItem';
 import WndInfoItem from './WndInfoItem';
+import WndJournal from './WndJournal';
 import RightClickMenu from './RightClickMenu';
 import WndShop from './WndShop';
 import WndImp from './WndImp';
@@ -29,13 +30,14 @@ const SCROLL_PICKER_KEYS = {
 function GameModals({
   modals, itemsById, toolbarItems,
   belongings, gold, energy, strength,
-  isDesktop,
+  isDesktop, depth,
   executeItemAction, assignQuickslot, sendSelectScrollTarget, sendStoneTarget,
   send, handleToolbarClick,
 }) {
   const { t } = useTranslation();
   const [ghostEquipSlot, setGhostEquipSlot] = useState(null);
   const [inspectItem, setInspectItem] = useState(null);
+  const [journalOpen, setJournalOpen] = useState(false);
   const {
     useItemTarget, setUseItemTarget,
     ctxMenu, setCtxMenu,
@@ -70,6 +72,7 @@ function GameModals({
           onAction={executeItemAction}
           onAssignQuickslot={assignQuickslot}
           onClose={() => setUseItemTarget(null)}
+          onOpenJournal={() => { setUseItemTarget(null); setJournalOpen(true); }}
         />
       )}
 
@@ -397,6 +400,10 @@ function GameModals({
             <WndInfoItem item={itemsById[inspectItem.id] || inspectItem} />
           </div>
         </div>
+      )}
+
+      {journalOpen && (
+        <WndJournal depth={depth} onClose={() => setJournalOpen(false)} />
       )}
     </>
   );
