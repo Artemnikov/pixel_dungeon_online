@@ -18,6 +18,7 @@ import ItemIcon from './ItemIcon';
 import ItemGlyph from './ItemGlyph';
 import { HOLDER_SPRITES } from '../rendering/sprites';
 import useEntityName from './useEntityName';
+import { levelDisplayText, levelColorClass } from './itemLevelColor';
 
 // SPD-style persistent inventory pane (port of InventoryPane.java). Shows the
 // five equip slots + an inline gold/energy readout, bag tabs for nested bags,
@@ -38,11 +39,6 @@ const LONG_PRESS_MS = 450;
 
 // All Bag subtypes (generic backpack + the SPD-style category pouches/holsters).
 const BAG_KINDS = new Set(['bag', 'velvet_pouch', 'scroll_holder', 'magical_holster', 'potion_bandolier']);
-
-function levelText(item) {
-  if (!item || !item.level_known || !item.level) return null;
-  return `${item.level > 0 ? '+' : ''}${item.level}`;
-}
 
 function isIdentified(item) {
   return !!(item.level_known && item.cursed_known);
@@ -128,8 +124,8 @@ function ItemSlot({ item, holderKey, equipped, strength, empty, onOpen, onContex
         <span className="inv-qty">{item.charges}/{item.max_charges}</span>
       )}
       {badge && <span className={`inv-str ${badge.cls}`}>{badge.text}</span>}
-      {levelText(item) && (
-        <span className={`inv-level ${item.level > 0 ? 'up' : 'down'}`}>{levelText(item)}</span>
+      {levelDisplayText(item) && (
+        <span className={`inv-level ${levelColorClass(item)}`}>{levelDisplayText(item)}</span>
       )}
       {item.cursed && item.cursed_known && <span className="inv-curse">✗</span>}
     </button>
