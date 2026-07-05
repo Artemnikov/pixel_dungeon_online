@@ -152,10 +152,12 @@ export default function InventoryPane({ belongings, gold, energy, strength, onOp
   const effectiveBagId = bags.some(b => b.id === activeBagId) ? activeBagId : backpack.id;
 
   // SPD InventoryPane BAG_1..BAG_5 keys: cycle the active bag tab. Tab / ] go
-  // forward, [ goes back. Only bound while more than one bag exists.
+  // forward, [ goes back. Only bound while more than one bag exists. Keyed on a
+  // primitive id list so the effect doesn't re-subscribe every render.
+  const bagIds = bags.map(b => b.id).join(',');
   useEffect(() => {
-    if (bags.length <= 1) return;
-    const ids = bags.map(b => b.id);
+    const ids = bagIds.split(',').filter(Boolean);
+    if (ids.length <= 1) return;
     const onKey = (e) => {
       let dir = 0;
       if (e.key === 'Tab' || e.key === ']') dir = 1;
@@ -169,7 +171,7 @@ export default function InventoryPane({ belongings, gold, energy, strength, onOp
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [bags, effectiveBagId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [bagIds, effectiveBagId]);
 
   const activeBag = bags.find(b => b.id === effectiveBagId) || backpack;
   const items = (activeBag.items || []).filter(i => !BAG_KINDS.has(i.kind));

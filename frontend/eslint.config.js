@@ -26,6 +26,10 @@ export default defineConfig([
     },
     rules: {
       'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z_]' }],
+      // The React Compiler is not in our build (vite.config.js uses plain
+      // @vitejs/plugin-react), so this compiler-adoption rule only flags the
+      // codebase's intentional manual useCallback memoization with no benefit.
+      'react-hooks/preserve-manual-memoization': 'off',
     },
   },
   {
@@ -50,6 +54,10 @@ export default defineConfig([
         'error',
         { varsIgnorePattern: '^[A-Z_]', argsIgnorePattern: '^_' },
       ],
+      // The React Compiler is not in our build (vite.config.js uses plain
+      // @vitejs/plugin-react), so this compiler-adoption rule only flags the
+      // codebase's intentional manual useCallback memoization with no benefit.
+      'react-hooks/preserve-manual-memoization': 'off',
     },
   },
 ])

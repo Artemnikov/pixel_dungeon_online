@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import AudioManager from '../audio/AudioManager';
 import ItemIcon from './ItemIcon';
 import { actionLabel, orderedActions, titleColor } from './itemActions';
-import { statLines } from './WndInfoItem';
+import { statLines } from './itemStatLines';
 import useEntityName from './useEntityName';
 
 export default function WndUseItem({ item, onAction, onAssignQuickslot, onClose, onOpenJournal }) {
