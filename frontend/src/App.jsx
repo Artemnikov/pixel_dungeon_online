@@ -333,7 +333,7 @@ function App() {
     canvasRef, grid, myPlayerId, depth, assetImages, floorFadeRef,
     entitiesRef, visionRef, openDoorsRef, projectilesRef,
     trapsRef, customTilesRef, customWallsRef, torchesRef,
-    mobAnimRef, dyingMobsRef, playerAnimRef, particlesRef, searchEffectsRef, floatingTextRef, screenFlashRef, screenShakeRef, myPlayerIdRef, warnedTilesRef, transmuteEffectsRef, flareEffectsRef, spellSpriteEffectsRef, lightningRef, shieldHaloRef, stateEffectsRef, magicMissileRef, staffAmbientRef, surpriseRef, selectedEnemyIdRef, hoveredCellRef, beamRef, blobAreasRef,
+    mobAnimRef, dyingMobsRef, playerAnimRef, particlesRef, searchEffectsRef, floatingTextRef, screenFlashRef, screenShakeRef, myPlayerIdRef, warnedTilesRef, transmuteEffectsRef, flareEffectsRef, spellSpriteEffectsRef, lightningRef, shieldHaloRef, stateEffectsRef, magicMissileRef, staffAmbientRef, surpriseRef, selectedEnemyIdRef, targetingModeRef: targeting.targetingModeRef, hoveredCellRef, beamRef, blobAreasRef,
     panOffsetRef, cameraLerpRef, zoomRef,
     isRefocusingRef, isDraggingRef,
     isCameraDetachedRef, detachedCameraRef,

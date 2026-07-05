@@ -33,6 +33,7 @@ import { advanceAndDrawFloorFade } from './floorTransition';
 import { drawCharHealth } from './draw/charHealth';
 import { drawTargetHealthIndicator } from './draw/targetHealthIndicator';
 import { drawTargetedCell } from './draw/targetedCell';
+import { drawLastTargetCrosshair } from './draw/lastTargetCrosshair';
 
 export default function useGameRenderer({
   canvasRef,
@@ -75,6 +76,7 @@ export default function useGameRenderer({
   staffAmbientRef,
   surpriseRef,
   selectedEnemyIdRef,
+  targetingModeRef,
   hoveredCellRef,
   screenShakeRef,
   beamRef,
@@ -219,6 +221,7 @@ export default function useGameRenderer({
       advanceAndDrawStaffAmbient(ctx, staffAmbientRef, entitiesRef, visionRef, myPlayerId);
       drawGridCaps(ctx, { grid, depth, assetImages, visionRef, openDoorsRef });
       drawTargetedCell(ctx, { hoveredCellRef, assetImages });
+      drawLastTargetCrosshair(ctx, { targetingModeRef, selectedEnemyIdRef, entitiesRef, visionRef, assetImages });
       advanceAndDrawCheckedCells(ctx, { ref: searchEffectsRef });
       advanceAndDrawParticles(ctx, { particlesRef });
       advanceAndDrawFlares(ctx, { flareRef: flareEffectsRef });
