@@ -24,6 +24,11 @@ const EXP_FILL_SMALL  = { x: 0, y: 48, w: 17, h: 4 };
 const FRAME_W = 12;
 const FRAME_H = 15;
 
+// The HUD portrait is the hero avatar (walking sheet col 1), cropped to the row
+// matching the equipped armor tier so it reflects the gear actually worn —
+// mirrors SPD HeroSprite.avatar(), which shifts the frame by tiers().get(tier).
+const MAX_ARMOR_TIER = 6;
+
 const BUFF_SIZE = 7;
 const BUFF_COLS = 18;
 const MAX_BUFFS = 14; // matches SPD's BuffIndicator.maxBuffs default
@@ -32,6 +37,9 @@ const FLASH_RATE = Math.PI * 1.5;
 const WARNING_COLORS = ['#660000', '#cc0000', '#660000'];
 
 function lerpColor(t, colors) {
+  // t in [0,1] across the colors array (matches ColorMath.interpolate).
+  if (!Number.isFinite(t)) t = 0;
+  t = Math.max(0, Math.min(1, t));
   const seg = Math.min(Math.floor(t * (colors.length - 1)), colors.length - 2);
   const local = t * (colors.length - 1) - seg;
   const a = parseInt(colors[seg].slice(1), 16);
@@ -154,7 +162,8 @@ export default function StatusPane({ myStats, depth, exitPos, isAdmin, onSearch,
           const ac = avatarCanvas.getContext('2d');
           ac.imageSmoothingEnabled = false;
           ac.clearRect(0, 0, FRAME_W, FRAME_H);
-          ac.drawImage(sheet, FRAME_W, 0, FRAME_W, FRAME_H, 0, 0, FRAME_W, FRAME_H);
+          const armorRow = Math.max(0, Math.min(s.armorTier || 0, MAX_ARMOR_TIER)) * FRAME_H;
+          ac.drawImage(sheet, FRAME_W, armorRow, FRAME_W, FRAME_H, 0, 0, FRAME_W, FRAME_H);
 
           if (s.isDowned) {
             ac.globalCompositeOperation = 'source-atop';
