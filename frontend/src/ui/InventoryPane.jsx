@@ -65,7 +65,7 @@ function strBadge(item, strength) {
   return { text: `:${req}`, cls: strength != null && strength < req ? 'str-bad' : 'str-ok' };
 }
 
-function ItemSlot({ item, holderKey, equipped, strength, empty, onOpen, onContext, onDefaultAction, selectMode, onSelectItem, itemFilter }) {
+function ItemSlot({ item, holderKey, equipped, strength, empty, onOpen, onContext, onDefaultAction, selectMode, onSelectItem, itemFilter, onInspect }) {
   const timerRef = useRef(null);
   const longFiredRef = useRef(false);
   const itemName = useEntityName(item);
@@ -102,18 +102,25 @@ function ItemSlot({ item, holderKey, equipped, strength, empty, onOpen, onContex
       className={`inv-slot filled ${equipped ? 'equipped' : ''} ${tintClass(item)} ${selectMode && !selectable ? 'inv-slot-unselectable' : ''}`}
       title={itemName}
       onClick={handleClick}
-      onAuxClick={selectMode ? undefined : (e) => { if (e.button === 1) { e.preventDefault(); if (item.default_action) onDefaultAction(item); } }}
-      onContextMenu={selectMode ? undefined : (e) => { e.preventDefault(); AudioManager.play('CLICK'); openContext(e.clientX, e.clientY); }}
-      onPointerDown={selectMode ? undefined : (e) => {
+      onAuxClick={selectMode
+        ? (e) => { if (e.button === 1 && onInspect) { e.preventDefault(); onInspect(item); } }
+        : (e) => { if (e.button === 1) { e.preventDefault(); if (item.default_action) onDefaultAction(item); } }}
+      onContextMenu={(e) => {
+        e.preventDefault(); AudioManager.play('CLICK');
+        if (selectMode) { if (onInspect) onInspect(item); }
+        else openContext(e.clientX, e.clientY);
+      }}
+      onPointerDown={(e) => {
         if (e.pointerType !== 'touch') return;
         longFiredRef.current = false;
         timerRef.current = setTimeout(() => {
           longFiredRef.current = true;
-          openContext(e.clientX, e.clientY);
+          if (selectMode) { if (onInspect) onInspect(item); }
+          else openContext(e.clientX, e.clientY);
         }, LONG_PRESS_MS);
       }}
-      onPointerUp={selectMode ? undefined : () => { clearTimeout(timerRef.current); }}
-      onPointerLeave={selectMode ? undefined : () => { clearTimeout(timerRef.current); }}
+      onPointerUp={() => { clearTimeout(timerRef.current); }}
+      onPointerLeave={() => { clearTimeout(timerRef.current); }}
     >
       <ItemIcon item={item} size={32} />
       <ItemGlyph item={item} />
@@ -132,7 +139,7 @@ function ItemSlot({ item, holderKey, equipped, strength, empty, onOpen, onContex
   );
 }
 
-export default function InventoryPane({ belongings, gold, energy, strength, onOpenItem, onContextMenu, onDefaultAction, selectMode, onSelectItem, itemFilter }) {
+export default function InventoryPane({ belongings, gold, energy, strength, onOpenItem, onContextMenu, onDefaultAction, selectMode, onSelectItem, itemFilter, onInspect }) {
   const backpack = (belongings && belongings.backpack) || { items: [], capacity: 20 };
 
   // Bag tabs: backpack first, then any nested bags it contains.
@@ -167,6 +174,7 @@ export default function InventoryPane({ belongings, gold, energy, strength, onOp
             selectMode={selectMode}
             onSelectItem={onSelectItem}
             itemFilter={itemFilter}
+            onInspect={onInspect}
           />
         ))}
         <div className="inv-equip-right">
@@ -204,6 +212,7 @@ export default function InventoryPane({ belongings, gold, energy, strength, onOp
             selectMode={selectMode}
             onSelectItem={onSelectItem}
             itemFilter={itemFilter}
+            onInspect={onInspect}
           />
         ))}
         {Array.from({ length: emptyCount }).map((_, i) => (
