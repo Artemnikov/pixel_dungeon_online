@@ -139,7 +139,7 @@ function ItemSlot({ item, holderKey, equipped, strength, empty, onOpen, onContex
   );
 }
 
-export default function InventoryPane({ belongings, gold, energy, strength, onOpenItem, onContextMenu, onDefaultAction, selectMode, onSelectItem, itemFilter, onInspect }) {
+export default function InventoryPane({ belongings, gold, energy, strength, onOpenItem, onContextMenu, onDefaultAction, selectMode, onSelectItem, itemFilter, onInspect, prompt }) {
   const backpack = (belongings && belongings.backpack) || { items: [], capacity: 20 };
 
   // Bag tabs: backpack first, then any nested bags it contains.
@@ -198,10 +198,14 @@ export default function InventoryPane({ belongings, gold, energy, strength, onOp
           />
         ))}
         <div className="inv-equip-right">
-          <div className="inv-currency">
-            <span className="inv-gold">{gold ?? 0}<i className="inv-gold-icon" /></span>
-            {energy > 0 && <span className="inv-energy">{energy}<i className="inv-energy-icon" /></span>}
-          </div>
+          {prompt ? (
+            <div className="inv-prompt">{prompt}</div>
+          ) : (
+            <div className="inv-currency">
+              <span className="inv-gold">{gold ?? 0}<i className="inv-gold-icon" /></span>
+              {energy > 0 && <span className="inv-energy">{energy}<i className="inv-energy-icon" /></span>}
+            </div>
+          )}
           {bags.length > 1 && (
             <div className="inv-bag-tabs">
               {bags.map(b => (

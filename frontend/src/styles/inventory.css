@@ -146,6 +146,14 @@
   gap: 4px;
   padding-right: 4px;
 }
+.inv-prompt {
+  font-size: 12px;
+  color: #ffff88;
+  max-width: 160px;
+  text-align: right;
+  padding-right: 4px;
+  align-self: center;
+}
 .inv-gold { color: #f1c40f; font-size: 14px; display: inline-flex; align-items: center; gap: 4px; }
 .inv-energy { color: #44ccff; font-size: 13px; display: inline-flex; align-items: center; gap: 4px; }
 .inv-gold-icon, .inv-energy-icon {

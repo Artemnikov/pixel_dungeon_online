@@ -19,12 +19,12 @@ export default function WndBag({ belongings, gold, energy, strength, onOpenItem,
         >
           ✕
         </button>
-        {title && <div className="wnd-bag-title">{title}</div>}
         <InventoryPane
           belongings={belongings}
           gold={gold}
           energy={energy}
           strength={strength}
+          prompt={title}
           onOpenItem={onOpenItem}
           onContextMenu={onContextMenu}
           onDefaultAction={onDefaultAction}
