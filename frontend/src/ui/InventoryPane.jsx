@@ -12,7 +12,7 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 // See the GNU General Public License for more details.
 //
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import AudioManager from '../audio/AudioManager';
 import ItemIcon from './ItemIcon';
 import ItemGlyph from './ItemGlyph';
@@ -150,6 +150,26 @@ export default function InventoryPane({ belongings, gold, energy, strength, onOp
   // Fall back to the backpack if the selected bag is gone (e.g. dropped) without
   // a state write — derive the effective id each render instead.
   const effectiveBagId = bags.some(b => b.id === activeBagId) ? activeBagId : backpack.id;
+
+  // SPD InventoryPane BAG_1..BAG_5 keys: cycle the active bag tab. Tab / ] go
+  // forward, [ goes back. Only bound while more than one bag exists.
+  useEffect(() => {
+    if (bags.length <= 1) return;
+    const ids = bags.map(b => b.id);
+    const onKey = (e) => {
+      let dir = 0;
+      if (e.key === 'Tab' || e.key === ']') dir = 1;
+      else if (e.key === '[') dir = -1;
+      else return;
+      e.preventDefault();
+      const cur = ids.indexOf(effectiveBagId);
+      const next = ids[(cur + dir + ids.length) % ids.length];
+      AudioManager.play('CLICK');
+      setActiveBagId(next);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [bags, effectiveBagId]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const activeBag = bags.find(b => b.id === effectiveBagId) || backpack;
   const items = (activeBag.items || []).filter(i => !BAG_KINDS.has(i.kind));
