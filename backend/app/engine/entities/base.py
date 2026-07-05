@@ -391,6 +391,16 @@ class ItemBase(BaseModel):
     def is_identified(self) -> bool:
         return self.level_known and self.cursed_known
 
+    def visibly_upgraded(self) -> int:
+        # SPD Item.visiblyUpgraded(): the upgrade level shown to the player,
+        # or 0 while the level is still unknown.
+        return self.level if self.level_known else 0
+
+    def buffed_visibly_upgraded(self) -> int:
+        # SPD Item.buffedVisiblyUpgraded(): same as visiblyUpgraded() unless a
+        # temporary modifier applies (e.g. a Staff's imbued wand raises it).
+        return self.visibly_upgraded()
+
     def is_similar(self, other: "ItemBase") -> bool:
         return (
             type(self) is type(other)
