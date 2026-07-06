@@ -2,7 +2,7 @@ import { TILE_SIZE } from '../../constants';
 import AudioManager from '../../audio/AudioManager';
 import { spawnFlameBurst } from '../../rendering/draw/flameParticle';
 import { spawnElmo } from '../../rendering/draw/elmoParticle';
-import { spawnWhiteSplash, spawnSewerBarrelBurst, spawnLeafForRegion, spawnEnergy, spawnBoneRattle, spawnCoin } from '../../rendering/draw/particles';
+import { spawnWhiteSplash, spawnSewerBarrelBurst, spawnLeafForRegion, spawnEnergy, spawnBoneRattle, spawnCoin, spawnBombBlast, spawnDust, spawnCritSparkle } from '../../rendering/draw/particles';
 import { spawnScreenShake } from '../../rendering/draw/screenShake';
 import { BACKEND_TILE } from '../../rendering/sewers/constants';
 import { regionForDepth } from '../../rendering/regions';
@@ -11,6 +11,18 @@ import { spawnSpellSprite } from '../../rendering/draw/spellSprite';
 import { updateBlobArea, removeBlobArea } from '../../rendering/draw/blobArea';
 import type { GameEvent } from '../../types/contract';
 import type { HandlerCtx } from '../types';
+
+// Per-kind blast tint [hot core, cooled edge]. Default is a fiery orange; the
+// enhanced bombs read distinctly. Firebomb keeps the fiery default.
+const BOMB_BLAST_TINT: Record<string, [string, string]> = {
+  frost_bomb: ['#AEE6FF', '#2C79B8'],
+  smoke_bomb: ['#CFCFCF', '#5A5A5A'],
+  holy_bomb: ['#FFF3B0', '#C99A00'],
+  flashbang_bomb: ['#FFFFFF', '#7FA8FF'],
+  arcane_bomb: ['#E4B4FF', '#6A22AA'],
+  regrowth_bomb: ['#BFF7A0', '#2E7D32'],
+  woolly_bomb: ['#FFFFFF', '#BFBFBF'],
+};
 
 export function handleWorldEvents(event: GameEvent, ctx: HandlerCtx): boolean {
   const { particlesRef, visionRef, stateEffectsRef, spellSpriteEffectsRef, blobAreasRef, setGrid, gridRef, depth, screenShakeRef } = ctx;
@@ -97,6 +109,50 @@ export function handleWorldEvents(event: GameEvent, ctx: HandlerCtx): boolean {
       gridRef.current = next;
       return next;
     });
+    return true;
+  }
+
+  if (event.type === 'WOOL_BURST' && particlesRef) {
+    const { x, y } = event.data;
+    if (!visionRef || visionRef.current?.visible?.has(`${x},${y}`)) {
+      spawnWhiteSplash(particlesRef, x * TILE_SIZE + TILE_SIZE / 2, y * TILE_SIZE + TILE_SIZE / 2, 4);
+    }
+    return true;
+  }
+
+  if (event.type === 'FLOCK' && particlesRef && visionRef) {
+    const sheep = event.data.sheep || [];
+    for (const s of sheep) {
+      if (visionRef.current?.visible?.has(`${s.x},${s.y}`)) {
+        spawnWhiteSplash(particlesRef, s.x * TILE_SIZE + TILE_SIZE / 2, s.y * TILE_SIZE + TILE_SIZE / 2, 4);
+      }
+    }
+    return true;
+  }
+
+  if (event.type === 'BOMB_LIT') {
+    const { x, y } = event.data;
+    if (particlesRef && (!visionRef || visionRef.current?.visible?.has(`${x},${y}`))) {
+      spawnCritSparkle(particlesRef, x * TILE_SIZE + TILE_SIZE / 2, y * TILE_SIZE + TILE_SIZE / 2, 5, '#FF5522');
+    }
+    return true;
+  }
+
+  if (event.type === 'BOMB_BLAST') {
+    const { x, y, kind, cells } = event.data;
+    const [core, edge] = BOMB_BLAST_TINT[kind] ?? ['#FFDD66', '#992200'];
+    if (particlesRef) {
+      if (!visionRef || visionRef.current?.visible?.has(`${x},${y}`)) {
+        spawnBombBlast(particlesRef, x * TILE_SIZE + TILE_SIZE / 2, y * TILE_SIZE + TILE_SIZE / 2, 26, core, edge);
+        spawnScreenShake(screenShakeRef, 1, 220);
+      }
+      for (const cell of cells ?? []) {
+        const [cxx, cyy] = cell;
+        if (!visionRef || visionRef.current?.visible?.has(`${cxx},${cyy}`)) {
+          spawnDust(particlesRef, cxx * TILE_SIZE + TILE_SIZE / 2, cyy * TILE_SIZE + TILE_SIZE / 2, 3, '#8a8a8a');
+        }
+      }
+    }
     return true;
   }
 

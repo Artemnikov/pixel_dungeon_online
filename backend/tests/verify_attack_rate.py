@@ -7,7 +7,8 @@ import uuid
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 from app.engine.manager import GameInstance
-from app.engine.entities.base import CharacterClass, KindOfWeapon
+from app.engine.entities.items_equip import KindOfWeapon
+from app.engine.entities.player import CharacterClass
 
 def test_attack_rate():
     print("Initializing Game...")
@@ -28,7 +29,8 @@ def test_attack_rate():
     # We don't want to rely on random gen
     
     # Manually place mob
-    from app.engine.entities.base import Mob, Position, Faction
+    from app.engine.entities.base import Position, Faction
+    from app.engine.entities.player import Mob
     mob = Mob(
         id=mob_id,
         name="Test Rat",

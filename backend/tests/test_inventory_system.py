@@ -1,11 +1,14 @@
 """Unit tests for the ported SPD inventory system: stacking, nested category
 bags, equip slots, quickslot placeholders, and curse handling."""
 import pytest
-from app.engine.entities.base import (
-    Player, Position, Belongings, Bag, PotionBandolier, ScrollHolder,
-    MeleeWeapon, Armor, Ring, Wand, HealthPotion, RevivingPotion, Scroll,
-    QuickSlot, Action, VelvetPouch, Seed, GooBlob, Stone,
-)
+from app.engine.entities.base import Position, Action
+from app.engine.entities.item_union import Bag, PotionBandolier, ScrollHolder, VelvetPouch
+from app.engine.entities.items_consumable import Seed, GooBlob, Stone
+from app.engine.entities.items_equip import MeleeWeapon, Armor, Ring
+from app.engine.entities.items_potions import HealthPotion, RevivingPotion
+from app.engine.entities.items_scrolls import Scroll
+from app.engine.entities.items_wands import Wand
+from app.engine.entities.player import Player, Belongings, QuickSlot
 
 
 def make_player(strength=10):

@@ -20,103 +20,33 @@ Backs the admin "give item" debug tool (`GET /api/items/catalog` and the
 
 from typing import Callable, List, Optional, TypedDict
 
-from app.engine.entities.base import (
-    Amulet,
-    Armor,
-    Artifact,
-    Bag,
-    Berry,
-    Boomerang,
-    Bow,
-    BrokenSeal,
-    SpiritBow,
-    ChargrilledMeat,
-    CloakOfShadows,
-    DriedRose,
-    Dagger,
-    Dewdrop,
-    DwarfToken,
-    ElixirOfAquaticRejuvenation,
-    Food,
-    FuryPotion,
-    GooBlob,
-    Petal,
-    Gold,
-    HealthPotion,
-    ItemBase,
-    Key,
-    KingsCrown,
-    MagicalHolster,
-    MeleeWeapon,
-    MissileWeapon,
-    MysteryMeat,
-    Pasty,
-    Potion,
-    PotionBandolier,
-    PotionOfExperience,
-    PotionOfFrost,
-    PotionOfHaste,
-    PotionOfInvisibility,
-    PotionOfLevitation,
-    PotionOfLiquidFlame,
-    PotionOfMindVision,
-    PotionOfParalyticGas,
-    PotionOfPurity,
-    PotionOfStrength,
-    PotionOfToxicGas,
-    Ration,
-    RevivingPotion,
-    Ring,
-    RingOfAccuracy,
-    RingOfEvasion,
-    RingOfHaste,
-    RingOfFuror,
-    RingOfMight,
-    RingOfTenacity,
-    RingOfEnergy,
-    RingOfArcana,
-    RingOfSharpshooting,
-    Scroll,
-    ScrollHolder,
-    ScrollOfIdentify,
-    ScrollOfLullaby,
-    ScrollOfMagicMapping,
-    ScrollOfMetamorphosis,
-    ScrollOfMirrorImage,
-    ScrollOfRage,
-    ScrollOfRecharging,
-    ScrollOfRemoveCurse,
-    ScrollOfRetribution,
-    ScrollOfTeleportation,
-    ScrollOfTerror,
-    ScrollOfTransmutation,
-    ScrollOfUpgrade,
-    Seed,
-    SmallRation,
-    Staff,
-    Stone,
-    Throwable,
-    ThrowableDagger,
-    TenguMask,
-    VelvetPouch,
-    Wand,
-    WandOfMagicMissile,
-    WandOfFireblast,
-    WandOfFrost,
-    WandOfLightning,
-    WandOfDisintegration,
-    WandOfPrismaticLight,
-    WandOfBlastWave,
-    WandOfTransfusion,
-    WandOfCorrosion,
-    WandOfCorruption,
-    WandOfRegrowth,
-    WandOfWarding,
-    WandOfLivingEarth,
-    Waterskin,
-    WornShortsword,
-)
+from app.engine.entities.base import ItemBase
+from app.engine.entities.rings import RingOfAccuracy, RingOfEvasion, RingOfHaste, RingOfFuror, RingOfMight, RingOfTenacity, RingOfEnergy, RingOfArcana, RingOfSharpshooting
+from app.engine.entities.item_union import Bag, MagicalHolster, PotionBandolier, ScrollHolder, VelvetPouch
+from app.engine.entities.items_artifacts import BrokenSeal, CloakOfShadows, DriedRose, Petal
+from app.engine.entities.items_consumable import Amulet, Berry, Boomerang, ChargrilledMeat, Dewdrop, DwarfToken, EnergyCrystal, Food, GooBlob, Gold, Key, KingsCrown, MeatPie, MysteryMeat, Pasty, Ration, Seed, SmallRation, Stone, StewedMeat, Throwable, ThrowableDagger, TenguMask, Waterskin, ArcaneStylus, MagicalInfusion
+from app.engine.entities.items_equip import Armor, ClothArmor, LeatherArmor, MailArmor, ScaleArmor, PlateArmor, Artifact, Bow, SpiritBow, Dagger, MeleeWeapon, MissileWeapon, Ring, Staff, WornShortsword
+from app.engine.entities.items_potions import ElixirOfAquaticRejuvenation, FuryPotion, HealthPotion, Potion, PotionOfExperience, PotionOfFrost, PotionOfHaste, PotionOfInvisibility, PotionOfLevitation, PotionOfLiquidFlame, PotionOfMindVision, PotionOfParalyticGas, PotionOfPurity, PotionOfStrength, PotionOfToxicGas, RevivingPotion
+from app.engine.entities.items_scrolls import Scroll, ScrollOfIdentify, ScrollOfLullaby, ScrollOfMagicMapping, ScrollOfMetamorphosis, ScrollOfMirrorImage, ScrollOfRage, ScrollOfRecharging, ScrollOfRemoveCurse, ScrollOfRetribution, ScrollOfTeleportation, ScrollOfTerror, ScrollOfTransmutation, ScrollOfUpgrade, ScrollOfEnchantment, ExoticScrollOfEnchantment
+from app.engine.entities.items_wands import Wand, WandOfMagicMissile, WandOfFireblast, WandOfFrost, WandOfLightning, WandOfDisintegration, WandOfPrismaticLight, WandOfBlastWave, WandOfTransfusion, WandOfCorrosion, WandOfCorruption, WandOfRegrowth, WandOfWarding, WandOfLivingEarth
+from app.engine.entities.weapon_defs import WEP_TIER_ORDER
+from app.engine.entities.items_equip import make_named_melee_weapon
 from app.engine.entities.rings_tier3 import RingOfForce, RingOfElements, RingOfWealth  # noqa: E402
+from app.engine.entities.runestones import (  # noqa: E402
+    StoneOfBlast, StoneOfBlink, StoneOfDeepSleep, StoneOfClairvoyance,
+    StoneOfAggression, StoneOfFlock, StoneOfShock, StoneOfFear,
+    StoneOfDetectMagic, StoneOfIntuition, StoneOfEnchantment, StoneOfAugmentation,
+)
+from app.engine.entities.items_bombs import (  # noqa: E402
+    Bomb, Firebomb, FrostBomb, SmokeBomb, FlashBangBomb, HolyBomb,
+    RegrowthBomb, WoollyBomb, Noisemaker, ArcaneBomb, ShrapnelBomb, MetalShard,
+)
+from app.engine.entities.trinkets import (  # noqa: E402
+    CrackedSpyglass, ChaoticCenser, DimensionalSundial, ExoticCrystals,
+    EyeOfNewt, FerretTuft, MimicTooth, MossyClump, ParchmentScrap,
+    PetrifiedSeed, RatSkull, SaltCube, ShardOfOblivion, ThirteenLeafClover,
+    TrapMechanism, TrinketCatalyst, VialOfBlood, WondrousResin,
+)
 
 
 class ItemCatalogEntry(TypedDict):
@@ -132,13 +62,47 @@ _CATALOG: List[tuple] = [
     ("melee_weapon", "Short Sword", "weapon", lambda: MeleeWeapon(name="Short Sword", tier=1)),
     ("dagger", "Dagger", "weapon", lambda: Dagger()),
     ("worn_shortsword", "Worn Shortsword", "weapon", lambda: WornShortsword()),
+    ("gloves", "Gloves", "weapon", lambda: make_named_melee_weapon("Gloves")),
+    ("rapier", "Rapier", "weapon", lambda: make_named_melee_weapon("Rapier")),
+    ("cudgel", "Cudgel", "weapon", lambda: make_named_melee_weapon("Cudgel")),
+    ("shortsword", "Shortsword", "weapon", lambda: make_named_melee_weapon("Shortsword")),
+    ("hand_axe", "Hand Axe", "weapon", lambda: make_named_melee_weapon("Hand Axe")),
+    ("spear", "Spear", "weapon", lambda: make_named_melee_weapon("Spear")),
+    ("quarterstaff", "Quarterstaff", "weapon", lambda: make_named_melee_weapon("Quarterstaff")),
+    ("dirk", "Dirk", "weapon", lambda: make_named_melee_weapon("Dirk")),
+    ("sickle", "Sickle", "weapon", lambda: make_named_melee_weapon("Sickle")),
+    ("sword", "Sword", "weapon", lambda: make_named_melee_weapon("Sword")),
+    ("mace", "Mace", "weapon", lambda: make_named_melee_weapon("Mace")),
+    ("scimitar", "Scimitar", "weapon", lambda: make_named_melee_weapon("Scimitar")),
+    ("round_shield", "Round Shield", "weapon", lambda: make_named_melee_weapon("Round Shield")),
+    ("sai", "Sai", "weapon", lambda: make_named_melee_weapon("Sai")),
+    ("whip", "Whip", "weapon", lambda: make_named_melee_weapon("Whip")),
+    ("longsword", "Longsword", "weapon", lambda: make_named_melee_weapon("Longsword")),
+    ("battle_axe", "Battle Axe", "weapon", lambda: make_named_melee_weapon("Battle Axe")),
+    ("flail", "Flail", "weapon", lambda: make_named_melee_weapon("Flail")),
+    ("runic_blade", "Runic Blade", "weapon", lambda: make_named_melee_weapon("Runic Blade")),
+    ("assassins_blade", "Assassin's Blade", "weapon", lambda: make_named_melee_weapon("Assassin's Blade")),
+    ("crossbow", "Crossbow", "weapon", lambda: make_named_melee_weapon("Crossbow")),
+    ("katana", "Katana", "weapon", lambda: make_named_melee_weapon("Katana")),
+    ("greatsword", "Greatsword", "weapon", lambda: make_named_melee_weapon("Greatsword")),
+    ("war_hammer", "War Hammer", "weapon", lambda: make_named_melee_weapon("War Hammer")),
+    ("glaive", "Glaive", "weapon", lambda: make_named_melee_weapon("Glaive")),
+    ("greataxe", "Greataxe", "weapon", lambda: make_named_melee_weapon("Greataxe")),
+    ("greatshield", "Greatshield", "weapon", lambda: make_named_melee_weapon("Greatshield")),
+    ("gauntlet", "Gauntlet", "weapon", lambda: make_named_melee_weapon("Gauntlet")),
+    ("war_scythe", "War Scythe", "weapon", lambda: make_named_melee_weapon("War Scythe")),
     ("bow", "Bow", "weapon", lambda: Bow()),
     ("spirit_bow", "Spirit Bow", "weapon", lambda: SpiritBow()),
     ("staff", "Staff", "weapon", lambda: Staff()),
     ("missile_weapon", "Throwing Knife", "weapon", lambda: MissileWeapon(name="Throwing Knife", tier=1)),
 
     # Armor / accessories
-    ("armor", "Leather Armor", "armor", lambda: Armor(name="Leather Armor", tier=1)),
+    ("armor", "Armor", "armor", lambda: Armor(name="Armor", tier=1)),
+    ("cloth_armor", "Cloth Armor", "armor", lambda: ClothArmor()),
+    ("leather_armor", "Leather Armor", "armor", lambda: LeatherArmor()),
+    ("mail_armor", "Mail Armor", "armor", lambda: MailArmor()),
+    ("scale_armor", "Scale Armor", "armor", lambda: ScaleArmor()),
+    ("plate_armor", "Plate Armor", "armor", lambda: PlateArmor()),
     ("ring", "Ring", "ring", lambda: Ring(name="Ring")),
     ("ring_accuracy", "Ring of Accuracy", "ring", lambda: RingOfAccuracy()),
     ("ring_evasion", "Ring of Evasion", "ring", lambda: RingOfEvasion()),
@@ -203,6 +167,8 @@ _CATALOG: List[tuple] = [
     ("scroll_of_mirror_image", "Scroll of Mirror Image", "scroll", lambda: ScrollOfMirrorImage()),
     ("scroll_of_retribution", "Scroll of Retribution", "scroll", lambda: ScrollOfRetribution()),
     ("scroll_of_transmutation", "Scroll of Transmutation", "scroll", lambda: ScrollOfTransmutation()),
+    ("scroll_of_enchantment", "Scroll of Enchantment", "scroll", lambda: ScrollOfEnchantment()),
+    ("scroll_of_exotic_enchantment", "Exotic Scroll of Enchantment", "scroll", lambda: ExoticScrollOfEnchantment()),
 
     # Currency
     ("gold", "Gold", "currency", lambda: Gold(name="Gold", quantity=100)),
@@ -214,6 +180,8 @@ _CATALOG: List[tuple] = [
     ("ration", "Ration", "food", lambda: Ration()),
     ("pasty", "Pasty", "food", lambda: Pasty()),
     ("chargrilled_meat", "Chargrilled Meat", "food", lambda: ChargrilledMeat()),
+    ("stewed_meat", "Stewed Meat", "food", lambda: StewedMeat()),
+    ("meat_pie", "Meat Pie", "food", lambda: MeatPie()),
     ("food", "Food", "food", lambda: Food(name="Food")),
 
     # Misc
@@ -231,6 +199,21 @@ _CATALOG: List[tuple] = [
     ("tengu_mask", "Tengu's Mask", "misc", lambda: TenguMask()),
     ("kings_crown", "King's Crown", "misc", lambda: KingsCrown()),
     ("amulet", "Amulet of Yendor", "misc", lambda: Amulet()),
+    ("energy_crystal", "Energy Crystal", "misc", lambda: EnergyCrystal(quantity=5)),
+
+    # Bombs
+    ("bomb", "Bomb", "misc", lambda: Bomb()),
+    ("firebomb", "Firebomb", "misc", lambda: Firebomb()),
+    ("frost_bomb", "Frost Bomb", "misc", lambda: FrostBomb()),
+    ("smoke_bomb", "Smoke Bomb", "misc", lambda: SmokeBomb()),
+    ("flashbang_bomb", "Flashbang", "misc", lambda: FlashBangBomb()),
+    ("holy_bomb", "Holy Bomb", "misc", lambda: HolyBomb()),
+    ("regrowth_bomb", "Regrowth Bomb", "misc", lambda: RegrowthBomb()),
+    ("woolly_bomb", "Woolly Bomb", "misc", lambda: WoollyBomb()),
+    ("noisemaker", "Noisemaker", "misc", lambda: Noisemaker()),
+    ("arcane_bomb", "Arcane Bomb", "misc", lambda: ArcaneBomb()),
+    ("shrapnel_bomb", "Shrapnel Bomb", "misc", lambda: ShrapnelBomb()),
+    ("metal_shard", "Metal Shard", "misc", lambda: MetalShard()),
 
     # Containers
     ("velvet_pouch", "Velvet Pouch", "container", lambda: VelvetPouch()),
@@ -238,6 +221,44 @@ _CATALOG: List[tuple] = [
     ("magical_holster", "Magical Holster", "container", lambda: MagicalHolster()),
     ("potion_bandolier", "Potion Bandolier", "container", lambda: PotionBandolier()),
     ("bag", "Bag", "container", lambda: Bag(name="Bag")),
+
+    # Runestones
+    ("stone_blast", "Stone of Blast", "runestone", lambda: StoneOfBlast()),
+    ("stone_blink", "Stone of Blink", "runestone", lambda: StoneOfBlink()),
+    ("stone_deep_sleep", "Stone of Deep Sleep", "runestone", lambda: StoneOfDeepSleep()),
+    ("stone_clairvoyance", "Stone of Clairvoyance", "runestone", lambda: StoneOfClairvoyance()),
+    ("stone_aggression", "Stone of Aggression", "runestone", lambda: StoneOfAggression()),
+    ("stone_flock", "Stone of Flock", "runestone", lambda: StoneOfFlock()),
+    ("stone_shock", "Stone of Shock", "runestone", lambda: StoneOfShock()),
+    ("stone_fear", "Stone of Fear", "runestone", lambda: StoneOfFear()),
+    ("stone_detect_magic", "Stone of Detect Magic", "runestone", lambda: StoneOfDetectMagic()),
+    ("stone_intuition", "Stone of Intuition", "runestone", lambda: StoneOfIntuition()),
+    ("stone_enchantment", "Stone of Enchantment", "runestone", lambda: StoneOfEnchantment()),
+    ("stone_augmentation", "Stone of Augmentation", "runestone", lambda: StoneOfAugmentation()),
+
+    # Stylus
+    ("arcane_stylus", "Arcane Stylus", "stylus", lambda: ArcaneStylus()),
+    ("magical_infusion", "Magical Infusion", "misc", lambda: MagicalInfusion()),
+
+    # Trinkets
+    ("trinket_catalyst", "Trinket Catalyst", "trinket", lambda: TrinketCatalyst()),
+    ("rat_skull", "Rat Skull", "trinket", lambda: RatSkull()),
+    ("parchment_scrap", "Parchment Scrap", "trinket", lambda: ParchmentScrap()),
+    ("petrified_seed", "Petrified Seed", "trinket", lambda: PetrifiedSeed()),
+    ("exotic_crystals", "Exotic Crystals", "trinket", lambda: ExoticCrystals()),
+    ("mossy_clump", "Mossy Clump", "trinket", lambda: MossyClump()),
+    ("dimensional_sundial", "Dimensional Sundial", "trinket", lambda: DimensionalSundial()),
+    ("thirteen_leaf_clover", "Thirteen-Leaf Clover", "trinket", lambda: ThirteenLeafClover()),
+    ("trap_mechanism", "Trap Mechanism", "trinket", lambda: TrapMechanism()),
+    ("mimic_tooth", "Mimic Tooth", "trinket", lambda: MimicTooth()),
+    ("wondrous_resin", "Wondrous Resin", "trinket", lambda: WondrousResin()),
+    ("eye_of_newt", "Eye of Newt", "trinket", lambda: EyeOfNewt()),
+    ("salt_cube", "Salt Cube", "trinket", lambda: SaltCube()),
+    ("vial_of_blood", "Vial of Blood", "trinket", lambda: VialOfBlood()),
+    ("shard_of_oblivion", "Shard of Oblivion", "trinket", lambda: ShardOfOblivion()),
+    ("chaotic_censer", "Chaotic Censer", "trinket", lambda: ChaoticCenser()),
+    ("ferret_tuft", "Ferret Tuft", "trinket", lambda: FerretTuft()),
+    ("cracked_spyglass", "Cracked Spyglass", "trinket", lambda: CrackedSpyglass()),
 ]
 
 _FACTORIES: dict = {kind: factory for kind, _name, _category, factory in _CATALOG}
@@ -260,11 +281,19 @@ def make_catalog_item(item_kind: str) -> Optional[ItemBase]:
 # NOTE: TRANSMUTE_GROUPS["scroll"] excludes scroll_of_transmutation to prevent
 # self-transmutation. Use FLOOR_SCROLL_KINDS for random floor loot pools.
 TRANSMUTE_GROUPS: dict = {
-    # Staff is grouped with melee weapons: there's no separate "magic weapon"
-    # transmute pool in this codebase.
-    "weapon_melee": ["melee_weapon", "dagger", "staff"],
+    "weapon_melee": [kind for kind, _name, _category, _factory in _CATALOG if kind in (
+        "melee_weapon", "dagger", "staff",
+        "gloves", "rapier", "cudgel",
+        "shortsword", "hand_axe", "spear", "quarterstaff", "dirk", "sickle",
+        "sword", "mace", "scimitar", "round_shield", "sai", "whip",
+        "longsword", "battle_axe", "flail", "runic_blade", "assassins_blade",
+        "crossbow", "katana",
+        "greatsword", "war_hammer", "glaive", "greataxe", "greatshield",
+        "gauntlet", "war_scythe",
+    )],
     "weapon_missile": ["bow", "missile_weapon"],
-    "armor": ["armor"],
+    "armor": [kind for kind, _name, _category, _factory in _CATALOG
+              if kind in ("armor", "cloth_armor", "leather_armor", "mail_armor", "scale_armor", "plate_armor")],
     "wand": [kind for kind, _name, category, _factory in _CATALOG
              if category == "wand"],
     "ring": ["ring"] + [kind for kind, _name, category, _factory in _CATALOG
@@ -279,6 +308,8 @@ TRANSMUTE_GROUPS: dict = {
              if category == "misc" and kind == "seed"],
     "stone": [kind for kind, _name, category, _factory in _CATALOG
               if category == "misc" and kind == "stone"],
+    "runestone": [kind for kind, _name, category, _factory in _CATALOG
+                  if category == "runestone"],
 }
 
 # All scroll kinds including scroll_of_transmutation — for random floor loot.

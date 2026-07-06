@@ -7,7 +7,7 @@ const SNOW_PARTICLE_DURATION = 1000;
 const MARK_PARTICLE_DURATION = 700;
 const HEART_PARTICLE_DURATION = 900;
 
-const CONTINUOUS_EFFECTS = new Set(['burning', 'frozen', 'chilled', 'shielded']);
+const CONTINUOUS_EFFECTS = new Set(['burning', 'frozen', 'chilled', 'shielded', 'bleeding', 'levitation']);
 
 let lastNow = null;
 
@@ -61,6 +61,15 @@ export function advanceAndDrawStateEffects(ctx, { stateEffectsRef }) {
         break;
       case 'shielded':
         drawShielded(ctx, e, elapsed, dt);
+        break;
+      case 'bleeding':
+        drawBleeding(ctx, e, elapsed, dt);
+        break;
+      case 'daze':
+        drawDaze(ctx, e, elapsed, dt);
+        break;
+      case 'levitation':
+        drawLevitation(ctx, e, elapsed, dt);
         break;
       default:
         entries.splice(i, 1);
@@ -313,4 +322,121 @@ function drawShielded(ctx, e, elapsed, dt) {
   }
   updateParticles(e, dt, false);
   drawParticles(ctx, e, '#bbaacc');
+}
+
+function drawBleeding(ctx, e, elapsed, dt) {
+  if (elapsed > 120000) return;
+  const cx = e.cx;
+  const cy = e.cy;
+
+  if (Math.random() < 0.3) {
+    const life = 0.5 + Math.random() * 0.3;
+    e.particles.push({
+      x: cx + (Math.random() - 0.5) * 16,
+      y: cy - Math.random() * 8,
+      vx: (Math.random() - 0.5) * 4,
+      vy: 12 + Math.random() * 8,
+      life, maxLife: life,
+      size: 2 + Math.floor(Math.random() * 2),
+      alpha: 1,
+    });
+  }
+  for (let i = e.particles.length - 1; i >= 0; i--) {
+    const p = e.particles[i];
+    p.life -= dt;
+    if (p.life <= 0) { e.particles.splice(i, 1); continue; }
+    p.vy += 60 * dt;
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+    p.alpha = Math.max(0, p.life / p.maxLife);
+  }
+  ctx.save();
+  for (const p of e.particles) {
+    ctx.globalAlpha = p.alpha * 0.6;
+    ctx.fillStyle = '#cc0000';
+    ctx.beginPath();
+    ctx.arc(Math.round(p.x), Math.round(p.y), p.size, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+function drawDaze(ctx, e, elapsed, dt) {
+  const cx = e.cx;
+  const cy = e.cy;
+
+  if (Math.random() < 0.2) {
+    const life = 0.3 + Math.random() * 0.2;
+    e.particles.push({
+      cx, cy,
+      x: cx + (Math.random() - 0.5) * 20,
+      y: cy + (Math.random() - 0.5) * 12,
+      vx: (Math.random() - 0.5) * 16,
+      vy: (Math.random() - 0.5) * 12,
+      life, maxLife: life,
+      size: 1,
+      alpha: 1,
+      angle: Math.random() * Math.PI * 2,
+      spin: (Math.random() - 0.5) * 10,
+    });
+  }
+  for (let i = e.particles.length - 1; i >= 0; i--) {
+    const p = e.particles[i];
+    p.life -= dt;
+    if (p.life <= 0) { e.particles.splice(i, 1); continue; }
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+    p.angle += p.spin * dt;
+    p.alpha = Math.max(0, p.life / p.maxLife);
+  }
+  ctx.save();
+  ctx.font = '6px Arial';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  for (const p of e.particles) {
+    ctx.globalAlpha = p.alpha * 0.5;
+    ctx.fillStyle = '#ffff00';
+    ctx.save();
+    ctx.translate(Math.round(p.x), Math.round(p.y));
+    ctx.rotate(p.angle);
+    ctx.fillText('\u2606', 0, 0);
+    ctx.restore();
+  }
+  ctx.restore();
+}
+
+function drawLevitation(ctx, e, elapsed, dt) {
+  if (elapsed > 120000) return;
+  const cx = e.cx;
+  const cy = e.cy;
+
+  if (Math.random() < 0.25) {
+    const life = 0.6 + Math.random() * 0.4;
+    e.particles.push({
+      x: cx + (Math.random() - 0.5) * 20,
+      y: cy + Math.random() * 16,
+      vx: (Math.random() - 0.5) * 4,
+      vy: -12 - Math.random() * 8,
+      life, maxLife: life,
+      size: 1 + Math.floor(Math.random() * 2),
+      alpha: 1,
+    });
+  }
+  for (let i = e.particles.length - 1; i >= 0; i--) {
+    const p = e.particles[i];
+    p.life -= dt;
+    if (p.life <= 0) { e.particles.splice(i, 1); continue; }
+    p.vy += -80 * dt;
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+    p.alpha = Math.max(0, p.life / p.maxLife);
+  }
+  ctx.save();
+  setLightMode(ctx);
+  for (const p of e.particles) {
+    ctx.globalAlpha = p.alpha * 0.4;
+    ctx.fillStyle = '#aaddff';
+    ctx.fillRect(Math.round(p.x), Math.round(p.y), p.size, p.size);
+  }
+  ctx.restore();
 }

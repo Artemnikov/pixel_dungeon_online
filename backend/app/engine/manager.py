@@ -10,16 +10,13 @@ the module constants) keep the historical ``from app.engine.manager import ...``
 import paths working for callers and tests.
 """
 
+import time
 from typing import Dict, List, Optional, Tuple
 
 # Re-exported for backward-compatible imports (main.py, tests).
 from app.engine.dungeon.generator import TileType
-from app.engine.entities.base import (
-    CharacterClass,
-    Difficulty,
-    Player,
-    Position,
-)
+from app.engine.entities.base import Position
+from app.engine.entities.player import CharacterClass, Difficulty, Player
 
 from app.engine.game.constants import (
     AUTO_MOVE_INTERVAL,
@@ -34,6 +31,8 @@ from app.engine.game.constants import (
     SEWERS_MAX_FLOOR,
 )
 from app.engine.game.floor_state import FloorState
+from app.engine.game.alchemy import AlchemyMixin
+from app.engine.game.bombs import BombsMixin
 from app.engine.game.armor_abilities import ArmorAbilitiesMixin
 from app.engine.game.events import EventsMixin
 from app.engine.game.floors import FloorAccessMixin
@@ -59,9 +58,13 @@ from app.engine.game.ai_shaman import ShamanAIMixin
 from app.engine.game.ai_warlock import WarlockAIMixin
 from app.engine.game.ai_spinner import SpinnerAIMixin
 from app.engine.game.ai_dm200 import DM200AIMixin
+from app.engine.game.ai_guard import GuardAIMixin
 from app.engine.game.tick import TickMixin
 from app.engine.game.vision import VisionMixin
 from app.engine.game.world import WorldInteractionMixin
+from app.engine.game.artifacts import ArtifactsMixin
+from app.engine.game.duelist import DuelistMixin
+from app.engine.game.cleric import ClericMixin
 
 
 class GameInstance(
@@ -72,6 +75,8 @@ class GameInstance(
     WorldInteractionMixin,
     MovementCombatMixin,
     ItemsMixin,
+    AlchemyMixin,
+    BombsMixin,
     PrisonBossMixin,
     GooAIMixin,
     EyeAIMixin,
@@ -87,10 +92,14 @@ class GameInstance(
     WarlockAIMixin,
     SpinnerAIMixin,
     DM200AIMixin,
+    GuardAIMixin,
     TickMixin,
     ArmorAbilitiesMixin,
     TalentsMixin,
     RogueMixin,
+    ArtifactsMixin,
+    DuelistMixin,
+    ClericMixin,
     VisionMixin,
     SerializationMixin,
 ):
@@ -134,6 +143,9 @@ class GameInstance(
         # Badge eligibility — set when entering a boss floor, cleared on
         # avoidable damage (SPD Statistics.qualifiedForBossChallengeBadge)
         self.qualified_for_boss_challenge: bool = False
+
+        # DimensionalSundial day/night cycle start (unix timestamp).
+        self.game_start_time = time.time()
 
         # Seed + RunState for SPD-parity level generation.
         if seed:

@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import Toolbar from './Toolbar';
 import InventoryPane from './InventoryPane';
 import WndBag from './WndBag';
@@ -6,11 +7,12 @@ import BerserkButton from './BerserkButton';
 import PrepStrikeButton from './PrepStrikeButton';
 import ComboDisplay from './ComboDisplay';
 
-export default function GameHud({
+function GameHud({
   interfaceSize, isDesktop, canvasWidth,
   toolbarItems, equippedItems, targetingMode,
   swappedQuickslots, showInventory,
   belongings, gold, energy, strength, myStats,
+  assetImages,
   onWait, onSearch, onInventory, onQuickBag, onSwap,
   onSlotClick, onSlotDoubleClick, onSlotLongPress, onSlotContextMenu,
   onUseAbility, onTriggerBerserk, onPrepStrike, onUseComboMove,
@@ -29,6 +31,7 @@ export default function GameHud({
         equippedItems={equippedItems}
         targetingMode={targetingMode}
         swappedQuickslots={swappedQuickslots}
+        assetImages={assetImages}
         onWait={onWait}
         onSearch={onSearch}
         onInventory={onInventory}
@@ -84,3 +87,5 @@ export default function GameHud({
     </div>
   );
 }
+
+export default memo(GameHud);

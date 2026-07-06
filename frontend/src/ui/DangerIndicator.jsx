@@ -5,9 +5,9 @@
 //
 // DangerIndicator — SPD's skull + enemy count tag on the right side.
 // Shows number of visible hostile mobs. Click to cycle focus through them.
-import { useEffect, useState } from 'react';
+import { useEffect, useState, memo } from 'react';
 
-export default function DangerIndicator({ visionRef, entitiesRef, myPlayerIdRef, onCycleEnemy }) {
+function DangerIndicator({ visionRef, entitiesRef, myPlayerIdRef, onCycleEnemy }) {
   const [count, setCount] = useState(0);
 
   useEffect(() => {
@@ -41,3 +41,5 @@ export default function DangerIndicator({ visionRef, entitiesRef, myPlayerIdRef,
     </div>
   );
 }
+
+export default memo(DangerIndicator);

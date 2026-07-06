@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback, useRef, memo } from 'react';
 
 import sewersSplash from '../assets/pixel-dungeon/splashes/sewers.jpg';
 import prisonSplash from '../assets/pixel-dungeon/splashes/prison.jpg';
@@ -15,7 +15,7 @@ const SPLASH = {
   21: hallsSplash,
 };
 
-export default function LoreOverlay({ depth, body, onContinue }) {
+function LoreOverlay({ depth, body, onContinue }) {
   const [phase, setPhase] = useState('enter');
   const dismissed = useRef(false);
   const overlayRef = useRef(null);
@@ -154,3 +154,5 @@ export default function LoreOverlay({ depth, body, onContinue }) {
     </div>
   );
 }
+
+export default memo(LoreOverlay);

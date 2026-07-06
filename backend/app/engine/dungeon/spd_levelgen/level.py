@@ -62,13 +62,17 @@ class Feeling(Enum):
     SECRETS = auto()
 
 
-def assign_feeling(rng: SPDRandom, depth: int) -> Feeling:
+def assign_feeling(rng: SPDRandom, depth: int,
+                   mossy_override_chance: float = 0.0,
+                   trap_override_chance: float = 0.0) -> Feeling:
     """Port of the `switch (Random.Int(14))` block in Level.create()
-    (Level.java:259-294), hardcoded to the fresh-game baseline:
-    MossyClump/TrapMechanism overrideNormalLevelChance() both -> 0, so the
-    `default` branch always draws exactly 2 Random.Float() and lands on NONE
-    (both `< 0f` comparisons are always false). Only called when depth > 1,
-    matching the `if (Dungeon.depth > 1)` guard at the call site."""
+    (Level.java:259-294), with optional MossyClump/TrapMechanism overrides.
+    mossy_override_chance: MossyClump.overrideNormalLevelChance() probability
+      of forcing Feeling.GRASS (0 = absent trinket, baseline)
+    trap_override_chance: TrapMechanism.overrideNormalLevelChance() probability
+      of forcing Feeling.TRAPS (0 = absent trinket, baseline)
+    Always consumes exactly 2 rng.Float() from the else branch for RNG parity;
+    when an override passes, an extra rng.IntMax(2) is consumed."""
     outcome = rng.IntMax(14)
     if outcome == 0:
         return Feeling.CHASM
@@ -85,8 +89,12 @@ def assign_feeling(rng: SPDRandom, depth: int) -> Feeling:
     elif outcome == 6:
         return Feeling.SECRETS
     else:
-        rng.Float()  # MossyClump.overrideNormalLevelChance() == 0 -> always false
-        rng.Float()  # TrapMechanism.overrideNormalLevelChance() == 0 -> always false
+        mossy_hit = rng.Float() < mossy_override_chance if mossy_override_chance > 0 else False
+        trap_hit = rng.Float() < trap_override_chance if trap_override_chance > 0 else False
+        if mossy_hit:
+            return Feeling.WATER if rng.IntMax(2) == 0 else Feeling.GRASS
+        if trap_hit:
+            return Feeling.TRAPS
         return Feeling.NONE
 
 

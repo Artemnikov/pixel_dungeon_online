@@ -2,23 +2,11 @@ import random
 import uuid
 from typing import Dict, List, Optional
 
-from app.engine.entities.base import (
-    DropEntry,
-    ItemBase,
-    Mob,
-    Position,
-    Seed,
-    Gold,
-    HealthPotion,
-    MysteryMeat,
-    make_named_melee_weapon,
-    Armor,
-    Potion,
-    Key,
-    TenguMask,
-    KingsCrown,
-    GooBlob,
-)
+from app.engine.entities.base import ItemBase, Position
+from app.engine.entities.items_consumable import Gold, GooBlob, Key, KingsCrown, MysteryMeat, Seed, TenguMask
+from app.engine.entities.items_equip import ClothArmor, LeatherArmor, MailArmor, make_named_melee_weapon, PlateArmor, ScaleArmor
+from app.engine.entities.items_potions import HealthPotion, Potion
+from app.engine.entities.player import DropEntry, Mob
 from app.engine.entities.weapon_enchants import roll_weapon_level, roll_weapon_enchant
 
 TIER2_WEAPONS = [
@@ -37,11 +25,11 @@ RANDOM_WEAPONS = [
 ]
 
 RANDOM_ARMORS = [
-    ("Cloth Armor", 1, 10),
-    ("Leather Armor", 2, 12),
-    ("Mail Armor", 3, 14),
-    ("Scale Armor", 4, 16),
-    ("Plate Armor", 5, 18),
+    ClothArmor,
+    LeatherArmor,
+    MailArmor,
+    ScaleArmor,
+    PlateArmor,
 ]
 
 RANDOM_POTIONS = [
@@ -98,6 +86,41 @@ def roll_drops(
                 bonus = _wealth_bonus_drop(p, death_x, death_y)
                 items.extend(bonus)
 
+    # CrackedSpyglass trinket: extra loot chance from defeated enemies
+    if players:
+        for p in players:
+            from app.engine.entities.trinkets import CrackedSpyglass as _CS
+            from app.engine.entities.trinkets import trinket_level
+            cs_lvl = trinket_level(p, "cracked_spyglass")
+            if cs_lvl >= 0:
+                chance = _CS.extra_loot_chance(cs_lvl)
+                while chance > 0:
+                    if random.random() < min(chance, 1.0):
+                        bonus_item = _random_wealth_consumable()
+                        if bonus_item:
+                            bonus_item.id = str(uuid.uuid4())
+                            bonus_item.pos = Position(x=death_x, y=death_y)
+                            items.append(bonus_item)
+                    chance -= 1.0
+
+    # ShardOfOblivion trinket: loot multiplier based on worn unidentified items
+    if players:
+        for p in players:
+            from app.engine.entities.trinkets import ShardOfOblivion as _SO
+            from app.engine.entities.trinkets import trinket_level
+            so_lvl = trinket_level(p, "shard_of_oblivion")
+            if so_lvl >= 0:
+                worn_un_id = p.count_worn_unidentified()
+                mult = _SO.loot_chance_multiplier(so_lvl, worn_un_id)
+                if mult > 1.0:
+                    for existing in items[:]:
+                        if random.random() < mult - 1.0:
+                            dup = _make_item(getattr(existing, "kind", "gold"))
+                            if dup:
+                                dup.id = str(uuid.uuid4())
+                                dup.pos = Position(x=death_x, y=death_y)
+                                items.append(dup)
+
     return items
 
 
@@ -152,8 +175,8 @@ def _make_item(item_kind: str) -> Optional[ItemBase]:
     elif item_kind == "weapon":
         return _random_dungeon_weapon(random.choice(RANDOM_WEAPONS))
     elif item_kind == "armor":
-        name, tier, str_req = random.choice(RANDOM_ARMORS)
-        return Armor(name=name, tier=tier, strength_requirement=str_req)
+        cls = random.choice(RANDOM_ARMORS)
+        return cls()
     elif item_kind == "potion":
         effect = random.choice(RANDOM_POTIONS)
         return Potion(name="Potion", effect=effect)
@@ -163,6 +186,9 @@ def _make_item(item_kind: str) -> Optional[ItemBase]:
         return TenguMask(name="Tengu's Mask")
     elif item_kind == "kings_crown":
         return KingsCrown(name="King's Crown")
+    elif item_kind == "metal_shard":
+        from app.engine.entities.items_bombs import MetalShard
+        return MetalShard()
     return None
 
 

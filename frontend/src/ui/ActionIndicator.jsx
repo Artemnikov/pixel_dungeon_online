@@ -1,4 +1,6 @@
-export default function ActionIndicator({ myStats, onAction }) {
+import { memo } from 'react';
+
+function ActionIndicator({ myStats, onAction }) {
   const actions = myStats?.belongings?.weapon?.actions || [];
   const isZap = actions.includes('ZAP');
   const isThrow = actions.includes('THROW');
@@ -19,3 +21,5 @@ export default function ActionIndicator({ myStats, onAction }) {
     </div>
   );
 }
+
+export default memo(ActionIndicator);

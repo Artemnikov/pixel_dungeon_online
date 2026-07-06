@@ -45,7 +45,8 @@ from __future__ import annotations
 
 from typing import List
 
-from app.engine.entities.base import DropEntry, Faction, Mob as MobEntity, WeightedCountDrop
+from app.engine.entities.base import Faction
+from app.engine.entities.player import DropEntry, Mob as MobEntity, WeightedCountDrop
 from app.engine.entities.mobs import Crab, Gnoll, Rat
 
 

@@ -39,7 +39,7 @@ def test_faction_combat_restrictions():
     
     # Add a mob (different faction) — orthogonally adjacent to p1 at (2,1)
     mob_id = "mob1"
-    from app.engine.entities.base import Mob as MobEntity
+    from app.engine.entities.player import Mob as MobEntity
     game.mobs[mob_id] = MobEntity(
         id=mob_id,
         name="Rat",
@@ -75,7 +75,7 @@ def test_mob_vs_mob_no_damage():
     
     mob1_id = "mob1"
     mob2_id = "mob2"
-    from app.engine.entities.base import Mob as MobEntity
+    from app.engine.entities.player import Mob as MobEntity
     
     game.mobs[mob1_id] = MobEntity(
         id=mob1_id,

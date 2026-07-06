@@ -10,6 +10,8 @@ export function handleProgressionEvents(event: GameEvent, ctx: HandlerCtx): bool
     onImbueWandChoiceAvailable, onTalentUpgraded, onMetamorphOpen, onMetamorphOptions,
     onGooFightStarted: _g, onTenguFightStarted: _t,
     onShopOpen, onImpDialogue, onGhostDialogue, onScrollSelectTarget, onGhostGearOpen, onBossSlain, onGhostQuestGiven, onGhostQuestComplete,
+    onStoneSelectTarget, onStoneIntuitionPickItem, onStoneIntuitionGuessKind, onStoneAugmentPickItem,
+    onEnchantChoiceAvailable,
   } = ctx;
 
   if (event.type === 'LEVEL_UP') {
@@ -138,6 +140,26 @@ export function handleProgressionEvents(event: GameEvent, ctx: HandlerCtx): bool
     return true;
   }
 
+  if (event.type === 'STONE_SELECT_TARGET') {
+    if (event.data.player === myPlayerIdRef.current) onStoneSelectTarget?.(event.data);
+    return true;
+  }
+
+  if (event.type === 'STONE_INTUITION_PICK_ITEM') {
+    if (event.data.player === myPlayerIdRef.current) onStoneIntuitionPickItem?.(event.data);
+    return true;
+  }
+
+  if (event.type === 'STONE_INTUITION_GUESS_KIND') {
+    if (event.data.player === myPlayerIdRef.current) onStoneIntuitionGuessKind?.(event.data);
+    return true;
+  }
+
+  if (event.type === 'STONE_AUGMENT_PICK_ITEM') {
+    if (event.data.player === myPlayerIdRef.current) onStoneAugmentPickItem?.(event.data);
+    return true;
+  }
+
   if (event.type === 'TALENT_METAMORPHED') {
     if (event.data.player === myPlayerIdRef.current) AudioManager.play('LEVELUP', 1.2);
     return true;
@@ -156,6 +178,25 @@ export function handleProgressionEvents(event: GameEvent, ctx: HandlerCtx): bool
 
   if (event.type === 'TOAST') {
     dispatchToast(event.data.text);
+    return true;
+  }
+
+  if (event.type === 'ENCHANT_CHOICE_AVAILABLE') {
+    if (event.data.player === myPlayerIdRef.current) {
+      onEnchantChoiceAvailable?.({
+        scroll_id: event.data.scroll_id,
+        target_id: event.data.target_id,
+        is_weapon: event.data.is_weapon,
+        options: event.data.options,
+      });
+    }
+    return true;
+  }
+
+  if (event.type === 'ENCHANT') {
+    if (event.data.player === myPlayerIdRef.current) {
+      AudioManager.play('LEVELUP', 1.3);
+    }
     return true;
   }
 

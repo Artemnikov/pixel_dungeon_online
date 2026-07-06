@@ -4,7 +4,10 @@ Combo (Gladiator) mechanics + finisher moves, and armor abilities."""
 import random
 
 from app.engine.manager import GameInstance
-from app.engine.entities.base import Mob as MobEntity, Position, Action, Armor, KingsCrown
+from app.engine.entities.base import Position, Action
+from app.engine.entities.items_consumable import KingsCrown
+from app.engine.entities.items_equip import Armor
+from app.engine.entities.player import Mob as MobEntity
 from app.engine.entities.subclasses import Subclass, Talent, ArmorAbilityType, CLASS_ARMOR_ABILITIES
 from app.engine.systems.loot import _make_item
 
@@ -206,7 +209,7 @@ def test_hearty_meal_heals_when_low_hp():
     p.subclass_info.talent_info.talents[Talent.HEARTY_MEAL] = 1
     p.hp = 1
     p.max_hp = 30
-    from app.engine.entities.base import Food
+    from app.engine.entities.items_consumable import Food
     food = Food(id="f", name="Mango", energy=8)
     g.on_food_eaten(p, food)
     assert p.hp == 1 + 2 + 2 * 1
@@ -216,7 +219,7 @@ def test_iron_stomach_grants_hunger_immunity_buff():
     g = GameInstance("t")
     p = _warrior(g)
     p.subclass_info.talent_info.talents[Talent.IRON_STOMACH] = 2
-    from app.engine.entities.base import Food
+    from app.engine.entities.items_consumable import Food
     food = Food(id="f", name="Mango", energy=8)
     g.on_food_eaten(p, food)
     assert p.has_buff("iron_stomach_immunity")
@@ -227,7 +230,7 @@ def test_liquid_willpower_grants_shield_on_potion():
     p = _warrior(g)
     p.subclass_info.talent_info.talents[Talent.LIQUID_WILLPOWER] = 1
     p.max_hp = 100
-    from app.engine.entities.base import Potion
+    from app.engine.entities.items_potions import Potion
     potion = Potion(id="pot", name="Potion")
     g.on_potion_drunk(p, potion)
     shield = p.get_shield("liquid_willpower")

@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, memo } from 'react';
 import { useTranslation } from 'react-i18next';
 import IconTitle from './IconTitle';
 import buffsImg from '../assets/pixel-dungeon/interfaces/buffs.png';
@@ -8,7 +8,7 @@ const BUFF_COLS = 18;
 
 // SPD WndInfoBuff.java port: icon + name + description for a single buff.
 // Called from StatusPane/BossHealthBar when a buff icon is clicked.
-export default function WndInfoBuff({ buff, onClose }) {
+function WndInfoBuff({ buff, onClose }) {
   const { t } = useTranslation();
   useEffect(() => {
     const onKey = (e) => { if (e.key === 'Escape') onClose?.(); };
@@ -51,3 +51,5 @@ export default function WndInfoBuff({ buff, onClose }) {
     </div>
   );
 }
+
+export default memo(WndInfoBuff);

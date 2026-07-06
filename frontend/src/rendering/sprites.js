@@ -26,6 +26,22 @@ import { TILE_SIZE, TILE_SCALE } from '../constants';
 // Matching below is substring-based (itemName.includes(key)), so more-specific keys must
 // be listed before the generic ones they contain (e.g. "Scroll Holder" before "Scroll").
 export const ITEM_SPRITES = {
+  // Bombs — items.png BOMBS row (ItemSpriteSheet.BOMBS = xy(1,6) = idx 80, so
+  // [col,row] = [idx%16, 5]). Listed before the generic "Bomb" so each enhanced
+  // bomb matches its own sprite first (substring match returns the first hit).
+  "Firebomb":         [2, 5],   // FIRE_BOMB
+  "Frost Bomb":       [3, 5],   // FROST_BOMB
+  "Regrowth Bomb":    [4, 5],   // REGROWTH_BOMB
+  "Smoke Bomb":       [5, 5],   // SMOKE_BOMB
+  "Flashbang":        [6, 5],   // FLASHBANG
+  "Holy Bomb":        [7, 5],   // HOLY_BOMB
+  "Woolly Bomb":      [8, 5],   // WOOLY_BOMB
+  "Noisemaker":       [9, 5],   // NOISEMAKER
+  "Arcane Bomb":     [10, 5],   // ARCANE_BOMB
+  "Shrapnel Bomb":   [11, 5],   // SHRAPNEL_BOMB
+  "Metal Shard":      [8, 29],  // SHARD (QUEST+8 = idx 472)
+  "Bomb":             [0, 5],   // BOMB (generic — keep last of the bomb block)
+
   // Weapons — [col,row] per docs/spd_items/07-item-sprites.md §1.
   // More-specific multi-word keys must precede shorter keys they contain
   // (e.g. "Worn Shortsword" before "Shortsword"/"Sword", "Battle Axe" before "Axe").
@@ -74,6 +90,21 @@ export const ITEM_SPRITES = {
   "Old Bow":          [0, 9],
   "Bow":              [0, 9],
   "Boomerang":        [12, 9],  // BOOMERANG (MISSILE_WEP+12)
+
+  // Runestones — MUST precede generic "Stone" below (substring matching).
+  "Stone of Aggression":     [0, 21],
+  "Stone of Augmentation":   [1, 21],
+  "Stone of Fear":           [2, 21],
+  "Stone of Blast":          [3, 21],
+  "Stone of Blink":          [4, 21],
+  "Stone of Clairvoyance":   [5, 21],
+  "Stone of Deep Sleep":     [6, 21],
+  "Stone of Detect Magic":   [7, 21],
+  "Stone of Enchantment":    [8, 21],
+  "Stone of Flock":          [9, 21],
+  "Stone of Intuition":      [10, 21],
+  "Stone of Shock":          [11, 21],
+
   "Stone":            [3, 9],   // THROWING_STONE (MISSILE_WEP+3)
 
   // Armor (ARMOR = xy(1,12) = idx 176 -> row 11)
@@ -82,6 +113,8 @@ export const ITEM_SPRITES = {
   "Leather":          [1, 11],
   "Broken Shield":    [2, 11],  // ARMOR_MAIL (ARMOR+2) — closest stand-in
   "Mail Armor":       [2, 11],
+  "Scale Armor":      [3, 11],  // ARMOR_SCALE (ARMOR+3)
+  "Plate Armor":      [4, 11],  // ARMOR_PLATE (ARMOR+4)
   "Rogue's Cloak":    [7, 11],  // ARMOR_ROGUE (ARMOR+7)
 
   "Dried Rose":       [4, 16],  // ARTIFACT_ROSE1
@@ -139,6 +172,7 @@ export const ITEM_SPRITES = {
   "Seed":             [3, 24],  // generic Seed / "Seed of Sunlight" -> SEED_SUNGRASS
 
   // Misc
+  "Arcane Stylus":    [1, 3],   // STYLUS (MISC_CONSUMABLE+1 = idx 49 = col 1, row 3)
   "Tengu's Mask":     [11, 3],  // MASK (MISC_CONSUMABLE+11 = idx 59 = col 11, row 3 in items.png)
   "Goo Blob":         [7, 29],  // BLOB (QUEST+7, QUEST = xy(1,30) = idx 464)
   "King's Crown":     [12, 3],  // CROWN (MISC_CONSUMABLE+12 = idx 60 = col 12, row 3)
@@ -157,6 +191,29 @@ export const ITEM_SPRITES = {
   "Rusty Key":        [7, 3],   // IRON_KEY (MISC_CONSUMABLE+7 = idx 55)
   "Key":              [7, 3],
   "Amulet of Yendor": [14, 4],  // AMULET = MISC_CONSUMABLE+13 = xy(1,4)+13 = idx 78 -> col14,row4
+  "Energy Crystal":   [3, 1],   // ENERGY (UNCOLLECTIBLE+1 = idx 19)
+  "Stewed Meat":      [2, 27],  // STEWED (FOOD+2 = idx 434)
+  "Meat Pie":         [7, 27],  // MEAT_PIE (FOOD+7 = idx 439)
+
+  // Trinkets (TRINKETS section = xy(1,18) → [0,17], 17 trinkets + 1 catalyst)
+  "Trinket Catalyst": [6, 4],   // TRINKET_CATA = MISC_CONSUMABLE+22 = [6,4]
+  "Rat Skull":        [0, 17],  // TRINKETS+0
+  "Parchment Scrap":  [1, 17],  // TRINKETS+1
+  "Petrified Seed":   [2, 17],  // TRINKETS+2
+  "Exotic Crystals":  [3, 17],  // TRINKETS+3
+  "Mossy Clump":      [4, 17],  // TRINKETS+4
+  "Sundial":          [5, 17],  // TRINKETS+5 (Dimensional Sundial)
+  "Clover":           [6, 17],  // TRINKETS+6 (Thirteen-Leaf Clover)
+  "Trap Mechanism":   [7, 17],  // TRINKETS+7
+  "Mimic Tooth":      [8, 17],  // TRINKETS+8
+  "Wondrous Resin":   [9, 17],  // TRINKETS+9
+  "Eye of Newt":      [10, 17], // TRINKETS+10
+  "Salt Cube":        [11, 17], // TRINKETS+11
+  "Vial of Blood":    [12, 17], // TRINKETS+12
+  "Shard of Oblivion":[13, 17], // TRINKETS+13
+  "Chaotic Censer":   [14, 17], // TRINKETS+14
+  "Ferret Tuft":      [15, 17], // TRINKETS+15
+  "Cracked Spyglass": [0, 18],  // TRINKETS+16 = next row
 
   // Default fallback (SOMETHING "?" placeholder, idx 0)
   "default":          [0, 0],
@@ -179,6 +236,8 @@ export const getItemSpriteCoords = (itemName, itemType) => {
     }
   }
   // Type fallbacks — also cover unidentified potions/scrolls (masked name, kept type).
+  if (itemType === 'stylus')    return [1, 3];
+  if (itemType === 'spell')     return [0, 19];
   if (itemType === 'weapon')    return [8, 6];
   if (itemType === 'wearable')  return [0, 11];
   if (itemType === 'potion')    return [0, 22];
@@ -191,6 +250,9 @@ export const getItemSpriteCoords = (itemName, itemType) => {
   if (itemType === 'key')       return [7, 3];
   if (itemType === 'gold')      return [2, 1];
   if (itemType === 'seed')      return [3, 24];  // SEED_SUNGRASS
+  if (itemType === 'trinket')   return [0, 17];  // RAT_SKULL (generic trinket fallback)
+  if (itemType === 'trinket_catalyst') return [6, 4];
+  if (itemType === 'runestone') return [0, 21];
   if (itemType === 'dewdrop')   return [5, 1];   // DEWDROP
   if (itemType === 'grave')     return [0, 2];   // BONES
   return ITEM_SPRITES["default"];
@@ -212,9 +274,42 @@ const PLACEHOLDER_TYPE_BY_KIND_PREFIX = [
   ['ration', 'food'],
   ['pasty', 'food'],
   ['chargrilled_meat', 'food'],
+  ['stewed_meat', 'food'],
+  ['meat_pie', 'food'],
   ['dewdrop', 'dewdrop'],
   ['gold', 'gold'],
   ['wand', 'wand'],
+  ['rat_skull', 'trinket'],
+  ['parchment_scrap', 'trinket'],
+  ['petrified_seed', 'trinket'],
+  ['exotic_crystals', 'trinket'],
+  ['mossy_clump', 'trinket'],
+  ['dimensional_sundial', 'trinket'],
+  ['thirteen_leaf_clover', 'trinket'],
+  ['trap_mechanism', 'trinket'],
+  ['mimic_tooth', 'trinket'],
+  ['wondrous_resin', 'trinket'],
+  ['eye_of_newt', 'trinket'],
+  ['salt_cube', 'trinket'],
+  ['vial_of_blood', 'trinket'],
+  ['shard_of_oblivion', 'trinket'],
+  ['chaotic_censer', 'trinket'],
+  ['ferret_tuft', 'trinket'],
+  ['cracked_spyglass', 'trinket'],
+  ['trinket_catalyst', 'trinket_catalyst'],
+  ['stone_augmentation', 'runestone'],
+  ['stone_enchantment', 'runestone'],
+  ['stone_intuition', 'runestone'],
+  ['stone_detect_magic', 'runestone'],
+  ['stone_fear', 'runestone'],
+  ['stone_shock', 'runestone'],
+  ['stone_flock', 'runestone'],
+  ['stone_aggression', 'runestone'],
+  ['stone_clairvoyance', 'runestone'],
+  ['stone_deep_sleep', 'runestone'],
+  ['stone_blink', 'runestone'],
+  ['stone_blast', 'runestone'],
+  ['stone_', 'runestone'],
 ];
 
 // Resolve a serialized item to its sprite cell: server-sent per-run appearance
@@ -283,7 +378,12 @@ const KIND_COORDS = {
   'bow':             [0, 9],
   'staff':           [5, 6],
   'missile_weapon':  [2, 9],
-  'armor':           [1, 11],  // Leather
+  'armor':           [1, 11],  // generic → Leather
+  'cloth_armor':     [0, 11],
+  'leather_armor':   [1, 11],
+  'mail_armor':      [2, 11],
+  'scale_armor':     [3, 11],
+  'plate_armor':     [4, 11],
   'ring':            [0, 14],
   'artifact':        [0, 15],
   'wand_magic_missile':   [0, 13],
@@ -300,6 +400,29 @@ const KIND_COORDS = {
   'wand_regrowth':        [11, 13],
   'wand_transfusion':     [12, 13],
   'wand':                 [0, 13],
+  'arcane_stylus':        [1, 3],
+  'magical_infusion':     [0, 19],
+  'trinket_catalyst':     [6, 4],
+  'rat_skull':            [0, 17],
+  'parchment_scrap':      [1, 17],
+  'petrified_seed':       [2, 17],
+  'exotic_crystals':      [3, 17],
+  'mossy_clump':          [4, 17],
+  'dimensional_sundial':  [5, 17],
+  'thirteen_leaf_clover': [6, 17],
+  'trap_mechanism':       [7, 17],
+  'mimic_tooth':          [8, 17],
+  'wondrous_resin':       [9, 17],
+  'eye_of_newt':          [10, 17],
+  'salt_cube':            [11, 17],
+  'vial_of_blood':        [12, 17],
+  'shard_of_oblivion':    [13, 17],
+  'chaotic_censer':       [14, 17],
+  'ferret_tuft':          [15, 17],
+  'cracked_spyglass':     [0, 18],
+  'energy_crystal':       [3, 1],
+  'stewed_meat':          [2, 27],
+  'meat_pie':             [7, 27],
 };
 
 export function coordsForKind(kind) {
@@ -307,10 +430,16 @@ export function coordsForKind(kind) {
   if (KIND_COORDS[kind]) return KIND_COORDS[kind];
   if (kind.startsWith('scroll_'))  return [0, 19];
   if (kind.startsWith('potion_'))  return [0, 22];
+  if (kind.startsWith('elixir_')) return [0, 22];
+  if (kind.endsWith('_brew'))     return [0, 22];
   if (kind.startsWith('ring_'))    return [0, 14];
   if (kind.startsWith('wand_'))    return [0, 13];
   if (kind.startsWith('armor'))    return [0, 11];
   if (kind.startsWith('seed'))     return [3, 24];
+  if (kind === 'trinket_catalyst') return [6, 4];
+  if (kind.startsWith('trinket_')) return [0, 17];
+  if (kind.startsWith('stone_'))   return [0, 21];
+  if (kind === 'arcane_stylus')    return [1, 3];
   return [0, 0];
 }
 

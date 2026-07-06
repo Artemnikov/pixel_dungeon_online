@@ -60,7 +60,7 @@ class ConnectionManager:
         inventory/HP/depth/position) instead of spawning a fresh one.
         """
         await websocket.accept()
-        if game_id not in self.active_connections:
+        if game_id not in self.game_instances:
             self.active_connections[game_id] = {}
             self.game_instances[game_id] = GameInstance(game_id, seed=seed or None)
             self.last_sent_floor[game_id] = {}
@@ -203,7 +203,7 @@ class ConnectionManager:
                     player_obj = game.players.get(player_id)
                     gold = player_obj.gold if player_obj else 0
                     energy = player_obj.energy if player_obj else 0
-                    from app.engine.entities.base import Amulet
+                    from app.engine.entities.items_consumable import Amulet
                     has_amulet = (
                         any(isinstance(it, Amulet) for it in player_obj.belongings.all_items())
                         if player_obj else False
@@ -255,7 +255,7 @@ async def get_talents(class_type: str):
         TIER_MAX_POINTS, CLASS_SUBCLASSES,
         T4_ABILITY_TALENTS, CLASS_ARMOR_ABILITIES, Talent,
     )
-    from app.engine.entities.base import CharacterClass
+    from app.engine.entities.player import CharacterClass
 
     valid = {CharacterClass.WARRIOR, CharacterClass.MAGE, CharacterClass.ROGUE, CharacterClass.HUNTRESS}
     if class_type not in valid:
@@ -436,13 +436,23 @@ async def game_websocket(websocket: WebSocket, game_id: str, class_type: str = "
                         if i.pos and i.pos.x == player.pos.x and i.pos.y == player.pos.y
                         and i.type != "grave" and not getattr(i, 'for_sale', False)
                     ]
-                    from app.engine.entities.base import Gold, Dewdrop
+                    from app.engine.entities.items_consumable import Gold, Dewdrop, EnergyCrystal
+                    from app.engine.entities.items_bombs import Bomb
                     for i_id in items_to_pickup:
                         item = floor.items[i_id]
                         if isinstance(item, Gold):
                             player.gold += item.quantity
                             del floor.items[i_id]
                             game.add_event("PICKUP_GOLD", {"player": player.id, "amount": item.quantity}, floor_id=player.floor_id)
+                        elif isinstance(item, EnergyCrystal):
+                            player.energy += item.quantity
+                            del floor.items[i_id]
+                            game.add_event("PICKUP_ENERGY", {"player": player.id, "amount": item.quantity}, floor_id=player.floor_id)
+                        elif isinstance(item, Dewdrop):
+                            game._pickup_dewdrop(player, floor, player.floor_id, i_id, item)
+                        elif isinstance(item, Bomb) and item.fuse_ticks is not None and \
+                                game.handle_bomb_pickup(player, floor, player.floor_id, i_id, item):
+                            pass
                         elif player.add_to_inventory(item):
                             del floor.items[i_id]
                             game.add_event("PICKUP", {"player": player.id, "item": item.name}, floor_id=player.floor_id)
@@ -508,6 +518,21 @@ async def game_websocket(websocket: WebSocket, game_id: str, class_type: str = "
             elif isinstance(message, msg.ConfirmChasmFall):
                 game.confirm_chasm_fall(player_id, message.x, message.y)
 
+            elif isinstance(message, msg.AlchemyPreview):
+                game.alchemy_preview(player_id, message.ingredient_ids)
+
+            elif isinstance(message, msg.AlchemyBrew):
+                game.alchemy_brew(player_id, message.ingredient_ids, message.recipe_index)
+
+            elif isinstance(message, msg.AlchemyEnergize):
+                game.alchemy_energize(player_id, message.item_id, message.all_items)
+
+            elif isinstance(message, msg.AlchemyTrinketChoose):
+                game.alchemy_trinket_choose(player_id, message.catalyst_id, message.kind)
+
+            elif isinstance(message, msg.ToolkitEnergize):
+                game.toolkit_energize(player_id, message.toolkit_id, message.levels)
+
             elif isinstance(message, msg.RangedAttack):
                 game.perform_ranged_attack(
                     player_id, message.item_id, message.target_x, message.target_y,
@@ -570,6 +595,21 @@ async def game_websocket(websocket: WebSocket, game_id: str, class_type: str = "
 
             elif isinstance(message, msg.GhostClaimReward):
                 game.ghost_claim_reward(player_id, message.npc_id, message.choice)
+
+            elif isinstance(message, msg.SelectStoneTarget):
+                game.select_stone_target(player_id, message.stone_id, message.item_id)
+
+            elif isinstance(message, msg.StoneIntuitionChooseItem):
+                game.stone_intuition_pick(player_id, message.stone_id, message.item_id)
+
+            elif isinstance(message, msg.StoneIntuitionGuess):
+                game.stone_intuition_guess(player_id, message.stone_id, message.item_id, message.guessed_kind)
+
+            elif isinstance(message, msg.StoneAugmentChoose):
+                game.stone_augment_choose(player_id, message.stone_id, message.item_id, message.augment_type)
+
+            elif isinstance(message, msg.ChooseEnchant):
+                game.choose_enchant(player_id, message.target_id, message.choice_index)
 
     except WebSocketDisconnect:
         # Keep the hero alive for the reconnect grace window (see reaper); the

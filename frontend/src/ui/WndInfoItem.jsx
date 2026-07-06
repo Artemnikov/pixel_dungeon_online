@@ -3,7 +3,7 @@ import IconTitle from './IconTitle';
 import ItemIcon from './ItemIcon';
 import { titleColor } from './itemActions';
 
-function statLines(item, t) {
+export function statLines(item, t) {
   const lines = [];
   const wTypes = ['weapon', 'melee_weapon', 'staff', 'missile_weapon'];
   if (wTypes.includes(item.type) || wTypes.includes(item.kind)) {
@@ -37,8 +37,10 @@ function statLines(item, t) {
   if (item.cursed_known === false && (wTypes.includes(item.type) || item.type === 'wearable'
       || item.kind === 'ring' || item.kind === 'artifact' || item.kind === 'wand'))
     lines.push(t('ui.cursedUnknown'));
-  if (item.enchantment && item.enchantment.type && item.enchantment.type !== 'none')
-    lines.push(item.enchantment.type);
+  if (item.enchantment && item.enchantment.type && item.enchantment.type !== 'none') {
+    const glyphLabel = item.enchantment.type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    lines.push(`Glyph of ${glyphLabel}`);
+  }
   return lines;
 }
 
@@ -58,7 +60,14 @@ export default function WndInfoItem({ item }) {
         level={level}
         color={titleColor(item)}
       />
-      {item.description && <div className="wnd-info-desc">{item.description}</div>}
+      {item.kind === 'chest' && item.chest_type === 'CRYSTAL_CHEST' && item.item_category && (
+        <div className="wnd-info-desc">
+          {`You can see through the crystal — this chest contains a ${item.item_category.toLowerCase()}.`}
+        </div>
+      )}
+      {!(item.kind === 'chest' && item.chest_type === 'CRYSTAL_CHEST' && item.item_category) && item.description && (
+        <div className="wnd-info-desc">{item.description}</div>
+      )}
       {lines.length > 0 && (
         <div className="wnd-info-stats">
           {lines.map((l, i) => <div key={i} className="wnd-info-stat-row">{l}</div>)}

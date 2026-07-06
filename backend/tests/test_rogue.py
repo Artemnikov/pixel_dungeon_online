@@ -2,7 +2,8 @@
 Preparation, Freerunner Momentum, and talent/subclass gating."""
 
 from app.engine.manager import GameInstance
-from app.engine.entities.base import Mob as MobEntity, Position
+from app.engine.entities.base import Position
+from app.engine.entities.player import Mob as MobEntity
 from app.engine.entities.subclasses import Subclass, Talent, ArmorAbilityType
 from app.engine.systems.combat import resolve_melee_attack
 from app.engine.game.rogue import (
@@ -323,7 +324,7 @@ def test_body_replacement_spawns_ninja_log():
 # --- Inscribed Stealth -------------------------------------------------------
 def test_inscribed_stealth_grants_invisibility_on_scroll_read():
     from app.engine.entities.item_actions import action_read
-    from app.engine.entities.base import Scroll
+    from app.engine.entities.items_scrolls import Scroll
 
     g = GameInstance("t")
     p = _rogue(g)

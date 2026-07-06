@@ -9,7 +9,7 @@ eviction/cache layer that keeps only active-player floors in hot memory.
 import pickle
 from typing import Dict, List, Optional, Set, Tuple
 
-from app.engine.entities.base import Item, Mob as MobEntity, Player
+from app.engine.entities.player import Item, Mob as MobEntity, Player
 from app.engine.game.constants import MAP_HEIGHT, MAP_WIDTH, MAX_FLOOR_ID
 from app.engine.game.floor_state import FloorState
 

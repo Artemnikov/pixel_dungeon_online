@@ -1,4 +1,4 @@
-from app.engine.entities.base import Amulet
+from app.engine.entities.items_consumable import Amulet
 from app.engine.entities.item_catalog import make_catalog_item
 from app.engine.game.spd_adapter import _DESCRIPTOR_ITEM_MAP
 

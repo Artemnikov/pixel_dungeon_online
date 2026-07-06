@@ -24,10 +24,11 @@ import uuid
 from typing import List, Optional, Tuple
 
 from app.engine.dungeon.generator import TileType
-from app.engine.entities.base import (
-    Armor, CharacterClass, Item, Key, Player, Position, make_named_melee_weapon,
-)
-from app.engine.entities.base import DwarfToken
+from app.engine.entities.base import Position
+from app.engine.entities.items_consumable import Key
+from app.engine.entities.items_equip import Armor, LeatherArmor, MailArmor, PlateArmor, ScaleArmor, make_named_melee_weapon
+from app.engine.entities.player import CharacterClass, Item, Player
+from app.engine.entities.items_consumable import DwarfToken
 from app.engine.entities.mobs import Imp, Shopkeeper
 from app.engine.entities.quest_bosses import FetidRat, Ghost, GnollTrickster, GreatCrab
 from app.engine.entities.weapon_defs import WEP_TIER_ORDER
@@ -82,8 +83,6 @@ _GHOST_REWARD_TEXT = (
     "Maybe they will help you in your journey..."
 )
 _GHOST_BOSS_CLASSES = {1: FetidRat, 2: GnollTrickster, 3: GreatCrab}
-_GHOST_ARMOR_NAMES = {2: "Leather Armor", 3: "Mail Armor", 4: "Scale Armor", 5: "Plate Armor"}
-_GHOST_ARMOR_STR_REQ = {2: 12, 3: 14, 4: 16, 5: 18}
 
 
 def _random_free_cell(floor: FloorState) -> Optional[Tuple[int, int]]:
@@ -111,10 +110,9 @@ def _make_ghost_reward_item(quest, choice: str) -> Optional[Item]:
         )
     if choice == "armor" and quest.armor_tier is not None:
         tier = quest.armor_tier
-        return Armor(
-            id=str(uuid.uuid4()), name=_GHOST_ARMOR_NAMES[tier], tier=tier,
-            strength_requirement=_GHOST_ARMOR_STR_REQ[tier],
-            level=quest.item_level, level_known=True, cursed=False,
+        _ARMOR_TYPES = {2: LeatherArmor, 3: MailArmor, 4: ScaleArmor, 5: PlateArmor}
+        return _ARMOR_TYPES[tier](
+            id=str(uuid.uuid4()), level=quest.item_level, level_known=True, cursed=False,
         )
     return None
 
@@ -193,7 +191,7 @@ class WorldInteractionMixin:
         key is dropped here because it needs the floor-specific lock id, and it
         must drop no matter how Goo died (melee or bleed) so progression can't
         soft-lock."""
-        from app.engine.entities.base import DwarfToken
+        from app.engine.entities.items_consumable import DwarfToken
         from app.engine.entities.mobs import DM300, Golem, Goo, Monk, Necromancer, Pylon, Skeleton, Tengu, YogDzewa
 
         # Imp.Quest.process(): once the quest is given (and not yet
@@ -229,7 +227,7 @@ class WorldInteractionMixin:
 
         # GhostHeroMob death: clear ghost_id on the owner's DriedRose so
         # the rose can be recharged and re-summoned.
-        from app.engine.entities.base import DriedRose
+        from app.engine.entities.items_artifacts import DriedRose
         from app.engine.entities.mobs import GhostHeroMob
         if isinstance(mob, GhostHeroMob) and mob.owner_id:
             owner = self.players.get(mob.owner_id)
@@ -308,6 +306,12 @@ class WorldInteractionMixin:
             distance += 1
             circular = wide_search == 1
 
+        # TrapMechanism trinket: extra trap reveal chance during search
+        from app.engine.entities.trinkets import TrapMechanism as _TM
+        from app.engine.entities.trinkets import trinket_level
+        tm_lvl = trinket_level(player, "trap_mechanism")
+        trap_reveal_chance = _TM.reveal_hidden_trap_chance(tm_lvl) if tm_lvl >= 0 else 0.0
+
         for dy in range(-distance, distance + 1):
             for dx in range(-distance, distance + 1):
                 if dx == 0 and dy == 0:
@@ -329,11 +333,12 @@ class WorldInteractionMixin:
 
                 trap = floor.traps.get(pos)
                 if trap and trap.hidden:
-                    trap.hidden = False
-                    found_secret = True
-                    if floor.grid[ty][tx] == TileType.SECRET_TRAP:
-                        floor.grid[ty][tx] = TileType.TRAP
-                        patches.append({"x": tx, "y": ty, "tile": TileType.TRAP})
+                    if trap_reveal_chance > 0 and random.random() < trap_reveal_chance:
+                        trap.hidden = False
+                        found_secret = True
+                        if floor.grid[ty][tx] == TileType.SECRET_TRAP:
+                            floor.grid[ty][tx] = TileType.TRAP
+                            patches.append({"x": tx, "y": ty, "tile": TileType.TRAP})
 
         if patches:
             # Tile mutations changed the grid — refresh derived flag maps
@@ -365,7 +370,8 @@ class WorldInteractionMixin:
         if not key_id:
             return False
 
-        if not player.remove_key(key_id, floor.floor_id):
+        # Tengu cell entrance: any player may pass freely once fight starts.
+        if key_id != "tengu_boss" and not player.remove_key(key_id, floor.floor_id):
             self.add_event("LOCKED", {"player": player.id, "x": x, "y": y}, floor_id=player.floor_id)
             return False
 
@@ -392,6 +398,8 @@ class WorldInteractionMixin:
         return True
 
     def _trigger_trap_if_needed(self, floor: FloorState, player: Player, floor_id: int):
+        if player.has_buff("levitation"):
+            return
         pos = (player.pos.x, player.pos.y)
         trap = floor.traps.get(pos)
         if not trap or not trap.active:

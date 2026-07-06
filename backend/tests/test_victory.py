@@ -1,5 +1,6 @@
 from app.engine.dungeon.constants import TileType
-from app.engine.entities.base import Amulet, Position
+from app.engine.entities.base import Position
+from app.engine.entities.items_consumable import Amulet
 from app.engine.manager import GameInstance
 
 

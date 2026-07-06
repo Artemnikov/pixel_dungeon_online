@@ -23,35 +23,15 @@ import uuid
 from typing import List, Optional, Tuple
 
 from app.engine.dungeon.generator import TileType
-from app.engine.entities.base import (
-    Amulet,
-    Armor,
-    Bag,
-    Belongings,
-    Bow,
-    CharacterClass,
-    CloakOfShadows,
-    Dagger,
-    Faction,
-    Item,
-    Player,
-    Position,
-    PotionOfLiquidFlame,
-    QuickSlot,
-    Ration,
-    ScrollOfIdentify,
-    ScrollOfUpgrade,
-    SpiritBow,
-    Staff,
-    Stone,
-    ThrowableDagger,
-    VelvetPouch,
-    WandOfMagicMissile,
-    Waterskin,
-    Weapon,
-    WornShortsword,
-    make_named_melee_weapon,
-)
+from app.engine.entities.base import Faction, Position
+from app.engine.entities.item_union import Bag, VelvetPouch
+from app.engine.entities.items_artifacts import CloakOfShadows
+from app.engine.entities.items_consumable import Amulet, Ration, Stone, ThrowableDagger, Waterskin
+from app.engine.entities.items_equip import Bow, ClothArmor, Dagger, SpiritBow, Staff, WornShortsword, make_named_melee_weapon
+from app.engine.entities.items_potions import PotionOfLiquidFlame
+from app.engine.entities.items_scrolls import ScrollOfIdentify, ScrollOfUpgrade
+from app.engine.entities.items_wands import WandOfMagicMissile
+from app.engine.entities.player import Belongings, CharacterClass, Item, Player, QuickSlot, Weapon
 from app.engine.entities.buffs import add_buff
 from app.engine.entities.item_catalog import make_catalog_item
 from app.engine.game.constants import MAX_FLOOR_ID
@@ -75,11 +55,8 @@ class PlayersMixin:
             belongings.weapon = WornShortsword(
                 id=str(uuid.uuid4()),
             )
-            belongings.armor = Armor(
+            belongings.armor = ClothArmor(
                 id=str(uuid.uuid4()),
-                name="Cloth Armor",
-                tier=1,
-                strength_requirement=10,
             )
             stones = Stone(
                 id=str(uuid.uuid4()),
@@ -123,11 +100,8 @@ class PlayersMixin:
             belongings.weapon = Dagger(
                 id=str(uuid.uuid4()),
             )
-            belongings.armor = Armor(
+            belongings.armor = ClothArmor(
                 id=str(uuid.uuid4()),
-                name="Cloth Armor",
-                tier=1,
-                strength_requirement=10,
             )
             belongings.artifact = CloakOfShadows(
                 id=str(uuid.uuid4()),
@@ -146,11 +120,8 @@ class PlayersMixin:
             # + Spirit Bow (quickslot). No armor in SPD, but the remake gives
             # Cloth Armor for parity with other starting kits.
             belongings.weapon = make_named_melee_weapon("Gloves", id=str(uuid.uuid4()))
-            belongings.armor = Armor(
+            belongings.armor = ClothArmor(
                 id=str(uuid.uuid4()),
-                name="Cloth Armor",
-                tier=1,
-                strength_requirement=10,
             )
             spirit_bow = SpiritBow(
                 id=str(uuid.uuid4()),

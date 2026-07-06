@@ -105,6 +105,10 @@ export interface SerializationExtras {
   description: string;
   /** Sprite cell for a potion/scroll's per-run appearance; only on those kinds. */
   appearance?: { col: number; row: number };
+  /** Alchemical energy this item converts to at a pot (energy.py). */
+  energy_value?: number;
+  /** Energy granted by converting exactly one unit (flat-valued items differ from energy_value/quantity). */
+  energy_value_one?: number;
 }
 
 /** An item as it actually arrives over the wire (model + serialization extras). */
@@ -561,6 +565,31 @@ export interface ScrollSelectTargetEvent {
   data: { player: string; scroll_id: string; scroll_kind: string; candidates: string[] };
 }
 
+/** Stone item-selector flow: server asks the player to pick a target item
+ * for a stone (e.g. Stone of Detect Magic, Stone of Enchantment). */
+export interface StoneSelectTargetEvent {
+  type: 'STONE_SELECT_TARGET';
+  data: { player: string; stone_id: string; stone_kind: string; candidates: string[] };
+}
+
+/** Stone of Intuition: server asks the player to pick an unidentified item. */
+export interface StoneIntuitionPickItemEvent {
+  type: 'STONE_INTUITION_PICK_ITEM';
+  data: { player: string; stone_id: string; candidates: string[] };
+}
+
+/** Stone of Intuition: after item is chosen, server sends possible kind names. */
+export interface StoneIntuitionGuessKindEvent {
+  type: 'STONE_INTUITION_GUESS_KIND';
+  data: { player: string; stone_id: string; item_id: string; possible_kinds: string[] };
+}
+
+/** Stone of Augmentation: server asks the player to pick a weapon or armor. */
+export interface StoneAugmentPickItemEvent {
+  type: 'STONE_AUGMENT_PICK_ITEM';
+  data: { player: string; stone_id: string; candidates: string[] };
+}
+
 /** Boss was slain — shows "BOSS SLAIN" banner + badge icon. */
 export interface BossSlainEvent {
   type: 'BOSS_SLAIN';
@@ -742,6 +771,195 @@ export interface LeafBurstEvent {
   data: { x: number; y: number };
 }
 
+/** Sheep spawned from Stone of Flock at each sheep position. */
+export interface FlockEvent {
+  type: 'FLOCK';
+  data: { sheep: Array<{ id: string; x: number; y: number }> };
+}
+
+/** Wool particle burst at a single cell (Stone of Flock). */
+export interface WoolBurstEvent {
+  type: 'WOOL_BURST';
+  data: { x: number; y: number };
+}
+
+/** A thrown bomb's fuse ignites, or an armed Noisemaker re-alerts, at a cell. */
+export interface BombLitEvent {
+  type: 'BOMB_LIT';
+  data: { x: number; y: number; kind: string };
+}
+
+/** A bomb detonates: blast centered at (x,y) covering the affected `cells`. */
+export interface BombBlastEvent {
+  type: 'BOMB_BLAST';
+  data: { x: number; y: number; kind: string; cells: [number, number][] };
+}
+
+// --- weapon enchant / armor glyph proc events --------------------------------
+
+export interface VampiricProcEvent {
+  type: 'VAMPIRIC_PROC';
+  data: { source: string; heal: number };
+}
+
+export interface BlockingProcEvent {
+  type: 'BLOCKING_PROC';
+  data: { source: string; shield: number };
+}
+
+export interface ElasticProcEvent {
+  type: 'ELASTIC_PROC';
+  data: { target: string; from_x: number; from_y: number; to_x: number; to_y: number };
+}
+
+export interface BloomingProcEvent {
+  type: 'BLOOMING_PROC';
+  data: { source: string; defender: string; cells: [number, number][] };
+}
+
+export interface CorruptProcEvent {
+  type: 'CORRUPT_PROC';
+  data: { source: string; target: string };
+}
+
+export interface CharmProcEvent {
+  type: 'CHARM_PROC';
+  data: { source: string; target: string };
+}
+
+export interface ExplosiveProcEvent {
+  type: 'EXPLOSIVE_PROC';
+  data: { x: number; y: number; radius: number };
+}
+
+// --- armor glyph proc events -------------------------------------------------
+
+export interface RepulsionProcEvent {
+  type: 'REPULSION_PROC';
+  data: { target: string; from_x: number; from_y: number; to_x: number; to_y: number };
+}
+
+export interface ViscosityProcEvent {
+  type: 'VISCOSITY_PROC';
+  data: { defender: string; deferred: number };
+}
+
+export interface PotentialProcEvent {
+  type: 'POTENTIAL_PROC';
+  data: { defender: string };
+}
+
+export interface EntanglementProcEvent {
+  type: 'ENTANGLEMENT_PROC';
+  data: { defender: string; absorb: number };
+}
+
+export interface ThornsProcEvent {
+  type: 'THORNS_PROC';
+  data: { defender: string; attacker: string; bleed: number };
+}
+
+export interface AntiEntropyProcEvent {
+  type: 'ANTI_ENTROPY_PROC';
+  data: { defender: string; x: number; y: number };
+}
+
+export interface CorrosionProcEvent {
+  type: 'CORROSION_PROC';
+  data: { defender: string; x: number; y: number };
+}
+
+export interface DisplacementProcEvent {
+  type: 'DISPLACEMENT_PROC';
+  data: { defender: string; attacker: string };
+}
+
+export interface MetabolismProcEvent {
+  type: 'METABOLISM_PROC';
+  data: { defender: string; heal: number };
+}
+
+export interface StenchProcEvent {
+  type: 'STENCH_PROC';
+  data: { defender: string; x: number; y: number };
+}
+
+// --- scroll / exotic items --------------------------------------------------
+
+export interface EnchantChoiceAvailableEvent {
+  type: 'ENCHANT_CHOICE_AVAILABLE';
+  data: {
+    player: string;
+    scroll_id: string;
+    target_id: string;
+    is_weapon: boolean;
+    options: string[];
+  };
+}
+
+export interface EnchantEvent {
+  type: 'ENCHANT';
+  data: { player: string; item: string };
+}
+
+export interface PickupEnergyEvent {
+  type: 'PICKUP_ENERGY';
+  data: { player: string; amount: number };
+}
+
+export interface AlchemyPreviewRecipe {
+  recipe_index: number;
+  cost: number;
+  affordable: boolean;
+  output_kind: string | null;
+  output_name: string;
+  output_quantity: number;
+  known: boolean;
+}
+
+export interface AlchemyPreviewResultEvent {
+  type: 'ALCHEMY_PREVIEW_RESULT';
+  data: {
+    player: string;
+    ingredient_ids: string[];
+    recipes: AlchemyPreviewRecipe[];
+    available_energy: number;
+  };
+}
+
+export interface AlchemyBrewedEvent {
+  type: 'ALCHEMY_BREWED';
+  data: {
+    player: string; item_id: string; item_kind: string; item_name: string;
+    quantity: number; cost: number; energy: number;
+  };
+}
+
+export interface AlchemyEnergizedEvent {
+  type: 'ALCHEMY_ENERGIZED';
+  data: { player: string; amount: number; energy: number };
+}
+
+export interface TrinketChoiceEvent {
+  type: 'TRINKET_CHOICE';
+  data: { player: string; catalyst_id: string; kinds: string[] };
+}
+
+export interface ToolkitBrewEvent {
+  type: 'TOOLKIT_BREW';
+  data: { player: string; item_id: string; charges: number };
+}
+
+export interface ToolkitEnergizePromptEvent {
+  type: 'TOOLKIT_ENERGIZE_PROMPT';
+  data: { player: string; toolkit_id: string; max_levels: number };
+}
+
+export interface ToolkitEnergizedEvent {
+  type: 'TOOLKIT_ENERGIZED';
+  data: { player: string; toolkit_id: string; levels: number; level: number };
+}
+
 export type GameEvent =
   | AttackEvent
   | MissEvent
@@ -797,6 +1015,10 @@ export type GameEvent =
   | MetamorphOptionsEvent
   | TalentMetamorphedEvent
   | ScrollSelectTargetEvent
+  | StoneSelectTargetEvent
+  | StoneIntuitionPickItemEvent
+  | StoneIntuitionGuessKindEvent
+  | StoneAugmentPickItemEvent
   | GooChargeEvent
   | GooEnrageEvent
   | GooFightStartedEvent
@@ -832,13 +1054,44 @@ export type GameEvent =
   | SacrificialFireEvent
   | FlameBurstEvent
   | LeafBurstEvent
+  | FlockEvent
+  | WoolBurstEvent
+  | BombLitEvent
+  | BombBlastEvent
   | SpellSpriteEvent
   | LockedEvent
   | OpenChestEvent
   | CrystalChestShatterEvent
   | SpawnMobEvent
   | LightningArcEvent
-  | DM300TrapStepEvent;
+  | DM300TrapStepEvent
+  | VampiricProcEvent
+  | BlockingProcEvent
+  | ElasticProcEvent
+  | BloomingProcEvent
+  | CorruptProcEvent
+  | CharmProcEvent
+  | ExplosiveProcEvent
+  | RepulsionProcEvent
+  | ViscosityProcEvent
+  | PotentialProcEvent
+  | EntanglementProcEvent
+  | ThornsProcEvent
+  | AntiEntropyProcEvent
+  | CorrosionProcEvent
+  | DisplacementProcEvent
+  | MetabolismProcEvent
+  | StenchProcEvent
+  | EnchantChoiceAvailableEvent
+  | EnchantEvent
+  | PickupEnergyEvent
+  | AlchemyPreviewResultEvent
+  | AlchemyBrewedEvent
+  | AlchemyEnergizedEvent
+  | TrinketChoiceEvent
+  | ToolkitBrewEvent
+  | ToolkitEnergizePromptEvent
+  | ToolkitEnergizedEvent;
 
 export type GameEventType = GameEvent['type'];
 
@@ -944,4 +1197,14 @@ export type ClientMessage =
   | { type: 'SHOP_SELL'; item_id: string }
   | { type: 'IMP_CLAIM_REWARD'; npc_id: string }
   | { type: 'SELECT_SCROLL_TARGET'; scroll_id: string; item_id: string }
-  | { type: 'CONFIRM_CHASM_FALL'; x: number; y: number };
+  | { type: 'SELECT_STONE_TARGET'; stone_id: string; item_id: string }
+  | { type: 'STONE_INTUITION_CHOOSE_ITEM'; stone_id: string; item_id: string }
+  | { type: 'STONE_INTUITION_GUESS'; stone_id: string; item_id: string; guessed_kind: string }
+  | { type: 'STONE_AUGMENT_CHOOSE'; stone_id: string; item_id: string; augment_type: string }
+  | { type: 'CHOOSE_ENCHANT'; target_id: string; choice_index: number }
+  | { type: 'CONFIRM_CHASM_FALL'; x: number; y: number }
+  | { type: 'ALCHEMY_PREVIEW'; ingredient_ids: string[] }
+  | { type: 'ALCHEMY_BREW'; ingredient_ids: string[]; recipe_index: number }
+  | { type: 'ALCHEMY_ENERGIZE'; item_id: string; all_items: boolean }
+  | { type: 'ALCHEMY_TRINKET_CHOOSE'; catalyst_id: string; kind: string }
+  | { type: 'TOOLKIT_ENERGIZE'; toolkit_id: string; levels: number };

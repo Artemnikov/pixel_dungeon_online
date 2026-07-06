@@ -45,6 +45,8 @@ export interface Player {
   ooze_cooldown?: number;
   burning_accum?: number;
   burning_total_seconds?: number;
+  poison_accum?: number;
+  corrosion_accum?: number;
   shields?: Shield[];
   crit_damage_bonus?: number;
   grim_max_chance?: number;
@@ -106,9 +108,24 @@ export interface Player {
   seal_affixed?: boolean;
   hunger?: number;
   cloak_stealth_active?: boolean;
+  holy_tome_buffed?: boolean;
   prep_seconds?: number;
   momentum_stacks?: number;
   freerun_seconds?: number;
+  weapon_charge?: number;
+  finisher_ready?: boolean;
+  duel_mode_active?: boolean;
+  duel_mode_target_id?: string | null;
+  last_weapon_enchant?: string;
+  spells_cast_this_turn?: string[];
+  spell_cooldowns?: {
+    [k: string]: number;
+  };
+  current_trinity_forms?: string[];
+  ascended_form_active?: boolean;
+  ascended_form_timer?: number;
+  powered_ally_id?: string | null;
+  blessed_weapon_turns?: number;
   inventory: (
     | MeleeWeapon
     | Dagger
@@ -118,6 +135,11 @@ export interface Player {
     | Staff
     | MissileWeapon
     | Armor
+    | ClothArmor
+    | LeatherArmor
+    | MailArmor
+    | ScaleArmor
+    | PlateArmor
     | Ring
     | RingOfAccuracy
     | RingOfEvasion
@@ -135,6 +157,19 @@ export interface Player {
     | BrokenSeal
     | CloakOfShadows
     | DriedRose
+    | AlchemistsToolkit
+    | CapeOfThorns
+    | ChaliceOfBlood
+    | EtherealChains
+    | HolyTome
+    | HornOfPlenty
+    | LloydsBeacon
+    | MasterThievesArmband
+    | SandalsOfNature
+    | SkeletonKey
+    | TalismanOfForesight
+    | TimekeepersHourglass
+    | UnstableSpellbook
     | DamageWand
     | WandOfMagicMissile
     | WandOfFireblast
@@ -149,6 +184,7 @@ export interface Player {
     | WandOfRegrowth
     | WandOfWarding
     | WandOfLivingEarth
+    | CursedWand
     | Wand
     | HealthPotion
     | RevivingPotion
@@ -165,6 +201,31 @@ export interface Player {
     | PotionOfPurity
     | PotionOfExperience
     | ElixirOfAquaticRejuvenation
+    | PotionOfCleansing
+    | PotionOfCorrosiveGas
+    | PotionOfDragonsBreath
+    | PotionOfEarthenArmor
+    | PotionOfMagicalSight
+    | PotionOfMastery
+    | PotionOfShielding
+    | PotionOfShroudingFog
+    | PotionOfSnapFreeze
+    | PotionOfStamina
+    | PotionOfStormClouds
+    | PotionOfDivineInspiration
+    | ElixirOfArcaneArmor
+    | ElixirOfDragonsBlood
+    | ElixirOfFeatherFall
+    | ElixirOfHoneyedHealing
+    | ElixirOfIcyTouch
+    | ElixirOfMight
+    | ElixirOfToxicEssence
+    | AquaBrew
+    | BlizzardBrew
+    | CausticBrew
+    | InfernalBrew
+    | ShockingBrew
+    | UnstableBrew
     | Potion
     | ScrollOfRage
     | ScrollOfMetamorphosis
@@ -179,10 +240,24 @@ export interface Player {
     | ScrollOfMirrorImage
     | ScrollOfRetribution
     | ScrollOfTransmutation
+    | ScrollOfEnchantment
+    | ExoticScrollOfEnchantment
+    | ScrollOfAntiMagic
+    | ScrollOfChallenge
+    | ScrollOfDivination
+    | ScrollOfDread
+    | ScrollOfForesight
+    | ScrollOfMysticalEnergy
+    | ScrollOfPassage
+    | ScrollOfPrismaticImage
+    | ScrollOfPsionicBlast
+    | ScrollOfSirensSong
     | Scroll
     | Gold
     | MysteryMeat
     | FrozenCarpaccio
+    | StewedMeat
+    | MeatPie
     | Berry
     | SmallRation
     | Ration
@@ -200,6 +275,9 @@ export interface Player {
     | Boomerang
     | ThrowableDagger
     | Throwable
+    | EnergyCrystal
+    | ArcaneStylus
+    | MagicalInfusion
     | GooBlob
     | DwarfToken
     | Petal
@@ -209,6 +287,36 @@ export interface Player {
     | MagicalHolster
     | PotionBandolier
     | Bag
+    | RatSkull
+    | ParchmentScrap
+    | PetrifiedSeed
+    | ExoticCrystals
+    | MossyClump
+    | DimensionalSundial
+    | ThirteenLeafClover
+    | TrapMechanism
+    | MimicTooth
+    | WondrousResin
+    | EyeOfNewt
+    | SaltCube
+    | VialOfBlood
+    | ShardOfOblivion
+    | ChaoticCenser
+    | FerretTuft
+    | CrackedSpyglass
+    | TrinketCatalyst
+    | StoneOfBlast
+    | StoneOfBlink
+    | StoneOfDeepSleep
+    | StoneOfClairvoyance
+    | StoneOfAggression
+    | StoneOfFlock
+    | StoneOfShock
+    | StoneOfFear
+    | StoneOfIntuition
+    | StoneOfAugmentation
+    | StoneOfDetectMagic
+    | StoneOfEnchantment
   )[];
   equipped_weapon:
     | (
@@ -220,6 +328,11 @@ export interface Player {
         | Staff
         | MissileWeapon
         | Armor
+        | ClothArmor
+        | LeatherArmor
+        | MailArmor
+        | ScaleArmor
+        | PlateArmor
         | Ring
         | RingOfAccuracy
         | RingOfEvasion
@@ -237,6 +350,19 @@ export interface Player {
         | BrokenSeal
         | CloakOfShadows
         | DriedRose
+        | AlchemistsToolkit
+        | CapeOfThorns
+        | ChaliceOfBlood
+        | EtherealChains
+        | HolyTome
+        | HornOfPlenty
+        | LloydsBeacon
+        | MasterThievesArmband
+        | SandalsOfNature
+        | SkeletonKey
+        | TalismanOfForesight
+        | TimekeepersHourglass
+        | UnstableSpellbook
         | DamageWand
         | WandOfMagicMissile
         | WandOfFireblast
@@ -251,6 +377,7 @@ export interface Player {
         | WandOfRegrowth
         | WandOfWarding
         | WandOfLivingEarth
+        | CursedWand
         | Wand
         | HealthPotion
         | RevivingPotion
@@ -267,6 +394,31 @@ export interface Player {
         | PotionOfPurity
         | PotionOfExperience
         | ElixirOfAquaticRejuvenation
+        | PotionOfCleansing
+        | PotionOfCorrosiveGas
+        | PotionOfDragonsBreath
+        | PotionOfEarthenArmor
+        | PotionOfMagicalSight
+        | PotionOfMastery
+        | PotionOfShielding
+        | PotionOfShroudingFog
+        | PotionOfSnapFreeze
+        | PotionOfStamina
+        | PotionOfStormClouds
+        | PotionOfDivineInspiration
+        | ElixirOfArcaneArmor
+        | ElixirOfDragonsBlood
+        | ElixirOfFeatherFall
+        | ElixirOfHoneyedHealing
+        | ElixirOfIcyTouch
+        | ElixirOfMight
+        | ElixirOfToxicEssence
+        | AquaBrew
+        | BlizzardBrew
+        | CausticBrew
+        | InfernalBrew
+        | ShockingBrew
+        | UnstableBrew
         | Potion
         | ScrollOfRage
         | ScrollOfMetamorphosis
@@ -281,10 +433,24 @@ export interface Player {
         | ScrollOfMirrorImage
         | ScrollOfRetribution
         | ScrollOfTransmutation
+        | ScrollOfEnchantment
+        | ExoticScrollOfEnchantment
+        | ScrollOfAntiMagic
+        | ScrollOfChallenge
+        | ScrollOfDivination
+        | ScrollOfDread
+        | ScrollOfForesight
+        | ScrollOfMysticalEnergy
+        | ScrollOfPassage
+        | ScrollOfPrismaticImage
+        | ScrollOfPsionicBlast
+        | ScrollOfSirensSong
         | Scroll
         | Gold
         | MysteryMeat
         | FrozenCarpaccio
+        | StewedMeat
+        | MeatPie
         | Berry
         | SmallRation
         | Ration
@@ -302,6 +468,9 @@ export interface Player {
         | Boomerang
         | ThrowableDagger
         | Throwable
+        | EnergyCrystal
+        | ArcaneStylus
+        | MagicalInfusion
         | GooBlob
         | DwarfToken
         | Petal
@@ -311,6 +480,36 @@ export interface Player {
         | MagicalHolster
         | PotionBandolier
         | Bag
+        | RatSkull
+        | ParchmentScrap
+        | PetrifiedSeed
+        | ExoticCrystals
+        | MossyClump
+        | DimensionalSundial
+        | ThirteenLeafClover
+        | TrapMechanism
+        | MimicTooth
+        | WondrousResin
+        | EyeOfNewt
+        | SaltCube
+        | VialOfBlood
+        | ShardOfOblivion
+        | ChaoticCenser
+        | FerretTuft
+        | CrackedSpyglass
+        | TrinketCatalyst
+        | StoneOfBlast
+        | StoneOfBlink
+        | StoneOfDeepSleep
+        | StoneOfClairvoyance
+        | StoneOfAggression
+        | StoneOfFlock
+        | StoneOfShock
+        | StoneOfFear
+        | StoneOfIntuition
+        | StoneOfAugmentation
+        | StoneOfDetectMagic
+        | StoneOfEnchantment
       )
     | null;
   equipped_wearable:
@@ -323,6 +522,11 @@ export interface Player {
         | Staff
         | MissileWeapon
         | Armor
+        | ClothArmor
+        | LeatherArmor
+        | MailArmor
+        | ScaleArmor
+        | PlateArmor
         | Ring
         | RingOfAccuracy
         | RingOfEvasion
@@ -340,6 +544,19 @@ export interface Player {
         | BrokenSeal
         | CloakOfShadows
         | DriedRose
+        | AlchemistsToolkit
+        | CapeOfThorns
+        | ChaliceOfBlood
+        | EtherealChains
+        | HolyTome
+        | HornOfPlenty
+        | LloydsBeacon
+        | MasterThievesArmband
+        | SandalsOfNature
+        | SkeletonKey
+        | TalismanOfForesight
+        | TimekeepersHourglass
+        | UnstableSpellbook
         | DamageWand
         | WandOfMagicMissile
         | WandOfFireblast
@@ -354,6 +571,7 @@ export interface Player {
         | WandOfRegrowth
         | WandOfWarding
         | WandOfLivingEarth
+        | CursedWand
         | Wand
         | HealthPotion
         | RevivingPotion
@@ -370,6 +588,31 @@ export interface Player {
         | PotionOfPurity
         | PotionOfExperience
         | ElixirOfAquaticRejuvenation
+        | PotionOfCleansing
+        | PotionOfCorrosiveGas
+        | PotionOfDragonsBreath
+        | PotionOfEarthenArmor
+        | PotionOfMagicalSight
+        | PotionOfMastery
+        | PotionOfShielding
+        | PotionOfShroudingFog
+        | PotionOfSnapFreeze
+        | PotionOfStamina
+        | PotionOfStormClouds
+        | PotionOfDivineInspiration
+        | ElixirOfArcaneArmor
+        | ElixirOfDragonsBlood
+        | ElixirOfFeatherFall
+        | ElixirOfHoneyedHealing
+        | ElixirOfIcyTouch
+        | ElixirOfMight
+        | ElixirOfToxicEssence
+        | AquaBrew
+        | BlizzardBrew
+        | CausticBrew
+        | InfernalBrew
+        | ShockingBrew
+        | UnstableBrew
         | Potion
         | ScrollOfRage
         | ScrollOfMetamorphosis
@@ -384,10 +627,24 @@ export interface Player {
         | ScrollOfMirrorImage
         | ScrollOfRetribution
         | ScrollOfTransmutation
+        | ScrollOfEnchantment
+        | ExoticScrollOfEnchantment
+        | ScrollOfAntiMagic
+        | ScrollOfChallenge
+        | ScrollOfDivination
+        | ScrollOfDread
+        | ScrollOfForesight
+        | ScrollOfMysticalEnergy
+        | ScrollOfPassage
+        | ScrollOfPrismaticImage
+        | ScrollOfPsionicBlast
+        | ScrollOfSirensSong
         | Scroll
         | Gold
         | MysteryMeat
         | FrozenCarpaccio
+        | StewedMeat
+        | MeatPie
         | Berry
         | SmallRation
         | Ration
@@ -405,6 +662,9 @@ export interface Player {
         | Boomerang
         | ThrowableDagger
         | Throwable
+        | EnergyCrystal
+        | ArcaneStylus
+        | MagicalInfusion
         | GooBlob
         | DwarfToken
         | Petal
@@ -414,6 +674,36 @@ export interface Player {
         | MagicalHolster
         | PotionBandolier
         | Bag
+        | RatSkull
+        | ParchmentScrap
+        | PetrifiedSeed
+        | ExoticCrystals
+        | MossyClump
+        | DimensionalSundial
+        | ThirteenLeafClover
+        | TrapMechanism
+        | MimicTooth
+        | WondrousResin
+        | EyeOfNewt
+        | SaltCube
+        | VialOfBlood
+        | ShardOfOblivion
+        | ChaoticCenser
+        | FerretTuft
+        | CrackedSpyglass
+        | TrinketCatalyst
+        | StoneOfBlast
+        | StoneOfBlink
+        | StoneOfDeepSleep
+        | StoneOfClairvoyance
+        | StoneOfAggression
+        | StoneOfFlock
+        | StoneOfShock
+        | StoneOfFear
+        | StoneOfIntuition
+        | StoneOfAugmentation
+        | StoneOfDetectMagic
+        | StoneOfEnchantment
       )
     | null;
 }
@@ -455,6 +745,11 @@ export interface Belongings {
         | Staff
         | MissileWeapon
         | Armor
+        | ClothArmor
+        | LeatherArmor
+        | MailArmor
+        | ScaleArmor
+        | PlateArmor
         | Ring
         | RingOfAccuracy
         | RingOfEvasion
@@ -472,6 +767,19 @@ export interface Belongings {
         | BrokenSeal
         | CloakOfShadows
         | DriedRose
+        | AlchemistsToolkit
+        | CapeOfThorns
+        | ChaliceOfBlood
+        | EtherealChains
+        | HolyTome
+        | HornOfPlenty
+        | LloydsBeacon
+        | MasterThievesArmband
+        | SandalsOfNature
+        | SkeletonKey
+        | TalismanOfForesight
+        | TimekeepersHourglass
+        | UnstableSpellbook
         | DamageWand
         | WandOfMagicMissile
         | WandOfFireblast
@@ -486,6 +794,7 @@ export interface Belongings {
         | WandOfRegrowth
         | WandOfWarding
         | WandOfLivingEarth
+        | CursedWand
         | Wand
         | HealthPotion
         | RevivingPotion
@@ -502,6 +811,31 @@ export interface Belongings {
         | PotionOfPurity
         | PotionOfExperience
         | ElixirOfAquaticRejuvenation
+        | PotionOfCleansing
+        | PotionOfCorrosiveGas
+        | PotionOfDragonsBreath
+        | PotionOfEarthenArmor
+        | PotionOfMagicalSight
+        | PotionOfMastery
+        | PotionOfShielding
+        | PotionOfShroudingFog
+        | PotionOfSnapFreeze
+        | PotionOfStamina
+        | PotionOfStormClouds
+        | PotionOfDivineInspiration
+        | ElixirOfArcaneArmor
+        | ElixirOfDragonsBlood
+        | ElixirOfFeatherFall
+        | ElixirOfHoneyedHealing
+        | ElixirOfIcyTouch
+        | ElixirOfMight
+        | ElixirOfToxicEssence
+        | AquaBrew
+        | BlizzardBrew
+        | CausticBrew
+        | InfernalBrew
+        | ShockingBrew
+        | UnstableBrew
         | Potion
         | ScrollOfRage
         | ScrollOfMetamorphosis
@@ -516,10 +850,24 @@ export interface Belongings {
         | ScrollOfMirrorImage
         | ScrollOfRetribution
         | ScrollOfTransmutation
+        | ScrollOfEnchantment
+        | ExoticScrollOfEnchantment
+        | ScrollOfAntiMagic
+        | ScrollOfChallenge
+        | ScrollOfDivination
+        | ScrollOfDread
+        | ScrollOfForesight
+        | ScrollOfMysticalEnergy
+        | ScrollOfPassage
+        | ScrollOfPrismaticImage
+        | ScrollOfPsionicBlast
+        | ScrollOfSirensSong
         | Scroll
         | Gold
         | MysteryMeat
         | FrozenCarpaccio
+        | StewedMeat
+        | MeatPie
         | Berry
         | SmallRation
         | Ration
@@ -537,6 +885,9 @@ export interface Belongings {
         | Boomerang
         | ThrowableDagger
         | Throwable
+        | EnergyCrystal
+        | ArcaneStylus
+        | MagicalInfusion
         | GooBlob
         | DwarfToken
         | Petal
@@ -546,6 +897,36 @@ export interface Belongings {
         | MagicalHolster
         | PotionBandolier
         | Bag
+        | RatSkull
+        | ParchmentScrap
+        | PetrifiedSeed
+        | ExoticCrystals
+        | MossyClump
+        | DimensionalSundial
+        | ThirteenLeafClover
+        | TrapMechanism
+        | MimicTooth
+        | WondrousResin
+        | EyeOfNewt
+        | SaltCube
+        | VialOfBlood
+        | ShardOfOblivion
+        | ChaoticCenser
+        | FerretTuft
+        | CrackedSpyglass
+        | TrinketCatalyst
+        | StoneOfBlast
+        | StoneOfBlink
+        | StoneOfDeepSleep
+        | StoneOfClairvoyance
+        | StoneOfAggression
+        | StoneOfFlock
+        | StoneOfShock
+        | StoneOfFear
+        | StoneOfIntuition
+        | StoneOfAugmentation
+        | StoneOfDetectMagic
+        | StoneOfEnchantment
       )
     | null;
   armor?:
@@ -558,6 +939,11 @@ export interface Belongings {
         | Staff
         | MissileWeapon
         | Armor
+        | ClothArmor
+        | LeatherArmor
+        | MailArmor
+        | ScaleArmor
+        | PlateArmor
         | Ring
         | RingOfAccuracy
         | RingOfEvasion
@@ -575,6 +961,19 @@ export interface Belongings {
         | BrokenSeal
         | CloakOfShadows
         | DriedRose
+        | AlchemistsToolkit
+        | CapeOfThorns
+        | ChaliceOfBlood
+        | EtherealChains
+        | HolyTome
+        | HornOfPlenty
+        | LloydsBeacon
+        | MasterThievesArmband
+        | SandalsOfNature
+        | SkeletonKey
+        | TalismanOfForesight
+        | TimekeepersHourglass
+        | UnstableSpellbook
         | DamageWand
         | WandOfMagicMissile
         | WandOfFireblast
@@ -589,6 +988,7 @@ export interface Belongings {
         | WandOfRegrowth
         | WandOfWarding
         | WandOfLivingEarth
+        | CursedWand
         | Wand
         | HealthPotion
         | RevivingPotion
@@ -605,6 +1005,31 @@ export interface Belongings {
         | PotionOfPurity
         | PotionOfExperience
         | ElixirOfAquaticRejuvenation
+        | PotionOfCleansing
+        | PotionOfCorrosiveGas
+        | PotionOfDragonsBreath
+        | PotionOfEarthenArmor
+        | PotionOfMagicalSight
+        | PotionOfMastery
+        | PotionOfShielding
+        | PotionOfShroudingFog
+        | PotionOfSnapFreeze
+        | PotionOfStamina
+        | PotionOfStormClouds
+        | PotionOfDivineInspiration
+        | ElixirOfArcaneArmor
+        | ElixirOfDragonsBlood
+        | ElixirOfFeatherFall
+        | ElixirOfHoneyedHealing
+        | ElixirOfIcyTouch
+        | ElixirOfMight
+        | ElixirOfToxicEssence
+        | AquaBrew
+        | BlizzardBrew
+        | CausticBrew
+        | InfernalBrew
+        | ShockingBrew
+        | UnstableBrew
         | Potion
         | ScrollOfRage
         | ScrollOfMetamorphosis
@@ -619,10 +1044,24 @@ export interface Belongings {
         | ScrollOfMirrorImage
         | ScrollOfRetribution
         | ScrollOfTransmutation
+        | ScrollOfEnchantment
+        | ExoticScrollOfEnchantment
+        | ScrollOfAntiMagic
+        | ScrollOfChallenge
+        | ScrollOfDivination
+        | ScrollOfDread
+        | ScrollOfForesight
+        | ScrollOfMysticalEnergy
+        | ScrollOfPassage
+        | ScrollOfPrismaticImage
+        | ScrollOfPsionicBlast
+        | ScrollOfSirensSong
         | Scroll
         | Gold
         | MysteryMeat
         | FrozenCarpaccio
+        | StewedMeat
+        | MeatPie
         | Berry
         | SmallRation
         | Ration
@@ -640,6 +1079,9 @@ export interface Belongings {
         | Boomerang
         | ThrowableDagger
         | Throwable
+        | EnergyCrystal
+        | ArcaneStylus
+        | MagicalInfusion
         | GooBlob
         | DwarfToken
         | Petal
@@ -649,6 +1091,36 @@ export interface Belongings {
         | MagicalHolster
         | PotionBandolier
         | Bag
+        | RatSkull
+        | ParchmentScrap
+        | PetrifiedSeed
+        | ExoticCrystals
+        | MossyClump
+        | DimensionalSundial
+        | ThirteenLeafClover
+        | TrapMechanism
+        | MimicTooth
+        | WondrousResin
+        | EyeOfNewt
+        | SaltCube
+        | VialOfBlood
+        | ShardOfOblivion
+        | ChaoticCenser
+        | FerretTuft
+        | CrackedSpyglass
+        | TrinketCatalyst
+        | StoneOfBlast
+        | StoneOfBlink
+        | StoneOfDeepSleep
+        | StoneOfClairvoyance
+        | StoneOfAggression
+        | StoneOfFlock
+        | StoneOfShock
+        | StoneOfFear
+        | StoneOfIntuition
+        | StoneOfAugmentation
+        | StoneOfDetectMagic
+        | StoneOfEnchantment
       )
     | null;
   artifact?:
@@ -661,6 +1133,11 @@ export interface Belongings {
         | Staff
         | MissileWeapon
         | Armor
+        | ClothArmor
+        | LeatherArmor
+        | MailArmor
+        | ScaleArmor
+        | PlateArmor
         | Ring
         | RingOfAccuracy
         | RingOfEvasion
@@ -678,6 +1155,19 @@ export interface Belongings {
         | BrokenSeal
         | CloakOfShadows
         | DriedRose
+        | AlchemistsToolkit
+        | CapeOfThorns
+        | ChaliceOfBlood
+        | EtherealChains
+        | HolyTome
+        | HornOfPlenty
+        | LloydsBeacon
+        | MasterThievesArmband
+        | SandalsOfNature
+        | SkeletonKey
+        | TalismanOfForesight
+        | TimekeepersHourglass
+        | UnstableSpellbook
         | DamageWand
         | WandOfMagicMissile
         | WandOfFireblast
@@ -692,6 +1182,7 @@ export interface Belongings {
         | WandOfRegrowth
         | WandOfWarding
         | WandOfLivingEarth
+        | CursedWand
         | Wand
         | HealthPotion
         | RevivingPotion
@@ -708,6 +1199,31 @@ export interface Belongings {
         | PotionOfPurity
         | PotionOfExperience
         | ElixirOfAquaticRejuvenation
+        | PotionOfCleansing
+        | PotionOfCorrosiveGas
+        | PotionOfDragonsBreath
+        | PotionOfEarthenArmor
+        | PotionOfMagicalSight
+        | PotionOfMastery
+        | PotionOfShielding
+        | PotionOfShroudingFog
+        | PotionOfSnapFreeze
+        | PotionOfStamina
+        | PotionOfStormClouds
+        | PotionOfDivineInspiration
+        | ElixirOfArcaneArmor
+        | ElixirOfDragonsBlood
+        | ElixirOfFeatherFall
+        | ElixirOfHoneyedHealing
+        | ElixirOfIcyTouch
+        | ElixirOfMight
+        | ElixirOfToxicEssence
+        | AquaBrew
+        | BlizzardBrew
+        | CausticBrew
+        | InfernalBrew
+        | ShockingBrew
+        | UnstableBrew
         | Potion
         | ScrollOfRage
         | ScrollOfMetamorphosis
@@ -722,10 +1238,24 @@ export interface Belongings {
         | ScrollOfMirrorImage
         | ScrollOfRetribution
         | ScrollOfTransmutation
+        | ScrollOfEnchantment
+        | ExoticScrollOfEnchantment
+        | ScrollOfAntiMagic
+        | ScrollOfChallenge
+        | ScrollOfDivination
+        | ScrollOfDread
+        | ScrollOfForesight
+        | ScrollOfMysticalEnergy
+        | ScrollOfPassage
+        | ScrollOfPrismaticImage
+        | ScrollOfPsionicBlast
+        | ScrollOfSirensSong
         | Scroll
         | Gold
         | MysteryMeat
         | FrozenCarpaccio
+        | StewedMeat
+        | MeatPie
         | Berry
         | SmallRation
         | Ration
@@ -743,6 +1273,9 @@ export interface Belongings {
         | Boomerang
         | ThrowableDagger
         | Throwable
+        | EnergyCrystal
+        | ArcaneStylus
+        | MagicalInfusion
         | GooBlob
         | DwarfToken
         | Petal
@@ -752,6 +1285,36 @@ export interface Belongings {
         | MagicalHolster
         | PotionBandolier
         | Bag
+        | RatSkull
+        | ParchmentScrap
+        | PetrifiedSeed
+        | ExoticCrystals
+        | MossyClump
+        | DimensionalSundial
+        | ThirteenLeafClover
+        | TrapMechanism
+        | MimicTooth
+        | WondrousResin
+        | EyeOfNewt
+        | SaltCube
+        | VialOfBlood
+        | ShardOfOblivion
+        | ChaoticCenser
+        | FerretTuft
+        | CrackedSpyglass
+        | TrinketCatalyst
+        | StoneOfBlast
+        | StoneOfBlink
+        | StoneOfDeepSleep
+        | StoneOfClairvoyance
+        | StoneOfAggression
+        | StoneOfFlock
+        | StoneOfShock
+        | StoneOfFear
+        | StoneOfIntuition
+        | StoneOfAugmentation
+        | StoneOfDetectMagic
+        | StoneOfEnchantment
       )
     | null;
   misc?:
@@ -764,6 +1327,11 @@ export interface Belongings {
         | Staff
         | MissileWeapon
         | Armor
+        | ClothArmor
+        | LeatherArmor
+        | MailArmor
+        | ScaleArmor
+        | PlateArmor
         | Ring
         | RingOfAccuracy
         | RingOfEvasion
@@ -781,6 +1349,19 @@ export interface Belongings {
         | BrokenSeal
         | CloakOfShadows
         | DriedRose
+        | AlchemistsToolkit
+        | CapeOfThorns
+        | ChaliceOfBlood
+        | EtherealChains
+        | HolyTome
+        | HornOfPlenty
+        | LloydsBeacon
+        | MasterThievesArmband
+        | SandalsOfNature
+        | SkeletonKey
+        | TalismanOfForesight
+        | TimekeepersHourglass
+        | UnstableSpellbook
         | DamageWand
         | WandOfMagicMissile
         | WandOfFireblast
@@ -795,6 +1376,7 @@ export interface Belongings {
         | WandOfRegrowth
         | WandOfWarding
         | WandOfLivingEarth
+        | CursedWand
         | Wand
         | HealthPotion
         | RevivingPotion
@@ -811,6 +1393,31 @@ export interface Belongings {
         | PotionOfPurity
         | PotionOfExperience
         | ElixirOfAquaticRejuvenation
+        | PotionOfCleansing
+        | PotionOfCorrosiveGas
+        | PotionOfDragonsBreath
+        | PotionOfEarthenArmor
+        | PotionOfMagicalSight
+        | PotionOfMastery
+        | PotionOfShielding
+        | PotionOfShroudingFog
+        | PotionOfSnapFreeze
+        | PotionOfStamina
+        | PotionOfStormClouds
+        | PotionOfDivineInspiration
+        | ElixirOfArcaneArmor
+        | ElixirOfDragonsBlood
+        | ElixirOfFeatherFall
+        | ElixirOfHoneyedHealing
+        | ElixirOfIcyTouch
+        | ElixirOfMight
+        | ElixirOfToxicEssence
+        | AquaBrew
+        | BlizzardBrew
+        | CausticBrew
+        | InfernalBrew
+        | ShockingBrew
+        | UnstableBrew
         | Potion
         | ScrollOfRage
         | ScrollOfMetamorphosis
@@ -825,10 +1432,24 @@ export interface Belongings {
         | ScrollOfMirrorImage
         | ScrollOfRetribution
         | ScrollOfTransmutation
+        | ScrollOfEnchantment
+        | ExoticScrollOfEnchantment
+        | ScrollOfAntiMagic
+        | ScrollOfChallenge
+        | ScrollOfDivination
+        | ScrollOfDread
+        | ScrollOfForesight
+        | ScrollOfMysticalEnergy
+        | ScrollOfPassage
+        | ScrollOfPrismaticImage
+        | ScrollOfPsionicBlast
+        | ScrollOfSirensSong
         | Scroll
         | Gold
         | MysteryMeat
         | FrozenCarpaccio
+        | StewedMeat
+        | MeatPie
         | Berry
         | SmallRation
         | Ration
@@ -846,6 +1467,9 @@ export interface Belongings {
         | Boomerang
         | ThrowableDagger
         | Throwable
+        | EnergyCrystal
+        | ArcaneStylus
+        | MagicalInfusion
         | GooBlob
         | DwarfToken
         | Petal
@@ -855,6 +1479,36 @@ export interface Belongings {
         | MagicalHolster
         | PotionBandolier
         | Bag
+        | RatSkull
+        | ParchmentScrap
+        | PetrifiedSeed
+        | ExoticCrystals
+        | MossyClump
+        | DimensionalSundial
+        | ThirteenLeafClover
+        | TrapMechanism
+        | MimicTooth
+        | WondrousResin
+        | EyeOfNewt
+        | SaltCube
+        | VialOfBlood
+        | ShardOfOblivion
+        | ChaoticCenser
+        | FerretTuft
+        | CrackedSpyglass
+        | TrinketCatalyst
+        | StoneOfBlast
+        | StoneOfBlink
+        | StoneOfDeepSleep
+        | StoneOfClairvoyance
+        | StoneOfAggression
+        | StoneOfFlock
+        | StoneOfShock
+        | StoneOfFear
+        | StoneOfIntuition
+        | StoneOfAugmentation
+        | StoneOfDetectMagic
+        | StoneOfEnchantment
       )
     | null;
   ring?:
@@ -867,6 +1521,11 @@ export interface Belongings {
         | Staff
         | MissileWeapon
         | Armor
+        | ClothArmor
+        | LeatherArmor
+        | MailArmor
+        | ScaleArmor
+        | PlateArmor
         | Ring
         | RingOfAccuracy
         | RingOfEvasion
@@ -884,6 +1543,19 @@ export interface Belongings {
         | BrokenSeal
         | CloakOfShadows
         | DriedRose
+        | AlchemistsToolkit
+        | CapeOfThorns
+        | ChaliceOfBlood
+        | EtherealChains
+        | HolyTome
+        | HornOfPlenty
+        | LloydsBeacon
+        | MasterThievesArmband
+        | SandalsOfNature
+        | SkeletonKey
+        | TalismanOfForesight
+        | TimekeepersHourglass
+        | UnstableSpellbook
         | DamageWand
         | WandOfMagicMissile
         | WandOfFireblast
@@ -898,6 +1570,7 @@ export interface Belongings {
         | WandOfRegrowth
         | WandOfWarding
         | WandOfLivingEarth
+        | CursedWand
         | Wand
         | HealthPotion
         | RevivingPotion
@@ -914,6 +1587,31 @@ export interface Belongings {
         | PotionOfPurity
         | PotionOfExperience
         | ElixirOfAquaticRejuvenation
+        | PotionOfCleansing
+        | PotionOfCorrosiveGas
+        | PotionOfDragonsBreath
+        | PotionOfEarthenArmor
+        | PotionOfMagicalSight
+        | PotionOfMastery
+        | PotionOfShielding
+        | PotionOfShroudingFog
+        | PotionOfSnapFreeze
+        | PotionOfStamina
+        | PotionOfStormClouds
+        | PotionOfDivineInspiration
+        | ElixirOfArcaneArmor
+        | ElixirOfDragonsBlood
+        | ElixirOfFeatherFall
+        | ElixirOfHoneyedHealing
+        | ElixirOfIcyTouch
+        | ElixirOfMight
+        | ElixirOfToxicEssence
+        | AquaBrew
+        | BlizzardBrew
+        | CausticBrew
+        | InfernalBrew
+        | ShockingBrew
+        | UnstableBrew
         | Potion
         | ScrollOfRage
         | ScrollOfMetamorphosis
@@ -928,10 +1626,24 @@ export interface Belongings {
         | ScrollOfMirrorImage
         | ScrollOfRetribution
         | ScrollOfTransmutation
+        | ScrollOfEnchantment
+        | ExoticScrollOfEnchantment
+        | ScrollOfAntiMagic
+        | ScrollOfChallenge
+        | ScrollOfDivination
+        | ScrollOfDread
+        | ScrollOfForesight
+        | ScrollOfMysticalEnergy
+        | ScrollOfPassage
+        | ScrollOfPrismaticImage
+        | ScrollOfPsionicBlast
+        | ScrollOfSirensSong
         | Scroll
         | Gold
         | MysteryMeat
         | FrozenCarpaccio
+        | StewedMeat
+        | MeatPie
         | Berry
         | SmallRation
         | Ration
@@ -949,6 +1661,9 @@ export interface Belongings {
         | Boomerang
         | ThrowableDagger
         | Throwable
+        | EnergyCrystal
+        | ArcaneStylus
+        | MagicalInfusion
         | GooBlob
         | DwarfToken
         | Petal
@@ -958,6 +1673,36 @@ export interface Belongings {
         | MagicalHolster
         | PotionBandolier
         | Bag
+        | RatSkull
+        | ParchmentScrap
+        | PetrifiedSeed
+        | ExoticCrystals
+        | MossyClump
+        | DimensionalSundial
+        | ThirteenLeafClover
+        | TrapMechanism
+        | MimicTooth
+        | WondrousResin
+        | EyeOfNewt
+        | SaltCube
+        | VialOfBlood
+        | ShardOfOblivion
+        | ChaoticCenser
+        | FerretTuft
+        | CrackedSpyglass
+        | TrinketCatalyst
+        | StoneOfBlast
+        | StoneOfBlink
+        | StoneOfDeepSleep
+        | StoneOfClairvoyance
+        | StoneOfAggression
+        | StoneOfFlock
+        | StoneOfShock
+        | StoneOfFear
+        | StoneOfIntuition
+        | StoneOfAugmentation
+        | StoneOfDetectMagic
+        | StoneOfEnchantment
       )
     | null;
 }
@@ -986,6 +1731,11 @@ export interface Bag {
     | Staff
     | MissileWeapon
     | Armor
+    | ClothArmor
+    | LeatherArmor
+    | MailArmor
+    | ScaleArmor
+    | PlateArmor
     | Ring
     | RingOfAccuracy
     | RingOfEvasion
@@ -1003,6 +1753,19 @@ export interface Bag {
     | BrokenSeal
     | CloakOfShadows
     | DriedRose
+    | AlchemistsToolkit
+    | CapeOfThorns
+    | ChaliceOfBlood
+    | EtherealChains
+    | HolyTome
+    | HornOfPlenty
+    | LloydsBeacon
+    | MasterThievesArmband
+    | SandalsOfNature
+    | SkeletonKey
+    | TalismanOfForesight
+    | TimekeepersHourglass
+    | UnstableSpellbook
     | DamageWand
     | WandOfMagicMissile
     | WandOfFireblast
@@ -1017,6 +1780,7 @@ export interface Bag {
     | WandOfRegrowth
     | WandOfWarding
     | WandOfLivingEarth
+    | CursedWand
     | Wand
     | HealthPotion
     | RevivingPotion
@@ -1033,6 +1797,31 @@ export interface Bag {
     | PotionOfPurity
     | PotionOfExperience
     | ElixirOfAquaticRejuvenation
+    | PotionOfCleansing
+    | PotionOfCorrosiveGas
+    | PotionOfDragonsBreath
+    | PotionOfEarthenArmor
+    | PotionOfMagicalSight
+    | PotionOfMastery
+    | PotionOfShielding
+    | PotionOfShroudingFog
+    | PotionOfSnapFreeze
+    | PotionOfStamina
+    | PotionOfStormClouds
+    | PotionOfDivineInspiration
+    | ElixirOfArcaneArmor
+    | ElixirOfDragonsBlood
+    | ElixirOfFeatherFall
+    | ElixirOfHoneyedHealing
+    | ElixirOfIcyTouch
+    | ElixirOfMight
+    | ElixirOfToxicEssence
+    | AquaBrew
+    | BlizzardBrew
+    | CausticBrew
+    | InfernalBrew
+    | ShockingBrew
+    | UnstableBrew
     | Potion
     | ScrollOfRage
     | ScrollOfMetamorphosis
@@ -1047,10 +1836,24 @@ export interface Bag {
     | ScrollOfMirrorImage
     | ScrollOfRetribution
     | ScrollOfTransmutation
+    | ScrollOfEnchantment
+    | ExoticScrollOfEnchantment
+    | ScrollOfAntiMagic
+    | ScrollOfChallenge
+    | ScrollOfDivination
+    | ScrollOfDread
+    | ScrollOfForesight
+    | ScrollOfMysticalEnergy
+    | ScrollOfPassage
+    | ScrollOfPrismaticImage
+    | ScrollOfPsionicBlast
+    | ScrollOfSirensSong
     | Scroll
     | Gold
     | MysteryMeat
     | FrozenCarpaccio
+    | StewedMeat
+    | MeatPie
     | Berry
     | SmallRation
     | Ration
@@ -1068,6 +1871,9 @@ export interface Bag {
     | Boomerang
     | ThrowableDagger
     | Throwable
+    | EnergyCrystal
+    | ArcaneStylus
+    | MagicalInfusion
     | GooBlob
     | DwarfToken
     | Petal
@@ -1077,6 +1883,36 @@ export interface Bag {
     | MagicalHolster
     | PotionBandolier
     | Bag
+    | RatSkull
+    | ParchmentScrap
+    | PetrifiedSeed
+    | ExoticCrystals
+    | MossyClump
+    | DimensionalSundial
+    | ThirteenLeafClover
+    | TrapMechanism
+    | MimicTooth
+    | WondrousResin
+    | EyeOfNewt
+    | SaltCube
+    | VialOfBlood
+    | ShardOfOblivion
+    | ChaoticCenser
+    | FerretTuft
+    | CrackedSpyglass
+    | TrinketCatalyst
+    | StoneOfBlast
+    | StoneOfBlink
+    | StoneOfDeepSleep
+    | StoneOfClairvoyance
+    | StoneOfAggression
+    | StoneOfFlock
+    | StoneOfShock
+    | StoneOfFear
+    | StoneOfIntuition
+    | StoneOfAugmentation
+    | StoneOfDetectMagic
+    | StoneOfEnchantment
   )[];
 }
 export interface MeleeWeapon {
@@ -1099,6 +1935,7 @@ export interface MeleeWeapon {
   range?: number;
   attack_cooldown?: number;
   enchantment?: string | null;
+  augment?: string | null;
   projectile_type?: string | null;
   surprise_damage_floor?: number;
   acc_factor?: number;
@@ -1128,6 +1965,7 @@ export interface Dagger {
   range?: number;
   attack_cooldown?: number;
   enchantment?: string | null;
+  augment?: string | null;
   projectile_type?: string | null;
   surprise_damage_floor?: number;
   acc_factor?: number;
@@ -1157,6 +1995,7 @@ export interface WornShortsword {
   range?: number;
   attack_cooldown?: number;
   enchantment?: string | null;
+  augment?: string | null;
   projectile_type?: string | null;
   surprise_damage_floor?: number;
   acc_factor?: number;
@@ -1186,6 +2025,7 @@ export interface Bow {
   range?: number;
   attack_cooldown?: number;
   enchantment?: string | null;
+  augment?: string | null;
   projectile_type?: string;
   surprise_damage_floor?: number;
   acc_factor?: number;
@@ -1214,6 +2054,7 @@ export interface SpiritBow {
   range?: number;
   attack_cooldown?: number;
   enchantment?: string | null;
+  augment?: string | null;
   projectile_type?: string;
   surprise_damage_floor?: number;
   acc_factor?: number;
@@ -1243,6 +2084,7 @@ export interface Staff {
   range?: number;
   attack_cooldown?: number;
   enchantment?: string | null;
+  augment?: string | null;
   projectile_type?: string;
   surprise_damage_floor?: number;
   acc_factor?: number;
@@ -1303,6 +2145,7 @@ export interface MissileWeapon {
   range?: number;
   attack_cooldown?: number;
   enchantment?: string | null;
+  augment?: string | null;
   projectile_type?: string | null;
   surprise_damage_floor?: number;
   acc_factor?: number;
@@ -1330,10 +2173,111 @@ export interface Armor {
   strength_requirement?: number;
   tier?: number;
   enchantment?: ArmorEnchantment;
+  augment?: string | null;
 }
 export interface ArmorEnchantment {
   type?: string;
   level?: number;
+}
+export interface ClothArmor {
+  kind?: "cloth_armor";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  strength_requirement?: number;
+  tier?: number;
+  enchantment?: ArmorEnchantment;
+  augment?: string | null;
+}
+export interface LeatherArmor {
+  kind?: "leather_armor";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  strength_requirement?: number;
+  tier?: number;
+  enchantment?: ArmorEnchantment;
+  augment?: string | null;
+}
+export interface MailArmor {
+  kind?: "mail_armor";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  strength_requirement?: number;
+  tier?: number;
+  enchantment?: ArmorEnchantment;
+  augment?: string | null;
+}
+export interface ScaleArmor {
+  kind?: "scale_armor";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  strength_requirement?: number;
+  tier?: number;
+  enchantment?: ArmorEnchantment;
+  augment?: string | null;
+}
+export interface PlateArmor {
+  kind?: "plate_armor";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  strength_requirement?: number;
+  tier?: number;
+  enchantment?: ArmorEnchantment;
+  augment?: string | null;
 }
 export interface Ring {
   kind?: "ring";
@@ -1677,6 +2621,271 @@ export interface DriedRose {
   armor?: Armor | null;
   dropped_petals?: number;
 }
+export interface AlchemistsToolkit {
+  kind?: "alchemists_toolkit";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  strength_requirement?: number;
+  charge?: number;
+  charge_cap?: number;
+  exp?: number;
+}
+export interface CapeOfThorns {
+  kind?: "cape_of_thorns";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  strength_requirement?: number;
+  charge?: number;
+  charge_cap?: number;
+  exp?: number;
+}
+export interface ChaliceOfBlood {
+  kind?: "chalice_of_blood";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  strength_requirement?: number;
+  charge?: number;
+  charge_cap?: number;
+}
+export interface EtherealChains {
+  kind?: "ethereal_chains";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  strength_requirement?: number;
+  charge?: number;
+  charge_cap?: number;
+  exp?: number;
+}
+export interface HolyTome {
+  kind?: "holy_tome";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  strength_requirement?: number;
+  charge?: number;
+  charge_cap?: number;
+  exp?: number;
+}
+export interface HornOfPlenty {
+  kind?: "horn_of_plenty";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  strength_requirement?: number;
+  charge?: number;
+  charge_cap?: number;
+  exp?: number;
+}
+export interface LloydsBeacon {
+  kind?: "lloyds_beacon";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  strength_requirement?: number;
+  charge?: number;
+  charge_cap?: number;
+  exp?: number;
+  beacon_floor?: number | null;
+  beacon_x?: number | null;
+  beacon_y?: number | null;
+}
+export interface MasterThievesArmband {
+  kind?: "master_thieves_armband";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  strength_requirement?: number;
+  charge?: number;
+  charge_cap?: number;
+  exp?: number;
+}
+export interface SandalsOfNature {
+  kind?: "sandals_of_nature";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  strength_requirement?: number;
+  charge?: number;
+  charge_cap?: number;
+  exp?: number;
+  stored_seeds?: string[];
+}
+export interface SkeletonKey {
+  kind?: "skeleton_key";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  strength_requirement?: number;
+  charge?: number;
+  charge_cap?: number;
+  exp?: number;
+}
+export interface TalismanOfForesight {
+  kind?: "talisman_of_foresight";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  strength_requirement?: number;
+  charge?: number;
+  charge_cap?: number;
+  exp?: number;
+}
+export interface TimekeepersHourglass {
+  kind?: "timekeepers_hourglass";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  strength_requirement?: number;
+  charge?: number;
+  charge_cap?: number;
+  exp?: number;
+}
+export interface UnstableSpellbook {
+  kind?: "unstable_spellbook";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  strength_requirement?: number;
+  charge?: number;
+  charge_cap?: number;
+  exp?: number;
+  scroll_index?: string[];
+  initialized?: boolean;
+}
 /**
  * Base for wands that deal direct damage to a target.
  *
@@ -1730,7 +2939,7 @@ export interface WandOfMagicMissile {
   range?: number;
   projectile_type?: string;
   beam_type?: string | null;
-  wand_sound?: string | null;
+  wand_sound?: string;
   partial_charge?: number;
   staff_name?: string;
   recharge_scale?: number;
@@ -1756,7 +2965,7 @@ export interface WandOfFireblast {
   range?: number;
   projectile_type?: string;
   beam_type?: string | null;
-  wand_sound?: string | null;
+  wand_sound?: string;
   partial_charge?: number;
   staff_name?: string;
   recharge_scale?: number;
@@ -1782,7 +2991,7 @@ export interface WandOfFrost {
   range?: number;
   projectile_type?: string;
   beam_type?: string | null;
-  wand_sound?: string | null;
+  wand_sound?: string;
   partial_charge?: number;
   staff_name?: string;
   recharge_scale?: number;
@@ -1859,7 +3068,7 @@ export interface WandOfPrismaticLight {
   max_charges?: number;
   range?: number;
   projectile_type?: string;
-  beam_type?: string;
+  beam_type?: string | null;
   wand_sound?: string;
   partial_charge?: number;
   staff_name?: string;
@@ -1886,7 +3095,7 @@ export interface WandOfBlastWave {
   range?: number;
   projectile_type?: string;
   beam_type?: string | null;
-  wand_sound?: string | null;
+  wand_sound?: string;
   partial_charge?: number;
   staff_name?: string;
   recharge_scale?: number;
@@ -1911,7 +3120,7 @@ export interface WandOfTransfusion {
   max_charges?: number;
   range?: number;
   projectile_type?: string;
-  beam_type?: string;
+  beam_type?: string | null;
   wand_sound?: string;
   partial_charge?: number;
   staff_name?: string;
@@ -1938,7 +3147,7 @@ export interface WandOfCorrosion {
   range?: number;
   projectile_type?: string;
   beam_type?: string | null;
-  wand_sound?: string | null;
+  wand_sound?: string;
   partial_charge?: number;
   staff_name?: string;
   recharge_scale?: number;
@@ -1964,7 +3173,7 @@ export interface WandOfCorruption {
   range?: number;
   projectile_type?: string;
   beam_type?: string | null;
-  wand_sound?: string | null;
+  wand_sound?: string;
   partial_charge?: number;
   staff_name?: string;
   recharge_scale?: number;
@@ -1990,7 +3199,7 @@ export interface WandOfRegrowth {
   range?: number;
   projectile_type?: string;
   beam_type?: string | null;
-  wand_sound?: string | null;
+  wand_sound?: string;
   partial_charge?: number;
   staff_name?: string;
   recharge_scale?: number;
@@ -2016,13 +3225,39 @@ export interface WandOfWarding {
   range?: number;
   projectile_type?: string;
   beam_type?: string | null;
-  wand_sound?: string | null;
+  wand_sound?: string;
   partial_charge?: number;
   staff_name?: string;
   recharge_scale?: number;
 }
 export interface WandOfLivingEarth {
   kind?: "wand_living_earth";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  damage?: number;
+  charges?: number;
+  max_charges?: number;
+  range?: number;
+  projectile_type?: string;
+  beam_type?: string | null;
+  wand_sound?: string;
+  partial_charge?: number;
+  staff_name?: string;
+  recharge_scale?: number;
+}
+export interface CursedWand {
+  kind?: "cursed_wand";
   id?: string;
   name?: string;
   type?: string;
@@ -2302,6 +3537,431 @@ export interface ElixirOfAquaticRejuvenation {
   seen?: boolean;
   effect?: string;
 }
+export interface PotionOfCleansing {
+  kind?: "potion_of_cleansing";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  effect?: string;
+}
+export interface PotionOfCorrosiveGas {
+  kind?: "potion_of_corrosive_gas";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  effect?: string;
+}
+export interface PotionOfDragonsBreath {
+  kind?: "potion_of_dragons_breath";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  effect?: string;
+}
+export interface PotionOfEarthenArmor {
+  kind?: "potion_of_earthen_armor";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  effect?: string;
+}
+export interface PotionOfMagicalSight {
+  kind?: "potion_of_magical_sight";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  effect?: string;
+}
+export interface PotionOfMastery {
+  kind?: "potion_of_mastery";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  effect?: string;
+}
+export interface PotionOfShielding {
+  kind?: "potion_of_shielding";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  effect?: string;
+}
+export interface PotionOfShroudingFog {
+  kind?: "potion_of_shrouding_fog";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  effect?: string;
+}
+export interface PotionOfSnapFreeze {
+  kind?: "potion_of_snap_freeze";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  effect?: string;
+}
+export interface PotionOfStamina {
+  kind?: "potion_of_stamina";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  effect?: string;
+}
+export interface PotionOfStormClouds {
+  kind?: "potion_of_storm_clouds";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  effect?: string;
+}
+export interface PotionOfDivineInspiration {
+  kind?: "potion_of_divine_inspiration";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  effect?: string;
+}
+export interface ElixirOfArcaneArmor {
+  kind?: "elixir_of_arcane_armor";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  effect?: string;
+}
+export interface ElixirOfDragonsBlood {
+  kind?: "elixir_of_dragons_blood";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  effect?: string;
+}
+export interface ElixirOfFeatherFall {
+  kind?: "elixir_of_feather_fall";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  effect?: string;
+}
+export interface ElixirOfHoneyedHealing {
+  kind?: "elixir_of_honeyed_healing";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  effect?: string;
+}
+export interface ElixirOfIcyTouch {
+  kind?: "elixir_of_icy_touch";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  effect?: string;
+}
+export interface ElixirOfMight {
+  kind?: "elixir_of_might";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  effect?: string;
+}
+export interface ElixirOfToxicEssence {
+  kind?: "elixir_of_toxic_essence";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  effect?: string;
+}
+export interface AquaBrew {
+  kind?: "aqua_brew";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  effect?: string;
+}
+export interface BlizzardBrew {
+  kind?: "blizzard_brew";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  effect?: string;
+}
+export interface CausticBrew {
+  kind?: "caustic_brew";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  effect?: string;
+}
+export interface InfernalBrew {
+  kind?: "infernal_brew";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  effect?: string;
+}
+export interface ShockingBrew {
+  kind?: "shocking_brew";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  effect?: string;
+}
+export interface UnstableBrew {
+  kind?: "unstable_brew";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  effect?: string;
+}
 export interface Potion {
   kind?: "potion";
   id?: string;
@@ -2527,6 +4187,198 @@ export interface ScrollOfTransmutation {
   for_sale?: boolean;
   seen?: boolean;
 }
+export interface ScrollOfEnchantment {
+  kind?: "scroll_of_enchantment";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+}
+export interface ExoticScrollOfEnchantment {
+  kind?: "scroll_of_exotic_enchantment";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+}
+export interface ScrollOfAntiMagic {
+  kind?: "scroll_of_anti_magic";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+}
+export interface ScrollOfChallenge {
+  kind?: "scroll_of_challenge";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+}
+export interface ScrollOfDivination {
+  kind?: "scroll_of_divination";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+}
+export interface ScrollOfDread {
+  kind?: "scroll_of_dread";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+}
+export interface ScrollOfForesight {
+  kind?: "scroll_of_foresight";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+}
+export interface ScrollOfMysticalEnergy {
+  kind?: "scroll_of_mystical_energy";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+}
+export interface ScrollOfPassage {
+  kind?: "scroll_of_passage";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+}
+export interface ScrollOfPrismaticImage {
+  kind?: "scroll_of_prismatic_image";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+}
+export interface ScrollOfPsionicBlast {
+  kind?: "scroll_of_psionic_blast";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+}
+export interface ScrollOfSirensSong {
+  kind?: "scroll_of_sirens_song";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+}
 export interface Scroll {
   kind?: "scroll";
   id?: string;
@@ -2578,6 +4430,40 @@ export interface MysteryMeat {
 }
 export interface FrozenCarpaccio {
   kind?: "frozen_carpaccio";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  energy?: number;
+}
+export interface StewedMeat {
+  kind?: "stewed_meat";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  energy?: number;
+}
+export interface MeatPie {
+  kind?: "meat_pie";
   id?: string;
   name?: string;
   type?: string;
@@ -2890,6 +4776,54 @@ export interface Throwable {
   consumable?: boolean;
   projectile_type?: string;
 }
+export interface EnergyCrystal {
+  kind?: "energy_crystal";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+}
+export interface ArcaneStylus {
+  kind?: "arcane_stylus";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+}
+export interface MagicalInfusion {
+  kind?: "magical_infusion";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+}
 export interface GooBlob {
   kind?: "goo_blob";
   id?: string;
@@ -2941,7 +4875,7 @@ export interface Petal {
 export interface Chest {
   kind?: "chest";
   id?: string;
-  name: string;
+  name?: string;
   type?: string;
   pos?: Position | null;
   quantity?: number;
@@ -2964,6 +4898,11 @@ export interface Chest {
     | Staff
     | MissileWeapon
     | Armor
+    | ClothArmor
+    | LeatherArmor
+    | MailArmor
+    | ScaleArmor
+    | PlateArmor
     | Ring
     | RingOfAccuracy
     | RingOfEvasion
@@ -2981,6 +4920,19 @@ export interface Chest {
     | BrokenSeal
     | CloakOfShadows
     | DriedRose
+    | AlchemistsToolkit
+    | CapeOfThorns
+    | ChaliceOfBlood
+    | EtherealChains
+    | HolyTome
+    | HornOfPlenty
+    | LloydsBeacon
+    | MasterThievesArmband
+    | SandalsOfNature
+    | SkeletonKey
+    | TalismanOfForesight
+    | TimekeepersHourglass
+    | UnstableSpellbook
     | DamageWand
     | WandOfMagicMissile
     | WandOfFireblast
@@ -2995,6 +4947,7 @@ export interface Chest {
     | WandOfRegrowth
     | WandOfWarding
     | WandOfLivingEarth
+    | CursedWand
     | Wand
     | HealthPotion
     | RevivingPotion
@@ -3011,6 +4964,31 @@ export interface Chest {
     | PotionOfPurity
     | PotionOfExperience
     | ElixirOfAquaticRejuvenation
+    | PotionOfCleansing
+    | PotionOfCorrosiveGas
+    | PotionOfDragonsBreath
+    | PotionOfEarthenArmor
+    | PotionOfMagicalSight
+    | PotionOfMastery
+    | PotionOfShielding
+    | PotionOfShroudingFog
+    | PotionOfSnapFreeze
+    | PotionOfStamina
+    | PotionOfStormClouds
+    | PotionOfDivineInspiration
+    | ElixirOfArcaneArmor
+    | ElixirOfDragonsBlood
+    | ElixirOfFeatherFall
+    | ElixirOfHoneyedHealing
+    | ElixirOfIcyTouch
+    | ElixirOfMight
+    | ElixirOfToxicEssence
+    | AquaBrew
+    | BlizzardBrew
+    | CausticBrew
+    | InfernalBrew
+    | ShockingBrew
+    | UnstableBrew
     | Potion
     | ScrollOfRage
     | ScrollOfMetamorphosis
@@ -3025,10 +5003,24 @@ export interface Chest {
     | ScrollOfMirrorImage
     | ScrollOfRetribution
     | ScrollOfTransmutation
+    | ScrollOfEnchantment
+    | ExoticScrollOfEnchantment
+    | ScrollOfAntiMagic
+    | ScrollOfChallenge
+    | ScrollOfDivination
+    | ScrollOfDread
+    | ScrollOfForesight
+    | ScrollOfMysticalEnergy
+    | ScrollOfPassage
+    | ScrollOfPrismaticImage
+    | ScrollOfPsionicBlast
+    | ScrollOfSirensSong
     | Scroll
     | Gold
     | MysteryMeat
     | FrozenCarpaccio
+    | StewedMeat
+    | MeatPie
     | Berry
     | SmallRation
     | Ration
@@ -3046,6 +5038,9 @@ export interface Chest {
     | Boomerang
     | ThrowableDagger
     | Throwable
+    | EnergyCrystal
+    | ArcaneStylus
+    | MagicalInfusion
     | GooBlob
     | DwarfToken
     | Petal
@@ -3055,7 +5050,38 @@ export interface Chest {
     | MagicalHolster
     | PotionBandolier
     | Bag
+    | RatSkull
+    | ParchmentScrap
+    | PetrifiedSeed
+    | ExoticCrystals
+    | MossyClump
+    | DimensionalSundial
+    | ThirteenLeafClover
+    | TrapMechanism
+    | MimicTooth
+    | WondrousResin
+    | EyeOfNewt
+    | SaltCube
+    | VialOfBlood
+    | ShardOfOblivion
+    | ChaoticCenser
+    | FerretTuft
+    | CrackedSpyglass
+    | TrinketCatalyst
+    | StoneOfBlast
+    | StoneOfBlink
+    | StoneOfDeepSleep
+    | StoneOfClairvoyance
+    | StoneOfAggression
+    | StoneOfFlock
+    | StoneOfShock
+    | StoneOfFear
+    | StoneOfIntuition
+    | StoneOfAugmentation
+    | StoneOfDetectMagic
+    | StoneOfEnchantment
   )[];
+  item_category?: string | null;
 }
 export interface VelvetPouch {
   kind?: "velvet_pouch";
@@ -3082,6 +5108,11 @@ export interface VelvetPouch {
     | Staff
     | MissileWeapon
     | Armor
+    | ClothArmor
+    | LeatherArmor
+    | MailArmor
+    | ScaleArmor
+    | PlateArmor
     | Ring
     | RingOfAccuracy
     | RingOfEvasion
@@ -3099,6 +5130,19 @@ export interface VelvetPouch {
     | BrokenSeal
     | CloakOfShadows
     | DriedRose
+    | AlchemistsToolkit
+    | CapeOfThorns
+    | ChaliceOfBlood
+    | EtherealChains
+    | HolyTome
+    | HornOfPlenty
+    | LloydsBeacon
+    | MasterThievesArmband
+    | SandalsOfNature
+    | SkeletonKey
+    | TalismanOfForesight
+    | TimekeepersHourglass
+    | UnstableSpellbook
     | DamageWand
     | WandOfMagicMissile
     | WandOfFireblast
@@ -3113,6 +5157,7 @@ export interface VelvetPouch {
     | WandOfRegrowth
     | WandOfWarding
     | WandOfLivingEarth
+    | CursedWand
     | Wand
     | HealthPotion
     | RevivingPotion
@@ -3129,6 +5174,31 @@ export interface VelvetPouch {
     | PotionOfPurity
     | PotionOfExperience
     | ElixirOfAquaticRejuvenation
+    | PotionOfCleansing
+    | PotionOfCorrosiveGas
+    | PotionOfDragonsBreath
+    | PotionOfEarthenArmor
+    | PotionOfMagicalSight
+    | PotionOfMastery
+    | PotionOfShielding
+    | PotionOfShroudingFog
+    | PotionOfSnapFreeze
+    | PotionOfStamina
+    | PotionOfStormClouds
+    | PotionOfDivineInspiration
+    | ElixirOfArcaneArmor
+    | ElixirOfDragonsBlood
+    | ElixirOfFeatherFall
+    | ElixirOfHoneyedHealing
+    | ElixirOfIcyTouch
+    | ElixirOfMight
+    | ElixirOfToxicEssence
+    | AquaBrew
+    | BlizzardBrew
+    | CausticBrew
+    | InfernalBrew
+    | ShockingBrew
+    | UnstableBrew
     | Potion
     | ScrollOfRage
     | ScrollOfMetamorphosis
@@ -3143,10 +5213,24 @@ export interface VelvetPouch {
     | ScrollOfMirrorImage
     | ScrollOfRetribution
     | ScrollOfTransmutation
+    | ScrollOfEnchantment
+    | ExoticScrollOfEnchantment
+    | ScrollOfAntiMagic
+    | ScrollOfChallenge
+    | ScrollOfDivination
+    | ScrollOfDread
+    | ScrollOfForesight
+    | ScrollOfMysticalEnergy
+    | ScrollOfPassage
+    | ScrollOfPrismaticImage
+    | ScrollOfPsionicBlast
+    | ScrollOfSirensSong
     | Scroll
     | Gold
     | MysteryMeat
     | FrozenCarpaccio
+    | StewedMeat
+    | MeatPie
     | Berry
     | SmallRation
     | Ration
@@ -3164,6 +5248,9 @@ export interface VelvetPouch {
     | Boomerang
     | ThrowableDagger
     | Throwable
+    | EnergyCrystal
+    | ArcaneStylus
+    | MagicalInfusion
     | GooBlob
     | DwarfToken
     | Petal
@@ -3173,6 +5260,36 @@ export interface VelvetPouch {
     | MagicalHolster
     | PotionBandolier
     | Bag
+    | RatSkull
+    | ParchmentScrap
+    | PetrifiedSeed
+    | ExoticCrystals
+    | MossyClump
+    | DimensionalSundial
+    | ThirteenLeafClover
+    | TrapMechanism
+    | MimicTooth
+    | WondrousResin
+    | EyeOfNewt
+    | SaltCube
+    | VialOfBlood
+    | ShardOfOblivion
+    | ChaoticCenser
+    | FerretTuft
+    | CrackedSpyglass
+    | TrinketCatalyst
+    | StoneOfBlast
+    | StoneOfBlink
+    | StoneOfDeepSleep
+    | StoneOfClairvoyance
+    | StoneOfAggression
+    | StoneOfFlock
+    | StoneOfShock
+    | StoneOfFear
+    | StoneOfIntuition
+    | StoneOfAugmentation
+    | StoneOfDetectMagic
+    | StoneOfEnchantment
   )[];
 }
 export interface ScrollHolder {
@@ -3200,6 +5317,11 @@ export interface ScrollHolder {
     | Staff
     | MissileWeapon
     | Armor
+    | ClothArmor
+    | LeatherArmor
+    | MailArmor
+    | ScaleArmor
+    | PlateArmor
     | Ring
     | RingOfAccuracy
     | RingOfEvasion
@@ -3217,6 +5339,19 @@ export interface ScrollHolder {
     | BrokenSeal
     | CloakOfShadows
     | DriedRose
+    | AlchemistsToolkit
+    | CapeOfThorns
+    | ChaliceOfBlood
+    | EtherealChains
+    | HolyTome
+    | HornOfPlenty
+    | LloydsBeacon
+    | MasterThievesArmband
+    | SandalsOfNature
+    | SkeletonKey
+    | TalismanOfForesight
+    | TimekeepersHourglass
+    | UnstableSpellbook
     | DamageWand
     | WandOfMagicMissile
     | WandOfFireblast
@@ -3231,6 +5366,7 @@ export interface ScrollHolder {
     | WandOfRegrowth
     | WandOfWarding
     | WandOfLivingEarth
+    | CursedWand
     | Wand
     | HealthPotion
     | RevivingPotion
@@ -3247,6 +5383,31 @@ export interface ScrollHolder {
     | PotionOfPurity
     | PotionOfExperience
     | ElixirOfAquaticRejuvenation
+    | PotionOfCleansing
+    | PotionOfCorrosiveGas
+    | PotionOfDragonsBreath
+    | PotionOfEarthenArmor
+    | PotionOfMagicalSight
+    | PotionOfMastery
+    | PotionOfShielding
+    | PotionOfShroudingFog
+    | PotionOfSnapFreeze
+    | PotionOfStamina
+    | PotionOfStormClouds
+    | PotionOfDivineInspiration
+    | ElixirOfArcaneArmor
+    | ElixirOfDragonsBlood
+    | ElixirOfFeatherFall
+    | ElixirOfHoneyedHealing
+    | ElixirOfIcyTouch
+    | ElixirOfMight
+    | ElixirOfToxicEssence
+    | AquaBrew
+    | BlizzardBrew
+    | CausticBrew
+    | InfernalBrew
+    | ShockingBrew
+    | UnstableBrew
     | Potion
     | ScrollOfRage
     | ScrollOfMetamorphosis
@@ -3261,10 +5422,24 @@ export interface ScrollHolder {
     | ScrollOfMirrorImage
     | ScrollOfRetribution
     | ScrollOfTransmutation
+    | ScrollOfEnchantment
+    | ExoticScrollOfEnchantment
+    | ScrollOfAntiMagic
+    | ScrollOfChallenge
+    | ScrollOfDivination
+    | ScrollOfDread
+    | ScrollOfForesight
+    | ScrollOfMysticalEnergy
+    | ScrollOfPassage
+    | ScrollOfPrismaticImage
+    | ScrollOfPsionicBlast
+    | ScrollOfSirensSong
     | Scroll
     | Gold
     | MysteryMeat
     | FrozenCarpaccio
+    | StewedMeat
+    | MeatPie
     | Berry
     | SmallRation
     | Ration
@@ -3282,6 +5457,9 @@ export interface ScrollHolder {
     | Boomerang
     | ThrowableDagger
     | Throwable
+    | EnergyCrystal
+    | ArcaneStylus
+    | MagicalInfusion
     | GooBlob
     | DwarfToken
     | Petal
@@ -3291,6 +5469,36 @@ export interface ScrollHolder {
     | MagicalHolster
     | PotionBandolier
     | Bag
+    | RatSkull
+    | ParchmentScrap
+    | PetrifiedSeed
+    | ExoticCrystals
+    | MossyClump
+    | DimensionalSundial
+    | ThirteenLeafClover
+    | TrapMechanism
+    | MimicTooth
+    | WondrousResin
+    | EyeOfNewt
+    | SaltCube
+    | VialOfBlood
+    | ShardOfOblivion
+    | ChaoticCenser
+    | FerretTuft
+    | CrackedSpyglass
+    | TrinketCatalyst
+    | StoneOfBlast
+    | StoneOfBlink
+    | StoneOfDeepSleep
+    | StoneOfClairvoyance
+    | StoneOfAggression
+    | StoneOfFlock
+    | StoneOfShock
+    | StoneOfFear
+    | StoneOfIntuition
+    | StoneOfAugmentation
+    | StoneOfDetectMagic
+    | StoneOfEnchantment
   )[];
 }
 export interface MagicalHolster {
@@ -3318,6 +5526,11 @@ export interface MagicalHolster {
     | Staff
     | MissileWeapon
     | Armor
+    | ClothArmor
+    | LeatherArmor
+    | MailArmor
+    | ScaleArmor
+    | PlateArmor
     | Ring
     | RingOfAccuracy
     | RingOfEvasion
@@ -3335,6 +5548,19 @@ export interface MagicalHolster {
     | BrokenSeal
     | CloakOfShadows
     | DriedRose
+    | AlchemistsToolkit
+    | CapeOfThorns
+    | ChaliceOfBlood
+    | EtherealChains
+    | HolyTome
+    | HornOfPlenty
+    | LloydsBeacon
+    | MasterThievesArmband
+    | SandalsOfNature
+    | SkeletonKey
+    | TalismanOfForesight
+    | TimekeepersHourglass
+    | UnstableSpellbook
     | DamageWand
     | WandOfMagicMissile
     | WandOfFireblast
@@ -3349,6 +5575,7 @@ export interface MagicalHolster {
     | WandOfRegrowth
     | WandOfWarding
     | WandOfLivingEarth
+    | CursedWand
     | Wand
     | HealthPotion
     | RevivingPotion
@@ -3365,6 +5592,31 @@ export interface MagicalHolster {
     | PotionOfPurity
     | PotionOfExperience
     | ElixirOfAquaticRejuvenation
+    | PotionOfCleansing
+    | PotionOfCorrosiveGas
+    | PotionOfDragonsBreath
+    | PotionOfEarthenArmor
+    | PotionOfMagicalSight
+    | PotionOfMastery
+    | PotionOfShielding
+    | PotionOfShroudingFog
+    | PotionOfSnapFreeze
+    | PotionOfStamina
+    | PotionOfStormClouds
+    | PotionOfDivineInspiration
+    | ElixirOfArcaneArmor
+    | ElixirOfDragonsBlood
+    | ElixirOfFeatherFall
+    | ElixirOfHoneyedHealing
+    | ElixirOfIcyTouch
+    | ElixirOfMight
+    | ElixirOfToxicEssence
+    | AquaBrew
+    | BlizzardBrew
+    | CausticBrew
+    | InfernalBrew
+    | ShockingBrew
+    | UnstableBrew
     | Potion
     | ScrollOfRage
     | ScrollOfMetamorphosis
@@ -3379,10 +5631,24 @@ export interface MagicalHolster {
     | ScrollOfMirrorImage
     | ScrollOfRetribution
     | ScrollOfTransmutation
+    | ScrollOfEnchantment
+    | ExoticScrollOfEnchantment
+    | ScrollOfAntiMagic
+    | ScrollOfChallenge
+    | ScrollOfDivination
+    | ScrollOfDread
+    | ScrollOfForesight
+    | ScrollOfMysticalEnergy
+    | ScrollOfPassage
+    | ScrollOfPrismaticImage
+    | ScrollOfPsionicBlast
+    | ScrollOfSirensSong
     | Scroll
     | Gold
     | MysteryMeat
     | FrozenCarpaccio
+    | StewedMeat
+    | MeatPie
     | Berry
     | SmallRation
     | Ration
@@ -3400,6 +5666,9 @@ export interface MagicalHolster {
     | Boomerang
     | ThrowableDagger
     | Throwable
+    | EnergyCrystal
+    | ArcaneStylus
+    | MagicalInfusion
     | GooBlob
     | DwarfToken
     | Petal
@@ -3409,6 +5678,36 @@ export interface MagicalHolster {
     | MagicalHolster
     | PotionBandolier
     | Bag
+    | RatSkull
+    | ParchmentScrap
+    | PetrifiedSeed
+    | ExoticCrystals
+    | MossyClump
+    | DimensionalSundial
+    | ThirteenLeafClover
+    | TrapMechanism
+    | MimicTooth
+    | WondrousResin
+    | EyeOfNewt
+    | SaltCube
+    | VialOfBlood
+    | ShardOfOblivion
+    | ChaoticCenser
+    | FerretTuft
+    | CrackedSpyglass
+    | TrinketCatalyst
+    | StoneOfBlast
+    | StoneOfBlink
+    | StoneOfDeepSleep
+    | StoneOfClairvoyance
+    | StoneOfAggression
+    | StoneOfFlock
+    | StoneOfShock
+    | StoneOfFear
+    | StoneOfIntuition
+    | StoneOfAugmentation
+    | StoneOfDetectMagic
+    | StoneOfEnchantment
   )[];
 }
 export interface PotionBandolier {
@@ -3436,6 +5735,11 @@ export interface PotionBandolier {
     | Staff
     | MissileWeapon
     | Armor
+    | ClothArmor
+    | LeatherArmor
+    | MailArmor
+    | ScaleArmor
+    | PlateArmor
     | Ring
     | RingOfAccuracy
     | RingOfEvasion
@@ -3453,6 +5757,19 @@ export interface PotionBandolier {
     | BrokenSeal
     | CloakOfShadows
     | DriedRose
+    | AlchemistsToolkit
+    | CapeOfThorns
+    | ChaliceOfBlood
+    | EtherealChains
+    | HolyTome
+    | HornOfPlenty
+    | LloydsBeacon
+    | MasterThievesArmband
+    | SandalsOfNature
+    | SkeletonKey
+    | TalismanOfForesight
+    | TimekeepersHourglass
+    | UnstableSpellbook
     | DamageWand
     | WandOfMagicMissile
     | WandOfFireblast
@@ -3467,6 +5784,7 @@ export interface PotionBandolier {
     | WandOfRegrowth
     | WandOfWarding
     | WandOfLivingEarth
+    | CursedWand
     | Wand
     | HealthPotion
     | RevivingPotion
@@ -3483,6 +5801,31 @@ export interface PotionBandolier {
     | PotionOfPurity
     | PotionOfExperience
     | ElixirOfAquaticRejuvenation
+    | PotionOfCleansing
+    | PotionOfCorrosiveGas
+    | PotionOfDragonsBreath
+    | PotionOfEarthenArmor
+    | PotionOfMagicalSight
+    | PotionOfMastery
+    | PotionOfShielding
+    | PotionOfShroudingFog
+    | PotionOfSnapFreeze
+    | PotionOfStamina
+    | PotionOfStormClouds
+    | PotionOfDivineInspiration
+    | ElixirOfArcaneArmor
+    | ElixirOfDragonsBlood
+    | ElixirOfFeatherFall
+    | ElixirOfHoneyedHealing
+    | ElixirOfIcyTouch
+    | ElixirOfMight
+    | ElixirOfToxicEssence
+    | AquaBrew
+    | BlizzardBrew
+    | CausticBrew
+    | InfernalBrew
+    | ShockingBrew
+    | UnstableBrew
     | Potion
     | ScrollOfRage
     | ScrollOfMetamorphosis
@@ -3497,10 +5840,24 @@ export interface PotionBandolier {
     | ScrollOfMirrorImage
     | ScrollOfRetribution
     | ScrollOfTransmutation
+    | ScrollOfEnchantment
+    | ExoticScrollOfEnchantment
+    | ScrollOfAntiMagic
+    | ScrollOfChallenge
+    | ScrollOfDivination
+    | ScrollOfDread
+    | ScrollOfForesight
+    | ScrollOfMysticalEnergy
+    | ScrollOfPassage
+    | ScrollOfPrismaticImage
+    | ScrollOfPsionicBlast
+    | ScrollOfSirensSong
     | Scroll
     | Gold
     | MysteryMeat
     | FrozenCarpaccio
+    | StewedMeat
+    | MeatPie
     | Berry
     | SmallRation
     | Ration
@@ -3518,6 +5875,9 @@ export interface PotionBandolier {
     | Boomerang
     | ThrowableDagger
     | Throwable
+    | EnergyCrystal
+    | ArcaneStylus
+    | MagicalInfusion
     | GooBlob
     | DwarfToken
     | Petal
@@ -3527,7 +5887,535 @@ export interface PotionBandolier {
     | MagicalHolster
     | PotionBandolier
     | Bag
+    | RatSkull
+    | ParchmentScrap
+    | PetrifiedSeed
+    | ExoticCrystals
+    | MossyClump
+    | DimensionalSundial
+    | ThirteenLeafClover
+    | TrapMechanism
+    | MimicTooth
+    | WondrousResin
+    | EyeOfNewt
+    | SaltCube
+    | VialOfBlood
+    | ShardOfOblivion
+    | ChaoticCenser
+    | FerretTuft
+    | CrackedSpyglass
+    | TrinketCatalyst
+    | StoneOfBlast
+    | StoneOfBlink
+    | StoneOfDeepSleep
+    | StoneOfClairvoyance
+    | StoneOfAggression
+    | StoneOfFlock
+    | StoneOfShock
+    | StoneOfFear
+    | StoneOfIntuition
+    | StoneOfAugmentation
+    | StoneOfDetectMagic
+    | StoneOfEnchantment
   )[];
+}
+export interface RatSkull {
+  kind?: "rat_skull";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  strength_requirement?: number;
+}
+export interface ParchmentScrap {
+  kind?: "parchment_scrap";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  strength_requirement?: number;
+}
+export interface PetrifiedSeed {
+  kind?: "petrified_seed";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  strength_requirement?: number;
+}
+export interface ExoticCrystals {
+  kind?: "exotic_crystals";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  strength_requirement?: number;
+}
+export interface MossyClump {
+  kind?: "mossy_clump";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  strength_requirement?: number;
+}
+export interface DimensionalSundial {
+  kind?: "dimensional_sundial";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  strength_requirement?: number;
+}
+export interface ThirteenLeafClover {
+  kind?: "thirteen_leaf_clover";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  strength_requirement?: number;
+}
+export interface TrapMechanism {
+  kind?: "trap_mechanism";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  strength_requirement?: number;
+}
+export interface MimicTooth {
+  kind?: "mimic_tooth";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  strength_requirement?: number;
+}
+export interface WondrousResin {
+  kind?: "wondrous_resin";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  strength_requirement?: number;
+}
+export interface EyeOfNewt {
+  kind?: "eye_of_newt";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  strength_requirement?: number;
+}
+export interface SaltCube {
+  kind?: "salt_cube";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  strength_requirement?: number;
+}
+export interface VialOfBlood {
+  kind?: "vial_of_blood";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  strength_requirement?: number;
+}
+export interface ShardOfOblivion {
+  kind?: "shard_of_oblivion";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  strength_requirement?: number;
+}
+export interface ChaoticCenser {
+  kind?: "chaotic_censer";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  strength_requirement?: number;
+}
+export interface FerretTuft {
+  kind?: "ferret_tuft";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  strength_requirement?: number;
+}
+export interface CrackedSpyglass {
+  kind?: "cracked_spyglass";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  strength_requirement?: number;
+}
+export interface TrinketCatalyst {
+  kind?: "trinket_catalyst";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  rolled_kinds?: string[];
+}
+export interface StoneOfBlast {
+  kind?: "stone_of_blast";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+}
+export interface StoneOfBlink {
+  kind?: "stone_of_blink";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+}
+export interface StoneOfDeepSleep {
+  kind?: "stone_of_deep_sleep";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+}
+export interface StoneOfClairvoyance {
+  kind?: "stone_of_clairvoyance";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+}
+export interface StoneOfAggression {
+  kind?: "stone_of_aggression";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+}
+export interface StoneOfFlock {
+  kind?: "stone_of_flock";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+}
+export interface StoneOfShock {
+  kind?: "stone_of_shock";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+}
+export interface StoneOfFear {
+  kind?: "stone_of_fear";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+}
+export interface StoneOfIntuition {
+  kind?: "stone_of_intuition";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+}
+export interface StoneOfAugmentation {
+  kind?: "stone_of_augmentation";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+}
+export interface StoneOfDetectMagic {
+  kind?: "stone_of_detect_magic";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+}
+export interface StoneOfEnchantment {
+  kind?: "stone_of_enchantment";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
 }
 export interface QuickSlot {
   slots?: QuickSlotEntry[];
@@ -3597,6 +6485,8 @@ export interface Mob {
   ooze_cooldown?: number;
   burning_accum?: number;
   burning_total_seconds?: number;
+  poison_accum?: number;
+  corrosion_accum?: number;
   shields?: Shield[];
   crit_damage_bonus?: number;
   grim_max_chance?: number;
@@ -3605,6 +6495,7 @@ export interface Mob {
   fury_turns_remaining?: number;
   invisible?: number;
   buffs?: Buff[];
+  mob_type?: string | null;
   ai_state?: string;
   target_id?: string | null;
   difficulty?: string;
@@ -3617,6 +6508,7 @@ export interface Mob {
   aggro_windup?: number;
   engaged?: boolean;
   last_known_target_pos?: Position | null;
+  freeze_ticks?: number;
   owner_id?: string | null;
   summon_lifespan?: number;
 }

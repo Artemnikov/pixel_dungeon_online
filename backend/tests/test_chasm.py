@@ -46,7 +46,8 @@ def test_floor_10_post_tengu_reveal_has_real_chasm_not_wall():
 
 
 def test_player_has_pending_chasm_fall_field_defaulting_to_none():
-    from app.engine.entities.base import Player, Position, Faction
+    from app.engine.entities.base import Position, Faction
+    from app.engine.entities.player import Player
     player = Player(id="p1", name="Hero", pos=Position(x=0, y=0), hp=20, max_hp=20, faction=Faction.PLAYER)
     assert player.pending_chasm_fall is None
 
@@ -78,7 +79,8 @@ def test_player_step_onto_chasm_prompts_instead_of_moving():
 
 
 def test_mob_step_onto_chasm_is_a_no_op():
-    from app.engine.entities.base import Mob as MobEntity, Faction, Position
+    from app.engine.entities.base import Faction, Position
+    from app.engine.entities.player import Mob as MobEntity
     game = GameInstance("test-chasm-mob-noop")
     floor = game._get_or_create_floor(game.depth)
     floor.grid = [[TileType.FLOOR for _ in range(5)] for _ in range(5)]

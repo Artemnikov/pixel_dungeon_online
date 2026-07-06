@@ -24,22 +24,24 @@ import time
 from typing import List, Optional, Type
 
 from app.engine.dungeon.generator import TileType
-from app.engine.entities.base import (
-    ChargrilledMeat, Difficulty, Effect, Faction, FrozenCarpaccio, Gold, is_immune, MysteryMeat, Player, Position, Wand,
-)
-from app.engine.entities.buffs import add_buff, get_buff, has_buff, process_buffs, remove_buff
+from app.engine.entities.base import Faction, is_immune, Position
+from app.engine.entities.items_consumable import ChargrilledMeat, FrozenCarpaccio, Gold, MysteryMeat
+from app.engine.entities.items_wands import Wand
+from app.engine.entities.player import Difficulty, Effect, Player
+from app.engine.entities.buffs import add_buff, get_buff, has_buff, is_frozen, process_buffs, remove_buff
 from app.engine.entities.scroll_predicates import player_inventory_items
 from app.engine.game.blobs import tick_blob_areas
 from app.engine.entities.mobs import (
     Rat, Goo, DwarfKing, Eye,
     YogDzewa, BurningFist, SoiledFist, RottingFist, RustedFist, BrightFist, DarkFist,
     DemonSpawner, Pylon, DM300,
-    Wraith, TormentedSpirit, Bee, EbonyMimic, MobEntity,
+    Wraith, TormentedSpirit, Bee, EbonyMimic, CrystalMimic, MobEntity,
     Necromancer, Tengu, MirrorImage, GhostHeroMob,
     RedShaman, BlueShaman, PurpleShaman,
     Warlock,
     Spinner,
     DM200,
+    Guard,
 )
 from app.engine.game.constants import (
     AUTO_MOVE_INTERVAL,
@@ -83,6 +85,14 @@ def _apply_floor_scaling(mob: MobEntity, floor_id: int) -> None:
         mob.attack_skill = mob.defense_skill
         mob.damage_min = max(1, max_hp // 10)
         mob.damage_max = max(1, max_hp // 4)
+    elif isinstance(mob, CrystalMimic):
+        max_hp = (1 + level) * 6
+        mob.floor_level = level
+        mob.max_hp = max_hp
+        mob.hp = max_hp
+        mob.defense_skill = 2 + level // 2
+        mob.attack_skill = 6 + level
+        # CrystalMimic starts disguised; scaling doesn't reveal it
     elif isinstance(mob, EbonyMimic):
         max_hp = (1 + level) * 6
         mob.floor_level = level
@@ -91,6 +101,15 @@ def _apply_floor_scaling(mob: MobEntity, floor_id: int) -> None:
         mob.defense_skill = 2 + level // 2
         mob.attack_skill = 6 + level
         mob.disguised = False
+
+
+def _is_nighttime(game_start_time: float) -> bool:
+    """SPD DayNight parity: first 60s always day, then cycles 120s day / 120s night."""
+    elapsed = time.time() - game_start_time
+    if elapsed < 60:
+        return False
+    cycle_time = (elapsed - 60) % 240
+    return cycle_time >= 120
 
 
 def _universal_extra_pool(floor_id: int) -> List[Type[MobEntity]]:
@@ -114,19 +133,38 @@ class TickMixin:
             removed = process_buffs(player.buffs, dt)
             if "invisibility" in removed or "shadows" in removed:
                 player.invisible = max(0, player.invisible - 1)
+            if "frost" in removed or "frozen" in removed:
+                self._frost_thaw(player, self._get_or_create_floor(player.floor_id))
             if "endure_tracker" in removed:
                 self._finalize_endure(player)
+            bleed = get_buff(player.buffs, "bleeding")
+            if bleed:
+                dmg = max(1, bleed.level)
+                player.take_damage(dmg)
+                self.add_event("DAMAGE", {"target": player.id, "amount": dmg, "bleed": True})
         for floor_id in active_ids:
             floor = self.floors[floor_id]
             for mob in floor.mobs.values():
                 if mob.is_alive:
                     removed = process_buffs(mob.buffs, dt)
+                    if "sheep_timer" in removed and mob.is_alive:
+                        mob.is_alive = False
+                        self.add_event("DEATH", {"target": mob.id}, floor_id=floor_id)
+                        self.handle_mob_death(mob, floor, floor_id)
+                        continue
                     if "invisibility" in removed or "shadows" in removed:
                         mob.invisible = max(0, mob.invisible - 1)
+                    if "frost" in removed or "frozen" in removed:
+                        self._frost_thaw(mob, floor)
                     if "drowsy" in removed and mob.ai_state in ("idle", "wandering"):
                         mob.ai_state = "sleeping"
                     if "terror" in removed and mob.ai_state == "fleeing":
                         mob.ai_state = "hunting"
+                    bleed = get_buff(mob.buffs, "bleeding")
+                    if bleed:
+                        dmg = max(1, bleed.level)
+                        mob.take_damage(dmg)
+                        self.add_event("DAMAGE", {"target": mob.id, "amount": dmg, "bleed": True})
 
         if active_ids:
             active_floors = {fid: self.floors[fid] for fid in active_ids}
@@ -154,6 +192,7 @@ class TickMixin:
 
         for floor_id in active_ids:
             self._tick_tengu_blobs(self.floors[floor_id], floor_id)
+            self.tick_bombs(self.floors[floor_id], floor_id)
 
         self._emit_state_effects()
 
@@ -171,8 +210,23 @@ class TickMixin:
             move_interval = AUTO_MOVE_INTERVAL
             if player.invisible > 0 and player.subclass_info.talent_info.level("speedy_stealth") >= 3:
                 move_interval /= 2
+            if player.has_buff("slow") or player.has_buff("chill"):
+                move_interval *= 2
+            if player.has_buff("paralysis") or is_frozen(player.buffs):
+                move_interval = 9999
             from app.engine.entities.rings import haste_multiplier
             move_interval /= haste_multiplier(player)
+            # Armor glyph speed boost (Swiftness, Flow, Bulk)
+            from app.engine.entities.armor_glyphs import speed_boost
+            armor = getattr(player.belongings, "armor", None)
+            if armor is not None:
+                pf = self._get_or_create_floor(player.floor_id)
+                enemies_nearby = any(
+                    m.is_alive for m in pf.mobs.values()
+                    if abs(m.pos.x - player.pos.x) + abs(m.pos.y - player.pos.y) <= 3
+                )
+                s = speed_boost(player, armor, enemies_nearby)
+                move_interval /= s
 
             if player.move_intent:
                 now = time.time()
@@ -204,6 +258,9 @@ class TickMixin:
             self._apply_aqua_heal_tick(player)
             self._apply_room_heal_tick(player)
             self._apply_passive_regen(player)
+            heal_buff = get_buff(player.buffs, "healing")
+            if heal_buff and player.hp < player.get_total_max_hp():
+                player.set_heal(float(heal_buff.level * 2), 0.1, 1.0)
             self._tick_passive_wand_recharge(player, dt)
 
             if player.armor_charge < 100:
@@ -211,6 +268,9 @@ class TickMixin:
 
             moved = bool(player.move_intent or player.path_queue)
             self.tick_rogue(player, dt, moved=moved)
+            self.tick_artifacts(player, dt)
+            self.tick_duelist(player, dt)
+            self.tick_cleric(player, dt)
 
             if moved:
                 player.stationary_ticks = 0
@@ -272,6 +332,27 @@ class TickMixin:
                     player.has_fury = False
                     player.fury_turns_remaining = 0
 
+            # ChaoticCenser trinket: periodic gas cloud spawning
+            from app.engine.entities.trinkets import ChaoticCenser as _CC
+            from app.engine.entities.trinkets import trinket_level
+            cc_lvl = trinket_level(player, "chaotic_censer")
+            if cc_lvl >= 0:
+                player._cc_turns = getattr(player, "_cc_turns", 0) + 1
+                avg_interval = _CC.average_turns_until_gas(cc_lvl)
+                if avg_interval > 0 and player._cc_turns >= avg_interval:
+                    player._cc_turns = 0
+                    floor = self._get_or_create_floor(player.floor_id)
+                    nearby_mobs = [
+                        m for m in floor.mobs.values()
+                        if m.is_alive and m.faction != Faction.PLAYER
+                        and max(abs(m.pos.x - player.pos.x), abs(m.pos.y - player.pos.y)) <= 4
+                    ]
+                    if nearby_mobs:
+                        target = random.choice(nearby_mobs)
+                        gas_type = random.choice(["toxic_gas", "fire", "paralytic_gas"])
+                        from app.engine.game.terrain_effects import _create_gas
+                        _create_gas(floor, (target.pos.x, target.pos.y), 4, gas_type)
+
         for floor_id in active_ids:
             floor = self.floors[floor_id]
             active_players = [p for p in self._players_on_floor(floor_id) if p.is_alive and not p.is_downed]
@@ -288,6 +369,9 @@ class TickMixin:
                 if not mob.is_alive:
                     continue
 
+                if isinstance(mob, CrystalMimic) and mob.disguised:
+                    continue
+
                 if mob.faction == Faction.PLAYER:
                     if isinstance(mob, GhostHeroMob):
                         owner = self.players.get(mob.owner_id)
@@ -299,7 +383,7 @@ class TickMixin:
                         self._refresh_mirror_image_stats(mob, owner, floor, floor_id)
                         if not mob.is_alive:
                             continue
-                    if mob.type != "ninja_log":
+                    if mob.type not in ("ninja_log", "npc"):
                         self._update_shadow_ally(mob, floor, floor_id)
                     continue
 
@@ -340,6 +424,9 @@ class TickMixin:
                     if self._update_yog_fist(mob, floor, floor_id):
                         continue
 
+                if isinstance(mob, Guard):
+                    self._update_guard(mob, floor, floor_id)
+
                 if isinstance(mob, Necromancer):
                     if self._update_necromancer(mob, floor, floor_id):
                         continue
@@ -373,6 +460,17 @@ class TickMixin:
                     move_times = self._mob_move_times = {}
                 now = time.time()
                 move_interval = 2 * AUTO_MOVE_INTERVAL / max(0.1, mob.speed)
+                if mob.has_buff("slow") or mob.has_buff("chill"):
+                    move_interval *= 2
+                if mob.has_buff("paralysis"):
+                    move_interval = 9999
+                # TimekeepersHourglass: frozen mobs skip AI entirely.
+                if getattr(mob, "freeze_ticks", 0) > 0:
+                    mob.freeze_ticks -= 1
+                    continue
+                # SPD Frost paralyses: a frozen mob does nothing until it thaws.
+                if is_frozen(mob.buffs):
+                    continue
                 can_move = now - move_times.get(mob.id, 0.0) >= move_interval
 
                 if mob.has_buff("amok"):
@@ -393,6 +491,23 @@ class TickMixin:
                             if not occupied:
                                 move_times[mob.id] = now
                                 self.move_entity(mob.id, step[0], step[1])
+                    if isinstance(mob, CrystalMimic):
+                        active_players = [p for p in self._players_on_floor(floor_id) if p.is_alive]
+                        far_enough = all(
+                            self._get_distance(mob.pos, p.pos) >= 6 for p in active_players
+                        )
+                        if far_enough and active_players:
+                            fov_cells = set()
+                            for p in active_players:
+                                fov = self._fov_from(p.pos, floor, self._view_distance(p), viewer_id=p.id)
+                                for fy in range(floor.height):
+                                    for fx in range(floor.width):
+                                        if fov[fy * floor.width + fx]:
+                                            fov_cells.add((fx, fy))
+                            if (mob.pos.x, mob.pos.y) not in fov_cells:
+                                mob.is_alive = False
+                                self.add_event("DEATH", {"target": mob.id}, floor_id=floor_id)
+                                continue
                     continue
 
                 if target_player and isinstance(target_player, Player) and target_player.invisible > 0:
@@ -402,7 +517,11 @@ class TickMixin:
                     target_player = None
                 elif target_player and isinstance(target_player, Player) and getattr(mob, "ai_state", "") in ("idle", "sleeping"):
                     dist = self._get_distance(mob.pos, target_player.pos)
-                    if dist > self._view_distance(mob):
+                    # SPD Mob.act(): enemyInFOV needs fieldOfView[enemy.pos],
+                    # so high grass and walls block noticing, not just range.
+                    if dist > self._view_distance(mob) or not self._is_in_los(
+                            mob.pos, target_player.pos, floor_id=floor_id,
+                            distance=self._view_distance(mob)):
                         target_player = None
                     else:
                         stealth = target_player.get_stealth()
@@ -419,7 +538,9 @@ class TickMixin:
 
                 if target_player and isinstance(target_player, Player) and getattr(mob, "ai_state", "") == "wandering":
                     dist = self._get_distance(mob.pos, target_player.pos)
-                    if dist > self._view_distance(mob):
+                    if dist > self._view_distance(mob) or not self._is_in_los(
+                            mob.pos, target_player.pos, floor_id=floor_id,
+                            distance=self._view_distance(mob)):
                         target_player = None
                     else:
                         stealth = target_player.get_stealth()
@@ -604,7 +725,7 @@ class TickMixin:
         return step
 
     def _refresh_ghost_hero_stats(self, mob, owner, floor: FloorState, floor_id: int) -> None:
-        from app.engine.entities.base import DriedRose
+        from app.engine.entities.items_artifacts import DriedRose
         if owner is None or not owner.is_alive or owner.floor_id != floor_id:
             mob.is_alive = False
             mob.hp = 0
@@ -912,6 +1033,16 @@ class TickMixin:
             "volume": {(x, y): 4},
         }
 
+    def _daynight_multiplier(self, player) -> float:
+        from app.engine.entities.trinkets import DimensionalSundial as _DS
+        from app.engine.entities.trinkets import trinket_level
+        ds_lvl = trinket_level(player, "dimensional_sundial")
+        if ds_lvl < 0:
+            return 1.0
+        if _is_nighttime(self.game_start_time):
+            return _DS.nighttime_spawn_multiplier(ds_lvl)
+        return _DS.daytime_spawn_multiplier(ds_lvl)
+
     def _process_respawns(self, floor_id: int, floor: FloorState, active_players: List[Player]):
         if floor_id in NO_RESPAWN_FLOORS:
             return
@@ -923,6 +1054,13 @@ class TickMixin:
         if floor.respawn_counter < RESPAWN_TURNS:
             return
         floor.respawn_counter = 0
+
+        # DimensionalSundial: adjust respawn probability based on day/night
+        if active_players:
+            dn_mult = max(self._daynight_multiplier(active_players[0]), 0.25)
+            if random.random() >= dn_mult:
+                return
+
         universal_extra = random.random() < 0.01
         if universal_extra:
             cls = random.choice(_universal_extra_pool(floor_id))
@@ -978,7 +1116,20 @@ class TickMixin:
         "lightning_charge": "shocked",
         "rock_armor": "hearts",
         "barrier": "hearts",
+        "slow": "chilled",
+        "daze": "daze",
+        "levitation": "levitation",
     }
+
+    def _frost_thaw(self, entity, floor):
+        # Frost.detach: a character that thaws while standing in water is left
+        # chilled (Chill for half of Frost's 10-turn duration).
+        if floor is None:
+            return
+        x, y = entity.pos.x, entity.pos.y
+        if 0 <= y < len(floor.grid) and 0 <= x < len(floor.grid[0]) \
+                and floor.grid[y][x] == TileType.FLOOR_WATER:
+            entity.add_buff("chill", duration=5.0, level=1, stack_mode="extend")
 
     def _check_state_buff(self, entity, x, y, floor_id):
         for buff_name, effect_type in self.STATE_BUFF_MAP.items():
@@ -1037,6 +1188,48 @@ class TickMixin:
             effects.append(Effect(
                 key="invisibility", name="Invisible", icon=12,
             ))
+        slow_buff = get_buff(player.buffs, "slow")
+        if slow_buff is not None:
+            effects.append(Effect(
+                key="slow", name="Slowed", icon=23,
+                remaining=slow_buff.remaining, duration=30.0,
+            ))
+        bleed_buff = get_buff(player.buffs, "bleeding")
+        if bleed_buff is not None:
+            effects.append(Effect(
+                key="bleeding", name="Bleeding", icon=26,
+                remaining=bleed_buff.remaining, duration=30.0,
+            ))
+        daze_buff = get_buff(player.buffs, "daze")
+        if daze_buff is not None:
+            effects.append(Effect(
+                key="daze", name="Dazed", icon=70,
+                remaining=daze_buff.remaining, duration=30.0,
+            ))
+        bless_buff = get_buff(player.buffs, "bless")
+        if bless_buff is not None:
+            effects.append(Effect(
+                key="bless", name="Blessed", icon=37,
+                remaining=bless_buff.remaining, duration=30.0,
+            ))
+        heal_buff = get_buff(player.buffs, "healing")
+        if heal_buff is not None:
+            effects.append(Effect(
+                key="healing_buff", name="Healing", icon=44,
+                remaining=heal_buff.remaining, duration=30.0,
+            ))
+        well_fed_buff = get_buff(player.buffs, "well_fed")
+        if well_fed_buff is not None:
+            effects.append(Effect(
+                key="well_fed", name="Well Fed", icon=43,
+                remaining=well_fed_buff.remaining, duration=30.0,
+            ))
+        levitation_buff = get_buff(player.buffs, "levitation")
+        if levitation_buff is not None:
+            effects.append(Effect(
+                key="levitation", name="Levitation", icon=1,
+                remaining=levitation_buff.remaining, duration=30.0,
+            ))
         player.active_effects = effects
 
     def _apply_heal_tick(self, player: Player):
@@ -1049,6 +1242,14 @@ class TickMixin:
 
         amt = int(round(player.heal_left * player.heal_pct_per_tick) + player.heal_flat_per_tick)
         amt = int(max(1, min(amt, player.heal_left)))
+
+        # VialOfBlood trinket: cap per-turn healing during delayed heal
+        from app.engine.entities.trinkets import VialOfBlood as _VialOfBlood
+        from app.engine.entities.trinkets import trinket_level
+        vob_lvl = trinket_level(player, "vial_of_blood")
+        if vob_lvl >= 0:
+            cap = _VialOfBlood.max_heal_per_turn(vob_lvl, player.get_total_max_hp())
+            amt = min(amt, cap)
 
         if player.hp < player.get_total_max_hp():
             player.hp = int(min(player.get_total_max_hp(), player.hp + amt))
@@ -1135,7 +1336,13 @@ class TickMixin:
     def _apply_hunger_tick(self, player: Player):
         if player.is_downed:
             return
-        player.hunger = min(self._HUNGER_STARVING + 50, player.hunger + self._HUNGER_RATE)
+        from app.engine.entities.trinkets import SaltCube as _SaltCube
+        from app.engine.entities.trinkets import trinket_level
+        rate = self._HUNGER_RATE
+        lvl = trinket_level(player, "salt_cube")
+        if lvl >= 0:
+            rate *= _SaltCube.hunger_gain_multiplier(lvl)
+        player.hunger = min(self._HUNGER_STARVING + 50, player.hunger + rate)
         if player.hunger >= self._HUNGER_STARVING:
             dmg = max(1, player.max_hp // 100)
             player.take_damage(dmg)
@@ -1144,7 +1351,8 @@ class TickMixin:
         floor = self.floors.get(player.floor_id)
         if floor is None or not floor.rooms:
             return
-        if not self._is_in_entrance_room(floor, player.pos.x, player.pos.y):
+        in_entrance = self._is_in_entrance_room(floor, player.pos.x, player.pos.y)
+        if not in_entrance and not player.has_buff("well_fed"):
             return
         # SPD Regeneration.regenOn(): LockedFloor (sealed boss arena) pauses
         # passive regen once its timer runs out.
@@ -1153,20 +1361,30 @@ class TickMixin:
         if player.hp <= 0 or player.hp >= player.get_total_max_hp():
             player._regen_cooldown = 0
             return
+        interval = PASSIVE_REGEN_INTERVAL
+        # SaltCube trinket: slows natural regen
+        from app.engine.entities.trinkets import SaltCube as _SaltCube
+        from app.engine.entities.trinkets import trinket_level
+        salt_lvl = trinket_level(player, "salt_cube")
+        if salt_lvl >= 0:
+            mult = _SaltCube.health_regen_multiplier(salt_lvl)
+            interval = int(interval / mult) if mult > 0 else interval
+        if player.has_buff("well_fed"):
+            interval = max(1, interval // 3)  # 3x regen rate
         cooldown = getattr(player, "_regen_cooldown", 0)
         cooldown -= 1
         if cooldown > 0:
             player._regen_cooldown = cooldown
             return
         player.hp = min(player.get_total_max_hp(), player.hp + 1)
-        player._regen_cooldown = PASSIVE_REGEN_INTERVAL
+        player._regen_cooldown = interval
 
     def _tick_passive_wand_recharge(self, player: Player, dt: float):
         """Passive wand recharge:
         - Normal wands: SPD formula (10 + 40 * 0.875^missing)
         - Staff-imbued wands: +1 charge every 2s (SPD MagesStaff style).
         - Recharging buff (Scroll of Recharging): multiplier on regen speed."""
-        from app.engine.entities.base import Staff as StaffCls
+        from app.engine.entities.items_equip import Staff as StaffCls
         weapon = getattr(player, "belongings", None)
         if weapon is not None:
             weapon = weapon.weapon

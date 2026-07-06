@@ -57,12 +57,17 @@ import swarmSprite from '../assets/pixel-dungeon/sprites/swarm.png';
 import ghostSprite from '../assets/pixel-dungeon/sprites/ghost.png';
 import spinnerSprite from '../assets/pixel-dungeon/sprites/spinner.png';
 import dm200Sprite from '../assets/pixel-dungeon/sprites/dm200.png';
+import sheepSprite from '../assets/pixel-dungeon/sprites/sheep.png';
 import shamanSprite from '../assets/pixel-dungeon/sprites/shaman.png';
 import iconsSprite from '../assets/pixel-dungeon/interfaces/icons.png';
 import spellIconsSprite from '../assets/pixel-dungeon/effects/spell_icons.png';
 import effectsSprite from '../assets/pixel-dungeon/effects/effects.png';
 import specksSprite from '../assets/pixel-dungeon/effects/specks.png';
 import fireballSprite from '../assets/pixel-dungeon/effects/fireball-short.png';
+import statusPaneImg from '../assets/pixel-dungeon/interfaces/status_pane.png';
+import buffsImg from '../assets/pixel-dungeon/interfaces/buffs.png';
+import bossHpImg from '../assets/pixel-dungeon/interfaces/boss_hp.png';
+import toolbarImg from '../assets/pixel-dungeon/interfaces/toolbar.png';
 
 export default function useAssetImages() {
   const [assetImages, setAssetImages] = useState({
@@ -122,12 +127,17 @@ export default function useAssetImages() {
     spinner: null,
     dm200: null,
     shaman: null,
+    sheep: null,
     swarm: null,
     icons: null,
     spellIcons: null,
     effects: null,
     specks: null,
     fireball: null,
+    statusPane: null,
+    buffs: null,
+    bossHp: null,
+    toolbar: null,
   });
 
   useEffect(() => {
@@ -226,6 +236,7 @@ export default function useAssetImages() {
     loadImage(bruteSprite, 'brute');
     loadImage(spinnerSprite, 'spinner');
     loadImage(dm200Sprite, 'dm200');
+    loadImage(sheepSprite, 'sheep');
     loadImage(shamanSprite, 'shaman');
     loadImage(swarmSprite, 'swarm');
     loadImage(iconsSprite, 'icons');
@@ -233,6 +244,10 @@ export default function useAssetImages() {
     loadImage(effectsSprite, 'effects');
     loadImage(specksSprite, 'specks');
     loadImage(fireballSprite, 'fireball');
+    loadImage(statusPaneImg, 'statusPane');
+    loadImage(buffsImg, 'buffs');
+    loadImage(bossHpImg, 'bossHp');
+    loadImage(toolbarImg, 'toolbar');
   }, []);
 
   return assetImages;

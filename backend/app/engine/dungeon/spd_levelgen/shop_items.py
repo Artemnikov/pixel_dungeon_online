@@ -42,25 +42,14 @@ from typing import List
 
 from app.engine.dungeon.spd_levelgen.generator import _WEP_T1, _WEP_T2, _WEP_T3, _WEP_T4, _WEP_T5
 from app.engine.dungeon.spd_random import SPDRandom
-from app.engine.entities.base import (
-    Armor,
-    Artifact,
-    Food,
-    HealthPotion,
-    Item,
-    MagicalHolster,
-    make_named_melee_weapon,
-    MissileWeapon,
-    PotionBandolier,
-    Ring,
-    ScrollHolder,
-    ScrollOfIdentify,
-    ScrollOfMagicMapping,
-    ScrollOfRemoveCurse,
-    ScrollOfUpgrade,
-    Stone,
-    Wand,
-)
+from app.engine.entities.item_union import MagicalHolster, PotionBandolier, ScrollHolder
+from app.engine.entities.items_bombs import Bomb
+from app.engine.entities.items_consumable import Food, Stone
+from app.engine.entities.items_equip import Armor, ClothArmor, LeatherArmor, MailArmor, ScaleArmor, PlateArmor, Artifact, make_named_melee_weapon, MissileWeapon, Ring
+from app.engine.entities.items_potions import HealthPotion
+from app.engine.entities.items_scrolls import ScrollOfIdentify, ScrollOfMagicMapping, ScrollOfRemoveCurse, ScrollOfUpgrade
+from app.engine.entities.items_wands import Wand
+from app.engine.entities.player import Item
 from app.engine.entities.weapon_defs import WEP_TIER_ORDER
 from app.engine.entities.weapon_enchants import ENCHANT_RARITY
 
@@ -108,13 +97,17 @@ _SHOP_BAGS = {
 }
 
 
+_ARMOR_TYPES = {1: ClothArmor, 2: LeatherArmor, 3: MailArmor, 4: ScaleArmor, 5: PlateArmor}
+
 def generate_shop_items(rng: SPDRandom, depth: int) -> List[Item]:
     weapon_tier, armor_tier = _SHOP_TIERS.get(depth, (2, 1))
+
+    armor_cls = _ARMOR_TYPES.get(armor_tier, LeatherArmor)
 
     items: List[Item] = [
         _random_melee_weapon(rng, weapon_tier),
         MissileWeapon(name="Missile Weapon", tier=weapon_tier),
-        Armor(name="Armor", tier=armor_tier),
+        armor_cls(),
         # TippedDart.randomTipped(2) -> 2x Stone
         Stone(),
         Stone(),
@@ -128,9 +121,18 @@ def generate_shop_items(rng: SPDRandom, depth: int) -> List[Item]:
         HealthPotion(),
         Food(name="Small Ration of Food"),
         Food(name="Small Ration of Food"),
-        # Bomb/DoubleBomb/Honeypot substitution
-        Food(name="Mystery Meat"),
     ]
+
+    # ShopRoom switch(Random.Int(4)): 0 -> Bomb, 1|2 -> DoubleBomb (a 2-stack
+    # Bomb), 3 -> Honeypot. Honeypot isn't modeled yet, so only its case keeps
+    # the prior Mystery Meat substitution.
+    bomb_roll = rng.IntMax(4)
+    if bomb_roll == 0:
+        items.append(Bomb(name="Bomb"))
+    elif bomb_roll in (1, 2):
+        items.append(Bomb(name="Bomb", quantity=2))
+    else:
+        items.append(Food(name="Mystery Meat"))
 
     # Rare item roll (Random.Int(10)): 0=wand, 1=ring, 2=artifact, the
     # remaining 7 (Stylus) buckets redistribute evenly to wand/ring.

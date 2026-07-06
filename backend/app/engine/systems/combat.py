@@ -35,6 +35,53 @@ def _preparation(attacker: "Entity", defender: "Entity") -> Optional[dict]:
     }
 
 
+# Remake states where SPD's Mob.enemySeen would be false: the mob has not
+# noticed its enemy yet, so any player attack on it counts as a sneak attack.
+_UNAWARE_AI_STATES = ("idle", "sleeping", "wandering", "passive")
+
+
+def _can_surprise_attack(attacker: "Entity", weapon=None) -> bool:
+    """SPD Hero.canSurpriseAttack: no sneak-attack bonus with a weapon whose
+    STR requirement isn't met, or with a Flail. Mobs/allies are unrestricted."""
+    if not hasattr(attacker, "belongings"):
+        return True
+    if weapon is None:
+        weapon = attacker.belongings.weapon
+    if weapon is None:
+        return True
+    if getattr(weapon, "name", "") == "Flail":
+        return False
+    get_str = getattr(attacker, "get_effective_strength", None)
+    if get_str is not None and getattr(weapon, "strength_requirement", 0) > get_str():
+        return False
+    return True
+
+
+def _is_surprise_attack(attacker: "Entity", defender: "Entity", is_in_los, weapon=None) -> bool:
+    """SPD Mob.surprisedBy(enemy, attacking=true): only mobs get surprised, and
+    only by players. True when the attacker is invisible, the mob never noticed
+    an enemy (enemySeen=false -> unaware ai_state here), or the attacker is
+    outside the mob's FOV."""
+    if getattr(defender, "ai_state", None) is None:
+        return False
+    if not hasattr(attacker, "belongings"):
+        return False
+    if not _can_surprise_attack(attacker, weapon):
+        return False
+    if getattr(attacker, "invisible", 0) > 0:
+        return True
+    if defender.ai_state in _UNAWARE_AI_STATES:
+        return True
+    return is_in_los is not None and not is_in_los(defender.pos, attacker.pos)
+
+
+def _alert_defender(defender: "Entity") -> None:
+    """SPD Mob.damage(): a sleeping mob that takes a hit wakes to WANDERING —
+    it starts searching but doesn't auto-locate an attacker it can't see."""
+    if getattr(defender, "ai_state", None) in ("idle", "sleeping"):
+        defender.ai_state = "wandering"
+
+
 def _dispel_stealth(attacker: "Entity") -> None:
     """Attacking breaks invisibility: clear the invisibility buffs and the
     cloak's sustained stealth flag. Preparation (Assassin) is NOT cleared
@@ -207,14 +254,15 @@ def resolve_melee_attack(
     if not attacker.is_alive or not defender.is_alive:
         return result
 
-    # Invisible attacker: always surprise attack (auto-hit)
+    # Invisible attacker: always hits (SPD Char.hit INFINITE_ACCURACY),
+    # provided the wielded weapon allows sneak attacks.
     if guaranteed_hit:
         result["hit"] = True
-    elif getattr(attacker, "invisible", 0) > 0:
+    elif getattr(attacker, "invisible", 0) > 0 and _can_surprise_attack(attacker):
         result["surprise"] = True
         result["hit"] = True
-    # Surprise attack: if defender can't see attacker, auto-hit
-    elif is_in_los and not is_in_los(defender.pos, attacker.pos):
+    # Sneak attack: mob never noticed the attacker, or can't see them.
+    elif _is_surprise_attack(attacker, defender, is_in_los):
         result["surprise"] = True
         result["hit"] = True
     elif getattr(attacker, "is_admin", False):
@@ -223,12 +271,16 @@ def resolve_melee_attack(
         atk_acc = attacker.attack_skill
         if attacker.has_buff("hex"):
             atk_acc = int(atk_acc * 0.75)
+        if attacker.has_buff("daze"):
+            atk_acc = int(atk_acc * 0.5)
         def_ev = defender.get_effective_defense_skill()
         if defender.has_buff("hex"):
             def_ev = int(def_ev * 0.75)
         if hasattr(attacker, "belongings"):
             from app.engine.entities.rings import accuracy_multiplier
             atk_acc = int(atk_acc * accuracy_multiplier(attacker))
+        if attacker.has_buff("wayward_buff"):
+            atk_acc //= 2
         acu_roll = random.random() * atk_acc
         def_roll = random.random() * def_ev
         if acu_roll < def_roll:
@@ -251,20 +303,46 @@ def resolve_melee_attack(
         return result
 
     dmg_roll = _roll_damage(attacker, result, prep)
+    # ThirteenLeafClover trinket: alters damage roll toward extremes
+    if hasattr(attacker, "belongings"):
+        from app.engine.entities.trinkets import ThirteenLeafClover as _TLC
+        from app.engine.entities.trinkets import trinket_level
+        tlc_lvl = trinket_level(attacker, "thirteen_leaf_clover")
+        if tlc_lvl >= 0 and random.random() < _TLC.alter_damage_chance(tlc_lvl):
+            if random.random() < 0.6:
+                dmg_roll = attacker.get_damage_max()
+            else:
+                dmg_roll = attacker.get_damage_min()
     dmg_roll = int((dmg_roll + dmg_bonus) * dmg_multi)
     if attacker.has_buff("weakness"):
         dmg_roll = round(dmg_roll * 0.67)
+    if attacker.has_buff("bless") and getattr(defender, "faction", None) == "enemy":
+        dmg_roll = round(dmg_roll * 1.2)
     dr_roll = random.randint(defender.get_dr_min(), defender.get_dr_max())
     raw_damage = max(0, dmg_roll - dr_roll)
 
     # Invisibility dispel on attack
     _dispel_stealth(attacker)
 
-    # Pre-DR defense proc (glyphs, abilities)
+    # Defense proc (abilities + glyphs)
     if hasattr(defender, "defense_proc") and raw_damage > 0:
         raw_damage = defender.defense_proc(raw_damage, attacker, floor_mobs, tile_x, tile_y)
         if raw_damage <= 0:
             return result
+
+    # Armor glyph proc
+    armor = getattr(getattr(defender, "belongings", None), "armor", None)
+    if armor is not None:
+        g = armor.enchantment
+        if g is not None and g.type not in ("none", None):
+            from app.engine.entities.armor_glyphs import apply_glyph_proc
+            raw_damage = apply_glyph_proc(
+                g.type, defender, attacker, armor,
+                raw_damage, floor_mobs, tile_x, tile_y, floor,
+                add_event=add_event,
+            )
+            if raw_damage <= 0:
+                return result
 
     weapon = getattr(getattr(attacker, "belongings", None), "weapon", None)
 
@@ -286,6 +364,7 @@ def resolve_melee_attack(
     hp_before = defender.hp
     actual_damage = defender.take_damage(max(0, effective_damage))
     result["damage"] = actual_damage
+    _alert_defender(defender)
 
     # Grim enchant: % max-HP execute scaling with missing HP.
     if weapon is not None and weapon.enchantment == "grim" and actual_damage > 0:
@@ -339,7 +418,8 @@ def resolve_melee_attack(
     if actual_damage > 0:
         subclass_info = getattr(attacker, "subclass_info", None)
         if subclass_info is not None and subclass_info.subclass == "battlemage":
-            from app.engine.entities.base import Staff, Wand
+            from app.engine.entities.items_equip import Staff
+            from app.engine.entities.items_wands import Wand
             w = getattr(getattr(attacker, "belongings", None), "weapon", None)
             if isinstance(w, Staff) and w.imbued_wand is not None:
                 wand = w.imbued_wand
@@ -380,10 +460,10 @@ def resolve_ranged_attack(
     if not attacker.is_alive or not defender.is_alive:
         return result
 
-    if getattr(attacker, "invisible", 0) > 0:
+    if getattr(attacker, "invisible", 0) > 0 and _can_surprise_attack(attacker, weapon=item):
         result["surprise"] = True
         result["hit"] = True
-    elif is_in_los and not is_in_los(defender.pos, attacker.pos):
+    elif _is_surprise_attack(attacker, defender, is_in_los, weapon=item):
         result["surprise"] = True
         result["hit"] = True
     elif getattr(attacker, "is_admin", False):
@@ -437,6 +517,7 @@ def resolve_ranged_attack(
     hp_before = defender.hp
     actual_damage = defender.take_damage(max(0, effective_damage))
     result["damage"] = actual_damage
+    _alert_defender(defender)
 
     if attacker.grim_max_chance > 0 and actual_damage > 0:
         _check_grim(attacker, defender, result)

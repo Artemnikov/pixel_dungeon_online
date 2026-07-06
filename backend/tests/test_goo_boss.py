@@ -1,7 +1,9 @@
 import sys, os, uuid
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-from app.engine.entities.base import Position, Faction, Player, Key
+from app.engine.entities.base import Position, Faction
+from app.engine.entities.items_consumable import Key
+from app.engine.entities.player import Player
 from app.engine.entities.mobs import Goo
 from app.engine.dungeon.constants import TileType
 from app.engine.dungeon.models import Room

@@ -9,7 +9,8 @@ never penetrates a solid wall (the defect the old Bresenham trace had).
 import pytest
 
 from app.engine.manager import GameInstance, FloorState
-from app.engine.entities.base import Position, Mob
+from app.engine.entities.base import Position
+from app.engine.entities.player import Mob
 from app.engine.dungeon.constants import TileType
 from app.engine.mechanics import shadowcaster
 

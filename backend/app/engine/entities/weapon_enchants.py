@@ -2,41 +2,7 @@
 # Copyright (C) 2026 ArtemNikov
 #
 # Adapted from Shattered Pixel Dungeon (C) 2014-2024 Evan Debenham
-#
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-# See the GNU General Public License for more details.
-#
-"""Weapon enchantments and curses, ported from `items/weapon/enchantments/` and
-`items/weapon/curses/` per docs/spd_items/01-weapons-bombs.md §6-7.
-
-Phase 1 implements only the enchants/curses that don't depend on a brand-new
-status-effect system (Burning, Chill, Blindness, Charm/Corruption):
-
-    ENCHANTS = vampiric, blocking, projecting, kinetic, grim, shocking,
-               elastic, unstable
-    CURSES   = polarized, sacrificial, displacing, annoying
-
-The remaining SPD enchants/curses (Blazing, Chilling, Blooming, Corrupting,
-Lucky, Dazzling, Wayward, Friendly, Explosive) are left for later phases.
-
-`Enchantment.random()`'s `typeChances = [50, 40, 10]` table assigns 12.5% to
-each of 4 "common" enchants, 6.67% to each of 6 "uncommon", 3.33% to each of 3
-"rare". Only some of each tier is implemented here:
-  - common (implemented 2/4): kinetic, shocking -> 12.5% each
-  - uncommon (implemented 4/6): blocking, elastic, projecting, unstable -> 6.67% each
-  - rare (implemented 2/3): grim, vampiric -> 3.33% each
-These sum to ~58.3% of the 10% "item is enchanted" roll; the remaining ~41.7%
-(which would have picked one of the not-yet-implemented enchants) falls back to
-no enchant. Same idea for curses: 4/8 SPD curses implemented, each keeping an
-equal 1/8 share of the 30% "item is cursed" roll; rolling one of the other 4
-curses falls back to "not cursed".
-"""
+# `items/weapon/enchantments/` and `items/weapon/curses/`.
 
 from __future__ import annotations
 
@@ -44,57 +10,70 @@ import random
 from collections import deque
 from typing import TYPE_CHECKING, Callable, Dict, Optional, Tuple
 
-from app.engine.dungeon.generator import TileType
+from app.engine.dungeon.constants import TileType
 
 if TYPE_CHECKING:
-    from app.engine.entities.base import Entity, KindOfWeapon
+    from app.engine.entities.base import Entity
+    from app.engine.entities.items_equip import KindOfWeapon
 
 
 # ---------------------------------------------------------------------------
 # Registries
 # ---------------------------------------------------------------------------
 
-# All SPD weapon curses, for documentation/rarity-table purposes; only the
-# names in CURSES below are implemented.
-ALL_SPD_CURSES: Tuple[str, ...] = (
-    "annoying", "displacing", "dazzling", "explosive",
-    "sacrificial", "wayward", "polarized", "friendly",
-)
-
-CURSES: Tuple[str, ...] = ("polarized", "sacrificial", "displacing", "annoying")
-
-# (enchant name -> share of the 10% "enchanted" roll, in percentage points)
 ENCHANT_RARITY: Dict[str, float] = {
     # common (12.5% each)
+    "blazing": 12.5,
+    "chilling": 12.5,
     "kinetic": 12.5,
     "shocking": 12.5,
     # uncommon (6.67% each)
     "blocking": 100.0 / 15.0,
+    "blooming": 100.0 / 15.0,
     "elastic": 100.0 / 15.0,
+    "lucky": 100.0 / 15.0,
     "projecting": 100.0 / 15.0,
     "unstable": 100.0 / 15.0,
     # rare (3.33% each)
+    "corrupting": 10.0 / 3.0,
     "grim": 10.0 / 3.0,
     "vampiric": 10.0 / 3.0,
 }
 
 ENCHANTS: Tuple[str, ...] = tuple(ENCHANT_RARITY)
 
-# Enchants Unstable can re-roll into (excludes itself, and excludes
-# kinetic/grim which hook into combat.py's existing Entity-field-based helpers
-# rather than the generic proc dispatch below).
-_UNSTABLE_POOL: Tuple[str, ...] = (
-    "vampiric", "blocking", "elastic", "shocking",
-    "sacrificial", "displacing", "annoying",
+CURSES: Tuple[str, ...] = (
+    "annoying", "displacing", "dazzling", "explosive",
+    "friendly", "polarized", "sacrificial", "wayward",
 )
+
+_UNSTABLE_POOL: Tuple[str, ...] = tuple(
+    n for n in ENCHANT_RARITY if n not in ("kinetic", "grim")
+) + CURSES
 
 
 # ---------------------------------------------------------------------------
-# Proc-chance formulas (docs/spd_items/01-weapons-bombs.md §6-7)
+# Proc-chance formulas — SPD-faithful
 # ---------------------------------------------------------------------------
 
 def missing_hp_pct(entity: "Entity") -> float:
     return 1.0 - entity.hp / max(entity.max_hp, 1)
+
+
+def _proc_chance_blazing_chilling(lvl: int) -> float:
+    return (lvl + 1) / (lvl + 3)
+
+
+def _proc_chance_blooming(lvl: int) -> float:
+    return (lvl + 1) / (lvl + 3)
+
+
+def _proc_chance_corrupting(lvl: int) -> float:
+    return (lvl + 5) / (lvl + 25)
+
+
+def _proc_chance_lucky(lvl: int) -> float:
+    return (lvl + 4) / (lvl + 40)
 
 
 def vampiric_chance(missing_pct: float) -> float:
@@ -121,21 +100,48 @@ CURSE_PROC_CHANCE: Dict[str, float] = {
     "sacrificial": 0.1,
     "displacing": 1.0 / 12.0,
     "annoying": 0.05,
+    "dazzling": 0.1,
+    "wayward": 0.25,
+    "friendly": 0.1,
+    "explosive": 0.0,  # handled by durability
 }
 
 
 def striking_wave_multiplier(attacker: "Entity") -> float:
-    """Striking Wave +4 (warrior T4 shockwave): for a few turns after the
-    shockwave procs, weapon enchant effect magnitudes get +20% power."""
     if attacker.has_buff("striking_wave_tracker"):
         return 1.2
     return 1.0
 
 
+def trinket_curse_effect_bonus(attacker: "Entity") -> Tuple[float, float]:
+    from app.engine.entities.trinkets import WondrousResin as _WR
+    from app.engine.entities.trinkets import trinket_level
+    lvl = trinket_level(attacker, "wondrous_resin")
+    if lvl < 0:
+        return (0.0, 0.0)
+    return (_WR.positive_curse_effect_chance(lvl),
+            _WR.extra_curse_effect_chance(lvl))
+
+
+def roll_curse_effect_wondrous(attacker: "Entity") -> Optional[str]:
+    pos_chance, _ = trinket_curse_effect_bonus(attacker)
+    if pos_chance <= 0:
+        return None
+    if random.random() >= pos_chance:
+        return None
+    return random.choice(list(ENCHANT_RARITY.keys()))
+
+
+def roll_extra_curse_effect(attacker: "Entity") -> Optional[str]:
+    _, extra_chance = trinket_curse_effect_bonus(attacker)
+    if extra_chance <= 0:
+        return None
+    if random.random() >= extra_chance:
+        return None
+    return random.choice(list(ENCHANT_RARITY.keys()))
+
+
 def enraged_catalyst_bonus(attacker: "Entity") -> float:
-    """Enraged Catalyst (warrior T3 berserker): while raging, weapon
-    enchant/curse proc chances go up by up to 15% per point, scaled by
-    current Berserk power (capped at 100%)."""
     info = getattr(attacker, "subclass_info", None)
     if info is None or info.subclass != "berserker" or not getattr(attacker, "berserk_active", False):
         return 0.0
@@ -146,11 +152,10 @@ def enraged_catalyst_bonus(attacker: "Entity") -> float:
 
 
 # ---------------------------------------------------------------------------
-# Random generation (Item.random() / Enchantment.random())
+# Random generation
 # ---------------------------------------------------------------------------
 
 def roll_weapon_level(rng: random.Random = random) -> int:
-    """75% +0, 20% +1, 5% +2."""
     r = rng.random()
     if r < 0.75:
         return 0
@@ -159,17 +164,15 @@ def roll_weapon_level(rng: random.Random = random) -> int:
     return 2
 
 
-def roll_weapon_enchant(rng: random.Random = random) -> Tuple[Optional[str], bool]:
-    """Returns (enchant_or_curse_name, is_cursed). 30% cursed, else 10%
-    enchanted, else (None, False). See module docstring for the rarity-table
-    renormalization used for the not-yet-implemented enchants/curses."""
+def roll_weapon_enchant(rng: random.Random = random,
+                        enchant_mult: float = 1.0,
+                        curse_mult: float = 1.0) -> Tuple[Optional[str], bool]:
     r = rng.random()
-    if r < 0.30:
-        curse = rng.choice(ALL_SPD_CURSES)
-        if curse in CURSES:
-            return curse, True
-        return None, False
-    if r < 0.40:
+    curse_threshold = 0.30 * curse_mult
+    if r < curse_threshold:
+        return rng.choice(CURSES), True
+    enchant_threshold = curse_threshold + 0.10 * enchant_mult
+    if r < enchant_threshold:
         roll = rng.random() * 100.0
         acc = 0.0
         for name, weight in ENCHANT_RARITY.items():
@@ -181,35 +184,207 @@ def roll_weapon_enchant(rng: random.Random = random) -> Tuple[Optional[str], boo
 
 
 # ---------------------------------------------------------------------------
-# Proc handlers
+# Helpers
 # ---------------------------------------------------------------------------
 
 def _is_hostile(a: "Entity", b: "Entity") -> bool:
     return a.faction != b.faction
 
 
+def _power_mult(proc_chance: float) -> float:
+    return max(1.0, proc_chance)
+
+
+def _dmg_mult_round(amount: float) -> int:
+    frac = amount - int(amount)
+    return int(amount) + (1 if random.random() < frac else 0)
+
+
+def _arcana_mult(attacker: "Entity") -> float:
+    if hasattr(attacker, "belongings"):
+        from app.engine.entities.rings import arcana_multiplier
+        return arcana_multiplier(attacker)
+    return 1.0
+
+
+def _enrage_bonus(attacker: "Entity") -> float:
+    return enraged_catalyst_bonus(attacker)
+
+
+def _final_chance(base: float, attacker: "Entity", arcana_mult: float) -> float:
+    return (base + _enrage_bonus(attacker)) * arcana_mult
+
+
+def _plants_at(floor, x: int, y: int) -> bool:
+    return floor.plants is not None and (x, y) in floor.plants
+
+
+# ---------------------------------------------------------------------------
+# Proc handlers
+# ---------------------------------------------------------------------------
+
+def _proc_blazing(attacker, defender, weapon, raw_damage, actual_damage, hp_before, result, floor_mobs, tile_x, tile_y, floor, **kwargs):
+    if not _is_hostile(attacker, defender) or actual_damage <= 0:
+        return
+    arcana_mult = kwargs.get("arcana_mult", 1.0)
+    lvl = weapon.buffed_lvl()
+    chance = _final_chance(_proc_chance_blazing_chilling(lvl), attacker, arcana_mult)
+    if random.random() >= chance:
+        return
+    power_multi = _power_mult(chance)
+    if not defender.has_buff("burning"):
+        defender.add_buff("burning", duration=8.0)
+    depth = getattr(floor, "depth", 1)
+    burn_dmg = _dmg_mult_round(random.randint(1, 3 + depth // 4) * 0.67 * power_multi)
+    if burn_dmg > 0:
+        defender.take_damage(burn_dmg)
+
+
+def _proc_chilling(attacker, defender, weapon, raw_damage, actual_damage, hp_before, result, floor_mobs, tile_x, tile_y, floor, **kwargs):
+    if not _is_hostile(attacker, defender) or actual_damage <= 0:
+        return
+    arcana_mult = kwargs.get("arcana_mult", 1.0)
+    lvl = weapon.buffed_lvl()
+    chance = _final_chance((lvl + 1) / (lvl + 4), attacker, arcana_mult)
+    if random.random() >= chance:
+        return
+    power_multi = _power_mult(chance)
+    current = 0.0
+    existing = defender.get_buff("chill")
+    if existing is not None:
+        current = existing.duration
+    new_duration = 3.0 * power_multi
+    cap = 6.0 * power_multi
+    defender.add_buff("chill", duration=min(current + new_duration, cap), stack_mode="extend")
+
+
+def _proc_blooming(attacker, defender, weapon, raw_damage, actual_damage, hp_before, result, floor_mobs, tile_x, tile_y, floor, **kwargs):
+    if not _is_hostile(attacker, defender) or actual_damage <= 0:
+        return
+    arcana_mult = kwargs.get("arcana_mult", 1.0)
+    lvl = weapon.buffed_lvl()
+    chance = _final_chance(_proc_chance_blooming(lvl), attacker, arcana_mult)
+    if random.random() >= chance:
+        return
+    power_multi = _power_mult(chance)
+    from app.engine.game.terrain_effects import plant_grass
+    plants_raw = (1 + 0.1 * lvl) * power_multi
+    plants = _dmg_mult_round(plants_raw)
+    if plants <= 0:
+        return
+    cells = [(defender.pos.x, defender.pos.y)]
+    adj = [(0, -1), (1, -1), (1, 0), (1, 1), (0, 1), (-1, 1), (-1, 0), (-1, -1)]
+    for dx, dy in adj:
+        cells.append((defender.pos.x + dx, defender.pos.y + dy))
+    # attacker's position is lowest priority
+    atk_cell = (attacker.pos.x, attacker.pos.y)
+    if atk_cell in cells:
+        cells.remove(atk_cell)
+        cells.append(atk_cell)
+    planted = []
+    for cx, cy in cells:
+        if plants <= 0:
+            break
+        if floor is None:
+            break
+        if not (0 <= cx < floor.width and 0 <= cy < floor.height):
+            continue
+        t = floor.grid[cy][cx]
+        if t not in {TileType.FLOOR_GRASS, TileType.EMPTY_DECO, TileType.EMBERS,
+                      TileType.HIGH_GRASS, TileType.FURROWED_GRASS}:
+            continue
+        if _plants_at(floor, cx, cy):
+            continue
+        plant_grass(floor, cx, cy)
+        planted.append((cx, cy))
+        plants -= 1
+    if planted and kwargs.get("add_event"):
+        kwargs["add_event"]("BLOOMING_PROC", {
+            "source": attacker.id,
+            "defender": defender.id,
+            "cells": planted,
+        })
+
+
+def _proc_corrupting(attacker, defender, weapon, raw_damage, actual_damage, hp_before, result, floor_mobs, tile_x, tile_y, floor, **kwargs):
+    if not _is_hostile(attacker, defender):
+        return
+    arcana_mult = kwargs.get("arcana_mult", 1.0)
+    lvl = weapon.buffed_lvl()
+    chance = _final_chance(_proc_chance_corrupting(lvl), attacker, arcana_mult)
+    if random.random() >= chance:
+        return
+    if actual_damage < hp_before:
+        return
+    if not defender.is_alive:
+        return
+    if hasattr(defender, "is_boss") and defender.is_boss:
+        return
+    if defender.has_buff("corruption"):
+        return
+    # immunity check via properties
+    if "IMMOVABLE" in getattr(defender, "properties", []):
+        return
+    defender.faction = attacker.faction
+    defender.add_buff("corruption", duration=999.0)
+    if chance > 1.1:
+        defender.add_buff("adrenaline", duration=round(5 * (chance - 1)))
+    if kwargs.get("add_event"):
+        kwargs["add_event"]("CORRUPT_PROC", {
+            "source": attacker.id,
+            "target": defender.id,
+        })
+
+
+def _proc_lucky(attacker, defender, weapon, raw_damage, actual_damage, hp_before, result, floor_mobs, tile_x, tile_y, floor, **kwargs):
+    if not _is_hostile(attacker, defender):
+        return
+    arcana_mult = kwargs.get("arcana_mult", 1.0)
+    lvl = weapon.buffed_lvl()
+    chance = _final_chance(_proc_chance_lucky(lvl), attacker, arcana_mult)
+    power_multi = _power_mult(chance)
+    ring_level = -10 + round(5 * power_multi)
+    if random.random() < chance:
+        defender.add_buff("luck_proc", duration=2.0, level=max(-10, ring_level))
+    else:
+        existing = defender.get_buff("luck_proc")
+        if existing is not None:
+            defender.remove_buff("luck_proc")
+
+
 def _proc_vampiric(attacker, defender, weapon, raw_damage, actual_damage, hp_before, result, floor_mobs, tile_x, tile_y, floor, **kwargs):
     if not _is_hostile(attacker, defender):
         return
     arcana_mult = kwargs.get("arcana_mult", 1.0)
-    chance = (vampiric_chance(missing_hp_pct(attacker)) + enraged_catalyst_bonus(attacker)) * arcana_mult
+    chance = _final_chance(vampiric_chance(missing_hp_pct(attacker)), attacker, arcana_mult)
     if random.random() < chance:
         heal = round(actual_damage * 0.5 * striking_wave_multiplier(attacker))
         if heal > 0:
             attacker.hp = min(attacker.max_hp, attacker.hp + heal)
+            if kwargs.get("add_event"):
+                kwargs["add_event"]("VAMPIRIC_PROC", {
+                    "source": attacker.id,
+                    "heal": heal,
+                })
 
 
 def _proc_blocking(attacker, defender, weapon, raw_damage, actual_damage, hp_before, result, floor_mobs, tile_x, tile_y, floor, **kwargs):
     lvl = weapon.buffed_lvl()
     arcana_mult = kwargs.get("arcana_mult", 1.0)
-    if random.random() < (blocking_chance(lvl) + enraged_catalyst_bonus(attacker)) * arcana_mult:
-        attacker.add_shield("block", round((2 + lvl) * striking_wave_multiplier(attacker)), priority=0)
+    if random.random() < _final_chance(blocking_chance(lvl), attacker, arcana_mult):
+        shield = round((2 + lvl) * striking_wave_multiplier(attacker))
+        attacker.add_shield("block", shield, priority=0)
+        if kwargs.get("add_event"):
+            kwargs["add_event"]("BLOCKING_PROC", {
+                "source": attacker.id,
+                "shield": shield,
+            })
 
 
 def _proc_elastic(attacker, defender, weapon, raw_damage, actual_damage, hp_before, result, floor_mobs, tile_x, tile_y, floor, **kwargs):
     lvl = weapon.buffed_lvl()
     arcana_mult = kwargs.get("arcana_mult", 1.0)
-    if random.random() >= (elastic_chance(lvl) + enraged_catalyst_bonus(attacker)) * arcana_mult:
+    if random.random() >= _final_chance(elastic_chance(lvl), attacker, arcana_mult):
         return
     if "IMMOVABLE" in getattr(defender, "properties", []):
         return
@@ -222,19 +397,28 @@ def _proc_elastic(attacker, defender, weapon, raw_damage, actual_damage, hp_befo
     if floor is None:
         return
     x, y = defender.pos.x, defender.pos.y
-    for _ in range(2):  # round(2 * powerMulti), powerMulti=1
+    from_x, from_y = x, y
+    for _ in range(2):
         nx, ny = x + step_x, y + step_y
         if not (0 <= nx < floor.width and 0 <= ny < floor.height):
             break
-        if not floor.flags or not floor.flags.passable[ny][nx] or floor.flags.solid[ny][nx]:
+        if floor.flags and (floor.flags.solid[ny][nx] or not floor.flags.passable[ny][nx]):
             break
         x, y = nx, ny
     defender.pos.x, defender.pos.y = x, y
+    if kwargs.get("add_event"):
+        kwargs["add_event"]("ELASTIC_PROC", {
+            "target": defender.id,
+            "from_x": from_x,
+            "from_y": from_y,
+            "to_x": x,
+            "to_y": y,
+        })
 
 
 def _proc_shocking(attacker, defender, weapon, raw_damage, actual_damage, hp_before, result, floor_mobs, tile_x, tile_y, floor, add_event=None, **kwargs):
     arcana_mult = kwargs.get("arcana_mult", 1.0)
-    if random.random() >= (SHOCKING_CHANCE + enraged_catalyst_bonus(attacker)) * arcana_mult:
+    if random.random() >= _final_chance(SHOCKING_CHANCE, attacker, arcana_mult):
         return
     if not _is_hostile(attacker, defender) or actual_damage <= 0:
         return
@@ -245,11 +429,11 @@ def _proc_shocking(attacker, defender, weapon, raw_damage, actual_damage, hp_bef
         visited = {(from_x, from_y)}
         q = deque([(from_x, from_y, 0)])
         while q:
-            x, y, d = q.popleft()
+            cx, cy, d = q.popleft()
             if d >= max_dist:
                 continue
             for dx, dy in [(0, -1), (1, 0), (0, 1), (-1, 0)]:
-                nx, ny = x + dx, y + dy
+                nx, ny = cx + dx, cy + dy
                 if 0 <= nx < floor.width and 0 <= ny < floor.height:
                     if (nx, ny) not in visited and not floor.flags.solid[ny][nx]:
                         visited.add((nx, ny))
@@ -267,15 +451,14 @@ def _proc_shocking(attacker, defender, weapon, raw_damage, actual_damage, hp_bef
             if (m.pos.x, m.pos.y) not in reachable:
                 continue
             affected_ids.add(m.id)
-            dmg = round(actual_damage * 0.5 * striking_wave_multiplier(attacker))
+            dmg = round(actual_damage * 0.5)
             if dmg < 1:
                 dmg = 1
             m.take_damage(dmg)
             chain_targets.append({"id": m.id, "x": m.pos.x, "y": m.pos.y})
-            # Recurse with reduced range (1 tile, or 2 if target in water and not flying)
             next_dist = 2 if (floor and hasattr(floor, 'grid')
-                             and floor.grid[m.pos.y][m.pos.x] == TileType.FLOOR_WATER
-                             and "FLYING" not in getattr(m, "properties", [])) else 1
+                              and floor.grid[m.pos.y][m.pos.x] == TileType.FLOOR_WATER
+                              and "FLYING" not in getattr(m, "properties", [])) else 1
             _shock_arc(m.pos.x, m.pos.y, next_dist)
 
     _shock_arc(defender.pos.x, defender.pos.y, 2)
@@ -291,7 +474,7 @@ def _proc_shocking(attacker, defender, weapon, raw_damage, actual_damage, hp_bef
 
 def _proc_sacrificial(attacker, defender, weapon, raw_damage, actual_damage, hp_before, result, floor_mobs, tile_x, tile_y, floor, **kwargs):
     arcana_mult = kwargs.get("arcana_mult", 1.0)
-    if random.random() >= (CURSE_PROC_CHANCE["sacrificial"] + enraged_catalyst_bonus(attacker)) * arcana_mult:
+    if random.random() >= _final_chance(CURSE_PROC_CHANCE["sacrificial"], attacker, arcana_mult):
         return
     cost = round(missing_hp_pct(attacker) ** 2 * attacker.max_hp / 8 * random.random())
     if cost > 0:
@@ -300,7 +483,7 @@ def _proc_sacrificial(attacker, defender, weapon, raw_damage, actual_damage, hp_
 
 def _proc_displacing(attacker, defender, weapon, raw_damage, actual_damage, hp_before, result, floor_mobs, tile_x, tile_y, floor, **kwargs):
     arcana_mult = kwargs.get("arcana_mult", 1.0)
-    if random.random() >= (CURSE_PROC_CHANCE["displacing"] + enraged_catalyst_bonus(attacker)) * arcana_mult:
+    if random.random() >= _final_chance(CURSE_PROC_CHANCE["displacing"], attacker, arcana_mult):
         return
     if "IMMOVABLE" in getattr(defender, "properties", []):
         return
@@ -313,18 +496,102 @@ def _proc_displacing(attacker, defender, weapon, raw_damage, actual_damage, hp_b
         if floor.flags.passable[y][x] and not floor.flags.solid[y][x]
     ]
     if candidates:
+        from_x, from_y = defender.pos.x, defender.pos.y
         defender.pos.x, defender.pos.y = random.choice(candidates)
+        if kwargs.get("add_event"):
+            kwargs["add_event"]("TELEPORT", {
+                "player": defender.id,
+                "from_x": from_x,
+                "from_y": from_y,
+                "x": defender.pos.x,
+                "y": defender.pos.y,
+            })
 
 
 def _proc_annoying(attacker, defender, weapon, raw_damage, actual_damage, hp_before, result, floor_mobs, tile_x, tile_y, floor, **kwargs):
     arcana_mult = kwargs.get("arcana_mult", 1.0)
-    if random.random() >= (CURSE_PROC_CHANCE["annoying"] + enraged_catalyst_bonus(attacker)) * arcana_mult:
+    if random.random() >= _final_chance(CURSE_PROC_CHANCE["annoying"], attacker, arcana_mult):
         return
-    for mob in floor_mobs.values():
+    for mob in (floor_mobs or {}).values():
         if not mob.is_alive:
             continue
         mob.target_id = attacker.id
         mob.ai_state = "hunting"
+
+
+def _proc_dazzling(attacker, defender, weapon, raw_damage, actual_damage, hp_before, result, floor_mobs, tile_x, tile_y, floor, **kwargs):
+    arcana_mult = kwargs.get("arcana_mult", 1.0)
+    if random.random() >= _final_chance(CURSE_PROC_CHANCE["dazzling"], attacker, arcana_mult):
+        return
+    attacker.add_buff("blindness", duration=10.0)
+    for mob in (floor_mobs or {}).values():
+        if mob.is_alive and mob.id != attacker.id and mob.id != defender.id:
+            mob.add_buff("blindness", duration=5.0)
+
+
+def _proc_wayward(attacker, defender, weapon, raw_damage, actual_damage, hp_before, result, floor_mobs, tile_x, tile_y, floor, **kwargs):
+    arcana_mult = kwargs.get("arcana_mult", 1.0)
+    if random.random() >= _final_chance(CURSE_PROC_CHANCE["wayward"], attacker, arcana_mult):
+        return
+    existing = attacker.get_buff("wayward_buff")
+    if existing is not None:
+        attacker.remove_buff("wayward_buff")
+    else:
+        attacker.add_buff("wayward_buff", duration=10.0)
+
+
+def _proc_friendly(attacker, defender, weapon, raw_damage, actual_damage, hp_before, result, floor_mobs, tile_x, tile_y, floor, **kwargs):
+    arcana_mult = kwargs.get("arcana_mult", 1.0)
+    if random.random() >= _final_chance(CURSE_PROC_CHANCE["friendly"], attacker, arcana_mult):
+        return
+    existing_charm = attacker.get_buff("charm")
+    if existing_charm is not None and getattr(existing_charm, "source_id", None) == defender.id:
+        return
+    attacker.add_buff("charm", duration=10.0, source_id=defender.id)
+    defender.add_buff("charm", duration=5.0, source_id=attacker.id)
+    if kwargs.get("add_event"):
+        kwargs["add_event"]("CHARM_PROC", {
+            "source": attacker.id,
+            "target": defender.id,
+        })
+
+
+_EXPLOSIVE_DURABILITY_MAX = 100
+_EXPLOSIVE_DURABILITY_WARM = 50
+_EXPLOSIVE_DURABILITY_HOT = 10
+
+
+def _proc_explosive(attacker, defender, weapon, raw_damage, actual_damage, hp_before, result, floor_mobs, tile_x, tile_y, floor, **kwargs):
+    arcana_mult = kwargs.get("arcana_mult", 1.0)
+    durability = getattr(weapon, "_explosive_durability", _EXPLOSIVE_DURABILITY_MAX)
+    durability -= round(random.randint(0, 10) * arcana_mult)
+    weapon._explosive_durability = durability
+    if durability <= 0:
+        weapon._explosive_durability = _EXPLOSIVE_DURABILITY_MAX
+        if floor is None:
+            return
+        best = None
+        best_dist = 999
+        for dx, dy in [(0, -1), (1, 0), (0, 1), (-1, 0)]:
+            nx, ny = defender.pos.x + dx, defender.pos.y + dy
+            if 0 <= nx < floor.width and 0 <= ny < floor.height:
+                if floor.flags and floor.flags.passable[ny][nx] and not floor.flags.solid[ny][nx]:
+                    d = abs(nx - defender.pos.x) + abs(ny - defender.pos.y)
+                    if d < best_dist:
+                        best_dist = d
+                        best = (nx, ny)
+        if best is not None:
+            bx, by = best
+            for mob in (floor_mobs or {}).values():
+                if mob.is_alive and abs(mob.pos.x - bx) + abs(mob.pos.y - by) <= 2:
+                    dmg = max(1, 20 - (abs(mob.pos.x - bx) + abs(mob.pos.y - by)) * 5)
+                    mob.take_damage(dmg)
+            if kwargs.get("add_event"):
+                kwargs["add_event"]("EXPLOSIVE_PROC", {
+                    "x": bx,
+                    "y": by,
+                    "radius": 2,
+                })
 
 
 def _proc_unstable(attacker, defender, weapon, raw_damage, actual_damage, hp_before, result, floor_mobs, tile_x, tile_y, floor, **kwargs):
@@ -333,6 +600,11 @@ def _proc_unstable(attacker, defender, weapon, raw_damage, actual_damage, hp_bef
 
 
 _PROC_HANDLERS: Dict[str, Callable] = {
+    "blazing": _proc_blazing,
+    "chilling": _proc_chilling,
+    "blooming": _proc_blooming,
+    "corrupting": _proc_corrupting,
+    "lucky": _proc_lucky,
     "vampiric": _proc_vampiric,
     "blocking": _proc_blocking,
     "elastic": _proc_elastic,
@@ -340,8 +612,22 @@ _PROC_HANDLERS: Dict[str, Callable] = {
     "sacrificial": _proc_sacrificial,
     "displacing": _proc_displacing,
     "annoying": _proc_annoying,
+    "dazzling": _proc_dazzling,
+    "wayward": _proc_wayward,
+    "friendly": _proc_friendly,
+    "explosive": _proc_explosive,
     "unstable": _proc_unstable,
 }
+
+
+def _resolve_wondrous_resin(
+    name: str, attacker: "Entity", **kwargs,
+) -> str:
+    if name in CURSES:
+        replacement = roll_curse_effect_wondrous(attacker)
+        if replacement is not None:
+            return replacement
+    return name
 
 
 def apply_enchant_proc(
@@ -359,17 +645,12 @@ def apply_enchant_proc(
     floor=None,
     add_event=None,
 ) -> None:
-    """Dispatch an on-hit weapon enchant/curse proc. Grim, Kinetic, Polarized
-    and Projecting are handled separately in combat.py (see plan §3)."""
+    name = _resolve_wondrous_resin(name, attacker)
     handler = _PROC_HANDLERS.get(name)
     if handler is not None:
-        arcana_mult = 1.0
-        if hasattr(attacker, "belongings"):
-            from app.engine.entities.rings import arcana_multiplier
-            arcana_mult = arcana_multiplier(attacker)
+        arcana_mult = _arcana_mult(attacker)
         handler(attacker, defender, weapon, raw_damage, actual_damage, hp_before, result, floor_mobs, tile_x, tile_y, floor, add_event=add_event, arcana_mult=arcana_mult)
 
 
 def polarized_roll() -> float:
-    """50% chance 1.5x damage, 50% chance 0x."""
     return 1.5 if random.random() < 0.5 else 0.0

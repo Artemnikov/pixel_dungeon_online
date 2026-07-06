@@ -29,7 +29,8 @@ from app.engine.game.floor_state import FloorState
 
 class VisionMixin:
     def _find_nearest_player(self, pos: Position, floor_id: int):
-        candidates = [p for p in self._players_on_floor(floor_id) if p.is_alive and not p.is_downed]
+        candidates = [p for p in self._players_on_floor(floor_id)
+                      if p.is_alive and not p.is_downed and not p.has_buff("time_stasis")]
         if not candidates:
             return None
 
@@ -49,6 +50,7 @@ class VisionMixin:
         candidates: List = [
             p for p in self._players_on_floor(floor_id)
             if p.id != exclude_id and p.is_alive and not p.is_downed
+            and not p.has_buff("time_stasis")
         ]
         floor = self.floors.get(floor_id)
         if floor is not None:
@@ -85,9 +87,13 @@ class VisionMixin:
 
     def _view_distance(self, entity) -> int:
         """Resolve an entity's effective vision radius. Single hook point for
-        Light/Blindness/Farsight buffs and per-floor overrides (mirrors SPD
-        Level.updateFieldOfView's viewDist scaling). Clamped to the
-        shadowcaster's supported range; missing field defaults to SPD's 8."""
+        Light/Blindness/Farsight buffs, per-floor overrides, and the EyeOfNewt
+        trinket's vision-range multiplier (mirrors SPD Level.updateFieldOfView's
+        viewDist scaling). Clamped to the shadowcaster's supported range; missing
+        field defaults to SPD's 8."""
+        from app.engine.entities.trinkets import EyeOfNewt as _EyeOfNewt
+        from app.engine.entities.trinkets import trinket_level
+
         # Per-floor override (e.g. YogDzewa fight shrinking level.viewDistance)
         # takes precedence over the entity's own view distance, mirroring SPD
         # where level.viewDistance is forced onto the hero directly.
@@ -102,6 +108,11 @@ class VisionMixin:
         get_view = getattr(entity, "get_view_distance", None)
         if get_view:
             dist = get_view()
+        # EyeOfNewt trinket: multiply vision range (reduces FOV radius)
+        lvl = trinket_level(entity, "eye_of_newt")
+        if lvl >= 0:
+            mult = _EyeOfNewt.vision_range_multiplier(lvl)
+            dist = int(dist * mult)
         return max(0, min(dist, shadowcaster.MAX_DISTANCE))
 
     def _effective_blocking(self, floor: "FloorState", viewer_id: Optional[str] = None) -> List[bool]:

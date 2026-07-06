@@ -15,6 +15,12 @@ class Subclass:
     WARLOCK = "warlock"
     # Huntress
     SNIPER = "sniper"
+    # Duelist
+    CHAMPION = "champion"
+    MONK = "monk"
+    # Cleric
+    PRIEST = "priest"
+    PALADIN = "paladin"
 
 
 # Which subclasses each hero class may choose at level 6.
@@ -23,6 +29,8 @@ CLASS_SUBCLASSES: Dict[str, tuple[str, ...]] = {
     "rogue": (Subclass.ASSASSIN, Subclass.FREERUNNER),
     "mage": (Subclass.BATTLEMAGE, Subclass.WARLOCK),
     "huntress": (Subclass.SNIPER, Subclass.WARDEN),
+    "duelist": (Subclass.CHAMPION, Subclass.MONK),
+    "cleric": (Subclass.PRIEST, Subclass.PALADIN),
 }
 
 
@@ -42,6 +50,14 @@ class ArmorAbilityType:
     SPECTRAL_BLADES = "spectral_blades"
     NATURES_POWER = "natures_power"
     SPIRIT_HAWK = "spirit_hawk"
+    # Duelist
+    CHALLENGE = "challenge"
+    ELEMENTAL_STRIKE = "elemental_strike"
+    FEINT = "feint"
+    # Cleric
+    ASCENDED_FORM = "ascended_form"
+    TRINITY = "trinity"
+    POWER_OF_MANY = "power_of_many"
 
 
 class Talent:
@@ -208,6 +224,84 @@ class Talent:
     GO_FOR_THE_EYES = "go_for_the_eyes"
     SWIFT_SPIRIT = "swift_spirit"
 
+    # ===================== DUELIST =====================
+    # Tier 1
+    AGGRESSIVE_APPROACH = "aggressive_approach"
+    LIGHTWEIGHT_COMBAT = "lightweight_combat"
+    DUELIST_LETHAL_MOMENTUM = "duelist_lethal_momentum"
+    STICK_AND_MOVE = "stick_and_move"
+    # Tier 2
+    DUAL_STRIKE = "dual_strike"
+    CIRCLE_OF_SLAUGHTER = "circle_of_slaughter"
+    FINISHER = "finisher"
+    FEROCITY = "ferocity"
+    # Tier 3 — class
+    CHARGED_ATTACK = "charged_attack"
+    SWIFT_EQUIP = "swift_equip"
+    # Tier 3 — Champion
+    CHAMPION_POWER = "champion_power"
+    CHAMPION_ENDURANCE = "champion_endurance"
+    CHAMPION_REACH = "champion_reach"
+    # Tier 3 — Monk
+    MONASTIC_VIGOR = "monastic_vigor"
+    MONKS_SPIRIT = "monks_spirit"
+    UNENCUMBERED_SPIRIT = "unencumbered_spirit"
+    # Tier 4 (armor abilities)
+    CHALLENGE_ABILITY = "challenge_talent"
+    ELEMENTAL_STRIKE_ABILITY = "elemental_strike_talent"
+    FEINT_ABILITY = "feint_talent"
+    # Tier 4 — Challenge
+    LASTING_CHALLENGE = "lasting_challenge"
+    HEIGHTENED_CHALLENGE = "heightened_challenge"
+    DUAL_CHALLENGE = "dual_challenge"
+    # Tier 4 — Elemental Strike
+    SEARING_STRIKE = "searing_strike"
+    CHILLING_STRIKE = "chilling_strike"
+    CHARGED_STRIKE = "charged_strike"
+    # Tier 4 — Feint
+    SHADOW_FEINT = "shadow_feint"
+    REACTIVE_FEINT = "reactive_feint"
+    PHANTASMAL_FEINT = "phantasmal_feint"
+
+    # ===================== CLERIC =====================
+    # Tier 1
+    SCEPTER_MASTERY = "scepter_mastery"
+    RELIC_MASTERY = "relic_mastery"
+    HOLINESS = "holiness"
+    AFFILIATION = "affiliation"
+    # Tier 2
+    TESTED_METTLE = "tested_mettle"
+    TOME_OF_DIVINITY = "tome_of_divinity"
+    SHARED_ARMAMENTS = "shared_armaments"
+    SPIRITUAL_GRACE = "spiritual_grace"
+    # Tier 3 — class
+    DIVINE_INTERVENTION = "divine_intervention"
+    DIVINE_SHIELD = "divine_shield"
+    # Tier 3 — Priest
+    RADIANCE = "radiance"
+    EMPOWERED_STRIKE = "empowered_strike"
+    SMITE = "smite"
+    # Tier 3 — Paladin
+    SHIELD_OF_LIGHT = "shield_of_light"
+    HOLY_ARMOR = "holy_armor"
+    UNDYING_FAITH = "undying_faith"
+    # Tier 4 (armor abilities)
+    ASCENDED_FORM_ABILITY = "ascended_form_talent"
+    TRINITY_ABILITY = "trinity_talent"
+    POWER_OF_MANY_ABILITY = "power_of_many_talent"
+    # Tier 4 — Ascended Form
+    EMPOWERED_ASCENSION = "empowered_ascension"
+    RADIANT_ASCENSION = "radiant_ascension"
+    HEALING_ASCENSION = "healing_ascension"
+    # Tier 4 — Trinity
+    TRINITARIAN_TRINITY = "trinitarian_trinity"
+    HOLY_TRINITY = "holy_trinity"
+    DEEP_ROOTS_TRINITY = "deep_roots_trinity"
+    # Tier 4 — Power of Many
+    GREATER_POWER = "greater_power"
+    PERSISTENT_ALLIES = "persistent_allies"
+    LIGHT_WARRIOR = "light_warrior"
+
 
 # Maps talent name → (max_points, tier, subclass_required_or_None)
 TALENT_DEFS: Dict[str, tuple[int, int, Optional[str]]] = {
@@ -363,6 +457,66 @@ TALENT_DEFS: Dict[str, tuple[int, int, Optional[str]]] = {
     Talent.EAGLE_EYE: (4, 4, None),
     Talent.GO_FOR_THE_EYES: (4, 4, None),
     Talent.SWIFT_SPIRIT: (4, 4, None),
+
+    # ===================== DUELIST =====================
+    Talent.AGGRESSIVE_APPROACH: (2, 1, None),
+    Talent.LIGHTWEIGHT_COMBAT: (2, 1, None),
+    Talent.DUELIST_LETHAL_MOMENTUM: (2, 1, None),
+    Talent.STICK_AND_MOVE: (2, 1, None),
+    Talent.DUAL_STRIKE: (2, 2, None),
+    Talent.CIRCLE_OF_SLAUGHTER: (2, 2, None),
+    Talent.FINISHER: (2, 2, None),
+    Talent.FEROCITY: (2, 2, None),
+    Talent.CHARGED_ATTACK: (3, 3, None),
+    Talent.SWIFT_EQUIP: (3, 3, None),
+    Talent.CHAMPION_POWER: (3, 3, Subclass.CHAMPION),
+    Talent.CHAMPION_ENDURANCE: (3, 3, Subclass.CHAMPION),
+    Talent.CHAMPION_REACH: (3, 3, Subclass.CHAMPION),
+    Talent.MONASTIC_VIGOR: (3, 3, Subclass.MONK),
+    Talent.MONKS_SPIRIT: (3, 3, Subclass.MONK),
+    Talent.UNENCUMBERED_SPIRIT: (3, 3, Subclass.MONK),
+    Talent.CHALLENGE_ABILITY: (1, 3, None),
+    Talent.ELEMENTAL_STRIKE_ABILITY: (1, 3, None),
+    Talent.FEINT_ABILITY: (1, 3, None),
+    Talent.LASTING_CHALLENGE: (4, 4, None),
+    Talent.HEIGHTENED_CHALLENGE: (4, 4, None),
+    Talent.DUAL_CHALLENGE: (4, 4, None),
+    Talent.SEARING_STRIKE: (4, 4, None),
+    Talent.CHILLING_STRIKE: (4, 4, None),
+    Talent.CHARGED_STRIKE: (4, 4, None),
+    Talent.SHADOW_FEINT: (4, 4, None),
+    Talent.REACTIVE_FEINT: (4, 4, None),
+    Talent.PHANTASMAL_FEINT: (4, 4, None),
+
+    # ===================== CLERIC =====================
+    Talent.SCEPTER_MASTERY: (2, 1, None),
+    Talent.RELIC_MASTERY: (2, 1, None),
+    Talent.HOLINESS: (2, 1, None),
+    Talent.AFFILIATION: (2, 1, None),
+    Talent.TESTED_METTLE: (2, 2, None),
+    Talent.TOME_OF_DIVINITY: (2, 2, None),
+    Talent.SHARED_ARMAMENTS: (2, 2, None),
+    Talent.SPIRITUAL_GRACE: (2, 2, None),
+    Talent.DIVINE_INTERVENTION: (3, 3, None),
+    Talent.DIVINE_SHIELD: (3, 3, None),
+    Talent.RADIANCE: (3, 3, Subclass.PRIEST),
+    Talent.EMPOWERED_STRIKE: (3, 3, Subclass.PRIEST),
+    Talent.SMITE: (3, 3, Subclass.PRIEST),
+    Talent.SHIELD_OF_LIGHT: (3, 3, Subclass.PALADIN),
+    Talent.HOLY_ARMOR: (3, 3, Subclass.PALADIN),
+    Talent.UNDYING_FAITH: (3, 3, Subclass.PALADIN),
+    Talent.ASCENDED_FORM_ABILITY: (1, 3, None),
+    Talent.TRINITY_ABILITY: (1, 3, None),
+    Talent.POWER_OF_MANY_ABILITY: (1, 3, None),
+    Talent.EMPOWERED_ASCENSION: (4, 4, None),
+    Talent.RADIANT_ASCENSION: (4, 4, None),
+    Talent.HEALING_ASCENSION: (4, 4, None),
+    Talent.TRINITARIAN_TRINITY: (4, 4, None),
+    Talent.HOLY_TRINITY: (4, 4, None),
+    Talent.DEEP_ROOTS_TRINITY: (4, 4, None),
+    Talent.GREATER_POWER: (4, 4, None),
+    Talent.PERSISTENT_ALLIES: (4, 4, None),
+    Talent.LIGHT_WARRIOR: (4, 4, None),
 }
 
 
@@ -413,6 +567,30 @@ TALENT_CLASS_REQ: Dict[str, str] = {
     Talent.FAN_OF_BLADES: "huntress", Talent.PROJECTING_BLADES: "huntress", Talent.SPIRIT_BLADES: "huntress",
     Talent.GROWING_POWER: "huntress", Talent.NATURES_WRATH: "huntress", Talent.WILD_MOMENTUM: "huntress",
     Talent.EAGLE_EYE: "huntress", Talent.GO_FOR_THE_EYES: "huntress", Talent.SWIFT_SPIRIT: "huntress",
+    # Duelist
+    Talent.AGGRESSIVE_APPROACH: "duelist", Talent.LIGHTWEIGHT_COMBAT: "duelist",
+    Talent.DUELIST_LETHAL_MOMENTUM: "duelist", Talent.STICK_AND_MOVE: "duelist",
+    Talent.DUAL_STRIKE: "duelist", Talent.CIRCLE_OF_SLAUGHTER: "duelist",
+    Talent.FINISHER: "duelist", Talent.FEROCITY: "duelist",
+    Talent.CHARGED_ATTACK: "duelist", Talent.SWIFT_EQUIP: "duelist",
+    Talent.CHAMPION_POWER: "duelist", Talent.CHAMPION_ENDURANCE: "duelist", Talent.CHAMPION_REACH: "duelist",
+    Talent.MONASTIC_VIGOR: "duelist", Talent.MONKS_SPIRIT: "duelist", Talent.UNENCUMBERED_SPIRIT: "duelist",
+    Talent.CHALLENGE_ABILITY: "duelist", Talent.ELEMENTAL_STRIKE_ABILITY: "duelist", Talent.FEINT_ABILITY: "duelist",
+    Talent.LASTING_CHALLENGE: "duelist", Talent.HEIGHTENED_CHALLENGE: "duelist", Talent.DUAL_CHALLENGE: "duelist",
+    Talent.SEARING_STRIKE: "duelist", Talent.CHILLING_STRIKE: "duelist", Talent.CHARGED_STRIKE: "duelist",
+    Talent.SHADOW_FEINT: "duelist", Talent.REACTIVE_FEINT: "duelist", Talent.PHANTASMAL_FEINT: "duelist",
+    # Cleric
+    Talent.SCEPTER_MASTERY: "cleric", Talent.RELIC_MASTERY: "cleric",
+    Talent.HOLINESS: "cleric", Talent.AFFILIATION: "cleric",
+    Talent.TESTED_METTLE: "cleric", Talent.TOME_OF_DIVINITY: "cleric",
+    Talent.SHARED_ARMAMENTS: "cleric", Talent.SPIRITUAL_GRACE: "cleric",
+    Talent.DIVINE_INTERVENTION: "cleric", Talent.DIVINE_SHIELD: "cleric",
+    Talent.RADIANCE: "cleric", Talent.EMPOWERED_STRIKE: "cleric", Talent.SMITE: "cleric",
+    Talent.SHIELD_OF_LIGHT: "cleric", Talent.HOLY_ARMOR: "cleric", Talent.UNDYING_FAITH: "cleric",
+    Talent.ASCENDED_FORM_ABILITY: "cleric", Talent.TRINITY_ABILITY: "cleric", Talent.POWER_OF_MANY_ABILITY: "cleric",
+    Talent.EMPOWERED_ASCENSION: "cleric", Talent.RADIANT_ASCENSION: "cleric", Talent.HEALING_ASCENSION: "cleric",
+    Talent.TRINITARIAN_TRINITY: "cleric", Talent.HOLY_TRINITY: "cleric", Talent.DEEP_ROOTS_TRINITY: "cleric",
+    Talent.GREATER_POWER: "cleric", Talent.PERSISTENT_ALLIES: "cleric", Talent.LIGHT_WARRIOR: "cleric",
 }
 
 
@@ -426,6 +604,14 @@ ABILITY_TALENTS: Dict[str, str] = {
     Talent.SPECTRAL_BLADES_ABILITY: ArmorAbilityType.SPECTRAL_BLADES,
     Talent.NATURES_POWER_ABILITY: ArmorAbilityType.NATURES_POWER,
     Talent.SPIRIT_HAWK_ABILITY: ArmorAbilityType.SPIRIT_HAWK,
+    # Duelist
+    Talent.CHALLENGE_ABILITY: ArmorAbilityType.CHALLENGE,
+    Talent.ELEMENTAL_STRIKE_ABILITY: ArmorAbilityType.ELEMENTAL_STRIKE,
+    Talent.FEINT_ABILITY: ArmorAbilityType.FEINT,
+    # Cleric
+    Talent.ASCENDED_FORM_ABILITY: ArmorAbilityType.ASCENDED_FORM,
+    Talent.TRINITY_ABILITY: ArmorAbilityType.TRINITY,
+    Talent.POWER_OF_MANY_ABILITY: ArmorAbilityType.POWER_OF_MANY,
 }
 
 
@@ -452,12 +638,34 @@ T4_ABILITY_TALENTS: Dict[str, str] = {
     Talent.SHADOW_BLADE: ArmorAbilityType.SHADOW_CLONE,
     Talent.CLONED_ARMOR: ArmorAbilityType.SHADOW_CLONE,
     Talent.PERFECT_COPY: ArmorAbilityType.SHADOW_CLONE,
+    # Duelist
+    Talent.LASTING_CHALLENGE: ArmorAbilityType.CHALLENGE,
+    Talent.HEIGHTENED_CHALLENGE: ArmorAbilityType.CHALLENGE,
+    Talent.DUAL_CHALLENGE: ArmorAbilityType.CHALLENGE,
+    Talent.SEARING_STRIKE: ArmorAbilityType.ELEMENTAL_STRIKE,
+    Talent.CHILLING_STRIKE: ArmorAbilityType.ELEMENTAL_STRIKE,
+    Talent.CHARGED_STRIKE: ArmorAbilityType.ELEMENTAL_STRIKE,
+    Talent.SHADOW_FEINT: ArmorAbilityType.FEINT,
+    Talent.REACTIVE_FEINT: ArmorAbilityType.FEINT,
+    Talent.PHANTASMAL_FEINT: ArmorAbilityType.FEINT,
+    # Cleric
+    Talent.EMPOWERED_ASCENSION: ArmorAbilityType.ASCENDED_FORM,
+    Talent.RADIANT_ASCENSION: ArmorAbilityType.ASCENDED_FORM,
+    Talent.HEALING_ASCENSION: ArmorAbilityType.ASCENDED_FORM,
+    Talent.TRINITARIAN_TRINITY: ArmorAbilityType.TRINITY,
+    Talent.HOLY_TRINITY: ArmorAbilityType.TRINITY,
+    Talent.DEEP_ROOTS_TRINITY: ArmorAbilityType.TRINITY,
+    Talent.GREATER_POWER: ArmorAbilityType.POWER_OF_MANY,
+    Talent.PERSISTENT_ALLIES: ArmorAbilityType.POWER_OF_MANY,
+    Talent.LIGHT_WARRIOR: ArmorAbilityType.POWER_OF_MANY,
 }
 
 # Armor abilities a class may choose from, by class_type.
 CLASS_ARMOR_ABILITIES: Dict[str, tuple[str, ...]] = {
     "warrior": (ArmorAbilityType.HEROIC_LEAP, ArmorAbilityType.SHOCKWAVE, ArmorAbilityType.ENDURE),
     "rogue": (ArmorAbilityType.SMOKE_BOMB, ArmorAbilityType.DEATH_MARK, ArmorAbilityType.SHADOW_CLONE),
+    "duelist": (ArmorAbilityType.CHALLENGE, ArmorAbilityType.ELEMENTAL_STRIKE, ArmorAbilityType.FEINT),
+    "cleric": (ArmorAbilityType.ASCENDED_FORM, ArmorAbilityType.TRINITY, ArmorAbilityType.POWER_OF_MANY),
 }
 
 

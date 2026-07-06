@@ -1,14 +1,7 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, memo } from 'react';
 
 const DPR = Math.min(window.devicePixelRatio || 1, 2);
 
-import bossHpImg from '../assets/pixel-dungeon/interfaces/boss_hp.png';
-import gooSprite from '../assets/pixel-dungeon/sprites/goo.png';
-import tenguSprite from '../assets/pixel-dungeon/sprites/tengu.png';
-import dm300Sprite from '../assets/pixel-dungeon/sprites/dm300.png';
-import kingSprite from '../assets/pixel-dungeon/sprites/king.png';
-import yogSprite from '../assets/pixel-dungeon/sprites/yog.png';
-import buffsImg from '../assets/pixel-dungeon/interfaces/buffs.png';
 
 const BAR_SRC = { x: 0, y: 16, w: 128, h: 30 };
 const HP_SRC = { x: 0, y: 46, w: 96, h: 9 };
@@ -24,19 +17,19 @@ const BUFF_SIZE = 7;
 const BUFF_COLS = 18;
 const MAX_BUFFS = 6;
 
-const BOSS_SPRITES = {
-  Goo: { fw: 20, fh: 14, src: gooSprite },
-  Tengu: { fw: 14, fh: 16, src: tenguSprite },
-  'DM-300': { fw: 25, fh: 22, src: dm300Sprite },
-  'Dwarf King': { fw: 16, fh: 16, src: kingSprite },
-  'Yog-Dzewa': { fw: 20, fh: 19, src: yogSprite },
+const BOSS_SPRITE_KEYS = {
+  Goo: { fw: 20, fh: 14, key: 'goo' },
+  Tengu: { fw: 14, fh: 16, key: 'tengu' },
+  'DM-300': { fw: 25, fh: 22, key: 'dm300' },
+  'Dwarf King': { fw: 16, fh: 16, key: 'king' },
+  'Yog-Dzewa': { fw: 20, fh: 19, key: 'yog' },
 };
 
 function bossScale() {
   return Math.min(3, Math.max(2, Math.floor(window.innerWidth / 160)));
 }
 
-export default function BossHealthBar({ boss, bleeding, interfaceSize }) {
+function BossHealthBar({ boss, bleeding, interfaceSize, assetImages }) {
   const canvasRef = useRef(null);
   const bossRef = useRef(boss);
   const bleedingRef = useRef(bleeding);
@@ -53,35 +46,18 @@ export default function BossHealthBar({ boss, bleeding, interfaceSize }) {
   useEffect(() => { isLargeRef.current = (interfaceSize || 0) > 0; }, [interfaceSize]);
 
   useEffect(() => {
-    const loadImg = (src) => new Promise(resolve => {
-      const img = new Image();
-      img.onload = () => resolve(img);
-      img.onerror = () => resolve(null);
-      img.src = src;
-      if (img.complete && img.naturalWidth > 0) { img.onload = null; resolve(img); }
-      else if (img.complete && img.naturalWidth === 0) { img.onerror = null; resolve(null); }
-    });
-
-    const loadAll = async () => {
-      const [bossHp, buffs] = await Promise.all([
-        loadImg(bossHpImg),
-        loadImg(buffsImg),
-      ]);
-      bossHpRef.current = bossHp;
-      buffsSheetRef.current = buffs;
-
-      const info = BOSS_SPRITES[boss?.name];
-      if (info) {
-        const sprite = await loadImg(info.src);
-        spriteRef.current = sprite;
-        spriteInfoRef.current = info;
-      } else {
-        spriteRef.current = null;
-        spriteInfoRef.current = null;
-      }
-    };
-    loadAll();
-  }, [boss?.name]);
+    if (!assetImages) return;
+    bossHpRef.current = assetImages.bossHp;
+    buffsSheetRef.current = assetImages.buffs;
+    const info = BOSS_SPRITE_KEYS[boss?.name];
+    if (info && assetImages[info.key]) {
+      spriteRef.current = assetImages[info.key];
+      spriteInfoRef.current = info;
+    } else {
+      spriteRef.current = null;
+      spriteInfoRef.current = null;
+    }
+  }, [assetImages, boss?.name]);
 
   useEffect(() => {
     const onResize = () => { scaleRef.current = bossScale(); };
@@ -176,8 +152,8 @@ export default function BossHealthBar({ boss, bleeding, interfaceSize }) {
       if (isLarge && spriteImg && sInfo) {
         const sw = sInfo.fw * s;
         const sh = sInfo.fh * s;
-        const sx = (paneSize - sw) / 2;
-        const sy = (paneSize - sh) / 2;
+        const sx = (paneSize * s - sw) / 2;
+        const sy = (paneSize * s - sh) / 2;
         if (isBleeding) {
           ctx.save();
           ctx.drawImage(spriteImg, 0, 0, sInfo.fw, sInfo.fh, sx, sy, sw, sh);
@@ -290,3 +266,5 @@ export default function BossHealthBar({ boss, bleeding, interfaceSize }) {
     </div>
   );
 }
+
+export default memo(BossHealthBar);

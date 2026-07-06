@@ -7,6 +7,11 @@ import type {
   SerializedItem,
   TrapInfo,
   CustomTileLayer,
+  AlchemyPreviewResultEvent,
+  AlchemyBrewedEvent,
+  AlchemyEnergizedEvent,
+  TrinketChoiceEvent,
+  ToolkitEnergizePromptEvent,
 } from '../types/contract';
 
 export type { Player, Mob, Difficulty, GameEvent, SerializedItem, TrapInfo, CustomTileLayer };
@@ -193,6 +198,12 @@ export interface HookProps {
   onGhostQuestComplete?: () => void;
   onGhostDialogue?: (data: { npc: string; text: string; can_claim: boolean; weapon?: SerializedItem | null; armor?: SerializedItem | null }) => void;
   onScrollSelectTarget?: (data: { player: string; scroll_id: string; scroll_kind: string; candidates: string[] }) => void;
+  onStoneSelectTarget?: (data: { player: string; stone_id: string; stone_kind: string; candidates: string[] }) => void;
+  onStoneIntuitionPickItem?: (data: { player: string; stone_id: string; candidates: string[] }) => void;
+  onStoneIntuitionGuessKind?: (data: { player: string; stone_id: string; item_id: string; possible_kinds: string[] }) => void;
+  onStoneAugmentSelect?: (data: { player: string; stone_id: string; candidates: string[] }) => void;
+  onStoneAugmentPickItem?: (data: { player: string; stone_id: string; candidates: string[] }) => void;
+  onEnchantChoiceAvailable?: (data: { scroll_id: string; target_id: string; is_weapon: boolean; options: string[] }) => void;
   onGhostGearOpen?: (data: {
     player: string; rose_id: string; ghost_id: string;
     ghost_hp: number; ghost_max_hp: number;
@@ -200,6 +211,12 @@ export interface HookProps {
   }) => void;
   onBossSlain?: (data: { mob: string; depth: number; badge_image: number }) => void;
   onPlayerDeath?: (data: { score_breakdown?: { kills: number; floors: number; gold: number }; can_resurrect?: boolean; victory?: boolean }) => void;
+  onAlchemyPreviewResult?: (data: AlchemyPreviewResultEvent['data']) => void;
+  onAlchemyBrewed?: (data: AlchemyBrewedEvent['data']) => void;
+  onAlchemyEnergized?: (data: AlchemyEnergizedEvent['data']) => void;
+  onTrinketChoice?: (data: TrinketChoiceEvent['data']) => void;
+  onToolkitEnergizePrompt?: (data: ToolkitEnergizePromptEvent['data']) => void;
+  onOpenAlchemy?: () => void;
 }
 
 export type HandlerCtx = Pick<
@@ -252,9 +269,21 @@ export type HandlerCtx = Pick<
   onGhostQuestGiven?: HookProps['onGhostQuestGiven'];
   onGhostQuestComplete?: HookProps['onGhostQuestComplete'];
   onScrollSelectTarget?: HookProps['onScrollSelectTarget'];
+  onStoneSelectTarget?: HookProps['onStoneSelectTarget'];
+  onStoneIntuitionPickItem?: HookProps['onStoneIntuitionPickItem'];
+  onStoneIntuitionGuessKind?: HookProps['onStoneIntuitionGuessKind'];
+  onStoneAugmentSelect?: HookProps['onStoneAugmentSelect'];
+  onStoneAugmentPickItem?: HookProps['onStoneAugmentPickItem'];
   onGhostGearOpen?: HookProps['onGhostGearOpen'];
+  onEnchantChoiceAvailable?: HookProps['onEnchantChoiceAvailable'];
   onBossSlain?: HookProps['onBossSlain'];
   onPlayerDeath?: HookProps['onPlayerDeath'];
+  onAlchemyPreviewResult?: HookProps['onAlchemyPreviewResult'];
+  onAlchemyBrewed?: HookProps['onAlchemyBrewed'];
+  onAlchemyEnergized?: HookProps['onAlchemyEnergized'];
+  onTrinketChoice?: HookProps['onTrinketChoice'];
+  onToolkitEnergizePrompt?: HookProps['onToolkitEnergizePrompt'];
+  onOpenAlchemy?: HookProps['onOpenAlchemy'];
   depth?: number;
 };
 

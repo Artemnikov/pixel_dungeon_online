@@ -8,7 +8,9 @@
 """
 
 from app.engine.manager import GameInstance, FloorState
-from app.engine.entities.base import Position, Mob, HealthPotion
+from app.engine.entities.base import Position
+from app.engine.entities.items_potions import HealthPotion
+from app.engine.entities.player import Mob
 from app.engine.entities.mobs import Bee, Tengu, Succubus, Eye, Scorpio, RipperDemon, YogDzewa, SoiledFist
 from app.engine.dungeon.constants import TileType
 

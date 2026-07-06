@@ -42,6 +42,7 @@ import meldSound from '../assets/sounds/meld.mp3';
 import gasSound from '../assets/sounds/gas.mp3';
 import shatterSound from '../assets/sounds/shatter.mp3';
 import bonesSound from '../assets/sounds/bones.mp3';
+import sheepSound from '../assets/sounds/sheep.mp3';
 import { effectiveSfxVolume, subscribe } from '../menu/menuSettings';
 
 class AudioManager {
@@ -103,6 +104,7 @@ class AudioManager {
         this.loadSound('GAS', gasSound);
         this.loadSound('SHATTER', shatterSound);
         this.loadSound('BONES', bonesSound);
+        this.loadSound('SHEEP', sheepSound);
 
         const doorSounds = import.meta.glob('../assets/sounds/door_open.mp3', { eager: true, query: '?url' });
         const doorUrl = doorSounds['../assets/sounds/door_open.mp3']?.default;
@@ -191,6 +193,16 @@ class AudioManager {
             case 'LOCKED':
                 this.playTone(250, 'square', 0.08, 0.12);
                 this.playTone(200, 'square', 0.08, 0.08, 0.06);
+                break;
+            case 'CURSE':
+                this.playTone(120, 'sawtooth', 0.3, 0.4);
+                this.playTone(90, 'sawtooth', 0.4, 0.3, 0.1);
+                this.playNoise(0.2, 0.15, 'lowpass', 400);
+                break;
+            case 'HEAL':
+                this.playTone(500, 'sine', 0.2, 0.15);
+                this.playTone(700, 'sine', 0.2, 0.15, 0.1);
+                this.playTone(900, 'sine', 0.3, 0.1, 0.2);
                 break;
             default:
                 // console.log(`Sound not found: ${soundName}`);

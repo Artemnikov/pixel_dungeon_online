@@ -21,7 +21,10 @@ potion colours / scroll runes, shared per-run across the co-op party).
 
 from typing import Dict, Optional
 
-from app.engine.entities.base import Bag, Difficulty
+from app.engine.alchemy.energy import energy_val
+from app.engine.entities.item_union import Bag
+from app.engine.entities.items_potions import ELIXIR_BREW_KINDS
+from app.engine.entities.player import Difficulty
 from app.engine.entities.locale_keys import item_locale_key, mob_locale_key
 
 
@@ -97,11 +100,16 @@ class SerializationMixin:
             for it in items:
                 self._mask_item_dict(it)
         typ = d.get("type")
-        if typ in ("potion", "scroll", "ring"):
+        # Crafted elixirs/brews are always known (SPD Elixir.isKnown()/Brew.isKnown()):
+        # they never enter the per-run scrambled-identity pool, so they get neither a
+        # scrambled appearance nor name/kind masking.
+        if typ in ("potion", "scroll", "ring") and d.get("kind") not in ELIXIR_BREW_KINDS:
             # Attach the per-run colour/rune/gem sprite from the TRUE kind before
             # any masking collapses it. The visual keeps its colour after ID (SPD).
             d["appearance"] = self._appearance_for(d["kind"], typ)
-        if typ in ("potion", "scroll", "ring") and d.get("kind") not in self.identified_kinds:
+        if (typ in ("potion", "scroll", "ring")
+                and d.get("kind") not in ELIXIR_BREW_KINDS
+                and d.get("kind") not in self.identified_kinds):
             d["name"] = self._label_for(d["kind"], typ)
             d["kind"] = typ
             d.pop("effect", None)
@@ -149,6 +157,9 @@ class SerializationMixin:
                     node["range"] = live.get_reach()
                 node["description"] = live.description(p)
                 node["value"] = live.value(identified=live.kind in self.identified_kinds)
+                node["energy_value"] = energy_val(self, live)
+                unit = live if live.quantity <= 1 else live.model_copy(update={"quantity": 1})
+                node["energy_value_one"] = energy_val(self, unit)
                 lk = item_locale_key(live)
                 if lk:
                     node["locale_key"] = lk
@@ -219,7 +230,7 @@ class SerializationMixin:
                 return {
                     "depth": player.floor_id,
                     "players": [self._serialize_player(p) for p in floor_players],
-                    "mobs": [self._serialize_mob(m) for m in floor.mobs.values() if m.is_alive],
+                    "mobs": [self._serialize_mob(m) for m in floor.mobs.values() if m.is_alive and not getattr(m, 'disguised', False)],
                     "items": [self._serialize_floor_item(i) for i in floor.items.values() if i.pos],
                     "visible_tiles": all_tiles,
                     "open_doors": self._get_open_doors(floor),
@@ -245,7 +256,19 @@ class SerializationMixin:
 
             # SPD MindVision: while active, every mob's 3x3 neighbourhood is
             # revealed regardless of walls/FOV.
+            # EyeOfNewt trinket: permanent passive mind-vision radius.
             mind_vision_set = set()
+            from app.engine.entities.trinkets import EyeOfNewt as _EyeOfNewt
+            from app.engine.entities.trinkets import trinket_level
+            eon_lvl = trinket_level(player, "eye_of_newt")
+            if eon_lvl >= 0:
+                mv_radius = _EyeOfNewt.mind_vision_radius(eon_lvl)
+                for m in floor.mobs.values():
+                    if not m.is_alive:
+                        continue
+                    for dx in range(-mv_radius, mv_radius + 1):
+                        for dy in range(-mv_radius, mv_radius + 1):
+                            mind_vision_set.add((m.pos.x + dx, m.pos.y + dy))
             if player.has_buff("mind_vision"):
                 for m in floor.mobs.values():
                     if not m.is_alive:
@@ -264,6 +287,7 @@ class SerializationMixin:
                 "depth": player.floor_id,
                 "players": [self._serialize_player(p) for p in floor_players],
                 "mobs": [self._serialize_mob(m) for m in floor.mobs.values() if m.is_alive
+                         and not getattr(m, 'disguised', False)
                          and ((m.pos.x, m.pos.y) in visible_set or (m.pos.x, m.pos.y) in mind_vision_set)],
                 "items": [self._serialize_floor_item(i) for i in floor.items.values() if i.pos and (i.pos.x, i.pos.y) in visible_set],
                 "visible_tiles": visible_tiles,

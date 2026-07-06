@@ -14,17 +14,12 @@
 #
 import math
 import random
-from typing import Optional, List, TYPE_CHECKING
+from typing import Optional, List, Any, TYPE_CHECKING
 
 from pydantic import BaseModel, Field
 
-from app.engine.entities.base import (
-    Mob as MobEntity,
-    DropEntry,
-    WeightedCountDrop,
-    Faction,
-    Position,
-)
+from app.engine.entities.base import Faction, Position
+from app.engine.entities.player import Mob as MobEntity, DropEntry, WeightedCountDrop
 
 if TYPE_CHECKING:
     from app.engine.entities.base import Entity
@@ -419,6 +414,11 @@ class DM300(MobEntity):
     loot_table: List[DropEntry] = [
         DropEntry(item_kind="overloaded_charger", chance=1.0, max_global=0),
     ]
+    # DM300.die(): drops 2 shards 60% / 3 shards 30% / 4 shards 10% (avg 2.5),
+    # via Random.chances({0,0,6,3,1}). These are the Shrapnel Bomb reagent.
+    weighted_drops: List[WeightedCountDrop] = [
+        WeightedCountDrop(item_kind="metal_shard", weights=[0, 0, 6, 3, 1]),
+    ]
 
     def is_enraged(self) -> bool:
         return self.hp * 2 <= self.max_hp
@@ -558,6 +558,7 @@ class Guard(MobEntity):
     loot_table: List[DropEntry] = [
         DropEntry(item_kind="armor", chance=0.2, max_global=0),
     ]
+    chain_pulled: bool = False
 
 
 class NecroSkeleton(Skeleton):
@@ -597,6 +598,7 @@ class Necromancer(MobEntity):
     summoning_y: int = -1
     first_summon: bool = True
     my_skeleton_id: str = ""
+    heal_cooldown: int = 0
 
     def die(self, attacker=None, floor_mobs=None, tile_x=0, tile_y=0, players=None):
         # SPD Necromancer.die(): kill the linked NecroSkeleton when its master dies.
@@ -1100,6 +1102,27 @@ class GoldenMimic(Mimic):
 class EbonyMimic(Mimic):
     """Ebony variant — deals double damage on surprise attack."""
     name: str = "Ebony Mimic"
+
+
+class CrystalMimic(Mimic):
+    """Crystal variant — steals on attack while disguised, teleports target when revealed, then flees."""
+    name: str = "Crystal Mimic"
+    fake_chest_id: str = ""
+    pending_steal_name: str = ""
+    pending_teleport: bool = False
+    pending_stolen_item: Optional[Any] = None
+
+    def attack_proc(self, target) -> None:
+        if self.disguised:
+            items = list(target.belongings.all_items()) if getattr(target, 'belongings', None) else []
+            stealable = [i for i in items if i.category not in ('KEY', 'SCROLL_OF_UPGRADE')]
+            if stealable:
+                stolen = random.choice(stealable)
+                target.belongings.backpack.detach_all(stolen.id)
+                self.pending_steal_name = stolen.name
+                self.pending_stolen_item = stolen
+        else:
+            self.pending_teleport = True
 
 
 class Statue(MobEntity):

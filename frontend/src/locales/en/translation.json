@@ -225,6 +225,7 @@
     "direct": "Direct",
     "wear": "Choose",
     "alchemize": "Alchemize",
+    "inscribe": "Inscribe",
     "quickslot": "Quickslot"
   },
   "slot": {
@@ -808,6 +809,24 @@
     "remove": "Remove",
     "selectWeapon": "Choose a weapon for the ghost",
     "selectArmor": "Choose armor for the ghost"
+  },
+  "alchemy": {
+    "title": "Alchemy",
+    "hint": "Select ingredients to brew with",
+    "noRecipe": "These ingredients don't combine into anything",
+    "brew": "Brew",
+    "close": "Close",
+    "cancel": "Cancel",
+    "energy": "Energy",
+    "selectIngredient": "Select an ingredient",
+    "energizeSelect": "Convert an item to energy",
+    "energizeOne": "Convert 1 ({{value}} energy)",
+    "energizeAll": "Convert all ({{value}} energy)",
+    "chooseTrinket": "Choose a trinket",
+    "later": "Later",
+    "toolkitEnergize": "Energize the toolkit?",
+    "toolkitEnergizeOne": "Spend 6 energy (+1 level)",
+    "toolkitEnergizeAll": "Spend {{cost}} energy (+{{levels}} levels)"
   },
   "admin": {
     "giveItem": "Give Item",

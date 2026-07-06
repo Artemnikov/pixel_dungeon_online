@@ -3,12 +3,13 @@ on interact, completion on boss death, and the weapon-or-armor reward claim).
 """
 import uuid
 
-from app.engine.entities.base import Armor, MeleeWeapon, Position
+from app.engine.entities.base import Position
+from app.engine.entities.items_equip import Armor, MeleeWeapon
 from app.engine.entities.quest_bosses import FetidRat, Ghost, GnollTrickster, GreatCrab
 from app.engine.manager import GameInstance
 
 # Fixed seed that reliably spawns a Ghost (quest_type=1, FetidRat) on depth 2.
-_SEED = "4"
+_SEED = "8"
 
 
 def _spawn_ghost_floor():

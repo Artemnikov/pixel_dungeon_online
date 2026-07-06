@@ -79,7 +79,9 @@ export const getRaisedWallFace = (grid, x, y, tile) => {
 
   const base = tile === BACKEND_TILE.WALL_DECO.id
     ? pickAlt(WALL_INDEX.RAISED_WALL_DECO, WALL_INDEX.RAISED_WALL_DECO_ALT, x, y)
-    : pickAlt(WALL_INDEX.RAISED_WALL, WALL_INDEX.RAISED_WALL_ALT, x, y);
+    : tile === BACKEND_TILE.BOOKSHELF.id
+      ? WALL_INDEX.RAISED_WALL_BOOKSHELF
+      : pickAlt(WALL_INDEX.RAISED_WALL, WALL_INDEX.RAISED_WALL_ALT, x, y);
 
   let mask = 0;
   if (!isWallStitcheable(right)) mask += 1;  // open to the right
@@ -102,7 +104,9 @@ export const getInternalWallTop = (grid, x, y, tile) => {
 
   const base = tile === BACKEND_TILE.WALL_DECO.id
     ? WALL_INDEX.WALL_INTERNAL_DECO
-    : WALL_INDEX.WALL_INTERNAL;
+    : tile === BACKEND_TILE.BOOKSHELF.id
+      ? WALL_INDEX.WALL_INTERNAL_WOODEN
+      : WALL_INDEX.WALL_INTERNAL;
 
   let mask = 0;
   if (!isWallStitcheable(right))      mask += 1;
@@ -128,7 +132,9 @@ export const getWallOverhang = (grid, x, y) => {
 
   const base = below === BACKEND_TILE.WALL_DECO.id
     ? WALL_INDEX.WALL_OVERHANG_DECO
-    : WALL_INDEX.WALL_OVERHANG;
+    : below === BACKEND_TILE.BOOKSHELF.id
+      ? WALL_INDEX.WALL_OVERHANG_WOODEN
+      : WALL_INDEX.WALL_OVERHANG;
 
   let mask = 0;
   if (!isWallStitcheable(rightBelow)) mask += 1;

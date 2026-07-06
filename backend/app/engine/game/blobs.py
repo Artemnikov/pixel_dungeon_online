@@ -74,7 +74,7 @@ def _evolve_electricity_blob(
                         events.append({"type": "DAMAGE", "data": {"target": p.id, "amount": dmg, "shock": True}})
                         damaged = True
                 # Charge wands in inventory
-                from app.engine.entities.base import Wand
+                from app.engine.entities.items_wands import Wand
                 for item in list(getattr(p, "belongings", None).all_items() if getattr(p, "belongings", None) else []):
                     if isinstance(item, Wand) and not item.cursed and item.charges < item.max_charges:
                         item.gain_charge(0.333)
@@ -97,7 +97,7 @@ def _evolve_electricity_blob(
         # Charge wands on ground
         for item_id, item in list(floor.items.items()):
             if item.pos and item.pos.x == cx and item.pos.y == cy:
-                from app.engine.entities.base import Wand
+                from app.engine.entities.items_wands import Wand
                 if isinstance(item, Wand) and not item.cursed and item.charges < item.max_charges:
                     item.gain_charge(0.333)
 
@@ -159,7 +159,8 @@ def _blob_cell_intensity(blob: dict, cell: tuple) -> int:
 
 def _burn_floor_items(floor: FloorState, cx: int, cy: int) -> None:
     """Selectively burn items at a cell, matching SPD Heap.burn()."""
-    from app.engine.entities.base import ChargrilledMeat, Dewdrop, MysteryMeat, Scroll
+    from app.engine.entities.items_consumable import ChargrilledMeat, Dewdrop, MysteryMeat
+    from app.engine.entities.items_scrolls import Scroll
     for item_id, item in list(floor.items.items()):
         if item.pos and item.pos.x == cx and item.pos.y == cy:
             if isinstance(item, Scroll) and not item.unique:
@@ -333,6 +334,9 @@ def _evolve_gas_blob(
                     add_buff(p.buffs, "corrosion", duration=5.0, level=1, stack_mode="extend")
                 elif btype == "confusion_gas" and not is_immune(p, "confusion_gas"):
                     add_buff(p.buffs, "vertigo", duration=2.0, level=1, stack_mode="replace")
+                elif btype == "shrouding_fog" and not is_immune(p, "shrouding_fog"):
+                    # SPD SmokeScreen: chars inside thick smoke are blinded.
+                    add_buff(p.buffs, "blindness", duration=2.0, level=1, stack_mode="extend")
 
         for m in list(floor.mobs.values()):
             if m.is_alive and m.pos.x == cx and m.pos.y == cy:
@@ -350,6 +354,9 @@ def _evolve_gas_blob(
                     add_buff(m.buffs, "corrosion", duration=5.0, level=1, stack_mode="extend")
                 elif btype == "confusion_gas" and not is_immune(m, "confusion_gas"):
                     add_buff(m.buffs, "vertigo", duration=2.0, level=1, stack_mode="replace")
+                elif btype == "shrouding_fog" and not is_immune(m, "shrouding_fog"):
+                    # SPD SmokeScreen: chars inside thick smoke are blinded.
+                    add_buff(m.buffs, "blindness", duration=2.0, level=1, stack_mode="extend")
 
     if new_cells:
         blob["cells"] = new_cells
@@ -403,7 +410,8 @@ def tick_blob_areas(floors: Dict[int, FloorState], players: Dict[str, Entity]) -
             elif btype == "electricity":
                 _evolve_electricity_blob(floor, blob_id, blob, players, events)
 
-            elif btype in ("toxic_gas", "paralytic_gas", "corrosive_gas", "confusion_gas"):
+            elif btype in ("toxic_gas", "paralytic_gas", "corrosive_gas",
+                           "confusion_gas", "shrouding_fog"):
                 _evolve_gas_blob(floor, blob_id, blob, players, events)
 
             elif btype in ("tengu_fire", "tengu_shocker"):

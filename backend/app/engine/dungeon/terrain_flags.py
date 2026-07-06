@@ -66,7 +66,12 @@ TILE_FLAGS = {
     # SPD Terrain.java: flags[CHASM] = AVOID | PIT. Not PASSABLE (normal
     # pathfinding/AI route around it like a wall) and not LOS_BLOCKING (you
     # can see across/down an open pit).
-    TileType.CHASM:           AVOID | PIT,
+    TileType.ALCHEMY:     SOLID,
+    TileType.WELL:        AVOID,
+    TileType.STATUE:      SOLID,
+    TileType.BOOKSHELF:   FLAMABLE | SOLID | LOS_BLOCKING,
+    TileType.CRYSTAL_DOOR: SOLID,
+    TileType.CHASM:       AVOID | PIT,
 }
 
 

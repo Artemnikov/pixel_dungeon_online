@@ -198,7 +198,9 @@ def _init_rooms(rng: SPDRandom, depth: int, feeling: Feeling, run_state: RunStat
     return init_rooms
 
 
-def build_floor(rng: SPDRandom, depth: int, run_state: RunState) -> Tuple[GenLevel, List[Room]]:
+def build_floor(rng: SPDRandom, depth: int, run_state: RunState,
+                mossy_override_chance: float = 0.0,
+                trap_override_chance: float = 0.0) -> Tuple[GenLevel, List[Room]]:
     """Port of Level.create()'s pre-spawn sequence + RegularLevel.build():
     assign feeling (depth > 1), pick the builder, generate+shuffle init rooms,
     retry the builder loop until it succeeds, then paint. Returns the painted
@@ -212,7 +214,7 @@ def build_floor(rng: SPDRandom, depth: int, run_state: RunState) -> Tuple[GenLev
         preamble_items: List[object] = []
     else:
         preamble_items = run_state.consume_item_preamble(rng, depth)
-        feeling = assign_feeling(rng, depth) if depth > 1 else Feeling.NONE
+        feeling = assign_feeling(rng, depth, mossy_override_chance, trap_override_chance) if depth > 1 else Feeling.NONE
 
     level = GenLevel(depth, feeling)
     level.run_state = run_state

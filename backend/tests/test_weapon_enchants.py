@@ -4,9 +4,10 @@ Scroll of Upgrade."""
 
 import random
 
-from app.engine.entities.base import Mob as MobEntity, Position, Dagger
+from app.engine.entities.base import Position
+from app.engine.entities.items_equip import Dagger
+from app.engine.entities.player import Mob as MobEntity
 from app.engine.entities.weapon_enchants import (
-    ALL_SPD_CURSES,
     CURSES,
     ENCHANTS,
     blocking_chance,
@@ -87,7 +88,6 @@ def test_roll_weapon_enchant_only_returns_known_names():
             assert cursed is False
         elif cursed:
             assert name in CURSES
-            assert name in ALL_SPD_CURSES
         else:
             assert name in ENCHANTS
 
@@ -133,8 +133,8 @@ def test_shocking_damages_nearby_hostile_mobs(monkeypatch):
     floor = g._get_or_create_floor(p.floor_id)
     floor.mobs.clear()
 
-    target = _mob(hp=100, max_hp=100, x=p.pos.x + 1, y=p.pos.y, dr_min=0, dr_max=0)
-    bystander = _mob(hp=100, max_hp=100, x=p.pos.x + 2, y=p.pos.y, dr_min=0, dr_max=0)
+    target = _mob(hp=100, max_hp=100, x=7, y=39, dr_min=0, dr_max=0)
+    bystander = _mob(hp=100, max_hp=100, x=8, y=39, dr_min=0, dr_max=0)
     bystander.id = "bystander"
     floor.mobs[target.id] = target
     floor.mobs[bystander.id] = bystander
@@ -195,7 +195,9 @@ def test_polarized_curse_replaces_damage_with_1_5x_or_0(monkeypatch):
     p.belongings.weapon.enchantment = "polarized"
     p.belongings.weapon.cursed = True
     p.attack_skill = 1000
-    target = _mob(hp=100, max_hp=100, dr_min=0, dr_max=0)
+    # aware defender: keeps the accuracy rolls in the sequence below (an
+    # unaware mob would be surprise-auto-hit and consume fewer random calls)
+    target = _mob(hp=100, max_hp=100, dr_min=0, dr_max=0, ai_state="hunting")
     floor = g._get_or_create_floor(p.floor_id)
 
     # First call: hit/dmg rolls "random" but polarized_roll forced to 0.0
@@ -260,7 +262,7 @@ def test_weapon_dr_bonus_applies_to_player_dr():
 # --- Scroll of Upgrade -----------------------------------------------------------
 
 def test_scroll_of_upgrade_levels_up_equipped_weapon():
-    from app.engine.entities.base import ScrollOfUpgrade
+    from app.engine.entities.items_scrolls import ScrollOfUpgrade
     from app.engine.entities.item_actions import action_read
 
     g = GameInstance("t")
@@ -284,7 +286,7 @@ def test_scroll_of_upgrade_levels_up_equipped_weapon():
 
 
 def test_scroll_of_upgrade_removes_curse():
-    from app.engine.entities.base import ScrollOfUpgrade
+    from app.engine.entities.items_scrolls import ScrollOfUpgrade
     from app.engine.entities.item_actions import action_read
 
     g = GameInstance("t")
@@ -306,7 +308,8 @@ def test_scroll_of_upgrade_removes_curse():
 
 
 def test_scroll_of_upgrade_excludes_non_upgradable_items():
-    from app.engine.entities.base import ScrollOfUpgrade, Gold
+    from app.engine.entities.items_consumable import Gold
+    from app.engine.entities.items_scrolls import ScrollOfUpgrade
     from app.engine.entities.item_actions import action_read
     from app.engine.entities.scroll_predicates import is_upgradable
 

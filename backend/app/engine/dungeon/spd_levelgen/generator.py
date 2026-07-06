@@ -72,9 +72,13 @@ class RolledItem:
     is_artifact: bool
     is_upgradable: bool
     level: int
+    tier: int = 1
     # Deck index picked for WAM categories (e.g. WEP_T1.._WEP_T5/MIS_T1.._MIS_T5)
-    # -- selects a concrete item name from WEP_TIER_ORDER. 0 for non-WAM kinds.
+    # -- selects a concrete item name from WEP_TIER_ORDER. Also the ARTIFACT deck
+    # index (selects the concrete artifact class). 0 for non-indexed kinds.
     item_index: int = 0
+    # ARTIFACT/RING cursed roll (Artifact.random(): Float() < 0.3). False elsewhere.
+    cursed: bool = False
 
 
 # Generator.Category enum order + (firstProb, secondProb, kind, defaultProbs,
@@ -255,9 +259,10 @@ def _roll_wandring(rng: SPDRandom) -> int:
     return n
 
 
-def _roll_artifact_item(rng: SPDRandom) -> None:
-    """Artifact.random(): Float() < 0.3 cursed roll, always +0, no push."""
-    rng.Float()
+def _roll_artifact_item(rng: SPDRandom) -> bool:
+    """Artifact.random(): Float() < 0.3 cursed roll, always +0, no push.
+    Returns the cursed result (RNG draw unchanged -- still one Float())."""
+    return rng.Float() < 0.3
 
 
 def _roll_gold_item(rng: SPDRandom, depth: int) -> None:
@@ -307,9 +312,9 @@ def _random_armor(rng: SPDRandom, depth: int) -> RolledItem:
     """Generator.randomArmor() -- direct creation via floorSetTierProbs, NOT
     deck-based (no push/pop, no probs decrement, no exotic check)."""
     floor_set = int(gate(0, depth // 5, len(_FLOOR_SET_TIER_PROBS) - 1))
-    rng.chances(_FLOOR_SET_TIER_PROBS[floor_set])
+    tier_idx = rng.chances(_FLOOR_SET_TIER_PROBS[floor_set])
     n = _roll_wam(rng)  # Armor.random() -- identical shape to Weapon/MissileWeapon
-    return RolledItem(category="ARMOR", is_artifact=False, is_upgradable=True, level=n)
+    return RolledItem(category="ARMOR", is_artifact=False, is_upgradable=True, level=n, tier=tier_idx + 1)
 
 
 def _random_weapon_or_missile(state: GeneratorState, rng: SPDRandom, depth: int, tiers: Tuple[str, ...]) -> RolledItem:
@@ -334,8 +339,9 @@ def _random_artifact(state: GeneratorState, rng: SPDRandom) -> Optional[RolledIt
     if i == -1:
         return None
     deck.probs[i] -= 1
-    _roll_artifact_item(rng)
-    return RolledItem(category="ARTIFACT", is_artifact=True, is_upgradable=False, level=0)
+    cursed = _roll_artifact_item(rng)
+    return RolledItem(category="ARTIFACT", is_artifact=True, is_upgradable=False,
+                      level=0, item_index=i, cursed=cursed)
 
 
 def _random_gold(rng: SPDRandom, depth: int) -> RolledItem:
@@ -403,6 +409,12 @@ def spawn_golden_mimic(rng: SPDRandom, level, pos: int, item: RolledItem, depth:
     from app.engine.dungeon.spd_levelgen.mob_spawner import GenMob
     prize = roll_mimic_prize(level.run_state.generator_state, rng, depth)
     return GenMob(cls_name="GoldenMimic", pos=pos, items=[item, prize])
+
+
+def spawn_crystal_mimic(rng: SPDRandom, level, pos: int, item: RolledItem, depth: int):
+    """Port of CrystalMimic.spawnAt -- carries the chest's prize item."""
+    from app.engine.dungeon.spd_levelgen.mob_spawner import GenMob
+    return GenMob(cls_name="CrystalMimic", pos=pos, items=[item])
 
 
 def generator_random(state: GeneratorState, rng: SPDRandom, depth: int) -> RolledItem:

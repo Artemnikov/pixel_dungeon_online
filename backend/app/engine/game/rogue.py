@@ -31,7 +31,8 @@ real-time design.
 
 from typing import Optional
 
-from app.engine.entities.base import Player, Position
+from app.engine.entities.base import Position
+from app.engine.entities.player import Player
 from app.engine.entities.buffs import add_buff
 
 
@@ -238,7 +239,8 @@ class RogueMixin:
         cripple on the victim and nearby enemies)."""
         if not mob.has_buff("death_mark"):
             return
-        from app.engine.entities.base import Player as PlayerCls, Faction
+        from app.engine.entities.base import Faction
+        from app.engine.entities.player import Player as PlayerCls
         if not isinstance(killer, PlayerCls):
             return
         ti = killer.talent_info

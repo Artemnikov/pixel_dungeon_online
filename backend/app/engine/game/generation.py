@@ -24,47 +24,16 @@ from typing import List, Tuple, Type
 
 from app.engine.dungeon.generator import TileType
 from app.engine.dungeon.dungeon_seed import seed_for_depth
-from app.engine.entities.base import (
-    Armor,
-    Boomerang,
-    Bow,
-    EntityType,
-    Faction,
-    HealthPotion,
-    RevivingPotion,
-    FuryPotion,
-    PotionOfStrength,
-    PotionOfHaste,
-    PotionOfInvisibility,
-    PotionOfLevitation,
-    PotionOfMindVision,
-    PotionOfFrost,
-    PotionOfLiquidFlame,
-    PotionOfToxicGas,
-    PotionOfParalyticGas,
-    PotionOfPurity,
-    PotionOfExperience,
-    ScrollOfRage,
-    ScrollOfUpgrade,
-    ScrollOfIdentify,
-    ScrollOfMagicMapping,
-    ScrollOfTeleportation,
-    ScrollOfRemoveCurse,
-    ScrollOfRecharging,
-    ScrollOfLullaby,
-    ScrollOfTerror,
-    ScrollOfMirrorImage,
-    ScrollOfRetribution,
-    ScrollOfTransmutation,
-    SmallRation,
-    Ration,
-    Pasty,
-    Key,
-    Mob as MobEntity,
-    Position,
-    Stone,
-    ThrowableDagger,
-    Weapon,
+from app.engine.entities.base import EntityType, Faction, Position
+from app.engine.entities.items_consumable import Boomerang, SmallRation, Ration, Pasty, Key, Stone, ThrowableDagger
+from app.engine.entities.items_equip import Armor, Bow, ClothArmor, ScaleArmor, LeatherArmor, MailArmor
+from app.engine.entities.items_potions import HealthPotion, RevivingPotion, FuryPotion, PotionOfStrength, PotionOfHaste, PotionOfInvisibility, PotionOfLevitation, PotionOfMindVision, PotionOfFrost, PotionOfLiquidFlame, PotionOfToxicGas, PotionOfParalyticGas, PotionOfPurity, PotionOfExperience
+from app.engine.entities.items_scrolls import ScrollOfRage, ScrollOfUpgrade, ScrollOfIdentify, ScrollOfMagicMapping, ScrollOfTeleportation, ScrollOfRemoveCurse, ScrollOfRecharging, ScrollOfLullaby, ScrollOfTerror, ScrollOfMirrorImage, ScrollOfRetribution, ScrollOfTransmutation
+from app.engine.entities.player import Mob as MobEntity, Weapon
+from app.engine.entities.runestones import (
+    StoneOfBlast, StoneOfBlink, StoneOfDeepSleep, StoneOfClairvoyance,
+    StoneOfAggression, StoneOfFlock, StoneOfShock, StoneOfFear,
+    StoneOfDetectMagic, StoneOfIntuition, StoneOfEnchantment, StoneOfAugmentation,
 )
 from app.engine.entities.mobs import (
     Rat, Snake, Gnoll, Swarm, Crab, Slime,
@@ -88,7 +57,109 @@ class GenerationMixin:
         self.floors[depth] = floor
         return floor
 
+    def _trinket_state(self) -> dict:
+        """Compute levelgen-relevant trinket multipliers from the first player."""
+        from app.engine.entities.trinkets import trinket_level as _tl
+        state = {}
+        for name in ("rat_skull", "petrified_seed", "exotic_crystals",
+                     "mossy_clump", "dimensional_sundial", "trap_mechanism",
+                     "mimic_tooth", "parchment_scrap", "wondrous_resin"):
+            state[name] = -1
+        if not self.players:
+            return state
+        p = next((p for p in self.players.values() if hasattr(p, "belongings")), None)
+        if not p:
+            return state
+        for name in state:
+            state[name] = _tl(p, name)
+        return state
+
+    def _trinket_apply_post_spawn(self, floor: FloorState):
+        """Post-processing for levelgen trinket effects after SPD gen."""
+        import random
+        from app.engine.entities.trinkets import (
+            RatSkull,
+            MimicTooth,
+            ExoticCrystals,
+        )
+        state = self._trinket_state()
+
+        # RatSkull: swap some mobs to alts (RARE_ALTS from mob_spawner)
+        rs_lvl = state["rat_skull"]
+        if rs_lvl >= 0:
+            from app.engine.entities.trinkets import RatSkull
+            from app.engine.dungeon.spd_levelgen.mob_spawner import RARE_ALTS
+            mult = RatSkull.exotic_chance_multiplier(rs_lvl)
+            alt_chance = (1.0 / 50.0) * mult
+            from app.engine.entities.mobs import (
+                Rat, Gnoll, Crab, Slime, Thief, Necromancer, Brute,
+                DM200, Monk, Scorpio,
+                AlbinoRat, GnollExile, HermitCrab, CausticSlime,
+                Bandit, SpectralNecromancer, ArmoredBrute,
+                DM201, Senior, Acidic,
+            )
+            ALT_MAP = {
+                Rat: AlbinoRat, Gnoll: GnollExile, Crab: HermitCrab,
+                Slime: CausticSlime, Thief: Bandit, Necromancer: SpectralNecromancer,
+                Brute: ArmoredBrute, DM200: DM201, Monk: Senior,
+                Scorpio: Acidic,
+            }
+            for mob_id, mob in list(floor.mobs.items()):
+                cls = type(mob)
+                alt_cls = ALT_MAP.get(cls)
+                if alt_cls and random.random() < alt_chance:
+                    new_mob = alt_cls(
+                        id=mob_id,
+                        pos=mob.pos,
+                        faction=mob.faction,
+                        hp=mob.hp,
+                        max_hp=mob.max_hp,
+                        attack_skill=mob.attack_skill,
+                        defense_skill=mob.defense_skill,
+                        damage_min=mob.damage_min,
+                        damage_max=mob.damage_max,
+                    )
+                    floor.mobs[mob_id] = new_mob
+
+        # ExoticCrystals: swap some potions/scrolls to exotic variants
+        ec_lvl = state["exotic_crystals"]
+        if ec_lvl >= 0:
+            from app.engine.entities.trinkets import ExoticCrystals
+            exo_chance = ExoticCrystals.consumable_exotic_chance(ec_lvl)
+            _exotic_potion_map = {
+                "health_potion": "exotic_health",
+                "potion_of_strength": "exotic_strength",
+                "potion_of_haste": "exotic_haste",
+            }
+            for item_id, item in list(floor.items.items()):
+                kind = getattr(item, "kind", "")
+                if kind in ("potion",) and random.random() < exo_chance:
+                    from app.engine.entities.items_potions import HealthPotion
+                    floor.items[item_id] = HealthPotion(
+                        id=item_id, pos=item.pos, name="Exotic Potion"
+                    )
+
+        # MimicTooth: convert some chests to mimics
+        mt_lvl = state["mimic_tooth"]
+        if mt_lvl >= 0:
+            from app.engine.entities.trinkets import MimicTooth
+            mult = MimicTooth.mimic_chance_multiplier(mt_lvl)
+            extra_mimic_chance = (mult - 1.0) / 4.0
+            from app.engine.entities.item_union import Chest as ChestCls
+            from app.engine.entities.mobs import Mimic as MimicMob
+            for item_id, item in list(floor.items.items()):
+                if isinstance(item, ChestCls) and item.chest_type == "CHEST":
+                    if random.random() < extra_mimic_chance:
+                        mimic = MimicMob(
+                            id=str(uuid.uuid4()),
+                            pos=item.pos,
+                            faction=Faction.DUNGEON,
+                        )
+                        floor.mobs[mimic.id] = mimic
+                        del floor.items[item_id]
+
     def _generate_floor_spd(self, depth: int) -> FloorState:
+        import random
         from app.engine.dungeon.spd_random import SPDRandom
         from app.engine.dungeon.spd_levelgen.boss_level import build_boss_floor
         from app.engine.dungeon.spd_levelgen.last_level import build_last_level
@@ -97,23 +168,36 @@ class GenerationMixin:
         floor_seed = seed_for_depth(self.master_seed, depth, 0)
         rng = SPDRandom()
         rng.push_generator(floor_seed)
+
+        state = self._trinket_state()
+        mossy_chance = 0.0
+        trap_chance = 0.0
+        if state["mossy_clump"] >= 0:
+            from app.engine.entities.trinkets import MossyClump
+            mossy_chance = MossyClump.override_normal_level_chance(state["mossy_clump"])
+        if state["trap_mechanism"] >= 0:
+            from app.engine.entities.trinkets import TrapMechanism
+            trap_chance = TrapMechanism.override_normal_level_chance(state["trap_mechanism"])
+
         if depth == 26:
             gen_level, _rooms = build_last_level(rng, depth, self.run_state)
         elif is_boss_level(depth):
             gen_level, _rooms = build_boss_floor(rng, depth, self.run_state)
         else:
-            gen_level, _rooms = build_floor(rng, depth, self.run_state)
+            gen_level, _rooms = build_floor(rng, depth, self.run_state,
+                                            mossy_chance, trap_chance)
         rng.pop_generator()
 
         floor = gen_level_to_floor_state(gen_level, depth)
 
         if "stronger_bosses" in self.challenges:
             from app.engine.entities.mobs import Goo
-
             for mob in floor.mobs.values():
                 if isinstance(mob, Goo):
                     mob.hp = 120
                     mob.max_hp = 120
+
+        self._trinket_apply_post_spawn(floor)
 
         return floor
 
@@ -259,6 +343,11 @@ class GenerationMixin:
             ScrollOfTerror, ScrollOfMirrorImage, ScrollOfRetribution, ScrollOfTransmutation,
         ]
         _ALL_FOOD = [SmallRation, Ration, Ration, Pasty]
+        _ALL_RUNESTONES = [
+            StoneOfBlast, StoneOfBlink, StoneOfDeepSleep, StoneOfClairvoyance,
+            StoneOfAggression, StoneOfFlock, StoneOfShock, StoneOfFear,
+            StoneOfDetectMagic, StoneOfIntuition, StoneOfEnchantment, StoneOfAugmentation,
+        ]
 
         num_items = 4 + random.randint(0, 3)
         for _ in range(num_items):
@@ -288,25 +377,20 @@ class GenerationMixin:
                     attack_cooldown=3.5,
                 )
             # Thresholds below rescaled by 7/6 after the unique never-dropping
+
             # Staff's 10%-wide band (rand<0.4) was removed, so armor/throwables/
             # potion/scroll/food keep their original relative proportions instead
             # of armor silently absorbing the freed probability mass.
             elif rand < 0.53:
                 armor_tiers = [
-                    ("Cloth Armor", 1, 10),
-                    ("Leather Armor", 2, 12),
-                    ("Mail Armor", 3, 14),
-                    ("Scale Armor", 4, 16),
+                    ClothArmor,
+                    LeatherArmor,
+                    MailArmor,
+                    ScaleArmor,
                 ]
                 tier_idx = min(len(armor_tiers) - 1, (floor.floor_id - 1) // 4)
-                name, tier, str_req = random.choice(armor_tiers[:tier_idx + 1])
-                floor.items[item_id] = Armor(
-                    id=item_id,
-                    name=name,
-                    tier=tier,
-                    pos=Position(x=x, y=y),
-                    strength_requirement=str_req,
-                )
+                cls = random.choice(armor_tiers[:tier_idx + 1])
+                floor.items[item_id] = cls(id=item_id, pos=Position(x=x, y=y))
             elif rand < 0.59:
                 t_rand = random.random()
                 if t_rand < 0.5:
@@ -321,9 +405,13 @@ class GenerationMixin:
             elif rand < 0.92:
                 cls = random.choice(_ALL_SCROLLS)
                 floor.items[item_id] = cls(id=item_id, pos=Position(x=x, y=y))
+            elif rand < 0.97:
+                cls = random.choice(_ALL_RUNESTONES)
+                floor.items[item_id] = cls(id=item_id, pos=Position(x=x, y=y))
             else:
                 cls = random.choice(_ALL_FOOD)
                 floor.items[item_id] = cls(id=item_id, pos=Position(x=x, y=y))
+
 
     def _spawn_floor_keys(self, floor: FloorState):
         for key_id, (x, y) in floor.key_spawns.items():

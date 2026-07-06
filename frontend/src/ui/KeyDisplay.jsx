@@ -12,12 +12,13 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 // See the GNU General Public License for more details.
 //
+import { memo } from 'react';
 import ItemIcon from './ItemIcon';
 
 // Mirrors SPD's KeyDisplay: a small icon+count row for keys held on the
 // current floor. Keys never enter the inventory grid (see Player.add_key in
 // the backend) — this is their only visual representation.
-export default function KeyDisplay({ keys, depth }) {
+function KeyDisplay({ keys, depth }) {
   const held = (keys || []).filter((k) => k.depth === depth && k.quantity > 0);
   if (held.length === 0) return null;
 
@@ -32,3 +33,5 @@ export default function KeyDisplay({ keys, depth }) {
     </div>
   );
 }
+
+export default memo(KeyDisplay);

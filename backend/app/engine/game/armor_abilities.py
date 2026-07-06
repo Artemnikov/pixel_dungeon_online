@@ -18,7 +18,8 @@ import uuid
 from typing import Optional
 
 from app.engine.dungeon.generator import TileType
-from app.engine.entities.base import Faction, Mob, Player, Position
+from app.engine.entities.base import Faction, Position
+from app.engine.entities.player import Mob, Player
 from app.engine.entities.buffs import add_buff
 from app.engine.entities.subclasses import ArmorAbilityType, COST_ARMOR_ABILITY, COST_ENDURE, Subclass, Talent
 from app.engine.systems.combat import resolve_melee_attack

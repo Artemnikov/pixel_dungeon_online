@@ -1,5 +1,6 @@
 import json
-from app.engine.entities.base import Player, KindOfWeapon, Item, Wearable
+from app.engine.entities.items_equip import KindOfWeapon
+from app.engine.entities.player import Player, Item, Wearable
 
 def test_serialization():
     w = KindOfWeapon(id="1", name="Sword", type="weapon", damage=10, range=1, strength_requirement=5)
