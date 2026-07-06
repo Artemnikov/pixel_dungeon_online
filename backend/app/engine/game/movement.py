@@ -565,9 +565,11 @@ class MovementCombatMixin:
                         continue
                 if entity.add_to_inventory(item):
                     del floor.items[i_id]
-                    self.add_event("PICKUP", {"player": entity.id, "item": item.name}, floor_id=floor_id)
+                    self.add_event("PICKUP", {"player": entity.id, "item": item.name, "x": entity.pos.x, "y": entity.pos.y, "item_type": item.type}, floor_id=floor_id)
                     if entity.is_admin and item.type in ("potion", "scroll"):
                         self.identify_kind(item)
+                else:
+                    self.add_event("TOAST", {"text": "Your backpack is full. Drop something to make room."}, player_id=entity.id, floor_id=floor_id)
 
             self._trigger_trap_if_needed(floor, entity, floor_id)
 

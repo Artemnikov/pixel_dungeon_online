@@ -69,6 +69,7 @@ function GameModals({
       {useItemTarget && (
         <WndUseItem
           item={itemsById[useItemTarget.id] || useItemTarget}
+          belongings={belongings}
           onAction={executeItemAction}
           onAssignQuickslot={assignQuickslot}
           onClose={() => setUseItemTarget(null)}
@@ -397,7 +398,7 @@ function GameModals({
       {inspectItem && (
         <div className="wnd-overlay" onClick={() => setInspectItem(null)}>
           <div className="wnd-item" onClick={(e) => e.stopPropagation()}>
-            <WndInfoItem item={itemsById[inspectItem.id] || inspectItem} />
+            <WndInfoItem item={itemsById[inspectItem.id] || inspectItem} belongings={belongings} />
           </div>
         </div>
       )}

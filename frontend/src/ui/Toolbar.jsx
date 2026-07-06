@@ -227,19 +227,35 @@ export default function Toolbar({
         if (item.is_placeholder) ctx.globalAlpha = 0.35;
         ctx.drawImage(ii, coords[0] * 16 + rx, coords[1] * 16 + ry, sw, sh, ix, iy, sw * sc, sh * sc);
         if (item.is_placeholder) ctx.globalAlpha = 1.0;
-        if (!item.is_placeholder && item.quantity > 1) {
-          const qs = 7 * sc;
-          ctx.font = `bold ${qs}px monospace`;
-          ctx.textBaseline = 'top';
-          ctx.textAlign = 'right';
+        let countText = null;
+        if (!item.is_placeholder) {
+          if (item.kind === 'waterskin') countText = `${item.volume}/20`;
+          else if (item.quantity > 1) countText = String(item.quantity);
+        }
+        if (countText) {
           const ox = 2 * sc;
           const oy = 2 * sc;
+          let qs = 7 * sc;
+          ctx.font = `bold ${qs}px monospace`;
+          // Shrink longer strings (e.g. waterskin "N/20") to sit inside the frame
+          // with a small inset; 1-2 char stack counts stay at 7px. Size the
+          // waterskin against its widest value ("20/20") so the number keeps a
+          // stable size as it drains instead of jumping bigger per digit-count.
+          const refText = item.kind === 'waterskin' ? '20/20' : countText;
+          const maxW = availW - 2 * ox;
+          const tw = ctx.measureText(refText).width;
+          if (tw > maxW) {
+            qs = qs * (maxW / tw);
+            ctx.font = `bold ${qs}px monospace`;
+          }
+          ctx.textBaseline = 'top';
+          ctx.textAlign = 'right';
           const rx2 = dx + padL + availW;
           const ty = dy;
           ctx.fillStyle = '#000';
-          ctx.fillText(String(item.quantity), rx2 - ox + sc, ty + oy + sc);
+          ctx.fillText(countText, rx2 - ox + sc, ty + oy + sc);
           ctx.fillStyle = '#fff';
-          ctx.fillText(String(item.quantity), rx2 - ox, ty + oy);
+          ctx.fillText(countText, rx2 - ox, ty + oy);
         }
       }
 

@@ -119,6 +119,7 @@
     "artifactCharge": "Charge: {{charge}}/{{cap}}",
     "cursed": "Cursed",
     "cursedUnknown": "Unknown curse",
+    "comparedToEquipped": "Compared to equipped",
     "tier": "Tier {{tier}}",
     "charges": "Charges",
     "level": "Level {{level}}",

@@ -68,7 +68,21 @@ function strBadge(item, strength) {
 function ItemSlot({ item, holderKey, equipped, strength, empty, onOpen, onContext, onDefaultAction, selectMode, onSelectItem, itemFilter, onInspect }) {
   const timerRef = useRef(null);
   const longFiredRef = useRef(false);
+  const idStateRef = useRef(null);
+  const [justIdentified, setJustIdentified] = useState(false);
   const itemName = useEntityName(item);
+
+  // Detect identification transition (unidentified -> identified) for glow animation
+  useEffect(() => {
+    if (empty || !item) return;
+    const nowId = !!(item.level_known && item.cursed_known);
+    const prevId = idStateRef.current;
+    if (prevId === false && nowId === true) {
+      setTimeout(() => setJustIdentified(true), 0);
+      setTimeout(() => setJustIdentified(false), 800);
+    }
+    idStateRef.current = nowId;
+  }, [empty, item]);
 
   if (empty || !item) {
     // Empty equip slots show SPD's placeholder holder sprite; empty backpack
@@ -99,7 +113,7 @@ function ItemSlot({ item, holderKey, equipped, strength, empty, onOpen, onContex
 
   return (
     <button
-      className={`inv-slot filled ${equipped ? 'equipped' : ''} ${tintClass(item)} ${selectMode && !selectable ? 'inv-slot-unselectable' : ''}`}
+      className={`inv-slot filled ${equipped ? 'equipped' : ''} ${tintClass(item)} ${selectMode && !selectable ? 'inv-slot-unselectable' : ''} ${justIdentified ? 'just-identified' : ''}`}
       title={itemName}
       onClick={handleClick}
       onAuxClick={selectMode
@@ -135,11 +149,20 @@ function ItemSlot({ item, holderKey, equipped, strength, empty, onOpen, onContex
         <span className={`inv-level ${levelColorClass(item)}`}>{levelDisplayText(item)}</span>
       )}
       {item.cursed && item.cursed_known && <span className="inv-curse">✗</span>}
+      {equipped && !selectMode && <span className="inv-eq-badge">E</span>}
     </button>
   );
 }
 
 export default function InventoryPane({ belongings, gold, energy, strength, onOpenItem, onContextMenu, onDefaultAction, selectMode, onSelectItem, itemFilter, onInspect, prompt }) {
+  // Zoom-compensation: hold a consistent on-screen size across browser zoom /
+  // display scale, mirroring Toolbar's quickslots + StatusPane. This pane is DOM
+  // (not canvas), so the analog of their zoomScale is a counter-scaling transform.
+  // baseDpr is captured once at mount; devicePixelRatio is re-read every render
+  // (this re-renders with GameHud on viewport change). At baseline zoomScale===1.
+  const [baseDpr] = useState(() => window.devicePixelRatio || 1);
+  const zoomScale = baseDpr / (window.devicePixelRatio || 1);
+
   const backpack = (belongings && belongings.backpack) || { items: [], capacity: 20 };
 
   // Bag tabs: backpack first, then any nested bags it contains.
@@ -181,7 +204,7 @@ export default function InventoryPane({ belongings, gold, energy, strength, onOp
   const equippedIds = new Set(EQUIP_SLOTS.map(s => belongings && belongings[s.key]).filter(Boolean).map(i => i.id));
 
   return (
-    <div className="inv-pane">
+    <div className="inv-pane" style={{ transform: `scale(${zoomScale})`, transformOrigin: 'bottom right' }}>
       <div className="inv-equip-row">
         {EQUIP_SLOTS.map(s => (
           <ItemSlot
@@ -211,14 +234,15 @@ export default function InventoryPane({ belongings, gold, energy, strength, onOp
           {bags.length > 1 && (
             <div className="inv-bag-tabs">
               {bags.map(b => (
-                <button
-                  key={b.id}
-                  className={`inv-bag-tab ${b.id === effectiveBagId ? 'active' : ''}`}
-                  onClick={() => { AudioManager.play('CLICK'); setActiveBagId(b.id); }}
-                  title={b.name || 'Backpack'}
-                >
-                  <ItemIcon item={b.id === backpack.id ? { name: 'Backpack', type: 'bag' } : b} size={20} />
-                </button>
+                  <button
+                    key={b.id}
+                    className={`inv-bag-tab ${b.id === effectiveBagId ? 'active' : ''}`}
+                    onClick={() => { AudioManager.play('CLICK'); setActiveBagId(b.id); }}
+                    title={b.name || 'Backpack'}
+                  >
+                    <ItemIcon item={b.id === backpack.id ? { name: 'Backpack', type: 'bag' } : b} size={20} />
+                    <span className="inv-bag-cap">{b.items ? b.items.filter(i => !BAG_KINDS.has(i.kind)).length : 0}/{b.capacity || 20}</span>
+                  </button>
               ))}
             </div>
           )}

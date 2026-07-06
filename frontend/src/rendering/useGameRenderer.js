@@ -29,6 +29,7 @@ import { advanceAndDrawBlobAreas, advanceAndDrawBlobParticles } from './draw/blo
 import { advanceAndDrawSinkDrips } from './draw/sinkDrip';
 import { advanceAndDrawFadingTraps } from './draw/fadingTraps';
 import { drawBombItem } from './draw/bombOverlay';
+import { advanceAndDrawFlyingItems } from './draw/flyingItem';
 import { advanceAndDrawFloorFade } from './floorTransition';
 import { drawCharHealth } from './draw/charHealth';
 import { drawTargetHealthIndicator } from './draw/targetHealthIndicator';
@@ -75,6 +76,7 @@ export default function useGameRenderer({
   magicMissileRef,
   staffAmbientRef,
   surpriseRef,
+  flyingItemsRef,
   selectedEnemyIdRef,
   targetingModeRef,
   hoveredCellRef,
@@ -239,6 +241,9 @@ export default function useGameRenderer({
       drawBombItem(ctx, assetImages, { visionRef });
 
       ctx.restore();
+
+      // Flying item pickup animation: screen-space (flies to inventory button).
+      advanceAndDrawFlyingItems(ctx, canvas, { flyingItemsRef, cameraLerpRef, zoomRef, assetImage: assetImages.items });
 
       // Retribution screen flash: full-screen white overlay that fades in screen space.
       if (screenFlashRef?.current?.until > performance.now()) {

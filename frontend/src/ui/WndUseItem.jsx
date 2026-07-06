@@ -4,9 +4,10 @@ import AudioManager from '../audio/AudioManager';
 import ItemIcon from './ItemIcon';
 import { actionLabel, orderedActions, titleColor } from './itemActions';
 import { statLines } from './itemStatLines';
+import { comparisonLines } from './itemComparison';
 import useEntityName from './useEntityName';
 
-export default function WndUseItem({ item, onAction, onAssignQuickslot, onClose, onOpenJournal }) {
+export default function WndUseItem({ item, onAction, onAssignQuickslot, onClose, onOpenJournal, belongings }) {
   const { t } = useTranslation();
   useEffect(() => {
     const onKey = (e) => { if (e.key === 'Escape') onClose(); };
@@ -21,6 +22,8 @@ export default function WndUseItem({ item, onAction, onAssignQuickslot, onClose,
   const actions = orderedActions(item);
   const level = item.level_known && item.level ? `${item.level > 0 ? '+' : ''}${item.level}` : null;
   const stats = statLines(item, t);
+
+  const compare = findComparison(item, belongings, t);
 
   const run = (action) => {
     AudioManager.play('CLICK');
@@ -57,6 +60,20 @@ export default function WndUseItem({ item, onAction, onAssignQuickslot, onClose,
           </div>
         )}
 
+        {compare && (
+          <div className="wnd-info-compare">
+            <div className="wnd-info-compare-header">{t('ui.comparedToEquipped')}</div>
+            {compare.map((row, i) => (
+              <div key={i} className="wnd-info-compare-row">
+                <span className="wnd-info-compare-label">{row.label}</span>
+                <span className="wnd-info-compare-val wnd-info-compare-eq">{row.eqVal}</span>
+                <span className="wnd-info-compare-arrow">&rarr;</span>
+                <span className="wnd-info-compare-val wnd-info-compare-item">{row.itemVal}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
         <div className="wnd-item-actions">
           {actions.map(action => (
             <button
@@ -79,4 +96,25 @@ export default function WndUseItem({ item, onAction, onAssignQuickslot, onClose,
       </div>
     </div>
   );
+}
+
+function findComparison(item, belongings, t) {
+  if (!belongings || !item) return null;
+
+  const wTypes = ['weapon', 'melee_weapon', 'staff', 'missile_weapon'];
+  const isWeapon = wTypes.includes(item.type) || wTypes.includes(item.kind);
+  const isArmor = item.type === 'wearable' || item.kind === 'armor';
+  const isRing = item.kind === 'ring' || item.type === 'ring';
+
+  if (isWeapon && belongings.weapon && belongings.weapon.id !== item.id) {
+    return comparisonLines(item, belongings.weapon, t);
+  }
+  if (isArmor && belongings.armor && belongings.armor.id !== item.id) {
+    return comparisonLines(item, belongings.armor, t);
+  }
+  if (isRing && belongings.ring && belongings.ring.id !== item.id) {
+    return comparisonLines(item, belongings.ring, t);
+  }
+
+  return null;
 }

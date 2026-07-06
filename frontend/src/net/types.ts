@@ -157,6 +157,7 @@ export interface HookProps {
   blobAreasRef?: Ref<Record<string, { type: string; cells: Map<string, number> }>>;
   wasDownedRef: Ref<boolean | undefined>;
   surpriseRef?: Ref<unknown[]>;
+  flyingItemsRef?: Ref<unknown[]>;
   selectedEnemyIdRef?: Ref<string | null>;
   floorFadeRef?: Ref<unknown>;
   onLoreNeeded?: (depth: number, finishTransition: () => void) => void;
@@ -243,6 +244,7 @@ export type HandlerCtx = Pick<
   | 'stateEffectsRef'
   | 'magicMissileRef'
   | 'surpriseRef'
+  | 'flyingItemsRef'
   | 'selectedEnemyIdRef'
   | 'screenShakeRef'
   | 'beamRef'

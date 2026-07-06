@@ -316,7 +316,7 @@ export interface ChasmPromptEvent {
 
 export interface PickupEvent {
   type: 'PICKUP';
-  data: { player: string; item: string };
+  data: { player: string; item: string; x: number; y: number; item_type: string };
 }
 
 export interface DropEvent {

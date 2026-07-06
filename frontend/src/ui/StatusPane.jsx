@@ -4,8 +4,6 @@ import AudioManager from '../audio/AudioManager';
 import { MAX_DPR } from '../constants';
 import WndHero from './WndHero';
 
-const DPR = Math.min(window.devicePixelRatio || 1, MAX_DPR);
-
 const PANE_W_LARGE = 160;
 const PANE_H_LARGE = 39;
 const PANE_W_SMALL = 82;
@@ -62,6 +60,13 @@ export default function StatusPane({ myStats, depth, exitPos, isAdmin, onSearch,
   const hpShield = isLarge ? HP_SHIELD_LARGE : HP_SHIELD_SMALL;
   const expFill = isLarge ? EXP_FILL_LARGE : EXP_FILL_SMALL;
   const BG = isLarge ? BG_LARGE : BG_SMALL;
+  // Zoom-compensation: keep the pane a consistent on-screen size across browser
+  // zoom / display scale, mirroring Toolbar's quickslots. baseDpr is captured once
+  // at mount; rawDPR tracks the live display scale, re-read every render.
+  const [baseDpr] = useState(() => window.devicePixelRatio || 1);
+  const rawDPR = window.devicePixelRatio || 1;
+  const cappedDPR = Math.min(rawDPR, MAX_DPR);
+  const zoomScale = baseDpr / rawDPR;
   const { t } = useTranslation();
   const [showFloorPicker, setShowFloorPicker] = useState(false);
   const canvasRef = useRef(null);
@@ -141,7 +146,7 @@ export default function StatusPane({ myStats, depth, exitPos, isAdmin, onSearch,
         ctx.imageSmoothingEnabled = false;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.save();
-        ctx.scale(DPR, DPR);
+        ctx.scale(cappedDPR, cappedDPR);
 
         const statusImg = imgs.status;
         if (statusImg?.complete && statusImg?.naturalWidth > 0) {
@@ -362,7 +367,7 @@ export default function StatusPane({ myStats, depth, exitPos, isAdmin, onSearch,
 
     raf = requestAnimationFrame(draw);
     return () => cancelAnimationFrame(raf);
-  }, [t, isBusy, SCALE, isLarge, PANE_W, PANE_H, hpFill, hpShield, expFill, BG]);
+  }, [t, isBusy, SCALE, isLarge, PANE_W, PANE_H, hpFill, hpShield, expFill, BG, cappedDPR]);
 
   const floorNumbers = [];
   for (let i = 1; i <= 26; i++) floorNumbers.push(i);
@@ -409,13 +414,14 @@ export default function StatusPane({ myStats, depth, exitPos, isAdmin, onSearch,
       </div>
       <canvas
         ref={canvasRef}
-        width={PANE_W * SCALE * DPR}
-        height={PANE_H * SCALE * DPR}
-        style={{ width: PANE_W * SCALE, height: PANE_H * SCALE }}
+        width={PANE_W * SCALE * cappedDPR}
+        height={PANE_H * SCALE * cappedDPR}
+        style={{ width: PANE_W * SCALE * zoomScale, height: PANE_H * SCALE * zoomScale }}
         className="status-pane-canvas"
         onClick={(e) => {
-          const x = e.nativeEvent.offsetX;
-          const y = e.nativeEvent.offsetY;
+          // offsets are in zoom-scaled CSS px; divide back to unscaled pane units.
+          const x = e.nativeEvent.offsetX / zoomScale;
+          const y = e.nativeEvent.offsetY / zoomScale;
           const ax = 9 * SCALE, ay = 8 * SCALE;
           const aw = FRAME_W * SCALE, ah = FRAME_H * SCALE;
           if (x >= ax && x < ax + aw && y >= ay && y < ay + ah) {

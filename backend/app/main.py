@@ -455,7 +455,7 @@ async def game_websocket(websocket: WebSocket, game_id: str, class_type: str = "
                             pass
                         elif player.add_to_inventory(item):
                             del floor.items[i_id]
-                            game.add_event("PICKUP", {"player": player.id, "item": item.name}, floor_id=player.floor_id)
+                            game.add_event("PICKUP", {"player": player.id, "item": item.name, "x": player.pos.x, "y": player.pos.y, "item_type": item.type}, floor_id=player.floor_id)
 
             elif isinstance(message, msg.MoveTo):
                 if player_id in game.players:

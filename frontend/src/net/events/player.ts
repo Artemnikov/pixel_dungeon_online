@@ -9,6 +9,7 @@ import { spawnCheckedCells } from '../../rendering/draw/searchEffects';
 import { spawnFloatingText } from '../../rendering/draw/floatingText';
 import { coordsForKind } from '../../rendering/sprites';
 import { spawnFlare } from '../../rendering/draw/flare';
+import { spawnFlyingItem } from '../../rendering/draw/flyingItem';
 import { spawnSpellSprite, SPELL_CHARGE, SPELL_MAP } from '../../rendering/draw/spellSprite';
 import { forceAlertMob } from '../../rendering/draw/mobs';
 import { spawnSparkMoving } from '../../rendering/draw/sparkParticle';
@@ -23,6 +24,7 @@ export function handlePlayerEvents(event: GameEvent, ctx: HandlerCtx): boolean {
     myPlayerIdRef, entitiesRef, visionRef,
     playerAnimRef, particlesRef, searchEffectsRef, floatingTextRef, lightningRef,
     screenFlashRef, transmuteEffectsRef, flareEffectsRef, spellSpriteEffectsRef,
+    flyingItemsRef,
   } = ctx;
 
   if (event.type === 'SEARCH') {
@@ -279,8 +281,7 @@ export function handlePlayerEvents(event: GameEvent, ctx: HandlerCtx): boolean {
   if (event.type === 'PICKUP' && event.data.player === myPlayerIdRef.current) {
     AudioManager.play('PICKUP');
     addGameLog(`You picked up ${event.data.item}`, 'positive');
-    const me = entitiesRef.current?.players?.[myPlayerIdRef.current];
-    if (me) spawnFloatingText(floatingTextRef, me.renderPos.x * TILE_SIZE + TILE_SIZE / 2, me.renderPos.y * TILE_SIZE, `${event.data.item}`, '#ffffff', 18);
+    if (flyingItemsRef) spawnFlyingItem(flyingItemsRef, event.data.item, event.data.item_type, event.data.x, event.data.y);
     return true;
   }
 
