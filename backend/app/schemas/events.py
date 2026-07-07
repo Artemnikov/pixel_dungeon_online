@@ -129,6 +129,9 @@ class ItemsDestroyedData(_EventData):
 class PickupData(_EventData):
     player: str
     item: str
+    x: int
+    y: int
+    item_type: str = "item"
 
 
 class DropData(_EventData):

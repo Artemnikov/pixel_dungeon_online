@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import AudioManager from '../audio/AudioManager';
 import InventoryPane from './InventoryPane';
 
-export default function WndBag({ belongings, gold, energy, strength, onOpenItem, onContextMenu, onDefaultAction, onClose, selectMode, onSelectItem, itemFilter, title, extraFooter }) {
+export default function WndBag({ belongings, gold, energy, strength, onOpenItem, onContextMenu, onDefaultAction, onClose, selectMode, onSelectItem, itemFilter, title, extraFooter, onInspectItem }) {
   useEffect(() => {
     const onKey = (e) => { if (e.key === 'Escape' || e.key === 'f') onClose(); };
     window.addEventListener('keydown', onKey);
@@ -19,18 +19,19 @@ export default function WndBag({ belongings, gold, energy, strength, onOpenItem,
         >
           ✕
         </button>
-        {title && <div className="wnd-bag-title">{title}</div>}
         <InventoryPane
           belongings={belongings}
           gold={gold}
           energy={energy}
           strength={strength}
+          prompt={title}
           onOpenItem={onOpenItem}
           onContextMenu={onContextMenu}
           onDefaultAction={onDefaultAction}
           selectMode={selectMode}
           onSelectItem={onSelectItem}
           itemFilter={itemFilter}
+          onInspect={onInspectItem}
         />
         {extraFooter}
       </div>

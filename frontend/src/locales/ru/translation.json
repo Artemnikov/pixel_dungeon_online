@@ -104,7 +104,8 @@
     "quickUse": "Быстрое использование",
     "chooseItem": "Выберите предмет",
     "chooseWandToImbue": "Выберите жезл для вселения",
-    "assignQuickslot": "Назначить быстрый слот"
+    "assignQuickslot": "Назначить быстрый слот",
+    "comparedToEquipped": "По сравнению с экипированным"
   },
   "game": {
     "menu": "Меню",

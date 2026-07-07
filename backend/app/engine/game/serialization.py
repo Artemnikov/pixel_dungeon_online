@@ -157,6 +157,8 @@ class SerializationMixin:
                     node["range"] = live.get_reach()
                 node["description"] = live.description(p)
                 node["value"] = live.value(identified=live.kind in self.identified_kinds)
+                if hasattr(live, "buffed_visibly_upgraded"):
+                    node["buffed_level"] = live.buffed_visibly_upgraded()
                 node["energy_value"] = energy_val(self, live)
                 unit = live if live.quantity <= 1 else live.model_copy(update={"quantity": 1})
                 node["energy_value_one"] = energy_val(self, unit)

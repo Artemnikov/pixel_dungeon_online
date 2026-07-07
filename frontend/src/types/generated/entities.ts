@@ -276,6 +276,18 @@ export interface Player {
     | ThrowableDagger
     | Throwable
     | EnergyCrystal
+    | Bomb
+    | Firebomb
+    | FrostBomb
+    | SmokeBomb
+    | FlashBangBomb
+    | HolyBomb
+    | RegrowthBomb
+    | WoollyBomb
+    | Noisemaker
+    | ArcaneBomb
+    | ShrapnelBomb
+    | MetalShard
     | ArcaneStylus
     | MagicalInfusion
     | GooBlob
@@ -469,6 +481,18 @@ export interface Player {
         | ThrowableDagger
         | Throwable
         | EnergyCrystal
+        | Bomb
+        | Firebomb
+        | FrostBomb
+        | SmokeBomb
+        | FlashBangBomb
+        | HolyBomb
+        | RegrowthBomb
+        | WoollyBomb
+        | Noisemaker
+        | ArcaneBomb
+        | ShrapnelBomb
+        | MetalShard
         | ArcaneStylus
         | MagicalInfusion
         | GooBlob
@@ -663,6 +687,18 @@ export interface Player {
         | ThrowableDagger
         | Throwable
         | EnergyCrystal
+        | Bomb
+        | Firebomb
+        | FrostBomb
+        | SmokeBomb
+        | FlashBangBomb
+        | HolyBomb
+        | RegrowthBomb
+        | WoollyBomb
+        | Noisemaker
+        | ArcaneBomb
+        | ShrapnelBomb
+        | MetalShard
         | ArcaneStylus
         | MagicalInfusion
         | GooBlob
@@ -886,6 +922,18 @@ export interface Belongings {
         | ThrowableDagger
         | Throwable
         | EnergyCrystal
+        | Bomb
+        | Firebomb
+        | FrostBomb
+        | SmokeBomb
+        | FlashBangBomb
+        | HolyBomb
+        | RegrowthBomb
+        | WoollyBomb
+        | Noisemaker
+        | ArcaneBomb
+        | ShrapnelBomb
+        | MetalShard
         | ArcaneStylus
         | MagicalInfusion
         | GooBlob
@@ -1080,6 +1128,18 @@ export interface Belongings {
         | ThrowableDagger
         | Throwable
         | EnergyCrystal
+        | Bomb
+        | Firebomb
+        | FrostBomb
+        | SmokeBomb
+        | FlashBangBomb
+        | HolyBomb
+        | RegrowthBomb
+        | WoollyBomb
+        | Noisemaker
+        | ArcaneBomb
+        | ShrapnelBomb
+        | MetalShard
         | ArcaneStylus
         | MagicalInfusion
         | GooBlob
@@ -1274,6 +1334,18 @@ export interface Belongings {
         | ThrowableDagger
         | Throwable
         | EnergyCrystal
+        | Bomb
+        | Firebomb
+        | FrostBomb
+        | SmokeBomb
+        | FlashBangBomb
+        | HolyBomb
+        | RegrowthBomb
+        | WoollyBomb
+        | Noisemaker
+        | ArcaneBomb
+        | ShrapnelBomb
+        | MetalShard
         | ArcaneStylus
         | MagicalInfusion
         | GooBlob
@@ -1468,6 +1540,18 @@ export interface Belongings {
         | ThrowableDagger
         | Throwable
         | EnergyCrystal
+        | Bomb
+        | Firebomb
+        | FrostBomb
+        | SmokeBomb
+        | FlashBangBomb
+        | HolyBomb
+        | RegrowthBomb
+        | WoollyBomb
+        | Noisemaker
+        | ArcaneBomb
+        | ShrapnelBomb
+        | MetalShard
         | ArcaneStylus
         | MagicalInfusion
         | GooBlob
@@ -1662,6 +1746,18 @@ export interface Belongings {
         | ThrowableDagger
         | Throwable
         | EnergyCrystal
+        | Bomb
+        | Firebomb
+        | FrostBomb
+        | SmokeBomb
+        | FlashBangBomb
+        | HolyBomb
+        | RegrowthBomb
+        | WoollyBomb
+        | Noisemaker
+        | ArcaneBomb
+        | ShrapnelBomb
+        | MetalShard
         | ArcaneStylus
         | MagicalInfusion
         | GooBlob
@@ -1872,6 +1968,18 @@ export interface Bag {
     | ThrowableDagger
     | Throwable
     | EnergyCrystal
+    | Bomb
+    | Firebomb
+    | FrostBomb
+    | SmokeBomb
+    | FlashBangBomb
+    | HolyBomb
+    | RegrowthBomb
+    | WoollyBomb
+    | Noisemaker
+    | ArcaneBomb
+    | ShrapnelBomb
+    | MetalShard
     | ArcaneStylus
     | MagicalInfusion
     | GooBlob
@@ -4792,6 +4900,220 @@ export interface EnergyCrystal {
   for_sale?: boolean;
   seen?: boolean;
 }
+export interface Bomb {
+  kind?: "bomb";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  fuse_ticks?: number | null;
+  armed?: boolean;
+}
+export interface Firebomb {
+  kind?: "firebomb";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  fuse_ticks?: number | null;
+  armed?: boolean;
+}
+export interface FrostBomb {
+  kind?: "frost_bomb";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  fuse_ticks?: number | null;
+  armed?: boolean;
+}
+export interface SmokeBomb {
+  kind?: "smoke_bomb";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  fuse_ticks?: number | null;
+  armed?: boolean;
+}
+export interface FlashBangBomb {
+  kind?: "flashbang_bomb";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  fuse_ticks?: number | null;
+  armed?: boolean;
+}
+export interface HolyBomb {
+  kind?: "holy_bomb";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  fuse_ticks?: number | null;
+  armed?: boolean;
+}
+export interface RegrowthBomb {
+  kind?: "regrowth_bomb";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  fuse_ticks?: number | null;
+  armed?: boolean;
+}
+export interface WoollyBomb {
+  kind?: "woolly_bomb";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  fuse_ticks?: number | null;
+  armed?: boolean;
+}
+export interface Noisemaker {
+  kind?: "noisemaker";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  fuse_ticks?: number | null;
+  armed?: boolean;
+}
+export interface ArcaneBomb {
+  kind?: "arcane_bomb";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  fuse_ticks?: number | null;
+  armed?: boolean;
+}
+export interface ShrapnelBomb {
+  kind?: "shrapnel_bomb";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+  fuse_ticks?: number | null;
+  armed?: boolean;
+}
+export interface MetalShard {
+  kind?: "metal_shard";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+}
 export interface ArcaneStylus {
   kind?: "arcane_stylus";
   id?: string;
@@ -5039,6 +5361,18 @@ export interface Chest {
     | ThrowableDagger
     | Throwable
     | EnergyCrystal
+    | Bomb
+    | Firebomb
+    | FrostBomb
+    | SmokeBomb
+    | FlashBangBomb
+    | HolyBomb
+    | RegrowthBomb
+    | WoollyBomb
+    | Noisemaker
+    | ArcaneBomb
+    | ShrapnelBomb
+    | MetalShard
     | ArcaneStylus
     | MagicalInfusion
     | GooBlob
@@ -5249,6 +5583,18 @@ export interface VelvetPouch {
     | ThrowableDagger
     | Throwable
     | EnergyCrystal
+    | Bomb
+    | Firebomb
+    | FrostBomb
+    | SmokeBomb
+    | FlashBangBomb
+    | HolyBomb
+    | RegrowthBomb
+    | WoollyBomb
+    | Noisemaker
+    | ArcaneBomb
+    | ShrapnelBomb
+    | MetalShard
     | ArcaneStylus
     | MagicalInfusion
     | GooBlob
@@ -5458,6 +5804,18 @@ export interface ScrollHolder {
     | ThrowableDagger
     | Throwable
     | EnergyCrystal
+    | Bomb
+    | Firebomb
+    | FrostBomb
+    | SmokeBomb
+    | FlashBangBomb
+    | HolyBomb
+    | RegrowthBomb
+    | WoollyBomb
+    | Noisemaker
+    | ArcaneBomb
+    | ShrapnelBomb
+    | MetalShard
     | ArcaneStylus
     | MagicalInfusion
     | GooBlob
@@ -5667,6 +6025,18 @@ export interface MagicalHolster {
     | ThrowableDagger
     | Throwable
     | EnergyCrystal
+    | Bomb
+    | Firebomb
+    | FrostBomb
+    | SmokeBomb
+    | FlashBangBomb
+    | HolyBomb
+    | RegrowthBomb
+    | WoollyBomb
+    | Noisemaker
+    | ArcaneBomb
+    | ShrapnelBomb
+    | MetalShard
     | ArcaneStylus
     | MagicalInfusion
     | GooBlob
@@ -5876,6 +6246,18 @@ export interface PotionBandolier {
     | ThrowableDagger
     | Throwable
     | EnergyCrystal
+    | Bomb
+    | Firebomb
+    | FrostBomb
+    | SmokeBomb
+    | FlashBangBomb
+    | HolyBomb
+    | RegrowthBomb
+    | WoollyBomb
+    | Noisemaker
+    | ArcaneBomb
+    | ShrapnelBomb
+    | MetalShard
     | ArcaneStylus
     | MagicalInfusion
     | GooBlob

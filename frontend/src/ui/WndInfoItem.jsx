@@ -2,55 +2,18 @@ import { useTranslation } from 'react-i18next';
 import IconTitle from './IconTitle';
 import ItemIcon from './ItemIcon';
 import { titleColor } from './itemActions';
+import { statLines } from './itemStatLines';
+import { comparisonLines } from './itemComparison';
 
-export function statLines(item, t) {
-  const lines = [];
-  const wTypes = ['weapon', 'melee_weapon', 'staff', 'missile_weapon'];
-  if (wTypes.includes(item.type) || wTypes.includes(item.kind)) {
-    if (item.tier != null) lines.push(t('ui.tier', { tier: item.tier }));
-    if (item.damage != null) lines.push(`${t('ui.damageStat')}: ${item.damage}`);
-    if (item.strength_requirement != null)
-      lines.push(t('ui.strengthReq', { str: item.strength_requirement }));
-  }
-  if (item.type === 'wearable' || item.kind === 'armor') {
-    if (item.tier != null) lines.push(t('ui.tier', { tier: item.tier }));
-    if (item.strength_requirement != null)
-      lines.push(t('ui.strengthReq', { str: item.strength_requirement }));
-    const bufLvl = item.level_known ? Math.max(0, item.level || 0) : 0;
-    const drMin = bufLvl;
-    const drMax = item.tier * (2 + bufLvl);
-    lines.push(`${t('ui.defenseStat')}: ${drMin}-${drMax}`);
-  }
-  if (item.kind === 'ring' || item.type === 'ring') {
-    if (item.level_known && item.level != null)
-      lines.push(item.level >= 0 ? `+${item.level}` : `${item.level}`);
-  }
-  if (item.kind === 'artifact' || item.type === 'artifact') {
-    if (item.charge != null && item.charge_cap != null)
-      lines.push(t('ui.artifactCharge', { charge: item.charge, cap: item.charge_cap }));
-  }
-  if (item.kind === 'wand' || item.type === 'wand') {
-    if (item.charges != null && item.max_charges != null)
-      lines.push(t('ui.wandCharges', { charges: item.charges, max: item.max_charges }));
-  }
-  if (item.cursed_known && item.cursed) lines.push(t('ui.cursed'));
-  if (item.cursed_known === false && (wTypes.includes(item.type) || item.type === 'wearable'
-      || item.kind === 'ring' || item.kind === 'artifact' || item.kind === 'wand'))
-    lines.push(t('ui.cursedUnknown'));
-  if (item.enchantment && item.enchantment.type && item.enchantment.type !== 'none') {
-    const glyphLabel = item.enchantment.type.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
-    lines.push(`Glyph of ${glyphLabel}`);
-  }
-  return lines;
-}
-
-export default function WndInfoItem({ item }) {
+export default function WndInfoItem({ item, belongings }) {
   const { t } = useTranslation();
   if (!item) return null;
 
   const name = item.locale_key ? t(item.locale_key, { defaultValue: item.name }) : item.name;
   const level = item.level_known ? item.level : null;
   const lines = statLines(item, t);
+
+  const compare = findComparison(item, belongings, t);
 
   return (
     <div className="wnd-info-card">
@@ -73,6 +36,40 @@ export default function WndInfoItem({ item }) {
           {lines.map((l, i) => <div key={i} className="wnd-info-stat-row">{l}</div>)}
         </div>
       )}
+      {compare && (
+        <div className="wnd-info-compare">
+          <div className="wnd-info-compare-header">{t('ui.comparedToEquipped')}</div>
+          {compare.map((row, i) => (
+            <div key={i} className="wnd-info-compare-row">
+              <span className="wnd-info-compare-label">{row.label}</span>
+              <span className="wnd-info-compare-val wnd-info-compare-eq">{row.eqVal}</span>
+              <span className="wnd-info-compare-arrow">&rarr;</span>
+              <span className="wnd-info-compare-val wnd-info-compare-item">{row.itemVal}</span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
+}
+
+function findComparison(item, belongings, t) {
+  if (!belongings || !item) return null;
+
+  const wTypes = ['weapon', 'melee_weapon', 'staff', 'missile_weapon'];
+  const isWeapon = wTypes.includes(item.type) || wTypes.includes(item.kind);
+  const isArmor = item.type === 'wearable' || item.kind === 'armor';
+  const isRing = item.kind === 'ring' || item.type === 'ring';
+
+  if (isWeapon && belongings.weapon && belongings.weapon.id !== item.id) {
+    return comparisonLines(item, belongings.weapon, t);
+  }
+  if (isArmor && belongings.armor && belongings.armor.id !== item.id) {
+    return comparisonLines(item, belongings.armor, t);
+  }
+  if (isRing && belongings.ring && belongings.ring.id !== item.id) {
+    return comparisonLines(item, belongings.ring, t);
+  }
+
+  return null;
 }

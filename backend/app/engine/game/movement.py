@@ -565,9 +565,11 @@ class MovementCombatMixin:
                         continue
                 if entity.add_to_inventory(item):
                     del floor.items[i_id]
-                    self.add_event("PICKUP", {"player": entity.id, "item": item.name}, floor_id=floor_id)
+                    self.add_event("PICKUP", {"player": entity.id, "item": item.name, "x": entity.pos.x, "y": entity.pos.y, "item_type": item.type}, floor_id=floor_id)
                     if entity.is_admin and item.type in ("potion", "scroll"):
                         self.identify_kind(item)
+                else:
+                    self.add_event("TOAST", {"text": "Your backpack is full. Drop something to make room."}, player_id=entity.id, floor_id=floor_id)
 
             self._trigger_trap_if_needed(floor, entity, floor_id)
 
@@ -597,7 +599,41 @@ class MovementCombatMixin:
             self.add_event("DM300_SUPERCHARGE", {"mob": target.id}, floor_id=floor_id)
             self._activate_pylon(floor, floor_id, near_pos=near_pos)
 
-    def perform_ranged_attack(self, player_id: str, item_id: str, target_x: int, target_y: int) -> Optional[int]:
+    def _autoaim_cell(self, player, target) -> tuple:
+        """Mirror of SPD QuickSlotButton.autoAim: aim straight at the target if a
+        shot lands on it, else 'angle' the shot from a nearby cell whose ballistica
+        still hits the target (shooting around a corner). Falls back to the
+        target's own cell when no line of fire exists."""
+        floor = self._get_or_create_floor(player.floor_id)
+        others = list(self._players_on_floor(player.floor_id))
+        mobs = list(floor.mobs.values())
+
+        def hits(tx: int, ty: int) -> bool:
+            rx, ry = ballistica_trace(
+                player.pos.x, player.pos.y, tx, ty,
+                floor.flags, floor.width, floor.height,
+                others, mobs, player.id,
+            )
+            return rx == target.pos.x and ry == target.pos.y
+
+        if hits(target.pos.x, target.pos.y):
+            return target.pos.x, target.pos.y
+
+        best = None
+        best_d = 99
+        for dx in range(-2, 3):
+            for dy in range(-2, 3):
+                cx, cy = target.pos.x + dx, target.pos.y + dy
+                if (cx, cy) == (target.pos.x, target.pos.y):
+                    continue
+                if hits(cx, cy):
+                    d = abs(player.pos.x - cx) + abs(player.pos.y - cy)
+                    if d < best_d:
+                        best_d, best = d, (cx, cy)
+        return best if best is not None else (target.pos.x, target.pos.y)
+
+    def perform_ranged_attack(self, player_id: str, item_id: str, target_x: int, target_y: int,
+                              target_entity_id: Optional[str] = None) -> Optional[int]:
         player = self.players.get(player_id)
         if not player or player.is_downed:
             return None
@@ -638,6 +674,19 @@ class MovementCombatMixin:
 
         if (current_time - player.last_attack_time) < cooldown:
             return None
+
+        # Locked-target auto-aim (SPD QuickSlotButton.autoAim): when the client
+        # sends the mob/player it is aiming at, resolve the firing cell here so
+        # line-of-fire stays server-authoritative.
+        if target_entity_id is not None:
+            ent = floor.mobs.get(target_entity_id)
+            if ent is None:
+                for pp in self._players_on_floor(floor_id):
+                    if pp.id == target_entity_id:
+                        ent = pp
+                        break
+            if ent is not None and getattr(ent, "is_alive", True):
+                target_x, target_y = self._autoaim_cell(player, ent)
 
         dist = abs(player.pos.x - target_x) + abs(player.pos.y - target_y)
         if is_wand or is_staff:

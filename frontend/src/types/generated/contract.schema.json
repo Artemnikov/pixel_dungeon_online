@@ -227,6 +227,90 @@
       },
       "type": "object"
     },
+    "ArcaneBomb": {
+      "properties": {
+        "kind": {
+          "const": "arcane_bomb",
+          "default": "arcane_bomb",
+          "type": "string"
+        },
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "name": {
+          "default": "Arcane Bomb",
+          "type": "string"
+        },
+        "type": {
+          "default": "bomb",
+          "type": "string"
+        },
+        "pos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Position"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "quantity": {
+          "default": 1,
+          "type": "integer"
+        },
+        "level": {
+          "default": 0,
+          "type": "integer"
+        },
+        "level_known": {
+          "default": true,
+          "type": "boolean"
+        },
+        "cursed": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed_known": {
+          "default": true,
+          "type": "boolean"
+        },
+        "unique": {
+          "default": false,
+          "type": "boolean"
+        },
+        "kept_though_lost": {
+          "default": false,
+          "type": "boolean"
+        },
+        "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        },
+        "fuse_ticks": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "armed": {
+          "default": false,
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
     "ArcaneStylus": {
       "properties": {
         "kind": {
@@ -561,12 +645,14 @@
                 "alchemists_toolkit": "#/$defs/AlchemistsToolkit",
                 "amulet": "#/$defs/Amulet",
                 "aqua_brew": "#/$defs/AquaBrew",
+                "arcane_bomb": "#/$defs/ArcaneBomb",
                 "arcane_stylus": "#/$defs/ArcaneStylus",
                 "armor": "#/$defs/Armor",
                 "artifact": "#/$defs/Artifact",
                 "bag": "#/$defs/Bag",
                 "berry": "#/$defs/Berry",
                 "blizzard_brew": "#/$defs/BlizzardBrew",
+                "bomb": "#/$defs/Bomb",
                 "boomerang": "#/$defs/Boomerang",
                 "bow": "#/$defs/Bow",
                 "broken_seal": "#/$defs/BrokenSeal",
@@ -599,12 +685,16 @@
                 "exotic_crystals": "#/$defs/ExoticCrystals",
                 "eye_of_newt": "#/$defs/EyeOfNewt",
                 "ferret_tuft": "#/$defs/FerretTuft",
+                "firebomb": "#/$defs/Firebomb",
+                "flashbang_bomb": "#/$defs/FlashBangBomb",
                 "food": "#/$defs/Food",
+                "frost_bomb": "#/$defs/FrostBomb",
                 "frozen_carpaccio": "#/$defs/FrozenCarpaccio",
                 "fury_potion": "#/$defs/FuryPotion",
                 "gold": "#/$defs/Gold",
                 "goo_blob": "#/$defs/GooBlob",
                 "health_potion": "#/$defs/HealthPotion",
+                "holy_bomb": "#/$defs/HolyBomb",
                 "holy_tome": "#/$defs/HolyTome",
                 "horn_of_plenty": "#/$defs/HornOfPlenty",
                 "infernal_brew": "#/$defs/InfernalBrew",
@@ -618,10 +708,12 @@
                 "master_thieves_armband": "#/$defs/MasterThievesArmband",
                 "meat_pie": "#/$defs/MeatPie",
                 "melee_weapon": "#/$defs/MeleeWeapon",
+                "metal_shard": "#/$defs/MetalShard",
                 "mimic_tooth": "#/$defs/MimicTooth",
                 "missile_weapon": "#/$defs/MissileWeapon",
                 "mossy_clump": "#/$defs/MossyClump",
                 "mystery_meat": "#/$defs/MysteryMeat",
+                "noisemaker": "#/$defs/Noisemaker",
                 "parchment_scrap": "#/$defs/ParchmentScrap",
                 "pasty": "#/$defs/Pasty",
                 "petal": "#/$defs/Petal",
@@ -654,6 +746,7 @@
                 "potion_of_toxic_gas": "#/$defs/PotionOfToxicGas",
                 "rat_skull": "#/$defs/RatSkull",
                 "ration": "#/$defs/Ration",
+                "regrowth_bomb": "#/$defs/RegrowthBomb",
                 "reviving_potion": "#/$defs/RevivingPotion",
                 "ring": "#/$defs/Ring",
                 "ring_accuracy": "#/$defs/RingOfAccuracy",
@@ -701,8 +794,10 @@
                 "seed": "#/$defs/Seed",
                 "shard_of_oblivion": "#/$defs/ShardOfOblivion",
                 "shocking_brew": "#/$defs/ShockingBrew",
+                "shrapnel_bomb": "#/$defs/ShrapnelBomb",
                 "skeleton_key": "#/$defs/SkeletonKey",
                 "small_ration": "#/$defs/SmallRation",
+                "smoke_bomb": "#/$defs/SmokeBomb",
                 "spirit_bow": "#/$defs/SpiritBow",
                 "staff": "#/$defs/Staff",
                 "stewed_meat": "#/$defs/StewedMeat",
@@ -747,6 +842,7 @@
                 "wand_warding": "#/$defs/WandOfWarding",
                 "waterskin": "#/$defs/Waterskin",
                 "wondrous_resin": "#/$defs/WondrousResin",
+                "woolly_bomb": "#/$defs/WoollyBomb",
                 "worn_shortsword": "#/$defs/WornShortsword"
               },
               "propertyName": "kind"
@@ -1200,6 +1296,42 @@
                 "$ref": "#/$defs/EnergyCrystal"
               },
               {
+                "$ref": "#/$defs/Bomb"
+              },
+              {
+                "$ref": "#/$defs/Firebomb"
+              },
+              {
+                "$ref": "#/$defs/FrostBomb"
+              },
+              {
+                "$ref": "#/$defs/SmokeBomb"
+              },
+              {
+                "$ref": "#/$defs/FlashBangBomb"
+              },
+              {
+                "$ref": "#/$defs/HolyBomb"
+              },
+              {
+                "$ref": "#/$defs/RegrowthBomb"
+              },
+              {
+                "$ref": "#/$defs/WoollyBomb"
+              },
+              {
+                "$ref": "#/$defs/Noisemaker"
+              },
+              {
+                "$ref": "#/$defs/ArcaneBomb"
+              },
+              {
+                "$ref": "#/$defs/ShrapnelBomb"
+              },
+              {
+                "$ref": "#/$defs/MetalShard"
+              },
+              {
                 "$ref": "#/$defs/ArcaneStylus"
               },
               {
@@ -1345,12 +1477,14 @@
                   "alchemists_toolkit": "#/$defs/AlchemistsToolkit",
                   "amulet": "#/$defs/Amulet",
                   "aqua_brew": "#/$defs/AquaBrew",
+                  "arcane_bomb": "#/$defs/ArcaneBomb",
                   "arcane_stylus": "#/$defs/ArcaneStylus",
                   "armor": "#/$defs/Armor",
                   "artifact": "#/$defs/Artifact",
                   "bag": "#/$defs/Bag",
                   "berry": "#/$defs/Berry",
                   "blizzard_brew": "#/$defs/BlizzardBrew",
+                  "bomb": "#/$defs/Bomb",
                   "boomerang": "#/$defs/Boomerang",
                   "bow": "#/$defs/Bow",
                   "broken_seal": "#/$defs/BrokenSeal",
@@ -1383,12 +1517,16 @@
                   "exotic_crystals": "#/$defs/ExoticCrystals",
                   "eye_of_newt": "#/$defs/EyeOfNewt",
                   "ferret_tuft": "#/$defs/FerretTuft",
+                  "firebomb": "#/$defs/Firebomb",
+                  "flashbang_bomb": "#/$defs/FlashBangBomb",
                   "food": "#/$defs/Food",
+                  "frost_bomb": "#/$defs/FrostBomb",
                   "frozen_carpaccio": "#/$defs/FrozenCarpaccio",
                   "fury_potion": "#/$defs/FuryPotion",
                   "gold": "#/$defs/Gold",
                   "goo_blob": "#/$defs/GooBlob",
                   "health_potion": "#/$defs/HealthPotion",
+                  "holy_bomb": "#/$defs/HolyBomb",
                   "holy_tome": "#/$defs/HolyTome",
                   "horn_of_plenty": "#/$defs/HornOfPlenty",
                   "infernal_brew": "#/$defs/InfernalBrew",
@@ -1402,10 +1540,12 @@
                   "master_thieves_armband": "#/$defs/MasterThievesArmband",
                   "meat_pie": "#/$defs/MeatPie",
                   "melee_weapon": "#/$defs/MeleeWeapon",
+                  "metal_shard": "#/$defs/MetalShard",
                   "mimic_tooth": "#/$defs/MimicTooth",
                   "missile_weapon": "#/$defs/MissileWeapon",
                   "mossy_clump": "#/$defs/MossyClump",
                   "mystery_meat": "#/$defs/MysteryMeat",
+                  "noisemaker": "#/$defs/Noisemaker",
                   "parchment_scrap": "#/$defs/ParchmentScrap",
                   "pasty": "#/$defs/Pasty",
                   "petal": "#/$defs/Petal",
@@ -1438,6 +1578,7 @@
                   "potion_of_toxic_gas": "#/$defs/PotionOfToxicGas",
                   "rat_skull": "#/$defs/RatSkull",
                   "ration": "#/$defs/Ration",
+                  "regrowth_bomb": "#/$defs/RegrowthBomb",
                   "reviving_potion": "#/$defs/RevivingPotion",
                   "ring": "#/$defs/Ring",
                   "ring_accuracy": "#/$defs/RingOfAccuracy",
@@ -1485,8 +1626,10 @@
                   "seed": "#/$defs/Seed",
                   "shard_of_oblivion": "#/$defs/ShardOfOblivion",
                   "shocking_brew": "#/$defs/ShockingBrew",
+                  "shrapnel_bomb": "#/$defs/ShrapnelBomb",
                   "skeleton_key": "#/$defs/SkeletonKey",
                   "small_ration": "#/$defs/SmallRation",
+                  "smoke_bomb": "#/$defs/SmokeBomb",
                   "spirit_bow": "#/$defs/SpiritBow",
                   "staff": "#/$defs/Staff",
                   "stewed_meat": "#/$defs/StewedMeat",
@@ -1531,6 +1674,7 @@
                   "wand_warding": "#/$defs/WandOfWarding",
                   "waterskin": "#/$defs/Waterskin",
                   "wondrous_resin": "#/$defs/WondrousResin",
+                  "woolly_bomb": "#/$defs/WoollyBomb",
                   "worn_shortsword": "#/$defs/WornShortsword"
                 },
                 "propertyName": "kind"
@@ -1982,6 +2126,42 @@
                 },
                 {
                   "$ref": "#/$defs/EnergyCrystal"
+                },
+                {
+                  "$ref": "#/$defs/Bomb"
+                },
+                {
+                  "$ref": "#/$defs/Firebomb"
+                },
+                {
+                  "$ref": "#/$defs/FrostBomb"
+                },
+                {
+                  "$ref": "#/$defs/SmokeBomb"
+                },
+                {
+                  "$ref": "#/$defs/FlashBangBomb"
+                },
+                {
+                  "$ref": "#/$defs/HolyBomb"
+                },
+                {
+                  "$ref": "#/$defs/RegrowthBomb"
+                },
+                {
+                  "$ref": "#/$defs/WoollyBomb"
+                },
+                {
+                  "$ref": "#/$defs/Noisemaker"
+                },
+                {
+                  "$ref": "#/$defs/ArcaneBomb"
+                },
+                {
+                  "$ref": "#/$defs/ShrapnelBomb"
+                },
+                {
+                  "$ref": "#/$defs/MetalShard"
                 },
                 {
                   "$ref": "#/$defs/ArcaneStylus"
@@ -2122,12 +2302,14 @@
                   "alchemists_toolkit": "#/$defs/AlchemistsToolkit",
                   "amulet": "#/$defs/Amulet",
                   "aqua_brew": "#/$defs/AquaBrew",
+                  "arcane_bomb": "#/$defs/ArcaneBomb",
                   "arcane_stylus": "#/$defs/ArcaneStylus",
                   "armor": "#/$defs/Armor",
                   "artifact": "#/$defs/Artifact",
                   "bag": "#/$defs/Bag",
                   "berry": "#/$defs/Berry",
                   "blizzard_brew": "#/$defs/BlizzardBrew",
+                  "bomb": "#/$defs/Bomb",
                   "boomerang": "#/$defs/Boomerang",
                   "bow": "#/$defs/Bow",
                   "broken_seal": "#/$defs/BrokenSeal",
@@ -2160,12 +2342,16 @@
                   "exotic_crystals": "#/$defs/ExoticCrystals",
                   "eye_of_newt": "#/$defs/EyeOfNewt",
                   "ferret_tuft": "#/$defs/FerretTuft",
+                  "firebomb": "#/$defs/Firebomb",
+                  "flashbang_bomb": "#/$defs/FlashBangBomb",
                   "food": "#/$defs/Food",
+                  "frost_bomb": "#/$defs/FrostBomb",
                   "frozen_carpaccio": "#/$defs/FrozenCarpaccio",
                   "fury_potion": "#/$defs/FuryPotion",
                   "gold": "#/$defs/Gold",
                   "goo_blob": "#/$defs/GooBlob",
                   "health_potion": "#/$defs/HealthPotion",
+                  "holy_bomb": "#/$defs/HolyBomb",
                   "holy_tome": "#/$defs/HolyTome",
                   "horn_of_plenty": "#/$defs/HornOfPlenty",
                   "infernal_brew": "#/$defs/InfernalBrew",
@@ -2179,10 +2365,12 @@
                   "master_thieves_armband": "#/$defs/MasterThievesArmband",
                   "meat_pie": "#/$defs/MeatPie",
                   "melee_weapon": "#/$defs/MeleeWeapon",
+                  "metal_shard": "#/$defs/MetalShard",
                   "mimic_tooth": "#/$defs/MimicTooth",
                   "missile_weapon": "#/$defs/MissileWeapon",
                   "mossy_clump": "#/$defs/MossyClump",
                   "mystery_meat": "#/$defs/MysteryMeat",
+                  "noisemaker": "#/$defs/Noisemaker",
                   "parchment_scrap": "#/$defs/ParchmentScrap",
                   "pasty": "#/$defs/Pasty",
                   "petal": "#/$defs/Petal",
@@ -2215,6 +2403,7 @@
                   "potion_of_toxic_gas": "#/$defs/PotionOfToxicGas",
                   "rat_skull": "#/$defs/RatSkull",
                   "ration": "#/$defs/Ration",
+                  "regrowth_bomb": "#/$defs/RegrowthBomb",
                   "reviving_potion": "#/$defs/RevivingPotion",
                   "ring": "#/$defs/Ring",
                   "ring_accuracy": "#/$defs/RingOfAccuracy",
@@ -2262,8 +2451,10 @@
                   "seed": "#/$defs/Seed",
                   "shard_of_oblivion": "#/$defs/ShardOfOblivion",
                   "shocking_brew": "#/$defs/ShockingBrew",
+                  "shrapnel_bomb": "#/$defs/ShrapnelBomb",
                   "skeleton_key": "#/$defs/SkeletonKey",
                   "small_ration": "#/$defs/SmallRation",
+                  "smoke_bomb": "#/$defs/SmokeBomb",
                   "spirit_bow": "#/$defs/SpiritBow",
                   "staff": "#/$defs/Staff",
                   "stewed_meat": "#/$defs/StewedMeat",
@@ -2308,6 +2499,7 @@
                   "wand_warding": "#/$defs/WandOfWarding",
                   "waterskin": "#/$defs/Waterskin",
                   "wondrous_resin": "#/$defs/WondrousResin",
+                  "woolly_bomb": "#/$defs/WoollyBomb",
                   "worn_shortsword": "#/$defs/WornShortsword"
                 },
                 "propertyName": "kind"
@@ -2759,6 +2951,42 @@
                 },
                 {
                   "$ref": "#/$defs/EnergyCrystal"
+                },
+                {
+                  "$ref": "#/$defs/Bomb"
+                },
+                {
+                  "$ref": "#/$defs/Firebomb"
+                },
+                {
+                  "$ref": "#/$defs/FrostBomb"
+                },
+                {
+                  "$ref": "#/$defs/SmokeBomb"
+                },
+                {
+                  "$ref": "#/$defs/FlashBangBomb"
+                },
+                {
+                  "$ref": "#/$defs/HolyBomb"
+                },
+                {
+                  "$ref": "#/$defs/RegrowthBomb"
+                },
+                {
+                  "$ref": "#/$defs/WoollyBomb"
+                },
+                {
+                  "$ref": "#/$defs/Noisemaker"
+                },
+                {
+                  "$ref": "#/$defs/ArcaneBomb"
+                },
+                {
+                  "$ref": "#/$defs/ShrapnelBomb"
+                },
+                {
+                  "$ref": "#/$defs/MetalShard"
                 },
                 {
                   "$ref": "#/$defs/ArcaneStylus"
@@ -2899,12 +3127,14 @@
                   "alchemists_toolkit": "#/$defs/AlchemistsToolkit",
                   "amulet": "#/$defs/Amulet",
                   "aqua_brew": "#/$defs/AquaBrew",
+                  "arcane_bomb": "#/$defs/ArcaneBomb",
                   "arcane_stylus": "#/$defs/ArcaneStylus",
                   "armor": "#/$defs/Armor",
                   "artifact": "#/$defs/Artifact",
                   "bag": "#/$defs/Bag",
                   "berry": "#/$defs/Berry",
                   "blizzard_brew": "#/$defs/BlizzardBrew",
+                  "bomb": "#/$defs/Bomb",
                   "boomerang": "#/$defs/Boomerang",
                   "bow": "#/$defs/Bow",
                   "broken_seal": "#/$defs/BrokenSeal",
@@ -2937,12 +3167,16 @@
                   "exotic_crystals": "#/$defs/ExoticCrystals",
                   "eye_of_newt": "#/$defs/EyeOfNewt",
                   "ferret_tuft": "#/$defs/FerretTuft",
+                  "firebomb": "#/$defs/Firebomb",
+                  "flashbang_bomb": "#/$defs/FlashBangBomb",
                   "food": "#/$defs/Food",
+                  "frost_bomb": "#/$defs/FrostBomb",
                   "frozen_carpaccio": "#/$defs/FrozenCarpaccio",
                   "fury_potion": "#/$defs/FuryPotion",
                   "gold": "#/$defs/Gold",
                   "goo_blob": "#/$defs/GooBlob",
                   "health_potion": "#/$defs/HealthPotion",
+                  "holy_bomb": "#/$defs/HolyBomb",
                   "holy_tome": "#/$defs/HolyTome",
                   "horn_of_plenty": "#/$defs/HornOfPlenty",
                   "infernal_brew": "#/$defs/InfernalBrew",
@@ -2956,10 +3190,12 @@
                   "master_thieves_armband": "#/$defs/MasterThievesArmband",
                   "meat_pie": "#/$defs/MeatPie",
                   "melee_weapon": "#/$defs/MeleeWeapon",
+                  "metal_shard": "#/$defs/MetalShard",
                   "mimic_tooth": "#/$defs/MimicTooth",
                   "missile_weapon": "#/$defs/MissileWeapon",
                   "mossy_clump": "#/$defs/MossyClump",
                   "mystery_meat": "#/$defs/MysteryMeat",
+                  "noisemaker": "#/$defs/Noisemaker",
                   "parchment_scrap": "#/$defs/ParchmentScrap",
                   "pasty": "#/$defs/Pasty",
                   "petal": "#/$defs/Petal",
@@ -2992,6 +3228,7 @@
                   "potion_of_toxic_gas": "#/$defs/PotionOfToxicGas",
                   "rat_skull": "#/$defs/RatSkull",
                   "ration": "#/$defs/Ration",
+                  "regrowth_bomb": "#/$defs/RegrowthBomb",
                   "reviving_potion": "#/$defs/RevivingPotion",
                   "ring": "#/$defs/Ring",
                   "ring_accuracy": "#/$defs/RingOfAccuracy",
@@ -3039,8 +3276,10 @@
                   "seed": "#/$defs/Seed",
                   "shard_of_oblivion": "#/$defs/ShardOfOblivion",
                   "shocking_brew": "#/$defs/ShockingBrew",
+                  "shrapnel_bomb": "#/$defs/ShrapnelBomb",
                   "skeleton_key": "#/$defs/SkeletonKey",
                   "small_ration": "#/$defs/SmallRation",
+                  "smoke_bomb": "#/$defs/SmokeBomb",
                   "spirit_bow": "#/$defs/SpiritBow",
                   "staff": "#/$defs/Staff",
                   "stewed_meat": "#/$defs/StewedMeat",
@@ -3085,6 +3324,7 @@
                   "wand_warding": "#/$defs/WandOfWarding",
                   "waterskin": "#/$defs/Waterskin",
                   "wondrous_resin": "#/$defs/WondrousResin",
+                  "woolly_bomb": "#/$defs/WoollyBomb",
                   "worn_shortsword": "#/$defs/WornShortsword"
                 },
                 "propertyName": "kind"
@@ -3536,6 +3776,42 @@
                 },
                 {
                   "$ref": "#/$defs/EnergyCrystal"
+                },
+                {
+                  "$ref": "#/$defs/Bomb"
+                },
+                {
+                  "$ref": "#/$defs/Firebomb"
+                },
+                {
+                  "$ref": "#/$defs/FrostBomb"
+                },
+                {
+                  "$ref": "#/$defs/SmokeBomb"
+                },
+                {
+                  "$ref": "#/$defs/FlashBangBomb"
+                },
+                {
+                  "$ref": "#/$defs/HolyBomb"
+                },
+                {
+                  "$ref": "#/$defs/RegrowthBomb"
+                },
+                {
+                  "$ref": "#/$defs/WoollyBomb"
+                },
+                {
+                  "$ref": "#/$defs/Noisemaker"
+                },
+                {
+                  "$ref": "#/$defs/ArcaneBomb"
+                },
+                {
+                  "$ref": "#/$defs/ShrapnelBomb"
+                },
+                {
+                  "$ref": "#/$defs/MetalShard"
                 },
                 {
                   "$ref": "#/$defs/ArcaneStylus"
@@ -3676,12 +3952,14 @@
                   "alchemists_toolkit": "#/$defs/AlchemistsToolkit",
                   "amulet": "#/$defs/Amulet",
                   "aqua_brew": "#/$defs/AquaBrew",
+                  "arcane_bomb": "#/$defs/ArcaneBomb",
                   "arcane_stylus": "#/$defs/ArcaneStylus",
                   "armor": "#/$defs/Armor",
                   "artifact": "#/$defs/Artifact",
                   "bag": "#/$defs/Bag",
                   "berry": "#/$defs/Berry",
                   "blizzard_brew": "#/$defs/BlizzardBrew",
+                  "bomb": "#/$defs/Bomb",
                   "boomerang": "#/$defs/Boomerang",
                   "bow": "#/$defs/Bow",
                   "broken_seal": "#/$defs/BrokenSeal",
@@ -3714,12 +3992,16 @@
                   "exotic_crystals": "#/$defs/ExoticCrystals",
                   "eye_of_newt": "#/$defs/EyeOfNewt",
                   "ferret_tuft": "#/$defs/FerretTuft",
+                  "firebomb": "#/$defs/Firebomb",
+                  "flashbang_bomb": "#/$defs/FlashBangBomb",
                   "food": "#/$defs/Food",
+                  "frost_bomb": "#/$defs/FrostBomb",
                   "frozen_carpaccio": "#/$defs/FrozenCarpaccio",
                   "fury_potion": "#/$defs/FuryPotion",
                   "gold": "#/$defs/Gold",
                   "goo_blob": "#/$defs/GooBlob",
                   "health_potion": "#/$defs/HealthPotion",
+                  "holy_bomb": "#/$defs/HolyBomb",
                   "holy_tome": "#/$defs/HolyTome",
                   "horn_of_plenty": "#/$defs/HornOfPlenty",
                   "infernal_brew": "#/$defs/InfernalBrew",
@@ -3733,10 +4015,12 @@
                   "master_thieves_armband": "#/$defs/MasterThievesArmband",
                   "meat_pie": "#/$defs/MeatPie",
                   "melee_weapon": "#/$defs/MeleeWeapon",
+                  "metal_shard": "#/$defs/MetalShard",
                   "mimic_tooth": "#/$defs/MimicTooth",
                   "missile_weapon": "#/$defs/MissileWeapon",
                   "mossy_clump": "#/$defs/MossyClump",
                   "mystery_meat": "#/$defs/MysteryMeat",
+                  "noisemaker": "#/$defs/Noisemaker",
                   "parchment_scrap": "#/$defs/ParchmentScrap",
                   "pasty": "#/$defs/Pasty",
                   "petal": "#/$defs/Petal",
@@ -3769,6 +4053,7 @@
                   "potion_of_toxic_gas": "#/$defs/PotionOfToxicGas",
                   "rat_skull": "#/$defs/RatSkull",
                   "ration": "#/$defs/Ration",
+                  "regrowth_bomb": "#/$defs/RegrowthBomb",
                   "reviving_potion": "#/$defs/RevivingPotion",
                   "ring": "#/$defs/Ring",
                   "ring_accuracy": "#/$defs/RingOfAccuracy",
@@ -3816,8 +4101,10 @@
                   "seed": "#/$defs/Seed",
                   "shard_of_oblivion": "#/$defs/ShardOfOblivion",
                   "shocking_brew": "#/$defs/ShockingBrew",
+                  "shrapnel_bomb": "#/$defs/ShrapnelBomb",
                   "skeleton_key": "#/$defs/SkeletonKey",
                   "small_ration": "#/$defs/SmallRation",
+                  "smoke_bomb": "#/$defs/SmokeBomb",
                   "spirit_bow": "#/$defs/SpiritBow",
                   "staff": "#/$defs/Staff",
                   "stewed_meat": "#/$defs/StewedMeat",
@@ -3862,6 +4149,7 @@
                   "wand_warding": "#/$defs/WandOfWarding",
                   "waterskin": "#/$defs/Waterskin",
                   "wondrous_resin": "#/$defs/WondrousResin",
+                  "woolly_bomb": "#/$defs/WoollyBomb",
                   "worn_shortsword": "#/$defs/WornShortsword"
                 },
                 "propertyName": "kind"
@@ -4313,6 +4601,42 @@
                 },
                 {
                   "$ref": "#/$defs/EnergyCrystal"
+                },
+                {
+                  "$ref": "#/$defs/Bomb"
+                },
+                {
+                  "$ref": "#/$defs/Firebomb"
+                },
+                {
+                  "$ref": "#/$defs/FrostBomb"
+                },
+                {
+                  "$ref": "#/$defs/SmokeBomb"
+                },
+                {
+                  "$ref": "#/$defs/FlashBangBomb"
+                },
+                {
+                  "$ref": "#/$defs/HolyBomb"
+                },
+                {
+                  "$ref": "#/$defs/RegrowthBomb"
+                },
+                {
+                  "$ref": "#/$defs/WoollyBomb"
+                },
+                {
+                  "$ref": "#/$defs/Noisemaker"
+                },
+                {
+                  "$ref": "#/$defs/ArcaneBomb"
+                },
+                {
+                  "$ref": "#/$defs/ShrapnelBomb"
+                },
+                {
+                  "$ref": "#/$defs/MetalShard"
                 },
                 {
                   "$ref": "#/$defs/ArcaneStylus"
@@ -4453,12 +4777,14 @@
                   "alchemists_toolkit": "#/$defs/AlchemistsToolkit",
                   "amulet": "#/$defs/Amulet",
                   "aqua_brew": "#/$defs/AquaBrew",
+                  "arcane_bomb": "#/$defs/ArcaneBomb",
                   "arcane_stylus": "#/$defs/ArcaneStylus",
                   "armor": "#/$defs/Armor",
                   "artifact": "#/$defs/Artifact",
                   "bag": "#/$defs/Bag",
                   "berry": "#/$defs/Berry",
                   "blizzard_brew": "#/$defs/BlizzardBrew",
+                  "bomb": "#/$defs/Bomb",
                   "boomerang": "#/$defs/Boomerang",
                   "bow": "#/$defs/Bow",
                   "broken_seal": "#/$defs/BrokenSeal",
@@ -4491,12 +4817,16 @@
                   "exotic_crystals": "#/$defs/ExoticCrystals",
                   "eye_of_newt": "#/$defs/EyeOfNewt",
                   "ferret_tuft": "#/$defs/FerretTuft",
+                  "firebomb": "#/$defs/Firebomb",
+                  "flashbang_bomb": "#/$defs/FlashBangBomb",
                   "food": "#/$defs/Food",
+                  "frost_bomb": "#/$defs/FrostBomb",
                   "frozen_carpaccio": "#/$defs/FrozenCarpaccio",
                   "fury_potion": "#/$defs/FuryPotion",
                   "gold": "#/$defs/Gold",
                   "goo_blob": "#/$defs/GooBlob",
                   "health_potion": "#/$defs/HealthPotion",
+                  "holy_bomb": "#/$defs/HolyBomb",
                   "holy_tome": "#/$defs/HolyTome",
                   "horn_of_plenty": "#/$defs/HornOfPlenty",
                   "infernal_brew": "#/$defs/InfernalBrew",
@@ -4510,10 +4840,12 @@
                   "master_thieves_armband": "#/$defs/MasterThievesArmband",
                   "meat_pie": "#/$defs/MeatPie",
                   "melee_weapon": "#/$defs/MeleeWeapon",
+                  "metal_shard": "#/$defs/MetalShard",
                   "mimic_tooth": "#/$defs/MimicTooth",
                   "missile_weapon": "#/$defs/MissileWeapon",
                   "mossy_clump": "#/$defs/MossyClump",
                   "mystery_meat": "#/$defs/MysteryMeat",
+                  "noisemaker": "#/$defs/Noisemaker",
                   "parchment_scrap": "#/$defs/ParchmentScrap",
                   "pasty": "#/$defs/Pasty",
                   "petal": "#/$defs/Petal",
@@ -4546,6 +4878,7 @@
                   "potion_of_toxic_gas": "#/$defs/PotionOfToxicGas",
                   "rat_skull": "#/$defs/RatSkull",
                   "ration": "#/$defs/Ration",
+                  "regrowth_bomb": "#/$defs/RegrowthBomb",
                   "reviving_potion": "#/$defs/RevivingPotion",
                   "ring": "#/$defs/Ring",
                   "ring_accuracy": "#/$defs/RingOfAccuracy",
@@ -4593,8 +4926,10 @@
                   "seed": "#/$defs/Seed",
                   "shard_of_oblivion": "#/$defs/ShardOfOblivion",
                   "shocking_brew": "#/$defs/ShockingBrew",
+                  "shrapnel_bomb": "#/$defs/ShrapnelBomb",
                   "skeleton_key": "#/$defs/SkeletonKey",
                   "small_ration": "#/$defs/SmallRation",
+                  "smoke_bomb": "#/$defs/SmokeBomb",
                   "spirit_bow": "#/$defs/SpiritBow",
                   "staff": "#/$defs/Staff",
                   "stewed_meat": "#/$defs/StewedMeat",
@@ -4639,6 +4974,7 @@
                   "wand_warding": "#/$defs/WandOfWarding",
                   "waterskin": "#/$defs/Waterskin",
                   "wondrous_resin": "#/$defs/WondrousResin",
+                  "woolly_bomb": "#/$defs/WoollyBomb",
                   "worn_shortsword": "#/$defs/WornShortsword"
                 },
                 "propertyName": "kind"
@@ -5090,6 +5426,42 @@
                 },
                 {
                   "$ref": "#/$defs/EnergyCrystal"
+                },
+                {
+                  "$ref": "#/$defs/Bomb"
+                },
+                {
+                  "$ref": "#/$defs/Firebomb"
+                },
+                {
+                  "$ref": "#/$defs/FrostBomb"
+                },
+                {
+                  "$ref": "#/$defs/SmokeBomb"
+                },
+                {
+                  "$ref": "#/$defs/FlashBangBomb"
+                },
+                {
+                  "$ref": "#/$defs/HolyBomb"
+                },
+                {
+                  "$ref": "#/$defs/RegrowthBomb"
+                },
+                {
+                  "$ref": "#/$defs/WoollyBomb"
+                },
+                {
+                  "$ref": "#/$defs/Noisemaker"
+                },
+                {
+                  "$ref": "#/$defs/ArcaneBomb"
+                },
+                {
+                  "$ref": "#/$defs/ShrapnelBomb"
+                },
+                {
+                  "$ref": "#/$defs/MetalShard"
                 },
                 {
                   "$ref": "#/$defs/ArcaneStylus"
@@ -5367,6 +5739,90 @@
         "effect": {
           "default": "blizzard_brew",
           "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "Bomb": {
+      "properties": {
+        "kind": {
+          "const": "bomb",
+          "default": "bomb",
+          "type": "string"
+        },
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "name": {
+          "default": "Bomb",
+          "type": "string"
+        },
+        "type": {
+          "default": "bomb",
+          "type": "string"
+        },
+        "pos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Position"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "quantity": {
+          "default": 1,
+          "type": "integer"
+        },
+        "level": {
+          "default": 0,
+          "type": "integer"
+        },
+        "level_known": {
+          "default": true,
+          "type": "boolean"
+        },
+        "cursed": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed_known": {
+          "default": true,
+          "type": "boolean"
+        },
+        "unique": {
+          "default": false,
+          "type": "boolean"
+        },
+        "kept_though_lost": {
+          "default": false,
+          "type": "boolean"
+        },
+        "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        },
+        "fuse_ticks": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "armed": {
+          "default": false,
+          "type": "boolean"
         }
       },
       "type": "object"
@@ -6180,12 +6636,14 @@
                 "alchemists_toolkit": "#/$defs/AlchemistsToolkit",
                 "amulet": "#/$defs/Amulet",
                 "aqua_brew": "#/$defs/AquaBrew",
+                "arcane_bomb": "#/$defs/ArcaneBomb",
                 "arcane_stylus": "#/$defs/ArcaneStylus",
                 "armor": "#/$defs/Armor",
                 "artifact": "#/$defs/Artifact",
                 "bag": "#/$defs/Bag",
                 "berry": "#/$defs/Berry",
                 "blizzard_brew": "#/$defs/BlizzardBrew",
+                "bomb": "#/$defs/Bomb",
                 "boomerang": "#/$defs/Boomerang",
                 "bow": "#/$defs/Bow",
                 "broken_seal": "#/$defs/BrokenSeal",
@@ -6218,12 +6676,16 @@
                 "exotic_crystals": "#/$defs/ExoticCrystals",
                 "eye_of_newt": "#/$defs/EyeOfNewt",
                 "ferret_tuft": "#/$defs/FerretTuft",
+                "firebomb": "#/$defs/Firebomb",
+                "flashbang_bomb": "#/$defs/FlashBangBomb",
                 "food": "#/$defs/Food",
+                "frost_bomb": "#/$defs/FrostBomb",
                 "frozen_carpaccio": "#/$defs/FrozenCarpaccio",
                 "fury_potion": "#/$defs/FuryPotion",
                 "gold": "#/$defs/Gold",
                 "goo_blob": "#/$defs/GooBlob",
                 "health_potion": "#/$defs/HealthPotion",
+                "holy_bomb": "#/$defs/HolyBomb",
                 "holy_tome": "#/$defs/HolyTome",
                 "horn_of_plenty": "#/$defs/HornOfPlenty",
                 "infernal_brew": "#/$defs/InfernalBrew",
@@ -6237,10 +6699,12 @@
                 "master_thieves_armband": "#/$defs/MasterThievesArmband",
                 "meat_pie": "#/$defs/MeatPie",
                 "melee_weapon": "#/$defs/MeleeWeapon",
+                "metal_shard": "#/$defs/MetalShard",
                 "mimic_tooth": "#/$defs/MimicTooth",
                 "missile_weapon": "#/$defs/MissileWeapon",
                 "mossy_clump": "#/$defs/MossyClump",
                 "mystery_meat": "#/$defs/MysteryMeat",
+                "noisemaker": "#/$defs/Noisemaker",
                 "parchment_scrap": "#/$defs/ParchmentScrap",
                 "pasty": "#/$defs/Pasty",
                 "petal": "#/$defs/Petal",
@@ -6273,6 +6737,7 @@
                 "potion_of_toxic_gas": "#/$defs/PotionOfToxicGas",
                 "rat_skull": "#/$defs/RatSkull",
                 "ration": "#/$defs/Ration",
+                "regrowth_bomb": "#/$defs/RegrowthBomb",
                 "reviving_potion": "#/$defs/RevivingPotion",
                 "ring": "#/$defs/Ring",
                 "ring_accuracy": "#/$defs/RingOfAccuracy",
@@ -6320,8 +6785,10 @@
                 "seed": "#/$defs/Seed",
                 "shard_of_oblivion": "#/$defs/ShardOfOblivion",
                 "shocking_brew": "#/$defs/ShockingBrew",
+                "shrapnel_bomb": "#/$defs/ShrapnelBomb",
                 "skeleton_key": "#/$defs/SkeletonKey",
                 "small_ration": "#/$defs/SmallRation",
+                "smoke_bomb": "#/$defs/SmokeBomb",
                 "spirit_bow": "#/$defs/SpiritBow",
                 "staff": "#/$defs/Staff",
                 "stewed_meat": "#/$defs/StewedMeat",
@@ -6366,6 +6833,7 @@
                 "wand_warding": "#/$defs/WandOfWarding",
                 "waterskin": "#/$defs/Waterskin",
                 "wondrous_resin": "#/$defs/WondrousResin",
+                "woolly_bomb": "#/$defs/WoollyBomb",
                 "worn_shortsword": "#/$defs/WornShortsword"
               },
               "propertyName": "kind"
@@ -6817,6 +7285,42 @@
               },
               {
                 "$ref": "#/$defs/EnergyCrystal"
+              },
+              {
+                "$ref": "#/$defs/Bomb"
+              },
+              {
+                "$ref": "#/$defs/Firebomb"
+              },
+              {
+                "$ref": "#/$defs/FrostBomb"
+              },
+              {
+                "$ref": "#/$defs/SmokeBomb"
+              },
+              {
+                "$ref": "#/$defs/FlashBangBomb"
+              },
+              {
+                "$ref": "#/$defs/HolyBomb"
+              },
+              {
+                "$ref": "#/$defs/RegrowthBomb"
+              },
+              {
+                "$ref": "#/$defs/WoollyBomb"
+              },
+              {
+                "$ref": "#/$defs/Noisemaker"
+              },
+              {
+                "$ref": "#/$defs/ArcaneBomb"
+              },
+              {
+                "$ref": "#/$defs/ShrapnelBomb"
+              },
+              {
+                "$ref": "#/$defs/MetalShard"
               },
               {
                 "$ref": "#/$defs/ArcaneStylus"
@@ -9008,6 +9512,174 @@
       },
       "type": "object"
     },
+    "Firebomb": {
+      "properties": {
+        "kind": {
+          "const": "firebomb",
+          "default": "firebomb",
+          "type": "string"
+        },
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "name": {
+          "default": "Firebomb",
+          "type": "string"
+        },
+        "type": {
+          "default": "bomb",
+          "type": "string"
+        },
+        "pos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Position"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "quantity": {
+          "default": 1,
+          "type": "integer"
+        },
+        "level": {
+          "default": 0,
+          "type": "integer"
+        },
+        "level_known": {
+          "default": true,
+          "type": "boolean"
+        },
+        "cursed": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed_known": {
+          "default": true,
+          "type": "boolean"
+        },
+        "unique": {
+          "default": false,
+          "type": "boolean"
+        },
+        "kept_though_lost": {
+          "default": false,
+          "type": "boolean"
+        },
+        "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        },
+        "fuse_ticks": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "armed": {
+          "default": false,
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
+    "FlashBangBomb": {
+      "properties": {
+        "kind": {
+          "const": "flashbang_bomb",
+          "default": "flashbang_bomb",
+          "type": "string"
+        },
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "name": {
+          "default": "Flashbang",
+          "type": "string"
+        },
+        "type": {
+          "default": "bomb",
+          "type": "string"
+        },
+        "pos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Position"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "quantity": {
+          "default": 1,
+          "type": "integer"
+        },
+        "level": {
+          "default": 0,
+          "type": "integer"
+        },
+        "level_known": {
+          "default": true,
+          "type": "boolean"
+        },
+        "cursed": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed_known": {
+          "default": true,
+          "type": "boolean"
+        },
+        "unique": {
+          "default": false,
+          "type": "boolean"
+        },
+        "kept_though_lost": {
+          "default": false,
+          "type": "boolean"
+        },
+        "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        },
+        "fuse_ticks": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "armed": {
+          "default": false,
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
     "Food": {
       "properties": {
         "kind": {
@@ -9081,6 +9753,90 @@
       "required": [
         "name"
       ],
+      "type": "object"
+    },
+    "FrostBomb": {
+      "properties": {
+        "kind": {
+          "const": "frost_bomb",
+          "default": "frost_bomb",
+          "type": "string"
+        },
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "name": {
+          "default": "Frost Bomb",
+          "type": "string"
+        },
+        "type": {
+          "default": "bomb",
+          "type": "string"
+        },
+        "pos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Position"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "quantity": {
+          "default": 1,
+          "type": "integer"
+        },
+        "level": {
+          "default": 0,
+          "type": "integer"
+        },
+        "level_known": {
+          "default": true,
+          "type": "boolean"
+        },
+        "cursed": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed_known": {
+          "default": true,
+          "type": "boolean"
+        },
+        "unique": {
+          "default": false,
+          "type": "boolean"
+        },
+        "kept_though_lost": {
+          "default": false,
+          "type": "boolean"
+        },
+        "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        },
+        "fuse_ticks": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "armed": {
+          "default": false,
+          "type": "boolean"
+        }
+      },
       "type": "object"
     },
     "FrozenCarpaccio": {
@@ -9438,6 +10194,90 @@
         "effect": {
           "default": "regen",
           "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "HolyBomb": {
+      "properties": {
+        "kind": {
+          "const": "holy_bomb",
+          "default": "holy_bomb",
+          "type": "string"
+        },
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "name": {
+          "default": "Holy Bomb",
+          "type": "string"
+        },
+        "type": {
+          "default": "bomb",
+          "type": "string"
+        },
+        "pos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Position"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "quantity": {
+          "default": 1,
+          "type": "integer"
+        },
+        "level": {
+          "default": 0,
+          "type": "integer"
+        },
+        "level_known": {
+          "default": true,
+          "type": "boolean"
+        },
+        "cursed": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed_known": {
+          "default": true,
+          "type": "boolean"
+        },
+        "unique": {
+          "default": false,
+          "type": "boolean"
+        },
+        "kept_though_lost": {
+          "default": false,
+          "type": "boolean"
+        },
+        "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        },
+        "fuse_ticks": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "armed": {
+          "default": false,
+          "type": "boolean"
         }
       },
       "type": "object"
@@ -10139,12 +10979,14 @@
                 "alchemists_toolkit": "#/$defs/AlchemistsToolkit",
                 "amulet": "#/$defs/Amulet",
                 "aqua_brew": "#/$defs/AquaBrew",
+                "arcane_bomb": "#/$defs/ArcaneBomb",
                 "arcane_stylus": "#/$defs/ArcaneStylus",
                 "armor": "#/$defs/Armor",
                 "artifact": "#/$defs/Artifact",
                 "bag": "#/$defs/Bag",
                 "berry": "#/$defs/Berry",
                 "blizzard_brew": "#/$defs/BlizzardBrew",
+                "bomb": "#/$defs/Bomb",
                 "boomerang": "#/$defs/Boomerang",
                 "bow": "#/$defs/Bow",
                 "broken_seal": "#/$defs/BrokenSeal",
@@ -10177,12 +11019,16 @@
                 "exotic_crystals": "#/$defs/ExoticCrystals",
                 "eye_of_newt": "#/$defs/EyeOfNewt",
                 "ferret_tuft": "#/$defs/FerretTuft",
+                "firebomb": "#/$defs/Firebomb",
+                "flashbang_bomb": "#/$defs/FlashBangBomb",
                 "food": "#/$defs/Food",
+                "frost_bomb": "#/$defs/FrostBomb",
                 "frozen_carpaccio": "#/$defs/FrozenCarpaccio",
                 "fury_potion": "#/$defs/FuryPotion",
                 "gold": "#/$defs/Gold",
                 "goo_blob": "#/$defs/GooBlob",
                 "health_potion": "#/$defs/HealthPotion",
+                "holy_bomb": "#/$defs/HolyBomb",
                 "holy_tome": "#/$defs/HolyTome",
                 "horn_of_plenty": "#/$defs/HornOfPlenty",
                 "infernal_brew": "#/$defs/InfernalBrew",
@@ -10196,10 +11042,12 @@
                 "master_thieves_armband": "#/$defs/MasterThievesArmband",
                 "meat_pie": "#/$defs/MeatPie",
                 "melee_weapon": "#/$defs/MeleeWeapon",
+                "metal_shard": "#/$defs/MetalShard",
                 "mimic_tooth": "#/$defs/MimicTooth",
                 "missile_weapon": "#/$defs/MissileWeapon",
                 "mossy_clump": "#/$defs/MossyClump",
                 "mystery_meat": "#/$defs/MysteryMeat",
+                "noisemaker": "#/$defs/Noisemaker",
                 "parchment_scrap": "#/$defs/ParchmentScrap",
                 "pasty": "#/$defs/Pasty",
                 "petal": "#/$defs/Petal",
@@ -10232,6 +11080,7 @@
                 "potion_of_toxic_gas": "#/$defs/PotionOfToxicGas",
                 "rat_skull": "#/$defs/RatSkull",
                 "ration": "#/$defs/Ration",
+                "regrowth_bomb": "#/$defs/RegrowthBomb",
                 "reviving_potion": "#/$defs/RevivingPotion",
                 "ring": "#/$defs/Ring",
                 "ring_accuracy": "#/$defs/RingOfAccuracy",
@@ -10279,8 +11128,10 @@
                 "seed": "#/$defs/Seed",
                 "shard_of_oblivion": "#/$defs/ShardOfOblivion",
                 "shocking_brew": "#/$defs/ShockingBrew",
+                "shrapnel_bomb": "#/$defs/ShrapnelBomb",
                 "skeleton_key": "#/$defs/SkeletonKey",
                 "small_ration": "#/$defs/SmallRation",
+                "smoke_bomb": "#/$defs/SmokeBomb",
                 "spirit_bow": "#/$defs/SpiritBow",
                 "staff": "#/$defs/Staff",
                 "stewed_meat": "#/$defs/StewedMeat",
@@ -10325,6 +11176,7 @@
                 "wand_warding": "#/$defs/WandOfWarding",
                 "waterskin": "#/$defs/Waterskin",
                 "wondrous_resin": "#/$defs/WondrousResin",
+                "woolly_bomb": "#/$defs/WoollyBomb",
                 "worn_shortsword": "#/$defs/WornShortsword"
               },
               "propertyName": "kind"
@@ -10776,6 +11628,42 @@
               },
               {
                 "$ref": "#/$defs/EnergyCrystal"
+              },
+              {
+                "$ref": "#/$defs/Bomb"
+              },
+              {
+                "$ref": "#/$defs/Firebomb"
+              },
+              {
+                "$ref": "#/$defs/FrostBomb"
+              },
+              {
+                "$ref": "#/$defs/SmokeBomb"
+              },
+              {
+                "$ref": "#/$defs/FlashBangBomb"
+              },
+              {
+                "$ref": "#/$defs/HolyBomb"
+              },
+              {
+                "$ref": "#/$defs/RegrowthBomb"
+              },
+              {
+                "$ref": "#/$defs/WoollyBomb"
+              },
+              {
+                "$ref": "#/$defs/Noisemaker"
+              },
+              {
+                "$ref": "#/$defs/ArcaneBomb"
+              },
+              {
+                "$ref": "#/$defs/ShrapnelBomb"
+              },
+              {
+                "$ref": "#/$defs/MetalShard"
               },
               {
                 "$ref": "#/$defs/ArcaneStylus"
@@ -11371,6 +12259,75 @@
       "required": [
         "name"
       ],
+      "type": "object"
+    },
+    "MetalShard": {
+      "properties": {
+        "kind": {
+          "const": "metal_shard",
+          "default": "metal_shard",
+          "type": "string"
+        },
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "name": {
+          "default": "Metal Shard",
+          "type": "string"
+        },
+        "type": {
+          "default": "misc",
+          "type": "string"
+        },
+        "pos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Position"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "quantity": {
+          "default": 1,
+          "type": "integer"
+        },
+        "level": {
+          "default": 0,
+          "type": "integer"
+        },
+        "level_known": {
+          "default": true,
+          "type": "boolean"
+        },
+        "cursed": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed_known": {
+          "default": true,
+          "type": "boolean"
+        },
+        "unique": {
+          "default": false,
+          "type": "boolean"
+        },
+        "kept_though_lost": {
+          "default": false,
+          "type": "boolean"
+        },
+        "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        }
+      },
       "type": "object"
     },
     "MimicTooth": {
@@ -11997,6 +12954,90 @@
         "energy": {
           "default": 0,
           "type": "integer"
+        }
+      },
+      "type": "object"
+    },
+    "Noisemaker": {
+      "properties": {
+        "kind": {
+          "const": "noisemaker",
+          "default": "noisemaker",
+          "type": "string"
+        },
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "name": {
+          "default": "Noisemaker",
+          "type": "string"
+        },
+        "type": {
+          "default": "bomb",
+          "type": "string"
+        },
+        "pos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Position"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "quantity": {
+          "default": 1,
+          "type": "integer"
+        },
+        "level": {
+          "default": 0,
+          "type": "integer"
+        },
+        "level_known": {
+          "default": true,
+          "type": "boolean"
+        },
+        "cursed": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed_known": {
+          "default": true,
+          "type": "boolean"
+        },
+        "unique": {
+          "default": false,
+          "type": "boolean"
+        },
+        "kept_though_lost": {
+          "default": false,
+          "type": "boolean"
+        },
+        "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        },
+        "fuse_ticks": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "armed": {
+          "default": false,
+          "type": "boolean"
         }
       },
       "type": "object"
@@ -12899,12 +13940,14 @@
                 "alchemists_toolkit": "#/$defs/AlchemistsToolkit",
                 "amulet": "#/$defs/Amulet",
                 "aqua_brew": "#/$defs/AquaBrew",
+                "arcane_bomb": "#/$defs/ArcaneBomb",
                 "arcane_stylus": "#/$defs/ArcaneStylus",
                 "armor": "#/$defs/Armor",
                 "artifact": "#/$defs/Artifact",
                 "bag": "#/$defs/Bag",
                 "berry": "#/$defs/Berry",
                 "blizzard_brew": "#/$defs/BlizzardBrew",
+                "bomb": "#/$defs/Bomb",
                 "boomerang": "#/$defs/Boomerang",
                 "bow": "#/$defs/Bow",
                 "broken_seal": "#/$defs/BrokenSeal",
@@ -12937,12 +13980,16 @@
                 "exotic_crystals": "#/$defs/ExoticCrystals",
                 "eye_of_newt": "#/$defs/EyeOfNewt",
                 "ferret_tuft": "#/$defs/FerretTuft",
+                "firebomb": "#/$defs/Firebomb",
+                "flashbang_bomb": "#/$defs/FlashBangBomb",
                 "food": "#/$defs/Food",
+                "frost_bomb": "#/$defs/FrostBomb",
                 "frozen_carpaccio": "#/$defs/FrozenCarpaccio",
                 "fury_potion": "#/$defs/FuryPotion",
                 "gold": "#/$defs/Gold",
                 "goo_blob": "#/$defs/GooBlob",
                 "health_potion": "#/$defs/HealthPotion",
+                "holy_bomb": "#/$defs/HolyBomb",
                 "holy_tome": "#/$defs/HolyTome",
                 "horn_of_plenty": "#/$defs/HornOfPlenty",
                 "infernal_brew": "#/$defs/InfernalBrew",
@@ -12956,10 +14003,12 @@
                 "master_thieves_armband": "#/$defs/MasterThievesArmband",
                 "meat_pie": "#/$defs/MeatPie",
                 "melee_weapon": "#/$defs/MeleeWeapon",
+                "metal_shard": "#/$defs/MetalShard",
                 "mimic_tooth": "#/$defs/MimicTooth",
                 "missile_weapon": "#/$defs/MissileWeapon",
                 "mossy_clump": "#/$defs/MossyClump",
                 "mystery_meat": "#/$defs/MysteryMeat",
+                "noisemaker": "#/$defs/Noisemaker",
                 "parchment_scrap": "#/$defs/ParchmentScrap",
                 "pasty": "#/$defs/Pasty",
                 "petal": "#/$defs/Petal",
@@ -12992,6 +14041,7 @@
                 "potion_of_toxic_gas": "#/$defs/PotionOfToxicGas",
                 "rat_skull": "#/$defs/RatSkull",
                 "ration": "#/$defs/Ration",
+                "regrowth_bomb": "#/$defs/RegrowthBomb",
                 "reviving_potion": "#/$defs/RevivingPotion",
                 "ring": "#/$defs/Ring",
                 "ring_accuracy": "#/$defs/RingOfAccuracy",
@@ -13039,8 +14089,10 @@
                 "seed": "#/$defs/Seed",
                 "shard_of_oblivion": "#/$defs/ShardOfOblivion",
                 "shocking_brew": "#/$defs/ShockingBrew",
+                "shrapnel_bomb": "#/$defs/ShrapnelBomb",
                 "skeleton_key": "#/$defs/SkeletonKey",
                 "small_ration": "#/$defs/SmallRation",
+                "smoke_bomb": "#/$defs/SmokeBomb",
                 "spirit_bow": "#/$defs/SpiritBow",
                 "staff": "#/$defs/Staff",
                 "stewed_meat": "#/$defs/StewedMeat",
@@ -13085,6 +14137,7 @@
                 "wand_warding": "#/$defs/WandOfWarding",
                 "waterskin": "#/$defs/Waterskin",
                 "wondrous_resin": "#/$defs/WondrousResin",
+                "woolly_bomb": "#/$defs/WoollyBomb",
                 "worn_shortsword": "#/$defs/WornShortsword"
               },
               "propertyName": "kind"
@@ -13538,6 +14591,42 @@
                 "$ref": "#/$defs/EnergyCrystal"
               },
               {
+                "$ref": "#/$defs/Bomb"
+              },
+              {
+                "$ref": "#/$defs/Firebomb"
+              },
+              {
+                "$ref": "#/$defs/FrostBomb"
+              },
+              {
+                "$ref": "#/$defs/SmokeBomb"
+              },
+              {
+                "$ref": "#/$defs/FlashBangBomb"
+              },
+              {
+                "$ref": "#/$defs/HolyBomb"
+              },
+              {
+                "$ref": "#/$defs/RegrowthBomb"
+              },
+              {
+                "$ref": "#/$defs/WoollyBomb"
+              },
+              {
+                "$ref": "#/$defs/Noisemaker"
+              },
+              {
+                "$ref": "#/$defs/ArcaneBomb"
+              },
+              {
+                "$ref": "#/$defs/ShrapnelBomb"
+              },
+              {
+                "$ref": "#/$defs/MetalShard"
+              },
+              {
                 "$ref": "#/$defs/ArcaneStylus"
               },
               {
@@ -13673,12 +14762,14 @@
                   "alchemists_toolkit": "#/$defs/AlchemistsToolkit",
                   "amulet": "#/$defs/Amulet",
                   "aqua_brew": "#/$defs/AquaBrew",
+                  "arcane_bomb": "#/$defs/ArcaneBomb",
                   "arcane_stylus": "#/$defs/ArcaneStylus",
                   "armor": "#/$defs/Armor",
                   "artifact": "#/$defs/Artifact",
                   "bag": "#/$defs/Bag",
                   "berry": "#/$defs/Berry",
                   "blizzard_brew": "#/$defs/BlizzardBrew",
+                  "bomb": "#/$defs/Bomb",
                   "boomerang": "#/$defs/Boomerang",
                   "bow": "#/$defs/Bow",
                   "broken_seal": "#/$defs/BrokenSeal",
@@ -13711,12 +14802,16 @@
                   "exotic_crystals": "#/$defs/ExoticCrystals",
                   "eye_of_newt": "#/$defs/EyeOfNewt",
                   "ferret_tuft": "#/$defs/FerretTuft",
+                  "firebomb": "#/$defs/Firebomb",
+                  "flashbang_bomb": "#/$defs/FlashBangBomb",
                   "food": "#/$defs/Food",
+                  "frost_bomb": "#/$defs/FrostBomb",
                   "frozen_carpaccio": "#/$defs/FrozenCarpaccio",
                   "fury_potion": "#/$defs/FuryPotion",
                   "gold": "#/$defs/Gold",
                   "goo_blob": "#/$defs/GooBlob",
                   "health_potion": "#/$defs/HealthPotion",
+                  "holy_bomb": "#/$defs/HolyBomb",
                   "holy_tome": "#/$defs/HolyTome",
                   "horn_of_plenty": "#/$defs/HornOfPlenty",
                   "infernal_brew": "#/$defs/InfernalBrew",
@@ -13730,10 +14825,12 @@
                   "master_thieves_armband": "#/$defs/MasterThievesArmband",
                   "meat_pie": "#/$defs/MeatPie",
                   "melee_weapon": "#/$defs/MeleeWeapon",
+                  "metal_shard": "#/$defs/MetalShard",
                   "mimic_tooth": "#/$defs/MimicTooth",
                   "missile_weapon": "#/$defs/MissileWeapon",
                   "mossy_clump": "#/$defs/MossyClump",
                   "mystery_meat": "#/$defs/MysteryMeat",
+                  "noisemaker": "#/$defs/Noisemaker",
                   "parchment_scrap": "#/$defs/ParchmentScrap",
                   "pasty": "#/$defs/Pasty",
                   "petal": "#/$defs/Petal",
@@ -13766,6 +14863,7 @@
                   "potion_of_toxic_gas": "#/$defs/PotionOfToxicGas",
                   "rat_skull": "#/$defs/RatSkull",
                   "ration": "#/$defs/Ration",
+                  "regrowth_bomb": "#/$defs/RegrowthBomb",
                   "reviving_potion": "#/$defs/RevivingPotion",
                   "ring": "#/$defs/Ring",
                   "ring_accuracy": "#/$defs/RingOfAccuracy",
@@ -13813,8 +14911,10 @@
                   "seed": "#/$defs/Seed",
                   "shard_of_oblivion": "#/$defs/ShardOfOblivion",
                   "shocking_brew": "#/$defs/ShockingBrew",
+                  "shrapnel_bomb": "#/$defs/ShrapnelBomb",
                   "skeleton_key": "#/$defs/SkeletonKey",
                   "small_ration": "#/$defs/SmallRation",
+                  "smoke_bomb": "#/$defs/SmokeBomb",
                   "spirit_bow": "#/$defs/SpiritBow",
                   "staff": "#/$defs/Staff",
                   "stewed_meat": "#/$defs/StewedMeat",
@@ -13859,6 +14959,7 @@
                   "wand_warding": "#/$defs/WandOfWarding",
                   "waterskin": "#/$defs/Waterskin",
                   "wondrous_resin": "#/$defs/WondrousResin",
+                  "woolly_bomb": "#/$defs/WoollyBomb",
                   "worn_shortsword": "#/$defs/WornShortsword"
                 },
                 "propertyName": "kind"
@@ -14310,6 +15411,42 @@
                 },
                 {
                   "$ref": "#/$defs/EnergyCrystal"
+                },
+                {
+                  "$ref": "#/$defs/Bomb"
+                },
+                {
+                  "$ref": "#/$defs/Firebomb"
+                },
+                {
+                  "$ref": "#/$defs/FrostBomb"
+                },
+                {
+                  "$ref": "#/$defs/SmokeBomb"
+                },
+                {
+                  "$ref": "#/$defs/FlashBangBomb"
+                },
+                {
+                  "$ref": "#/$defs/HolyBomb"
+                },
+                {
+                  "$ref": "#/$defs/RegrowthBomb"
+                },
+                {
+                  "$ref": "#/$defs/WoollyBomb"
+                },
+                {
+                  "$ref": "#/$defs/Noisemaker"
+                },
+                {
+                  "$ref": "#/$defs/ArcaneBomb"
+                },
+                {
+                  "$ref": "#/$defs/ShrapnelBomb"
+                },
+                {
+                  "$ref": "#/$defs/MetalShard"
                 },
                 {
                   "$ref": "#/$defs/ArcaneStylus"
@@ -14450,12 +15587,14 @@
                   "alchemists_toolkit": "#/$defs/AlchemistsToolkit",
                   "amulet": "#/$defs/Amulet",
                   "aqua_brew": "#/$defs/AquaBrew",
+                  "arcane_bomb": "#/$defs/ArcaneBomb",
                   "arcane_stylus": "#/$defs/ArcaneStylus",
                   "armor": "#/$defs/Armor",
                   "artifact": "#/$defs/Artifact",
                   "bag": "#/$defs/Bag",
                   "berry": "#/$defs/Berry",
                   "blizzard_brew": "#/$defs/BlizzardBrew",
+                  "bomb": "#/$defs/Bomb",
                   "boomerang": "#/$defs/Boomerang",
                   "bow": "#/$defs/Bow",
                   "broken_seal": "#/$defs/BrokenSeal",
@@ -14488,12 +15627,16 @@
                   "exotic_crystals": "#/$defs/ExoticCrystals",
                   "eye_of_newt": "#/$defs/EyeOfNewt",
                   "ferret_tuft": "#/$defs/FerretTuft",
+                  "firebomb": "#/$defs/Firebomb",
+                  "flashbang_bomb": "#/$defs/FlashBangBomb",
                   "food": "#/$defs/Food",
+                  "frost_bomb": "#/$defs/FrostBomb",
                   "frozen_carpaccio": "#/$defs/FrozenCarpaccio",
                   "fury_potion": "#/$defs/FuryPotion",
                   "gold": "#/$defs/Gold",
                   "goo_blob": "#/$defs/GooBlob",
                   "health_potion": "#/$defs/HealthPotion",
+                  "holy_bomb": "#/$defs/HolyBomb",
                   "holy_tome": "#/$defs/HolyTome",
                   "horn_of_plenty": "#/$defs/HornOfPlenty",
                   "infernal_brew": "#/$defs/InfernalBrew",
@@ -14507,10 +15650,12 @@
                   "master_thieves_armband": "#/$defs/MasterThievesArmband",
                   "meat_pie": "#/$defs/MeatPie",
                   "melee_weapon": "#/$defs/MeleeWeapon",
+                  "metal_shard": "#/$defs/MetalShard",
                   "mimic_tooth": "#/$defs/MimicTooth",
                   "missile_weapon": "#/$defs/MissileWeapon",
                   "mossy_clump": "#/$defs/MossyClump",
                   "mystery_meat": "#/$defs/MysteryMeat",
+                  "noisemaker": "#/$defs/Noisemaker",
                   "parchment_scrap": "#/$defs/ParchmentScrap",
                   "pasty": "#/$defs/Pasty",
                   "petal": "#/$defs/Petal",
@@ -14543,6 +15688,7 @@
                   "potion_of_toxic_gas": "#/$defs/PotionOfToxicGas",
                   "rat_skull": "#/$defs/RatSkull",
                   "ration": "#/$defs/Ration",
+                  "regrowth_bomb": "#/$defs/RegrowthBomb",
                   "reviving_potion": "#/$defs/RevivingPotion",
                   "ring": "#/$defs/Ring",
                   "ring_accuracy": "#/$defs/RingOfAccuracy",
@@ -14590,8 +15736,10 @@
                   "seed": "#/$defs/Seed",
                   "shard_of_oblivion": "#/$defs/ShardOfOblivion",
                   "shocking_brew": "#/$defs/ShockingBrew",
+                  "shrapnel_bomb": "#/$defs/ShrapnelBomb",
                   "skeleton_key": "#/$defs/SkeletonKey",
                   "small_ration": "#/$defs/SmallRation",
+                  "smoke_bomb": "#/$defs/SmokeBomb",
                   "spirit_bow": "#/$defs/SpiritBow",
                   "staff": "#/$defs/Staff",
                   "stewed_meat": "#/$defs/StewedMeat",
@@ -14636,6 +15784,7 @@
                   "wand_warding": "#/$defs/WandOfWarding",
                   "waterskin": "#/$defs/Waterskin",
                   "wondrous_resin": "#/$defs/WondrousResin",
+                  "woolly_bomb": "#/$defs/WoollyBomb",
                   "worn_shortsword": "#/$defs/WornShortsword"
                 },
                 "propertyName": "kind"
@@ -15087,6 +16236,42 @@
                 },
                 {
                   "$ref": "#/$defs/EnergyCrystal"
+                },
+                {
+                  "$ref": "#/$defs/Bomb"
+                },
+                {
+                  "$ref": "#/$defs/Firebomb"
+                },
+                {
+                  "$ref": "#/$defs/FrostBomb"
+                },
+                {
+                  "$ref": "#/$defs/SmokeBomb"
+                },
+                {
+                  "$ref": "#/$defs/FlashBangBomb"
+                },
+                {
+                  "$ref": "#/$defs/HolyBomb"
+                },
+                {
+                  "$ref": "#/$defs/RegrowthBomb"
+                },
+                {
+                  "$ref": "#/$defs/WoollyBomb"
+                },
+                {
+                  "$ref": "#/$defs/Noisemaker"
+                },
+                {
+                  "$ref": "#/$defs/ArcaneBomb"
+                },
+                {
+                  "$ref": "#/$defs/ShrapnelBomb"
+                },
+                {
+                  "$ref": "#/$defs/MetalShard"
                 },
                 {
                   "$ref": "#/$defs/ArcaneStylus"
@@ -15399,12 +16584,14 @@
                 "alchemists_toolkit": "#/$defs/AlchemistsToolkit",
                 "amulet": "#/$defs/Amulet",
                 "aqua_brew": "#/$defs/AquaBrew",
+                "arcane_bomb": "#/$defs/ArcaneBomb",
                 "arcane_stylus": "#/$defs/ArcaneStylus",
                 "armor": "#/$defs/Armor",
                 "artifact": "#/$defs/Artifact",
                 "bag": "#/$defs/Bag",
                 "berry": "#/$defs/Berry",
                 "blizzard_brew": "#/$defs/BlizzardBrew",
+                "bomb": "#/$defs/Bomb",
                 "boomerang": "#/$defs/Boomerang",
                 "bow": "#/$defs/Bow",
                 "broken_seal": "#/$defs/BrokenSeal",
@@ -15437,12 +16624,16 @@
                 "exotic_crystals": "#/$defs/ExoticCrystals",
                 "eye_of_newt": "#/$defs/EyeOfNewt",
                 "ferret_tuft": "#/$defs/FerretTuft",
+                "firebomb": "#/$defs/Firebomb",
+                "flashbang_bomb": "#/$defs/FlashBangBomb",
                 "food": "#/$defs/Food",
+                "frost_bomb": "#/$defs/FrostBomb",
                 "frozen_carpaccio": "#/$defs/FrozenCarpaccio",
                 "fury_potion": "#/$defs/FuryPotion",
                 "gold": "#/$defs/Gold",
                 "goo_blob": "#/$defs/GooBlob",
                 "health_potion": "#/$defs/HealthPotion",
+                "holy_bomb": "#/$defs/HolyBomb",
                 "holy_tome": "#/$defs/HolyTome",
                 "horn_of_plenty": "#/$defs/HornOfPlenty",
                 "infernal_brew": "#/$defs/InfernalBrew",
@@ -15456,10 +16647,12 @@
                 "master_thieves_armband": "#/$defs/MasterThievesArmband",
                 "meat_pie": "#/$defs/MeatPie",
                 "melee_weapon": "#/$defs/MeleeWeapon",
+                "metal_shard": "#/$defs/MetalShard",
                 "mimic_tooth": "#/$defs/MimicTooth",
                 "missile_weapon": "#/$defs/MissileWeapon",
                 "mossy_clump": "#/$defs/MossyClump",
                 "mystery_meat": "#/$defs/MysteryMeat",
+                "noisemaker": "#/$defs/Noisemaker",
                 "parchment_scrap": "#/$defs/ParchmentScrap",
                 "pasty": "#/$defs/Pasty",
                 "petal": "#/$defs/Petal",
@@ -15492,6 +16685,7 @@
                 "potion_of_toxic_gas": "#/$defs/PotionOfToxicGas",
                 "rat_skull": "#/$defs/RatSkull",
                 "ration": "#/$defs/Ration",
+                "regrowth_bomb": "#/$defs/RegrowthBomb",
                 "reviving_potion": "#/$defs/RevivingPotion",
                 "ring": "#/$defs/Ring",
                 "ring_accuracy": "#/$defs/RingOfAccuracy",
@@ -15539,8 +16733,10 @@
                 "seed": "#/$defs/Seed",
                 "shard_of_oblivion": "#/$defs/ShardOfOblivion",
                 "shocking_brew": "#/$defs/ShockingBrew",
+                "shrapnel_bomb": "#/$defs/ShrapnelBomb",
                 "skeleton_key": "#/$defs/SkeletonKey",
                 "small_ration": "#/$defs/SmallRation",
+                "smoke_bomb": "#/$defs/SmokeBomb",
                 "spirit_bow": "#/$defs/SpiritBow",
                 "staff": "#/$defs/Staff",
                 "stewed_meat": "#/$defs/StewedMeat",
@@ -15585,6 +16781,7 @@
                 "wand_warding": "#/$defs/WandOfWarding",
                 "waterskin": "#/$defs/Waterskin",
                 "wondrous_resin": "#/$defs/WondrousResin",
+                "woolly_bomb": "#/$defs/WoollyBomb",
                 "worn_shortsword": "#/$defs/WornShortsword"
               },
               "propertyName": "kind"
@@ -16036,6 +17233,42 @@
               },
               {
                 "$ref": "#/$defs/EnergyCrystal"
+              },
+              {
+                "$ref": "#/$defs/Bomb"
+              },
+              {
+                "$ref": "#/$defs/Firebomb"
+              },
+              {
+                "$ref": "#/$defs/FrostBomb"
+              },
+              {
+                "$ref": "#/$defs/SmokeBomb"
+              },
+              {
+                "$ref": "#/$defs/FlashBangBomb"
+              },
+              {
+                "$ref": "#/$defs/HolyBomb"
+              },
+              {
+                "$ref": "#/$defs/RegrowthBomb"
+              },
+              {
+                "$ref": "#/$defs/WoollyBomb"
+              },
+              {
+                "$ref": "#/$defs/Noisemaker"
+              },
+              {
+                "$ref": "#/$defs/ArcaneBomb"
+              },
+              {
+                "$ref": "#/$defs/ShrapnelBomb"
+              },
+              {
+                "$ref": "#/$defs/MetalShard"
               },
               {
                 "$ref": "#/$defs/ArcaneStylus"
@@ -18034,6 +19267,90 @@
       },
       "type": "object"
     },
+    "RegrowthBomb": {
+      "properties": {
+        "kind": {
+          "const": "regrowth_bomb",
+          "default": "regrowth_bomb",
+          "type": "string"
+        },
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "name": {
+          "default": "Regrowth Bomb",
+          "type": "string"
+        },
+        "type": {
+          "default": "bomb",
+          "type": "string"
+        },
+        "pos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Position"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "quantity": {
+          "default": 1,
+          "type": "integer"
+        },
+        "level": {
+          "default": 0,
+          "type": "integer"
+        },
+        "level_known": {
+          "default": true,
+          "type": "boolean"
+        },
+        "cursed": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed_known": {
+          "default": true,
+          "type": "boolean"
+        },
+        "unique": {
+          "default": false,
+          "type": "boolean"
+        },
+        "kept_though_lost": {
+          "default": false,
+          "type": "boolean"
+        },
+        "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        },
+        "fuse_ticks": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "armed": {
+          "default": false,
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
     "RevivingPotion": {
       "properties": {
         "kind": {
@@ -19624,12 +20941,14 @@
                 "alchemists_toolkit": "#/$defs/AlchemistsToolkit",
                 "amulet": "#/$defs/Amulet",
                 "aqua_brew": "#/$defs/AquaBrew",
+                "arcane_bomb": "#/$defs/ArcaneBomb",
                 "arcane_stylus": "#/$defs/ArcaneStylus",
                 "armor": "#/$defs/Armor",
                 "artifact": "#/$defs/Artifact",
                 "bag": "#/$defs/Bag",
                 "berry": "#/$defs/Berry",
                 "blizzard_brew": "#/$defs/BlizzardBrew",
+                "bomb": "#/$defs/Bomb",
                 "boomerang": "#/$defs/Boomerang",
                 "bow": "#/$defs/Bow",
                 "broken_seal": "#/$defs/BrokenSeal",
@@ -19662,12 +20981,16 @@
                 "exotic_crystals": "#/$defs/ExoticCrystals",
                 "eye_of_newt": "#/$defs/EyeOfNewt",
                 "ferret_tuft": "#/$defs/FerretTuft",
+                "firebomb": "#/$defs/Firebomb",
+                "flashbang_bomb": "#/$defs/FlashBangBomb",
                 "food": "#/$defs/Food",
+                "frost_bomb": "#/$defs/FrostBomb",
                 "frozen_carpaccio": "#/$defs/FrozenCarpaccio",
                 "fury_potion": "#/$defs/FuryPotion",
                 "gold": "#/$defs/Gold",
                 "goo_blob": "#/$defs/GooBlob",
                 "health_potion": "#/$defs/HealthPotion",
+                "holy_bomb": "#/$defs/HolyBomb",
                 "holy_tome": "#/$defs/HolyTome",
                 "horn_of_plenty": "#/$defs/HornOfPlenty",
                 "infernal_brew": "#/$defs/InfernalBrew",
@@ -19681,10 +21004,12 @@
                 "master_thieves_armband": "#/$defs/MasterThievesArmband",
                 "meat_pie": "#/$defs/MeatPie",
                 "melee_weapon": "#/$defs/MeleeWeapon",
+                "metal_shard": "#/$defs/MetalShard",
                 "mimic_tooth": "#/$defs/MimicTooth",
                 "missile_weapon": "#/$defs/MissileWeapon",
                 "mossy_clump": "#/$defs/MossyClump",
                 "mystery_meat": "#/$defs/MysteryMeat",
+                "noisemaker": "#/$defs/Noisemaker",
                 "parchment_scrap": "#/$defs/ParchmentScrap",
                 "pasty": "#/$defs/Pasty",
                 "petal": "#/$defs/Petal",
@@ -19717,6 +21042,7 @@
                 "potion_of_toxic_gas": "#/$defs/PotionOfToxicGas",
                 "rat_skull": "#/$defs/RatSkull",
                 "ration": "#/$defs/Ration",
+                "regrowth_bomb": "#/$defs/RegrowthBomb",
                 "reviving_potion": "#/$defs/RevivingPotion",
                 "ring": "#/$defs/Ring",
                 "ring_accuracy": "#/$defs/RingOfAccuracy",
@@ -19764,8 +21090,10 @@
                 "seed": "#/$defs/Seed",
                 "shard_of_oblivion": "#/$defs/ShardOfOblivion",
                 "shocking_brew": "#/$defs/ShockingBrew",
+                "shrapnel_bomb": "#/$defs/ShrapnelBomb",
                 "skeleton_key": "#/$defs/SkeletonKey",
                 "small_ration": "#/$defs/SmallRation",
+                "smoke_bomb": "#/$defs/SmokeBomb",
                 "spirit_bow": "#/$defs/SpiritBow",
                 "staff": "#/$defs/Staff",
                 "stewed_meat": "#/$defs/StewedMeat",
@@ -19810,6 +21138,7 @@
                 "wand_warding": "#/$defs/WandOfWarding",
                 "waterskin": "#/$defs/Waterskin",
                 "wondrous_resin": "#/$defs/WondrousResin",
+                "woolly_bomb": "#/$defs/WoollyBomb",
                 "worn_shortsword": "#/$defs/WornShortsword"
               },
               "propertyName": "kind"
@@ -20261,6 +21590,42 @@
               },
               {
                 "$ref": "#/$defs/EnergyCrystal"
+              },
+              {
+                "$ref": "#/$defs/Bomb"
+              },
+              {
+                "$ref": "#/$defs/Firebomb"
+              },
+              {
+                "$ref": "#/$defs/FrostBomb"
+              },
+              {
+                "$ref": "#/$defs/SmokeBomb"
+              },
+              {
+                "$ref": "#/$defs/FlashBangBomb"
+              },
+              {
+                "$ref": "#/$defs/HolyBomb"
+              },
+              {
+                "$ref": "#/$defs/RegrowthBomb"
+              },
+              {
+                "$ref": "#/$defs/WoollyBomb"
+              },
+              {
+                "$ref": "#/$defs/Noisemaker"
+              },
+              {
+                "$ref": "#/$defs/ArcaneBomb"
+              },
+              {
+                "$ref": "#/$defs/ShrapnelBomb"
+              },
+              {
+                "$ref": "#/$defs/MetalShard"
               },
               {
                 "$ref": "#/$defs/ArcaneStylus"
@@ -22290,6 +23655,90 @@
       },
       "type": "object"
     },
+    "ShrapnelBomb": {
+      "properties": {
+        "kind": {
+          "const": "shrapnel_bomb",
+          "default": "shrapnel_bomb",
+          "type": "string"
+        },
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "name": {
+          "default": "Shrapnel Bomb",
+          "type": "string"
+        },
+        "type": {
+          "default": "bomb",
+          "type": "string"
+        },
+        "pos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Position"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "quantity": {
+          "default": 1,
+          "type": "integer"
+        },
+        "level": {
+          "default": 0,
+          "type": "integer"
+        },
+        "level_known": {
+          "default": true,
+          "type": "boolean"
+        },
+        "cursed": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed_known": {
+          "default": true,
+          "type": "boolean"
+        },
+        "unique": {
+          "default": false,
+          "type": "boolean"
+        },
+        "kept_though_lost": {
+          "default": false,
+          "type": "boolean"
+        },
+        "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        },
+        "fuse_ticks": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "armed": {
+          "default": false,
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
     "SkeletonKey": {
       "properties": {
         "kind": {
@@ -22444,6 +23893,90 @@
         "energy": {
           "default": 150,
           "type": "integer"
+        }
+      },
+      "type": "object"
+    },
+    "SmokeBomb": {
+      "properties": {
+        "kind": {
+          "const": "smoke_bomb",
+          "default": "smoke_bomb",
+          "type": "string"
+        },
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "name": {
+          "default": "Smoke Bomb",
+          "type": "string"
+        },
+        "type": {
+          "default": "bomb",
+          "type": "string"
+        },
+        "pos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Position"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "quantity": {
+          "default": 1,
+          "type": "integer"
+        },
+        "level": {
+          "default": 0,
+          "type": "integer"
+        },
+        "level_known": {
+          "default": true,
+          "type": "boolean"
+        },
+        "cursed": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed_known": {
+          "default": true,
+          "type": "boolean"
+        },
+        "unique": {
+          "default": false,
+          "type": "boolean"
+        },
+        "kept_though_lost": {
+          "default": false,
+          "type": "boolean"
+        },
+        "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        },
+        "fuse_ticks": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "armed": {
+          "default": false,
+          "type": "boolean"
         }
       },
       "type": "object"
@@ -24668,12 +26201,14 @@
                 "alchemists_toolkit": "#/$defs/AlchemistsToolkit",
                 "amulet": "#/$defs/Amulet",
                 "aqua_brew": "#/$defs/AquaBrew",
+                "arcane_bomb": "#/$defs/ArcaneBomb",
                 "arcane_stylus": "#/$defs/ArcaneStylus",
                 "armor": "#/$defs/Armor",
                 "artifact": "#/$defs/Artifact",
                 "bag": "#/$defs/Bag",
                 "berry": "#/$defs/Berry",
                 "blizzard_brew": "#/$defs/BlizzardBrew",
+                "bomb": "#/$defs/Bomb",
                 "boomerang": "#/$defs/Boomerang",
                 "bow": "#/$defs/Bow",
                 "broken_seal": "#/$defs/BrokenSeal",
@@ -24706,12 +26241,16 @@
                 "exotic_crystals": "#/$defs/ExoticCrystals",
                 "eye_of_newt": "#/$defs/EyeOfNewt",
                 "ferret_tuft": "#/$defs/FerretTuft",
+                "firebomb": "#/$defs/Firebomb",
+                "flashbang_bomb": "#/$defs/FlashBangBomb",
                 "food": "#/$defs/Food",
+                "frost_bomb": "#/$defs/FrostBomb",
                 "frozen_carpaccio": "#/$defs/FrozenCarpaccio",
                 "fury_potion": "#/$defs/FuryPotion",
                 "gold": "#/$defs/Gold",
                 "goo_blob": "#/$defs/GooBlob",
                 "health_potion": "#/$defs/HealthPotion",
+                "holy_bomb": "#/$defs/HolyBomb",
                 "holy_tome": "#/$defs/HolyTome",
                 "horn_of_plenty": "#/$defs/HornOfPlenty",
                 "infernal_brew": "#/$defs/InfernalBrew",
@@ -24725,10 +26264,12 @@
                 "master_thieves_armband": "#/$defs/MasterThievesArmband",
                 "meat_pie": "#/$defs/MeatPie",
                 "melee_weapon": "#/$defs/MeleeWeapon",
+                "metal_shard": "#/$defs/MetalShard",
                 "mimic_tooth": "#/$defs/MimicTooth",
                 "missile_weapon": "#/$defs/MissileWeapon",
                 "mossy_clump": "#/$defs/MossyClump",
                 "mystery_meat": "#/$defs/MysteryMeat",
+                "noisemaker": "#/$defs/Noisemaker",
                 "parchment_scrap": "#/$defs/ParchmentScrap",
                 "pasty": "#/$defs/Pasty",
                 "petal": "#/$defs/Petal",
@@ -24761,6 +26302,7 @@
                 "potion_of_toxic_gas": "#/$defs/PotionOfToxicGas",
                 "rat_skull": "#/$defs/RatSkull",
                 "ration": "#/$defs/Ration",
+                "regrowth_bomb": "#/$defs/RegrowthBomb",
                 "reviving_potion": "#/$defs/RevivingPotion",
                 "ring": "#/$defs/Ring",
                 "ring_accuracy": "#/$defs/RingOfAccuracy",
@@ -24808,8 +26350,10 @@
                 "seed": "#/$defs/Seed",
                 "shard_of_oblivion": "#/$defs/ShardOfOblivion",
                 "shocking_brew": "#/$defs/ShockingBrew",
+                "shrapnel_bomb": "#/$defs/ShrapnelBomb",
                 "skeleton_key": "#/$defs/SkeletonKey",
                 "small_ration": "#/$defs/SmallRation",
+                "smoke_bomb": "#/$defs/SmokeBomb",
                 "spirit_bow": "#/$defs/SpiritBow",
                 "staff": "#/$defs/Staff",
                 "stewed_meat": "#/$defs/StewedMeat",
@@ -24854,6 +26398,7 @@
                 "wand_warding": "#/$defs/WandOfWarding",
                 "waterskin": "#/$defs/Waterskin",
                 "wondrous_resin": "#/$defs/WondrousResin",
+                "woolly_bomb": "#/$defs/WoollyBomb",
                 "worn_shortsword": "#/$defs/WornShortsword"
               },
               "propertyName": "kind"
@@ -25305,6 +26850,42 @@
               },
               {
                 "$ref": "#/$defs/EnergyCrystal"
+              },
+              {
+                "$ref": "#/$defs/Bomb"
+              },
+              {
+                "$ref": "#/$defs/Firebomb"
+              },
+              {
+                "$ref": "#/$defs/FrostBomb"
+              },
+              {
+                "$ref": "#/$defs/SmokeBomb"
+              },
+              {
+                "$ref": "#/$defs/FlashBangBomb"
+              },
+              {
+                "$ref": "#/$defs/HolyBomb"
+              },
+              {
+                "$ref": "#/$defs/RegrowthBomb"
+              },
+              {
+                "$ref": "#/$defs/WoollyBomb"
+              },
+              {
+                "$ref": "#/$defs/Noisemaker"
+              },
+              {
+                "$ref": "#/$defs/ArcaneBomb"
+              },
+              {
+                "$ref": "#/$defs/ShrapnelBomb"
+              },
+              {
+                "$ref": "#/$defs/MetalShard"
               },
               {
                 "$ref": "#/$defs/ArcaneStylus"
@@ -27303,6 +28884,90 @@
         "strength_requirement": {
           "default": 0,
           "type": "integer"
+        }
+      },
+      "type": "object"
+    },
+    "WoollyBomb": {
+      "properties": {
+        "kind": {
+          "const": "woolly_bomb",
+          "default": "woolly_bomb",
+          "type": "string"
+        },
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "name": {
+          "default": "Woolly Bomb",
+          "type": "string"
+        },
+        "type": {
+          "default": "bomb",
+          "type": "string"
+        },
+        "pos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Position"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "quantity": {
+          "default": 1,
+          "type": "integer"
+        },
+        "level": {
+          "default": 0,
+          "type": "integer"
+        },
+        "level_known": {
+          "default": true,
+          "type": "boolean"
+        },
+        "cursed": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed_known": {
+          "default": true,
+          "type": "boolean"
+        },
+        "unique": {
+          "default": false,
+          "type": "boolean"
+        },
+        "kept_though_lost": {
+          "default": false,
+          "type": "boolean"
+        },
+        "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        },
+        "fuse_ticks": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "armed": {
+          "default": false,
+          "type": "boolean"
         }
       },
       "type": "object"

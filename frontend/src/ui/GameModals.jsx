@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next';
 import AudioManager from '../audio/AudioManager';
 import WndBag from './WndBag';
 import WndUseItem from './WndUseItem';
+import WndInfoItem from './WndInfoItem';
+import WndJournal from './WndJournal';
 import RightClickMenu from './RightClickMenu';
 import WndShop from './WndShop';
 import WndImp from './WndImp';
@@ -28,12 +30,14 @@ const SCROLL_PICKER_KEYS = {
 function GameModals({
   modals, itemsById, toolbarItems,
   belongings, gold, energy, strength,
-  isDesktop,
+  isDesktop, depth,
   executeItemAction, assignQuickslot, sendSelectScrollTarget, sendStoneTarget,
   send, handleToolbarClick,
 }) {
   const { t } = useTranslation();
   const [ghostEquipSlot, setGhostEquipSlot] = useState(null);
+  const [inspectItem, setInspectItem] = useState(null);
+  const [journalOpen, setJournalOpen] = useState(false);
   const {
     useItemTarget, setUseItemTarget,
     ctxMenu, setCtxMenu,
@@ -65,9 +69,11 @@ function GameModals({
       {useItemTarget && (
         <WndUseItem
           item={itemsById[useItemTarget.id] || useItemTarget}
+          belongings={belongings}
           onAction={executeItemAction}
           onAssignQuickslot={assignQuickslot}
           onClose={() => setUseItemTarget(null)}
+          onOpenJournal={() => { setUseItemTarget(null); setJournalOpen(true); }}
         />
       )}
 
@@ -156,6 +162,7 @@ function GameModals({
           energy={energy}
           strength={strength}
           selectMode
+          onInspectItem={setInspectItem}
           itemFilter={(item) => item.type === ghostEquipSlot}
           title={t(ghostEquipSlot === 'weapon' ? 'ghostGear.selectWeapon' : 'ghostGear.selectArmor')}
           onSelectItem={(item) => {
@@ -197,6 +204,7 @@ function GameModals({
           energy={energy}
           strength={strength}
           selectMode
+          onInspectItem={setInspectItem}
           title={t('modal.quickslot')}
           onSelectItem={(item) => {
             send({ type: 'SET_QUICKSLOT', index: quickslotPicker, item_id: item.id });
@@ -225,6 +233,7 @@ function GameModals({
           energy={energy}
           strength={strength}
           selectMode
+          onInspectItem={setInspectItem}
           itemFilter={(item) => scrollPickerData.candidates.includes(item.id)}
           title={t(SCROLL_PICKER_KEYS[scrollPickerData.scroll_kind] ?? 'ui.chooseItem')}
           onSelectItem={(item) => {
@@ -242,6 +251,7 @@ function GameModals({
           energy={energy}
           strength={strength}
           selectMode
+          onInspectItem={setInspectItem}
           itemFilter={(item) => imbueWandData.candidates.includes(item.id)}
           title={t('ui.chooseWandToImbue')}
           onSelectItem={(item) => {
@@ -259,6 +269,7 @@ function GameModals({
           energy={energy}
           strength={strength}
           selectMode
+          onInspectItem={setInspectItem}
           itemFilter={(item) => stonePickerData.candidates.includes(item.id)}
           title={t('ui.chooseItem')}
           onSelectItem={(item) => {
@@ -382,6 +393,18 @@ function GameModals({
             <button onClick={() => setToolkitEnergize(null)}>{t('alchemy.cancel')}</button>
           </div>
         </div>
+      )}
+
+      {inspectItem && (
+        <div className="wnd-overlay" onClick={() => setInspectItem(null)}>
+          <div className="wnd-item" onClick={(e) => e.stopPropagation()}>
+            <WndInfoItem item={itemsById[inspectItem.id] || inspectItem} belongings={belongings} />
+          </div>
+        </div>
+      )}
+
+      {journalOpen && (
+        <WndJournal depth={depth} onClose={() => setJournalOpen(false)} />
       )}
     </>
   );

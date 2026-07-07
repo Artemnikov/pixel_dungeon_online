@@ -5,7 +5,7 @@ const TARGETED_ABILITIES = ['heroic_leap', 'smoke_bomb', 'death_mark'];
 
 export default function useTargetingExamine({
   entitiesRef, visionRef, myPlayerIdRef, gridRef,
-  equippedItems, send, trapsRef,
+  equippedItems, send, trapsRef, selectedEnemyIdRef,
 }) {
   const [targetingMode, setTargetingMode] = useState(false);
   const [examineMode, setExamineMode] = useState(false);
@@ -23,7 +23,6 @@ export default function useTargetingExamine({
 
   const resolveTargetingTap = (tileX, tileY) => {
     const tm = targetingModeRef.current;
-    console.log('resolveTargetingTap', { tm, tileX, tileY });
     if (tm && typeof tm === 'object' && tm.ability) {
       send({ type: 'USE_ARMOR_ABILITY', ability: tm.ability, target_x: tileX, target_y: tileY });
       setTargetingMode(false);
@@ -40,14 +39,19 @@ export default function useTargetingExamine({
       return;
     }
     if (tm && typeof tm === 'object' && tm.action) {
-      console.log('Sending EXECUTE_ITEM_ACTION', { item_id: tm.itemId, action: tm.action, target_x: tileX, target_y: tileY });
       send({ type: 'EXECUTE_ITEM_ACTION', item_id: tm.itemId, action: tm.action, target_x: tileX, target_y: tileY });
       setTargetingMode(false);
       return;
     }
     const weaponId = typeof tm === 'string' ? tm : equippedItems.weapon?.id;
     if (weaponId) {
-      send({ type: 'RANGED_ATTACK', item_id: weaponId, target_x: tileX, target_y: tileY });
+      // If the tapped cell is the locked target's cell, let the server auto-aim
+      // (angle around corners) via target_entity_id; SPD QuickSlotButton.autoAim.
+      const lockId = selectedEnemyIdRef?.current || null;
+      const lock = lockId ? entitiesRef.current.mobs[lockId] : null;
+      const onLock = lock && Math.round(lock.renderPos.x) === tileX && Math.round(lock.renderPos.y) === tileY;
+      send({ type: 'RANGED_ATTACK', item_id: weaponId, target_x: tileX, target_y: tileY,
+             target_entity_id: onLock ? lockId : null });
       setTargetingMode(typeof tm === 'string' ? false : true);
     }
   };

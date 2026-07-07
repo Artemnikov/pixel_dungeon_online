@@ -21,17 +21,9 @@ export function drawPlayers(ctx, { entitiesRef, visionRef, assetImages, playerAn
     const playerSprite = assetImages[CLASS_KEYS[player.class_type] || 'warrior'];
 
     if (playerSprite) {
-      const armorType = player.armor_type || 'plate';
-      const armorRows = {
-        cloth: 11,
-        leather: 11,
-        mail: 11,
-        scale: 11,
-        plate: 11
-      };
-      // Note: Currently all armors share row 11 in the sprite sheet.
-      // If specific variations are added to items.png later, they can be mapped here.
-      
+      // Note: Currently all armors share row 11 in the sprite sheet. If specific
+      // per-armor rows are added to items.png later, map player.armor_type here.
+
       ctx.save();
 
       if (player.fadeAlpha != null && player.fadeAlpha < 1) {

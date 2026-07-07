@@ -12,12 +12,13 @@
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
 // See the GNU General Public License for more details.
 //
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import AudioManager from '../audio/AudioManager';
 import ItemIcon from './ItemIcon';
 import ItemGlyph from './ItemGlyph';
 import { HOLDER_SPRITES } from '../rendering/sprites';
 import useEntityName from './useEntityName';
+import { levelDisplayText, levelColorClass } from './itemLevelColor';
 
 // SPD-style persistent inventory pane (port of InventoryPane.java). Shows the
 // five equip slots + an inline gold/energy readout, bag tabs for nested bags,
@@ -38,11 +39,6 @@ const LONG_PRESS_MS = 450;
 
 // All Bag subtypes (generic backpack + the SPD-style category pouches/holsters).
 const BAG_KINDS = new Set(['bag', 'velvet_pouch', 'scroll_holder', 'magical_holster', 'potion_bandolier']);
-
-function levelText(item) {
-  if (!item || !item.level_known || !item.level) return null;
-  return `${item.level > 0 ? '+' : ''}${item.level}`;
-}
 
 function isIdentified(item) {
   return !!(item.level_known && item.cursed_known);
@@ -69,10 +65,24 @@ function strBadge(item, strength) {
   return { text: `:${req}`, cls: strength != null && strength < req ? 'str-bad' : 'str-ok' };
 }
 
-function ItemSlot({ item, holderKey, equipped, strength, empty, onOpen, onContext, onDefaultAction, selectMode, onSelectItem, itemFilter }) {
+function ItemSlot({ item, holderKey, equipped, strength, empty, onOpen, onContext, onDefaultAction, selectMode, onSelectItem, itemFilter, onInspect }) {
   const timerRef = useRef(null);
   const longFiredRef = useRef(false);
+  const idStateRef = useRef(null);
+  const [justIdentified, setJustIdentified] = useState(false);
   const itemName = useEntityName(item);
+
+  // Detect identification transition (unidentified -> identified) for glow animation
+  useEffect(() => {
+    if (empty || !item) return;
+    const nowId = !!(item.level_known && item.cursed_known);
+    const prevId = idStateRef.current;
+    if (prevId === false && nowId === true) {
+      setTimeout(() => setJustIdentified(true), 0);
+      setTimeout(() => setJustIdentified(false), 800);
+    }
+    idStateRef.current = nowId;
+  }, [empty, item]);
 
   if (empty || !item) {
     // Empty equip slots show SPD's placeholder holder sprite; empty backpack
@@ -103,21 +113,28 @@ function ItemSlot({ item, holderKey, equipped, strength, empty, onOpen, onContex
 
   return (
     <button
-      className={`inv-slot filled ${equipped ? 'equipped' : ''} ${tintClass(item)} ${selectMode && !selectable ? 'inv-slot-unselectable' : ''}`}
+      className={`inv-slot filled ${equipped ? 'equipped' : ''} ${tintClass(item)} ${selectMode && !selectable ? 'inv-slot-unselectable' : ''} ${justIdentified ? 'just-identified' : ''}`}
       title={itemName}
       onClick={handleClick}
-      onAuxClick={selectMode ? undefined : (e) => { if (e.button === 1) { e.preventDefault(); if (item.default_action) onDefaultAction(item); } }}
-      onContextMenu={selectMode ? undefined : (e) => { e.preventDefault(); AudioManager.play('CLICK'); openContext(e.clientX, e.clientY); }}
-      onPointerDown={selectMode ? undefined : (e) => {
+      onAuxClick={selectMode
+        ? (e) => { if (e.button === 1 && onInspect) { e.preventDefault(); onInspect(item); } }
+        : (e) => { if (e.button === 1) { e.preventDefault(); if (item.default_action) onDefaultAction(item); } }}
+      onContextMenu={(e) => {
+        e.preventDefault(); AudioManager.play('CLICK');
+        if (selectMode) { if (onInspect) onInspect(item); }
+        else openContext(e.clientX, e.clientY);
+      }}
+      onPointerDown={(e) => {
         if (e.pointerType !== 'touch') return;
         longFiredRef.current = false;
         timerRef.current = setTimeout(() => {
           longFiredRef.current = true;
-          openContext(e.clientX, e.clientY);
+          if (selectMode) { if (onInspect) onInspect(item); }
+          else openContext(e.clientX, e.clientY);
         }, LONG_PRESS_MS);
       }}
-      onPointerUp={selectMode ? undefined : () => { clearTimeout(timerRef.current); }}
-      onPointerLeave={selectMode ? undefined : () => { clearTimeout(timerRef.current); }}
+      onPointerUp={() => { clearTimeout(timerRef.current); }}
+      onPointerLeave={() => { clearTimeout(timerRef.current); }}
     >
       <ItemIcon item={item} size={32} />
       <ItemGlyph item={item} />
@@ -128,15 +145,24 @@ function ItemSlot({ item, holderKey, equipped, strength, empty, onOpen, onContex
         <span className="inv-qty">{item.charges}/{item.max_charges}</span>
       )}
       {badge && <span className={`inv-str ${badge.cls}`}>{badge.text}</span>}
-      {levelText(item) && (
-        <span className={`inv-level ${item.level > 0 ? 'up' : 'down'}`}>{levelText(item)}</span>
+      {levelDisplayText(item) && (
+        <span className={`inv-level ${levelColorClass(item)}`}>{levelDisplayText(item)}</span>
       )}
       {item.cursed && item.cursed_known && <span className="inv-curse">✗</span>}
+      {equipped && !selectMode && <span className="inv-eq-badge">E</span>}
     </button>
   );
 }
 
-export default function InventoryPane({ belongings, gold, energy, strength, onOpenItem, onContextMenu, onDefaultAction, selectMode, onSelectItem, itemFilter }) {
+export default function InventoryPane({ belongings, gold, energy, strength, onOpenItem, onContextMenu, onDefaultAction, selectMode, onSelectItem, itemFilter, onInspect, prompt }) {
+  // Zoom-compensation: hold a consistent on-screen size across browser zoom /
+  // display scale, mirroring Toolbar's quickslots + StatusPane. This pane is DOM
+  // (not canvas), so the analog of their zoomScale is a counter-scaling transform.
+  // baseDpr is captured once at mount; devicePixelRatio is re-read every render
+  // (this re-renders with GameHud on viewport change). At baseline zoomScale===1.
+  const [baseDpr] = useState(() => window.devicePixelRatio || 1);
+  const zoomScale = baseDpr / (window.devicePixelRatio || 1);
+
   const backpack = (belongings && belongings.backpack) || { items: [], capacity: 20 };
 
   // Bag tabs: backpack first, then any nested bags it contains.
@@ -148,6 +174,28 @@ export default function InventoryPane({ belongings, gold, energy, strength, onOp
   // a state write — derive the effective id each render instead.
   const effectiveBagId = bags.some(b => b.id === activeBagId) ? activeBagId : backpack.id;
 
+  // SPD InventoryPane BAG_1..BAG_5 keys: cycle the active bag tab. Tab / ] go
+  // forward, [ goes back. Only bound while more than one bag exists. Keyed on a
+  // primitive id list so the effect doesn't re-subscribe every render.
+  const bagIds = bags.map(b => b.id).join(',');
+  useEffect(() => {
+    const ids = bagIds.split(',').filter(Boolean);
+    if (ids.length <= 1) return;
+    const onKey = (e) => {
+      let dir = 0;
+      if (e.key === 'Tab' || e.key === ']') dir = 1;
+      else if (e.key === '[') dir = -1;
+      else return;
+      e.preventDefault();
+      const cur = ids.indexOf(effectiveBagId);
+      const next = ids[(cur + dir + ids.length) % ids.length];
+      AudioManager.play('CLICK');
+      setActiveBagId(next);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [bagIds, effectiveBagId]);
+
   const activeBag = bags.find(b => b.id === effectiveBagId) || backpack;
   const items = (activeBag.items || []).filter(i => !BAG_KINDS.has(i.kind));
   const capacity = activeBag.capacity || 20;
@@ -156,7 +204,7 @@ export default function InventoryPane({ belongings, gold, energy, strength, onOp
   const equippedIds = new Set(EQUIP_SLOTS.map(s => belongings && belongings[s.key]).filter(Boolean).map(i => i.id));
 
   return (
-    <div className="inv-pane">
+    <div className="inv-pane" style={{ transform: `scale(${zoomScale})`, transformOrigin: 'bottom right' }}>
       <div className="inv-equip-row">
         {EQUIP_SLOTS.map(s => (
           <ItemSlot
@@ -171,24 +219,30 @@ export default function InventoryPane({ belongings, gold, energy, strength, onOp
             selectMode={selectMode}
             onSelectItem={onSelectItem}
             itemFilter={itemFilter}
+            onInspect={onInspect}
           />
         ))}
         <div className="inv-equip-right">
-          <div className="inv-currency">
-            <span className="inv-gold">{gold ?? 0}<i className="inv-gold-icon" /></span>
-            {energy > 0 && <span className="inv-energy">{energy}<i className="inv-energy-icon" /></span>}
-          </div>
+          {prompt ? (
+            <div className="inv-prompt">{prompt}</div>
+          ) : (
+            <div className="inv-currency">
+              <span className="inv-gold">{gold ?? 0}<i className="inv-gold-icon" /></span>
+              {energy > 0 && <span className="inv-energy">{energy}<i className="inv-energy-icon" /></span>}
+            </div>
+          )}
           {bags.length > 1 && (
             <div className="inv-bag-tabs">
               {bags.map(b => (
-                <button
-                  key={b.id}
-                  className={`inv-bag-tab ${b.id === effectiveBagId ? 'active' : ''}`}
-                  onClick={() => { AudioManager.play('CLICK'); setActiveBagId(b.id); }}
-                  title={b.name || 'Backpack'}
-                >
-                  <ItemIcon item={b.id === backpack.id ? { name: 'Backpack', type: 'bag' } : b} size={20} />
-                </button>
+                  <button
+                    key={b.id}
+                    className={`inv-bag-tab ${b.id === effectiveBagId ? 'active' : ''}`}
+                    onClick={() => { AudioManager.play('CLICK'); setActiveBagId(b.id); }}
+                    title={b.name || 'Backpack'}
+                  >
+                    <ItemIcon item={b.id === backpack.id ? { name: 'Backpack', type: 'bag' } : b} size={20} />
+                    <span className="inv-bag-cap">{b.items ? b.items.filter(i => !BAG_KINDS.has(i.kind)).length : 0}/{b.capacity || 20}</span>
+                  </button>
               ))}
             </div>
           )}
@@ -208,6 +262,7 @@ export default function InventoryPane({ belongings, gold, energy, strength, onOp
             selectMode={selectMode}
             onSelectItem={onSelectItem}
             itemFilter={itemFilter}
+            onInspect={onInspect}
           />
         ))}
         {Array.from({ length: emptyCount }).map((_, i) => (

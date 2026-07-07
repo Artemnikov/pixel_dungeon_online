@@ -109,6 +109,8 @@ export interface SerializationExtras {
   energy_value?: number;
   /** Energy granted by converting exactly one unit (flat-valued items differ from energy_value/quantity). */
   energy_value_one?: number;
+  /** Buffed upgrade level (SPD buffedVisiblyUpgraded); differs from `level` only for temporary modifiers e.g. an imbued staff. */
+  buffed_level?: number;
 }
 
 /** An item as it actually arrives over the wire (model + serialization extras). */
@@ -314,7 +316,7 @@ export interface ChasmPromptEvent {
 
 export interface PickupEvent {
   type: 'PICKUP';
-  data: { player: string; item: string };
+  data: { player: string; item: string; x: number; y: number; item_type: string };
 }
 
 export interface DropEvent {
@@ -1183,7 +1185,7 @@ export type ClientMessage =
   | { type: 'EQUIP_ITEM'; item_id: string }
   | { type: 'DROP_ITEM'; item_id: string }
   | { type: 'USE_ITEM'; item_id: string }
-  | { type: 'RANGED_ATTACK'; item_id: string; target_x: number; target_y: number }
+  | { type: 'RANGED_ATTACK'; item_id: string; target_x: number; target_y: number; target_entity_id?: string | null }
   | { type: 'CHANGE_DIFFICULTY'; difficulty: Difficulty }
   | { type: 'SEARCH' }
   | { type: 'WAIT' }
