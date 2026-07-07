@@ -66,6 +66,16 @@ Dev build exposes `window.__debug` (see `frontend/src/dev/useDebugApi.js`). Conn
 
 Prefer structured `evaluate_script` over screenshots — cheaper, more data.
 
+## Version bump checklist
+
+When releasing a new version, bump in these files (search for `0.4.9` as reference):
+- `frontend/src/menu/content/changelog.js` — `APP_VERSION`
+- `frontend/src/locales/en/translation.json` — changelog entries + title
+- `frontend/src/locales/ru/translation.json` — changelog entries + title
+- `frontend/package.json` — `"version"`
+- `backend/cloudbuild.yaml` + `frontend/cloudbuild.yaml` — image tags
+- Build & push Docker images, deploy Cloud Run
+
 ## Reference docs
 
 - `docs/spd_items/` — SPD item catalogs (weapons, armor, potions, scrolls, rings, artifacts, seeds, sprites)
