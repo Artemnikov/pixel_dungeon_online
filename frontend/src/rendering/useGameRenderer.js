@@ -27,6 +27,8 @@ import { advanceAndDrawScreenShake } from './draw/screenShake';
 import { advanceAndDrawBeams } from './draw/beam';
 import { advanceAndDrawBlobAreas, advanceAndDrawBlobParticles } from './draw/blobArea';
 import { advanceAndDrawSinkDrips } from './draw/sinkDrip';
+import { advanceAndDrawFadingTraps } from './draw/fadingTraps';
+import { drawBombItem } from './draw/bombOverlay';
 import { advanceAndDrawFloorFade } from './floorTransition';
 import { drawCharHealth } from './draw/charHealth';
 import { drawTargetHealthIndicator } from './draw/targetHealthIndicator';
@@ -230,6 +232,8 @@ export default function useGameRenderer({
       advanceAndDrawMagicMissiles(ctx, magicMissileRef);
       advanceAndDrawBeams(ctx, { beamRef, assetImages });
       advanceAndDrawLightning(ctx, { lightningRef });
+      advanceAndDrawFadingTraps(ctx, assetImages, { visionRef });
+      drawBombItem(ctx, assetImages, { visionRef });
 
       ctx.restore();
 
