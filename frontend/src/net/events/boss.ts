@@ -1,15 +1,17 @@
 import { TILE_SIZE } from '../../constants';
 import AudioManager from '../../audio/AudioManager';
-import { spawnDust, spawnCritSparkle } from '../../rendering/draw/particles';
+import { spawnDust, spawnCritSparkle, spawnLight } from '../../rendering/draw/particles';
 import { spawnSparkMoving } from '../../rendering/draw/sparkParticle';
 import { spawnFloatingText } from '../../rendering/draw/floatingText';
 import { spawnBeam } from '../../rendering/draw/beam';
+import { spawnLightning } from '../../rendering/draw/lightning';
 import { spawnScreenShake } from '../../rendering/draw/screenShake';
+import { addFadingTraps, setBombItem, clearBombItem } from '../../rendering/tenguEffects';
 import type { GameEvent } from '../../types/contract';
 import type { HandlerCtx } from '../types';
 
 export function handleBossEvents(event: GameEvent, ctx: HandlerCtx): boolean {
-  const { mobAnimRef, particlesRef, floatingTextRef, warnedTilesRef, visionRef, beamRef, screenShakeRef } = ctx;
+  const { mobAnimRef, particlesRef, floatingTextRef, warnedTilesRef, visionRef, beamRef, screenShakeRef, lightningRef } = ctx;
 
   if (event.type === 'GOO_CHARGE') {
     const now = performance.now();
@@ -97,12 +99,26 @@ export function handleBossEvents(event: GameEvent, ctx: HandlerCtx): boolean {
     return true;
   }
 
+  if (event.type === 'TENGU_TRAP_BURST') {
+    const cells = event.data.cells;
+    if (particlesRef && cells) {
+      for (const [x, y] of cells) {
+        if (visionRef?.current?.visible?.has(`${x},${y}`)) {
+          spawnLight(particlesRef, x * TILE_SIZE + TILE_SIZE / 2, y * TILE_SIZE + TILE_SIZE / 2, 2);
+        }
+      }
+    }
+    if (cells) addFadingTraps(cells, 'tengu_dart');
+    return true;
+  }
+
   if (event.type === 'TENGU_BOMB') {
     const now = performance.now();
     if (mobAnimRef.current) {
       if (!mobAnimRef.current[event.data.mob]) mobAnimRef.current[event.data.mob] = {};
       mobAnimRef.current[event.data.mob].attackUntil = now + 400;
     }
+    setBombItem(event.data.x, event.data.y);
     if (floatingTextRef && visionRef?.current?.visible?.has(`${event.data.x},${event.data.y}`)) {
       const cx = event.data.x * TILE_SIZE + TILE_SIZE / 2;
       const cy = event.data.y * TILE_SIZE;
@@ -121,6 +137,7 @@ export function handleBossEvents(event: GameEvent, ctx: HandlerCtx): boolean {
   }
 
   if (event.type === 'TENGU_BLAST') {
+    clearBombItem();
     if (particlesRef && visionRef?.current?.visible?.has(`${event.data.x},${event.data.y}`)) {
       const cx = event.data.x * TILE_SIZE + TILE_SIZE / 2;
       const cy = event.data.y * TILE_SIZE + TILE_SIZE / 2;
@@ -129,14 +146,35 @@ export function handleBossEvents(event: GameEvent, ctx: HandlerCtx): boolean {
     return true;
   }
 
-  if (event.type === 'TENGU_FIRE' || event.type === 'TENGU_SHOCKER') {
+  if (event.type === 'TENGU_FIRE') {
     if (particlesRef) {
-      const color = event.type === 'TENGU_FIRE' ? '#ff6600' : '#66ccff';
       for (const [x, y] of event.data.cells) {
         if (!visionRef?.current?.visible?.has(`${x},${y}`)) continue;
         const cx = x * TILE_SIZE + TILE_SIZE / 2;
         const cy = y * TILE_SIZE + TILE_SIZE / 2;
-        spawnCritSparkle(particlesRef, cx, cy, 8, color);
+        spawnCritSparkle(particlesRef, cx, cy, 8, '#ff6600');
+      }
+    }
+    return true;
+  }
+
+  if (event.type === 'TENGU_SHOCKER') {
+    if (particlesRef) {
+      for (const [x, y] of event.data.cells) {
+        if (!visionRef?.current?.visible?.has(`${x},${y}`)) continue;
+        const cx = x * TILE_SIZE + TILE_SIZE / 2;
+        const cy = y * TILE_SIZE + TILE_SIZE / 2;
+        spawnCritSparkle(particlesRef, cx, cy, 8, '#66ccff');
+
+        if (lightningRef) {
+          const s = TILE_SIZE;
+          const h = s / 2;
+          const [bx, by] = [x * s + h, y * s + h];
+          spawnLightning(lightningRef, bx - s, by - s, bx + s, by + s, '#88ccff');
+          spawnLightning(lightningRef, bx - s, by + s, bx + s, by - s, '#88ccff');
+          spawnLightning(lightningRef, bx, by - s, bx, by + s, '#88ccff');
+          spawnLightning(lightningRef, bx - s, by, bx + s, by, '#88ccff');
+        }
       }
     }
     return true;

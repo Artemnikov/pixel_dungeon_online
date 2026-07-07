@@ -144,6 +144,9 @@ class PrisonBossMixin:
         if patches:
             floor.rebuild_flags()
             self.add_event("MAP_PATCH", {"tiles": patches}, floor_id=floor_id)
+            self.add_event("TENGU_TRAP_BURST", {
+                "cells": [[x, y] for (x, y) in trap_cells],
+            }, floor_id=floor_id)
 
     # -- transitions --------------------------------------------------------
 

@@ -723,6 +723,12 @@ export interface TenguShockerEvent {
   data: { mob: string; cells: Vec2[] };
 }
 
+/** Tengu trap burst — hidden dart traps appear in the arena with a fade overlay. */
+export interface TenguTrapBurstEvent {
+  type: 'TENGU_TRAP_BURST';
+  data: { mob?: string; cells: [number, number][] };
+}
+
 /** Persistent blob area (fire, gas, electricity) state update. */
 export interface BlobUpdateEvent {
   type: 'BLOB_UPDATE';
@@ -1040,6 +1046,7 @@ export type GameEvent =
   | TenguBlastEvent
   | TenguFireEvent
   | TenguShockerEvent
+  | TenguTrapBurstEvent
   | TeleportEvent
   | MirrorImageEvent
   | MessageEvent
