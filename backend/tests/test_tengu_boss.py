@@ -45,11 +45,28 @@ def test_tengu_base_stats_match_original():
     assert tengu.hp == tengu.max_hp == 200
     assert tengu.attack_skill == 20
     assert tengu.is_enraged() is False
-    assert tengu.get_attack_skill() == 20
 
     tengu.hp = 100
     assert tengu.is_enraged() is True
-    assert tengu.get_attack_skill() == 10
+
+
+def test_tengu_attack_skill_is_adjacency_based():
+    floor = make_floor()
+    game = make_game(floor)
+    tengu = Tengu(id="t1", pos=Position(x=5, y=5), faction=Faction.DUNGEON)
+    floor.mobs[tengu.id] = tengu
+    player = game.add_player("p1", "Hero")
+    player.floor_id = floor.floor_id
+
+    player.pos = Position(x=6, y=6)          # Chebyshev-adjacent (diagonal)
+    game._update_tengu(tengu, floor, floor.floor_id)
+    game.flush_events()
+    assert tengu.attack_skill == 10
+
+    player.pos = Position(x=5, y=1)          # ranged
+    game._update_tengu(tengu, floor, floor.floor_id)
+    game.flush_events()
+    assert tengu.attack_skill == 20
 
 
 def test_tengu_jumps_when_dropping_an_hp_bracket():

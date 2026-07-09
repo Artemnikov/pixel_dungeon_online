@@ -141,6 +141,11 @@ class TenguAIMixin:
     def _update_tengu(self, tengu: Tengu, floor: FloorState, floor_id: int) -> bool:
         if tengu.is_alive:
             tengu.clamp_bracket()
+            _t = self._find_nearest_player(tengu.pos, floor_id)
+            if _t is not None:
+                _adj = (max(abs(tengu.pos.x - _t.pos.x),
+                            abs(tengu.pos.y - _t.pos.y)) == 1)
+                tengu.attack_skill = 10 if _adj else 20
 
         if tengu.bomb_timer > 0:
             tengu.bomb_timer -= 1

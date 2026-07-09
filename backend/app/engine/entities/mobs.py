@@ -369,9 +369,6 @@ class Tengu(MobEntity):
     def is_enraged(self) -> bool:
         return self.hp * 2 <= self.max_hp
 
-    def get_attack_skill(self) -> int:
-        return 20 if not self.is_enraged() else 10
-
     def target_ability_uses(self) -> int:
         target = 1 + 2 * self.arena_jumps
         target += max(0, self.arena_jumps - 2)
