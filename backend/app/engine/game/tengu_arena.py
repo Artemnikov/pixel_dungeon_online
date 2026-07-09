@@ -194,6 +194,9 @@ class PrisonBossMixin:
         if tengu is None or not tengu.is_alive or not tengu.is_enraged():
             return
 
+        self.add_event("BOSS_YELL", {"mob": tengu.id, "text": "Let's make this interesting...",
+                                     "x": tengu.pos.x, "y": tengu.pos.y}, floor_id=floor_id)
+
         self._clear_entities_outside(floor, floor_id, layout.TENGU_CELL, keep_mob_id=tengu.id)
 
         rng = SPDRandom()

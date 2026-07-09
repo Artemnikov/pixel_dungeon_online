@@ -155,6 +155,38 @@ def test_tengu_throws_bomb_when_enraged_and_detonates():
     assert player.hp < hp_before
 
 
+def test_tengu_yells_gotcha_on_first_notice_at_full_hp():
+    floor = make_floor()
+    game = make_game(floor)
+    tengu = Tengu(id="t1", pos=Position(x=5, y=5), faction=Faction.DUNGEON)
+    floor.mobs[tengu.id] = tengu
+    player = game.add_player("p1", "Hero")
+    player.pos = Position(x=5, y=4)
+    player.floor_id = floor.floor_id
+
+    game._update_tengu(tengu, floor, floor.floor_id)
+    yells = [e for e in game.flush_events() if e["type"] == "BOSS_YELL"]
+    assert any(y["data"]["text"] == "Gotcha, Hero!" for y in yells)
+    assert tengu.noticed is True
+
+    # No second notice yell on the next turn.
+    game._update_tengu(tengu, floor, floor.floor_id)
+    assert not any(e["type"] == "BOSS_YELL" and "otcha" in e["data"]["text"]
+                   for e in game.flush_events())
+
+
+def test_tengu_yells_defeated_on_death():
+    floor = make_floor()
+    game = make_game(floor)
+    tengu = Tengu(id="t1", pos=Position(x=5, y=5), faction=Faction.DUNGEON)
+    floor.mobs[tengu.id] = tengu
+    game.add_player("p1", "Hero")
+
+    game.handle_mob_death(tengu, floor, floor.floor_id)
+    assert any(e["type"] == "BOSS_YELL" and e["data"]["text"] == "Free at last..."
+               for e in game.flush_events())
+
+
 def test_tengu_shocker_emits_alternating_lightning_events():
     floor = make_floor()
     game = make_game(floor)

@@ -250,6 +250,8 @@ class WorldInteractionMixin:
             if self.qualified_for_boss_challenge:
                 self.add_event("TENGU_BADGE_QUALIFIED", {}, floor_id=floor_id)
             self.add_event("BOSS_SLAIN", {"mob": mob.id, "depth": floor_id, "badge_image": 48}, floor_id=floor_id)
+            self.add_event("BOSS_YELL", {"mob": mob.id, "text": "Free at last...",
+                                         "x": mob.pos.x, "y": mob.pos.y}, floor_id=floor_id)
             return
 
         if isinstance(mob, YogDzewa):

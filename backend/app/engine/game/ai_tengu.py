@@ -164,6 +164,13 @@ class TenguAIMixin:
                 _adj = (max(abs(tengu.pos.x - _t.pos.x),
                             abs(tengu.pos.y - _t.pos.y)) == 1)
                 tengu.attack_skill = 10 if _adj else 20
+            if not tengu.noticed and _t is not None and self._is_in_los(
+                    tengu.pos, _t.pos, floor_id=floor_id, distance=self._view_distance(tengu)):
+                tengu.noticed = True
+                text = (f"Gotcha, {_t.name}!" if tengu.hp == tengu.max_hp
+                        else f"I have you now, {_t.name}!")
+                self.add_event("BOSS_YELL", {"mob": tengu.id, "text": text,
+                                             "x": tengu.pos.x, "y": tengu.pos.y}, floor_id=floor_id)
 
         if tengu.bomb_timer > 0:
             tengu.bomb_timer -= 1

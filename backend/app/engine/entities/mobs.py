@@ -353,6 +353,8 @@ class Tengu(MobEntity):
     bomb_y: int = -1
     bomb_timer: int = 0
 
+    noticed: bool = False  # first-sight yell guard (SPD notice())
+
     # Persistent shocker state (SPD ShockerAbility buff)
     shocker_active: bool = False
     shocker_x: int = -1
