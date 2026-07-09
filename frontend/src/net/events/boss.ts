@@ -7,11 +7,24 @@ import { spawnBeam } from '../../rendering/draw/beam';
 import { spawnLightning } from '../../rendering/draw/lightning';
 import { spawnScreenShake } from '../../rendering/draw/screenShake';
 import { addFadingTraps, setBombItem, clearBombItem } from '../../rendering/tenguEffects';
+import { spawnSmoke } from '../../rendering/draw/smokeParticle';
 import type { GameEvent } from '../../types/contract';
 import type { HandlerCtx } from '../types';
 
 export function handleBossEvents(event: GameEvent, ctx: HandlerCtx): boolean {
   const { mobAnimRef, particlesRef, floatingTextRef, warnedTilesRef, visionRef, beamRef, screenShakeRef, lightningRef } = ctx;
+
+  const pourBombSmoke = (bx: number, by: number) => {
+    if (!particlesRef) return;
+    for (let dy = -2; dy <= 2; dy++) {
+      for (let dx = -2; dx <= 2; dx++) {
+        const x = bx + dx, y = by + dy;
+        if (!visionRef?.current?.visible?.has(`${x},${y}`)) continue;
+        if (Math.random() > 0.5) continue;
+        spawnSmoke(particlesRef, x * TILE_SIZE + TILE_SIZE / 2, y * TILE_SIZE + TILE_SIZE / 2, 1);
+      }
+    }
+  };
 
   if (event.type === 'GOO_CHARGE') {
     const now = performance.now();
@@ -119,11 +132,7 @@ export function handleBossEvents(event: GameEvent, ctx: HandlerCtx): boolean {
       mobAnimRef.current[event.data.mob].attackUntil = now + 400;
     }
     setBombItem(event.data.x, event.data.y);
-    if (floatingTextRef && visionRef?.current?.visible?.has(`${event.data.x},${event.data.y}`)) {
-      const cx = event.data.x * TILE_SIZE + TILE_SIZE / 2;
-      const cy = event.data.y * TILE_SIZE;
-      spawnFloatingText(floatingTextRef, cx, cy, '!', '#ff6600');
-    }
+    pourBombSmoke(event.data.x, event.data.y);
     return true;
   }
 
@@ -133,6 +142,7 @@ export function handleBossEvents(event: GameEvent, ctx: HandlerCtx): boolean {
       const cy = event.data.y * TILE_SIZE;
       spawnFloatingText(floatingTextRef, cx, cy, `${event.data.count}...`, '#ff6600');
     }
+    pourBombSmoke(event.data.x, event.data.y);
     return true;
   }
 
