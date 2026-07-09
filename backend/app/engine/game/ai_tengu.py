@@ -31,6 +31,11 @@ _SHOCKER_ORDINAL_OFFSETS = [(-1, -1), (1, -1), (-1, 1), (1, 1)]
 _SHOCKER_CARDINAL_OFFSETS = [(0, -1), (1, 0), (0, 1), (-1, 0)]
 
 
+def _normal_int_range(lo: int, hi: int) -> int:
+    # SPD Random.NormalIntRange: mean-biased average of two uniforms.
+    return round((random.randint(lo, hi) + random.randint(lo, hi)) / 2)
+
+
 def _left(d: int) -> int:
     return 7 if d == 0 else d - 1
 
@@ -470,16 +475,36 @@ class TenguAIMixin:
         self.add_event("PLAY_SOUND", {"sound": "PUFF"}, floor_id=floor_id)
         return True
 
+    def _bomb_blast_cells(self, floor: FloorState, x: int, y: int) -> set:
+        """Cells within Chebyshev radius 2 reachable from (x,y) without
+        crossing a solid tile (SPD PathFinder.buildDistanceMap, radius 2)."""
+        cells = {(x, y)}
+        frontier = [(x, y, 0)]
+        while frontier:
+            cx, cy, d = frontier.pop()
+            if d >= 2:
+                continue
+            for dx, dy in _CIRCLE8_OFFSETS:
+                nx, ny = cx + dx, cy + dy
+                if not (0 <= nx < floor.width and 0 <= ny < floor.height):
+                    continue
+                if floor.flags and floor.flags.solid[ny][nx]:
+                    continue
+                if (nx, ny) not in cells:
+                    cells.add((nx, ny))
+                    frontier.append((nx, ny, d + 1))
+        return cells
+
     def _tengu_detonate_bomb(self, tengu: Tengu, floor: FloorState, floor_id: int) -> None:
         x, y = tengu.bomb_x, tengu.bomb_y
         tengu.bomb_x = -1
         tengu.bomb_y = -1
         depth = floor.floor_id
-        center = Position(x=x, y=y)
+        blast = self._bomb_blast_cells(floor, x, y)
 
         for p in self._players_on_floor(floor_id):
-            if p.is_alive and self._get_distance(p.pos, center) <= 2:
-                raw = random.randint(5 + depth, 10 + 2 * depth)
+            if p.is_alive and (p.pos.x, p.pos.y) in blast:
+                raw = _normal_int_range(5 + depth, 10 + 2 * depth)
                 taken = p.take_damage(max(0, raw - random.randint(p.get_dr_min(), p.get_dr_max())))
                 self.add_event("ATTACK", {"source": tengu.id, "target": p.id,
                                           "damage": taken, "surprise": False}, floor_id=floor_id)
@@ -489,8 +514,8 @@ class TenguAIMixin:
                     self.qualified_for_boss_challenge = False
 
         for m in list(floor.mobs.values()):
-            if m.is_alive and m.id != tengu.id and self._get_distance(m.pos, center) <= 2:
-                raw = random.randint(5 + depth, 10 + 2 * depth)
+            if m.is_alive and m.id != tengu.id and (m.pos.x, m.pos.y) in blast:
+                raw = _normal_int_range(5 + depth, 10 + 2 * depth)
                 taken = m.take_damage(max(0, raw - random.randint(m.get_dr_min(), m.get_dr_max())))
                 self.add_event("ATTACK", {"source": tengu.id, "target": m.id,
                                           "damage": taken, "surprise": False}, floor_id=floor_id)

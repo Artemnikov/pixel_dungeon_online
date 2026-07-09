@@ -155,6 +155,23 @@ def test_tengu_throws_bomb_when_enraged_and_detonates():
     assert player.hp < hp_before
 
 
+def test_tengu_bomb_blast_respects_walls():
+    floor = make_floor(w=7, h=7)
+    # Solid wall column at x=3 for y=2..4 (isolates left half from right half)
+    for yy in (2, 3, 4):
+        floor.grid[yy][3] = TileType.WALL
+    floor.rebuild_flags()
+    game = make_game(floor)
+    tengu = Tengu(id="t1", pos=Position(x=1, y=3), faction=Faction.DUNGEON)
+    floor.mobs[tengu.id] = tengu
+    game.add_player("p1", "Hero")
+
+    cells = game._bomb_blast_cells(floor, 2, 3)   # bomb just left of the wall
+    assert (2, 3) in cells
+    assert (5, 3) not in cells                     # right of the wall, unreachable
+    assert (4, 3) not in cells                     # behind the wall column
+
+
 def test_tengu_mask_drops_for_player_without_subclass():
     game = make_game(make_floor())
     tengu = Tengu(id="t1", pos=Position(x=5, y=5), faction=Faction.DUNGEON)
