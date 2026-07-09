@@ -472,6 +472,7 @@ class TenguAIMixin:
                                           "target_x": x, "target_y": y, "projectile": "shuriken",
                                           "crit": False, "grim_proc": False}, floor_id=floor_id)
         self.add_event("TENGU_BOMB", {"mob": tengu.id, "x": x, "y": y, "timer": tengu.bomb_timer}, floor_id=floor_id)
+        self.add_event("TENGU_BOMB_COUNTDOWN", {"mob": tengu.id, "x": x, "y": y, "count": 3}, floor_id=floor_id)
         self.add_event("PLAY_SOUND", {"sound": "PUFF"}, floor_id=floor_id)
         return True
 

@@ -155,6 +155,21 @@ def test_tengu_throws_bomb_when_enraged_and_detonates():
     assert player.hp < hp_before
 
 
+def test_tengu_bomb_emits_three_countdown_on_placement():
+    floor = make_floor()
+    game = make_game(floor)
+    tengu = Tengu(id="t1", pos=Position(x=5, y=5), faction=Faction.DUNGEON)
+    floor.mobs[tengu.id] = tengu
+    player = game.add_player("p1", "Hero")
+    player.pos = Position(x=5, y=4)
+    player.floor_id = floor.floor_id
+
+    assert game._tengu_throw_bomb(tengu, player, floor, floor.floor_id) is True
+    events = game.flush_events()
+    cds = [e for e in events if e["type"] == "TENGU_BOMB_COUNTDOWN"]
+    assert any(e["data"]["count"] == 3 for e in cds)
+
+
 def test_tengu_bomb_blast_respects_walls():
     floor = make_floor(w=7, h=7)
     # Solid wall column at x=3 for y=2..4 (isolates left half from right half)
