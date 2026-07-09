@@ -205,6 +205,15 @@ export function handleBossEvents(event: GameEvent, ctx: HandlerCtx): boolean {
     return true;
   }
 
+  if (event.type === 'BOSS_YELL') {
+    if (floatingTextRef && visionRef?.current?.visible?.has(`${event.data.x},${event.data.y}`)) {
+      const cx = event.data.x * TILE_SIZE + TILE_SIZE / 2;
+      const cy = event.data.y * TILE_SIZE - 2;
+      spawnFloatingText(floatingTextRef, cx, cy, event.data.text, '#ffff66');
+    }
+    return true;
+  }
+
   if (event.type === 'DM300_TRAP_STEP') {
     if (visionRef?.current?.visible?.has(`${event.data.x},${event.data.y}`)) {
       const cx = event.data.x * TILE_SIZE + TILE_SIZE / 2;

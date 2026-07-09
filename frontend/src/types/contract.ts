@@ -725,6 +725,12 @@ export interface TenguShockerEvent {
   data: { mob: string; cells: Vec2[] };
 }
 
+/** A boss shouts a taunt; rendered as floating text above its tile. */
+export interface BossYellEvent {
+  type: 'BOSS_YELL';
+  data: { mob: string; text: string; x: number; y: number };
+}
+
 /** Tengu trap burst — hidden dart traps appear in the arena with a fade overlay. */
 export interface TenguTrapBurstEvent {
   type: 'TENGU_TRAP_BURST';
@@ -1048,6 +1054,7 @@ export type GameEvent =
   | TenguBlastEvent
   | TenguFireEvent
   | TenguShockerEvent
+  | BossYellEvent
   | TenguTrapBurstEvent
   | TeleportEvent
   | MirrorImageEvent
