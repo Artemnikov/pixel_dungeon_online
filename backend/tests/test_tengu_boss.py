@@ -155,6 +155,26 @@ def test_tengu_throws_bomb_when_enraged_and_detonates():
     assert player.hp < hp_before
 
 
+def test_tengu_shocker_emits_alternating_lightning_events():
+    floor = make_floor()
+    game = make_game(floor)
+    tengu = Tengu(id="t1", pos=Position(x=5, y=5), faction=Faction.DUNGEON)
+    tengu.shocker_active = True
+    tengu.shocker_x, tengu.shocker_y = 5, 3
+    tengu.shocking_ordinals = None
+    floor.mobs[tengu.id] = tengu
+    game.add_player("p1", "Hero")
+
+    seen = []
+    for _ in range(3):
+        game._tick_tengu_shocker_turn(tengu, floor, floor.floor_id)
+        for e in game.flush_events():
+            if e["type"] == "TENGU_SHOCKER":
+                seen.append(e["data"]["ordinals"])
+    assert len(seen) >= 2
+    assert seen[-1] != seen[-2]
+
+
 def test_tengu_fire_direction_is_cardinal_for_shallow_oblique():
     floor = make_floor(w=12, h=12)
     game = make_game(floor)

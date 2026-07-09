@@ -304,12 +304,17 @@ class TenguAIMixin:
         cell_list = [(cx, cy, 1) for cx, cy in pattern_cells
                      if 0 <= cx < floor.width and 0 <= cy < floor.height]
         self._emit_shocker_blob(tengu, pattern_cells, floor, floor_id)
+        self._emit_shocker_event(tengu, pattern_cells, floor, floor_id)
 
         if shocked:
             self.add_event("PLAY_SOUND", {"sound": "LIGHTNING"}, floor_id=floor_id)
 
     def _emit_shocker_event(self, tengu: Tengu, cells: list, floor: FloorState, floor_id: int) -> None:
-        self.add_event("TENGU_SHOCKER", {"mob": tengu.id, "cells": [(x, y) for x, y in cells]}, floor_id=floor_id)
+        self.add_event("TENGU_SHOCKER", {
+            "mob": tengu.id,
+            "cells": [(x, y) for x, y in cells],
+            "ordinals": bool(tengu.shocking_ordinals),
+        }, floor_id=floor_id)
 
     def _emit_shocker_blob(self, tengu: Tengu, cells: list, floor: FloorState, floor_id: int) -> None:
         """Create/update the shocker blob area so the frontend renders spark particles."""
@@ -645,6 +650,6 @@ class TenguAIMixin:
 
         # Initial blob area + event (no damage on spawn turn, SPD-style)
         self._emit_shocker_blob(tengu, [(x, y)], floor, floor_id)
-        self.add_event("TENGU_SHOCKER", {"mob": tengu.id, "cells": [(x, y)]}, floor_id=floor_id)
+        self.add_event("TENGU_SHOCKER", {"mob": tengu.id, "cells": [(x, y)], "ordinals": False}, floor_id=floor_id)
         self.add_event("PLAY_SOUND", {"sound": "LIGHTNING"}, floor_id=floor_id)
         return True
