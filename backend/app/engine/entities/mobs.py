@@ -340,13 +340,24 @@ class Tengu(MobEntity):
     # Ability/jump state (mirrors Tengu.java's HP-bracket jump and the
     # bomb/fire/shocker ability rotation used while enraged).
     hp_bracket: int = 7
-    ability_cooldown_until: float = 2.0  # SPD: starts at 2 so 1-turn delay before first ability
+    # Turn-based tick counter (game runs at 20Hz; 20 ticks = 1 game turn).
+    # Ability logic only runs when this reaches 20.
+    turn_tick: int = 0
+    # Cooldown in game turns. Starts at 2 so 1-turn delay before first ability
+    # (SPD Tengu.java:443: "starts at 2, so one turn and then first ability").
+    ability_cooldown: int = 2
     abilities_used: int = 0
     last_ability: int = -1  # SPD: 90% no-repeat; -1 = none yet
     arena_jumps: int = 0     # SPD: affects targetAbilityUses() cooldown
     bomb_x: int = -1
     bomb_y: int = -1
     bomb_timer: int = 0
+
+    # Persistent shocker state (SPD ShockerAbility buff)
+    shocker_active: bool = False
+    shocker_x: int = -1
+    shocker_y: int = -1
+    shocking_ordinals: Optional[bool] = None  # None=just spawned, True=ordinals, False=cardinals
 
     # SPD Tengu immunities
     immunities: List[str] = Field(default_factory=lambda: ["roots", "blindness", "dread", "terror"])
@@ -1114,11 +1125,20 @@ class CrystalMimic(Mimic):
 
     def attack_proc(self, target) -> None:
         if self.disguised:
-            items = list(target.belongings.all_items()) if getattr(target, 'belongings', None) else []
-            stealable = [i for i in items if i.category not in ('KEY', 'SCROLL_OF_UPGRADE')]
-            if stealable:
-                stolen = random.choice(stealable)
-                target.belongings.backpack.detach_all(stolen.id)
+            bp = target.belongings.backpack if getattr(target, 'belongings', None) else None
+            if not bp:
+                return
+            tries = 10
+            stolen = None
+            for _ in range(tries):
+                candidate = random.choice(bp.items) if bp.items else None
+                if candidate is None:
+                    break
+                if not candidate.unique and candidate.level < 1 and candidate.category != 'KEY':
+                    stolen = candidate
+                    break
+            if stolen is not None:
+                bp.detach_all(stolen.id)
                 self.pending_steal_name = stolen.name
                 self.pending_stolen_item = stolen
         else:

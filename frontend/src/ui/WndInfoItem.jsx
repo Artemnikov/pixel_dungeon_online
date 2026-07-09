@@ -26,6 +26,11 @@ export default function WndInfoItem({ item, belongings }) {
       {item.kind === 'chest' && item.chest_type === 'CRYSTAL_CHEST' && item.item_category && (
         <div className="wnd-info-desc">
           {`You can see through the crystal — this chest contains a ${item.item_category.toLowerCase()}.`}
+          {item.mimic_hint && (
+            <div style={{ marginTop: '0.5em', color: '#e04040' }}>
+              It seems to be breathing...
+            </div>
+          )}
         </div>
       )}
       {!(item.kind === 'chest' && item.chest_type === 'CRYSTAL_CHEST' && item.item_category) && item.description && (

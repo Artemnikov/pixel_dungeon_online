@@ -654,6 +654,7 @@ def _adapt_gen_mobs_and_items(gen_mobs, width: int):
                 chest_type="CRYSTAL_CHEST",
                 contents=[],
                 item_category=item_category,
+                mimic_hint=True,
             )
             mob.fake_chest_id = fake_chest.id
             mobs[mob.id] = mob

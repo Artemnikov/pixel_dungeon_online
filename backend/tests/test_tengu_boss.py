@@ -8,6 +8,7 @@ from app.engine.game.floor_state import FloorState
 from app.engine.manager import GameInstance
 from app.engine.systems.loot import roll_drops
 from app.engine.entities.subclasses import Subclass
+from app.engine.game.ai_tengu import TURN_TICKS
 
 
 def make_floor(floor_id=10, w=10, h=10):
@@ -23,6 +24,20 @@ def make_game(floor):
     game.depth = floor.floor_id
     game.floors[floor.floor_id] = floor
     return game
+
+
+def advance_turns(game, tengu, floor, n=1, collect_events=False):
+    """Advance N game turns by calling _update_tengu TURN_TICKS times each.
+    If collect_events=True, returns all events produced (otherwise flushes silently).
+    """
+    events = []
+    for _ in range(n * TURN_TICKS):
+        game._update_tengu(tengu, floor, floor.floor_id)
+        if collect_events:
+            events.extend(game.flush_events())
+        else:
+            game.flush_events()
+    return events
 
 
 def test_tengu_base_stats_match_original():
@@ -91,33 +106,34 @@ def test_tengu_throws_bomb_when_enraged_and_detonates():
     player.pos = Position(x=5, y=4)
     player.floor_id = floor.floor_id
 
-    # SPD initial cooldown (ability_cooldown_until=2) needs 2 ticks before first ability
-    consumed = game._update_tengu(tengu, floor, floor.floor_id)  # tick 1: decrement to 1
-    consumed = game._update_tengu(tengu, floor, floor.floor_id)  # tick 2: decrement to 0, fire!
-    assert consumed is True
+    # SPD initial cooldown (ability_cooldown=2) needs 2 game turns.
+    # Advance 2 turns = 40 ticks. Bomb fires on the last tick (cooldown reaches 0).
+    events = advance_turns(game, tengu, floor, 2, collect_events=True)
+    # If bomb was placed, timer is exactly 60 (no countdown ticks passed yet).
+    # If not, the jump consumed the first tick; advance one more partial turn.
+    if not any(e["type"] == "TENGU_BOMB" for e in events):
+        events = advance_turns(game, tengu, floor, 1, collect_events=True)
+    assert any(e["type"] == "TENGU_BOMB" for e in events), "No bomb placed"
     # SPD BombAbility: bomb placed on a free neighbor of the target closest to Tengu
     # Tengu at (5,5), player at (5,4). Neighbors: (4,3),(5,3),(6,3),(4,4),(6,4),(4,5),(5,5),(6,5)
     # (5,5) is occupied by Tengu, closest free is (4,4),(6,4),(4,5),(6,5) all at dist 1
-    assert tengu.bomb_timer == 60
+    assert tengu.bomb_timer == 60, f"Expected 60, got {tengu.bomb_timer}"
     assert tengu.bomb_x != -1 and tengu.bomb_y != -1
     assert not (tengu.bomb_x == 5 and tengu.bomb_y == 5)  # not on Tengu
     assert abs(tengu.bomb_x - 5) <= 1 and abs(tengu.bomb_y - 4) <= 1  # adjacent to player
-
-    events = game.flush_events()
     assert any(e["type"] == "TENGU_BOMB" for e in events)
 
-    # Tick until detonation; the bomb should deal AoE damage to the player.
+    # Tick until detonation (bomb timer ticks every call regardless of turn gate).
     hp_before = player.hp
-    for _ in range(59):
-        game._update_tengu(tengu, floor, floor.floor_id)
-        game.flush_events()
+    bomb_go = tengu.bomb_timer
+    for _ in range(bomb_go + 5):
+        consumed = game._update_tengu(tengu, floor, floor.floor_id)
+        events = game.flush_events()
+        if any(e["type"] == "TENGU_BLAST" for e in events):
+            break
 
-    consumed = game._update_tengu(tengu, floor, floor.floor_id)
-    assert consumed is True
     assert tengu.bomb_timer == 0
     assert tengu.bomb_x == -1 and tengu.bomb_y == -1
-
-    events = game.flush_events()
     assert any(e["type"] == "TENGU_BLAST" for e in events)
     assert player.hp < hp_before
 

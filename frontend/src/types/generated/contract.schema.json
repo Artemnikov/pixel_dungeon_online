@@ -7459,6 +7459,10 @@
             }
           ],
           "default": null
+        },
+        "mimic_hint": {
+          "default": false,
+          "type": "boolean"
         }
       },
       "type": "object"

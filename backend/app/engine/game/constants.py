@@ -30,6 +30,7 @@ KEY_TIME_TO_UNLOCK = 1.0
 # briefly standing on the next tile) before giving up on the route.
 PATH_BLOCKED_GIVE_UP_TICKS = 6
 
+GAME_TURN_TICKS = 20  # 20 game-loop ticks per game turn (at 20 Hz → 1 turn/sec)
 HEAL_TICK_INTERVAL = 20
 ROOM_HEAL_AMOUNT = 10
 PASSIVE_REGEN_INTERVAL = 10
