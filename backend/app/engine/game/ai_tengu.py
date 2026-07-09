@@ -426,6 +426,7 @@ class TenguAIMixin:
         return tengu.ability_cooldown == 0
 
     def _tengu_use_ability(self, tengu: Tengu, target, floor: FloorState, floor_id: int) -> None:
+        challenged = "stronger_bosses" in self.challenges
         ability_used = False
         ability_to_use = -1
         while not ability_used:
@@ -433,6 +434,8 @@ class TenguAIMixin:
                 ability_to_use = 0
             elif tengu.abilities_used == 1:
                 ability_to_use = 2
+            elif challenged:
+                ability_to_use = random.randint(0, 1) * 2   # 0 or 2, never fire
             else:
                 ability_to_use = random.randint(0, 2)
 
@@ -451,6 +454,10 @@ class TenguAIMixin:
                 if not ability_used and tengu.abilities_used == 1:
                     ability_to_use = 1
                     ability_used = self._tengu_throw_fire(tengu, target, floor, floor_id)
+
+            # Challenge: always accompany a non-fire ability with fire.
+            if ability_used and challenged and ability_to_use != 1:
+                self._tengu_throw_fire(tengu, target, floor, floor_id)
 
         tengu.last_ability = ability_to_use
         tengu.abilities_used += 1

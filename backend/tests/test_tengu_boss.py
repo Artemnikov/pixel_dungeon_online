@@ -254,6 +254,45 @@ def test_tengu_bomb_blast_respects_walls():
     assert (4, 3) not in cells                     # behind the wall column
 
 
+def _enable_challenge(game):
+    game.challenges = {"stronger_bosses"}
+
+
+def test_tengu_challenge_hp_is_250():
+    from app.engine.game.tengu_arena import _apply_boss_challenge
+    tengu = Tengu(id="t1", pos=Position(x=0, y=0), faction=Faction.DUNGEON)
+    _apply_boss_challenge(tengu, {"stronger_bosses"})
+    assert tengu.hp == tengu.max_hp == 250
+
+    normal = Tengu(id="t2", pos=Position(x=0, y=0), faction=Faction.DUNGEON)
+    _apply_boss_challenge(normal, set())
+    assert normal.hp == normal.max_hp == 200
+
+
+def test_tengu_challenge_fire_never_random_but_always_paired():
+    floor = make_floor()
+    game = make_game(floor)
+    _enable_challenge(game)
+    tengu = Tengu(id="t1", pos=Position(x=5, y=5), faction=Faction.DUNGEON)
+    tengu.hp = 100
+    tengu.abilities_used = 5           # past the scripted bomb/shocker openers
+    tengu.arena_jumps = 4
+    floor.mobs[tengu.id] = tengu
+    player = game.add_player("p1", "Hero")
+    player.pos = Position(x=5, y=8)
+    player.floor_id = floor.floor_id
+
+    fire_events = 0
+    for _ in range(30):
+        tengu.abilities_used = 5
+        tengu.last_ability = -1
+        game._tengu_use_ability(tengu, player, floor, floor.floor_id)
+        if any(e["type"] == "TENGU_FIRE" for e in game.flush_events()):
+            fire_events += 1
+    # Under challenge every ability use also throws fire.
+    assert fire_events == 30
+
+
 def test_tengu_mask_drops_for_player_without_subclass():
     game = make_game(make_floor())
     tengu = Tengu(id="t1", pos=Position(x=5, y=5), faction=Faction.DUNGEON)
