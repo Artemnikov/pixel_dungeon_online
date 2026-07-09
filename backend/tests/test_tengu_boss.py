@@ -155,6 +155,21 @@ def test_tengu_throws_bomb_when_enraged_and_detonates():
     assert player.hp < hp_before
 
 
+def test_tengu_fire_direction_is_cardinal_for_shallow_oblique():
+    floor = make_floor(w=12, h=12)
+    game = make_game(floor)
+    tengu = Tengu(id="t1", pos=Position(x=1, y=5), faction=Faction.DUNGEON)
+    floor.mobs[tengu.id] = tengu
+    player = game.add_player("p1", "Hero")
+    player.pos = Position(x=4, y=6)          # dx=3, dy=1 -> first step cardinal (1,0)
+    player.floor_id = floor.floor_id
+
+    assert game._tengu_throw_fire(tengu, player, floor, floor.floor_id) is True
+    blob = next(b for b in floor.blob_areas.values() if b.get("type") == "tengu_fire")
+    from app.engine.dungeon.spd_levelgen.level import _CIRCLE8_OFFSETS
+    assert _CIRCLE8_OFFSETS[blob["direction"]] == (1, 0)
+
+
 def test_tengu_bomb_emits_three_countdown_on_placement():
     floor = make_floor()
     game = make_game(floor)

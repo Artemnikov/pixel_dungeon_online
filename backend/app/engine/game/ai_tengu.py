@@ -36,6 +36,19 @@ def _normal_int_range(lo: int, hi: int) -> int:
     return round((random.randint(lo, hi) + random.randint(lo, hi)) / 2)
 
 
+def _line_first_step(x0: int, y0: int, x1: int, y1: int):
+    """Offset of the first Bresenham cell from (x0,y0) toward (x1,y1)
+    (SPD Ballistica path.get(1))."""
+    dx = abs(x1 - x0)
+    dy = abs(y1 - y0)
+    sx = 1 if x1 >= x0 else -1
+    sy = 1 if y1 >= y0 else -1
+    e2 = 2 * (dx - dy)
+    nx = x0 + (sx if e2 > -dy else 0)
+    ny = y0 + (sy if e2 < dx else 0)
+    return (nx - x0, ny - y0)
+
+
 def _left(d: int) -> int:
     return 7 if d == 0 else d - 1
 
@@ -534,10 +547,9 @@ class TenguAIMixin:
         self.add_event("PLAY_SOUND", {"sound": "BLAST"}, floor_id=floor_id)
 
     def _tengu_throw_fire(self, tengu: Tengu, target, floor: FloorState, floor_id: int) -> bool:
-        dx = target.pos.x - tengu.pos.x
-        dy = target.pos.y - tengu.pos.y
-        step_x = (dx > 0) - (dx < 0)
-        step_y = (dy > 0) - (dy < 0)
+        if target.pos.x == tengu.pos.x and target.pos.y == tengu.pos.y:
+            return False
+        step_x, step_y = _line_first_step(tengu.pos.x, tengu.pos.y, target.pos.x, target.pos.y)
         if step_x == 0 and step_y == 0:
             return False
 
