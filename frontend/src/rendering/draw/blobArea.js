@@ -1,6 +1,6 @@
 import { TILE_SIZE } from '../../constants';
 import { spawnFlame } from './flameParticle';
-import { spawnElmo } from './elmoParticle';
+import { spawnSmoke } from './smokeParticle';
 import { spawnSparkMoving } from './sparkParticle';
 import { spawnToxicGas, spawnParalyticGas, spawnCorrosiveGas, spawnConfusionGas } from './gasParticle';
 
@@ -39,15 +39,16 @@ export function advanceAndDrawBlobParticles(ctx, { blobAreasRef, visionRef, part
   const visible = visionRef?.current?.visible;
   for (const [, area] of Object.entries(blobAreasRef.current)) {
     if (FIRE_TYPES.has(area.type)) {
-      const isTengu = area.type === 'tengu_fire';
-      const spawnFn = isTengu ? spawnElmo : spawnFlame;
       for (const [key] of area.cells) {
         if (visible && !visible.has(key)) continue;
         if (Math.random() > dt * FIRE_EMIT_RATE) continue;
         const [x, y] = key.split(',').map(Number);
         const cx = x * TILE_SIZE + TILE_SIZE / 2;
         const cy = y * TILE_SIZE + TILE_SIZE / 2;
-        spawnFn(particlesRef, cx, cy, 1);
+        spawnFlame(particlesRef, cx, cy, 1);
+        if (area.type === 'tengu_fire' && Math.random() < 0.3) {
+          spawnSmoke(particlesRef, cx, cy, 1);   // SPD FireBlob STEAM
+        }
       }
     }
     if (ELECTRIC_TYPES.has(area.type)) {

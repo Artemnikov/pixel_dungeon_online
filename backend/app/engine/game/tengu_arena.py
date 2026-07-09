@@ -50,6 +50,14 @@ def _grid_from_level(level) -> List[List[int]]:
     return [[_convert_tile(level.map[y * w + x]) for x in range(w)] for y in range(h)]
 
 
+def _apply_boss_challenge(tengu: Tengu, challenges) -> Tengu:
+    """SPD Challenges.STRONGER_BOSSES: Tengu HP/HT 200 -> 250."""
+    if "stronger_bosses" in challenges:
+        tengu.max_hp = tengu.hp = 250
+        tengu.hp_bracket = 7
+    return tengu
+
+
 class PrisonBossMixin:
     def _update_prison_boss(self, floor: FloorState, floor_id: int) -> None:
         if floor_id != PRISON_BOSS_FLOOR:
@@ -175,6 +183,7 @@ class PrisonBossMixin:
         self.add_event("MAP_PATCH", {"tiles": [{"x": dx, "y": dy, "tile": TileType.LOCKED_DOOR}]}, floor_id=floor_id)
 
         tengu = Tengu(id=str(uuid.uuid4()), pos=Position(x=cx, y=cy), faction=Faction.DUNGEON)
+        _apply_boss_challenge(tengu, self.challenges)
         tengu.ai_state = "hunting"
         tengu.fight_started = True
         floor.mobs[tengu.id] = tengu
@@ -193,6 +202,9 @@ class PrisonBossMixin:
         tengu = self._find_tengu(floor)
         if tengu is None or not tengu.is_alive or not tengu.is_enraged():
             return
+
+        self.add_event("BOSS_YELL", {"mob": tengu.id, "text": "Let's make this interesting...",
+                                     "x": tengu.pos.x, "y": tengu.pos.y}, floor_id=floor_id)
 
         self._clear_entities_outside(floor, floor_id, layout.TENGU_CELL, keep_mob_id=tengu.id)
 
@@ -227,6 +239,7 @@ class PrisonBossMixin:
         tengu = floor.generation_meta.pop("tengu_pending", None)
         if tengu is None:
             tengu = Tengu(id=str(uuid.uuid4()), faction=Faction.DUNGEON)
+            _apply_boss_challenge(tengu, self.challenges)
         tengu.pos = Position(x=layout.ARENA.left + layout.ARENA.width() // 2, y=layout.ARENA.top + 2)
         tengu.ai_state = "hunting"
         floor.mobs[tengu.id] = tengu

@@ -106,6 +106,10 @@ function App() {
   const [bossInfo, setBossInfo] = useState(null);
   const [bossFightActive, setBossFightActive] = useState(false);
   const [bossBleeding, setBossBleeding] = useState(false);
+  // SPD BossHealthBar.bleed(true) — Tengu bleeds once past half HP (phase 2).
+  // Derived (not synced state) so it stays in step with bossInfo without an effect.
+  const bossBleedingEffective = bossBleeding
+    || (bossInfo?.name === 'Tengu' && bossInfo.hp * 2 <= bossInfo.maxHp);
   const [depth, setDepth] = useState(1);
   const [, setCamera] = useState({ x: 0, y: 0 });
   const [gold, setGold] = useState(0);
@@ -240,7 +244,7 @@ function App() {
   });
   useAudioUnlock();
   const assetImages = useAssetImages();
-  useMusicByDepth({ enabled: true, menu: gameState !== 'PLAYING', depth, bossFightActive: bossFightActive && !!bossInfo, bossBleeding, bossLurking, tense: ghostQuestGiven && depth <= 5, amuletObtained: hasAmulet, musicRef });
+  useMusicByDepth({ enabled: true, menu: gameState !== 'PLAYING', depth, bossFightActive: bossFightActive && !!bossInfo, bossBleeding: bossBleedingEffective, bossLurking, tense: ghostQuestGiven && depth <= 5, amuletObtained: hasAmulet, musicRef });
 
   const { sendSelectScrollTarget, sendStoneTarget } = useGameSocket({
     enabled: gameState === 'PLAYING',
@@ -697,7 +701,7 @@ function App() {
           </div>
         )}
 
-        <BossHealthBar boss={bossInfo} bleeding={bossBleeding} interfaceSize={interfaceSize} assetImages={assetImages} />
+        <BossHealthBar boss={bossInfo} bleeding={bossBleedingEffective} interfaceSize={interfaceSize} assetImages={assetImages} />
         <KeyDisplay keys={myStats.keys} depth={depth} />
 
         <SideTags>

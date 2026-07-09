@@ -353,6 +353,8 @@ class Tengu(MobEntity):
     bomb_y: int = -1
     bomb_timer: int = 0
 
+    noticed: bool = False  # first-sight yell guard (SPD notice())
+
     # Persistent shocker state (SPD ShockerAbility buff)
     shocker_active: bool = False
     shocker_x: int = -1
@@ -368,9 +370,6 @@ class Tengu(MobEntity):
 
     def is_enraged(self) -> bool:
         return self.hp * 2 <= self.max_hp
-
-    def get_attack_skill(self) -> int:
-        return 20 if not self.is_enraged() else 10
 
     def target_ability_uses(self) -> int:
         target = 1 + 2 * self.arena_jumps

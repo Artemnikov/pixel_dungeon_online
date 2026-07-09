@@ -31,6 +31,24 @@ _SHOCKER_ORDINAL_OFFSETS = [(-1, -1), (1, -1), (-1, 1), (1, 1)]
 _SHOCKER_CARDINAL_OFFSETS = [(0, -1), (1, 0), (0, 1), (-1, 0)]
 
 
+def _normal_int_range(lo: int, hi: int) -> int:
+    # SPD Random.NormalIntRange: mean-biased average of two uniforms.
+    return round((random.randint(lo, hi) + random.randint(lo, hi)) / 2)
+
+
+def _line_first_step(x0: int, y0: int, x1: int, y1: int):
+    """Offset of the first Bresenham cell from (x0,y0) toward (x1,y1)
+    (SPD Ballistica path.get(1))."""
+    dx = abs(x1 - x0)
+    dy = abs(y1 - y0)
+    sx = 1 if x1 >= x0 else -1
+    sy = 1 if y1 >= y0 else -1
+    e2 = 2 * (dx - dy)
+    nx = x0 + (sx if e2 > -dy else 0)
+    ny = y0 + (sy if e2 < dx else 0)
+    return (nx - x0, ny - y0)
+
+
 def _left(d: int) -> int:
     return 7 if d == 0 else d - 1
 
@@ -141,6 +159,18 @@ class TenguAIMixin:
     def _update_tengu(self, tengu: Tengu, floor: FloorState, floor_id: int) -> bool:
         if tengu.is_alive:
             tengu.clamp_bracket()
+            _t = self._find_nearest_player(tengu.pos, floor_id)
+            if _t is not None:
+                _adj = (max(abs(tengu.pos.x - _t.pos.x),
+                            abs(tengu.pos.y - _t.pos.y)) == 1)
+                tengu.attack_skill = 10 if _adj else 20
+            if not tengu.noticed and _t is not None and self._is_in_los(
+                    tengu.pos, _t.pos, floor_id=floor_id, distance=self._view_distance(tengu)):
+                tengu.noticed = True
+                text = (f"Gotcha, {_t.name}!" if tengu.hp == tengu.max_hp
+                        else f"I have you now, {_t.name}!")
+                self.add_event("BOSS_YELL", {"mob": tengu.id, "text": text,
+                                             "x": tengu.pos.x, "y": tengu.pos.y}, floor_id=floor_id)
 
         if tengu.bomb_timer > 0:
             tengu.bomb_timer -= 1
@@ -281,12 +311,17 @@ class TenguAIMixin:
         cell_list = [(cx, cy, 1) for cx, cy in pattern_cells
                      if 0 <= cx < floor.width and 0 <= cy < floor.height]
         self._emit_shocker_blob(tengu, pattern_cells, floor, floor_id)
+        self._emit_shocker_event(tengu, pattern_cells, floor, floor_id)
 
         if shocked:
             self.add_event("PLAY_SOUND", {"sound": "LIGHTNING"}, floor_id=floor_id)
 
     def _emit_shocker_event(self, tengu: Tengu, cells: list, floor: FloorState, floor_id: int) -> None:
-        self.add_event("TENGU_SHOCKER", {"mob": tengu.id, "cells": [(x, y) for x, y in cells]}, floor_id=floor_id)
+        self.add_event("TENGU_SHOCKER", {
+            "mob": tengu.id,
+            "cells": [(x, y) for x, y in cells],
+            "ordinals": bool(tengu.shocking_ordinals),
+        }, floor_id=floor_id)
 
     def _emit_shocker_blob(self, tengu: Tengu, cells: list, floor: FloorState, floor_id: int) -> None:
         """Create/update the shocker blob area so the frontend renders spark particles."""
@@ -391,6 +426,7 @@ class TenguAIMixin:
         return tengu.ability_cooldown == 0
 
     def _tengu_use_ability(self, tengu: Tengu, target, floor: FloorState, floor_id: int) -> None:
+        challenged = "stronger_bosses" in self.challenges
         ability_used = False
         ability_to_use = -1
         while not ability_used:
@@ -398,6 +434,8 @@ class TenguAIMixin:
                 ability_to_use = 0
             elif tengu.abilities_used == 1:
                 ability_to_use = 2
+            elif challenged:
+                ability_to_use = random.randint(0, 1) * 2   # 0 or 2, never fire
             else:
                 ability_to_use = random.randint(0, 2)
 
@@ -416,6 +454,10 @@ class TenguAIMixin:
                 if not ability_used and tengu.abilities_used == 1:
                     ability_to_use = 1
                     ability_used = self._tengu_throw_fire(tengu, target, floor, floor_id)
+
+            # Challenge: always accompany a non-fire ability with fire.
+            if ability_used and challenged and ability_to_use != 1:
+                self._tengu_throw_fire(tengu, target, floor, floor_id)
 
         tengu.last_ability = ability_to_use
         tengu.abilities_used += 1
@@ -462,19 +504,40 @@ class TenguAIMixin:
                                           "target_x": x, "target_y": y, "projectile": "shuriken",
                                           "crit": False, "grim_proc": False}, floor_id=floor_id)
         self.add_event("TENGU_BOMB", {"mob": tengu.id, "x": x, "y": y, "timer": tengu.bomb_timer}, floor_id=floor_id)
+        self.add_event("TENGU_BOMB_COUNTDOWN", {"mob": tengu.id, "x": x, "y": y, "count": 3}, floor_id=floor_id)
         self.add_event("PLAY_SOUND", {"sound": "PUFF"}, floor_id=floor_id)
         return True
+
+    def _bomb_blast_cells(self, floor: FloorState, x: int, y: int) -> set:
+        """Cells within Chebyshev radius 2 reachable from (x,y) without
+        crossing a solid tile (SPD PathFinder.buildDistanceMap, radius 2)."""
+        cells = {(x, y)}
+        frontier = [(x, y, 0)]
+        while frontier:
+            cx, cy, d = frontier.pop()
+            if d >= 2:
+                continue
+            for dx, dy in _CIRCLE8_OFFSETS:
+                nx, ny = cx + dx, cy + dy
+                if not (0 <= nx < floor.width and 0 <= ny < floor.height):
+                    continue
+                if floor.flags and floor.flags.solid[ny][nx]:
+                    continue
+                if (nx, ny) not in cells:
+                    cells.add((nx, ny))
+                    frontier.append((nx, ny, d + 1))
+        return cells
 
     def _tengu_detonate_bomb(self, tengu: Tengu, floor: FloorState, floor_id: int) -> None:
         x, y = tengu.bomb_x, tengu.bomb_y
         tengu.bomb_x = -1
         tengu.bomb_y = -1
         depth = floor.floor_id
-        center = Position(x=x, y=y)
+        blast = self._bomb_blast_cells(floor, x, y)
 
         for p in self._players_on_floor(floor_id):
-            if p.is_alive and self._get_distance(p.pos, center) <= 2:
-                raw = random.randint(5 + depth, 10 + 2 * depth)
+            if p.is_alive and (p.pos.x, p.pos.y) in blast:
+                raw = _normal_int_range(5 + depth, 10 + 2 * depth)
                 taken = p.take_damage(max(0, raw - random.randint(p.get_dr_min(), p.get_dr_max())))
                 self.add_event("ATTACK", {"source": tengu.id, "target": p.id,
                                           "damage": taken, "surprise": False}, floor_id=floor_id)
@@ -484,8 +547,8 @@ class TenguAIMixin:
                     self.qualified_for_boss_challenge = False
 
         for m in list(floor.mobs.values()):
-            if m.is_alive and m.id != tengu.id and self._get_distance(m.pos, center) <= 2:
-                raw = random.randint(5 + depth, 10 + 2 * depth)
+            if m.is_alive and m.id != tengu.id and (m.pos.x, m.pos.y) in blast:
+                raw = _normal_int_range(5 + depth, 10 + 2 * depth)
                 taken = m.take_damage(max(0, raw - random.randint(m.get_dr_min(), m.get_dr_max())))
                 self.add_event("ATTACK", {"source": tengu.id, "target": m.id,
                                           "damage": taken, "surprise": False}, floor_id=floor_id)
@@ -503,10 +566,9 @@ class TenguAIMixin:
         self.add_event("PLAY_SOUND", {"sound": "BLAST"}, floor_id=floor_id)
 
     def _tengu_throw_fire(self, tengu: Tengu, target, floor: FloorState, floor_id: int) -> bool:
-        dx = target.pos.x - tengu.pos.x
-        dy = target.pos.y - tengu.pos.y
-        step_x = (dx > 0) - (dx < 0)
-        step_y = (dy > 0) - (dy < 0)
+        if target.pos.x == tengu.pos.x and target.pos.y == tengu.pos.y:
+            return False
+        step_x, step_y = _line_first_step(tengu.pos.x, tengu.pos.y, target.pos.x, target.pos.y)
         if step_x == 0 and step_y == 0:
             return False
 
@@ -602,6 +664,6 @@ class TenguAIMixin:
 
         # Initial blob area + event (no damage on spawn turn, SPD-style)
         self._emit_shocker_blob(tengu, [(x, y)], floor, floor_id)
-        self.add_event("TENGU_SHOCKER", {"mob": tengu.id, "cells": [(x, y)]}, floor_id=floor_id)
+        self.add_event("TENGU_SHOCKER", {"mob": tengu.id, "cells": [(x, y)], "ordinals": False}, floor_id=floor_id)
         self.add_event("PLAY_SOUND", {"sound": "LIGHTNING"}, floor_id=floor_id)
         return True

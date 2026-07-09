@@ -45,11 +45,28 @@ def test_tengu_base_stats_match_original():
     assert tengu.hp == tengu.max_hp == 200
     assert tengu.attack_skill == 20
     assert tengu.is_enraged() is False
-    assert tengu.get_attack_skill() == 20
 
     tengu.hp = 100
     assert tengu.is_enraged() is True
-    assert tengu.get_attack_skill() == 10
+
+
+def test_tengu_attack_skill_is_adjacency_based():
+    floor = make_floor()
+    game = make_game(floor)
+    tengu = Tengu(id="t1", pos=Position(x=5, y=5), faction=Faction.DUNGEON)
+    floor.mobs[tengu.id] = tengu
+    player = game.add_player("p1", "Hero")
+    player.floor_id = floor.floor_id
+
+    player.pos = Position(x=6, y=6)          # Chebyshev-adjacent (diagonal)
+    game._update_tengu(tengu, floor, floor.floor_id)
+    game.flush_events()
+    assert tengu.attack_skill == 10
+
+    player.pos = Position(x=5, y=1)          # ranged
+    game._update_tengu(tengu, floor, floor.floor_id)
+    game.flush_events()
+    assert tengu.attack_skill == 20
 
 
 def test_tengu_jumps_when_dropping_an_hp_bracket():
@@ -136,6 +153,144 @@ def test_tengu_throws_bomb_when_enraged_and_detonates():
     assert tengu.bomb_x == -1 and tengu.bomb_y == -1
     assert any(e["type"] == "TENGU_BLAST" for e in events)
     assert player.hp < hp_before
+
+
+def test_tengu_yells_gotcha_on_first_notice_at_full_hp():
+    floor = make_floor()
+    game = make_game(floor)
+    tengu = Tengu(id="t1", pos=Position(x=5, y=5), faction=Faction.DUNGEON)
+    floor.mobs[tengu.id] = tengu
+    player = game.add_player("p1", "Hero")
+    player.pos = Position(x=5, y=4)
+    player.floor_id = floor.floor_id
+
+    game._update_tengu(tengu, floor, floor.floor_id)
+    yells = [e for e in game.flush_events() if e["type"] == "BOSS_YELL"]
+    assert any(y["data"]["text"] == "Gotcha, Hero!" for y in yells)
+    assert tengu.noticed is True
+
+    # No second notice yell on the next turn.
+    game._update_tengu(tengu, floor, floor.floor_id)
+    assert not any(e["type"] == "BOSS_YELL" and "otcha" in e["data"]["text"]
+                   for e in game.flush_events())
+
+
+def test_tengu_yells_defeated_on_death():
+    floor = make_floor()
+    game = make_game(floor)
+    tengu = Tengu(id="t1", pos=Position(x=5, y=5), faction=Faction.DUNGEON)
+    floor.mobs[tengu.id] = tengu
+    game.add_player("p1", "Hero")
+
+    game.handle_mob_death(tengu, floor, floor.floor_id)
+    assert any(e["type"] == "BOSS_YELL" and e["data"]["text"] == "Free at last..."
+               for e in game.flush_events())
+
+
+def test_tengu_shocker_emits_alternating_lightning_events():
+    floor = make_floor()
+    game = make_game(floor)
+    tengu = Tengu(id="t1", pos=Position(x=5, y=5), faction=Faction.DUNGEON)
+    tengu.shocker_active = True
+    tengu.shocker_x, tengu.shocker_y = 5, 3
+    tengu.shocking_ordinals = None
+    floor.mobs[tengu.id] = tengu
+    game.add_player("p1", "Hero")
+
+    seen = []
+    for _ in range(3):
+        game._tick_tengu_shocker_turn(tengu, floor, floor.floor_id)
+        for e in game.flush_events():
+            if e["type"] == "TENGU_SHOCKER":
+                seen.append(e["data"]["ordinals"])
+    assert len(seen) >= 2
+    assert seen[-1] != seen[-2]
+
+
+def test_tengu_fire_direction_is_cardinal_for_shallow_oblique():
+    floor = make_floor(w=12, h=12)
+    game = make_game(floor)
+    tengu = Tengu(id="t1", pos=Position(x=1, y=5), faction=Faction.DUNGEON)
+    floor.mobs[tengu.id] = tengu
+    player = game.add_player("p1", "Hero")
+    player.pos = Position(x=4, y=6)          # dx=3, dy=1 -> first step cardinal (1,0)
+    player.floor_id = floor.floor_id
+
+    assert game._tengu_throw_fire(tengu, player, floor, floor.floor_id) is True
+    blob = next(b for b in floor.blob_areas.values() if b.get("type") == "tengu_fire")
+    from app.engine.dungeon.spd_levelgen.level import _CIRCLE8_OFFSETS
+    assert _CIRCLE8_OFFSETS[blob["direction"]] == (1, 0)
+
+
+def test_tengu_bomb_emits_three_countdown_on_placement():
+    floor = make_floor()
+    game = make_game(floor)
+    tengu = Tengu(id="t1", pos=Position(x=5, y=5), faction=Faction.DUNGEON)
+    floor.mobs[tengu.id] = tengu
+    player = game.add_player("p1", "Hero")
+    player.pos = Position(x=5, y=4)
+    player.floor_id = floor.floor_id
+
+    assert game._tengu_throw_bomb(tengu, player, floor, floor.floor_id) is True
+    events = game.flush_events()
+    cds = [e for e in events if e["type"] == "TENGU_BOMB_COUNTDOWN"]
+    assert any(e["data"]["count"] == 3 for e in cds)
+
+
+def test_tengu_bomb_blast_respects_walls():
+    floor = make_floor(w=7, h=7)
+    # Solid wall column at x=3 for y=2..4 (isolates left half from right half)
+    for yy in (2, 3, 4):
+        floor.grid[yy][3] = TileType.WALL
+    floor.rebuild_flags()
+    game = make_game(floor)
+    tengu = Tengu(id="t1", pos=Position(x=1, y=3), faction=Faction.DUNGEON)
+    floor.mobs[tengu.id] = tengu
+    game.add_player("p1", "Hero")
+
+    cells = game._bomb_blast_cells(floor, 2, 3)   # bomb just left of the wall
+    assert (2, 3) in cells
+    assert (5, 3) not in cells                     # right of the wall, unreachable
+    assert (4, 3) not in cells                     # behind the wall column
+
+
+def _enable_challenge(game):
+    game.challenges = {"stronger_bosses"}
+
+
+def test_tengu_challenge_hp_is_250():
+    from app.engine.game.tengu_arena import _apply_boss_challenge
+    tengu = Tengu(id="t1", pos=Position(x=0, y=0), faction=Faction.DUNGEON)
+    _apply_boss_challenge(tengu, {"stronger_bosses"})
+    assert tengu.hp == tengu.max_hp == 250
+
+    normal = Tengu(id="t2", pos=Position(x=0, y=0), faction=Faction.DUNGEON)
+    _apply_boss_challenge(normal, set())
+    assert normal.hp == normal.max_hp == 200
+
+
+def test_tengu_challenge_fire_never_random_but_always_paired():
+    floor = make_floor()
+    game = make_game(floor)
+    _enable_challenge(game)
+    tengu = Tengu(id="t1", pos=Position(x=5, y=5), faction=Faction.DUNGEON)
+    tengu.hp = 100
+    tengu.abilities_used = 5           # past the scripted bomb/shocker openers
+    tengu.arena_jumps = 4
+    floor.mobs[tengu.id] = tengu
+    player = game.add_player("p1", "Hero")
+    player.pos = Position(x=5, y=8)
+    player.floor_id = floor.floor_id
+
+    fire_events = 0
+    for _ in range(30):
+        tengu.abilities_used = 5
+        tengu.last_ability = -1
+        game._tengu_use_ability(tengu, player, floor, floor.floor_id)
+        if any(e["type"] == "TENGU_FIRE" for e in game.flush_events()):
+            fire_events += 1
+    # Under challenge every ability use also throws fire.
+    assert fire_events == 30
 
 
 def test_tengu_mask_drops_for_player_without_subclass():
