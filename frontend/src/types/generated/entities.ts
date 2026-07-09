@@ -5416,6 +5416,7 @@ export interface Chest {
     | StoneOfEnchantment
   )[];
   item_category?: string | null;
+  mimic_hint?: boolean;
 }
 export interface VelvetPouch {
   kind?: "velvet_pouch";

@@ -50,6 +50,7 @@ class Chest(ItemBase):
     opened: bool = False
     contents: List["AnyItem"] = Field(default_factory=list)
     item_category: Optional[str] = None
+    mimic_hint: bool = False
 
 
 class Bag(ItemBase):

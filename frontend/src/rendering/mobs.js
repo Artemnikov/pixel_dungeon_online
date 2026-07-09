@@ -514,8 +514,17 @@ export const getWraithFrame = (mob, mobAnim, now) =>
 export const getPiranhaFrame = (mob, mobAnim, now) =>
   [0, 1][Math.floor(now / 250) % 2] * PIRANHA_FW;
 
-// Mimic variants: mostly static (mimics disguise as items until triggered).
-export const getMimicFrame = () => 0;
+// Mimic variants: hiding animation (frames 1-2) when disguised, idle (frames 3-4) when revealed.
+export const getMimicFrame = (mob, mobAnim, now) => {
+  if (mob && mob.disguised === false) {
+    // Revealed: idle animation (open mouth, frames 3-4, SPD: MimicSprite idle 3,3,3,4,4)
+    const cycle = [3, 3, 3, 4, 4];
+    return cycle[Math.floor(now / 300) % 5] * FRAME_W;
+  }
+  // Disguised: hiding animation (subtle chest movement, frames 1-2, SPD: hiding 1,1,1,1,1,2)
+  const cycle = [1, 1, 1, 1, 1, 2];
+  return cycle[Math.floor(now / 400) % 6] * FRAME_W;
+};
 
 // Bee: simple 2-frame wing flutter.
 export const getBeeFrame = (mob, mobAnim, now) =>
