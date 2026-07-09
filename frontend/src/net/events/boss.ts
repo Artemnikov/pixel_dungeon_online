@@ -169,6 +169,7 @@ export function handleBossEvents(event: GameEvent, ctx: HandlerCtx): boolean {
   }
 
   if (event.type === 'TENGU_SHOCKER') {
+    const ordinals = event.data.ordinals ?? true;
     if (particlesRef) {
       for (const [x, y] of event.data.cells) {
         if (!visionRef?.current?.visible?.has(`${x},${y}`)) continue;
@@ -178,12 +179,14 @@ export function handleBossEvents(event: GameEvent, ctx: HandlerCtx): boolean {
 
         if (lightningRef) {
           const s = TILE_SIZE;
-          const h = s / 2;
-          const [bx, by] = [x * s + h, y * s + h];
-          spawnLightning(lightningRef, bx - s, by - s, bx + s, by + s, '#88ccff');
-          spawnLightning(lightningRef, bx - s, by + s, bx + s, by - s, '#88ccff');
-          spawnLightning(lightningRef, bx, by - s, bx, by + s, '#88ccff');
-          spawnLightning(lightningRef, bx - s, by, bx + s, by, '#88ccff');
+          const [bx, by] = [x * s + s / 2, y * s + s / 2];
+          if (ordinals) {
+            spawnLightning(lightningRef, bx - s, by - s, bx + s, by + s, '#88ccff');
+            spawnLightning(lightningRef, bx - s, by + s, bx + s, by - s, '#88ccff');
+          } else {
+            spawnLightning(lightningRef, bx, by - s, bx, by + s, '#88ccff');
+            spawnLightning(lightningRef, bx - s, by, bx + s, by, '#88ccff');
+          }
         }
       }
     }

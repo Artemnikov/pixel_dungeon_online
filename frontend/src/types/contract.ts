@@ -722,7 +722,7 @@ export interface TenguFireEvent {
 /** Tengu calls down a lightning cross centered on its target. */
 export interface TenguShockerEvent {
   type: 'TENGU_SHOCKER';
-  data: { mob: string; cells: Vec2[] };
+  data: { mob: string; cells: Vec2[]; ordinals?: boolean };
 }
 
 /** A boss shouts a taunt; rendered as floating text above its tile. */
