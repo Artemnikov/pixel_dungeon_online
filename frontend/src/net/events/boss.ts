@@ -7,11 +7,24 @@ import { spawnBeam } from '../../rendering/draw/beam';
 import { spawnLightning } from '../../rendering/draw/lightning';
 import { spawnScreenShake } from '../../rendering/draw/screenShake';
 import { addFadingTraps, setBombItem, clearBombItem } from '../../rendering/tenguEffects';
+import { spawnSmoke } from '../../rendering/draw/smokeParticle';
 import type { GameEvent } from '../../types/contract';
 import type { HandlerCtx } from '../types';
 
 export function handleBossEvents(event: GameEvent, ctx: HandlerCtx): boolean {
   const { mobAnimRef, particlesRef, floatingTextRef, warnedTilesRef, visionRef, beamRef, screenShakeRef, lightningRef } = ctx;
+
+  const pourBombSmoke = (bx: number, by: number) => {
+    if (!particlesRef) return;
+    for (let dy = -2; dy <= 2; dy++) {
+      for (let dx = -2; dx <= 2; dx++) {
+        const x = bx + dx, y = by + dy;
+        if (!visionRef?.current?.visible?.has(`${x},${y}`)) continue;
+        if (Math.random() > 0.5) continue;
+        spawnSmoke(particlesRef, x * TILE_SIZE + TILE_SIZE / 2, y * TILE_SIZE + TILE_SIZE / 2, 1);
+      }
+    }
+  };
 
   if (event.type === 'GOO_CHARGE') {
     const now = performance.now();
@@ -119,11 +132,7 @@ export function handleBossEvents(event: GameEvent, ctx: HandlerCtx): boolean {
       mobAnimRef.current[event.data.mob].attackUntil = now + 400;
     }
     setBombItem(event.data.x, event.data.y);
-    if (floatingTextRef && visionRef?.current?.visible?.has(`${event.data.x},${event.data.y}`)) {
-      const cx = event.data.x * TILE_SIZE + TILE_SIZE / 2;
-      const cy = event.data.y * TILE_SIZE;
-      spawnFloatingText(floatingTextRef, cx, cy, '!', '#ff6600');
-    }
+    pourBombSmoke(event.data.x, event.data.y);
     return true;
   }
 
@@ -133,6 +142,7 @@ export function handleBossEvents(event: GameEvent, ctx: HandlerCtx): boolean {
       const cy = event.data.y * TILE_SIZE;
       spawnFloatingText(floatingTextRef, cx, cy, `${event.data.count}...`, '#ff6600');
     }
+    pourBombSmoke(event.data.x, event.data.y);
     return true;
   }
 
@@ -159,6 +169,7 @@ export function handleBossEvents(event: GameEvent, ctx: HandlerCtx): boolean {
   }
 
   if (event.type === 'TENGU_SHOCKER') {
+    const ordinals = event.data.ordinals ?? true;
     if (particlesRef) {
       for (const [x, y] of event.data.cells) {
         if (!visionRef?.current?.visible?.has(`${x},${y}`)) continue;
@@ -168,12 +179,14 @@ export function handleBossEvents(event: GameEvent, ctx: HandlerCtx): boolean {
 
         if (lightningRef) {
           const s = TILE_SIZE;
-          const h = s / 2;
-          const [bx, by] = [x * s + h, y * s + h];
-          spawnLightning(lightningRef, bx - s, by - s, bx + s, by + s, '#88ccff');
-          spawnLightning(lightningRef, bx - s, by + s, bx + s, by - s, '#88ccff');
-          spawnLightning(lightningRef, bx, by - s, bx, by + s, '#88ccff');
-          spawnLightning(lightningRef, bx - s, by, bx + s, by, '#88ccff');
+          const [bx, by] = [x * s + s / 2, y * s + s / 2];
+          if (ordinals) {
+            spawnLightning(lightningRef, bx - s, by - s, bx + s, by + s, '#88ccff');
+            spawnLightning(lightningRef, bx - s, by + s, bx + s, by - s, '#88ccff');
+          } else {
+            spawnLightning(lightningRef, bx, by - s, bx, by + s, '#88ccff');
+            spawnLightning(lightningRef, bx - s, by, bx + s, by, '#88ccff');
+          }
         }
       }
     }
@@ -201,6 +214,15 @@ export function handleBossEvents(event: GameEvent, ctx: HandlerCtx): boolean {
     if (beamRef) spawnBeam(beamRef, sx, sy, tx, ty, 'death_ray');
     if (visionRef?.current?.visible?.has(`${event.data.source_x},${event.data.source_y}`)) {
       AudioManager.play('RAY');
+    }
+    return true;
+  }
+
+  if (event.type === 'BOSS_YELL') {
+    if (floatingTextRef && visionRef?.current?.visible?.has(`${event.data.x},${event.data.y}`)) {
+      const cx = event.data.x * TILE_SIZE + TILE_SIZE / 2;
+      const cy = event.data.y * TILE_SIZE - 2;
+      spawnFloatingText(floatingTextRef, cx, cy, event.data.text, '#ffff66');
     }
     return true;
   }

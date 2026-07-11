@@ -120,7 +120,7 @@ export function drawPlayers(ctx, { entitiesRef, visionRef, assetImages, playerAn
       }
     }
 
-    if (player.id !== myPlayerId) {
+    if (player.id !== myPlayerId && !player.is_downed) {
       ctx.fillStyle = 'white';
       ctx.font = '10px Arial';
       ctx.textAlign = 'center';

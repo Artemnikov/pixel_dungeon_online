@@ -1,0 +1,8 @@
+steps:
+- name: gcr.io/cloud-builders/docker
+  args: ['build', '-t', 'eu.gcr.io/$PROJECT_ID/online-pixel-dungeon', '.']
+images:
+- 'eu.gcr.io/$PROJECT_ID/online-pixel-dungeon'
+options:
+  logging: CLOUD_LOGGING_ONLY
+serviceAccount: projects/$PROJECT_ID/serviceAccounts/cloudbuild-deployer@$PROJECT_ID.iam.gserviceaccount.com

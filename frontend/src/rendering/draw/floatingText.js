@@ -70,17 +70,19 @@ export const TEXT_ICON = {
 
 const stacks = new Map();
 
-export function spawnFloatingText(floatingTextRef, cx, cy, text, color = '#ffffff', iconIndex = -1, key = -1) {
+export function spawnFloatingText(floatingTextRef, cx, cy, text, color = '#ffffff', iconIndex = -1, key = -1, opts = {}) {
   const entry = {
     x: cx,
     y: cy,
     text,
     color,
-    life: LIFESPAN,
-    maxLife: LIFESPAN,
+    life: opts.life ?? LIFESPAN,
+    maxLife: opts.life ?? LIFESPAN,
     iconIndex,
     key,
     origY: cy,
+    fontSize: opts.fontSize ?? 9,
+    lineWidth: opts.lineWidth ?? 2,
   };
   floatingTextRef.current.push(entry);
 
@@ -165,10 +167,10 @@ export function advanceAndDrawFloatingText(ctx, { floatingTextRef }) {
         ix, iy, iw, ih);
     }
 
-    ctx.font = '9px Arial';
+    ctx.font = `${t.fontSize}px Arial`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.lineWidth = 2;
+    ctx.lineWidth = t.lineWidth;
     ctx.strokeStyle = 'rgba(0, 0, 0, 0.6)';
     ctx.strokeText(t.text, textX, textY);
     ctx.fillStyle = t.color;

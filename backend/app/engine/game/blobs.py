@@ -41,13 +41,13 @@ def _evolve_electricity_blob(
         return
 
     is_wand_blob = blob_id and str(blob_id).startswith("wand_elec_")
-    if is_wand_blob:
-        tick_counter = blob.get("tick_counter", 0) + 1
-        blob["tick_counter"] = tick_counter
-        if tick_counter >= 150:
-            del floor.blob_areas[blob_id]
-            events.append({"type": "BLOB_DEPLETED", "data": {"id": blob_id}})
-            return
+    tick_counter = blob.get("tick_counter", 0) + 1
+    blob["tick_counter"] = tick_counter
+    max_ticks = 150 if is_wand_blob else 100  # 5 s for traps
+    if tick_counter >= max_ticks:
+        del floor.blob_areas[blob_id]
+        events.append({"type": "BLOB_DEPLETED", "data": {"id": blob_id}})
+        return
 
     new_cells: Set[Tuple[int, int]] = set()
     new_volume: Dict[Tuple[int, int], int] = {}

@@ -106,6 +106,10 @@ function App() {
   const [bossInfo, setBossInfo] = useState(null);
   const [bossFightActive, setBossFightActive] = useState(false);
   const [bossBleeding, setBossBleeding] = useState(false);
+  // SPD BossHealthBar.bleed(true) — Tengu bleeds once past half HP (phase 2).
+  // Derived (not synced state) so it stays in step with bossInfo without an effect.
+  const bossBleedingEffective = bossBleeding
+    || (bossInfo?.name === 'Tengu' && bossInfo.hp * 2 <= bossInfo.maxHp);
   const [depth, setDepth] = useState(1);
   const [, setCamera] = useState({ x: 0, y: 0 });
   const [gold, setGold] = useState(0);
@@ -240,7 +244,7 @@ function App() {
   });
   useAudioUnlock();
   const assetImages = useAssetImages();
-  useMusicByDepth({ enabled: true, menu: gameState !== 'PLAYING', depth, bossFightActive: bossFightActive && !!bossInfo, bossBleeding, bossLurking, tense: ghostQuestGiven && depth <= 5, amuletObtained: hasAmulet, musicRef });
+  useMusicByDepth({ enabled: true, menu: gameState !== 'PLAYING', depth, bossFightActive: bossFightActive && !!bossInfo, bossBleeding: bossBleedingEffective, bossLurking, tense: ghostQuestGiven && depth <= 5, amuletObtained: hasAmulet, musicRef });
 
   const { sendSelectScrollTarget, sendStoneTarget } = useGameSocket({
     enabled: gameState === 'PLAYING',
@@ -470,10 +474,10 @@ function App() {
     } else if (talent.showTalentPane) {
       talent.setShowTalentPane(false);
       talent.setUpgradedTalentId(null);
-    } else if (!modals.gameMenuOpenRef.current) {
+    } else if (!modals.gameMenuOpenRef.current && gameState === 'PLAYING') {
       modals.setGameMenuOpen(true);
     }
-  }, [talent.showSubclassChoice, talent.showArmorAbilityChoice, talent.showTalentPane]);
+  }, [talent.showSubclassChoice, talent.showArmorAbilityChoice, talent.showTalentPane, gameState]);
 
   const resetForRestart = useCallback(() => {
     if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
@@ -513,7 +517,6 @@ function App() {
     triggerWait: () => send({ type: 'WAIT' }),
     isRefocusingRef, isDraggingRef, floorFadeRef,
     quickslot, itemsById,
-    onRadialSelect: modals.handleRadialSelect,
     gameMenuOpenRef: modals.gameMenuOpenRef,
     showItemBrowserRef: modals.showItemBrowserRef,
     onOpenTalents: () => talent.setShowTalentPane(v => !v),
@@ -697,7 +700,7 @@ function App() {
           </div>
         )}
 
-        <BossHealthBar boss={bossInfo} bleeding={bossBleeding} interfaceSize={interfaceSize} assetImages={assetImages} />
+        <BossHealthBar boss={bossInfo} bleeding={bossBleedingEffective} interfaceSize={interfaceSize} assetImages={assetImages} />
         <KeyDisplay keys={myStats.keys} depth={depth} />
 
         <SideTags>

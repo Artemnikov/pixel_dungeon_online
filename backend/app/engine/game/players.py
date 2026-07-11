@@ -26,7 +26,7 @@ from app.engine.dungeon.generator import TileType
 from app.engine.entities.base import Faction, Position
 from app.engine.entities.item_union import Bag, VelvetPouch
 from app.engine.entities.items_artifacts import CloakOfShadows
-from app.engine.entities.items_consumable import Amulet, Ration, Stone, ThrowableDagger, Waterskin
+from app.engine.entities.items_consumable import Amulet, Dewdrop, Ration, Stone, ThrowableDagger, Waterskin
 from app.engine.entities.items_equip import Bow, ClothArmor, Dagger, SpiritBow, Staff, WornShortsword, make_named_melee_weapon
 from app.engine.entities.items_potions import PotionOfLiquidFlame
 from app.engine.entities.items_scrolls import ScrollOfIdentify, ScrollOfUpgrade
@@ -353,10 +353,35 @@ class PlayersMixin:
 
         # Drop everything the hero carried — equipped gear plus the backpack's
         # items. Sub-bags drop their contents individually, not the bag itself.
-        dropped_items = [s for s in player.belongings.equipped_slots() if s is not None]
+        # Skip the starting weapon and waterskin (dewdrops from the latter).
+        starting_weapon_class = {
+            CharacterClass.WARRIOR: WornShortsword,
+            CharacterClass.MAGE: Staff,
+            CharacterClass.ROGUE: Dagger,
+        }.get(player.class_type)
+
+        dropped_items = []
+        for s in player.belongings.equipped_slots():
+            if s is None:
+                continue
+            if starting_weapon_class and isinstance(s, starting_weapon_class):
+                continue
+            if player.class_type == CharacterClass.HUNTRESS and s.name == "Gloves":
+                continue
+            if player.class_type == CharacterClass.ROGUE and isinstance(s, CloakOfShadows):
+                continue
+            if isinstance(s, ClothArmor):
+                continue
+            dropped_items.append(s)
+
         for item in list(player.belongings.backpack.items):
             if isinstance(item, Bag):
                 dropped_items.extend(item.items)
+            elif isinstance(item, Waterskin):
+                if item.volume > 0:
+                    dropped_items.append(Dewdrop(
+                        id=str(uuid.uuid4()), quantity=item.volume,
+                    ))
             else:
                 dropped_items.append(item)
         for idx, item in enumerate(dropped_items):

@@ -105,10 +105,12 @@ class MovementCombatMixin:
                 continue
             floor.items.pop(chest_id, None)
             mob.disguised = False
-            mob.ai_state = "hunting"
+            mob.ai_state = "fleeing"
+            mob.add_buff("haste", 2.0)
             self.add_event("SPAWN_MOB", {"mob": mob.model_dump()}, floor_id=floor_id)
             self.add_event("PLAY_SOUND", {"sound": "MIMIC"}, floor_id=floor_id)
             self.add_event("MESSAGE", {"text": "The crystal chest was a mimic!", "player": player.id}, floor_id=floor_id)
+            self.add_event("CRYSTAL_CHEST_SHATTER", {"x": mob.pos.x, "y": mob.pos.y}, floor_id=floor_id)
             return True
         return False
 
@@ -195,7 +197,7 @@ class MovementCombatMixin:
             self.add_event("PLAY_SOUND", {"sound": "TOMB"}, floor_id=floor_id)
             self._spawn_wraiths_around(floor, floor_id, player)
         elif chest.chest_type in ("SKELETON", "REMAINS"):
-            self.add_event("PLAY_SOUND", {"sound": "BONES"}, floor_id=floor_id)
+            self.add_event("PLAY_SOUND", {"sound": "BONES", "x": x, "y": y}, floor_id=floor_id)
         else:
             self.add_event("PLAY_SOUND", {"sound": "UNLOCK"}, floor_id=floor_id)
         self._drop_chest_contents(floor, chest, x, y)
