@@ -34,7 +34,6 @@ export default function useKeyboardControls({
   isDraggingRef,
   quickslot,
   itemsById,
-  onRadialSelect,
   gameMenuOpenRef,
   showItemBrowserRef,
   onOpenTalents,
@@ -93,10 +92,6 @@ export default function useKeyboardControls({
         if (triggerWait) triggerWait();
         return;
       }
-      if (e.code === 'KeyQ') {
-        if (onRadialSelect) onRadialSelect();
-        return;
-      }
       if (e.code === 'KeyT') {
         if (onOpenTalents) onOpenTalents();
         return;
@@ -152,5 +147,5 @@ export default function useKeyboardControls({
       window.removeEventListener('keyup', handleKeyUp);
       window.removeEventListener('blur', handleBlur);
     };
-  }, [inventory, handleToolbarClick, handleToolbarDoubleClick, socketRef, setShowInventory, onExamineOrReveal, onCancelModes, triggerWait, isRefocusingRef, isDraggingRef, quickslot, itemsById, onRadialSelect, gameMenuOpenRef, showItemBrowserRef, onOpenTalents, onOpenItemBrowser, floorFadeRef]);
+  }, [inventory, handleToolbarClick, handleToolbarDoubleClick, socketRef, setShowInventory, onExamineOrReveal, onCancelModes, triggerWait, isRefocusingRef, isDraggingRef, quickslot, itemsById, gameMenuOpenRef, showItemBrowserRef, onOpenTalents, onOpenItemBrowser, floorFadeRef]);
 }
