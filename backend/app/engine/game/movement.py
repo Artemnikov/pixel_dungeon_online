@@ -197,7 +197,7 @@ class MovementCombatMixin:
             self.add_event("PLAY_SOUND", {"sound": "TOMB"}, floor_id=floor_id)
             self._spawn_wraiths_around(floor, floor_id, player)
         elif chest.chest_type in ("SKELETON", "REMAINS"):
-            self.add_event("PLAY_SOUND", {"sound": "BONES"}, floor_id=floor_id)
+            self.add_event("PLAY_SOUND", {"sound": "BONES", "x": x, "y": y}, floor_id=floor_id)
         else:
             self.add_event("PLAY_SOUND", {"sound": "UNLOCK"}, floor_id=floor_id)
         self._drop_chest_contents(floor, chest, x, y)
