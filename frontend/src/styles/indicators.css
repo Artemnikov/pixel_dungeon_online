@@ -79,17 +79,18 @@
 .side-tag--attack:hover { background: rgba(40, 10, 10, 0.85); }
 .side-tag--action { border-color: #8855cc; }
 
-/* --- GameLog — SPD's bottom-left message log --- */
+/* --- GameLog — bottom-center message log --- */
 .game-log {
   position: fixed;
-  left: max(6px, env(safe-area-inset-left));
+  left: 50%;
+  transform: translateX(-50%);
   bottom: max(6px, env(safe-area-inset-bottom));
   z-index: 45;
   display: flex;
   flex-direction: column;
   gap: 2px;
   pointer-events: none;
-  max-width: min(360px, 50vw);
+  max-width: 320px;
 }
 .game-log__line {
   font: 11px monospace;
@@ -98,6 +99,7 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  text-align: left;
 }
 
 .toast-overlay {
