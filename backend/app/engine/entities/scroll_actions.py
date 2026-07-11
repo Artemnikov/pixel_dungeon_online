@@ -57,7 +57,7 @@ def _maybe_proc_inscribed_stealth(game, player) -> None:
     inscribed_stealth = player.subclass_info.talent_info.level("inscribed_stealth")
     if inscribed_stealth > 0:
         player.add_buff("invisibility", duration=1.0 * (1 + 2 * inscribed_stealth), level=1)
-        game.add_event("PLAY_SOUND", {"sound": "MELD"}, floor_id=player.floor_id, source_player_id=player.id)
+        game.add_event("PLAY_SOUND", {"sound": "MELD"}, floor_id=player.floor_id, player_id=player.id)
 
 
 def _teleport_player(game, player) -> None:

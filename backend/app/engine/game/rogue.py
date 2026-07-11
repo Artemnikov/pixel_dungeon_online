@@ -132,7 +132,7 @@ class RogueMixin:
         player._cloak_drain_accum = 0.0
         player.add_buff("shadows", duration=999999.0, level=1)
         player.prep_seconds = 0.0
-        self.add_event("PLAY_SOUND", {"sound": "MELD"}, floor_id=player.floor_id, source_player_id=player.id)
+        self.add_event("PLAY_SOUND", {"sound": "MELD"}, floor_id=player.floor_id, player_id=player.id)
         self.add_event("STEALTH", {"player": player.id, "active": True}, floor_id=player.floor_id, source_player_id=player.id)
         return True
 
