@@ -90,7 +90,7 @@
   flex-direction: column;
   gap: 2px;
   pointer-events: none;
-  max-width: min(360px, 50vw);
+  max-width: 320px;
 }
 .game-log__line {
   font: 11px monospace;
