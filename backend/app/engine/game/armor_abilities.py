@@ -338,7 +338,7 @@ class ArmorAbilitiesMixin:
 
         add_buff(target.buffs, "death_mark", duration=5.0, level=1, source_id=player.id)
         self.add_event("DEATH_MARK", {"player": player.id, "target": target.id}, floor_id=floor_id, source_player_id=player.id)
-        self.add_event("PLAY_SOUND", {"sound": "MELD"}, floor_id=floor_id, source_player_id=player.id)
+        self.add_event("PLAY_SOUND", {"sound": "MELD"}, floor_id=floor_id, player_id=player.id)
 
     def _ability_shadow_clone(self, player, floor, floor_id, target_x, target_y) -> None:
         # Summon a shadow ally beside the hero. It fights nearby enemies; its HP

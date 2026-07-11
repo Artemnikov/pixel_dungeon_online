@@ -119,9 +119,7 @@ export function syncState(data: StateUpdateMessage, ctx: SyncCtx): void {
       applyInvisFade(existing, p.invisible || 0);
       if (p.is_downed && !existing.is_downed) {
         existing.deathStart = performance.now();
-        const localPlayer = p.id === myPlayerIdRef.current;
-        const visible = visionRef.current?.visible;
-        if (localPlayer || visible?.has(`${p.pos.x},${p.pos.y}`)) AudioManager.play('DEATH');
+        if (p.id === myPlayerIdRef.current) AudioManager.play('DEATH');
       }
       existing.is_downed = p.is_downed;
       existing.heal_left = p.heal_left;
