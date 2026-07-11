@@ -1,5 +1,6 @@
 import { TILE_SIZE } from '../../constants';
 import AudioManager from '../../audio/AudioManager';
+import { spawnFloatingText } from '../../rendering/draw/floatingText';
 import { spawnFlameBurst } from '../../rendering/draw/flameParticle';
 import { spawnElmo } from '../../rendering/draw/elmoParticle';
 import { spawnWhiteSplash, spawnSewerBarrelBurst, spawnLeafForRegion, spawnEnergy, spawnBoneRattle, spawnCoin, spawnBombBlast, spawnDust, spawnCritSparkle } from '../../rendering/draw/particles';
@@ -158,6 +159,12 @@ export function handleWorldEvents(event: GameEvent, ctx: HandlerCtx): boolean {
 
   if (event.type === 'LOCKED') {
     AudioManager.play('LOCKED');
+    const { x, y } = event.data;
+    if (ctx.floatingTextRef && x != null && y != null && visionRef?.current?.visible?.has(`${x},${y}`)) {
+      const cx = x * TILE_SIZE + TILE_SIZE / 2;
+      const cy = y * TILE_SIZE + TILE_SIZE * 0.2;
+      spawnFloatingText(ctx.floatingTextRef, cx, cy, 'Locked', '#ffaa44', -1, -1, { fontSize: 13, lineWidth: 3 });
+    }
     return true;
   }
 
