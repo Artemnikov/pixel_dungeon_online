@@ -79,10 +79,11 @@
 .side-tag--attack:hover { background: rgba(40, 10, 10, 0.85); }
 .side-tag--action { border-color: #8855cc; }
 
-/* --- GameLog — SPD's bottom-left message log --- */
+/* --- GameLog — bottom-center message log --- */
 .game-log {
   position: fixed;
-  left: max(6px, env(safe-area-inset-left));
+  left: 50%;
+  transform: translateX(-50%);
   bottom: max(6px, env(safe-area-inset-bottom));
   z-index: 45;
   display: flex;
@@ -98,6 +99,7 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  text-align: left;
 }
 
 .toast-overlay {

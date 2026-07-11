@@ -28,8 +28,9 @@
   }
 
   .game-log {
-    left: max(6px, env(safe-area-inset-left));
-    bottom: 130px;
+    left: 50%;
+    transform: translateX(-50%);
+    bottom: max(6px, env(safe-area-inset-bottom));
     max-width: min(240px, 60vw);
     z-index: 46;
   }
