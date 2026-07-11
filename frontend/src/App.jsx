@@ -517,7 +517,6 @@ function App() {
     triggerWait: () => send({ type: 'WAIT' }),
     isRefocusingRef, isDraggingRef, floorFadeRef,
     quickslot, itemsById,
-    onRadialSelect: modals.handleRadialSelect,
     gameMenuOpenRef: modals.gameMenuOpenRef,
     showItemBrowserRef: modals.showItemBrowserRef,
     onOpenTalents: () => talent.setShowTalentPane(v => !v),

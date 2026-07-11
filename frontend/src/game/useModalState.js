@@ -18,7 +18,6 @@ export default function useModalState() {
   const [showItemBrowser, setShowItemBrowser] = useState(false);
   const [itemCatalog, setItemCatalog] = useState([]);
   const [showQuickBag, setShowQuickBag] = useState(false);
-  const [radialOpen, setRadialOpen] = useState(false);
   const [swappedQuickslots, setSwappedQuickslots] = useState(false);
   const [quickslotPicker, setQuickslotPicker] = useState(null);
   const [gameMenuOpen, setGameMenuOpen] = useState(false);
@@ -38,7 +37,6 @@ export default function useModalState() {
 
   const handleQuickBag = () => setShowQuickBag(true);
   const handleSwap = () => setSwappedQuickslots(v => !v);
-  const handleRadialSelect = () => setRadialOpen(true);
   const openQuickslotPicker = (idx) => setQuickslotPicker(idx);
 
   // Socket callbacks for useGameSocket
@@ -89,7 +87,6 @@ export default function useModalState() {
     showItemBrowser, setShowItemBrowser,
     itemCatalog,
     showQuickBag, setShowQuickBag,
-    radialOpen, setRadialOpen,
     swappedQuickslots, setSwappedQuickslots,
     quickslotPicker, setQuickslotPicker,
     gameMenuOpen, setGameMenuOpen,
@@ -97,7 +94,6 @@ export default function useModalState() {
     showItemBrowserRef,
     handleQuickBag,
     handleSwap,
-    handleRadialSelect,
     openQuickslotPicker,
     onShopOpen,
     onImpDialogue,

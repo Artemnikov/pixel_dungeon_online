@@ -12,7 +12,6 @@ import WndSadGhost from './WndSadGhost';
 import WndGhostGear from './WndGhostGear';
 import WndChasmJump from './WndChasmJump';
 import WndQuickBag from './WndQuickBag';
-import RadialMenu from './RadialMenu';
 
 import WndStoneIntuition from './WndStoneIntuition';
 import WndStoneAugment from './WndStoneAugment';
@@ -30,9 +29,9 @@ const SCROLL_PICKER_KEYS = {
 function GameModals({
   modals, itemsById, toolbarItems,
   belongings, gold, energy, strength,
-  isDesktop, depth,
+  depth,
   executeItemAction, assignQuickslot, sendSelectScrollTarget, sendStoneTarget,
-  send, handleToolbarClick,
+  send,
 }) {
   const { t } = useTranslation();
   const [ghostEquipSlot, setGhostEquipSlot] = useState(null);
@@ -47,7 +46,6 @@ function GameModals({
     ghostGearData, setGhostGearData,
     chasmPrompt, setChasmPrompt,
     showQuickBag, setShowQuickBag,
-    radialOpen, setRadialOpen,
     quickslotPicker, setQuickslotPicker,
     scrollPickerData, setScrollPickerData,
     stonePickerData, setStonePickerData,
@@ -56,7 +54,6 @@ function GameModals({
     augmentSelectData, setAugmentSelectData,
     enchantChoiceData, setEnchantChoiceData,
     imbueWandData, setImbueWandData,
-    openQuickslotPicker,
     alchemyOpen, setAlchemyOpen,
     alchemyPreview, setAlchemyPreview,
     alchemyBrewed, setAlchemyBrewed,
@@ -187,15 +184,6 @@ function GameModals({
         />
       )}
 
-      {radialOpen && (
-        <RadialMenu
-          items={toolbarItems}
-          size={isDesktop ? 200 : 140}
-          onSelect={(idx) => { handleToolbarClick(toolbarItems[idx]); }}
-          onAssign={(idx) => openQuickslotPicker(idx)}
-          onClose={() => setRadialOpen(false)}
-        />
-      )}
 
       {quickslotPicker !== null && (
         <WndBag
