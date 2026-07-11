@@ -474,10 +474,10 @@ function App() {
     } else if (talent.showTalentPane) {
       talent.setShowTalentPane(false);
       talent.setUpgradedTalentId(null);
-    } else if (!modals.gameMenuOpenRef.current) {
+    } else if (!modals.gameMenuOpenRef.current && gameState === 'PLAYING') {
       modals.setGameMenuOpen(true);
     }
-  }, [talent.showSubclassChoice, talent.showArmorAbilityChoice, talent.showTalentPane]);
+  }, [talent.showSubclassChoice, talent.showArmorAbilityChoice, talent.showTalentPane, gameState]);
 
   const resetForRestart = useCallback(() => {
     if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
