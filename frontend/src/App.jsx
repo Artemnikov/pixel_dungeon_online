@@ -84,7 +84,7 @@ function App() {
   const [playerName, setPlayerName] = useState('');
   const [difficulty, setDifficulty] = useState('normal');
   const [challenges, setChallenges] = useState('');
-  const [gameId] = useState('default-lobby');
+  const [gameId] = useState('game5');
   const [sessionId, setSessionId] = useState(
     () => sessionStorage.getItem('opd_session') || ''
   );
