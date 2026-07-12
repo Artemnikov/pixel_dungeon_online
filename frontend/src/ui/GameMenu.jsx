@@ -4,7 +4,7 @@ import SettingsPanel from '../menu/SettingsPanel';
 import WndJournal from './WndJournal';
 import WndChallenges from './WndChallenges';
 
-export default function GameMenu({ depth, challenges, onClose, onLeaveGame }) {
+export default function GameMenu({ depth, challenges, onClose, onLeaveGame, onReplayTutorial }) {
   const { t } = useTranslation();
   const [showSettings, setShowSettings] = useState(false);
   const [showJournal, setShowJournal] = useState(false);
@@ -48,6 +48,11 @@ export default function GameMenu({ depth, challenges, onClose, onLeaveGame }) {
         <button className="game-menu-btn" onClick={() => setShowSettings(true)}>
           {t('game.settings')}
         </button>
+        {onReplayTutorial && (
+          <button className="game-menu-btn" onClick={() => { onClose(); onReplayTutorial(); }}>
+            {t('tutorial.replay')}
+          </button>
+        )}
         <button className="game-menu-btn danger" onClick={onLeaveGame}>
           {t('game.leaveGame')}
         </button>

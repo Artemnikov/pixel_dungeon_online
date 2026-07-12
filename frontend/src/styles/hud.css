@@ -47,6 +47,12 @@
   flex-direction: column-reverse;
 }
 
+.desktop-mode .status-pane-footer {
+  position: fixed;
+  top: 0;
+  left: 0;
+}
+
 .status-pane-canvas {
   image-rendering: pixelated;
   display: block;

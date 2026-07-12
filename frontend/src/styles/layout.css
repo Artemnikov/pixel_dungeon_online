@@ -94,6 +94,30 @@
   transform: scale(1.05);
 }
 
+.esc-hint {
+  display: none;
+}
+
+.desktop-mode .esc-hint {
+  display: flex;
+  position: absolute;
+  top: max(18px, calc(env(safe-area-inset-top) + 6px));
+  right: 60px;
+  z-index: 200;
+  align-items: center;
+  justify-content: center;
+  padding: 2px 8px;
+  background: rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 4px;
+  color: rgba(255, 255, 255, 0.35);
+  font-family: monospace;
+  font-size: 10px;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+  pointer-events: none;
+}
+
 /* --- Unified bottom-centered HUD container: message log, toolbar, then inventory --- */
 .hud-bottom {
   position: fixed;
