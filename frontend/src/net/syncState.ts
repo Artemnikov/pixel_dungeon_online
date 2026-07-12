@@ -1,7 +1,15 @@
 import AudioManager from '../audio/AudioManager';
 import { INVIS_ALPHA } from '../constants';
+import { isWallTile } from '../rendering/sewers/constants';
 import type { StateUpdateMessage, SerializedItem } from '../types/contract';
 import type { SyncCtx, RenderPlayer, RenderMob } from './types';
+
+// 8-neighbour offsets used to light the wall shell around visible open cells.
+const WALL_SHELL_OFFSETS: ReadonlyArray<readonly [number, number]> = [
+  [-1, -1], [0, -1], [1, -1],
+  [-1, 0], [1, 0],
+  [-1, 1], [0, 1], [1, 1],
+];
 
 interface DropBounce {
   startTime: number;
@@ -214,6 +222,22 @@ export function syncState(data: StateUpdateMessage, ctx: SyncCtx): void {
 
   if (data.visible_tiles) {
     const newVisible = new Set(data.visible_tiles.map(t => `${t[0]},${t[1]}`));
+    // Reveal the wall shell bounding visible open space. A wall cell only enters
+    // a shadowcast FOV if a ray actually reaches it, so wall-tops that border
+    // seen floor — the far wall of a room, or the walls framing a hidden/locked
+    // door room — would otherwise render as black gaps ("missing top_wall").
+    // Lighting the wall neighbours of every visible *open* cell fills those gaps
+    // at the same brightness as the floor they bound. (Intentional deviation
+    // from SPD, which fogs never-seen walls to solid black.)
+    const grid = gridRef.current;
+    for (const t of data.visible_tiles as Array<[number, number]>) {
+      const x = t[0], y = t[1];
+      if (isWallTile(grid[y]?.[x])) continue; // spread out from open cells only
+      for (const [dx, dy] of WALL_SHELL_OFFSETS) {
+        const nx = x + dx, ny = y + dy;
+        if (isWallTile(grid[ny]?.[nx])) newVisible.add(`${nx},${ny}`);
+      }
+    }
     visionRef.current.visible = newVisible;
     newVisible.forEach(t => visionRef.current.discovered.add(t));
   }

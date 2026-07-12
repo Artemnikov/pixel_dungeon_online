@@ -181,6 +181,10 @@ export const getSewerCap = (grid, x, y, tile, openDoors) => {
   if (doorCap != null) return doorCap;
 
   const below = getTile(grid, x, y + 1);
+
+  // Alchemy pot overhang: the raised pot sprite extends into the cell above.
+  if (below === BACKEND_TILE.ALCHEMY.id) return BACKEND_TILE.ALCHEMY.overhangIndex;
+
   if (!isWallStitcheable(below)) return null;
   if (isWallTile(tile)) return getInternalWallTop(grid, x, y, tile);
   return getWallOverhang(grid, x, y);

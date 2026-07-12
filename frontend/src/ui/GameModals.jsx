@@ -337,6 +337,7 @@ function GameModals({
           gold={gold}
           energy={energy}
           strength={strength}
+          depth={depth}
           itemsById={itemsById}
           preview={alchemyPreview}
           brewed={alchemyBrewed}

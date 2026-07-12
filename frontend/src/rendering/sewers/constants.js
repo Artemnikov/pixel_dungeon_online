@@ -53,7 +53,7 @@ export const BACKEND_TILE = {
   HIGH_GRASS: { id: 19, atlasIndex: null, seethrough: false },
   SECRET_DOOR: { id: 20, atlasIndex: atlasIndex(0, 5), seethrough: false },
   LOCKED_EXIT: { id: 21, atlasIndex: atlasIndex(8, 3), seethrough: false },
-  ALCHEMY: { id: 23, atlasIndex: atlasIndex(8, 7), seethrough: true },
+  ALCHEMY: { id: 23, atlasIndex: atlasIndex(8, 7), seethrough: true, overhangIndex: atlasIndex(8, 14) },
   WELL: { id: 24, atlasIndex: null, seethrough: true },
   STATUE: { id: 25, atlasIndex: atlasIndex(0, 8), seethrough: true },
   BOOKSHELF: { id: 27, atlasIndex: atlasIndex(12, 5), seethrough: false },
