@@ -20,6 +20,7 @@ import useCanvasControls from './input/useCanvasControls';
 import { resolveTapAction } from './input/resolveTap';
 import { isFloorFadeActive } from './rendering/floorTransition';
 import LoreOverlay from './ui/LoreOverlay';
+import TutorialOverlay from './ui/TutorialOverlay';
 import { getLoreForDepth } from './game/loreTexts';
 import useDebugApi from './dev/useDebugApi';
 
@@ -89,6 +90,12 @@ function App() {
     () => sessionStorage.getItem('opd_session') || ''
   );
   const [connectionStatus, setConnectionStatus] = useState(null);
+  const [showTutorial, setShowTutorial] = useState(false);
+
+  const handleReplayTutorial = useCallback(() => {
+    localStorage.removeItem('opd-tutorial-completed');
+    setShowTutorial(true);
+  }, []);
 
   // --- game state ---
   const [grid, setGrid] = useState([]);
@@ -134,6 +141,9 @@ function App() {
 
   const handleLoreDismiss = useCallback(() => {
     loreFinishRef.current?.();
+    if (!localStorage.getItem('opd-tutorial-completed')) {
+      setShowTutorial(true);
+    }
   }, []);
 
   // --- shared refs ---
@@ -691,6 +701,13 @@ function App() {
 
         <LoadingOverlay visible={grid.length === 0} />
 
+        {showTutorial && (
+          <TutorialOverlay onComplete={() => {
+            localStorage.setItem('opd-tutorial-completed', '1');
+            setShowTutorial(false);
+          }} />
+        )}
+
         {connectionStatus === 'reconnecting' && (
           <div className="reconnect-banner" role="status">
             {t('app.reconnecting')}
@@ -897,6 +914,7 @@ function App() {
           onNewGame={() => { resetForRestart(); setGameState('SELECT'); }}
           onMenu={() => { resetForRestart(); setGameState('WELCOME'); }}
           challenges={challenges}
+          onReplayTutorial={handleReplayTutorial}
         />
       </div>
     </>

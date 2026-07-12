@@ -955,5 +955,29 @@
     "v00x1": "Four playable classes: Warrior, Mage, Rogue, Archer.",
     "v00x2": "Canvas-rendered dungeon with mobs, items, inventory and combat.",
     "v00x3": "Depth-based music and sound effects."
+  },
+  "tutorial": {
+    "skip": "Skip",
+    "replay": "Replay Tutorial",
+    "movement": {
+      "title": "Movement",
+      "body": "Use these keys to move your hero:"
+    },
+    "examine": {
+      "title": "Examine & Reveal",
+      "body": "Press E to enter examine mode, then click a tile or mob to inspect it.",
+      "sub": "Press E again to search the area and reveal hidden passages."
+    },
+    "attack": {
+      "title": "Combat",
+      "body": "Walk into adjacent enemies to attack them.",
+      "sub": "Select a ranged weapon and tap a target to fire."
+    },
+    "objectives": {
+      "title": "Your Goal",
+      "body": "Defeat monsters, find the stairs down, and descend deeper.",
+      "stairs": "Stairs to the next floor",
+      "boss": "A boss guards every 5th floor!"
+    }
   }
 }

@@ -10,7 +10,7 @@ export default function GameOverlay({
   isDowned, playerName, classType, level, depth, gold,
   subclass, armorAbility, talentLevels, talentDefs, inventory,
   selectedClass, scoreBreakdown, canResurrect, isVictory, onResurrect,
-  onNewGame, onMenu, challenges,
+  onNewGame, onMenu, challenges, onReplayTutorial,
 }) {
   const { t } = useTranslation();
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -31,6 +31,7 @@ export default function GameOverlay({
 
   return (
     <>
+      <span className="esc-hint">ESC</span>
       <button className="fullscreen-btn" onClick={toggleFullscreen} title={isFullscreen ? t('app.exitFullscreen') : t('app.fullscreen')}>
         <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           {isFullscreen ? (
@@ -47,6 +48,7 @@ export default function GameOverlay({
           challenges={challenges}
           onClose={onCloseMenu}
           onLeaveGame={onLeaveGame}
+          onReplayTutorial={onReplayTutorial}
         />
       )}
       {!!isDowned && canResurrect && (
