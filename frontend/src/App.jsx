@@ -85,7 +85,7 @@ function App() {
   const [playerName, setPlayerName] = useState('');
   const [difficulty, setDifficulty] = useState('normal');
   const [challenges, setChallenges] = useState('');
-  const [gameId] = useState('game5');
+  const [gameId] = useState('default-lobby');
   const [sessionId, setSessionId] = useState(
     () => sessionStorage.getItem('opd_session') || ''
   );
@@ -534,6 +534,8 @@ function App() {
       if (!myStats.isAdmin) return;
       modals.setShowItemBrowser(v => !v);
     },
+    gridRef, entitiesRef, myPlayerIdRef,
+    onOpenAlchemy: modals.onOpenAlchemy,
   });
 
   const handleCanvasClick = useCallback((e) => {

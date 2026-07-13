@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { isFloorFadeActive } from '../rendering/floorTransition';
+import { BACKEND_TILE } from '../rendering/sewers/constants';
 
 const DIRECTION_KEYS = new Set(['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'KeyW', 'KeyA', 'KeyS', 'KeyD']);
 
@@ -39,6 +40,10 @@ export default function useKeyboardControls({
   onOpenTalents,
   onOpenItemBrowser,
   floorFadeRef,
+  gridRef,
+  entitiesRef,
+  myPlayerIdRef,
+  onOpenAlchemy,
 }) {
   const lastKeyRef = useRef({ key: null, time: 0 });
   const pressedKeysRef = useRef(new Set());
@@ -121,6 +126,21 @@ export default function useKeyboardControls({
       }
 
       if (DIRECTION_KEYS.has(e.code)) {
+        // Check if the tile in the pressed direction is an alchemy pot.
+        // If so, open the alchemy overlay instead of moving into it.
+        const dx = isRight(e.code) ? 1 : isLeft(e.code) ? -1 : 0;
+        const dy = isDown(e.code) ? 1 : isUp(e.code) ? -1 : 0;
+        const me = entitiesRef?.current?.players[myPlayerIdRef?.current];
+        if (me && dx + dy !== 0) {
+          const pos = me.targetPos || me.renderPos;
+          const tx = Math.round(pos.x) + dx;
+          const ty = Math.round(pos.y) + dy;
+          const g = gridRef?.current;
+          if (g?.[ty]?.[tx] === BACKEND_TILE.ALCHEMY.id) {
+            if (onOpenAlchemy) onOpenAlchemy();
+            return;
+          }
+        }
         // Auto-repeat keydowns don't change the held set, so syncMoveIntent no-ops on
         // them; the server paces repeated stepping while the key stays down.
         syncMoveIntent();
@@ -147,5 +167,5 @@ export default function useKeyboardControls({
       window.removeEventListener('keyup', handleKeyUp);
       window.removeEventListener('blur', handleBlur);
     };
-  }, [inventory, handleToolbarClick, handleToolbarDoubleClick, socketRef, setShowInventory, onExamineOrReveal, onCancelModes, triggerWait, isRefocusingRef, isDraggingRef, quickslot, itemsById, gameMenuOpenRef, showItemBrowserRef, onOpenTalents, onOpenItemBrowser, floorFadeRef]);
+  }, [inventory, handleToolbarClick, handleToolbarDoubleClick, socketRef, setShowInventory, onExamineOrReveal, onCancelModes, triggerWait, isRefocusingRef, isDraggingRef, quickslot, itemsById, gameMenuOpenRef, showItemBrowserRef, onOpenTalents, onOpenItemBrowser, floorFadeRef, gridRef, entitiesRef, myPlayerIdRef, onOpenAlchemy]);
 }

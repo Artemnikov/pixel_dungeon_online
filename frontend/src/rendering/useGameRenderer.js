@@ -28,6 +28,7 @@ import { advanceAndDrawBeams } from './draw/beam';
 import { advanceAndDrawBlobAreas, advanceAndDrawBlobParticles } from './draw/blobArea';
 import { advanceAndDrawSinkDrips } from './draw/sinkDrip';
 import { advanceAndDrawFadingTraps } from './draw/fadingTraps';
+import { advanceAndDrawAlchemyBubbles } from './draw/alchemyBubbles';
 import { drawBombItem } from './draw/bombOverlay';
 import { advanceAndDrawFlyingItems } from './draw/flyingItem';
 import { advanceAndDrawFloorFade } from './floorTransition';
@@ -221,6 +222,7 @@ export default function useGameRenderer({
       drawCustomWalls(ctx, { customWalls: customWallsRef.current, assetImages, visionRef });
       drawTorches(ctx, { torches: torchesRef.current, assetImages, visionRef });
       advanceAndDrawStaffAmbient(ctx, staffAmbientRef, entitiesRef, visionRef, myPlayerId);
+      advanceAndDrawAlchemyBubbles(ctx, { grid, visionRef, assetImages });
       drawGridCaps(ctx, { grid, depth, assetImages, visionRef, openDoorsRef });
       drawTargetedCell(ctx, { hoveredCellRef, assetImages });
       drawLastTargetCrosshair(ctx, { targetingModeRef, selectedEnemyIdRef, entitiesRef, visionRef, assetImages });
