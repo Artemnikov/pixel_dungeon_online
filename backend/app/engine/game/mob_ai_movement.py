@@ -88,7 +88,7 @@ class MobAIMovementMixin:
                         return
             return
 
-        if target_player and isinstance(target_player, Player) and target_player.invisible > 0:
+        if target_player and isinstance(target_player, Player) and (target_player.invisible > 0 or target_player.is_afk):
             target_player = None
 
         if target_player and getattr(mob, "never_wakes", False):

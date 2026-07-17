@@ -18,25 +18,33 @@ interface DropBounce {
 
 type Fadeable = {
   invisible?: number;
+  is_afk?: boolean;
   fadeAlpha?: number;
   fadeStartAlpha?: number;
   fadeTargetAlpha?: number;
   fadeStartTime?: number | null;
+  faded?: boolean;
 };
 
-function applyInvisFade(entity: Fadeable, newInvis: number): void {
-  const prev = entity.invisible || 0;
-  const next = newInvis || 0;
-  if (prev === 0 && next > 0) {
+// `newInvis` drives the real invisibility stat (also read for UI elsewhere);
+// `afk` is an independent ghost-mode flag (disconnected player) -- either one
+// fades the sprite, tracked via a separate `faded` flag so toggling one while
+// the other is already active doesn't fight over fadeStartAlpha/fadeTargetAlpha.
+function applyInvisFade(entity: Fadeable, newInvis: number, afk = false): void {
+  const prev = entity.faded ?? false;
+  const next = newInvis > 0 || afk;
+  if (!prev && next) {
     entity.fadeStartAlpha = entity.fadeAlpha ?? 1;
     entity.fadeTargetAlpha = INVIS_ALPHA;
     entity.fadeStartTime = performance.now();
-  } else if (prev > 0 && next === 0) {
+  } else if (prev && !next) {
     entity.fadeStartAlpha = entity.fadeAlpha ?? INVIS_ALPHA;
     entity.fadeTargetAlpha = 1;
     entity.fadeStartTime = performance.now();
   }
-  entity.invisible = next;
+  entity.invisible = newInvis;
+  entity.is_afk = afk;
+  entity.faded = next;
 }
 
 export function syncState(data: StateUpdateMessage, ctx: SyncCtx): void {
@@ -98,7 +106,8 @@ export function syncState(data: StateUpdateMessage, ctx: SyncCtx): void {
         facing: 'RIGHT',
         flipX: false,
         deathStart: p.is_downed ? performance.now() : null,
-        fadeAlpha: (p.invisible || 0) > 0 ? INVIS_ALPHA : 1,
+        fadeAlpha: (p.invisible || 0) > 0 || p.is_afk ? INVIS_ALPHA : 1,
+        faded: (p.invisible || 0) > 0 || !!p.is_afk,
         fadeStartTime: null,
       } as RenderPlayer;
     } else {
@@ -124,7 +133,7 @@ export function syncState(data: StateUpdateMessage, ctx: SyncCtx): void {
       existing.hp = p.hp;
       existing.max_hp = p.max_hp;
       existing.equipped_wearable = p.equipped_wearable;
-      applyInvisFade(existing, p.invisible || 0);
+      applyInvisFade(existing, p.invisible || 0, !!p.is_afk);
       if (p.is_downed && !existing.is_downed) {
         existing.deathStart = performance.now();
         if (p.id === myPlayerIdRef.current) AudioManager.play('DEATH');

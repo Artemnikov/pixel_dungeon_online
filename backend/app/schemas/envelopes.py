@@ -39,6 +39,10 @@ class InitMessage(_Envelope):
     torches: List[Tuple[int, int]] = []
     # Only set on the very first INIT after connecting; omitted on floor change.
     player_id: Optional[str] = None
+    # True only when this connect spawned a brand-new hero, False when it
+    # rebound to an existing one (reconnect/resume) -- player_id alone can't
+    # tell the two apart, since it's set on both. Omitted on floor change.
+    is_new: Optional[bool] = None
     entrance_pos: Optional[Tuple[int, int]] = None
     exit_pos: Optional[Tuple[int, int]] = None
 

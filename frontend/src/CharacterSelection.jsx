@@ -47,7 +47,9 @@ const CharacterSelection = ({ onSelect }) => {
   const [selectedClass, setSelectedClass] = useState('warrior');
   const [difficulty, setDifficulty] = useState('normal');
   const [strongerBosses, setStrongerBosses] = useState(false);
-  const [playerName, setPlayerName] = useState('');
+  const [playerName, setPlayerName] = useState(
+    () => (typeof localStorage !== 'undefined' && localStorage.getItem('opd_last_name')) || ''
+  );
   const [landscape, setLandscape] = useState(
     typeof window !== 'undefined' ? window.innerWidth > window.innerHeight : true
   );
@@ -148,6 +150,7 @@ const CharacterSelection = ({ onSelect }) => {
             {t('hero.strongerBosses')}
           </label>
           <input
+            autoFocus
             className="hero-name-input"
             type="text"
             placeholder={t('hero.namePlaceholder')}
