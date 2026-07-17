@@ -49,6 +49,7 @@ from app.engine.game.ai_dwarf_king import DwarfKingAIMixin
 from app.engine.game.ai_yog_dzewa import YogDzewaAIMixin
 from app.engine.game.ai_demon_spawner import DemonSpawnerAIMixin
 from app.engine.game.ai_pylon import PylonAIMixin
+from app.engine.game.ai_sentry import SentryAIMixin
 from app.engine.game.ai_dm300 import DM300AIMixin
 from app.engine.game.ai_necromancer import NecromancerAIMixin
 from app.engine.game.ai_eye import EyeAIMixin
@@ -92,6 +93,7 @@ class GameInstance(
     YogDzewaAIMixin,
     DemonSpawnerAIMixin,
     PylonAIMixin,
+    SentryAIMixin,
     DM300AIMixin,
     NecromancerAIMixin,
     TenguAIMixin,

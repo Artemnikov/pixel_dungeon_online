@@ -1612,6 +1612,44 @@ class Pylon(MobEntity):
         return super().take_damage(amount)
 
 
+class Sentry(MobEntity):
+    """SentryRoom's guardian statue (levels/rooms/special/SentryRoom.java's
+    nested Sentry class). Immovable, invulnerable, never attacks in melee --
+    fires an unavoidable death-ray beam if the hero lingers on the room's
+    "danger" floor tiles within line of sight. Watch-zone rect and charge
+    delay are threaded in from GenMob.extra at spawn (see ai_sentry.py)."""
+    name: str = "Sentry"
+    faction: str = Faction.DUNGEON
+    hp: int = 1
+    max_hp: int = 1
+    attack_skill: int = 0
+    defense_skill: int = 0
+    damage_min: int = 0
+    damage_max: int = 0
+    dr_min: int = 0
+    dr_max: int = 0
+    exp: int = 0
+    max_lvl: int = -2
+    properties: List[str] = ["IMMOVABLE"]
+    loot_table: List[DropEntry] = []
+    never_wakes: bool = True
+
+    # Runtime (populated from GenMob.extra at spawn; see spd_adapter._spawn_mob)
+    watch_room: List[int] = [0, 0, 0, 0]  # (left, top, right, bottom)
+    initial_charge_ticks: int = 20
+    charge_ticks_left: int = 0
+    charging: bool = False
+    sentry_depth: int = 1
+
+    def take_damage(self, amount: int):
+        # Sentry.damage(): do nothing -- invulnerable.
+        return 0
+
+    def get_effective_defense_skill(self) -> int:
+        # Sentry.defenseSkill(): INFINITE_EVASION -- always dodges.
+        return 10 ** 9
+
+
 # ---------------------------------------------------------------------------
 # Sewer Boss (floor 5) hidden room NPC
 # ---------------------------------------------------------------------------

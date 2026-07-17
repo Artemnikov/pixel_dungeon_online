@@ -13,11 +13,13 @@
 # See the GNU General Public License for more details.
 #
 """Port of concrete SpecialRoom/SecretRoom subclasses
-(rooms/special/*.java, rooms/secret/*.java) -- sizing overrides only.
+(rooms/special/*.java, rooms/secret/*.java).
 
-Only `min/max_width/height` matter for layout-RNG parity (they gate the
-`set_size` -> `NormalIntRange` draw bounds); `paint()` is stubbed and
-deferred to the Painter phase (Task #4) like the other room types."""
+`min/max_width/height` gate the `set_size` -> `NormalIntRange` draw bounds
+for layout-RNG parity; `paint()` fully replicates each room's terrain/loot/
+mob placement (RNG-exact draw order). `SpecialRoom.paint`/`SecretRoom.paint`
+(`_stub_paint`, just below) are only the abstract-base fallback -- every
+concrete subclass in this file overrides it with the real implementation."""
 
 from __future__ import annotations
 
@@ -462,6 +464,7 @@ class SentryRoom(SpecialRoom):
         c = self.center(rng)
         sentry_pos = Point()
         treasure_pos = Point()
+        danger_dist = 0
 
         if entrance.x == self.left:
             sentry_pos.x = self.right - 1
@@ -532,9 +535,18 @@ class SentryRoom(SpecialRoom):
                 else:
                     Painter.set(level, c.x, y, terrain.STATUE)
 
+        if entrance.x == self.left or entrance.x == self.right:
+            danger_dist = 2 * (self.width() - 5)
+        else:
+            danger_dist = 2 * (self.height() - 5)
+        charge_delay = danger_dist / 3.0 + 0.1
+
         Painter.set(level, sentry_pos, terrain.PEDESTAL)
-        # Sentry NPC: runtime-only, zero-RNG, deferred for integration
-        level.mobs.append(GenMob(cls_name="Sentry", pos=level.point_to_cell(sentry_pos)))
+        level.mobs.append(GenMob(
+            cls_name="Sentry", pos=level.point_to_cell(sentry_pos),
+            extra={"room": (self.left, self.top, self.right, self.bottom),
+                   "charge_delay": charge_delay, "depth": level.depth},
+        ))
 
         Painter.set(level, treasure_pos, terrain.PEDESTAL)
         level.drop(_sentry_prize(level, rng, level.depth), level.point_to_cell(treasure_pos)).type = "CHEST"
@@ -802,8 +814,16 @@ class SacrificeRoom(SpecialRoom):
         Painter.fill(level, c.x - 1, c.y - 1, 3, 3, terrain.EMBERS)
         Painter.set(level, c, terrain.PEDESTAL)
 
-        _sacrifice_prize(level, rng, level.depth)
-        # SacrificialFire Blob.seed -- zero-RNG runtime, out of layout-parity scope
+        prize = _sacrifice_prize(level, rng, level.depth)
+        if not hasattr(level, "sacrifice_fires"):
+            level.sacrifice_fires = []
+        max_volume = 6 + level.depth * 4
+        level.sacrifice_fires.append({
+            "pos": level.point_to_cell(c),
+            "volume": max_volume,
+            "max_volume": max_volume,
+            "prize": prize,
+        })
 
         door.set(DoorType.EMPTY)
 
@@ -953,8 +973,11 @@ class MagicWellRoom(SpecialRoom):
 
         # overrideWater is only ever set by external quest wiring (always None
         # in fresh levelgen) -- Random.element(WATERS) always fires.
-        rng.IntMax(2)  # WellWater class pick -- identity irrelevant
-        # WellWater.seed(...) -- zero-RNG actor registration, omitted
+        # WATERS = {WaterOfAwareness, WaterOfHealth} -- index 0 -> awareness.
+        water_type = "awareness" if rng.IntMax(2) == 0 else "health"
+        if not hasattr(level, "magic_wells"):
+            level.magic_wells = []
+        level.magic_wells.append({"pos": level.point_to_cell(c), "water_type": water_type})
 
         self.entrance().set(DoorType.LOCKED)
         level.add_item_to_spawn(_IRON_KEY)

@@ -254,7 +254,16 @@ class GhostQuestState:
         2-4 only, one ghost per run. Returns a GenMob for the caller to add
         to the floor's mob list, or None."""
         depth = level.depth
-        if self.spawned or depth <= 1:
+        # Ghost.Quest.spawn is only ever called from SewerLevel.createMobs()
+        # in the original (a per-class override, depths 1-4 regular floors
+        # only -- depth 5 is the sewer boss floor and uses a separate
+        # create_mobs-free pipeline). This port's create_mobs() is shared
+        # across all regions, so the upper bound must be enforced here
+        # instead: without it, `Random.Int(5 - depth)` for depth >= 5 always
+        # evaluates its `<= 0` zero-consuming branch and returns 0, so the
+        # `!= 0` check below never short-circuits and this incorrectly fires
+        # (and burns RNG draws) on every non-sewers floor.
+        if self.spawned or depth <= 1 or depth > 4:
             return None
         if rng.IntMax(5 - depth) != 0:
             return None
@@ -350,7 +359,15 @@ class WandmakerQuestState:
         if self.spawned:
             return None
         if self.quest_type == 0:
-            if not (depth > 6 and rng.IntMax(10 - depth) == 0):
+            # Wandmaker.Quest.spawnRoom() is only ever called from
+            # PrisonLevel.initRooms() in the original (depths 6-9, a
+            # per-region override) -- this port's _init_rooms() is shared
+            # across all regions, so the upper bound must be enforced here:
+            # without `depth <= 9`, `10 - depth` goes <= 0 for depth >= 10,
+            # and IntMax's zero-consuming "max <= 0 -> 0" rule makes the
+            # `== 0` check always true, incorrectly inserting a Prison quest
+            # room into every caves/city/halls floor's init_rooms.
+            if not (6 < depth <= 9 and rng.IntMax(10 - depth) == 0):
                 return None
             self.quest_type = rng.IntMax(3) + 1
         if self.quest_type == 1:

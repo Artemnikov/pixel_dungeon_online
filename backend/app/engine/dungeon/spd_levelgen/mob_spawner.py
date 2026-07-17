@@ -25,7 +25,7 @@ reading every reachable class's `properties()`)."""
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import List
+from typing import List, Optional
 
 from app.engine.dungeon.spd_random import SPDRandom
 
@@ -40,6 +40,9 @@ class GenMob:
     pos: int = -1
     items: List[object] = None
     depth: int = 1
+    # Free-form per-mob spawn data that doesn't fit the fields above (e.g.
+    # SentryRoom's watch-zone rect + charge delay). Optional, mob-type-specific.
+    extra: Optional[dict] = None
 
     def __post_init__(self) -> None:
         if self.items is None:
