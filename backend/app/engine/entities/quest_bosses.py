@@ -70,7 +70,7 @@ class FetidRat(Rat):
         if random.randint(0, 2) == 0:
             target.ooze_amount = OOZE_DURATION
 
-    def defense_proc(self, damage: int, attacker, floor_mobs: dict, tile_x: int, tile_y: int) -> int:
+    def defense_proc(self, damage: int, attacker, floor_mobs: dict, tile_x: int, tile_y: int, **kwargs) -> int:
         # Substitute for StenchGas-on-hit -- see module docstring.
         if attacker is not None:
             attacker.add_buff("paralysis", duration=2.0, level=1)

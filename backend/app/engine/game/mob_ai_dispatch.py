@@ -209,7 +209,7 @@ class MobAIDispatchMixin:
 
         if target is not None:
             move_times[ally.id] = now
-            if best <= 1:
+            if best <= getattr(ally, "attack_range", 1):
                 ally.last_attack_time = now - ally.attack_cooldown
                 adx = (target.pos.x > ally.pos.x) - (target.pos.x < ally.pos.x)
                 ady = (target.pos.y > ally.pos.y) - (target.pos.y < ally.pos.y)
@@ -220,10 +220,18 @@ class MobAIDispatchMixin:
                     self.move_entity(ally.id, step[0], step[1])
             return
 
-        owner = self.players.get(getattr(ally, "owner_id", None) or "")
-        if owner is not None and owner.floor_id == floor_id:
-            if self._get_distance(ally.pos, owner.pos) > 1:
+        # No enemy visible: mirror images wander randomly (SPD MirrorImage
+        # wanders like any mob when idle), other allies return to owner.
+        if isinstance(ally, MirrorImage):
+            step = self._pick_wander_step(ally, floor, floor_id, now)
+            if step:
                 move_times[ally.id] = now
-                step = self._get_next_step_to(ally.pos, owner.pos, floor_id=floor_id, flying=getattr(ally, "flying", False))
-                if step:
-                    self.move_entity(ally.id, step[0], step[1])
+                self.move_entity(ally.id, *step)
+        else:
+            owner = self.players.get(getattr(ally, "owner_id", None) or "")
+            if owner is not None and owner.floor_id == floor_id:
+                if self._get_distance(ally.pos, owner.pos) > 1:
+                    move_times[ally.id] = now
+                    step = self._get_next_step_to(ally.pos, owner.pos, floor_id=floor_id, flying=getattr(ally, "flying", False))
+                    if step:
+                        self.move_entity(ally.id, step[0], step[1])

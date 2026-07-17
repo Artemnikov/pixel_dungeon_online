@@ -206,6 +206,10 @@ class Mob(Entity):
     # remaining real-time lifespan in seconds (0 = permanent until killed).
     owner_id: Optional[str] = None
     summon_lifespan: float = 0.0
+    # SPD Mob.aggro(Char): when set, the mob prioritises chasing this specific
+    # entity over scanning for the nearest player. Cleared when the target dies
+    # or leaves the floor.
+    aggro_target_id: Optional[str] = None
 
     def die(self, attacker=None, floor_mobs=None, tile_x=0, tile_y=0, players=None):
         pass
@@ -695,7 +699,7 @@ class Player(Entity):
             self.combo_count += 1
             self.combo_timer = max(self.combo_timer, 5.0)
 
-    def defense_proc(self, raw_damage: int, attacker, floor_mobs: dict, tile_x: int, tile_y: int) -> int:
+    def defense_proc(self, raw_damage: int, attacker, floor_mobs: dict, tile_x: int, tile_y: int, **kwargs) -> int:
         from app.engine.entities.buffs import has_buff
 
         # Endure (warrior armor ability): bank half of incoming damage and

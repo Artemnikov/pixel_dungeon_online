@@ -51,10 +51,24 @@ class MobAIMovementMixin:
             return
         can_move = now - move_times.get(mob.id, 0.0) >= move_interval
 
-        if mob.has_buff("amok"):
-            target_player = self._find_nearest_entity(mob.pos, floor_id, exclude_id=mob.id)
-        else:
-            target_player = self._find_nearest_player(mob.pos, floor_id)
+        # SPD Mob.aggro: when a mob has an explicit aggro target (set by
+        # mirror image / ghost hero attacks), chase that target instead
+        # of scanning for the nearest player.
+        target_player = None
+        aggro_id = getattr(mob, "aggro_target_id", None)
+        if aggro_id:
+            aggro_target = floor.mobs.get(aggro_id)
+            if aggro_target is not None and aggro_target.is_alive:
+                target_player = aggro_target
+            else:
+                # Target dead or gone — fall through to normal scan.
+                mob.aggro_target_id = None
+
+        if target_player is None:
+            if mob.has_buff("amok"):
+                target_player = self._find_nearest_entity(mob.pos, floor_id, exclude_id=mob.id)
+            else:
+                target_player = self._find_nearest_player(mob.pos, floor_id)
         if mob.ai_state == "fleeing":
             if can_move and target_player:
                 dx = mob.pos.x - target_player.pos.x

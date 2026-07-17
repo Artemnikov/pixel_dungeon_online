@@ -120,7 +120,7 @@ class RotHeart(MobEntity):
     ai_state: str = "passive"
     properties: List[str] = ["IMMOVABLE"]
 
-    def defense_proc(self, damage: int, attacker, floor_mobs: dict, tile_x: int, tile_y: int) -> int:
+    def defense_proc(self, damage: int, attacker, floor_mobs: dict, tile_x: int, tile_y: int, **kwargs) -> int:
         # RotHeart.defenseProc(): spreads ToxicGas on every hit taken --
         # substituted with a direct poison application (see module docstring).
         if attacker is not None:

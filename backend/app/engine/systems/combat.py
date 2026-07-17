@@ -240,6 +240,7 @@ def resolve_melee_attack(
     guaranteed_hit: bool = False,
     floor=None,
     add_event=None,
+    game=None,
 ) -> dict:
     result = {
         "hit": False,
@@ -326,7 +327,7 @@ def resolve_melee_attack(
 
     # Defense proc (abilities + glyphs)
     if hasattr(defender, "defense_proc") and raw_damage > 0:
-        raw_damage = defender.defense_proc(raw_damage, attacker, floor_mobs, tile_x, tile_y)
+        raw_damage = defender.defense_proc(raw_damage, attacker, floor_mobs, tile_x, tile_y, floor=floor, game=game)
         if raw_damage <= 0:
             return result
 
@@ -339,7 +340,7 @@ def resolve_melee_attack(
             raw_damage = apply_glyph_proc(
                 g.type, defender, attacker, armor,
                 raw_damage, floor_mobs, tile_x, tile_y, floor,
-                add_event=add_event,
+                add_event=add_event, game=game,
             )
             if raw_damage <= 0:
                 return result
@@ -366,6 +367,15 @@ def resolve_melee_attack(
     result["damage"] = actual_damage
     _alert_defender(defender)
 
+    # SPD MirrorImage.attackProc: when an ally (mirror image / ghost hero)
+    # hits a mob, the mob aggros onto that ally specifically instead of
+    # continuing to chase the nearest player.
+    if (actual_damage > 0
+            and hasattr(defender, "aggro_target_id")
+            and getattr(attacker, "owner_id", None) is not None):
+        defender.aggro_target_id = attacker.id
+        defender.ai_state = "hunting"
+
     # Grim enchant: % max-HP execute scaling with missing HP.
     if weapon is not None and weapon.enchantment == "grim" and actual_damage > 0:
         from app.engine.entities.weapon_enchants import grim_chance
@@ -390,6 +400,19 @@ def resolve_melee_attack(
         from app.engine.entities.weapon_enchants import apply_enchant_proc
         apply_enchant_proc(
             weapon.enchantment, attacker, defender, weapon,
+            raw_damage, actual_damage, hp_before, result,
+            floor_mobs, tile_x, tile_y, floor,
+            add_event=add_event,
+        )
+
+    # Mirror image weapon proc delegation: images have no belongings, but the
+    # hero's weapon enchantment should still proc through them (SPD
+    # MirrorImage.attackProc delegates to hero.belongings.weapon().proc).
+    owner_weapon = getattr(attacker, "_owner_weapon", None)
+    if owner_weapon is not None and owner_weapon.enchantment and actual_damage > 0:
+        from app.engine.entities.weapon_enchants import apply_enchant_proc
+        apply_enchant_proc(
+            owner_weapon.enchantment, attacker, defender, owner_weapon,
             raw_damage, actual_damage, hp_before, result,
             floor_mobs, tile_x, tile_y, floor,
             add_event=add_event,
@@ -446,6 +469,8 @@ def resolve_ranged_attack(
     tile_x: int,
     tile_y: int,
     is_in_los: Optional[Callable[["Position", "Position"], bool]] = None,
+    floor=None,
+    game=None,
 ) -> dict:
     result = {
         "hit": False,
@@ -505,7 +530,7 @@ def resolve_ranged_attack(
 
     # Pre-DR defense proc
     if hasattr(defender, "defense_proc") and raw_damage > 0:
-        raw_damage = defender.defense_proc(raw_damage, attacker, floor_mobs, tile_x, tile_y)
+        raw_damage = defender.defense_proc(raw_damage, attacker, floor_mobs, tile_x, tile_y, floor=floor, game=game)
         if raw_damage <= 0:
             return result
 
