@@ -58,9 +58,10 @@
   padding: 12px;
 }
 
-/* --- Title (SPD IconTitle gold text) ------------------------------ */
-.alchemy-title {
-  margin: 0; color: #ffd97a; font-size: 18px; text-align: center;
+/* --- Hint / status text (SPD AlchemyScene txtInfo, replaces title) - */
+.alchemy-hint-text {
+  margin: 0; color: #e8e0d0; font-size: 14px; text-align: center;
+  max-width: 320px;
   text-shadow: 0 1px 4px rgba(0,0,0,0.6);
 }
 
@@ -91,13 +92,18 @@
   box-sizing: border-box; padding: 0;
   width: 48px; height: 48px;
   display: flex; align-items: center; justify-content: center;
-  background: rgba(20,15,10,0.8);
-  border: 1px solid rgba(107,83,52,0.5);
+  background: rgba(130,20,20,0.55);
+  border: 1px solid rgba(180,60,50,0.7);
   border-radius: 3px; cursor: pointer;
   color: #6b5334; font-size: 22px;
   transition: border-color 0.15s;
 }
 .alchemy-input-slot:hover { border-color: #ffd97a; }
+
+.alchemy-input-slot-glyph {
+  color: #f0d8c0; font-weight: bold;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.7);
+}
 
 /* --- Center: combine / arrow buttons ------------------------------
        Each button is an arrow (▶) with cost label.  In SPD these are
@@ -110,15 +116,15 @@
 .alchemy-combine-btn {
   width: 40px; height: 40px;
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px;
-  background: rgba(42,33,24,0.85);
-  border: 1px solid rgba(107,83,52,0.5);
+  background: rgba(130,20,20,0.55);
+  border: 1px solid rgba(180,60,50,0.7);
   border-radius: 3px; cursor: pointer;
   transition: all 0.15s;
 }
 .alchemy-combine-btn:hover:not(:disabled) { border-color: #ffd97a; }
 .alchemy-combine-btn:disabled { opacity: 0.45; cursor: default; }
 
-.alchemy-combine-icon { color: #ffd97a; font-size: 16px; line-height: 1; }
+.alchemy-combine-icon { color: #f0d8c0; font-size: 16px; line-height: 1; }
 .alchemy-combine-btn:disabled .alchemy-combine-icon { color: rgba(0,0,0,0.5); }
 .alchemy-combine-cost { color: #44ccff; font-size: 9px; font-weight: bold; line-height: 1; }
 .alchemy-combine-cost-bad { color: #ff5544; }
@@ -137,10 +143,12 @@
 .alchemy-output-slot {
   display: flex; align-items: center; gap: 8px;
   padding: 4px 8px;
-  background: rgba(15,12,8,0.5);
-  border: 1px solid rgba(107,83,52,0.3);
+  background: rgba(20,20,22,0.6);
+  border: 1px solid rgba(150,150,150,0.35);
   border-radius: 3px; min-height: 48px;
 }
+
+.alchemy-output-empty { width: 48px; height: 48px; min-height: 0; padding: 0; }
 
 .alchemy-output-icon {
   flex-shrink: 0; width: 32px; height: 32px;
@@ -149,11 +157,6 @@
 .alchemy-output-name { flex: 1; font-size: 13px; color: #e8e0d0; }
 .alchemy-unknown { color: #8a7a5e; font-size: 22px; }
 
-.alchemy-output-hint {
-  padding: 8px; text-align: center;
-  color: #8a7a5e; font-size: 13px;
-}
-
 /* --- Controls row (cancel / repeat, below workspace) -------------- */
 .alchemy-controls {
   display: flex; gap: 6px; justify-content: center;
@@ -161,15 +164,15 @@
 .alchemy-control-btn {
   width: 28px; height: 28px;
   background: rgba(15,12,8,0.6);
-  border: 1px solid rgba(107,83,52,0.4);
+  border: 1px solid #ffd97a;
   border-radius: 3px;
-  color: #8a7a5e; font-size: 14px;
+  color: #ffd97a; font-size: 14px;
   cursor: pointer;
   display: flex; align-items: center; justify-content: center;
 }
-.alchemy-control-btn:hover { color: #ffd97a; border-color: #ffd97a; }
+.alchemy-control-btn:hover { background: rgba(42,33,24,0.9); }
 .alchemy-control-disabled { opacity: 0.4; cursor: default; }
-.alchemy-control-disabled:hover { color: #8a7a5e; border-color: rgba(107,83,52,0.4); }
+.alchemy-control-disabled:hover { background: rgba(15,12,8,0.6); }
 
 /* --- Energy display (bottom-center, SPD style) -------------------- */
 .alchemy-energy {
@@ -182,10 +185,10 @@
 .alchemy-energy-text { color: #44ccff; font-size: 14px; font-weight: bold; }
 .alchemy-energize-btn {
   width: 24px; height: 24px;
-  background: rgba(42,33,24,0.8);
-  border: 1px solid rgba(107,83,52,0.5);
+  background: rgba(190,70,20,0.9);
+  border: 1px solid rgba(230,120,50,0.8);
   border-radius: 3px;
-  color: #ffd97a; font-size: 16px; font-weight: bold;
+  color: #fff; font-size: 16px; font-weight: bold;
   cursor: pointer;
   display: flex; align-items: center; justify-content: center;
 }
@@ -224,15 +227,15 @@
 /* --- Guide button (SPD AlchemyScene btnGuide, above energy) -------- */
 .alchemy-guide-btn {
   padding: 5px 14px;
-  background: rgba(42,33,24,0.85);
-  border: 1px solid rgba(107,83,52,0.5);
+  background: rgba(30,55,30,0.85);
+  border: 1px solid rgba(90,160,90,0.6);
   border-radius: 4px;
-  color: #ffd97a; font-size: 13px; font-weight: bold;
+  color: #c8e8a8; font-size: 13px; font-weight: bold;
   font-family: inherit;
   cursor: pointer;
   transition: border-color 0.15s;
 }
-.alchemy-guide-btn:hover { border-color: #ffd97a; }
+.alchemy-guide-btn:hover { border-color: #a8d888; }
 
 /* --- Alchemy guide window (SPD WndJournal.AlchemyTab) -------------- */
 .wnd-alchemy-guide {

@@ -113,7 +113,11 @@ export default function AlchemyOverlay({
       <button className="alchemy-exit-btn" onClick={onClose}>✕</button>
 
       <div className="alchemy-scene">
-        <h2 className="alchemy-title">{t('alchemy.title')}</h2>
+        {recipes.length === 0 && (
+          <div className="alchemy-hint-text">
+            {ids.length > 0 ? t('alchemy.noRecipe') : t('alchemy.hint')}
+          </div>
+        )}
 
         <div className="alchemy-workspace">
           {/* ── Column 1: input slots ── */}
@@ -126,7 +130,7 @@ export default function AlchemyOverlay({
               >
                 {id && itemsById[id]
                   ? <ItemIcon item={itemsById[id]} size={40} />
-                  : <span>+</span>}
+                  : <span className="alchemy-input-slot-glyph">?</span>}
               </button>
             ))}
           </div>
@@ -165,11 +169,7 @@ export default function AlchemyOverlay({
                   {r.output_name}{r.output_quantity > 1 ? ` x${r.output_quantity}` : ''}
                 </span>
               </div>
-            )) : (
-              <div className="alchemy-output-hint">
-                {ids.length > 0 ? t('alchemy.noRecipe') : t('alchemy.hint')}
-              </div>
-            )}
+            )) : <div className="alchemy-output-slot alchemy-output-empty" />}
             {brewed && (
               <div className="alchemy-output-slot alchemy-brewed" key={brewed.item_id}>
                 <div className="alchemy-output-icon">

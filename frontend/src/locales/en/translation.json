@@ -420,7 +420,12 @@
     "mages_staff": "Mage's Staff",
     "pickaxe": "Pickaxe",
     "throwing_knife": "Throwing Knife",
-    "chest": "Chest"
+    "chest": "Chest",
+    "locked_chest": "Locked Chest",
+    "crystal_chest": "Crystal Chest",
+    "tomb": "Tomb",
+    "skeleton": "Skeleton",
+    "remains": "Remains"
   },
   "mob": {
     "rat": "Rat",
@@ -821,7 +826,7 @@
   },
   "alchemy": {
     "title": "Alchemy",
-    "hint": "Select ingredients to brew with",
+    "hint": "Combine ingredients to create something new!",
     "noRecipe": "These ingredients don't combine into anything",
     "brew": "Brew",
     "close": "Close",
