@@ -180,9 +180,9 @@ export const ITEM_SPRITES = {
   "smoldering embers":  [3, 29], // EMBER (QUEST+3)
   "seed of the rotberry": [0, 24], // SEED_ROTBERRY (SEEDS+0)
   "King's Crown":     [12, 3],  // CROWN (MISC_CONSUMABLE+12 = idx 60 = col 12, row 3)
+  "Crystal Chest":    [6, 2],   // CRYSTAL_CHEST (CONTAINER+2 = idx 38) — before "Chest"
+  "Locked Chest":     [5, 2],   // LOCKED_CHEST (CONTAINER+1 = idx 37) — before "Chest"
   "Chest":            [4, 2],   // CHEST (CONTAINER+0 = xy(5,3) = idx 36)
-  "Crystal Chest":    [6, 2],   // CRYSTAL_CHEST (CONTAINER+2 = idx 38)
-  "Locked Chest":     [5, 2],   // LOCKED_CHEST (CONTAINER+1 = idx 37)
   "Tomb":             [2, 2],   // TOMB (CONTAINER+? = xy(3,3) = idx 34)
   "Grave":            [0, 2],   // BONES sprite — player death grave marker
   "Skeleton":         [0, 2],   // SKELETON (CONTAINER+? = xy(1,3) = idx 32)

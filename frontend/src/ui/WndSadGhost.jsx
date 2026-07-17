@@ -9,9 +9,11 @@ const itemLabel = (item) => {
   return `${item.name}${lvl}`;
 };
 
-// Port of WndSadGhost + its RewardWindow (WndSadGhost.java:84-159): picking
-// weapon/armor opens an item-info preview with confirm/cancel before the
-// choice is actually committed, so a misclick doesn't forfeit the other reward.
+// Port of WndSadGhost + its RewardWindow (WndSadGhost.java:84-159): when the
+// quest is processed the window shows two ItemButtons side-by-side (just the
+// item sprites, no upgrade level, no close button — matching the original).
+// Tapping an item opens a RewardWindow (WndInfoItem) with confirm/cancel.
+// The intro/reminder states use a plain WndQuest-style text popup with Close.
 export default function WndSadGhost({ npcId, text, canClaim, weapon, armor, onChoose, onClose }) {
   const { t } = useTranslation();
   const [pending, setPending] = useState(null); // 'weapon' | 'armor' | null
@@ -60,25 +62,32 @@ export default function WndSadGhost({ npcId, text, canClaim, weapon, armor, onCh
       <div className="wnd-item" onClick={(e) => e.stopPropagation()}>
         <div className="wnd-item-title">{t('ghost.title')}</div>
         <div className="wnd-item-desc">{text}</div>
-        <div className="wnd-item-actions">
-          {canClaim && weapon && (
-            <button
-              className="default"
-              onClick={() => { AudioManager.play('CLICK'); setPending('weapon'); }}
-            >
-              {t('ghost.takeWeapon')}: {itemLabel(weapon)}
-            </button>
-          )}
-          {canClaim && armor && (
-            <button
-              className="default"
-              onClick={() => { AudioManager.play('CLICK'); setPending('armor'); }}
-            >
-              {t('ghost.takeArmor')}: {itemLabel(armor)}
-            </button>
-          )}
-          <button onClick={() => { AudioManager.play('CLICK'); onClose(); }}>{t('ghost.close')}</button>
-        </div>
+        {canClaim ? (
+          <div className="wnd-ghost-items">
+            {weapon && (
+              <button
+                className="ghost-item-btn"
+                title={t('ghost.takeWeapon')}
+                onClick={() => { AudioManager.play('CLICK'); setPending('weapon'); }}
+              >
+                <ItemIcon item={weapon} size={48} />
+              </button>
+            )}
+            {armor && (
+              <button
+                className="ghost-item-btn"
+                title={t('ghost.takeArmor')}
+                onClick={() => { AudioManager.play('CLICK'); setPending('armor'); }}
+              >
+                <ItemIcon item={armor} size={48} />
+              </button>
+            )}
+          </div>
+        ) : (
+          <div className="wnd-item-actions">
+            <button onClick={() => { AudioManager.play('CLICK'); onClose(); }}>{t('ghost.close')}</button>
+          </div>
+        )}
       </div>
     </div>
   );

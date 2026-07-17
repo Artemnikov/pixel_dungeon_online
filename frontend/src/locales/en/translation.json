@@ -835,7 +835,50 @@
     "later": "Later",
     "toolkitEnergize": "Energize the toolkit?",
     "toolkitEnergizeOne": "Spend 6 energy (+1 level)",
-    "toolkitEnergizeAll": "Spend {{cost}} energy (+{{levels}} levels)"
+    "toolkitEnergizeAll": "Spend {{cost}} energy (+{{levels}} levels)",
+    "guide": {
+      "btn": "Guide",
+      "title": "Alchemy Guide",
+      "close": "Close",
+      "prev": "Prev",
+      "next": "Next",
+      "potions": {
+        "title": "Intro and Potions",
+        "body": "Welcome to Practical Applications of Alchemy! This book is a reference of recipes to craft items at an alchemy pot.\n\nWe'll start with the most iconic recipe: Potions!\n\nUse three seeds to brew a random potion! Every seed has a potion counterpart, use multiple of the same seed to increase the chance that the potion relates to the seeds you used."
+      },
+      "stones": {
+        "title": "Creating Runestones",
+        "body": "Mixing a scroll into an alchemy pot will imbue its magic into two rocks within the pot. This creates runestones and identifies the scroll!"
+      },
+      "energy_food": {
+        "title": "Energy and Food",
+        "body": "Many recipes require crystal alchemical energy, which is made by deconstructing consumable items in an alchemy pot. Energizing potions or scrolls also identifies them.\n\nSome recipes that require energy are magical, but these ones resemble traditional cooking."
+      },
+      "exotic_potions": {
+        "title": "Exotic Potions",
+        "body": "Potions can be mixed with energy to create exotic potions. They have more powerful effects, but are often useful in different ways."
+      },
+      "exotic_scrolls": {
+        "title": "Exotic Scrolls",
+        "body": "Exotic scrolls can be made with some energy and a scroll. They're a bit stronger and more expensive than exotic potions."
+      },
+      "bombs": {
+        "title": "Enhanced Bombs",
+        "body": "A standard black powder bomb can be mixed with a specific item to create an enhanced bomb."
+      },
+      "weapons": {
+        "title": "Enhancing Weapons",
+        "body": "Some of the lighter or more magical weapons can be used in alchemy!\n\nEach thrown weapon set produces enough liquid metal to fully repair another set of the same level and tier. Note that alchemizing a set will destroy the whole set, even if it isn't all present!\n\nOne wand will produce enough arcane resin to upgrade two wands of the same level, but no higher than +3."
+      },
+      "brews_elixirs": {
+        "title": "Brews and Elixirs",
+        "body": "Brews and elixirs are advanced potions with a variety of effects, usually with a single use."
+      },
+      "spells": {
+        "title": "Spells",
+        "body": "Spells are contained in crystals and provide a variety of effects, usually with multiple uses."
+      }
+    }
   },
   "admin": {
     "giveItem": "Give Item",

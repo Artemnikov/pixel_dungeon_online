@@ -18,6 +18,7 @@ function GameHud({
   onUseAbility, onTriggerBerserk, onPrepStrike, onUseComboMove,
   onOpenItem, onContextMenu, onDefaultAction,
   onCloseInventory,
+  onLayout,
 }) {
   return (
     <div className="hud-bottom">
@@ -41,6 +42,7 @@ function GameHud({
         onSlotLongPress={onSlotLongPress}
         onSlotContextMenu={onSlotContextMenu}
         onSwap={onSwap}
+        onLayout={onLayout}
       />
       <AbilityButton
         armorAbility={myStats.armorAbility || null}

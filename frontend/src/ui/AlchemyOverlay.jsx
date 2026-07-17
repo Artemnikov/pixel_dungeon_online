@@ -13,6 +13,7 @@ import AudioManager from '../audio/AudioManager';
 import ItemIcon from './ItemIcon';
 import WndBag from './WndBag';
 import { coordsForKind } from '../rendering/sprites';
+import WndAlchemyGuide from './WndAlchemyGuide';
 import specksSrc from '../assets/pixel-dungeon/effects/specks.png';
 import water0 from '../assets/pixel-dungeon/environment/water0.png';
 import water1 from '../assets/pixel-dungeon/environment/water1.png';
@@ -37,6 +38,7 @@ export default function AlchemyOverlay({
   const [pickingSlot, setPickingSlot] = useState(null);
   const [energizePick, setEnergizePick] = useState(false);
   const [energizeItem, setEnergizeItem] = useState(null);
+  const [guideOpen, setGuideOpen] = useState(false);
 
   const ids = slots.filter(Boolean);
 
@@ -194,6 +196,14 @@ export default function AlchemyOverlay({
           >↻</button>
         </div>
 
+        {/* ── Guide button (SPD AlchemyScene btnGuide, above energy) ── */}
+        <button
+          className="alchemy-guide-btn"
+          onClick={() => { AudioManager.play('CLICK'); setGuideOpen(true); }}
+        >
+          {t('alchemy.guide.btn')}
+        </button>
+
         {/* ── Energy display ── */}
         <div className="alchemy-energy">
           <span className="inv-energy-icon" />
@@ -257,6 +267,8 @@ export default function AlchemyOverlay({
           </div>
         </div>
       )}
+
+      {guideOpen && <WndAlchemyGuide onClose={() => setGuideOpen(false)} />}
     </div>
   );
 }

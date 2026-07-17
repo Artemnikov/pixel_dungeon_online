@@ -57,6 +57,7 @@ export default function Toolbar({
   onSlotLongPress,
   onSlotContextMenu,
   onSwap,
+  onLayout,
 }) {
   const S = interfaceSize > 0 ? S_DESKTOP : S_MOBILE;
   const isMobile = interfaceSize === 0;
@@ -420,8 +421,27 @@ export default function Toolbar({
       }
 
       areasRef.current = areas;
+
+      if (onLayout && areas.inventory) {
+        const cssScale = S * zoomRef.current;
+        const canvasEl = canvasRef.current;
+        const rect = canvasEl ? canvasEl.getBoundingClientRect() : null;
+        if (rect) {
+          const pos = {
+            x: Math.round(rect.left + areas.inventory.x * cssScale),
+            y: Math.round(rect.top + areas.inventory.y * cssScale),
+            w: Math.round(areas.inventory.w * cssScale),
+            h: Math.round(areas.inventory.h * cssScale),
+          };
+          const prev = areasRef.current._lastLayout;
+          if (!prev || prev.x !== pos.x || prev.y !== pos.y || prev.w !== pos.w || prev.h !== pos.h) {
+            areasRef.current._lastLayout = pos;
+            onLayout({ inventory: pos });
+          }
+        }
+      }
     }
-  }, [mode, interfaceSize, S, isMobile, flipToolbar, quickSwapper, swappedQuickslots, canvasWidth, items, equippedItems, targetingMode]);
+  }, [mode, interfaceSize, S, isMobile, flipToolbar, quickSwapper, swappedQuickslots, canvasWidth, items, equippedItems, targetingMode, onLayout]);
 
   const handlePointerDown = (e) => {
     if (e.pointerType !== 'touch') return;

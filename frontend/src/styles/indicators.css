@@ -79,6 +79,43 @@
 .side-tag--attack:hover { background: rgba(40, 10, 10, 0.85); }
 .side-tag--action { border-color: #8855cc; }
 
+/* --- LootIndicator — item preview above inventory button --- */
+.loot-indicator {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  background: #185898;
+  border: 1px solid #0d3a66;
+  border-radius: 4px;
+  cursor: pointer;
+  pointer-events: auto;
+  user-select: none;
+  z-index: 51;
+  opacity: 0.9;
+  transition: opacity 0.15s;
+}
+.loot-indicator:hover {
+  opacity: 1;
+  background: #1e6ab0;
+}
+.loot-indicator--flash {
+  animation: loot-flash 0.4s ease;
+}
+@keyframes loot-flash {
+  0% { filter: brightness(2); }
+  100% { filter: brightness(1); }
+}
+.loot-indicator__label {
+  font: 10px monospace;
+  color: #fff;
+  font-weight: bold;
+  max-width: 80px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* --- GameLog — bottom-center message log --- */
 .game-log {
   position: fixed;
