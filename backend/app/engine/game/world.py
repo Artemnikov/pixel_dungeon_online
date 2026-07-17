@@ -31,8 +31,8 @@ from app.engine.entities.player import CharacterClass, Item, Player
 from app.engine.entities.items_consumable import CorpseDust, DwarfToken
 from app.engine.entities.mobs import Imp, Shopkeeper
 from app.engine.entities.quest_bosses import FetidRat, Ghost, GnollTrickster, GreatCrab
-from app.engine.entities.wandmaker_quest import DustWraith, Wandmaker
-from app.engine.entities.wandmaker_quest_items import RotberrySeed
+from app.engine.entities.wandmaker_quest import DustWraith, NewbornFireElemental, Wandmaker
+from app.engine.entities.wandmaker_quest_items import CeremonialCandle, Embers, RotberrySeed
 from app.engine.entities.weapon_defs import WEP_TIER_ORDER
 from app.engine.entities.buffs import remove_buff
 from app.engine.game.floor_state import FloorState
@@ -128,14 +128,22 @@ _WANDMAKER_INTRO_BERRY = (
     "lashers if you want to stay in one piece. Using fire might be tempting but please don't, "
     "you'll kill the plant and destroy its seeds."
 )
+_WANDMAKER_INTRO_EMBER = (
+    "I'm looking for some fresh embers from a newborn fire elemental. Elementals usually pop "
+    "up when a summoning ritual isn't controlled, so just find some candles and a ritual site "
+    "and I'm sure you can get one to pop up. You'll want to avoid boxing yourself in while "
+    "fighting it though, or you could keep some sort of freezing item handy. Newborn Elementals "
+    "are pretty powerful and chaotic, but they can't stand the cold."
+)
 _WANDMAKER_INTRO_2 = (
     "\n\nIf you can get that for me, I'll be happy to pay you with one of my finely crafted "
     "wands! I brought two with me, so you can take whichever one you prefer."
 )
-_WANDMAKER_INTRO_BY_TYPE = {1: _WANDMAKER_INTRO_DUST, 3: _WANDMAKER_INTRO_BERRY}
+_WANDMAKER_INTRO_BY_TYPE = {1: _WANDMAKER_INTRO_DUST, 2: _WANDMAKER_INTRO_EMBER, 3: _WANDMAKER_INTRO_BERRY}
 _WANDMAKER_REMINDER_DUST = "Any luck with corpse dust, {name}? Look for some barricades."
 _WANDMAKER_REMINDER_BERRY = "Any luck with a Rotberry seed, {name}? Look for a room filled with vegetation."
-_WANDMAKER_REMINDER_BY_TYPE = {1: _WANDMAKER_REMINDER_DUST, 3: _WANDMAKER_REMINDER_BERRY}
+_WANDMAKER_REMINDER_EMBER = "Any luck with those embers, {name}? You'll need to find four candles and the ritual site."
+_WANDMAKER_REMINDER_BY_TYPE = {1: _WANDMAKER_REMINDER_DUST, 2: _WANDMAKER_REMINDER_EMBER, 3: _WANDMAKER_REMINDER_BERRY}
 _WANDMAKER_REWARD_DUST = (
     "Oh, I see you have the dust! Don't worry about the wraiths, I can deal with them. As I "
     "promised, you can choose one of my high quality wands."
@@ -144,8 +152,12 @@ _WANDMAKER_REWARD_BERRY = (
     "Oh, I see you have the berry! I do hope the rotberry plant didn't trouble you too much. "
     "As I promised, you can choose one of my high quality wands."
 )
-_WANDMAKER_REWARD_BY_TYPE = {1: _WANDMAKER_REWARD_DUST, 3: _WANDMAKER_REWARD_BERRY}
-_WANDMAKER_QUEST_ITEM_BY_TYPE = {1: CorpseDust, 3: RotberrySeed}
+_WANDMAKER_REWARD_EMBER = (
+    "Oh, I see you have the embers! I do hope the fire elemental wasn't too much trouble. As I "
+    "promised, you can choose one of my high quality wands."
+)
+_WANDMAKER_REWARD_BY_TYPE = {1: _WANDMAKER_REWARD_DUST, 2: _WANDMAKER_REWARD_EMBER, 3: _WANDMAKER_REWARD_BERRY}
+_WANDMAKER_QUEST_ITEM_BY_TYPE = {1: CorpseDust, 2: Embers, 3: RotberrySeed}
 
 
 def _random_free_cell(floor: FloorState) -> Optional[Tuple[int, int]]:
@@ -270,8 +282,8 @@ class WorldInteractionMixin:
         soft-lock."""
         from app.engine.entities.items_consumable import DwarfToken
         from app.engine.entities.mobs import DM300, Golem, Goo, Monk, Necromancer, Pylon, Skeleton, Tengu, YogDzewa
-        from app.engine.entities.wandmaker_quest import RotHeart
-        from app.engine.entities.wandmaker_quest_items import RotberrySeed
+        from app.engine.entities.wandmaker_quest import NewbornFireElemental, RotHeart
+        from app.engine.entities.wandmaker_quest_items import Embers, RotberrySeed
 
         # Imp.Quest.process(): once the quest is given (and not yet
         # completed), killing a Monk (alternative) or Golem (!alternative)
@@ -288,6 +300,11 @@ class WorldInteractionMixin:
         if isinstance(mob, RotHeart):
             seed = RotberrySeed(id=str(uuid.uuid4()), pos=Position(x=mob.pos.x, y=mob.pos.y))
             floor.items[seed.id] = seed
+
+        # Elemental.NewbornFireElemental.die(): always drops embers.
+        if isinstance(mob, NewbornFireElemental):
+            embers = Embers(id=str(uuid.uuid4()), pos=Position(x=mob.pos.x, y=mob.pos.y))
+            floor.items[embers.id] = embers
 
         # Ghost.Quest.process(): called directly from each quest-boss's
         # die() override in the original (FetidRat/GnollTrickster/GreatCrab),
@@ -1087,3 +1104,48 @@ class WorldInteractionMixin:
             {"player": player.id, "npc": npc_id, "item": reward.id},
             player_id=player_id,
         )
+
+    def _check_ritual_candles(self, floor_id: int) -> None:
+        """CeremonialCandle.checkCandles(): if the 4 cells cardinally
+        adjacent to the ritual's center each hold a landed CeremonialCandle,
+        consume them and spawn a NewbornFireElemental at (or, if occupied,
+        next to) the ritual center, already hunting. Called after any
+        CeremonialCandle lands via drop (item_actions.action_drop) or throw
+        (movement.perform_ranged_attack) -- mirrors Java's doDrop/onThrow
+        both calling checkCandles(). The `aflame` partial-progress visual
+        flag is dropped (see CeremonialCandle's docstring) -- purely
+        cosmetic, no gameplay effect."""
+        quest = self.run_state.wandmaker_quest
+        if quest.ritual_pos is None or quest.ritual_floor_id != floor_id:
+            return
+        floor = self._get_or_create_floor(floor_id)
+        width = floor.width
+        rx, ry = quest.ritual_pos % width, quest.ritual_pos // width
+        cardinals = [(rx, ry - 1), (rx + 1, ry), (rx, ry + 1), (rx - 1, ry)]
+        landed = []
+        for cx, cy in cardinals:
+            item = next(
+                (i for i in floor.items.values()
+                 if isinstance(i, CeremonialCandle) and i.pos and i.pos.x == cx and i.pos.y == cy),
+                None,
+            )
+            if item is None:
+                return
+            landed.append(item)
+
+        for item in landed:
+            del floor.items[item.id]
+
+        occupied = {(m.pos.x, m.pos.y) for m in floor.mobs.values() if m.is_alive}
+        occupied |= {(p.pos.x, p.pos.y) for p in self._players_on_floor(floor_id) if p.is_alive}
+        diagonals = ((-1, -1), (0, -1), (1, -1), (-1, 0), (1, 0), (-1, 1), (0, 1), (1, 1))
+        candidates = [
+            (rx + dx, ry + dy) for dx, dy in diagonals
+            if 0 <= rx + dx < floor.width and 0 <= ry + dy < floor.height
+            and (rx + dx, ry + dy) not in occupied
+            and floor.flags and not floor.flags.solid[ry + dy][rx + dx]
+        ]
+        ex, ey = random.choice(candidates) if candidates else (rx, ry)
+
+        elemental = NewbornFireElemental(id=str(uuid.uuid4()), pos=Position(x=ex, y=ey), ai_state="hunting")
+        floor.mobs[elemental.id] = elemental

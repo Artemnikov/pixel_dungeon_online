@@ -38,6 +38,7 @@ from app.engine.dungeon.spd_levelgen.geom import _to_f32
 from app.engine.dungeon.spd_levelgen.generator import GeneratorState, _CategoryDeck, _random_deck_category, init_generator_state
 from app.engine.dungeon.spd_levelgen.mob_spawner import GenMob
 from app.engine.dungeon.spd_levelgen.room import Room
+from app.engine.dungeon.spd_levelgen import room_types
 from app.engine.dungeon.spd_levelgen import special_rooms as sr
 from app.engine.dungeon.spd_levelgen import terrain
 from app.engine.dungeon.spd_levelgen.standard_rooms import _neighbours4
@@ -312,12 +313,8 @@ class GhostQuestState:
 
 class WandmakerQuestState:
     """Mirrors actors/mobs/npcs/Wandmaker.Quest's static fields (Wandmaker.
-    java): the Prison depths 6-9 side quest. Types 1 (Corpse Dust) and 3
-    (Rotberry) are implemented; type 2 (Ceremonial Candle) is still deferred
-    -- see wandmaker_quest.py's module docstring for why its RNG draw is
-    still consumed but silently produces no room, keeping later floor
-    generation for a given seed byte-identical to vanilla regardless of
-    which type is rolled.
+    java): the Prison depths 6-9 side quest. All 3 variants (1=Corpse Dust,
+    2=Ceremonial Candle, 3=Rotberry) are implemented.
 
     wand1/wand2 are stored as bare deck-index + level descriptors (not
     concrete Item objects) -- mirrors GhostQuestState's weapon_tier_category/
@@ -328,7 +325,7 @@ class WandmakerQuestState:
 
     def __init__(self) -> None:
         self.spawned: bool = False               # Quest.spawned -- NPC actually placed
-        self.quest_type: int = 0                  # Quest.type -- 1=CorpseDust, 3=Rotberry (2=Candle unimplemented)
+        self.quest_type: int = 0                  # Quest.type -- 1=CorpseDust, 2=Candle, 3=Rotberry
         self.quest_room_spawned: bool = False     # Quest.questRoomSpawned (transient)
         self.given: bool = False                  # Quest.given -- intro dialogue already shown
         self.npc_id: Optional[str] = None
@@ -336,6 +333,10 @@ class WandmakerQuestState:
         self.wand1_level: int = 0
         self.wand2_index: Optional[int] = None
         self.wand2_level: int = 0
+        # Ceremonial Candle variant (type 2) only -- CeremonialCandle.ritualPos,
+        # set once RitualSiteRoom is painted (see room_types.RitualSiteRoom).
+        self.ritual_pos: Optional[int] = None
+        self.ritual_floor_id: Optional[int] = None
 
     def maybe_spawn_room(self, rng: SPDRandom, depth: int):
         """Wandmaker.Quest.spawnRoom() -- called once all other Prison-floor
@@ -355,6 +356,14 @@ class WandmakerQuestState:
         if self.quest_type == 1:
             self.quest_room_spawned = True
             return sr.MassGraveRoom()
+        if self.quest_type == 2:
+            self.quest_room_spawned = True
+            room = room_types.RitualSiteRoom()
+            # Java's instance initializer runs setSizeCat() at construction
+            # time; the port exposes that as an explicit post-construct call
+            # (see StandardRoom.init_size_cat's docstring).
+            room.init_size_cat(rng)
+            return room
         if self.quest_type == 3:
             self.quest_room_spawned = True
             from app.engine.dungeon.spd_levelgen.rot_garden_room import RotGardenRoom

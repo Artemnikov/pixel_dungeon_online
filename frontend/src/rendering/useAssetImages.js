@@ -28,6 +28,7 @@ import impSprite from '../assets/pixel-dungeon/sprites/demon.png';
 import wandmakerSprite from '../assets/pixel-dungeon/sprites/wandmaker.png';
 import rotHeartSprite from '../assets/pixel-dungeon/sprites/rot_heart.png';
 import rotLasherSprite from '../assets/pixel-dungeon/sprites/rot_lasher.png';
+import elementalSprite from '../assets/pixel-dungeon/sprites/elemental.png';
 import ratKingSprite from '../assets/pixel-dungeon/sprites/ratking.png';
 import gooSprite from '../assets/pixel-dungeon/sprites/goo.png';
 import scorpioSprite from '../assets/pixel-dungeon/sprites/scorpio.png';
@@ -102,6 +103,7 @@ export default function useAssetImages() {
     wandmaker: null,
     rotHeart: null,
     rotLasher: null,
+    elemental: null,
     ratking: null,
     goo: null,
     scorpio: null,
@@ -215,6 +217,7 @@ export default function useAssetImages() {
     loadImage(wandmakerSprite, 'wandmaker');
     loadImage(rotHeartSprite, 'rotHeart');
     loadImage(rotLasherSprite, 'rotLasher');
+    loadImage(elementalSprite, 'elemental');
     loadImage(ratKingSprite, 'ratking');
     loadImage(gooSprite, 'goo');
     loadImage(scorpioSprite, 'scorpio');

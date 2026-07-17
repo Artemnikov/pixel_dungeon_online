@@ -187,6 +187,46 @@ class AmbitiousImpRoom(SpecialRoom):
         entrance.set(DoorType.REGULAR)
 
 
+class RitualSiteRoom(StandardRoom):
+    """Port of rooms/quest/RitualSiteRoom.java (Wandmaker quest, Ceremonial
+    Candle variant -- type 2). A modest standard room (forced min 9x9,
+    regardless of its rolled size_cat) with a 3x3 decorative floor marker
+    at its center and 4 CeremonialCandle prizes queued for other rooms'
+    findPrizeItem() to place around the floor. ritual_pos/ritual_floor_id
+    are only knowable once the builder has placed this room, hence set
+    here in paint() rather than at spawn-roll time -- matches Java's own
+    timing (CeremonialCandle.ritualPos is likewise set inside paint()).
+    The purely cosmetic RitualMarker CustomTilemap is dropped -- see
+    MassGraveRoom's Bones for the same precedent (no CustomTilemap
+    rendering layer in this engine)."""
+
+    def min_width(self) -> int:
+        return 9
+
+    def min_height(self) -> int:
+        return 9
+
+    def paint(self, level, rng: SPDRandom) -> None:
+        from app.engine.dungeon.spd_levelgen import terrain
+        from app.engine.dungeon.spd_levelgen.painter import Painter
+
+        for door in self.connected.values():
+            door.set(DoorType.REGULAR)
+
+        Painter.fill(level, self, terrain.WALL)
+        Painter.fill(level, self, 1, terrain.EMPTY)
+
+        c = self.center(rng)
+        Painter.fill(level, c.x - 1, c.y - 1, 3, 3, terrain.CUSTOM_DECO_EMPTY)
+
+        for _ in range(4):
+            level.add_item_to_spawn(frozenset({"CeremonialCandle"}))
+
+        quest = level.run_state.wandmaker_quest
+        quest.ritual_pos = level.point_to_cell(c)
+        quest.ritual_floor_id = level.depth
+
+
 class ShopRoom(SpecialRoom):
     def paint(self, level, rng: SPDRandom) -> None:
         from app.engine.dungeon.spd_levelgen import terrain

@@ -34,6 +34,7 @@ from app.engine.entities.items_wands import Wand, ZapContext
 from app.engine.entities.player import Mob as MobEntity, Player, Weapon
 from app.engine.entities.buffs import add_buff, get_buff, has_buff, is_frozen, remove_buff
 from app.engine.entities.mobs import CrystalMimic, DM300, Goo, Shopkeeper, Wraith
+from app.engine.entities.wandmaker_quest_items import CeremonialCandle
 from app.engine.entities.subclasses import Talent
 from app.engine.systems.ballistica import ballistica_trace
 from app.engine.systems.combat import _dispel_stealth, resolve_melee_attack, resolve_ranged_attack
@@ -912,5 +913,7 @@ class MovementCombatMixin:
                 player.quickslot.convert_to_placeholder(removed)
                 removed.pos = Position(x=target_x, y=target_y)
                 floor.items[removed.id] = removed
+                if isinstance(removed, CeremonialCandle):
+                    self._check_ritual_candles(floor_id)
 
         return damage_dealt

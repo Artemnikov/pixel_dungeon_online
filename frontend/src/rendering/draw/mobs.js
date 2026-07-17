@@ -97,6 +97,9 @@ import {
    ROT_LASHER_FW,
    ROT_LASHER_FH,
    ROT_LASHER_DEST,
+   NEWBORN_ELEMENTAL_FW,
+   NEWBORN_ELEMENTAL_FH,
+   NEWBORN_ELEMENTAL_DEST,
    RATKING_FW,
    RATKING_FH,
    RATKING_DEST,
@@ -154,6 +157,7 @@ import {
   getWandmakerFrame,
   getRotHeartFrame,
   getRotLasherFrame,
+  getNewbornElementalFrame,
    getRatKingFrame,
    getSheepFrame,
 } from '../mobs';
@@ -408,6 +412,9 @@ export function drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef,
     } else if (mob.name === 'Rot Lasher') {
       mobSprite = assetImages.rotLasher;
       sx = getRotLasherFrame();
+    } else if (mob.name === 'Newborn Fire Elemental') {
+      mobSprite = assetImages.elemental;
+      sx = getNewbornElementalFrame();
     } else if (mob.name === 'Rat King') {
       mobSprite = assetImages.ratking;
       sx = getRatKingFrame(mob, mobAnimRef.current, now);
@@ -476,6 +483,7 @@ export function drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef,
     const isWandmaker = mob.name === 'Wandmaker';
     const isRotHeart = mob.name === 'Rot Heart';
     const isRotLasher = mob.name === 'Rot Lasher';
+    const isNewbornElemental = mob.name === 'Newborn Fire Elemental';
     const isRatKing = mob.name === 'Rat King';
     const isGhost = mob.name === 'Ghost' || mob.name === 'Ghost Hero';
     const isSheep = mob.name === 'Sheep';
@@ -566,6 +574,8 @@ export function drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef,
       drawMobSprite(ctx, mob, mobSprite, sx, ROT_HEART_FW, ROT_HEART_FH, flash, ROT_HEART_DEST);
     } else if (isRotLasher) {
       drawMobSprite(ctx, mob, mobSprite, sx, ROT_LASHER_FW, ROT_LASHER_FH, flash, ROT_LASHER_DEST);
+    } else if (isNewbornElemental) {
+      drawMobSprite(ctx, mob, mobSprite, sx, NEWBORN_ELEMENTAL_FW, NEWBORN_ELEMENTAL_FH, flash, NEWBORN_ELEMENTAL_DEST);
     } else if (isRatKing) {
       drawMobSprite(ctx, mob, mobSprite, sx, RATKING_FW, RATKING_FH, flash, RATKING_DEST);
     } else if (isGhost) {

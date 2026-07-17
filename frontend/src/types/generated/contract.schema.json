@@ -658,6 +658,7 @@
                 "broken_seal": "#/$defs/BrokenSeal",
                 "cape_of_thorns": "#/$defs/CapeOfThorns",
                 "caustic_brew": "#/$defs/CausticBrew",
+                "ceremonial_candle": "#/$defs/CeremonialCandle",
                 "chalice_of_blood": "#/$defs/ChaliceOfBlood",
                 "chaotic_censer": "#/$defs/ChaoticCenser",
                 "chargrilled_meat": "#/$defs/ChargrilledMeat",
@@ -681,6 +682,7 @@
                 "elixir_of_icy_touch": "#/$defs/ElixirOfIcyTouch",
                 "elixir_of_might": "#/$defs/ElixirOfMight",
                 "elixir_of_toxic_essence": "#/$defs/ElixirOfToxicEssence",
+                "embers": "#/$defs/Embers",
                 "energy_crystal": "#/$defs/EnergyCrystal",
                 "ethereal_chains": "#/$defs/EtherealChains",
                 "exotic_crystals": "#/$defs/ExoticCrystals",
@@ -1352,6 +1354,12 @@
                 "$ref": "#/$defs/RotberrySeed"
               },
               {
+                "$ref": "#/$defs/CeremonialCandle"
+              },
+              {
+                "$ref": "#/$defs/Embers"
+              },
+              {
                 "$ref": "#/$defs/Petal"
               },
               {
@@ -1498,6 +1506,7 @@
                   "broken_seal": "#/$defs/BrokenSeal",
                   "cape_of_thorns": "#/$defs/CapeOfThorns",
                   "caustic_brew": "#/$defs/CausticBrew",
+                  "ceremonial_candle": "#/$defs/CeremonialCandle",
                   "chalice_of_blood": "#/$defs/ChaliceOfBlood",
                   "chaotic_censer": "#/$defs/ChaoticCenser",
                   "chargrilled_meat": "#/$defs/ChargrilledMeat",
@@ -1521,6 +1530,7 @@
                   "elixir_of_icy_touch": "#/$defs/ElixirOfIcyTouch",
                   "elixir_of_might": "#/$defs/ElixirOfMight",
                   "elixir_of_toxic_essence": "#/$defs/ElixirOfToxicEssence",
+                  "embers": "#/$defs/Embers",
                   "energy_crystal": "#/$defs/EnergyCrystal",
                   "ethereal_chains": "#/$defs/EtherealChains",
                   "exotic_crystals": "#/$defs/ExoticCrystals",
@@ -2190,6 +2200,12 @@
                 },
                 {
                   "$ref": "#/$defs/RotberrySeed"
+                },
+                {
+                  "$ref": "#/$defs/CeremonialCandle"
+                },
+                {
+                  "$ref": "#/$defs/Embers"
                 },
                 {
                   "$ref": "#/$defs/Petal"
@@ -2331,6 +2347,7 @@
                   "broken_seal": "#/$defs/BrokenSeal",
                   "cape_of_thorns": "#/$defs/CapeOfThorns",
                   "caustic_brew": "#/$defs/CausticBrew",
+                  "ceremonial_candle": "#/$defs/CeremonialCandle",
                   "chalice_of_blood": "#/$defs/ChaliceOfBlood",
                   "chaotic_censer": "#/$defs/ChaoticCenser",
                   "chargrilled_meat": "#/$defs/ChargrilledMeat",
@@ -2354,6 +2371,7 @@
                   "elixir_of_icy_touch": "#/$defs/ElixirOfIcyTouch",
                   "elixir_of_might": "#/$defs/ElixirOfMight",
                   "elixir_of_toxic_essence": "#/$defs/ElixirOfToxicEssence",
+                  "embers": "#/$defs/Embers",
                   "energy_crystal": "#/$defs/EnergyCrystal",
                   "ethereal_chains": "#/$defs/EtherealChains",
                   "exotic_crystals": "#/$defs/ExoticCrystals",
@@ -3023,6 +3041,12 @@
                 },
                 {
                   "$ref": "#/$defs/RotberrySeed"
+                },
+                {
+                  "$ref": "#/$defs/CeremonialCandle"
+                },
+                {
+                  "$ref": "#/$defs/Embers"
                 },
                 {
                   "$ref": "#/$defs/Petal"
@@ -3164,6 +3188,7 @@
                   "broken_seal": "#/$defs/BrokenSeal",
                   "cape_of_thorns": "#/$defs/CapeOfThorns",
                   "caustic_brew": "#/$defs/CausticBrew",
+                  "ceremonial_candle": "#/$defs/CeremonialCandle",
                   "chalice_of_blood": "#/$defs/ChaliceOfBlood",
                   "chaotic_censer": "#/$defs/ChaoticCenser",
                   "chargrilled_meat": "#/$defs/ChargrilledMeat",
@@ -3187,6 +3212,7 @@
                   "elixir_of_icy_touch": "#/$defs/ElixirOfIcyTouch",
                   "elixir_of_might": "#/$defs/ElixirOfMight",
                   "elixir_of_toxic_essence": "#/$defs/ElixirOfToxicEssence",
+                  "embers": "#/$defs/Embers",
                   "energy_crystal": "#/$defs/EnergyCrystal",
                   "ethereal_chains": "#/$defs/EtherealChains",
                   "exotic_crystals": "#/$defs/ExoticCrystals",
@@ -3856,6 +3882,12 @@
                 },
                 {
                   "$ref": "#/$defs/RotberrySeed"
+                },
+                {
+                  "$ref": "#/$defs/CeremonialCandle"
+                },
+                {
+                  "$ref": "#/$defs/Embers"
                 },
                 {
                   "$ref": "#/$defs/Petal"
@@ -3997,6 +4029,7 @@
                   "broken_seal": "#/$defs/BrokenSeal",
                   "cape_of_thorns": "#/$defs/CapeOfThorns",
                   "caustic_brew": "#/$defs/CausticBrew",
+                  "ceremonial_candle": "#/$defs/CeremonialCandle",
                   "chalice_of_blood": "#/$defs/ChaliceOfBlood",
                   "chaotic_censer": "#/$defs/ChaoticCenser",
                   "chargrilled_meat": "#/$defs/ChargrilledMeat",
@@ -4020,6 +4053,7 @@
                   "elixir_of_icy_touch": "#/$defs/ElixirOfIcyTouch",
                   "elixir_of_might": "#/$defs/ElixirOfMight",
                   "elixir_of_toxic_essence": "#/$defs/ElixirOfToxicEssence",
+                  "embers": "#/$defs/Embers",
                   "energy_crystal": "#/$defs/EnergyCrystal",
                   "ethereal_chains": "#/$defs/EtherealChains",
                   "exotic_crystals": "#/$defs/ExoticCrystals",
@@ -4689,6 +4723,12 @@
                 },
                 {
                   "$ref": "#/$defs/RotberrySeed"
+                },
+                {
+                  "$ref": "#/$defs/CeremonialCandle"
+                },
+                {
+                  "$ref": "#/$defs/Embers"
                 },
                 {
                   "$ref": "#/$defs/Petal"
@@ -4830,6 +4870,7 @@
                   "broken_seal": "#/$defs/BrokenSeal",
                   "cape_of_thorns": "#/$defs/CapeOfThorns",
                   "caustic_brew": "#/$defs/CausticBrew",
+                  "ceremonial_candle": "#/$defs/CeremonialCandle",
                   "chalice_of_blood": "#/$defs/ChaliceOfBlood",
                   "chaotic_censer": "#/$defs/ChaoticCenser",
                   "chargrilled_meat": "#/$defs/ChargrilledMeat",
@@ -4853,6 +4894,7 @@
                   "elixir_of_icy_touch": "#/$defs/ElixirOfIcyTouch",
                   "elixir_of_might": "#/$defs/ElixirOfMight",
                   "elixir_of_toxic_essence": "#/$defs/ElixirOfToxicEssence",
+                  "embers": "#/$defs/Embers",
                   "energy_crystal": "#/$defs/EnergyCrystal",
                   "ethereal_chains": "#/$defs/EtherealChains",
                   "exotic_crystals": "#/$defs/ExoticCrystals",
@@ -5522,6 +5564,12 @@
                 },
                 {
                   "$ref": "#/$defs/RotberrySeed"
+                },
+                {
+                  "$ref": "#/$defs/CeremonialCandle"
+                },
+                {
+                  "$ref": "#/$defs/Embers"
                 },
                 {
                   "$ref": "#/$defs/Petal"
@@ -6376,6 +6424,76 @@
       },
       "type": "object"
     },
+    "CeremonialCandle": {
+      "description": "items/quest/CeremonialCandle.java -- the Ceremonial Candle quest\nvariant's collectible. 4 are queued as findPrizeItem() prizes when\nRitualSiteRoom is painted (see room_types.RitualSiteRoom); throwing or\ndropping one onto each of the 4 cells cardinally adjacent to the\nritual's center completes the ritual (see world.py's\n_check_ritual_candles, hooked from item_actions.action_drop and\nmovement.perform_ranged_attack). The `aflame` visual-only flag Java\nflips as candles land is dropped -- purely cosmetic, no gameplay effect.",
+      "properties": {
+        "kind": {
+          "const": "ceremonial_candle",
+          "default": "ceremonial_candle",
+          "type": "string"
+        },
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "name": {
+          "default": "ceremonial candle",
+          "type": "string"
+        },
+        "type": {
+          "default": "misc",
+          "type": "string"
+        },
+        "pos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Position"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "quantity": {
+          "default": 1,
+          "type": "integer"
+        },
+        "level": {
+          "default": 0,
+          "type": "integer"
+        },
+        "level_known": {
+          "default": true,
+          "type": "boolean"
+        },
+        "cursed": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed_known": {
+          "default": true,
+          "type": "boolean"
+        },
+        "unique": {
+          "default": true,
+          "type": "boolean"
+        },
+        "kept_though_lost": {
+          "default": false,
+          "type": "boolean"
+        },
+        "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
     "ChaliceOfBlood": {
       "properties": {
         "kind": {
@@ -6697,6 +6815,7 @@
                 "broken_seal": "#/$defs/BrokenSeal",
                 "cape_of_thorns": "#/$defs/CapeOfThorns",
                 "caustic_brew": "#/$defs/CausticBrew",
+                "ceremonial_candle": "#/$defs/CeremonialCandle",
                 "chalice_of_blood": "#/$defs/ChaliceOfBlood",
                 "chaotic_censer": "#/$defs/ChaoticCenser",
                 "chargrilled_meat": "#/$defs/ChargrilledMeat",
@@ -6720,6 +6839,7 @@
                 "elixir_of_icy_touch": "#/$defs/ElixirOfIcyTouch",
                 "elixir_of_might": "#/$defs/ElixirOfMight",
                 "elixir_of_toxic_essence": "#/$defs/ElixirOfToxicEssence",
+                "embers": "#/$defs/Embers",
                 "energy_crystal": "#/$defs/EnergyCrystal",
                 "ethereal_chains": "#/$defs/EtherealChains",
                 "exotic_crystals": "#/$defs/ExoticCrystals",
@@ -7389,6 +7509,12 @@
               },
               {
                 "$ref": "#/$defs/RotberrySeed"
+              },
+              {
+                "$ref": "#/$defs/CeremonialCandle"
+              },
+              {
+                "$ref": "#/$defs/Embers"
               },
               {
                 "$ref": "#/$defs/Petal"
@@ -9195,6 +9321,76 @@
         "effect": {
           "default": "toxic_essence",
           "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "Embers": {
+      "description": "items/quest/Embers.java -- the Ceremonial Candle quest's turn-in\nitem, dropped by NewbornFireElemental on death (see wandmaker_quest.py\n/ world.py's handle_mob_death). Inert for quest purposes, same as\nRotberrySeed.",
+      "properties": {
+        "kind": {
+          "const": "embers",
+          "default": "embers",
+          "type": "string"
+        },
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "name": {
+          "default": "smoldering embers",
+          "type": "string"
+        },
+        "type": {
+          "default": "misc",
+          "type": "string"
+        },
+        "pos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Position"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "quantity": {
+          "default": 1,
+          "type": "integer"
+        },
+        "level": {
+          "default": 0,
+          "type": "integer"
+        },
+        "level_known": {
+          "default": true,
+          "type": "boolean"
+        },
+        "cursed": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed_known": {
+          "default": true,
+          "type": "boolean"
+        },
+        "unique": {
+          "default": true,
+          "type": "boolean"
+        },
+        "kept_though_lost": {
+          "default": false,
+          "type": "boolean"
+        },
+        "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
         }
       },
       "type": "object"
@@ -11121,6 +11317,7 @@
                 "broken_seal": "#/$defs/BrokenSeal",
                 "cape_of_thorns": "#/$defs/CapeOfThorns",
                 "caustic_brew": "#/$defs/CausticBrew",
+                "ceremonial_candle": "#/$defs/CeremonialCandle",
                 "chalice_of_blood": "#/$defs/ChaliceOfBlood",
                 "chaotic_censer": "#/$defs/ChaoticCenser",
                 "chargrilled_meat": "#/$defs/ChargrilledMeat",
@@ -11144,6 +11341,7 @@
                 "elixir_of_icy_touch": "#/$defs/ElixirOfIcyTouch",
                 "elixir_of_might": "#/$defs/ElixirOfMight",
                 "elixir_of_toxic_essence": "#/$defs/ElixirOfToxicEssence",
+                "embers": "#/$defs/Embers",
                 "energy_crystal": "#/$defs/EnergyCrystal",
                 "ethereal_chains": "#/$defs/EtherealChains",
                 "exotic_crystals": "#/$defs/ExoticCrystals",
@@ -11813,6 +12011,12 @@
               },
               {
                 "$ref": "#/$defs/RotberrySeed"
+              },
+              {
+                "$ref": "#/$defs/CeremonialCandle"
+              },
+              {
+                "$ref": "#/$defs/Embers"
               },
               {
                 "$ref": "#/$defs/Petal"
@@ -14090,6 +14294,7 @@
                 "broken_seal": "#/$defs/BrokenSeal",
                 "cape_of_thorns": "#/$defs/CapeOfThorns",
                 "caustic_brew": "#/$defs/CausticBrew",
+                "ceremonial_candle": "#/$defs/CeremonialCandle",
                 "chalice_of_blood": "#/$defs/ChaliceOfBlood",
                 "chaotic_censer": "#/$defs/ChaoticCenser",
                 "chargrilled_meat": "#/$defs/ChargrilledMeat",
@@ -14113,6 +14318,7 @@
                 "elixir_of_icy_touch": "#/$defs/ElixirOfIcyTouch",
                 "elixir_of_might": "#/$defs/ElixirOfMight",
                 "elixir_of_toxic_essence": "#/$defs/ElixirOfToxicEssence",
+                "embers": "#/$defs/Embers",
                 "energy_crystal": "#/$defs/EnergyCrystal",
                 "ethereal_chains": "#/$defs/EtherealChains",
                 "exotic_crystals": "#/$defs/ExoticCrystals",
@@ -14784,6 +14990,12 @@
                 "$ref": "#/$defs/RotberrySeed"
               },
               {
+                "$ref": "#/$defs/CeremonialCandle"
+              },
+              {
+                "$ref": "#/$defs/Embers"
+              },
+              {
                 "$ref": "#/$defs/Petal"
               },
               {
@@ -14920,6 +15132,7 @@
                   "broken_seal": "#/$defs/BrokenSeal",
                   "cape_of_thorns": "#/$defs/CapeOfThorns",
                   "caustic_brew": "#/$defs/CausticBrew",
+                  "ceremonial_candle": "#/$defs/CeremonialCandle",
                   "chalice_of_blood": "#/$defs/ChaliceOfBlood",
                   "chaotic_censer": "#/$defs/ChaoticCenser",
                   "chargrilled_meat": "#/$defs/ChargrilledMeat",
@@ -14943,6 +15156,7 @@
                   "elixir_of_icy_touch": "#/$defs/ElixirOfIcyTouch",
                   "elixir_of_might": "#/$defs/ElixirOfMight",
                   "elixir_of_toxic_essence": "#/$defs/ElixirOfToxicEssence",
+                  "embers": "#/$defs/Embers",
                   "energy_crystal": "#/$defs/EnergyCrystal",
                   "ethereal_chains": "#/$defs/EtherealChains",
                   "exotic_crystals": "#/$defs/ExoticCrystals",
@@ -15612,6 +15826,12 @@
                 },
                 {
                   "$ref": "#/$defs/RotberrySeed"
+                },
+                {
+                  "$ref": "#/$defs/CeremonialCandle"
+                },
+                {
+                  "$ref": "#/$defs/Embers"
                 },
                 {
                   "$ref": "#/$defs/Petal"
@@ -15753,6 +15973,7 @@
                   "broken_seal": "#/$defs/BrokenSeal",
                   "cape_of_thorns": "#/$defs/CapeOfThorns",
                   "caustic_brew": "#/$defs/CausticBrew",
+                  "ceremonial_candle": "#/$defs/CeremonialCandle",
                   "chalice_of_blood": "#/$defs/ChaliceOfBlood",
                   "chaotic_censer": "#/$defs/ChaoticCenser",
                   "chargrilled_meat": "#/$defs/ChargrilledMeat",
@@ -15776,6 +15997,7 @@
                   "elixir_of_icy_touch": "#/$defs/ElixirOfIcyTouch",
                   "elixir_of_might": "#/$defs/ElixirOfMight",
                   "elixir_of_toxic_essence": "#/$defs/ElixirOfToxicEssence",
+                  "embers": "#/$defs/Embers",
                   "energy_crystal": "#/$defs/EnergyCrystal",
                   "ethereal_chains": "#/$defs/EtherealChains",
                   "exotic_crystals": "#/$defs/ExoticCrystals",
@@ -16445,6 +16667,12 @@
                 },
                 {
                   "$ref": "#/$defs/RotberrySeed"
+                },
+                {
+                  "$ref": "#/$defs/CeremonialCandle"
+                },
+                {
+                  "$ref": "#/$defs/Embers"
                 },
                 {
                   "$ref": "#/$defs/Petal"
@@ -16758,6 +16986,7 @@
                 "broken_seal": "#/$defs/BrokenSeal",
                 "cape_of_thorns": "#/$defs/CapeOfThorns",
                 "caustic_brew": "#/$defs/CausticBrew",
+                "ceremonial_candle": "#/$defs/CeremonialCandle",
                 "chalice_of_blood": "#/$defs/ChaliceOfBlood",
                 "chaotic_censer": "#/$defs/ChaoticCenser",
                 "chargrilled_meat": "#/$defs/ChargrilledMeat",
@@ -16781,6 +17010,7 @@
                 "elixir_of_icy_touch": "#/$defs/ElixirOfIcyTouch",
                 "elixir_of_might": "#/$defs/ElixirOfMight",
                 "elixir_of_toxic_essence": "#/$defs/ElixirOfToxicEssence",
+                "embers": "#/$defs/Embers",
                 "energy_crystal": "#/$defs/EnergyCrystal",
                 "ethereal_chains": "#/$defs/EtherealChains",
                 "exotic_crystals": "#/$defs/ExoticCrystals",
@@ -17450,6 +17680,12 @@
               },
               {
                 "$ref": "#/$defs/RotberrySeed"
+              },
+              {
+                "$ref": "#/$defs/CeremonialCandle"
+              },
+              {
+                "$ref": "#/$defs/Embers"
               },
               {
                 "$ref": "#/$defs/Petal"
@@ -21193,6 +21429,7 @@
                 "broken_seal": "#/$defs/BrokenSeal",
                 "cape_of_thorns": "#/$defs/CapeOfThorns",
                 "caustic_brew": "#/$defs/CausticBrew",
+                "ceremonial_candle": "#/$defs/CeremonialCandle",
                 "chalice_of_blood": "#/$defs/ChaliceOfBlood",
                 "chaotic_censer": "#/$defs/ChaoticCenser",
                 "chargrilled_meat": "#/$defs/ChargrilledMeat",
@@ -21216,6 +21453,7 @@
                 "elixir_of_icy_touch": "#/$defs/ElixirOfIcyTouch",
                 "elixir_of_might": "#/$defs/ElixirOfMight",
                 "elixir_of_toxic_essence": "#/$defs/ElixirOfToxicEssence",
+                "embers": "#/$defs/Embers",
                 "energy_crystal": "#/$defs/EnergyCrystal",
                 "ethereal_chains": "#/$defs/EtherealChains",
                 "exotic_crystals": "#/$defs/ExoticCrystals",
@@ -21885,6 +22123,12 @@
               },
               {
                 "$ref": "#/$defs/RotberrySeed"
+              },
+              {
+                "$ref": "#/$defs/CeremonialCandle"
+              },
+              {
+                "$ref": "#/$defs/Embers"
               },
               {
                 "$ref": "#/$defs/Petal"
@@ -26461,6 +26705,7 @@
                 "broken_seal": "#/$defs/BrokenSeal",
                 "cape_of_thorns": "#/$defs/CapeOfThorns",
                 "caustic_brew": "#/$defs/CausticBrew",
+                "ceremonial_candle": "#/$defs/CeremonialCandle",
                 "chalice_of_blood": "#/$defs/ChaliceOfBlood",
                 "chaotic_censer": "#/$defs/ChaoticCenser",
                 "chargrilled_meat": "#/$defs/ChargrilledMeat",
@@ -26484,6 +26729,7 @@
                 "elixir_of_icy_touch": "#/$defs/ElixirOfIcyTouch",
                 "elixir_of_might": "#/$defs/ElixirOfMight",
                 "elixir_of_toxic_essence": "#/$defs/ElixirOfToxicEssence",
+                "embers": "#/$defs/Embers",
                 "energy_crystal": "#/$defs/EnergyCrystal",
                 "ethereal_chains": "#/$defs/EtherealChains",
                 "exotic_crystals": "#/$defs/ExoticCrystals",
@@ -27153,6 +27399,12 @@
               },
               {
                 "$ref": "#/$defs/RotberrySeed"
+              },
+              {
+                "$ref": "#/$defs/CeremonialCandle"
+              },
+              {
+                "$ref": "#/$defs/Embers"
               },
               {
                 "$ref": "#/$defs/Petal"

@@ -44,6 +44,7 @@ from app.engine.entities.item_catalog import FLOOR_SCROLL_KINDS, TRANSMUTE_GROUP
 from app.engine.entities.weapon_defs import WEP_TIER_ORDER
 from app.engine.entities.quest_bosses import FetidRat, Ghost, GnollTrickster, GreatCrab
 from app.engine.entities.wandmaker_quest import DustWraith, RotHeart, RotLasher, Wandmaker
+from app.engine.entities.wandmaker_quest_items import CeremonialCandle
 from app.engine.entities.trinkets import TrinketCatalyst
 from app.engine.entities.mobs import (
     AcidicScorpio,
@@ -572,6 +573,7 @@ _DESCRIPTOR_ITEM_MAP = {
     "Weapon": lambda iid, pos: Weapon(id=iid, pos=pos, name="Weapon", damage=2, range=1, strength_requirement=10, attack_cooldown=2.0),
     "Armor": lambda iid, pos: PlateArmor(id=iid, pos=pos),
     "CorpseDust": lambda iid, pos: CorpseDust(id=iid, pos=pos),
+    "CeremonialCandle": lambda iid, pos: CeremonialCandle(id=iid, pos=pos),
 }
 
 

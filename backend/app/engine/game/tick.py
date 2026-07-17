@@ -26,7 +26,7 @@ from typing import List, Optional, Type
 from app.engine.dungeon.generator import TileType
 from app.engine.entities.base import Faction, is_immune, Position
 from app.engine.entities.items_consumable import ChargrilledMeat, CorpseDust, FrozenCarpaccio, Gold, MysteryMeat
-from app.engine.entities.wandmaker_quest import DustWraith, RotLasher
+from app.engine.entities.wandmaker_quest import DustWraith, NewbornFireElemental, RotLasher
 from app.engine.entities.items_wands import Wand
 from app.engine.entities.player import Difficulty, Effect, Player
 from app.engine.entities.buffs import add_buff, get_buff, has_buff, is_frozen, process_buffs, remove_buff
@@ -455,6 +455,10 @@ class TickMixin:
 
                 if isinstance(mob, DM200):
                     if self._update_dm200(mob, floor, floor_id):
+                        continue
+
+                if isinstance(mob, NewbornFireElemental):
+                    if self._update_newborn_elemental(mob, floor, floor_id):
                         continue
 
                 move_times = getattr(self, "_mob_move_times", None)

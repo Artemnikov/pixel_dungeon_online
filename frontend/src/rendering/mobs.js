@@ -178,6 +178,17 @@ export const ROT_LASHER_FW = 12;
 export const ROT_LASHER_FH = 16;
 export const ROT_LASHER_DEST = { dx: 4, dy: 0, dw: 24, dh: 32 };
 
+// NewbornFireElemental: 12x14 frames (ElementalSprite TextureFilm(texture,
+// 12, 14)), elemental.png -- a shared sheet for all 5 Elemental variants,
+// each occupying a 14-frame block (texOffset 0/14/28/42/56 for Fire/
+// NewbornFire/Frost/Shock/Chaos); only NewbornFire is reachable in this
+// port (Wandmaker quest), so only that block is wired. Centered/bottom-
+// aligned in the 32px tile, scaled 2x -> 24x28 @ +4,+4 (same as Imp).
+export const NEWBORN_ELEMENTAL_FW = 12;
+export const NEWBORN_ELEMENTAL_FH = 14;
+export const NEWBORN_ELEMENTAL_DEST = { dx: 4, dy: 4, dw: 24, dh: 28 };
+const NEWBORN_ELEMENTAL_TEX_OFFSET = 14;
+
 // Rat King: 16x17 frames (RatKingSprite TextureFilm(texture, 16, 17)), ratking.png.
 // Centered/bottom-aligned in the 32px tile, scaled 2x -> 32x34 @ 0,-2.
 export const RATKING_FW = 16;
@@ -737,6 +748,11 @@ export const getWandmakerFrame = (mob, mobAnim, now) =>
 // frame-loop function here):
 export const getRotHeartFrame = () => 0;
 export const getRotLasherFrame = () => 0;
+
+// Static single frame (idle's first frame, texOffset+0) -- see module note
+// on NewbornFire's shared-sheet block; full 3-frame idle loop skipped as a
+// low-value animation-fidelity simplification (RotHeart/RotLasher precedent).
+export const getNewbornElementalFrame = () => NEWBORN_ELEMENTAL_TEX_OFFSET * NEWBORN_ELEMENTAL_FW;
 
 // Faithful to original SPD RatKingSprite (16x17 frames, ratking.png):
 //   idle 2fps loop [0,0,0,1]

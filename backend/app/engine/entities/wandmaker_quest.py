@@ -20,13 +20,11 @@ precedent. Quest *items* live in wandmaker_quest_items.py, not here -- a
 Mob subclass needs player.Mob, which (via item_union.py's Item discriminated
 union) would create an import cycle with any item class defined alongside it.
 
-Variants ported so far: Corpse Dust (phase 1: DustWraith; CorpseDust item
-in items_consumable.py) and Rotberry (phase 2: RotHeart, RotLasher;
-RotberrySeed item in wandmaker_quest_items.py). Ceremonial Candle (type 2)
-is still deferred -- see run_state.py's WandmakerQuestState docstring for
-how its RNG draw is still consumed even though it currently produces no
-room, keeping future floor generation byte-identical to vanilla SPD for a
-given seed regardless.
+All 3 variants are now ported: Corpse Dust (phase 1: DustWraith; CorpseDust
+item in items_consumable.py), Rotberry (phase 2: RotHeart, RotLasher;
+RotberrySeed item in wandmaker_quest_items.py), and Ceremonial Candle
+(phase 3: NewbornFireElemental; CeremonialCandle/Embers items in
+wandmaker_quest_items.py).
 
 Scoping notes (deliberate simplifications, not oversights):
   - DustWraith.attack()'s atkCount score-penalty tracking, RotLasher.attack()'s
@@ -43,6 +41,12 @@ Scoping notes (deliberate simplifications, not oversights):
   - Wandmaker.add()/reset() (Java: reject all buffs, always "resets" cleanly
     on load) have no equivalent hook in this engine's buff/save system --
     skipped, same as RatKing/Shopkeeper/Imp before it.
+  - NewbornFireElemental's ranged attack is a same-turn hit-scan bolt
+    (ai_newborn_elemental.py, matches the existing DM-200/201 vent-gas
+    pattern) rather than Java's 2-turn "aim then fire" telegraph with
+    predictive targeting -- see that module's docstring. meleeProc's fiery
+    on-hit (only active for ally-summoned Elementals, which this quest
+    never creates) is correspondingly omitted too.
 """
 
 from __future__ import annotations
@@ -51,7 +55,7 @@ from typing import List
 
 from app.engine.entities.base import Faction
 from app.engine.entities.player import DropEntry, Mob as MobEntity
-from app.engine.entities.mobs import Wraith
+from app.engine.entities.mobs import FireElemental, Wraith
 
 
 class Wandmaker(MobEntity):
@@ -151,3 +155,21 @@ class RotLasher(MobEntity):
 
     def attack_proc(self, target) -> None:
         target.add_buff("cripple", duration=2.0, level=1)
+
+
+class NewbornFireElemental(FireElemental):
+    """Elemental.NewbornFireElemental -- Ceremonial Candle quest miniboss,
+    summoned already-hunting once all 4 candles land around the ritual site
+    (see world.py's _check_ritual_candles). Weaker damage and lower
+    defense than a regular Fire Elemental (still flying, still FIERY, still
+    immune to its own burning), no on-hit fire from melee -- only its
+    ranged bolt burns (ai_newborn_elemental.py; see module docstring for
+    the telegraph simplification)."""
+
+    name: str = "Newborn Fire Elemental"
+    defense_skill: int = 12
+    damage_min: int = 10
+    damage_max: int = 12
+    attack_range: int = 6
+    ranged_cooldown: int = 0
+    properties: List[str] = ["FIERY", "INORGANIC", "MINIBOSS"]

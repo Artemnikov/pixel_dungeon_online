@@ -1,21 +1,22 @@
 """Tests for the Wandmaker quest chain: Corpse Dust variant (MassGraveRoom,
-CorpseDust pickup/buff, DustWraith spawner) and Rotberry variant
-(RotGardenRoom, RotHeart/RotLasher, RotberrySeed drop), both via
-WandmakerClaimReward.
+CorpseDust pickup/buff, DustWraith spawner), Rotberry variant (RotGardenRoom,
+RotHeart/RotLasher, RotberrySeed drop), and Ceremonial Candle variant
+(RitualSiteRoom, 4-candle ritual completion, NewbornFireElemental, Embers
+drop) -- all three via WandmakerClaimReward.
 
-Seeds "2" (type 1, Corpse Dust) and "1" (type 3, Rotberry) are known seeds
-where WandmakerQuestState rolls that quest_type by depth 7-9 -- see
-run_state.WandmakerQuestState / wandmaker_quest.py's module docstring for why
-type 2 (Ceremonial Candle) is still unimplemented (still consumes the same
-RNG draw but silently produces no room)."""
+Seeds "2" (type 1, Corpse Dust), "0" (type 2, Ceremonial Candle), and "1"
+(type 3, Rotberry) are known seeds where WandmakerQuestState rolls that
+quest_type by depth 7-9 -- see run_state.WandmakerQuestState's docstring."""
 import uuid
 
+from app.engine.dungeon.constants import TileType
 from app.engine.entities.base import Position
+from app.engine.entities.item_actions import action_drop
 from app.engine.entities.item_union import Chest
 from app.engine.entities.items_consumable import CorpseDust
 from app.engine.entities.items_wands import Wand
-from app.engine.entities.wandmaker_quest import DustWraith, RotHeart, RotLasher, Wandmaker
-from app.engine.entities.wandmaker_quest_items import RotberrySeed
+from app.engine.entities.wandmaker_quest import DustWraith, NewbornFireElemental, RotHeart, RotLasher, Wandmaker
+from app.engine.entities.wandmaker_quest_items import CeremonialCandle, Embers, RotberrySeed
 from app.engine.manager import GameInstance
 
 
@@ -312,5 +313,165 @@ def test_wandmaker_claim_reward_rotberry_grants_wand():
     wands = [i for i in p.inventory if isinstance(i, Wand)]
     assert len(wands) == 1
     assert wands[0].level == 2
+    reward_events = [e for e in g.events if e["type"] == "WANDMAKER_REWARD"]
+    assert len(reward_events) == 1
+
+
+# ---------------------------------------------------------------------------
+# Ceremonial Candle variant (RitualSiteRoom, NewbornFireElemental, Embers)
+# ---------------------------------------------------------------------------
+
+def test_ritual_site_room_spawns_wandmaker_and_four_candles():
+    g = GameInstance("wandmaker-ritual", seed="0")
+    wandmaker = None
+    candle_count = 0
+    ritual_pos = ritual_floor = None
+    for depth in (6, 7, 8, 9):
+        floor = g._get_or_create_floor(depth)
+        found = next((m for m in floor.mobs.values() if isinstance(m, Wandmaker)), None)
+        if found:
+            wandmaker = found
+        candle_count += sum(1 for i in floor.items.values() if isinstance(i, CeremonialCandle))
+        for i in floor.items.values():
+            if isinstance(i, Chest):
+                candle_count += sum(1 for c in i.contents if isinstance(c, CeremonialCandle))
+
+    quest = g.run_state.wandmaker_quest
+    assert wandmaker is not None
+    assert quest.quest_type == 2
+    assert quest.spawned is True
+    assert quest.ritual_pos is not None
+    assert quest.ritual_floor_id is not None
+    assert candle_count == 4
+
+
+def _setup_ritual(g, ritual_x=10, ritual_y=10):
+    g.grid = [[TileType.FLOOR for _ in range(20)] for _ in range(20)]
+    floor = g._get_or_create_floor(g.depth)
+    floor.rebuild_flags()
+    quest = g.run_state.wandmaker_quest
+    quest.ritual_pos = ritual_x + ritual_y * floor.width
+    quest.ritual_floor_id = g.depth
+    return floor, quest
+
+
+def test_dropping_fourth_candle_completes_ritual_and_spawns_elemental():
+    g = GameInstance("wandmaker-ritual-drop")
+    p = g.add_player("p1", "Bob")
+    floor, quest = _setup_ritual(g)
+    rx, ry = 10, 10
+    cardinals = [(rx, ry - 1), (rx + 1, ry), (rx, ry + 1), (rx - 1, ry)]
+    for i, (cx, cy) in enumerate(cardinals[:3]):
+        c = CeremonialCandle(id=f"c{i}", pos=Position(x=cx, y=cy))
+        floor.items[c.id] = c
+
+    p.pos = Position(x=cardinals[3][0], y=cardinals[3][1])
+    p.floor_id = g.depth
+    last_candle = CeremonialCandle(id="c3")
+    p.inventory.append(last_candle)
+
+    action_drop(g, p, last_candle)
+
+    elementals = [m for m in floor.mobs.values() if isinstance(m, NewbornFireElemental)]
+    assert len(elementals) == 1
+    assert elementals[0].ai_state == "hunting"
+    assert not any(isinstance(i, CeremonialCandle) for i in floor.items.values())
+
+
+def test_dropping_only_three_candles_does_not_complete_ritual():
+    g = GameInstance("wandmaker-ritual-incomplete")
+    p = g.add_player("p1", "Bob")
+    floor, quest = _setup_ritual(g)
+    rx, ry = 10, 10
+    cardinals = [(rx, ry - 1), (rx + 1, ry), (rx, ry + 1)]
+    for i, (cx, cy) in enumerate(cardinals):
+        c = CeremonialCandle(id=f"c{i}", pos=Position(x=cx, y=cy))
+        floor.items[c.id] = c
+    p.pos = Position(x=rx, y=ry)
+    p.floor_id = g.depth
+
+    g._check_ritual_candles(g.depth)
+
+    assert not any(isinstance(m, NewbornFireElemental) for m in floor.mobs.values())
+    assert sum(1 for i in floor.items.values() if isinstance(i, CeremonialCandle)) == 3
+
+
+def test_newborn_fire_elemental_ranged_attack_burns_target():
+    g = GameInstance("wandmaker-elemental-ranged")
+    g.grid = [[TileType.FLOOR for _ in range(10)] for _ in range(10)]
+    g._get_or_create_floor(g.depth).rebuild_flags()
+    p = g.add_player("p1", "Bob")
+    p.pos = Position(x=1, y=1)
+    floor = g._get_or_create_floor(p.floor_id)
+    elem = NewbornFireElemental(id="e1", pos=Position(x=5, y=1), ai_state="hunting", hp=100, max_hp=100)
+    floor.mobs[elem.id] = elem
+
+    fired = g._update_newborn_elemental(elem, floor, p.floor_id)
+
+    assert fired is True
+    assert p.hp < 20
+    assert p.has_buff("burning")
+    assert elem.ranged_cooldown > 0
+
+
+def test_newborn_fire_elemental_death_drops_embers():
+    g = GameInstance("wandmaker-elemental-death")
+    floor = g._get_or_create_floor(1)
+    elem = NewbornFireElemental(id="e1", pos=Position(x=5, y=5))
+    floor.mobs[elem.id] = elem
+
+    g.handle_mob_death(elem, floor, 1)
+
+    embers = [i for i in floor.items.values() if isinstance(i, Embers)]
+    assert len(embers) == 1
+    assert embers[0].pos == Position(x=5, y=5)
+
+
+def test_npc_interact_wandmaker_ember_reminder_and_reward():
+    g = GameInstance("wandmaker-ember-dialogue")
+    p = g.add_player("p1", "Bob")
+    floor = g._get_or_create_floor(p.floor_id)
+    npc = Wandmaker(id="wm1", pos=Position(x=p.pos.x + 1, y=p.pos.y))
+    floor.mobs[npc.id] = npc
+    quest = g.run_state.wandmaker_quest
+    quest.given = True
+    quest.quest_type = 2
+    quest.wand1_index = 0
+    quest.wand1_level = 2
+    quest.wand2_index = 3
+    quest.wand2_level = 1
+
+    g.npc_interact("p1", npc.id)
+    events = [e for e in g.events if e["type"] == "WANDMAKER_DIALOGUE"]
+    assert events[-1]["data"]["can_claim"] is False
+    assert "embers" in events[-1]["data"]["text"].lower()
+
+    p.inventory.append(Embers(id="embers1"))
+    g.npc_interact("p1", npc.id)
+    events = [e for e in g.events if e["type"] == "WANDMAKER_DIALOGUE"]
+    assert events[-1]["data"]["can_claim"] is True
+
+
+def test_wandmaker_claim_reward_ember_grants_wand():
+    g = GameInstance("wandmaker-ember-claim")
+    p = g.add_player("p1", "Bob")
+    floor = g._get_or_create_floor(p.floor_id)
+    npc = Wandmaker(id="wm1", pos=Position(x=p.pos.x + 1, y=p.pos.y))
+    floor.mobs[npc.id] = npc
+    quest = g.run_state.wandmaker_quest
+    quest.given = True
+    quest.quest_type = 2
+    quest.wand1_index = 1
+    quest.wand1_level = 4
+    quest.wand2_index = 2
+    quest.wand2_level = 1
+    p.inventory.append(Embers(id="embers1"))
+
+    g.wandmaker_claim_reward("p1", npc.id, "wand1")
+
+    assert not any(isinstance(i, Embers) for i in p.inventory)
+    wands = [i for i in p.inventory if isinstance(i, Wand)]
+    assert len(wands) == 1
+    assert wands[0].level == 4
     reward_events = [e for e in g.events if e["type"] == "WANDMAKER_REWARD"]
     assert len(reward_events) == 1
