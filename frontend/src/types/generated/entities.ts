@@ -69,6 +69,7 @@ export interface Player {
   websocket_id?: string | null;
   is_downed?: boolean;
   death_processed?: boolean;
+  is_afk?: boolean;
   kills_count?: number;
   floors_explored?: number;
   heal_left?: number;

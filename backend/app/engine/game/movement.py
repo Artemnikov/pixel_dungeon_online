@@ -259,7 +259,7 @@ class MovementCombatMixin:
 
         target_entity = None
         for p in self._players_on_floor(floor_id):
-            if p.id != entity_id and p.is_alive and p.pos.x == new_x and p.pos.y == new_y:
+            if p.id != entity_id and p.is_alive and not p.is_afk and p.pos.x == new_x and p.pos.y == new_y:
                 target_entity = p
                 break
 

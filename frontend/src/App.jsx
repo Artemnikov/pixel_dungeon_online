@@ -77,17 +77,47 @@ function inspectScreenPos(canvas, cam, zoom, anchor, mobs, visible) {
   return { left, top: below ? bottomY + 6 : topY - 6, below };
 }
 
+const RESUME_SESSION_KEY = 'opd_session';
+const RESUME_RUN_KEY = 'opd_run';
+
+// Read once at module load (not per-render): if a prior tab session left a
+// resumable run behind, skip WELCOME/SELECT entirely and reconnect straight
+// into PLAYING with the same session id -- the backend's WS connect() rebinds
+// to the still-alive-or-ghosted hero automatically (see main.py ConnectionManager).
+// If that hero already died or the session is gone, the same class/difficulty/
+// name/challenges are reused as connect params, so a lost cause still yields a
+// sane state instead of a special "resume failed" screen.
+function readResumeBundle() {
+  try {
+    const session = sessionStorage.getItem(RESUME_SESSION_KEY);
+    const raw = sessionStorage.getItem(RESUME_RUN_KEY);
+    if (!session || !raw) return null;
+    const run = JSON.parse(raw);
+    if (!run || typeof run !== 'object' || !run.class) return null;
+    return { session, class: run.class, difficulty: run.difficulty || 'normal', name: run.name || '', challenges: run.challenges || '' };
+  } catch {
+    return null;
+  }
+}
+
+function clearResumeBundle() {
+  sessionStorage.removeItem(RESUME_SESSION_KEY);
+  sessionStorage.removeItem(RESUME_RUN_KEY);
+}
+
+const RESUME = readResumeBundle();
+
 function App() {
   const { t } = useTranslation();
   // --- screen flow / session state ---
-  const [gameState, setGameState] = useState('WELCOME');
-  const [selectedClass, setSelectedClass] = useState('warrior');
-  const [playerName, setPlayerName] = useState('');
-  const [difficulty, setDifficulty] = useState('normal');
-  const [challenges, setChallenges] = useState('');
+  const [gameState, setGameState] = useState(RESUME ? 'PLAYING' : 'WELCOME');
+  const [selectedClass, setSelectedClass] = useState(RESUME?.class || 'warrior');
+  const [playerName, setPlayerName] = useState(RESUME?.name || '');
+  const [difficulty, setDifficulty] = useState(RESUME?.difficulty || 'normal');
+  const [challenges, setChallenges] = useState(RESUME?.challenges || '');
   const [gameId] = useState('default-lobby');
   const [sessionId, setSessionId] = useState(
-    () => sessionStorage.getItem('opd_session') || ''
+    () => sessionStorage.getItem(RESUME_SESSION_KEY) || ''
   );
   const [connectionStatus, setConnectionStatus] = useState(null);
   const [showTutorial, setShowTutorial] = useState(false);
@@ -530,7 +560,10 @@ function App() {
     quickslot, itemsById,
     gameMenuOpenRef: modals.gameMenuOpenRef,
     showItemBrowserRef: modals.showItemBrowserRef,
-    onOpenTalents: () => talent.setShowTalentPane(v => !v),
+    onOpenTalents: () => {
+      if (gameState !== 'PLAYING' || showTutorial || loreOverlay) return;
+      talent.setShowTalentPane(v => !v);
+    },
     onOpenItemBrowser: () => {
       if (!myStats.isAdmin) return;
       modals.setShowItemBrowser(v => !v);
@@ -680,12 +713,15 @@ function App() {
         <div className={isDesktop ? 'desktop-mode' : ''}
              style={isDesktop ? { '--cursor-mouse': mouseCursorVal } : {}}>
           <CharacterSelection onSelect={(c, d, n, strongerBosses) => {
+            const runChallenges = strongerBosses ? 'stronger_bosses' : '';
             setSelectedClass(c);
             setDifficulty(d);
-            setChallenges(strongerBosses ? 'stronger_bosses' : '');
+            setChallenges(runChallenges);
             setPlayerName(n);
             const newSession = crypto.randomUUID();
-            sessionStorage.setItem('opd_session', newSession);
+            sessionStorage.setItem(RESUME_SESSION_KEY, newSession);
+            sessionStorage.setItem(RESUME_RUN_KEY, JSON.stringify({ class: c, difficulty: d, name: n, challenges: runChallenges }));
+            if (n) localStorage.setItem('opd_last_name', n);
             setSessionId(newSession);
             setGameState('PLAYING');
           }} />
@@ -917,8 +953,8 @@ function App() {
           canResurrect={canResurrect}
           isVictory={isVictory}
           onResurrect={() => send({ type: 'RESURRECT' })}
-          onNewGame={() => { resetForRestart(); setGameState('SELECT'); }}
-          onMenu={() => { resetForRestart(); setGameState('WELCOME'); }}
+          onNewGame={() => { clearResumeBundle(); resetForRestart(); setGameState('SELECT'); }}
+          onMenu={() => { clearResumeBundle(); resetForRestart(); setGameState('WELCOME'); }}
           challenges={challenges}
           onReplayTutorial={handleReplayTutorial}
         />

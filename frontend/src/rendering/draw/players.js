@@ -125,6 +125,15 @@ export function drawPlayers(ctx, { entitiesRef, visionRef, assetImages, playerAn
       ctx.font = '10px Arial';
       ctx.textAlign = 'center';
       ctx.fillText(player.name, x + TILE_SIZE / 2, y - 15);
+
+      if (player.is_afk) {
+        ctx.font = 'bold 10px Arial';
+        ctx.fillStyle = '#ffdd55';
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 3;
+        ctx.strokeText('(AFK)', x + TILE_SIZE / 2, y - 26);
+        ctx.fillText('(AFK)', x + TILE_SIZE / 2, y - 26);
+      }
     }
 
     const totalShield = (player.shields || []).reduce((sum, s) => sum + (s.amount || 0), 0);

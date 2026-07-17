@@ -13981,6 +13981,10 @@
           "default": false,
           "type": "boolean"
         },
+        "is_afk": {
+          "default": false,
+          "type": "boolean"
+        },
         "kills_count": {
           "default": 0,
           "type": "integer"

@@ -33,6 +33,7 @@ export interface RenderPlayer extends Player {
   fadeStartAlpha?: number;
   fadeTargetAlpha?: number;
   fadeStartTime?: number | null;
+  faded?: boolean;
 }
 
 export interface RenderMob extends Mob {
@@ -46,6 +47,7 @@ export interface RenderMob extends Mob {
   fadeStartAlpha?: number;
   fadeTargetAlpha?: number;
   fadeStartTime?: number | null;
+  faded?: boolean;
 }
 
 export type DyingMob = RenderMob & { deathStart: number };

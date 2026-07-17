@@ -1146,6 +1146,8 @@ export interface InitMessage {
   torches?: [number, number][];
   /** Only present on the very first INIT after connecting. */
   player_id?: string;
+  /** True only when this connect spawned a brand-new hero; false on reconnect/resume. Only present alongside player_id. */
+  is_new?: boolean;
 }
 
 /** A decorative tilemap overlay (e.g. GooBossRoom's GooNest). */

@@ -246,6 +246,10 @@ class Player(Entity):
     websocket_id: Optional[str] = None
     is_downed: bool = False
     death_processed: bool = False
+    # True while the hero's WS is disconnected (grace window before reap kills
+    # them) -- non-solid ghost: skipped by collision/AI targeting, "(AFK)" tag
+    # shown above their head client-side.
+    is_afk: bool = False
     kills_count: int = 0
     floors_explored: int = 1
     # Over-time healing, mirroring SPD's Healing buff. Each application heals

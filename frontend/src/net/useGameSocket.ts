@@ -285,14 +285,17 @@ export default function useGameSocket({
           // Steady state (most ticks), or a non-stairs depth change (admin teleport,
           // resurrect, etc.) — apply any stashed INIT immediately, no fade.
           if (pendingInit) {
-            const isFirstConnect = !!pendingInit.player_id;
+            // player_id is set on every first INIT (both a fresh spawn and a
+            // reconnect/resume rebind) -- is_new is what actually distinguishes
+            // them, so a resumed hero doesn't replay the depth-1 lore intro.
+            const isNewPlayer = pendingInit.is_new === true;
             const initDepth = pendingInit.depth;
             if (isCameraDetachedRef) isCameraDetachedRef.current = false;
             applyInit(pendingInit);
             pendingInit = null;
             // First connection to depth 1 = new game. Show lore chain over the
             // rendered world (Dungeon intro → Sewers intro → game is revealed).
-            if (isFirstConnect && initDepth === 1 && onLoreNeeded) {
+            if (isNewPlayer && initDepth === 1 && onLoreNeeded) {
               onLoreNeeded(1, () => {});
             }
           }

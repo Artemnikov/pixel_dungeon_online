@@ -1138,7 +1138,7 @@ class WorldInteractionMixin:
             del floor.items[item.id]
 
         occupied = {(m.pos.x, m.pos.y) for m in floor.mobs.values() if m.is_alive}
-        occupied |= {(p.pos.x, p.pos.y) for p in self._players_on_floor(floor_id) if p.is_alive}
+        occupied |= {(p.pos.x, p.pos.y) for p in self._players_on_floor(floor_id) if p.is_alive and not p.is_afk}
         diagonals = ((-1, -1), (0, -1), (1, -1), (-1, 0), (1, 0), (-1, 1), (0, 1), (1, 1))
         candidates = [
             (rx + dx, ry + dy) for dx, dy in diagonals

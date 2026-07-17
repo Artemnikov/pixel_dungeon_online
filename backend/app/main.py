@@ -73,6 +73,7 @@ class ConnectionManager:
             # Reconnect: rebind to the live hero and cancel its removal.
             player_id = existing_player_id
             self.disconnect_deadline[game_id].pop(player_id, None)
+            game.players[player_id].is_afk = False
             # Force a fresh INIT (full grid/depth) on the next broadcast.
             self.last_sent_floor[game_id].pop(player_id, None)
             self.active_connections[game_id][websocket] = player_id
@@ -83,7 +84,7 @@ class ConnectionManager:
         self.active_connections[game_id][websocket] = player_id
         return player_id, True
 
-    async def send_player_init(self, game_id: str, websocket: WebSocket, player_id: str):
+    async def send_player_init(self, game_id: str, websocket: WebSocket, player_id: str, is_new: bool = True):
         game = self.game_instances[game_id]
         state = game.get_state(player_id)
         player_floor = state.get("depth", 1)
@@ -93,6 +94,7 @@ class ConnectionManager:
         floor = game._get_or_create_floor(player_floor)
         init = InitMessage(
             player_id=player_id,
+            is_new=is_new,
             depth=player_floor,
             grid=state["grid"],
             width=state["width"],
@@ -122,12 +124,14 @@ class ConnectionManager:
                 # Stop any in-progress walking so a disconnected hero stands still.
                 player.move_intent = None
                 player.path_queue = []
+                # Ghost mode: non-solid, un-targetable, "(AFK)" tag client-side.
+                player.is_afk = True
                 self.disconnect_deadline.setdefault(game_id, {})[player_id] = (
                     time.monotonic() + DISCONNECT_GRACE_SECONDS
                 )
 
     def reap_expired_players(self, game_id: str):
-        """Remove heroes whose reconnect grace window has elapsed."""
+        """Kill heroes whose reconnect grace window has elapsed."""
         deadlines = self.disconnect_deadline.get(game_id)
         if not deadlines:
             return
@@ -144,11 +148,17 @@ class ConnectionManager:
             deadlines.pop(player_id, None)
             self.last_sent_floor.get(game_id, {}).pop(player_id, None)
             if game and player_id in game.players:
-                del game.players[player_id]
-            sessions = self.sessions.get(game_id, {})
-            for sid, pid in list(sessions.items()):
-                if pid == player_id:
-                    del sessions[sid]
+                player = game.players[player_id]
+                # Didn't reconnect in time -- die for real (gear scatter, grave,
+                # DEATH event) via the normal death path: the next update_tick()
+                # (called right after this from broadcast_state) picks up
+                # is_alive=False and not death_processed and runs _kill_player.
+                # Leave the entity in game.players so a later reconnect on this
+                # session rebinds to the dead hero and sees the death/score screen.
+                if player.is_alive:
+                    player.hp = 0
+                    player.is_downed = True
+                    player.is_alive = False
 
     def cleanup_if_empty(self, game_id: str):
         """Tear down a game once nobody is connected and no hero awaits reconnect."""
@@ -157,7 +167,10 @@ class ConnectionManager:
         if self.disconnect_deadline.get(game_id):
             return
         game = self.game_instances.get(game_id)
-        if game and game.players:
+        # Dead heroes (AFK-reaped or otherwise) no longer get deleted from
+        # game.players -- a corpse alone shouldn't keep an abandoned game
+        # alive forever, so only a still-living hero blocks teardown here.
+        if game and any(p.is_alive for p in game.players.values()):
             return
         self.active_connections.pop(game_id, None)
         self.game_instances.pop(game_id, None)
@@ -394,7 +407,7 @@ async def game_websocket(websocket: WebSocket, game_id: str, class_type: str = "
         is_admin = bool(admin_secret and admin_secret == os.environ.get("ADMIN_SECRET", "admin"))
         player_name = "admin" if is_admin else (name.strip()[:20] if name and name.strip() else f"Player_{player_id[:4]}")
         game.add_player(player_id, player_name, class_type, is_admin=is_admin)
-    await manager.send_player_init(game_id, websocket, player_id)
+    await manager.send_player_init(game_id, websocket, player_id, is_new=is_new)
 
     try:
         while True:
