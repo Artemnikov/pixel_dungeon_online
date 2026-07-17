@@ -23,7 +23,7 @@ from typing import Optional
 from app.engine.entities.base import Faction, Position
 from app.engine.entities.mobs import (
     CrystalMimic, GhostHeroMob, MirrorImage, Goo, DwarfKing, YogDzewa, DM300,
-    DemonSpawner, Pylon, BurningFist, SoiledFist, RottingFist, RustedFist,
+    DemonSpawner, Pylon, Sentry, BurningFist, SoiledFist, RottingFist, RustedFist,
     BrightFist, DarkFist, Guard, Necromancer, Tengu, Eye, RedShaman,
     BlueShaman, PurpleShaman, Warlock, Spinner, DM200,
 )
@@ -85,6 +85,10 @@ class MobAIDispatchMixin:
 
         if isinstance(mob, Pylon):
             self._update_pylon(mob, floor, floor_id)
+            return
+
+        if isinstance(mob, Sentry):
+            self._update_sentry(mob, floor, floor_id)
             return
 
         if isinstance(mob, (BurningFist, SoiledFist, RottingFist,

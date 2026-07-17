@@ -271,7 +271,61 @@ def _spawn_blazing_trap_fire(floor: FloorState, cx: int, cy: int) -> None:
             queue.append((nx + dx, ny + dy, dist + 1))
     if cells:
         floor.blob_areas[blob_id] = {"type": "fire", "cells": cells, "volume": volume}
+def _sacrifice_exp_value(mob) -> int:
+    """Port of SacrificialFire.sacrifice()'s per-type exp lookup (same rates
+    as Wand of Corruption, except Swarms)."""
+    from app.engine.entities.mobs import (
+        Bee, Mimic, GoldenMimic, EbonyMimic, CrystalMimic,
+        Piranha, PhantomPiranha, Statue, ArmoredStatue, Swarm, TormentedSpirit, Wraith,
+    )
+    depth = getattr(mob, "floor_level", 1)
+    if isinstance(mob, (Statue, ArmoredStatue, Mimic, GoldenMimic, EbonyMimic, CrystalMimic)):
+        return 1 + depth
+    if isinstance(mob, (Piranha, PhantomPiranha, Bee)):
+        return 1 + depth // 2
+    if isinstance(mob, (Wraith, TormentedSpirit)):
+        return 1 + depth // 3
+    if isinstance(mob, Swarm) and mob.exp == 0:
+        return 1
+    if mob.exp > 0:
+        return 1 + mob.exp
+    return 0
+
+
 class WorldInteractionMixin:
+    def _process_sacrifice_fire_death(self, mob, floor: FloorState, floor_id: int) -> None:
+        """Port of SacrificialFire.sacrifice(): a mob that dies within the
+        fire's blast radius (its 3x3 EMBERS block plus one ring of
+        NEIGHBOURS9 marking) feeds the room's reward pool; once the pool is
+        exhausted the pre-rolled prize drops. Simplified from SPD's
+        continuous per-turn Marked-buff tracking to a proximity check taken
+        at the moment of death (the fire only marks/consumes on death
+        either way, so the outcome matches for the common case of a mob
+        dying to a hit landed while adjacent to the fire)."""
+        fires = floor.generation_meta.get("sacrifice_fires")
+        if not fires:
+            return
+        for fire in fires:
+            if fire["volume"] <= 0:
+                continue
+            fx, fy = fire["pos"]
+            if max(abs(mob.pos.x - fx), abs(mob.pos.y - fy)) > 2:
+                continue
+            exp_value = _sacrifice_exp_value(mob) * random.randint(2, 3)
+            if exp_value <= 0:
+                self.add_event("SACRIFICE_UNWORTHY", {"x": mob.pos.x, "y": mob.pos.y}, floor_id=floor_id)
+                return
+            fire["volume"] -= exp_value
+            if fire["volume"] > 0:
+                self.add_event("SACRIFICE_FEED", {"x": fx, "y": fy}, floor_id=floor_id)
+                return
+            from app.engine.game.spd_adapter import _descriptor_to_item
+            prize_item = _descriptor_to_item(fire["prize"], fx, fy)
+            floor.items[prize_item.id] = prize_item
+            self.add_event("SACRIFICE_REWARD", {"x": fx, "y": fy}, floor_id=floor_id)
+            self.add_event("PLAY_SOUND", {"sound": "BURNING"}, floor_id=floor_id)
+            return
+
     def handle_mob_death(self, mob, floor: FloorState, floor_id: int) -> None:
         """Boss-specific on-death drops, called at every mob-death site.
 
@@ -284,6 +338,8 @@ class WorldInteractionMixin:
         from app.engine.entities.mobs import DM300, Golem, Goo, Monk, Necromancer, Pylon, Skeleton, Tengu, YogDzewa
         from app.engine.entities.wandmaker_quest import NewbornFireElemental, RotHeart
         from app.engine.entities.wandmaker_quest_items import Embers, RotberrySeed
+
+        self._process_sacrifice_fire_death(mob, floor, floor_id)
 
         # Imp.Quest.process(): once the quest is given (and not yet
         # completed), killing a Monk (alternative) or Golem (!alternative)

@@ -166,6 +166,12 @@ class GrimTrap(Trap):
     pass
 
 
+# MinefieldRoom (universal filler standard room, reachable on all regions
+# incl. sewers depths 1-4) -- ExplosiveTrap.java, avoidsHallways not overridden.
+class ExplosiveTrap(Trap):
+    pass
+
+
 # SewerLevel.trapClasses()/trapChances() -- depth==1 vs depth>1 (Random.java
 # source confirms depth-1 sewers floors only ever roll WornDartTrap).
 _DEPTH1_TRAP_CLASSES = (WornDartTrap,)

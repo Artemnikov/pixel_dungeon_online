@@ -162,6 +162,7 @@ function App() {
   const [bossSlainData, setBossSlainData] = useState(null);
   const [loreOverlay, setLoreOverlay] = useState(null);
   const [inspectBuff, setInspectBuff] = useState(null);
+  const [inventoryPos, setInventoryPos] = useState(null);
   const loreFinishRef = useRef(null);
 
   const handleLoreNeeded = useCallback((depth, finishTransition) => {
@@ -771,11 +772,6 @@ function App() {
               if (weapon) executeItemAction(weapon.id, action);
             }}
           />
-          <LootIndicator
-            entitiesRef={entitiesRef}
-            myPlayerIdRef={myPlayerIdRef}
-            onPickup={() => send({ type: 'PICKUP_FLOOR' })}
-          />
           <ResumeIndicator
             myStats={myStats}
             onResume={() => send({ type: 'RESUME' })}
@@ -805,6 +801,13 @@ function App() {
             }}
           />
         </SideTags>
+
+        <LootIndicator
+          entitiesRef={entitiesRef}
+          myPlayerIdRef={myPlayerIdRef}
+          onPickup={() => send({ type: 'PICKUP_FLOOR' })}
+          position={inventoryPos}
+        />
 
         <StatusPane
           myStats={myStats}
@@ -889,6 +892,7 @@ function App() {
           onContextMenu={(item, x, y) => modals.setCtxMenu({ item, x, y })}
           onDefaultAction={(item) => executeItemAction(item.id, item.default_action)}
           onCloseInventory={() => modals.setShowInventory(false)}
+          onLayout={setInventoryPos}
         />
 
         <GameLog />

@@ -13,16 +13,21 @@
 # See the GNU General Public License for more details.
 #
 """Port of EntranceRoom/ExitRoom + sewers-eligible StandardRoom subclasses
-(rooms/standard/{entrance,exit}/*.java, rooms/standard/*.java) -- sizing/
-sizeCatProbs overrides only (gate the `set_size`/`init_size_cat` RNG draws);
-`paint()` is stubbed and deferred to the Painter phase (Task #4) like the
-other room types.
+(rooms/standard/{entrance,exit}/*.java, rooms/standard/*.java).
 
-Only the subclasses *reachable* (nonzero `chances[depth]` weight) for depths
-1-5 are ported; SpecialRoom-style placeholder `None` slots preserve the
-registration-order indices that `Random.chances` resolves into, for the
-prison/caves/city/halls-region StandardRoom variants that are unreachable on
-sewers floors (their weight is always 0 there, so the slot is never read)."""
+sizing/sizeCatProbs overrides gate the `set_size`/`init_size_cat` RNG draws.
+`paint()` is fully ported (terrain/loot/mob placement, RNG-exact draw order)
+for every StandardRoom class with nonzero `chances[depth]` weight on depths
+1-5 (the sewers-exclusive quintet -- SewerPipeRoom/RingRoom/WaterBridgeRoom/
+RegionDecoPatchRoom/CircleBasinRoom -- plus the "universal" filler rooms:
+PlantsRoom, AquariumRoom, PlatformRoom, BurnedRoom, FissureRoom,
+GrassyGraveRoom, StripedRoom, StudyRoom, SuspiciousChestRoom, MinefieldRoom).
+
+The prison/caves/city/halls-region-only StandardRoom variants below (CaveRoom,
+RitualRoom, StatuesRoom, etc.) are unreachable on sewers floors (weight 0
+there) and are out of this port's current scope -- `paint = _stub_paint`
+placeholders (generic wall+floor box) preserve their registration-order
+indices so `Random.chances` still resolves correctly for other regions."""
 
 from __future__ import annotations
 
@@ -898,6 +903,15 @@ class CircleBasinExitRoom(CircleBasinRoom):
 
 # -- "filler" StandardRoom subclasses (registration-table indices 25-34) ---
 
+def _random_plant_seed(rng: SPDRandom):
+    """Port of PlantsRoom.randomSeed(): Generator.randomUsingDefaults(SEED) in
+    a do-while excluding Firebloom.Seed. Firebloom already carries weight 0 in
+    the SEED chances table (generator._SEED[0] == 0.0), so Random.chances can
+    never select it and the do-while always terminates after one draw."""
+    from app.engine.dungeon.spd_levelgen.generator import _random_using_defaults_seed
+    return _random_using_defaults_seed(rng)
+
+
 class PlantsRoom(StandardRoom):
     def min_width(self) -> int:
         return max(super().min_width(), 5)
@@ -908,7 +922,43 @@ class PlantsRoom(StandardRoom):
     def size_cat_probs(self):
         return [3.0, 1.0, 0.0]
 
-    paint = _stub_paint
+    def merge(self, level, other, merge_rect, merge_terrain):
+        if merge_terrain == terrain.EMPTY and isinstance(other, (PlantsRoom, GrassyGraveRoom)):
+            super().merge(level, other, merge_rect, terrain.GRASS)
+        else:
+            super().merge(level, other, merge_rect, merge_terrain)
+
+    def paint(self, level, rng: SPDRandom) -> None:
+        Painter.fill(level, self, terrain.WALL)
+        Painter.fill(level, self, 1, terrain.GRASS)
+        Painter.fill(level, self, 2, terrain.HIGH_GRASS)
+
+        if min(self.width(), self.height()) >= 7:
+            Painter.fill(level, self, 3, terrain.GRASS)
+
+        center = self.center(rng)
+
+        if max(self.width(), self.height()) >= 9:
+            if min(self.width(), self.height()) >= 11:
+                Painter.draw_line(level, Point(self.left + 2, center.y), Point(self.right - 2, center.y), terrain.HIGH_GRASS)
+                Painter.draw_line(level, Point(center.x, self.top + 2), Point(center.x, self.bottom - 2), terrain.HIGH_GRASS)
+                level.plant(_random_plant_seed(rng), level.point_to_cell(Point(center.x - 1, center.y - 1)))
+                level.plant(_random_plant_seed(rng), level.point_to_cell(Point(center.x + 1, center.y - 1)))
+                level.plant(_random_plant_seed(rng), level.point_to_cell(Point(center.x - 1, center.y + 1)))
+                level.plant(_random_plant_seed(rng), level.point_to_cell(Point(center.x + 1, center.y + 1)))
+            elif self.width() > self.height() or (self.width() == self.height() and rng.IntMax(2) == 0):
+                Painter.draw_line(level, Point(center.x, self.top + 2), Point(center.x, self.bottom - 2), terrain.HIGH_GRASS)
+                level.plant(_random_plant_seed(rng), level.point_to_cell(Point(center.x - 1, center.y)))
+                level.plant(_random_plant_seed(rng), level.point_to_cell(Point(center.x + 1, center.y)))
+            else:
+                Painter.draw_line(level, Point(self.left + 2, center.y), Point(self.right - 2, center.y), terrain.HIGH_GRASS)
+                level.plant(_random_plant_seed(rng), level.point_to_cell(Point(center.x, center.y - 1)))
+                level.plant(_random_plant_seed(rng), level.point_to_cell(Point(center.x, center.y + 1)))
+        else:
+            level.plant(_random_plant_seed(rng), level.point_to_cell(center))
+
+        for door in self.connected.values():
+            door.set(DoorType.REGULAR)
 
 
 class AquariumRoom(StandardRoom):
@@ -921,7 +971,33 @@ class AquariumRoom(StandardRoom):
     def size_cat_probs(self):
         return [3.0, 1.0, 0.0]
 
-    paint = _stub_paint
+    def can_place_item(self, p, level) -> bool:
+        return super().can_place_item(p, level) and level.map[level.point_to_cell(p)] != terrain.WATER
+
+    def can_place_character(self, p, level) -> bool:
+        return super().can_place_character(p, level) and level.map[level.point_to_cell(p)] != terrain.WATER
+
+    def paint(self, level, rng: SPDRandom) -> None:
+        from app.engine.dungeon.spd_levelgen.mob_spawner import GenMob
+
+        Painter.fill(level, self, terrain.WALL)
+        Painter.fill(level, self, 1, terrain.EMPTY)
+        Painter.fill(level, self, 2, terrain.EMPTY_SP)
+        Painter.fill(level, self, 3, terrain.WATER)
+
+        min_dim = min(self.width(), self.height())
+        num_fish = (min_dim - 4) // 3
+
+        for _ in range(num_fish):
+            cls_name = "PhantomPiranha" if rng.Float() < 0.02 else "Piranha"
+            while True:
+                pos = level.point_to_cell(self.random(rng, 3))
+                if level.map[pos] == terrain.WATER and level.find_mob(pos) is None:
+                    break
+            level.mobs.append(GenMob(cls_name=cls_name, pos=pos, depth=level.depth))
+
+        for door in self.connected.values():
+            door.set(DoorType.REGULAR)
 
 
 class PlatformRoom(StandardRoom):
@@ -1033,11 +1109,78 @@ class FissureRoom(StandardRoom):
     def size_cat_probs(self):
         return [6.0, 3.0, 1.0]
 
-    paint = _stub_paint
+    def paint(self, level, rng: SPDRandom) -> None:
+        from app.engine.dungeon.spd_levelgen.geom import _f32_div
+
+        Painter.fill(level, self, terrain.WALL)
+        for door in self.connected.values():
+            door.set(DoorType.REGULAR)
+        Painter.fill(level, self, 1, terrain.EMPTY)
+
+        if self.square() <= 25:
+            p = self.center(rng)
+            Painter.set(level, p.x, p.y, terrain.CHASM)
+        else:
+            smallest_dim = min(self.width(), self.height())
+            floor_w = int(math.sqrt(smallest_dim))
+            edge_floor_chance = _to_f32(math.fmod(_to_f32(math.sqrt(smallest_dim)), 1.0))
+            edge_floor_chance = _to_f32(_f32_div(
+                _to_f32(edge_floor_chance + _to_f32((floor_w - 1) * 0.5)),
+                _to_f32(floor_w),
+            ))
+
+            for i in range(self.top + 2, self.bottom - 1):
+                for j in range(self.left + 2, self.right - 1):
+                    v = min(i - self.top, self.bottom - i)
+                    h = min(j - self.left, self.right - j)
+                    if min(v, h) > floor_w or (min(v, h) == floor_w and rng.Float() > edge_floor_chance):
+                        Painter.set(level, j, i, terrain.CHASM)
+
+        # CavesFissureEntranceRoom/CavesFissureExitRoom inherit this paint()
+        # without their own override (see the "entrance variants" section
+        # below for the pattern other real-paint rooms use) -- carve/stamp
+        # the transition tile here, same as _stub_paint's tail, so those
+        # subclasses' floors always have their ENTRANCE/EXIT terrain even
+        # though the anchor point may land on a just-painted CHASM cell.
+        if self.is_entrance() or self.is_exit():
+            cell = level.point_to_cell(self.random(rng, 2))
+            for nb in _neighbours8(level.width()):
+                Painter.set(level, cell + nb, terrain.EMPTY)
+            Painter.set(level, cell, terrain.ENTRANCE if self.is_entrance() else terrain.EXIT)
 
 
 class GrassyGraveRoom(StandardRoom):
-    paint = _stub_paint
+    def merge(self, level, other, merge_rect, merge_terrain):
+        if merge_terrain == terrain.EMPTY and isinstance(other, (GrassyGraveRoom, PlantsRoom)):
+            super().merge(level, other, merge_rect, terrain.GRASS)
+        else:
+            super().merge(level, other, merge_rect, merge_terrain)
+
+    def paint(self, level, rng: SPDRandom) -> None:
+        from app.engine.dungeon.spd_levelgen import generator as gen
+
+        Painter.fill(level, self, terrain.WALL)
+        for door in self.connected.values():
+            door.set(DoorType.REGULAR)
+        Painter.fill(level, self, 1, terrain.GRASS)
+
+        w = self.width() - 2
+        h = self.height() - 2
+        n_graves = max(w, h) // 2
+
+        index = rng.IntMax(n_graves)
+        shift = rng.IntMax(2)
+        for i in range(n_graves):
+            if w > h:
+                pos = self.left + 1 + shift + i * 2 + (self.top + 2 + rng.IntMax(h - 2)) * level.width()
+            else:
+                pos = (self.left + 2 + rng.IntMax(w - 2)) + (self.top + 1 + shift + i * 2) * level.width()
+            if i == index:
+                item = gen.generator_random(level.run_state.generator_state, rng, level.depth)
+            else:
+                gen._roll_gold_item(rng, level.depth)
+                item = frozenset({"Gold"})
+            level.drop(item, pos).type = "TOMB"
 
 
 class StripedRoom(StandardRoom):
@@ -1078,7 +1221,45 @@ class StudyRoom(StandardRoom):
     def size_cat_probs(self):
         return [2.0, 1.0, 0.0]
 
-    paint = _stub_paint
+    def paint(self, level, rng: SPDRandom) -> None:
+        from app.engine.dungeon.spd_levelgen import generator as gen
+
+        Painter.fill(level, self, terrain.WALL)
+        Painter.fill(level, self, 1, terrain.BOOKSHELF)
+        Painter.fill(level, self, 2, terrain.EMPTY_SP)
+
+        for door in self.connected.values():
+            Painter.draw_inside(level, self, door, 2, terrain.EMPTY_SP)
+            door.set(DoorType.REGULAR)
+
+        if self.size_cat == SizeCategory.LARGE:
+            pillar_w = (self.width() - 7) // 2
+            pillar_h = (self.height() - 7) // 2
+
+            Painter.fill(level, self.left + 3, self.top + 3, pillar_w, 1, terrain.BOOKSHELF)
+            Painter.fill(level, self.left + 3, self.top + 3, 1, pillar_h, terrain.BOOKSHELF)
+
+            Painter.fill(level, self.left + 3, self.bottom - 2 - 1, pillar_w, 1, terrain.BOOKSHELF)
+            Painter.fill(level, self.left + 3, self.bottom - 2 - pillar_h, 1, pillar_h, terrain.BOOKSHELF)
+
+            Painter.fill(level, self.right - 2 - pillar_w, self.top + 3, pillar_w, 1, terrain.BOOKSHELF)
+            Painter.fill(level, self.right - 2 - 1, self.top + 3, 1, pillar_h, terrain.BOOKSHELF)
+
+            Painter.fill(level, self.right - 2 - pillar_w, self.bottom - 2 - 1, pillar_w, 1, terrain.BOOKSHELF)
+            Painter.fill(level, self.right - 2 - 1, self.bottom - 2 - pillar_h, 1, pillar_h, terrain.BOOKSHELF)
+
+        center = self.center(rng)
+        Painter.set(level, center, terrain.PEDESTAL)
+
+        prize = level.find_prize_item(rng) if rng.IntMax(2) == 0 else None
+
+        pos = level.point_to_cell(center)
+        if prize is not None:
+            level.drop(prize, pos)
+        else:
+            cat = "POTION" if rng.IntMax(2) == 0 else "SCROLL"
+            item = gen._dispatch_random_category(level.run_state.generator_state, rng, level.depth, cat)
+            level.drop(item, pos)
 
 
 class SuspiciousChestRoom(StandardRoom):
@@ -1117,7 +1298,51 @@ class MinefieldRoom(StandardRoom):
     def size_cat_probs(self):
         return [4.0, 1.0, 0.0]
 
-    paint = _stub_paint
+    def can_merge(self, level, other, p, merge_terrain) -> bool:
+        cell = level.point_to_cell(self.point_inside(p, 1))
+        return level.map[cell] == terrain.EMPTY
+
+    def paint(self, level, rng: SPDRandom) -> None:
+        from app.engine.dungeon.spd_levelgen.traps import ExplosiveTrap, reveal_hidden_trap_chance
+
+        Painter.fill(level, self, terrain.WALL)
+        Painter.fill(level, self, 1, terrain.EMPTY)
+        for door in self.connected.values():
+            door.set(DoorType.REGULAR)
+
+        # Math.round(double): floor(x + 0.5), double precision (no float32
+        # truncation -- Math.sqrt/Math.round(double) here, unlike the float32
+        # helpers elsewhere in this module).
+        mines = math.floor(math.sqrt(self.square()) + 0.5)
+        if self.size_cat == SizeCategory.NORMAL:
+            mines -= 3
+        elif self.size_cat == SizeCategory.LARGE:
+            mines += 3
+        elif self.size_cat == SizeCategory.GIANT:
+            mines += 9
+
+        revealed_chance = reveal_hidden_trap_chance()
+        reveal_inc = 0.0
+        nbrs = _neighbours8(level.width())
+        for _ in range(mines):
+            while True:
+                pos = level.point_to_cell(self.random(rng, 1))
+                if pos not in level.traps:
+                    break
+
+            for _ in range(8):
+                c = nbrs[rng.IntMax(8)]
+                if pos + c not in level.traps and level.map[pos + c] == terrain.EMPTY:
+                    Painter.set(level, pos + c, terrain.EMBERS)
+
+            reveal_inc += revealed_chance
+            if reveal_inc >= 1:
+                Painter.set(level, pos, terrain.TRAP)
+                level.set_trap(ExplosiveTrap().reveal(), pos)
+                reveal_inc -= 1
+            else:
+                Painter.set(level, pos, terrain.SECRET_TRAP)
+                level.set_trap(ExplosiveTrap().hide(), pos)
 
 
 # -- Prison standard rooms (region-table indices 5-9) ----------------------

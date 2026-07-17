@@ -34,6 +34,7 @@ from app.engine.entities.items_wands import Wand, ZapContext
 from app.engine.entities.player import Mob as MobEntity, Player, Weapon, hurt_warning_sound
 from app.engine.entities.buffs import add_buff, get_buff, has_buff, is_frozen, remove_buff
 from app.engine.entities.mobs import CrystalMimic, DM300, Goo, Shopkeeper, Wraith
+from app.engine.entities.quest_bosses import Ghost
 from app.engine.entities.wandmaker_quest_items import CeremonialCandle
 from app.engine.entities.subclasses import Talent
 from app.engine.systems.ballistica import ballistica_trace
@@ -205,6 +206,50 @@ class MovementCombatMixin:
         self.add_event("OPEN_CHEST", {"player": player.id, "x": x, "y": y, "chest_type": chest.chest_type}, floor_id=floor_id)
         return True
 
+    def _drink_from_well(self, player: Player, floor, floor_id: int, x: int, y: int) -> None:
+        """Port of WellWater.affectCell/affectHero for the two MagicWellRoom
+        types (WaterOfHealth/WaterOfAwareness). Simplified to a single-charge
+        well (levelgen records which water type this well rolled in
+        generation_meta['magic_wells']) rather than SPD's depleting Blob
+        volume -- the well empties on first use instead of draining gradually."""
+        wells = floor.generation_meta.get("magic_wells", [])
+        well = next((w for w in wells if w.get("pos") == (x, y) and not w.get("used")), None)
+        if well is None:
+            return
+        well["used"] = True
+
+        floor.grid[y][x] = TileType.FLOOR
+        self.add_event("MAP_PATCH", {"tiles": [{"x": x, "y": y, "tile": TileType.FLOOR}]}, floor_id=floor_id)
+        self.add_event("PLAY_SOUND", {"sound": "DRINK"}, floor_id=floor_id, source_player_id=player.id)
+
+        if well["water_type"] == "health":
+            player.hp = player.get_total_max_hp()
+            player.hunger = 0.0
+            from app.engine.entities.scroll_actions import _apply_remove_curse
+            for item in player.belongings.equipped_slots():
+                if item is not None and getattr(item, "cursed", False):
+                    _apply_remove_curse(self, player, item)
+            self.add_event("DRINK", {"player": player.id, "type": "well_of_health"}, floor_id=floor_id, source_player_id=player.id)
+            self.add_event("HEAL", {"target": player.id, "amount": player.get_total_max_hp()}, floor_id=floor_id)
+        else:
+            from app.engine.entities.scroll_actions import _apply_identify
+            for item in player.belongings.all_items():
+                if not item.is_identified():
+                    _apply_identify(self, player, item)
+            for (tx, ty), actual_tile in list(floor.hidden_doors.items()):
+                floor.hidden_doors.pop((tx, ty))
+                floor.grid[ty][tx] = actual_tile
+                self.add_event("MAP_PATCH", {"tiles": [{"x": tx, "y": ty, "tile": actual_tile}]}, floor_id=floor_id)
+            for (tx, ty), trap in floor.traps.items():
+                if trap.hidden:
+                    trap.hidden = False
+                    if floor.grid[ty][tx] == TileType.SECRET_TRAP:
+                        floor.grid[ty][tx] = TileType.TRAP
+                        self.add_event("MAP_PATCH", {"tiles": [{"x": tx, "y": ty, "tile": TileType.TRAP}]}, floor_id=floor_id)
+            self.add_event("DRINK", {"player": player.id, "type": "well_of_awareness"}, floor_id=floor_id, source_player_id=player.id)
+
+        floor.rebuild_flags()
+
     def set_move_intent(self, entity_id: str, dx: int, dy: int):
         """Set/clear a player's held keyboard direction. The update tick paces the
         actual stepping at AUTO_MOVE_INTERVAL."""
@@ -284,6 +329,10 @@ class MovementCombatMixin:
                 return
 
             if isinstance(entity, Player) and isinstance(target_entity, Shopkeeper):
+                self.npc_interact(entity.id, target_entity.id)
+                return
+
+            if isinstance(entity, Player) and isinstance(target_entity, Ghost):
                 self.npc_interact(entity.id, target_entity.id)
                 return
 
@@ -452,6 +501,11 @@ class MovementCombatMixin:
             if chest is not None:
                 self._try_open_chest(entity, floor, floor_id, chest)
                 return
+
+        if tile == TileType.WELL:
+            if isinstance(entity, Player):
+                self._drink_from_well(entity, floor, floor_id, new_x, new_y)
+            return
 
         if tile == TileType.CHASM:
             # Mobs never voluntarily step into a chasm (AI pathing already

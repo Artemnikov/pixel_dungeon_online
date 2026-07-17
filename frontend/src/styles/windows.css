@@ -50,6 +50,16 @@
 .wnd-item-actions button.default, .rc-menu button.default { color: #f1c40f; }
 .wnd-item-actions .qs-assign, .rc-menu .qs-assign { background: #2c4a6e; }
 
+/* --- WndSadGhost reward item buttons (side-by-side sprites) --- */
+.wnd-ghost-items { display: flex; justify-content: center; gap: 8px; margin-top: 6px; }
+.ghost-item-btn {
+  width: 40px; height: 40px;
+  display: flex; align-items: center; justify-content: center;
+  background: #3a3a44; border: 2px solid #55555f; border-radius: 5px;
+  cursor: pointer; padding: 0;
+}
+.ghost-item-btn:hover { background: #4a4a55; border-color: #77777f; }
+
 /* --- Right-click context menu (RightClickMenu) --- */
 .rc-menu {
   position: fixed; z-index: 210;

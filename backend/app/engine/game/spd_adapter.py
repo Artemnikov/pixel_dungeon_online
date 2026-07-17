@@ -28,6 +28,7 @@ from app.engine.dungeon.spd_levelgen.traps import (
     FrostTrap, CorrosionTrap, RockfallTrap, GuardianTrap, WarpingTrap, PitfallTrap,
     DisintegrationTrap, FlashingTrap, WeakeningTrap,
     DisarmingTrap, CursingTrap, DistortionTrap, GrimTrap,
+    ExplosiveTrap,
 )
 from app.engine.dungeon.generator import TileType
 from app.engine.entities.base import EntityType, Position
@@ -101,6 +102,7 @@ from app.engine.entities.mobs import (
     RustedFist,
     Scorpio,
     Senior,
+    Sentry,
     ShockElemental,
     Skeleton,
     Slime,
@@ -274,6 +276,7 @@ _MOB_CLASSES: Dict[str, type[MobEntity]] = {
     "CrystalMimic": CrystalMimic,
     "Statue": Statue,
     "ArmoredStatue": ArmoredStatue,
+    "Sentry": Sentry,
     "Bee": Bee,
     # DwarfKing + minions
     "DwarfKing": DwarfKing,
@@ -386,6 +389,7 @@ _register_trap(DisarmingTrap, TrapType.DISARMING_TRAP)
 _register_trap(CursingTrap, TrapType.CURSING_TRAP)
 _register_trap(DistortionTrap, TrapType.DISTORTION_TRAP)
 _register_trap(GrimTrap, TrapType.GRIM_TRAP)
+_register_trap(ExplosiveTrap, TrapType.EXPLOSIVE_TRAP)
 
 
 def _convert_tile(val: int) -> int:
@@ -437,6 +441,13 @@ def _spawn_mob(gen_mob: GenMob, width: int) -> MobEntity:
     # Set floor_level for depth-scaled mobs
     if hasattr(mob, 'floor_level'):
         mob.floor_level = gen_mob.depth
+    if isinstance(mob, Sentry) and gen_mob.extra:
+        left, top, right, bottom = gen_mob.extra["room"]
+        mob.watch_room = [left, top, right, bottom]
+        mob.sentry_depth = gen_mob.extra.get("depth", gen_mob.depth)
+        # SPD's charge delay is turn-based (curChargeDelay -= hero.cooldown());
+        # ~20 ticks/turn matches the tick rate other charge-up AI (Eye) uses.
+        mob.initial_charge_ticks = max(1, round(gen_mob.extra["charge_delay"] * 20))
     return mob
 
 
@@ -598,6 +609,16 @@ def _descriptor_to_item(descriptor: frozenset, cx: int, cy: int) -> Item:
     return item
 
 
+def _convert_plants(gen_level: GenLevel, w: int) -> Dict[Tuple[int, int], object]:
+    """Port of Level.plants: seed descriptors dropped by PlantsRoom/GrassyGraveRoom's
+    tall-grass patches. Surfaced for future plant-growth/proc integration --
+    no runtime Plant system consumes this yet (tracked separately)."""
+    plants: Dict[Tuple[int, int], object] = {}
+    for cell, seed in getattr(gen_level, "plants", {}).items():
+        plants[(cell % w, cell // w)] = seed
+    return plants
+
+
 def _convert_traps(gen_level: GenLevel, w: int) -> Dict[Tuple[int, int], TrapInfo]:
     traps: Dict[Tuple[int, int], TrapInfo] = {}
     for cell, spd_trap in gen_level.traps.items():
@@ -728,6 +749,7 @@ def gen_level_to_floor_state(gen_level: GenLevel, depth: int) -> FloorState:
     items.update(extra_items)
 
     traps = _convert_traps(gen_level, w)
+    plants = _convert_plants(gen_level, w)
     hidden_doors, locked_doors = _extract_doors(gen_level, w, h)
 
     key_spawns: Dict[str, Tuple[int, int]] = {}
@@ -738,6 +760,15 @@ def gen_level_to_floor_state(gen_level: GenLevel, depth: int) -> FloorState:
             alchemy_pots.append((cell % w, cell // w))
 
     region = "sewers" if depth <= 5 else "prison" if depth <= 10 else "caves" if depth <= 15 else "city" if depth <= 20 else "halls"
+
+    magic_wells = [
+        {**well, "pos": (well["pos"] % w, well["pos"] // w)}
+        for well in getattr(gen_level, 'magic_wells', [])
+    ]
+    sacrifice_fires = [
+        {**fire, "pos": (fire["pos"] % w, fire["pos"] // w)}
+        for fire in getattr(gen_level, 'sacrifice_fires', [])
+    ]
 
     try:
         entrance_cell = gen_level.entrance()
@@ -766,12 +797,15 @@ def gen_level_to_floor_state(gen_level: GenLevel, depth: int) -> FloorState:
         hidden_doors=hidden_doors,
         locked_doors=locked_doors,
         traps=traps,
+        plants=plants,
         key_spawns=key_spawns,
         generation_meta={
             "seed": str(getattr(gen_level, '_seed', '')),
             "spd_generated": True,
             "layout_kind": getattr(gen_level, 'layout_kind', 'loop'),
             "room_ids_by_kind": _room_ids_by_kind(rooms),
+            "magic_wells": magic_wells,
+            "sacrifice_fires": sacrifice_fires,
             **({"imp_shop_room": gen_level.imp_shop_room, "imp_shop_spawned": False}
                if hasattr(gen_level, 'imp_shop_room') else {}),
         },

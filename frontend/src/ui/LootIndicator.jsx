@@ -1,7 +1,9 @@
 import { useEffect, useState, memo } from 'react';
+import ItemIcon from './ItemIcon';
 
-function LootIndicator({ entitiesRef, myPlayerIdRef, onPickup }) {
+function LootIndicator({ entitiesRef, myPlayerIdRef, onPickup, position }) {
   const [item, setItem] = useState(null);
+  const [flash, setFlash] = useState(false);
 
   useEffect(() => {
     let raf;
@@ -13,6 +15,10 @@ function LootIndicator({ entitiesRef, myPlayerIdRef, onPickup }) {
         const { x, y } = hero.targetPos;
         const items = entitiesRef?.current?.items || [];
         const found = items.find(i => i.pos && i.pos.x === Math.round(x) && i.pos.y === Math.round(y));
+        if (found && (!item || found.id !== item.id || found.quantity !== item.quantity)) {
+          setFlash(true);
+          setTimeout(() => setFlash(false), 400);
+        }
         setItem(found || null);
       } else {
         setItem(null);
@@ -21,15 +27,25 @@ function LootIndicator({ entitiesRef, myPlayerIdRef, onPickup }) {
     };
     raf = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(raf);
-  }, [entitiesRef, myPlayerIdRef]);
+  }, [entitiesRef, myPlayerIdRef, item]);
 
-  if (!item) return null;
+  if (!item || !position) return null;
+
   return (
-    <div className="side-tag side-tag--loot" onClick={onPickup} title={`Pick up ${item.name}`}>
-      <svg viewBox="0 0 16 16" width="16" height="16" fill="#1858a8">
-        <path d="M8 2l6 6H2L8 2zm-2 6h4v6H6V8z"/>
-      </svg>
-      <span className="side-tag__label">{item.name}</span>
+    <div
+      className={`loot-indicator${flash ? ' loot-indicator--flash' : ''}`}
+      style={{
+        position: 'fixed',
+        left: position.x,
+        top: position.y - 24,
+        width: position.w,
+        height: 24,
+      }}
+      onClick={onPickup}
+      title={`Pick up ${item.name}`}
+    >
+      <ItemIcon item={item} size={16} />
+      <span className="loot-indicator__label">{item.name}</span>
     </div>
   );
 }
