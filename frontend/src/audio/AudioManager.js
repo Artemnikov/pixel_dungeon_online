@@ -16,6 +16,7 @@ import deathSound from '../assets/sounds/death.mp3';
 import secretSound from '../assets/sounds/secret.mp3';
 import waterStepSound from '../assets/sounds/water.mp3';
 import grassStepSound from '../assets/sounds/grass.mp3';
+import woodStepSound from '../assets/sounds/sturdy.mp3';
 import descendSound from '../assets/pixel-dungeon/audio/descend.mp3';
 import fallingSound from '../assets/pixel-dungeon/audio/falling.mp3';
 import drinkSound from '../assets/sounds/drink.mp3';
@@ -67,6 +68,7 @@ class AudioManager {
         this.loadSound('STEP', stepSound);
         this.loadSound('STEP_WATER', waterStepSound);
         this.loadSound('STEP_GRASS', grassStepSound);
+        this.loadSound('STEP_WOOD', woodStepSound);
         this.loadSound('HIT_ARROW', hitArrowSound);
         this.loadSound('HIT_SLASH', hitSlashSound);
         this.loadSound('HIT_STAB', hitStabSound);
@@ -217,6 +219,7 @@ class AudioManager {
         let key = 'STEP';
         if (tileType === 7) key = 'STEP_WATER';
         else if (tileType === 9) key = 'STEP_GRASS';
+        else if (tileType === 6) key = 'STEP_WOOD';
         if (this.loadedSounds[key]) {
             this.playSoundBuffer(this.loadedSounds[key], rate);
         } else {
