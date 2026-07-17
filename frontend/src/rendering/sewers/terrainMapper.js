@@ -145,6 +145,10 @@ export const getSewerTerrainInstructions = (grid, x, y, tile, openDoors = new Se
     return [{ srcIndex: BACKEND_TILE.ALCHEMY.atlasIndex, quadrant: QUADRANT.FULL }];
   }
 
+  if (tile === BACKEND_TILE.BARRICADE.id) {
+    return [{ srcIndex: WALL_INDEX.RAISED_BARRICADE, quadrant: QUADRANT.FULL }];
+  }
+
   if (tile === BACKEND_TILE.WELL.id) {
     return [{ srcIndex: getFloorBase(x, y), quadrant: QUADRANT.FULL }];
   }

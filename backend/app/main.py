@@ -172,7 +172,13 @@ class ConnectionManager:
             events = game.flush_events()
             dead_connections = []
 
-            for connection, player_id in self.active_connections[game_id].items():
+            # Snapshot before iterating: connect/disconnect can mutate this dict
+            # from another coroutine while `await connection.send_json(...)`
+            # below yields control, which raised "dictionary changed size during
+            # iteration" and crashed the single global_game_loop task -- since
+            # that loop has no per-game exception isolation, one game's mutation
+            # race silently froze broadcast_state for every game on the server.
+            for connection, player_id in list(self.active_connections[game_id].items()):
                 try:
                     if player_id not in game.players:
                         continue
@@ -623,9 +629,17 @@ async def game_websocket(websocket: WebSocket, game_id: str, class_type: str = "
 async def global_game_loop():
     while True:
         for game_id in list(manager.game_instances.keys()):
-            manager.reap_expired_players(game_id)
-            await manager.broadcast_state(game_id)
-            manager.cleanup_if_empty(game_id)
+            try:
+                manager.reap_expired_players(game_id)
+                await manager.broadcast_state(game_id)
+                manager.cleanup_if_empty(game_id)
+            except Exception:
+                # One game's bug must never freeze broadcast_state for every
+                # other game on the server -- this loop is a single shared
+                # task with no other supervision, so an unhandled exception
+                # here previously killed ticking/broadcasting globally until
+                # a manual server restart.
+                logger.exception("global_game_loop: error ticking game_id=%s", game_id)
         await asyncio.sleep(0.05)
 
 @app.on_event("startup")

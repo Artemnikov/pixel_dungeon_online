@@ -19,6 +19,7 @@ import {
   QUADRANT,
   SOURCE_TILE_SIZE,
   WATER_SCROLL_PX_PER_SEC,
+  isWallTile,
 } from './constants.js';
 import { getSewerTerrainInstructions } from './terrainMapper.js';
 import { getSewerCap, getSewerWallInstructions } from './wallMapper.js';
@@ -190,11 +191,7 @@ export const drawWaterBackground = (ctx, waterTex, clipPath, bounds, nowMs) => {
 //          group in GameScene.
 
 export const drawSewerTileBase = (ctx, atlasImage, grid, x, y, tile, openDoors = new Set()) => {
-  const isWall = tile === BACKEND_TILE.WALL.id
-    || tile === BACKEND_TILE.WALL_DECO.id
-    || tile === BACKEND_TILE.SECRET_DOOR.id;
-
-  const instructions = isWall
+  const instructions = isWallTile(tile)
     ? getSewerWallInstructions(grid, x, y)
     : getSewerTerrainInstructions(grid, x, y, tile, openDoors);
 

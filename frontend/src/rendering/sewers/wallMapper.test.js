@@ -76,7 +76,7 @@ test('getInternalWallTop — fully surrounded wall returns mask=0', () => {
     [W, W, W],
   );
   // Cell (1, 1): every 4-neighbour (right, rightBelow, leftBelow, left) is a wall.
-  assert.equal(getInternalWallTop(grid, 1, 1, W), WALL_INDEX.WALL_INTERNAL);
+  assert.equal(getInternalWallTop(grid, 1, 1, W, W), WALL_INDEX.WALL_INTERNAL);
 });
 
 test('getInternalWallTop — isolated wall with all four corners open = mask 1|2|4|8 = 15', () => {
@@ -86,7 +86,7 @@ test('getInternalWallTop — isolated wall with all four corners open = mask 1|2
     [F, F, F],
   );
   // Cell (1, 1): right (2,1)=F(+1), rightBelow (2,2)=F(+2), leftBelow (0,2)=F(+4), left (0,1)=F(+8).
-  assert.equal(getInternalWallTop(grid, 1, 1, W), WALL_INDEX.WALL_INTERNAL + 15);
+  assert.equal(getInternalWallTop(grid, 1, 1, W, F), WALL_INDEX.WALL_INTERNAL + 15);
 });
 
 test('getInternalWallTop — WALL_DECO uses the DECO variant row', () => {
@@ -95,7 +95,7 @@ test('getInternalWallTop — WALL_DECO uses the DECO variant row', () => {
     [WD, WD, WD],
     [WD, WD, WD],
   );
-  assert.equal(getInternalWallTop(grid, 1, 1, WD), WALL_INDEX.WALL_INTERNAL_DECO);
+  assert.equal(getInternalWallTop(grid, 1, 1, WD, WD), WALL_INDEX.WALL_INTERNAL_DECO);
 });
 
 test('getWallOverhang — floor above wall, both below-diagonals are wall = mask 0', () => {

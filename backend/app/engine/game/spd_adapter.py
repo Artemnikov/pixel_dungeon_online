@@ -187,7 +187,11 @@ _SPD_TO_TILE = {
     spd_terrain.PEDESTAL: TileType.FLOOR,
     spd_terrain.WALL_DECO: TileType.WALL_DECO,
     spd_terrain.BARRICADE: TileType.BARRICADE,
-    spd_terrain.EMPTY_SP: TileType.FLOOR,
+    # SPD's DungeonTileSheet: directVisuals[EMPTY_SP] = FLOOR_SP = GROUND+4,
+    # the same atlas slot as our FLOOR_WOOD -- the distinct "special room"
+    # floor look (vault rooms: Library, Storage, Treasury, etc.), not plain
+    # FLOOR. Collapsing it to FLOOR lost that visual identity.
+    spd_terrain.EMPTY_SP: TileType.FLOOR_WOOD,
     spd_terrain.HIGH_GRASS: TileType.HIGH_GRASS,
     spd_terrain.FURROWED_GRASS: TileType.FURROWED_GRASS,
     spd_terrain.SECRET_DOOR: TileType.SECRET_DOOR,

@@ -96,16 +96,16 @@ export const getRaisedWallFace = (grid, x, y, tile) => {
  *
  * Mirrors SPD DungeonTileSheet.stitchInternalWallTile.
  */
-export const getInternalWallTop = (grid, x, y, tile) => {
+export const getInternalWallTop = (grid, x, y, tile, below) => {
   const right = getTile(grid, x + 1, y);
   const rightBelow = getTile(grid, x + 1, y + 1);
   const leftBelow = getTile(grid, x - 1, y + 1);
   const left = getTile(grid, x - 1, y);
 
-  const base = tile === BACKEND_TILE.WALL_DECO.id
-    ? WALL_INDEX.WALL_INTERNAL_DECO
-    : tile === BACKEND_TILE.BOOKSHELF.id
-      ? WALL_INDEX.WALL_INTERNAL_WOODEN
+  const base = (tile === BACKEND_TILE.BOOKSHELF.id || below === BACKEND_TILE.BOOKSHELF.id)
+    ? WALL_INDEX.WALL_INTERNAL_WOODEN
+    : tile === BACKEND_TILE.WALL_DECO.id
+      ? WALL_INDEX.WALL_INTERNAL_DECO
       : WALL_INDEX.WALL_INTERNAL;
 
   let mask = 0;
@@ -156,8 +156,10 @@ export const getDoorSidewaysOverhang = (grid, x, y, tile, openDoors) => {
   const leftBelow = getTile(grid, x - 1, y + 1);
 
   let base;
-  if (tile === BACKEND_TILE.LOCKED_DOOR.id || tile === BACKEND_TILE.LOCKED_EXIT.id || tile === BACKEND_TILE.CRYSTAL_DOOR.id) {
+  if (tile === BACKEND_TILE.LOCKED_DOOR.id || tile === BACKEND_TILE.LOCKED_EXIT.id) {
     base = WALL_INDEX.DOOR_SIDEWAYS_OVERHANG_LOCKED;
+  } else if (tile === BACKEND_TILE.CRYSTAL_DOOR.id) {
+    base = WALL_INDEX.DOOR_SIDEWAYS_OVERHANG_CRYSTAL;
   } else if (tile === BACKEND_TILE.OPEN_DOOR.id || openDoors?.has(`${x},${y}`)) {
     base = WALL_INDEX.DOOR_SIDEWAYS_OVERHANG;
   } else {
@@ -186,7 +188,7 @@ export const getSewerCap = (grid, x, y, tile, openDoors) => {
   if (below === BACKEND_TILE.ALCHEMY.id) return BACKEND_TILE.ALCHEMY.overhangIndex;
 
   if (!isWallStitcheable(below)) return null;
-  if (isWallTile(tile)) return getInternalWallTop(grid, x, y, tile);
+  if (isWallTile(tile)) return getInternalWallTop(grid, x, y, tile, below);
   return getWallOverhang(grid, x, y);
 };
 
@@ -212,12 +214,15 @@ export const getSewerDoorCap = (grid, x, y, tile, openDoors) => {
       // for closed/locked doors (no side-wall check). NULL_TILE for open
       // doors so the open doorway is unobstructed.
       if (isOpen) return null;
-      if (below === BACKEND_TILE.LOCKED_DOOR.id || below === BACKEND_TILE.LOCKED_EXIT.id || below === BACKEND_TILE.CRYSTAL_DOOR.id)
+      if (below === BACKEND_TILE.LOCKED_DOOR.id || below === BACKEND_TILE.LOCKED_EXIT.id)
         return WALL_INDEX.DOOR_SIDEWAYS_LOCKED;
+      if (below === BACKEND_TILE.CRYSTAL_DOOR.id)
+        return WALL_INDEX.DOOR_SIDEWAYS_CRYSTAL;
       return WALL_INDEX.DOOR_SIDEWAYS;
     }
 
     // Floor above a top-facing door — the door-top cap sprite.
+    if (below === BACKEND_TILE.CRYSTAL_DOOR.id) return WALL_INDEX.DOOR_OVERHANG_CRYSTAL;
     return isOpen ? WALL_INDEX.DOOR_OVERHANG_OPEN : WALL_INDEX.DOOR_OVERHANG;
   }
 
@@ -243,5 +248,5 @@ export const getSewerWallInstructions = (grid, x, y) => {
   }
 
   // Wall with wall below → internal wall-top cap goes here.
-  return [{ srcIndex: getInternalWallTop(grid, x, y, tile), quadrant: QUADRANT.FULL }];
+  return [{ srcIndex: getInternalWallTop(grid, x, y, tile, below), quadrant: QUADRANT.FULL }];
 };

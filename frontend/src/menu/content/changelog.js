@@ -1,4 +1,4 @@
-export const APP_VERSION = '0.5.0';
+export const APP_VERSION = '0.6.0';
 
 // Changelog content moved to locale JSON files.
 // This file retained for APP_VERSION export; remove when refactored.
