@@ -91,6 +91,12 @@ import {
    WANDMAKER_FW,
    WANDMAKER_FH,
    WANDMAKER_DEST,
+   ROT_HEART_FW,
+   ROT_HEART_FH,
+   ROT_HEART_DEST,
+   ROT_LASHER_FW,
+   ROT_LASHER_FH,
+   ROT_LASHER_DEST,
    RATKING_FW,
    RATKING_FH,
    RATKING_DEST,
@@ -146,6 +152,8 @@ import {
   getKeeperFrame,
   getImpFrame,
   getWandmakerFrame,
+  getRotHeartFrame,
+  getRotLasherFrame,
    getRatKingFrame,
    getSheepFrame,
 } from '../mobs';
@@ -394,6 +402,12 @@ export function drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef,
     } else if (mob.name === 'Wandmaker') {
       mobSprite = assetImages.wandmaker;
       sx = getWandmakerFrame(mob, mobAnimRef.current, now);
+    } else if (mob.name === 'Rot Heart') {
+      mobSprite = assetImages.rotHeart;
+      sx = getRotHeartFrame();
+    } else if (mob.name === 'Rot Lasher') {
+      mobSprite = assetImages.rotLasher;
+      sx = getRotLasherFrame();
     } else if (mob.name === 'Rat King') {
       mobSprite = assetImages.ratking;
       sx = getRatKingFrame(mob, mobAnimRef.current, now);
@@ -460,6 +474,8 @@ export function drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef,
     const isShopkeeper = mob.name === 'Shopkeeper';
     const isImp = mob.name === 'Imp';
     const isWandmaker = mob.name === 'Wandmaker';
+    const isRotHeart = mob.name === 'Rot Heart';
+    const isRotLasher = mob.name === 'Rot Lasher';
     const isRatKing = mob.name === 'Rat King';
     const isGhost = mob.name === 'Ghost' || mob.name === 'Ghost Hero';
     const isSheep = mob.name === 'Sheep';
@@ -546,6 +562,10 @@ export function drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef,
       drawMobSprite(ctx, mob, mobSprite, sx, IMP_FW, IMP_FH, flash, IMP_DEST);
     } else if (isWandmaker) {
       drawMobSprite(ctx, mob, mobSprite, sx, WANDMAKER_FW, WANDMAKER_FH, flash, WANDMAKER_DEST);
+    } else if (isRotHeart) {
+      drawMobSprite(ctx, mob, mobSprite, sx, ROT_HEART_FW, ROT_HEART_FH, flash, ROT_HEART_DEST);
+    } else if (isRotLasher) {
+      drawMobSprite(ctx, mob, mobSprite, sx, ROT_LASHER_FW, ROT_LASHER_FH, flash, ROT_LASHER_DEST);
     } else if (isRatKing) {
       drawMobSprite(ctx, mob, mobSprite, sx, RATKING_FW, RATKING_FH, flash, RATKING_DEST);
     } else if (isGhost) {

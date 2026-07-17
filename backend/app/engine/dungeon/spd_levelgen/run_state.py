@@ -312,10 +312,10 @@ class GhostQuestState:
 
 class WandmakerQuestState:
     """Mirrors actors/mobs/npcs/Wandmaker.Quest's static fields (Wandmaker.
-    java): the Prison depths 6-9 side quest. Phase 1 only implements the
-    Corpse Dust variant (type 1) -- see wandmaker_quest.py's module
-    docstring for why types 2/3 (Ceremonial Candle/Rotberry) still consume
-    the same RNG draw but silently produce no room, keeping later floor
+    java): the Prison depths 6-9 side quest. Types 1 (Corpse Dust) and 3
+    (Rotberry) are implemented; type 2 (Ceremonial Candle) is still deferred
+    -- see wandmaker_quest.py's module docstring for why its RNG draw is
+    still consumed but silently produces no room, keeping later floor
     generation for a given seed byte-identical to vanilla regardless of
     which type is rolled.
 
@@ -328,7 +328,7 @@ class WandmakerQuestState:
 
     def __init__(self) -> None:
         self.spawned: bool = False               # Quest.spawned -- NPC actually placed
-        self.quest_type: int = 0                  # Quest.type -- 1=CorpseDust (2/3 unimplemented)
+        self.quest_type: int = 0                  # Quest.type -- 1=CorpseDust, 3=Rotberry (2=Candle unimplemented)
         self.quest_room_spawned: bool = False     # Quest.questRoomSpawned (transient)
         self.given: bool = False                  # Quest.given -- intro dialogue already shown
         self.npc_id: Optional[str] = None
@@ -355,6 +355,10 @@ class WandmakerQuestState:
         if self.quest_type == 1:
             self.quest_room_spawned = True
             return sr.MassGraveRoom()
+        if self.quest_type == 3:
+            self.quest_room_spawned = True
+            from app.engine.dungeon.spd_levelgen.rot_garden_room import RotGardenRoom
+            return RotGardenRoom()
         return None
 
     def maybe_spawn_npc(self, rng: SPDRandom, level) -> Optional[GenMob]:

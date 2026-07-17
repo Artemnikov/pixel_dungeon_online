@@ -189,6 +189,13 @@ class GenLevel:
         bx, by = b % self._width, b // self._width
         return ((ax - bx) ** 2 + (ay - by) ** 2) ** 0.5
 
+    def distance(self, a: int, b: int) -> int:
+        """Port of Level.distance() -- Chebyshev (8-directional/king-move)
+        distance, unlike true_distance's Euclidean. No RNG."""
+        ax, ay = a % self._width, a // self._width
+        bx, by = b % self._width, b // self._width
+        return max(abs(ax - bx), abs(ay - by))
+
     def add_item_to_spawn(self, item: Optional[frozenset]) -> Optional[frozenset]:
         """Port of Level.addItemToSpawn -- queues a descriptor (no-op for None,
         mirroring the `if (item != null)` guard; Generator.random/randomArtifact

@@ -21,7 +21,6 @@ exact order SPD does."""
 from __future__ import annotations
 
 import math
-from collections import deque
 from typing import List, Optional, Tuple
 
 from app.engine.dungeon.spd_levelgen import generator as gen
@@ -30,7 +29,7 @@ from app.engine.dungeon.spd_levelgen import standard_rooms as std
 from app.engine.dungeon.spd_levelgen import special_rooms as sr
 from app.engine.dungeon.spd_levelgen import terrain
 from app.engine.dungeon.spd_levelgen.builders import Builder, FigureEightBuilder, LoopBuilder
-from app.engine.dungeon.spd_levelgen.geom import _to_f32
+from app.engine.dungeon.spd_levelgen.geom import _to_f32, build_distance_map_limited
 from app.engine.dungeon.spd_levelgen.level import Feeling, GenLevel, assign_feeling
 from app.engine.dungeon.spd_levelgen.mob_spawner import GenMob
 from app.engine.dungeon.spd_levelgen.room import Room
@@ -61,10 +60,6 @@ _ITEM_DESTROYING_TRAP_NAMES = frozenset({
     "BurningTrap", "BlazingTrap", "ChillingTrap", "FrostTrap",
     "ExplosiveTrap", "DisintegrationTrap", "PitfallTrap",
 })
-
-# PathFinder.dirLR (PathFinder.java:67) as (dx, dy) pairs, in left-to-right
-# scan order: NW, W, SW, N, S, NE, E, SE.
-_DIR_LR = ((-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1))
 
 
 def _builder(rng: SPDRandom) -> Builder:
@@ -263,35 +258,6 @@ def build_floor(rng: SPDRandom, depth: int, run_state: RunState,
     return level, rooms
 
 
-def _build_distance_map_limited(to_idx: int, passable: List[bool], width: int,
-                                height: int, limit: int) -> List[Optional[int]]:
-    """Port of PathFinder.buildDistanceMap(int to, boolean[] passable, int
-    limit) (PathFinder.java:248-282) -- BFS that bails out entirely the first
-    time the frontier distance would exceed `limit` (FIFO queue guarantees
-    non-decreasing distances, so this is a safe early-out, not a per-node
-    skip). `dirLR` order + the `start`/`end` edge-wrap guards are reproduced
-    exactly; `None` stands in for Integer.MAX_VALUE."""
-    size = width * height
-    distance: List[Optional[int]] = [None] * size
-    distance[to_idx] = 0
-    queue: deque = deque([to_idx])
-    while queue:
-        step = queue.popleft()
-        next_distance = distance[step] + 1
-        if next_distance > limit:
-            return distance
-        x = step % width
-        start = 3 if x == 0 else 0
-        end = 3 if (x + 1) % width == 0 else 0
-        for i in range(start, 8 - end):
-            dx, dy = _DIR_LR[i]
-            n = step + dx + dy * width
-            if 0 <= n < size and passable[n] and (distance[n] is None or distance[n] > next_distance):
-                queue.append(n)
-                distance[n] = next_distance
-    return distance
-
-
 def _create_mob(rng: SPDRandom, level: GenLevel) -> GenMob:
     """Port of Level.createMob -- regenerates the per-level rotation cache
     from MobSpawner.getMobRotation when empty, then rolls (and discards) a
@@ -397,7 +363,7 @@ def create_mobs(rng: SPDRandom, level: GenLevel, run_state: RunState) -> None:
             if level.passable[cell]:
                 entrance_walkable[cell] = True
 
-    distance = _build_distance_map_limited(entrance_cell, entrance_walkable, width, level.height(), 8)
+    distance = build_distance_map_limited(entrance_cell, entrance_walkable, width, level.height(), 8)
 
     mob: Optional[GenMob] = None
     while mobs_to_spawn > 0:

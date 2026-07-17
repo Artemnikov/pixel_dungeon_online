@@ -20,7 +20,8 @@ the generation code can be transliterated near-verbatim.
 from __future__ import annotations
 
 import math
-from typing import List
+from collections import deque
+from typing import List, Optional
 
 from app.engine.dungeon.spd_random import SPDRandom
 
@@ -162,6 +163,44 @@ class Rect:
             for j in range(self.top, self.bottom + 1):
                 points.append(Point(i, j))
         return points
+
+
+# PathFinder.dirLR order (PathFinder.java) -- shared by build_distance_map_limited
+# below. Relocated here (rather than kept local to regular_level.py) so
+# special_rooms.py can also use it without an import cycle (regular_level.py
+# already imports special_rooms.py).
+_DIR_LR = ((-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1))
+
+
+def build_distance_map_limited(to_idx: int, passable: List[bool], width: int,
+                                height: int, limit: int) -> List[Optional[int]]:
+    """Port of PathFinder.buildDistanceMap(int to, boolean[] passable, int
+    limit) (PathFinder.java:248-282) -- BFS that bails out entirely the first
+    time the frontier distance would exceed `limit` (FIFO queue guarantees
+    non-decreasing distances, so this is a safe early-out, not a per-node
+    skip). `dirLR` order + the `start`/`end` edge-wrap guards are reproduced
+    exactly; `None` stands in for Integer.MAX_VALUE. Passing a `limit` no
+    real BFS distance can reach (e.g. width*height) reproduces the unlimited
+    2-arg `buildDistanceMap(int, boolean[])` overload exactly."""
+    size = width * height
+    distance: List[Optional[int]] = [None] * size
+    distance[to_idx] = 0
+    queue: deque = deque([to_idx])
+    while queue:
+        step = queue.popleft()
+        next_distance = distance[step] + 1
+        if next_distance > limit:
+            return distance
+        x = step % width
+        start = 3 if x == 0 else 0
+        end = 3 if (x + 1) % width == 0 else 0
+        for i in range(start, 8 - end):
+            dx, dy = _DIR_LR[i]
+            n = step + dx + dy * width
+            if 0 <= n < size and passable[n] and (distance[n] is None or distance[n] > next_distance):
+                queue.append(n)
+                distance[n] = next_distance
+    return distance
 
 
 A = 180.0 / math.pi

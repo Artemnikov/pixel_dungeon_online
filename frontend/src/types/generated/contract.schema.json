@@ -762,6 +762,7 @@
                 "ring_sharpshooting": "#/$defs/RingOfSharpshooting",
                 "ring_tenacity": "#/$defs/RingOfTenacity",
                 "ring_wealth": "#/$defs/RingOfWealth",
+                "rotberry_seed": "#/$defs/RotberrySeed",
                 "salt_cube": "#/$defs/SaltCube",
                 "sandals_of_nature": "#/$defs/SandalsOfNature",
                 "scale_armor": "#/$defs/ScaleArmor",
@@ -1348,6 +1349,9 @@
                 "$ref": "#/$defs/CorpseDust"
               },
               {
+                "$ref": "#/$defs/RotberrySeed"
+              },
+              {
                 "$ref": "#/$defs/Petal"
               },
               {
@@ -1598,6 +1602,7 @@
                   "ring_sharpshooting": "#/$defs/RingOfSharpshooting",
                   "ring_tenacity": "#/$defs/RingOfTenacity",
                   "ring_wealth": "#/$defs/RingOfWealth",
+                  "rotberry_seed": "#/$defs/RotberrySeed",
                   "salt_cube": "#/$defs/SaltCube",
                   "sandals_of_nature": "#/$defs/SandalsOfNature",
                   "scale_armor": "#/$defs/ScaleArmor",
@@ -2182,6 +2187,9 @@
                 },
                 {
                   "$ref": "#/$defs/CorpseDust"
+                },
+                {
+                  "$ref": "#/$defs/RotberrySeed"
                 },
                 {
                   "$ref": "#/$defs/Petal"
@@ -2427,6 +2435,7 @@
                   "ring_sharpshooting": "#/$defs/RingOfSharpshooting",
                   "ring_tenacity": "#/$defs/RingOfTenacity",
                   "ring_wealth": "#/$defs/RingOfWealth",
+                  "rotberry_seed": "#/$defs/RotberrySeed",
                   "salt_cube": "#/$defs/SaltCube",
                   "sandals_of_nature": "#/$defs/SandalsOfNature",
                   "scale_armor": "#/$defs/ScaleArmor",
@@ -3011,6 +3020,9 @@
                 },
                 {
                   "$ref": "#/$defs/CorpseDust"
+                },
+                {
+                  "$ref": "#/$defs/RotberrySeed"
                 },
                 {
                   "$ref": "#/$defs/Petal"
@@ -3256,6 +3268,7 @@
                   "ring_sharpshooting": "#/$defs/RingOfSharpshooting",
                   "ring_tenacity": "#/$defs/RingOfTenacity",
                   "ring_wealth": "#/$defs/RingOfWealth",
+                  "rotberry_seed": "#/$defs/RotberrySeed",
                   "salt_cube": "#/$defs/SaltCube",
                   "sandals_of_nature": "#/$defs/SandalsOfNature",
                   "scale_armor": "#/$defs/ScaleArmor",
@@ -3840,6 +3853,9 @@
                 },
                 {
                   "$ref": "#/$defs/CorpseDust"
+                },
+                {
+                  "$ref": "#/$defs/RotberrySeed"
                 },
                 {
                   "$ref": "#/$defs/Petal"
@@ -4085,6 +4101,7 @@
                   "ring_sharpshooting": "#/$defs/RingOfSharpshooting",
                   "ring_tenacity": "#/$defs/RingOfTenacity",
                   "ring_wealth": "#/$defs/RingOfWealth",
+                  "rotberry_seed": "#/$defs/RotberrySeed",
                   "salt_cube": "#/$defs/SaltCube",
                   "sandals_of_nature": "#/$defs/SandalsOfNature",
                   "scale_armor": "#/$defs/ScaleArmor",
@@ -4669,6 +4686,9 @@
                 },
                 {
                   "$ref": "#/$defs/CorpseDust"
+                },
+                {
+                  "$ref": "#/$defs/RotberrySeed"
                 },
                 {
                   "$ref": "#/$defs/Petal"
@@ -4914,6 +4934,7 @@
                   "ring_sharpshooting": "#/$defs/RingOfSharpshooting",
                   "ring_tenacity": "#/$defs/RingOfTenacity",
                   "ring_wealth": "#/$defs/RingOfWealth",
+                  "rotberry_seed": "#/$defs/RotberrySeed",
                   "salt_cube": "#/$defs/SaltCube",
                   "sandals_of_nature": "#/$defs/SandalsOfNature",
                   "scale_armor": "#/$defs/ScaleArmor",
@@ -5498,6 +5519,9 @@
                 },
                 {
                   "$ref": "#/$defs/CorpseDust"
+                },
+                {
+                  "$ref": "#/$defs/RotberrySeed"
                 },
                 {
                   "$ref": "#/$defs/Petal"
@@ -6777,6 +6801,7 @@
                 "ring_sharpshooting": "#/$defs/RingOfSharpshooting",
                 "ring_tenacity": "#/$defs/RingOfTenacity",
                 "ring_wealth": "#/$defs/RingOfWealth",
+                "rotberry_seed": "#/$defs/RotberrySeed",
                 "salt_cube": "#/$defs/SaltCube",
                 "sandals_of_nature": "#/$defs/SandalsOfNature",
                 "scale_armor": "#/$defs/ScaleArmor",
@@ -7361,6 +7386,9 @@
               },
               {
                 "$ref": "#/$defs/CorpseDust"
+              },
+              {
+                "$ref": "#/$defs/RotberrySeed"
               },
               {
                 "$ref": "#/$defs/Petal"
@@ -11197,6 +11225,7 @@
                 "ring_sharpshooting": "#/$defs/RingOfSharpshooting",
                 "ring_tenacity": "#/$defs/RingOfTenacity",
                 "ring_wealth": "#/$defs/RingOfWealth",
+                "rotberry_seed": "#/$defs/RotberrySeed",
                 "salt_cube": "#/$defs/SaltCube",
                 "sandals_of_nature": "#/$defs/SandalsOfNature",
                 "scale_armor": "#/$defs/ScaleArmor",
@@ -11781,6 +11810,9 @@
               },
               {
                 "$ref": "#/$defs/CorpseDust"
+              },
+              {
+                "$ref": "#/$defs/RotberrySeed"
               },
               {
                 "$ref": "#/$defs/Petal"
@@ -14162,6 +14194,7 @@
                 "ring_sharpshooting": "#/$defs/RingOfSharpshooting",
                 "ring_tenacity": "#/$defs/RingOfTenacity",
                 "ring_wealth": "#/$defs/RingOfWealth",
+                "rotberry_seed": "#/$defs/RotberrySeed",
                 "salt_cube": "#/$defs/SaltCube",
                 "sandals_of_nature": "#/$defs/SandalsOfNature",
                 "scale_armor": "#/$defs/ScaleArmor",
@@ -14748,6 +14781,9 @@
                 "$ref": "#/$defs/CorpseDust"
               },
               {
+                "$ref": "#/$defs/RotberrySeed"
+              },
+              {
                 "$ref": "#/$defs/Petal"
               },
               {
@@ -14988,6 +15024,7 @@
                   "ring_sharpshooting": "#/$defs/RingOfSharpshooting",
                   "ring_tenacity": "#/$defs/RingOfTenacity",
                   "ring_wealth": "#/$defs/RingOfWealth",
+                  "rotberry_seed": "#/$defs/RotberrySeed",
                   "salt_cube": "#/$defs/SaltCube",
                   "sandals_of_nature": "#/$defs/SandalsOfNature",
                   "scale_armor": "#/$defs/ScaleArmor",
@@ -15572,6 +15609,9 @@
                 },
                 {
                   "$ref": "#/$defs/CorpseDust"
+                },
+                {
+                  "$ref": "#/$defs/RotberrySeed"
                 },
                 {
                   "$ref": "#/$defs/Petal"
@@ -15817,6 +15857,7 @@
                   "ring_sharpshooting": "#/$defs/RingOfSharpshooting",
                   "ring_tenacity": "#/$defs/RingOfTenacity",
                   "ring_wealth": "#/$defs/RingOfWealth",
+                  "rotberry_seed": "#/$defs/RotberrySeed",
                   "salt_cube": "#/$defs/SaltCube",
                   "sandals_of_nature": "#/$defs/SandalsOfNature",
                   "scale_armor": "#/$defs/ScaleArmor",
@@ -16401,6 +16442,9 @@
                 },
                 {
                   "$ref": "#/$defs/CorpseDust"
+                },
+                {
+                  "$ref": "#/$defs/RotberrySeed"
                 },
                 {
                   "$ref": "#/$defs/Petal"
@@ -16818,6 +16862,7 @@
                 "ring_sharpshooting": "#/$defs/RingOfSharpshooting",
                 "ring_tenacity": "#/$defs/RingOfTenacity",
                 "ring_wealth": "#/$defs/RingOfWealth",
+                "rotberry_seed": "#/$defs/RotberrySeed",
                 "salt_cube": "#/$defs/SaltCube",
                 "sandals_of_nature": "#/$defs/SandalsOfNature",
                 "scale_armor": "#/$defs/ScaleArmor",
@@ -17402,6 +17447,9 @@
               },
               {
                 "$ref": "#/$defs/CorpseDust"
+              },
+              {
+                "$ref": "#/$defs/RotberrySeed"
               },
               {
                 "$ref": "#/$defs/Petal"
@@ -20659,6 +20707,76 @@
       },
       "type": "object"
     },
+    "RotberrySeed": {
+      "description": "plants/Rotberry.java's Seed inner class -- the Rotberry quest's\nturn-in item, dropped by RotHeart on death (see wandmaker_quest.py /\nworld.py's handle_mob_death). Inert for quest purposes (no held-item\nside effect, unlike CorpseDust); the \"plant it to grow a new Rotberry\"\nflavor mechanic is a separate, unrelated Plant/Seed system this port\ndoesn't need to build out for the quest to work.",
+      "properties": {
+        "kind": {
+          "const": "rotberry_seed",
+          "default": "rotberry_seed",
+          "type": "string"
+        },
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "name": {
+          "default": "seed of the rotberry",
+          "type": "string"
+        },
+        "type": {
+          "default": "misc",
+          "type": "string"
+        },
+        "pos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Position"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "quantity": {
+          "default": 1,
+          "type": "integer"
+        },
+        "level": {
+          "default": 0,
+          "type": "integer"
+        },
+        "level_known": {
+          "default": true,
+          "type": "boolean"
+        },
+        "cursed": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed_known": {
+          "default": true,
+          "type": "boolean"
+        },
+        "unique": {
+          "default": true,
+          "type": "boolean"
+        },
+        "kept_though_lost": {
+          "default": false,
+          "type": "boolean"
+        },
+        "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
     "SaltCube": {
       "properties": {
         "kind": {
@@ -21179,6 +21297,7 @@
                 "ring_sharpshooting": "#/$defs/RingOfSharpshooting",
                 "ring_tenacity": "#/$defs/RingOfTenacity",
                 "ring_wealth": "#/$defs/RingOfWealth",
+                "rotberry_seed": "#/$defs/RotberrySeed",
                 "salt_cube": "#/$defs/SaltCube",
                 "sandals_of_nature": "#/$defs/SandalsOfNature",
                 "scale_armor": "#/$defs/ScaleArmor",
@@ -21763,6 +21882,9 @@
               },
               {
                 "$ref": "#/$defs/CorpseDust"
+              },
+              {
+                "$ref": "#/$defs/RotberrySeed"
               },
               {
                 "$ref": "#/$defs/Petal"
@@ -26443,6 +26565,7 @@
                 "ring_sharpshooting": "#/$defs/RingOfSharpshooting",
                 "ring_tenacity": "#/$defs/RingOfTenacity",
                 "ring_wealth": "#/$defs/RingOfWealth",
+                "rotberry_seed": "#/$defs/RotberrySeed",
                 "salt_cube": "#/$defs/SaltCube",
                 "sandals_of_nature": "#/$defs/SandalsOfNature",
                 "scale_armor": "#/$defs/ScaleArmor",
@@ -27027,6 +27150,9 @@
               },
               {
                 "$ref": "#/$defs/CorpseDust"
+              },
+              {
+                "$ref": "#/$defs/RotberrySeed"
               },
               {
                 "$ref": "#/$defs/Petal"

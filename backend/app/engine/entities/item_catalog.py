@@ -25,6 +25,7 @@ from app.engine.entities.rings import RingOfAccuracy, RingOfEvasion, RingOfHaste
 from app.engine.entities.item_union import Bag, MagicalHolster, PotionBandolier, ScrollHolder, VelvetPouch
 from app.engine.entities.items_artifacts import BrokenSeal, CloakOfShadows, DriedRose, Petal
 from app.engine.entities.items_consumable import Amulet, Berry, Boomerang, ChargrilledMeat, CorpseDust, Dewdrop, DwarfToken, EnergyCrystal, Food, GooBlob, Gold, Key, KingsCrown, MeatPie, MysteryMeat, Pasty, Ration, Seed, SmallRation, Stone, StewedMeat, Throwable, ThrowableDagger, TenguMask, Waterskin, ArcaneStylus, MagicalInfusion
+from app.engine.entities.wandmaker_quest_items import RotberrySeed
 from app.engine.entities.items_equip import Armor, ClothArmor, LeatherArmor, MailArmor, ScaleArmor, PlateArmor, Artifact, Bow, SpiritBow, Dagger, MeleeWeapon, MissileWeapon, Ring, Staff, WornShortsword
 from app.engine.entities.items_potions import ElixirOfAquaticRejuvenation, FuryPotion, HealthPotion, Potion, PotionOfExperience, PotionOfFrost, PotionOfHaste, PotionOfInvisibility, PotionOfLevitation, PotionOfLiquidFlame, PotionOfMindVision, PotionOfParalyticGas, PotionOfPurity, PotionOfStrength, PotionOfToxicGas, RevivingPotion
 from app.engine.entities.items_scrolls import Scroll, ScrollOfIdentify, ScrollOfLullaby, ScrollOfMagicMapping, ScrollOfMetamorphosis, ScrollOfMirrorImage, ScrollOfRage, ScrollOfRecharging, ScrollOfRemoveCurse, ScrollOfRetribution, ScrollOfTeleportation, ScrollOfTerror, ScrollOfTransmutation, ScrollOfUpgrade, ScrollOfEnchantment, ExoticScrollOfEnchantment
@@ -197,6 +198,7 @@ _CATALOG: List[tuple] = [
     ("petal", "Petal", "misc", lambda: Petal()),
     ("dwarf_token", "Dwarf Token", "misc", lambda: DwarfToken()),
     ("corpse_dust", "Dust of the Corpse", "misc", lambda: CorpseDust()),
+    ("rotberry_seed", "Seed of the Rotberry", "misc", lambda: RotberrySeed()),
     ("tengu_mask", "Tengu's Mask", "misc", lambda: TenguMask()),
     ("kings_crown", "King's Crown", "misc", lambda: KingsCrown()),
     ("amulet", "Amulet of Yendor", "misc", lambda: Amulet()),

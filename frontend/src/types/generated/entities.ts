@@ -293,6 +293,7 @@ export interface Player {
     | GooBlob
     | DwarfToken
     | CorpseDust
+    | RotberrySeed
     | Petal
     | Chest
     | VelvetPouch
@@ -499,6 +500,7 @@ export interface Player {
         | GooBlob
         | DwarfToken
         | CorpseDust
+        | RotberrySeed
         | Petal
         | Chest
         | VelvetPouch
@@ -706,6 +708,7 @@ export interface Player {
         | GooBlob
         | DwarfToken
         | CorpseDust
+        | RotberrySeed
         | Petal
         | Chest
         | VelvetPouch
@@ -942,6 +945,7 @@ export interface Belongings {
         | GooBlob
         | DwarfToken
         | CorpseDust
+        | RotberrySeed
         | Petal
         | Chest
         | VelvetPouch
@@ -1149,6 +1153,7 @@ export interface Belongings {
         | GooBlob
         | DwarfToken
         | CorpseDust
+        | RotberrySeed
         | Petal
         | Chest
         | VelvetPouch
@@ -1356,6 +1361,7 @@ export interface Belongings {
         | GooBlob
         | DwarfToken
         | CorpseDust
+        | RotberrySeed
         | Petal
         | Chest
         | VelvetPouch
@@ -1563,6 +1569,7 @@ export interface Belongings {
         | GooBlob
         | DwarfToken
         | CorpseDust
+        | RotberrySeed
         | Petal
         | Chest
         | VelvetPouch
@@ -1770,6 +1777,7 @@ export interface Belongings {
         | GooBlob
         | DwarfToken
         | CorpseDust
+        | RotberrySeed
         | Petal
         | Chest
         | VelvetPouch
@@ -1993,6 +2001,7 @@ export interface Bag {
     | GooBlob
     | DwarfToken
     | CorpseDust
+    | RotberrySeed
     | Petal
     | Chest
     | VelvetPouch
@@ -5203,6 +5212,30 @@ export interface CorpseDust {
   for_sale?: boolean;
   seen?: boolean;
 }
+/**
+ * plants/Rotberry.java's Seed inner class -- the Rotberry quest's
+ * turn-in item, dropped by RotHeart on death (see wandmaker_quest.py /
+ * world.py's handle_mob_death). Inert for quest purposes (no held-item
+ * side effect, unlike CorpseDust); the "plant it to grow a new Rotberry"
+ * flavor mechanic is a separate, unrelated Plant/Seed system this port
+ * doesn't need to build out for the quest to work.
+ */
+export interface RotberrySeed {
+  kind?: "rotberry_seed";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+}
 export interface Petal {
   kind?: "petal";
   id?: string;
@@ -5403,6 +5436,7 @@ export interface Chest {
     | GooBlob
     | DwarfToken
     | CorpseDust
+    | RotberrySeed
     | Petal
     | Chest
     | VelvetPouch
@@ -5627,6 +5661,7 @@ export interface VelvetPouch {
     | GooBlob
     | DwarfToken
     | CorpseDust
+    | RotberrySeed
     | Petal
     | Chest
     | VelvetPouch
@@ -5849,6 +5884,7 @@ export interface ScrollHolder {
     | GooBlob
     | DwarfToken
     | CorpseDust
+    | RotberrySeed
     | Petal
     | Chest
     | VelvetPouch
@@ -6071,6 +6107,7 @@ export interface MagicalHolster {
     | GooBlob
     | DwarfToken
     | CorpseDust
+    | RotberrySeed
     | Petal
     | Chest
     | VelvetPouch
@@ -6293,6 +6330,7 @@ export interface PotionBandolier {
     | GooBlob
     | DwarfToken
     | CorpseDust
+    | RotberrySeed
     | Petal
     | Chest
     | VelvetPouch

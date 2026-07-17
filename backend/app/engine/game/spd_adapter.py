@@ -43,7 +43,7 @@ from app.engine.dungeon.spd_levelgen.run_state import SCROLL_DEFAULT_PROBS_TOTAL
 from app.engine.entities.item_catalog import FLOOR_SCROLL_KINDS, TRANSMUTE_GROUPS, make_catalog_item
 from app.engine.entities.weapon_defs import WEP_TIER_ORDER
 from app.engine.entities.quest_bosses import FetidRat, Ghost, GnollTrickster, GreatCrab
-from app.engine.entities.wandmaker_quest import DustWraith, Wandmaker
+from app.engine.entities.wandmaker_quest import DustWraith, RotHeart, RotLasher, Wandmaker
 from app.engine.entities.trinkets import TrinketCatalyst
 from app.engine.entities.mobs import (
     AcidicScorpio,
@@ -301,6 +301,8 @@ _MOB_CLASSES: Dict[str, type[MobEntity]] = {
     # Prison Wandmaker quest (depths 6-9), Corpse Dust variant
     "Wandmaker": Wandmaker,
     "DustWraith": DustWraith,
+    "RotHeart": RotHeart,
+    "RotLasher": RotLasher,
 }
 
 # Trap class (SPD) -> remake TrapType

@@ -26,7 +26,7 @@ from typing import List, Optional, Type
 from app.engine.dungeon.generator import TileType
 from app.engine.entities.base import Faction, is_immune, Position
 from app.engine.entities.items_consumable import ChargrilledMeat, CorpseDust, FrozenCarpaccio, Gold, MysteryMeat
-from app.engine.entities.wandmaker_quest import DustWraith
+from app.engine.entities.wandmaker_quest import DustWraith, RotLasher
 from app.engine.entities.items_wands import Wand
 from app.engine.entities.player import Difficulty, Effect, Player
 from app.engine.entities.buffs import add_buff, get_buff, has_buff, is_frozen, process_buffs, remove_buff
@@ -594,6 +594,30 @@ class TickMixin:
                 # "idle" is our default spawn state and maps to SPD's default
                 # SLEEPING state (almost every mob starts asleep).
                 if target_player is None and mob.ai_state in ("idle", "sleeping"):
+                    continue
+
+                # Char.Property.IMMOVABLE (getCloser()/getFurther() both
+                # false in SPD): never chases, only attacks (bump-into, same
+                # mechanism the difficulty branches below use) a target
+                # already within range. Not itself difficulty-gated in SPD,
+                # so this intercepts before the branches below.
+                if isinstance(mob, RotLasher) and mob.hp < mob.max_hp and dist > 1:
+                    # RotLasher.act(): heals 5/turn whenever no enemy is
+                    # directly adjacent (checked before the IMMOVABLE
+                    # short-circuit below, same as Java's ordering).
+                    mob.hp = min(mob.max_hp, mob.hp + 5)
+
+                if "IMMOVABLE" in getattr(mob, "properties", []):
+                    if target_player and dist <= atk_range:
+                        if not mob.engaged:
+                            mob.engaged = True
+                            mob.last_attack_time = time.time() - max(
+                                0.0, mob.attack_cooldown - mob.aggro_windup
+                            )
+                        dx, dy = target_player.pos.x - mob.pos.x, target_player.pos.y - mob.pos.y
+                        self.move_entity(mob.id, dx, dy)
+                    else:
+                        mob.engaged = False
                     continue
 
                 in_attack_range = target_player is not None and dist <= atk_range

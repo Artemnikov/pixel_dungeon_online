@@ -32,6 +32,7 @@ from app.engine.entities.items_consumable import CorpseDust, DwarfToken
 from app.engine.entities.mobs import Imp, Shopkeeper
 from app.engine.entities.quest_bosses import FetidRat, Ghost, GnollTrickster, GreatCrab
 from app.engine.entities.wandmaker_quest import DustWraith, Wandmaker
+from app.engine.entities.wandmaker_quest_items import RotberrySeed
 from app.engine.entities.weapon_defs import WEP_TIER_ORDER
 from app.engine.entities.buffs import remove_buff
 from app.engine.game.floor_state import FloorState
@@ -88,8 +89,9 @@ _GHOST_REWARD_TEXT = (
 _GHOST_BOSS_CLASSES = {1: FetidRat, 2: GnollTrickster, 3: GreatCrab}
 
 # Wandmaker.java messages_en.properties (actors.mobs.npcs.wandmaker.*) --
-# markup (_italics_) stripped. Phase 1 only implements the Corpse Dust
-# variant (type 1) -- see wandmaker_quest.py's module docstring.
+# markup (_italics_) stripped. Types 1 (Corpse Dust) and 3 (Rotberry) are
+# implemented; type 2 (Ceremonial Candle) is still deferred -- see
+# wandmaker_quest.py's module docstring.
 _WANDMAKER_INTRO_BY_CLASS = {
     "warrior": ("Oh, hello there! What a pleasant surprise to meet a warrior from the north "
                 "in such a depressing place! You must have travelled quite far to get here. "
@@ -119,15 +121,31 @@ _WANDMAKER_INTRO_DUST = (
     "I'm sure some dust will turn up there. Do be careful though, the curse the dust carries "
     "is quite potent, get back to me as fast as you can and I'll cleanse it for you."
 )
+_WANDMAKER_INTRO_BERRY = (
+    "The old warden of this prison kept a rotberry plant, and I'm after one of its seeds. The "
+    "plant has probably gone wild by now though, so getting it to give up a seed might be "
+    "tricky. Its garden should be somewhere around here. Try to keep away from its vine "
+    "lashers if you want to stay in one piece. Using fire might be tempting but please don't, "
+    "you'll kill the plant and destroy its seeds."
+)
 _WANDMAKER_INTRO_2 = (
     "\n\nIf you can get that for me, I'll be happy to pay you with one of my finely crafted "
     "wands! I brought two with me, so you can take whichever one you prefer."
 )
+_WANDMAKER_INTRO_BY_TYPE = {1: _WANDMAKER_INTRO_DUST, 3: _WANDMAKER_INTRO_BERRY}
 _WANDMAKER_REMINDER_DUST = "Any luck with corpse dust, {name}? Look for some barricades."
-_WANDMAKER_REWARD_TEXT = (
+_WANDMAKER_REMINDER_BERRY = "Any luck with a Rotberry seed, {name}? Look for a room filled with vegetation."
+_WANDMAKER_REMINDER_BY_TYPE = {1: _WANDMAKER_REMINDER_DUST, 3: _WANDMAKER_REMINDER_BERRY}
+_WANDMAKER_REWARD_DUST = (
     "Oh, I see you have the dust! Don't worry about the wraiths, I can deal with them. As I "
     "promised, you can choose one of my high quality wands."
 )
+_WANDMAKER_REWARD_BERRY = (
+    "Oh, I see you have the berry! I do hope the rotberry plant didn't trouble you too much. "
+    "As I promised, you can choose one of my high quality wands."
+)
+_WANDMAKER_REWARD_BY_TYPE = {1: _WANDMAKER_REWARD_DUST, 3: _WANDMAKER_REWARD_BERRY}
+_WANDMAKER_QUEST_ITEM_BY_TYPE = {1: CorpseDust, 3: RotberrySeed}
 
 
 def _random_free_cell(floor: FloorState) -> Optional[Tuple[int, int]]:
@@ -252,6 +270,8 @@ class WorldInteractionMixin:
         soft-lock."""
         from app.engine.entities.items_consumable import DwarfToken
         from app.engine.entities.mobs import DM300, Golem, Goo, Monk, Necromancer, Pylon, Skeleton, Tengu, YogDzewa
+        from app.engine.entities.wandmaker_quest import RotHeart
+        from app.engine.entities.wandmaker_quest_items import RotberrySeed
 
         # Imp.Quest.process(): once the quest is given (and not yet
         # completed), killing a Monk (alternative) or Golem (!alternative)
@@ -262,6 +282,12 @@ class WorldInteractionMixin:
             if isinstance(mob, wanted):
                 token = DwarfToken(id=str(uuid.uuid4()), pos=Position(x=mob.pos.x, y=mob.pos.y))
                 floor.items[token.id] = token
+
+        # RotHeart.die(): always drops the Rotberry seed, regardless of how
+        # the Wandmaker quest's Rotberry variant is currently tracked.
+        if isinstance(mob, RotHeart):
+            seed = RotberrySeed(id=str(uuid.uuid4()), pos=Position(x=mob.pos.x, y=mob.pos.y))
+            floor.items[seed.id] = seed
 
         # Ghost.Quest.process(): called directly from each quest-boss's
         # die() override in the original (FetidRat/GnollTrickster/GreatCrab),
@@ -735,8 +761,9 @@ class WorldInteractionMixin:
                 # sequential WndQuest popups (hide() chains to the second) --
                 # collapsed into one text block here.
                 greeting = _WANDMAKER_INTRO_BY_CLASS.get(player.class_type, "")
+                task = _WANDMAKER_INTRO_BY_TYPE.get(quest.quest_type, _WANDMAKER_INTRO_DUST)
                 text = (greeting.format(name=player.name) + _WANDMAKER_INTRO_1
-                        + _WANDMAKER_INTRO_DUST + _WANDMAKER_INTRO_2)
+                        + task + _WANDMAKER_INTRO_2)
                 quest.given = True
                 self.add_event(
                     "WANDMAKER_DIALOGUE",
@@ -744,15 +771,17 @@ class WorldInteractionMixin:
                     player_id=player_id,
                 )
             else:
-                dust = next((i for i in player.inventory if isinstance(i, CorpseDust)), None)
-                if dust is not None:
+                quest_item_cls = _WANDMAKER_QUEST_ITEM_BY_TYPE.get(quest.quest_type, CorpseDust)
+                held = next((i for i in player.inventory if isinstance(i, quest_item_cls)), None)
+                if held is not None:
                     wand1 = _make_wandmaker_wand(quest, "wand1")
                     wand2 = _make_wandmaker_wand(quest, "wand2")
+                    reward_text = _WANDMAKER_REWARD_BY_TYPE.get(quest.quest_type, _WANDMAKER_REWARD_DUST)
                     self.add_event(
                         "WANDMAKER_DIALOGUE",
                         {
                             "player": player.id, "npc": npc_id,
-                            "text": _WANDMAKER_REWARD_TEXT,
+                            "text": reward_text,
                             "can_claim": True,
                             "wand1": self._serialize_floor_item(wand1) if wand1 else None,
                             "wand2": self._serialize_floor_item(wand2) if wand2 else None,
@@ -760,11 +789,12 @@ class WorldInteractionMixin:
                         player_id=player_id,
                     )
                 else:
+                    reminder_text = _WANDMAKER_REMINDER_BY_TYPE.get(quest.quest_type, _WANDMAKER_REMINDER_DUST)
                     self.add_event(
                         "WANDMAKER_DIALOGUE",
                         {
                             "player": player.id, "npc": npc_id,
-                            "text": _WANDMAKER_REMINDER_DUST.format(name=player.name),
+                            "text": reminder_text.format(name=player.name),
                             "can_claim": False,
                         },
                         player_id=player_id,
@@ -1021,24 +1051,27 @@ class WorldInteractionMixin:
         quest = self.run_state.wandmaker_quest
         if not quest.given:
             return
-        dust = next((i for i in player.inventory if isinstance(i, CorpseDust)), None)
-        if dust is None:
+        quest_item_cls = _WANDMAKER_QUEST_ITEM_BY_TYPE.get(quest.quest_type, CorpseDust)
+        held = next((i for i in player.inventory if isinstance(i, quest_item_cls)), None)
+        if held is None:
             return
 
         reward = _make_wandmaker_wand(quest, choice)
         if reward is None:
             return
 
-        # CorpseDust.onDetach()/DustGhostSpawner.dispel(): drop the dust,
-        # remove the buff, and kill every wraith it spawned -- across all
-        # floors, since the player may have changed floors while carrying it
-        # (a single-level assumption in the original that doesn't hold here).
-        player.belongings.backpack.detach(dust.id)
-        remove_buff(player.buffs, "dust_ghost_spawner")
-        for fid, f in self.floors.items():
-            for mob_id in [m.id for m in f.mobs.values() if isinstance(m, DustWraith)]:
-                del f.mobs[mob_id]
-                self.add_event("DEATH", {"target": mob_id}, floor_id=fid)
+        player.belongings.backpack.detach(held.id)
+        if isinstance(held, CorpseDust):
+            # CorpseDust.onDetach()/DustGhostSpawner.dispel(): remove the
+            # buff and kill every wraith it spawned -- across all floors,
+            # since the player may have changed floors while carrying it (a
+            # single-level assumption in the original that doesn't hold
+            # here). Rotberry's seed has no such held-item side effect.
+            remove_buff(player.buffs, "dust_ghost_spawner")
+            for fid, f in self.floors.items():
+                for mob_id in [m.id for m in f.mobs.values() if isinstance(m, DustWraith)]:
+                    del f.mobs[mob_id]
+                    self.add_event("DEATH", {"target": mob_id}, floor_id=fid)
 
         if not player.add_to_inventory(reward):
             reward.pos = Position(x=npc.pos.x, y=npc.pos.y)

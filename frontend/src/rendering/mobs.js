@@ -166,6 +166,18 @@ export const WANDMAKER_FW = 12;
 export const WANDMAKER_FH = 14;
 export const WANDMAKER_DEST = { dx: 4, dy: 4, dw: 24, dh: 28 };
 
+// RotHeart: 16x16 frames (RotHeartSprite TextureFilm(texture, 16, 16)),
+// rot_heart.png. 16px sprite at 2x scale = full 32x32 tile, no offset needed.
+export const ROT_HEART_FW = 16;
+export const ROT_HEART_FH = 16;
+export const ROT_HEART_DEST = { dx: 0, dy: 0, dw: 32, dh: 32 };
+
+// RotLasher: 12x16 frames (RotLasherSprite TextureFilm(texture, 12, 16)),
+// rot_lasher.png. Centered/bottom-aligned in the 32px tile, scaled 2x -> 24x32 @ +4,0.
+export const ROT_LASHER_FW = 12;
+export const ROT_LASHER_FH = 16;
+export const ROT_LASHER_DEST = { dx: 4, dy: 0, dw: 24, dh: 32 };
+
 // Rat King: 16x17 frames (RatKingSprite TextureFilm(texture, 16, 17)), ratking.png.
 // Centered/bottom-aligned in the 32px tile, scaled 2x -> 32x34 @ 0,-2.
 export const RATKING_FW = 16;
@@ -719,6 +731,12 @@ export const getImpFrame = (mob, mobAnim, now) =>
 //   idle 10fps loop [0*14, 1,2,3,3,3,3,3,3,2,1] -- long static hold, brief wobble
 export const getWandmakerFrame = (mob, mobAnim, now) =>
   [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 3, 3, 3, 3, 3, 2, 1][Math.floor(now / 100) % 24] * WANDMAKER_FW;
+
+// Faithful to original SPD RotHeartSprite/RotLasherSprite (both static
+// single-frame idles, animation reserved for attack/die which don't need a
+// frame-loop function here):
+export const getRotHeartFrame = () => 0;
+export const getRotLasherFrame = () => 0;
 
 // Faithful to original SPD RatKingSprite (16x17 frames, ratking.png):
 //   idle 2fps loop [0,0,0,1]
