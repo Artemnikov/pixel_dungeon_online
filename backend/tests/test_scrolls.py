@@ -753,8 +753,14 @@ def test_scroll_of_mirror_image_spawns_two_invisible_player_allies():
         assert clone.max_hp == 1
         assert clone.damage_min == max(1, (p.get_damage_min() + 1) // 2)
         assert clone.damage_max == max(1, (p.get_damage_max() + 1) // 2)
-        assert clone.attack_skill == p.attack_skill
-        assert clone.defense_skill == round(p.get_effective_defense_skill() / 2)
+        # SPD: attackSkill = (9 + hero.lvl) * accuracyMultiplier — with no ring
+        # this is just the owner's base attack_skill.
+        from app.engine.entities.rings import accuracy_multiplier
+        assert clone.attack_skill == int(p.attack_skill * accuracy_multiplier(p))
+        # SPD: defenseSkill = super.defenseSkill * (baseEvasion + heroEvasion) / 2
+        base_ev = 4 + p.level
+        hero_ev = int(base_ev * 1.0)  # no Ring of Evasion
+        assert clone.defense_skill == (base_ev + hero_ev) // 2
         dist = max(abs(clone.pos.x - p.pos.x), abs(clone.pos.y - p.pos.y))
         assert dist == 1
 

@@ -95,28 +95,47 @@ class Swarm(MobEntity):
         DropEntry(item_kind="health_potion", chance=0.167, max_global=5),
     ]
 
-    def defense_proc(self, damage: int, attacker: "Entity", floor_mobs: dict, tile_x: int, tile_y: int):
+    def defense_proc(self, damage: int, attacker: "Entity", floor_mobs: dict, tile_x: int, tile_y: int,
+                      floor=None, game=None):
         # Splits into a clone on hit (SPD Swarm.defenseProc), but always returns
-        # the unchanged damage so the resolver still applies it.
+        # the unchanged damage so the resolver still applies it. Candidates are
+        # cells adjacent to *this* Swarm (not tile_x/tile_y, which is the
+        # attacker's tile) so clones never appear behind the player.
         if self.hp >= damage + 2 and self.is_alive:
-            clone_id = f"{self.id}_split_{random.randint(0, 99999)}"
-            clone = self.model_copy(deep=True)
-            clone.id = clone_id
-            clone.hp = self.hp // 2
-            clone.max_hp = self.hp
-            clone.exp = 0
-            self.hp -= 1
+            blocked = {(m.pos.x, m.pos.y) for m in floor_mobs.values() if m.is_alive}
+            if attacker is not None and hasattr(attacker, "pos"):
+                blocked.add((attacker.pos.x, attacker.pos.y))
+            if game is not None and floor is not None:
+                blocked |= {
+                    (p.pos.x, p.pos.y)
+                    for p in game._players_on_floor(floor.floor_id)
+                    if p.is_alive
+                }
+
+            candidates = []
             for ox, oy in [(0, 1), (0, -1), (1, 0), (-1, 0)]:
-                cx, cy = tile_x + ox, tile_y + oy
-                pos = Position(x=cx, y=cy)
-                occupied = any(
-                    m.pos.x == cx and m.pos.y == cy and m.is_alive
-                    for m in floor_mobs.values()
-                )
-                if not occupied:
-                    clone.pos = pos
-                    floor_mobs[clone_id] = clone
-                    break
+                cx, cy = self.pos.x + ox, self.pos.y + oy
+                if (cx, cy) in blocked:
+                    continue
+                if floor is not None:
+                    if not (0 <= cx < floor.width and 0 <= cy < floor.height):
+                        continue
+                    if floor.flags and not (floor.flags.passable[cy][cx] or floor.flags.avoid[cy][cx]):
+                        continue
+                candidates.append(Position(x=cx, y=cy))
+
+            if candidates:
+                clone_id = f"{self.id}_split_{random.randint(0, 99999)}"
+                clone = self.model_copy(deep=True)
+                clone.id = clone_id
+                # SPD Swarm.java: clone.HP = (HP - damage) / 2; HP -= clone.HP
+                # -- conserves total HP across the split instead of growing it.
+                clone.hp = (self.hp - damage) // 2
+                clone.max_hp = self.max_hp
+                clone.exp = 0
+                clone.pos = random.choice(candidates)
+                self.hp -= clone.hp
+                floor_mobs[clone_id] = clone
         return damage
 
 
@@ -527,7 +546,7 @@ class Thief(MobEntity):
             target.gold -= gold_stolen
             self.ai_state = "fleeing"
 
-    def defense_proc(self, damage: int, attacker, floor_mobs: dict, tile_x: int, tile_y: int):
+    def defense_proc(self, damage: int, attacker, floor_mobs: dict, tile_x: int, tile_y: int, **kwargs):
         if self.ai_state == "fleeing":
             pass
         return damage
@@ -959,7 +978,7 @@ class Eye(MobEntity):
     charge_target_x: int = 0  # snapshot of target position when charge began
     charge_target_y: int = 0
 
-    def defense_proc(self, damage: int, attacker, floor_mobs: dict, tile_x: int, tile_y: int) -> int:
+    def defense_proc(self, damage: int, attacker, floor_mobs: dict, tile_x: int, tile_y: int, **kwargs) -> int:
         if self.beam_charged:
             damage = max(1, damage // 4)
         return damage
@@ -1296,7 +1315,7 @@ class YogDzewa(MobEntity):
     summon_cooldown: float = 200.0
     fight_started: bool = False
 
-    def defense_proc(self, damage: int, attacker, floor_mobs: dict, tile_x: int, tile_y: int) -> int:
+    def defense_proc(self, damage: int, attacker, floor_mobs: dict, tile_x: int, tile_y: int, **kwargs) -> int:
         # Invincible while any fist is alive (phases 0-4).
         if self.phase < 5:
             alive_fists = [m for m in floor_mobs.values()
@@ -1335,7 +1354,7 @@ class _YogFistMixin(BaseModel):
     # Yog permanently invulnerable.
     ai_state: str = "hunting"
 
-    def defense_proc(self, damage: int, attacker, floor_mobs: dict, tile_x: int, tile_y: int) -> int:
+    def defense_proc(self, damage: int, attacker, floor_mobs: dict, tile_x: int, tile_y: int, **kwargs) -> int:
         if _is_fist_near_yog(self, floor_mobs):
             return 0
         return damage

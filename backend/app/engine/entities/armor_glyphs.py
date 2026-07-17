@@ -409,7 +409,111 @@ def _proc_multiplicity(defender, attacker, armor, raw_damage, floor_mobs, tile_x
     arcana_mult = kwargs.get("arcana_mult", 1.0)
     if random.random() >= CURSE_GLYPH_CHANCE["multiplicity"] * arcana_mult:
         return raw_damage
-    return raw_damage  # clone spawning — complex, deferred
+
+    game = kwargs.get("game")
+    if game is None or floor is None:
+        return raw_damage
+
+    from app.engine.entities.base import Position
+    from app.engine.entities.mobs import MirrorImage
+
+    # SPD Multiplicity: 50% chance to spawn a MirrorImage of the defender
+    # (hero), 50% chance to duplicate the attacker. If the attacker can't
+    # be duplicated (boss/miniboss/NPC/etc.), spawn a random floor mob.
+    spawn_mirror = random.random() < 0.5
+
+    if spawn_mirror and hasattr(defender, "belongings"):
+        clone_ids = game._spawn_mirror_images(defender, floor, defender.floor_id)
+        if clone_ids:
+            for cid in clone_ids:
+                if add_event:
+                    add_event("MULTIPLICITY_SPAWN", {
+                        "defender": defender.id,
+                        "clone": cid,
+                    }, floor_id=defender.floor_id)
+        return raw_damage
+
+    # Duplicate the attacker (or spawn random mob if can't clone).
+    from app.engine.entities.mobs import MobEntity
+    is_boss = getattr(attacker, "is_boss", False)
+    is_miniboss = getattr(attacker, "is_miniboss", False)
+    is_npc = "NPC" in getattr(attacker, "properties", [])
+    can_clone = isinstance(attacker, MobEntity) and not is_boss and not is_miniboss and not is_npc
+
+    if can_clone:
+        clone = attacker.model_copy(deep=True)
+        clone.id = f"mult_{attacker.id}_{random.randint(0, 99999)}"
+        clone.hp = clone.max_hp
+    else:
+        # Spawn a random enemy mob for the floor
+        clone = _spawn_random_enemy(floor, defender.floor_id)
+        if clone is None:
+            return raw_damage
+
+    # Find a valid spawn point adjacent to the defender
+    from app.engine.dungeon.spd_levelgen.level import _CIRCLE8_OFFSETS
+    occupied = {(m.pos.x, m.pos.y) for m in floor.mobs.values() if m.is_alive}
+    spawn_points = []
+    for ddx, ddy in _CIRCLE8_OFFSETS:
+        cx, cy = defender.pos.x + ddx, defender.pos.y + ddy
+        if 0 <= cx < floor.width and 0 <= cy < floor.height:
+            if floor.flags and (floor.flags.passable[cy][cx] or floor.flags.avoid[cy][cx]):
+                if (cx, cy) not in occupied:
+                    spawn_points.append((cx, cy))
+
+    if spawn_points:
+        sx, sy = random.choice(spawn_points)
+        clone.pos = Position(x=sx, y=sy)
+        clone.faction = "enemy"
+        clone.ai_state = "hunting"
+        floor.mobs[clone.id] = clone
+        if add_event:
+            add_event("MULTIPLICITY_SPAWN", {
+                "defender": defender.id,
+                "clone": clone.id,
+                "x": sx, "y": sy,
+            }, floor_id=defender.floor_id)
+
+    return raw_damage
+
+
+def _spawn_random_enemy(floor, floor_id: int):
+    """Spawn a random enemy mob appropriate for the current floor.
+
+    Simplified from SPD Level.createMob(): picks from a pool of basic
+    enemies weighted by floor depth.
+    """
+    import uuid as _uuid
+    from app.engine.entities.base import Position
+    from app.engine.entities.mobs import (
+        Rat, Gnoll, Crab, Skeleton, Thief, Shaman, Guard,
+        DM200, Spinner, Warlock, Monk, Succubus, Eye, Scorpio,
+        Bat, Brute, FireElemental, Golem, DM100,
+    )
+
+    # Basic enemy pool by dungeon region (mirrors SPD mobClass distribution).
+    if floor_id <= 4:
+        pool = [Rat, Gnoll, Crab]
+    elif floor_id <= 9:
+        pool = [Skeleton, Thief, Shaman, Guard]
+    elif floor_id <= 14:
+        pool = [DM200, Spinner, Warlock, Monk, Bat, Brute]
+    else:
+        pool = [Succubus, Eye, Scorpio, FireElemental, Golem, DM100]
+
+    mob_cls = random.choice(pool)
+    mob = mob_cls(id=f"mult_random_{_uuid.uuid4().hex[:8]}")
+
+    # Find a valid passable tile near the floor center.
+    for _ in range(20):
+        cx = random.randint(1, max(1, floor.width - 2))
+        cy = random.randint(1, max(1, floor.height - 2))
+        if floor.flags and floor.flags.passable[cy][cx]:
+            occupied = {(m.pos.x, m.pos.y) for m in floor.mobs.values() if m.is_alive}
+            if (cx, cy) not in occupied:
+                mob.pos = Position(x=cx, y=cy)
+                return mob
+    return None
 
 
 def _proc_stench(defender, attacker, armor, raw_damage, floor_mobs, tile_x, tile_y, floor, **kwargs):
@@ -532,10 +636,11 @@ def apply_glyph_proc(
     tile_y: int,
     floor=None,
     add_event=None,
+    game=None,
 ) -> int:
     """Dispatch an on-hit armor glyph/curse proc. Returns modified damage."""
     handler = _GLYPH_PROC_HANDLERS.get(name)
     if handler is None:
         return raw_damage
     a_mult = _arcana_mult(defender)
-    return handler(defender, attacker, armor, raw_damage, floor_mobs, tile_x, tile_y, floor, add_event=add_event, arcana_mult=a_mult)
+    return handler(defender, attacker, armor, raw_damage, floor_mobs, tile_x, tile_y, floor, add_event=add_event, arcana_mult=a_mult, game=game)

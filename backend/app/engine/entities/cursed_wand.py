@@ -12,7 +12,7 @@ import random
 
 _COMMON = [
     "magic_missile", "slow", "knockback", "toxic_gas", "regrowth",
-    "blindness", "teleport_other", "recharge",
+    "blindness", "teleport_other", "recharge", "summon_monsters",
 ]
 _UNCOMMON = [
     "fire_blast", "frost_blast", "prismatic", "corruption",
@@ -27,7 +27,7 @@ _VERY_RARE = [
 
 _POSITIVE_EFFECTS = {
     "magic_missile", "recharge", "regrowth", "transfusion",
-    "blink", "warp_beacon", "wish",
+    "blink", "warp_beacon", "wish", "summon_monsters",
 }
 
 _TIER_WEIGHTS = [60, 30, 9, 1]
@@ -148,6 +148,30 @@ def fire_cursed_wand(game, player, item, tx: int, ty: int) -> None:
             heal = max(1, random.randint(5, 15))
             target_mob.hp = min(target_mob.max_hp, target_mob.hp + heal)
             player.take_damage(max(1, heal // 2))
+    elif effect == "summon_monsters":
+        # SPD CursedWand.SummonMonsters: positive-only + user is hero →
+        # spawn 2 mirror images at bolt collision pos. Otherwise →
+        # summon hostile mobs (simplified: random enemy for the floor).
+        if positive_only:
+            from app.engine.entities.base import Position
+            spawn_pos = Position(x=tx, y=ty)
+            clone_ids = game._spawn_mirror_images(
+                player, floor, player.floor_id, spawn_pos=spawn_pos,
+            )
+            clone_data = [
+                {"id": cid, "x": floor.mobs[cid].pos.x, "y": floor.mobs[cid].pos.y}
+                for cid in clone_ids if cid in floor.mobs
+            ]
+            game.add_event("MIRROR_IMAGE", {"player": player.id, "clones": clone_data},
+                           floor_id=player.floor_id)
+        else:
+            from app.engine.entities.armor_glyphs import _spawn_random_enemy
+            for _ in range(random.randint(1, 3)):
+                mob = _spawn_random_enemy(floor, player.floor_id)
+                if mob is not None:
+                    floor.mobs[mob.id] = mob
+                    game.add_event("SPAWN", {"mob": mob.id, "x": mob.pos.x, "y": mob.pos.y},
+                                   floor_id=player.floor_id)
     elif effect in ("summon_elemental", "living_earth", "warp_beacon", "polymorph", "wish"):
         # Stub: complex effects emit a placeholder event
         game.add_event("CURSED_WAND_STUB", {"effect": effect, "player": player.id},

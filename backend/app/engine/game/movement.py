@@ -344,6 +344,7 @@ class MovementCombatMixin:
                         "source_player_id": entity.id if isinstance(entity, Player) else None,
                         **kw,
                     }),
+                    game=self,
                 )
                 if result["missed"]:
                     self.add_event("MISS", {"source": entity.id, "target": target_entity.id, "defense_verb": result.get("defense_verb", "dodged")}, floor_id=floor_id)
@@ -787,6 +788,8 @@ class MovementCombatMixin:
                 player, target_entity, item,
                 floor.mobs, target_x, target_y,
                 is_in_los=lambda a, b: self._is_in_los(a, b, floor_id=floor_id),
+                floor=floor,
+                game=self,
             )
             player.damage_min, player.damage_max = old_min, old_max
             if result["missed"]:
