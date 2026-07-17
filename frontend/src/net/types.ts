@@ -198,6 +198,7 @@ export interface HookProps {
   onGhostQuestGiven?: () => void;
   onGhostQuestComplete?: () => void;
   onGhostDialogue?: (data: { npc: string; text: string; can_claim: boolean; weapon?: SerializedItem | null; armor?: SerializedItem | null }) => void;
+  onWandmakerDialogue?: (data: { npc: string; text: string; can_claim: boolean; wand1?: SerializedItem | null; wand2?: SerializedItem | null }) => void;
   onScrollSelectTarget?: (data: { player: string; scroll_id: string; scroll_kind: string; candidates: string[] }) => void;
   onStoneSelectTarget?: (data: { player: string; stone_id: string; stone_kind: string; candidates: string[] }) => void;
   onStoneIntuitionPickItem?: (data: { player: string; stone_id: string; candidates: string[] }) => void;
@@ -268,6 +269,7 @@ export type HandlerCtx = Pick<
   onShopOpen?: HookProps['onShopOpen'];
   onImpDialogue?: HookProps['onImpDialogue'];
   onGhostDialogue?: HookProps['onGhostDialogue'];
+  onWandmakerDialogue?: HookProps['onWandmakerDialogue'];
   onGhostQuestGiven?: HookProps['onGhostQuestGiven'];
   onGhostQuestComplete?: HookProps['onGhostQuestComplete'];
   onScrollSelectTarget?: HookProps['onScrollSelectTarget'];

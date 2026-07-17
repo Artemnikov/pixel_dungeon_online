@@ -276,7 +276,7 @@ def _finish_roll(rng: SPDRandom, cat: str, kind: str, item_index: int = 0) -> Ro
         return RolledItem(category=cat, is_artifact=False, is_upgradable=True, level=n, item_index=item_index)
     if kind == WANDRING:
         n = _roll_wandring(rng)
-        return RolledItem(category=cat, is_artifact=False, is_upgradable=True, level=n)
+        return RolledItem(category=cat, is_artifact=False, is_upgradable=True, level=n, item_index=item_index)
     if kind == NOOP:
         return RolledItem(category=cat, is_artifact=False, is_upgradable=False, level=0)
     raise AssertionError(f"unexpected roll kind {kind!r} for category {cat!r}")

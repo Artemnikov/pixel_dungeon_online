@@ -27,7 +27,7 @@ from app.engine.dungeon.generator import TileType
 from app.engine.entities.base import Faction, Position, is_immune
 from app.engine.entities.item_union import Chest
 from app.engine.entities.items_bombs import Bomb
-from app.engine.entities.items_consumable import Amulet, Dewdrop, EnergyCrystal, Gold, Key, Throwable, Waterskin
+from app.engine.entities.items_consumable import Amulet, CorpseDust, Dewdrop, EnergyCrystal, Gold, Key, Throwable, Waterskin
 from app.engine.entities.items_equip import Bow, MissileWeapon, SpiritBow, Staff
 from app.engine.entities.items_potions import RevivingPotion
 from app.engine.entities.items_wands import Wand, ZapContext
@@ -565,6 +565,15 @@ class MovementCombatMixin:
                 if isinstance(item, Bomb) and item.fuse_ticks is not None:
                     if self.handle_bomb_pickup(entity, floor, floor_id, i_id, item):
                         continue
+                if isinstance(item, CorpseDust):
+                    # CorpseDust.doPickUp(): attaches the DustGhostSpawner
+                    # buff (very long duration -- dispelled explicitly by
+                    # wandmaker_claim_reward, never by natural decay).
+                    if entity.add_to_inventory(item):
+                        del floor.items[i_id]
+                        entity.add_buff("dust_ghost_spawner", duration=999999.0)
+                        self.add_event("PICKUP", {"player": entity.id, "item": item.name, "x": entity.pos.x, "y": entity.pos.y, "item_type": item.type}, floor_id=floor_id)
+                    continue
                 if entity.add_to_inventory(item):
                     del floor.items[i_id]
                     self.add_event("PICKUP", {"player": entity.id, "item": item.name, "x": entity.pos.x, "y": entity.pos.y, "item_type": item.type}, floor_id=floor_id)

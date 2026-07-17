@@ -292,6 +292,7 @@ export interface Player {
     | MagicalInfusion
     | GooBlob
     | DwarfToken
+    | CorpseDust
     | Petal
     | Chest
     | VelvetPouch
@@ -497,6 +498,7 @@ export interface Player {
         | MagicalInfusion
         | GooBlob
         | DwarfToken
+        | CorpseDust
         | Petal
         | Chest
         | VelvetPouch
@@ -703,6 +705,7 @@ export interface Player {
         | MagicalInfusion
         | GooBlob
         | DwarfToken
+        | CorpseDust
         | Petal
         | Chest
         | VelvetPouch
@@ -938,6 +941,7 @@ export interface Belongings {
         | MagicalInfusion
         | GooBlob
         | DwarfToken
+        | CorpseDust
         | Petal
         | Chest
         | VelvetPouch
@@ -1144,6 +1148,7 @@ export interface Belongings {
         | MagicalInfusion
         | GooBlob
         | DwarfToken
+        | CorpseDust
         | Petal
         | Chest
         | VelvetPouch
@@ -1350,6 +1355,7 @@ export interface Belongings {
         | MagicalInfusion
         | GooBlob
         | DwarfToken
+        | CorpseDust
         | Petal
         | Chest
         | VelvetPouch
@@ -1556,6 +1562,7 @@ export interface Belongings {
         | MagicalInfusion
         | GooBlob
         | DwarfToken
+        | CorpseDust
         | Petal
         | Chest
         | VelvetPouch
@@ -1762,6 +1769,7 @@ export interface Belongings {
         | MagicalInfusion
         | GooBlob
         | DwarfToken
+        | CorpseDust
         | Petal
         | Chest
         | VelvetPouch
@@ -1984,6 +1992,7 @@ export interface Bag {
     | MagicalInfusion
     | GooBlob
     | DwarfToken
+    | CorpseDust
     | Petal
     | Chest
     | VelvetPouch
@@ -5178,6 +5187,22 @@ export interface DwarfToken {
   for_sale?: boolean;
   seen?: boolean;
 }
+export interface CorpseDust {
+  kind?: "corpse_dust";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+}
 export interface Petal {
   kind?: "petal";
   id?: string;
@@ -5377,6 +5402,7 @@ export interface Chest {
     | MagicalInfusion
     | GooBlob
     | DwarfToken
+    | CorpseDust
     | Petal
     | Chest
     | VelvetPouch
@@ -5600,6 +5626,7 @@ export interface VelvetPouch {
     | MagicalInfusion
     | GooBlob
     | DwarfToken
+    | CorpseDust
     | Petal
     | Chest
     | VelvetPouch
@@ -5821,6 +5848,7 @@ export interface ScrollHolder {
     | MagicalInfusion
     | GooBlob
     | DwarfToken
+    | CorpseDust
     | Petal
     | Chest
     | VelvetPouch
@@ -6042,6 +6070,7 @@ export interface MagicalHolster {
     | MagicalInfusion
     | GooBlob
     | DwarfToken
+    | CorpseDust
     | Petal
     | Chest
     | VelvetPouch
@@ -6263,6 +6292,7 @@ export interface PotionBandolier {
     | MagicalInfusion
     | GooBlob
     | DwarfToken
+    | CorpseDust
     | Petal
     | Chest
     | VelvetPouch

@@ -32,7 +32,7 @@ from app.engine.dungeon.spd_levelgen.traps import (
 from app.engine.dungeon.generator import TileType
 from app.engine.entities.base import EntityType, Position
 from app.engine.entities.item_union import Chest
-from app.engine.entities.items_consumable import Amulet, Dewdrop, EnergyCrystal, Food, Gold, Key, Seed, Stone
+from app.engine.entities.items_consumable import Amulet, CorpseDust, Dewdrop, EnergyCrystal, Food, Gold, Key, Seed, Stone
 from app.engine.entities.items_bombs import Bomb, MetalShard
 from app.engine.entities.items_equip import Armor, ClothArmor, LeatherArmor, MailArmor, make_named_melee_weapon, PlateArmor, ScaleArmor
 from app.engine.entities.items_potions import HealthPotion
@@ -43,6 +43,7 @@ from app.engine.dungeon.spd_levelgen.run_state import SCROLL_DEFAULT_PROBS_TOTAL
 from app.engine.entities.item_catalog import FLOOR_SCROLL_KINDS, TRANSMUTE_GROUPS, make_catalog_item
 from app.engine.entities.weapon_defs import WEP_TIER_ORDER
 from app.engine.entities.quest_bosses import FetidRat, Ghost, GnollTrickster, GreatCrab
+from app.engine.entities.wandmaker_quest import DustWraith, Wandmaker
 from app.engine.entities.trinkets import TrinketCatalyst
 from app.engine.entities.mobs import (
     AcidicScorpio,
@@ -122,6 +123,49 @@ from app.engine.entities.mobs import (
 )
 from app.engine.game.floor_state import FloorState
 from app.engine.dungeon.spd_levelgen.generator import RolledItem
+from app.engine.entities.items_wands import (
+    WandOfMagicMissile, WandOfLightning, WandOfDisintegration, WandOfFireblast,
+    WandOfCorrosion, WandOfBlastWave, WandOfLivingEarth, WandOfFrost,
+    WandOfPrismaticLight, WandOfWarding, WandOfTransfusion, WandOfCorruption,
+    WandOfRegrowth,
+)
+
+# WAND deck index (generator.py's _WAND table order) -> concrete wand class /
+# item-catalog kind string. Shared by _rolled_item_to_item's WAND branch and
+# world.py's Wandmaker reward builder (both need to turn a bare deck index
+# into a real Wand item).
+WAND_KIND_BY_INDEX = [
+    "wand_magic_missile",     # 0
+    "wand_lightning",         # 1
+    "wand_disintegration",    # 2
+    "wand_fireblast",         # 3
+    "wand_corrosion",         # 4
+    "wand_blast_wave",        # 5
+    "wand_living_earth",      # 6
+    "wand_frost",             # 7
+    "wand_prismatic_light",   # 8
+    "wand_warding",            # 9
+    "wand_transfusion",         # 10
+    "wand_corruption",          # 11
+    "wand_regrowth",            # 12
+]
+WAND_CLASS_BY_INDEX = [
+    WandOfMagicMissile, WandOfLightning, WandOfDisintegration, WandOfFireblast,
+    WandOfCorrosion, WandOfBlastWave, WandOfLivingEarth, WandOfFrost,
+    WandOfPrismaticLight, WandOfWarding, WandOfTransfusion, WandOfCorruption,
+    WandOfRegrowth,
+]
+
+
+def build_wand_item(idx: int, level: int, iid: Optional[str] = None,
+                     pos: Optional[Position] = None, **extra) -> Item:
+    """Builds a concrete Wand item from a WAND-deck index (see
+    WAND_CLASS_BY_INDEX above). `extra` forwards additional constructor
+    kwargs (e.g. cursed=False, cursed_known=False)."""
+    iid = iid or str(uuid.uuid4())
+    if 0 <= idx < len(WAND_CLASS_BY_INDEX):
+        return WAND_CLASS_BY_INDEX[idx](id=iid, pos=pos, name=WAND_KIND_BY_INDEX[idx], level=level, **extra)
+    return Wand(id=iid, pos=pos, name="Wand", level=level, **extra)
 
 # SPD terrain constant -> remake TileType
 _SPD_TO_TILE = {
@@ -254,6 +298,9 @@ _MOB_CLASSES: Dict[str, type[MobEntity]] = {
     "FetidRat": FetidRat,
     "GnollTrickster": GnollTrickster,
     "GreatCrab": GreatCrab,
+    # Prison Wandmaker quest (depths 6-9), Corpse Dust variant
+    "Wandmaker": Wandmaker,
+    "DustWraith": DustWraith,
 }
 
 # Trap class (SPD) -> remake TrapType
@@ -460,42 +507,7 @@ def _rolled_item_to_item(ri: RolledItem, cx: int, cy: int) -> Item:
     if ri.category == "STONE":
         return Stone(id=iid, pos=pos, damage=1, range=5)
     if ri.category in ("WAND",):
-        _WAND_CLASSES = [
-            "wand_magic_missile",     # 0
-            "wand_lightning",         # 1
-            "wand_disintegration",    # 2
-            "wand_fireblast",         # 3
-            "wand_corrosion",         # 4
-            "wand_blast_wave",        # 5
-            "wand_living_earth",      # 6
-            "wand_frost",             # 7
-            "wand_prismatic_light",   # 8
-            "wand_warding",            # 9
-            "wand_transfusion",       # 10
-            "wand_corruption",        # 11
-            "wand_regrowth",           # 12
-        ]
-        from app.engine.entities.items_wands import WandOfMagicMissile, WandOfLightning, WandOfDisintegration, WandOfFireblast, WandOfCorrosion, WandOfBlastWave, WandOfLivingEarth, WandOfFrost, WandOfPrismaticLight, WandOfWarding, WandOfTransfusion, WandOfCorruption, WandOfRegrowth
-        _WAND_MAP = [
-            WandOfMagicMissile,
-            WandOfLightning,
-            WandOfDisintegration,
-            WandOfFireblast,
-            WandOfCorrosion,
-            WandOfBlastWave,
-            WandOfLivingEarth,
-            WandOfFrost,
-            WandOfPrismaticLight,
-            WandOfWarding,
-            WandOfTransfusion,
-            WandOfCorruption,
-            WandOfRegrowth,
-        ]
-        idx = ri.item_index
-        if 0 <= idx < len(_WAND_MAP):
-            kind = _WAND_CLASSES[idx]
-            return _WAND_MAP[idx](id=iid, pos=pos, name=kind, level=ri.level)
-        return Wand(id=iid, pos=pos, name="Wand")
+        return build_wand_item(ri.item_index, ri.level, iid=iid, pos=pos)
     if ri.category in WEP_TIER_ORDER:
         return _make_melee_weapon(ri.category, ri.item_index, ri.level, iid, pos)
     if ri.category == "WEAPON":
@@ -557,6 +569,7 @@ _DESCRIPTOR_ITEM_MAP = {
     "Gold": lambda iid, pos: Gold(id=iid, pos=pos, name="Gold"),
     "Weapon": lambda iid, pos: Weapon(id=iid, pos=pos, name="Weapon", damage=2, range=1, strength_requirement=10, attack_cooldown=2.0),
     "Armor": lambda iid, pos: PlateArmor(id=iid, pos=pos),
+    "CorpseDust": lambda iid, pos: CorpseDust(id=iid, pos=pos),
 }
 
 

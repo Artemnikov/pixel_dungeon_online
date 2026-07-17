@@ -794,6 +794,14 @@
     "confirm": "Take it",
     "cancel": "Back"
   },
+  "wandmaker": {
+    "title": "Wandmaker",
+    "takeWand1": "Take",
+    "takeWand2": "Take",
+    "close": "Close",
+    "confirm": "Take it",
+    "cancel": "Back"
+  },
   "modal": {
     "upgrade": "Choose an item to upgrade",
     "identify": "Choose an item to identify",

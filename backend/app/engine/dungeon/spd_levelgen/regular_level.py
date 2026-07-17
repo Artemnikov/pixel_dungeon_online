@@ -195,6 +195,13 @@ def _init_rooms(rng: SPDRandom, depth: int, feeling: Feeling, run_state: RunStat
         if imp_room is not None:
             init_rooms.append(imp_room)
 
+    # PrisonLevel.initRooms(): Wandmaker.Quest.spawnRoom() rolls for a
+    # MassGraveRoom on depths 7-9 (after all other rooms are decided).
+    if region_for_depth(depth) == "prison":
+        quest_room = run_state.wandmaker_quest.maybe_spawn_room(rng, depth)
+        if quest_room is not None:
+            init_rooms.append(quest_room)
+
     return init_rooms
 
 
@@ -351,10 +358,21 @@ def _ghost_quest_spawn(rng: SPDRandom, level: GenLevel, run_state: RunState) -> 
         level.mobs.append(mob)
 
 
+def _wandmaker_quest_spawn(rng: SPDRandom, level: GenLevel, run_state: RunState) -> None:
+    """Port of PrisonLevel.createMobs()'s `Wandmaker.Quest.spawnWandmaker(
+    this, roomEntrance)` call (must run before super.createMobs(), same as
+    Ghost's spawn call above -- matches WandmakerQuestState.maybe_spawn_npc's
+    RNG-order requirements). Only relevant on Prison depths 6-9."""
+    mob = run_state.wandmaker_quest.maybe_spawn_npc(rng, level)
+    if mob is not None:
+        level.mobs.append(mob)
+
+
 def create_mobs(rng: SPDRandom, level: GenLevel, run_state: RunState) -> None:
     """Port of RegularLevel.createMobs (RegularLevel.java:220-326)."""
     depth = level.depth
     _ghost_quest_spawn(rng, level, run_state)
+    _wandmaker_quest_spawn(rng, level, run_state)
     mobs_to_spawn = 8 if depth == 1 else _mob_limit(rng, depth, level.feeling)
 
     std_rooms: List[Room] = []

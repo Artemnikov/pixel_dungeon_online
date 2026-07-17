@@ -160,6 +160,12 @@ export const IMP_FW = 12;
 export const IMP_FH = 14;
 export const IMP_DEST = { dx: 4, dy: 4, dw: 24, dh: 28 };
 
+// Wandmaker: 12x14 frames (WandmakerSprite TextureFilm(texture, 12, 14)), wandmaker.png.
+// Centered/bottom-aligned in the 32px tile, scaled 2x -> 24x28 @ +4,+4 (same as Imp).
+export const WANDMAKER_FW = 12;
+export const WANDMAKER_FH = 14;
+export const WANDMAKER_DEST = { dx: 4, dy: 4, dw: 24, dh: 28 };
+
 // Rat King: 16x17 frames (RatKingSprite TextureFilm(texture, 16, 17)), ratking.png.
 // Centered/bottom-aligned in the 32px tile, scaled 2x -> 32x34 @ 0,-2.
 export const RATKING_FW = 16;
@@ -708,6 +714,11 @@ export const getKeeperFrame = (mob, mobAnim, now) =>
 // cycle of frames 0/4 with occasional 1-3), demon.png, 12x14 frames.
 export const getImpFrame = (mob, mobAnim, now) =>
   [0, 0, 0, 1, 2, 3, 0, 0, 0, 4, 4, 4, 4, 4, 4][Math.floor(now / 100) % 15] * IMP_FW;
+
+// Faithful to original SPD WandmakerSprite (12x14 frames, wandmaker.png):
+//   idle 10fps loop [0*14, 1,2,3,3,3,3,3,3,2,1] -- long static hold, brief wobble
+export const getWandmakerFrame = (mob, mobAnim, now) =>
+  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 3, 3, 3, 3, 3, 2, 1][Math.floor(now / 100) % 24] * WANDMAKER_FW;
 
 // Faithful to original SPD RatKingSprite (16x17 frames, ratking.png):
 //   idle 2fps loop [0,0,0,1]

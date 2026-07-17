@@ -664,6 +664,7 @@
                 "chest": "#/$defs/Chest",
                 "cloak_of_shadows": "#/$defs/CloakOfShadows",
                 "cloth_armor": "#/$defs/ClothArmor",
+                "corpse_dust": "#/$defs/CorpseDust",
                 "cracked_spyglass": "#/$defs/CrackedSpyglass",
                 "cursed_wand": "#/$defs/CursedWand",
                 "dagger": "#/$defs/Dagger",
@@ -1344,6 +1345,9 @@
                 "$ref": "#/$defs/DwarfToken"
               },
               {
+                "$ref": "#/$defs/CorpseDust"
+              },
+              {
                 "$ref": "#/$defs/Petal"
               },
               {
@@ -1496,6 +1500,7 @@
                   "chest": "#/$defs/Chest",
                   "cloak_of_shadows": "#/$defs/CloakOfShadows",
                   "cloth_armor": "#/$defs/ClothArmor",
+                  "corpse_dust": "#/$defs/CorpseDust",
                   "cracked_spyglass": "#/$defs/CrackedSpyglass",
                   "cursed_wand": "#/$defs/CursedWand",
                   "dagger": "#/$defs/Dagger",
@@ -2174,6 +2179,9 @@
                 },
                 {
                   "$ref": "#/$defs/DwarfToken"
+                },
+                {
+                  "$ref": "#/$defs/CorpseDust"
                 },
                 {
                   "$ref": "#/$defs/Petal"
@@ -2321,6 +2329,7 @@
                   "chest": "#/$defs/Chest",
                   "cloak_of_shadows": "#/$defs/CloakOfShadows",
                   "cloth_armor": "#/$defs/ClothArmor",
+                  "corpse_dust": "#/$defs/CorpseDust",
                   "cracked_spyglass": "#/$defs/CrackedSpyglass",
                   "cursed_wand": "#/$defs/CursedWand",
                   "dagger": "#/$defs/Dagger",
@@ -2999,6 +3008,9 @@
                 },
                 {
                   "$ref": "#/$defs/DwarfToken"
+                },
+                {
+                  "$ref": "#/$defs/CorpseDust"
                 },
                 {
                   "$ref": "#/$defs/Petal"
@@ -3146,6 +3158,7 @@
                   "chest": "#/$defs/Chest",
                   "cloak_of_shadows": "#/$defs/CloakOfShadows",
                   "cloth_armor": "#/$defs/ClothArmor",
+                  "corpse_dust": "#/$defs/CorpseDust",
                   "cracked_spyglass": "#/$defs/CrackedSpyglass",
                   "cursed_wand": "#/$defs/CursedWand",
                   "dagger": "#/$defs/Dagger",
@@ -3824,6 +3837,9 @@
                 },
                 {
                   "$ref": "#/$defs/DwarfToken"
+                },
+                {
+                  "$ref": "#/$defs/CorpseDust"
                 },
                 {
                   "$ref": "#/$defs/Petal"
@@ -3971,6 +3987,7 @@
                   "chest": "#/$defs/Chest",
                   "cloak_of_shadows": "#/$defs/CloakOfShadows",
                   "cloth_armor": "#/$defs/ClothArmor",
+                  "corpse_dust": "#/$defs/CorpseDust",
                   "cracked_spyglass": "#/$defs/CrackedSpyglass",
                   "cursed_wand": "#/$defs/CursedWand",
                   "dagger": "#/$defs/Dagger",
@@ -4649,6 +4666,9 @@
                 },
                 {
                   "$ref": "#/$defs/DwarfToken"
+                },
+                {
+                  "$ref": "#/$defs/CorpseDust"
                 },
                 {
                   "$ref": "#/$defs/Petal"
@@ -4796,6 +4816,7 @@
                   "chest": "#/$defs/Chest",
                   "cloak_of_shadows": "#/$defs/CloakOfShadows",
                   "cloth_armor": "#/$defs/ClothArmor",
+                  "corpse_dust": "#/$defs/CorpseDust",
                   "cracked_spyglass": "#/$defs/CrackedSpyglass",
                   "cursed_wand": "#/$defs/CursedWand",
                   "dagger": "#/$defs/Dagger",
@@ -5474,6 +5495,9 @@
                 },
                 {
                   "$ref": "#/$defs/DwarfToken"
+                },
+                {
+                  "$ref": "#/$defs/CorpseDust"
                 },
                 {
                   "$ref": "#/$defs/Petal"
@@ -6655,6 +6679,7 @@
                 "chest": "#/$defs/Chest",
                 "cloak_of_shadows": "#/$defs/CloakOfShadows",
                 "cloth_armor": "#/$defs/ClothArmor",
+                "corpse_dust": "#/$defs/CorpseDust",
                 "cracked_spyglass": "#/$defs/CrackedSpyglass",
                 "cursed_wand": "#/$defs/CursedWand",
                 "dagger": "#/$defs/Dagger",
@@ -7335,6 +7360,9 @@
                 "$ref": "#/$defs/DwarfToken"
               },
               {
+                "$ref": "#/$defs/CorpseDust"
+              },
+              {
                 "$ref": "#/$defs/Petal"
               },
               {
@@ -7639,6 +7667,75 @@
             }
           ],
           "default": null
+        }
+      },
+      "type": "object"
+    },
+    "CorpseDust": {
+      "properties": {
+        "kind": {
+          "const": "corpse_dust",
+          "default": "corpse_dust",
+          "type": "string"
+        },
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "name": {
+          "default": "dust of the corpse",
+          "type": "string"
+        },
+        "type": {
+          "default": "misc",
+          "type": "string"
+        },
+        "pos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Position"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "quantity": {
+          "default": 1,
+          "type": "integer"
+        },
+        "level": {
+          "default": 0,
+          "type": "integer"
+        },
+        "level_known": {
+          "default": true,
+          "type": "boolean"
+        },
+        "cursed": {
+          "default": true,
+          "type": "boolean"
+        },
+        "cursed_known": {
+          "default": true,
+          "type": "boolean"
+        },
+        "unique": {
+          "default": true,
+          "type": "boolean"
+        },
+        "kept_though_lost": {
+          "default": false,
+          "type": "boolean"
+        },
+        "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
         }
       },
       "type": "object"
@@ -11002,6 +11099,7 @@
                 "chest": "#/$defs/Chest",
                 "cloak_of_shadows": "#/$defs/CloakOfShadows",
                 "cloth_armor": "#/$defs/ClothArmor",
+                "corpse_dust": "#/$defs/CorpseDust",
                 "cracked_spyglass": "#/$defs/CrackedSpyglass",
                 "cursed_wand": "#/$defs/CursedWand",
                 "dagger": "#/$defs/Dagger",
@@ -11680,6 +11778,9 @@
               },
               {
                 "$ref": "#/$defs/DwarfToken"
+              },
+              {
+                "$ref": "#/$defs/CorpseDust"
               },
               {
                 "$ref": "#/$defs/Petal"
@@ -13963,6 +14064,7 @@
                 "chest": "#/$defs/Chest",
                 "cloak_of_shadows": "#/$defs/CloakOfShadows",
                 "cloth_armor": "#/$defs/ClothArmor",
+                "corpse_dust": "#/$defs/CorpseDust",
                 "cracked_spyglass": "#/$defs/CrackedSpyglass",
                 "cursed_wand": "#/$defs/CursedWand",
                 "dagger": "#/$defs/Dagger",
@@ -14643,6 +14745,9 @@
                 "$ref": "#/$defs/DwarfToken"
               },
               {
+                "$ref": "#/$defs/CorpseDust"
+              },
+              {
                 "$ref": "#/$defs/Petal"
               },
               {
@@ -14785,6 +14890,7 @@
                   "chest": "#/$defs/Chest",
                   "cloak_of_shadows": "#/$defs/CloakOfShadows",
                   "cloth_armor": "#/$defs/ClothArmor",
+                  "corpse_dust": "#/$defs/CorpseDust",
                   "cracked_spyglass": "#/$defs/CrackedSpyglass",
                   "cursed_wand": "#/$defs/CursedWand",
                   "dagger": "#/$defs/Dagger",
@@ -15463,6 +15569,9 @@
                 },
                 {
                   "$ref": "#/$defs/DwarfToken"
+                },
+                {
+                  "$ref": "#/$defs/CorpseDust"
                 },
                 {
                   "$ref": "#/$defs/Petal"
@@ -15610,6 +15719,7 @@
                   "chest": "#/$defs/Chest",
                   "cloak_of_shadows": "#/$defs/CloakOfShadows",
                   "cloth_armor": "#/$defs/ClothArmor",
+                  "corpse_dust": "#/$defs/CorpseDust",
                   "cracked_spyglass": "#/$defs/CrackedSpyglass",
                   "cursed_wand": "#/$defs/CursedWand",
                   "dagger": "#/$defs/Dagger",
@@ -16288,6 +16398,9 @@
                 },
                 {
                   "$ref": "#/$defs/DwarfToken"
+                },
+                {
+                  "$ref": "#/$defs/CorpseDust"
                 },
                 {
                   "$ref": "#/$defs/Petal"
@@ -16607,6 +16720,7 @@
                 "chest": "#/$defs/Chest",
                 "cloak_of_shadows": "#/$defs/CloakOfShadows",
                 "cloth_armor": "#/$defs/ClothArmor",
+                "corpse_dust": "#/$defs/CorpseDust",
                 "cracked_spyglass": "#/$defs/CrackedSpyglass",
                 "cursed_wand": "#/$defs/CursedWand",
                 "dagger": "#/$defs/Dagger",
@@ -17285,6 +17399,9 @@
               },
               {
                 "$ref": "#/$defs/DwarfToken"
+              },
+              {
+                "$ref": "#/$defs/CorpseDust"
               },
               {
                 "$ref": "#/$defs/Petal"
@@ -20964,6 +21081,7 @@
                 "chest": "#/$defs/Chest",
                 "cloak_of_shadows": "#/$defs/CloakOfShadows",
                 "cloth_armor": "#/$defs/ClothArmor",
+                "corpse_dust": "#/$defs/CorpseDust",
                 "cracked_spyglass": "#/$defs/CrackedSpyglass",
                 "cursed_wand": "#/$defs/CursedWand",
                 "dagger": "#/$defs/Dagger",
@@ -21642,6 +21760,9 @@
               },
               {
                 "$ref": "#/$defs/DwarfToken"
+              },
+              {
+                "$ref": "#/$defs/CorpseDust"
               },
               {
                 "$ref": "#/$defs/Petal"
@@ -26224,6 +26345,7 @@
                 "chest": "#/$defs/Chest",
                 "cloak_of_shadows": "#/$defs/CloakOfShadows",
                 "cloth_armor": "#/$defs/ClothArmor",
+                "corpse_dust": "#/$defs/CorpseDust",
                 "cracked_spyglass": "#/$defs/CrackedSpyglass",
                 "cursed_wand": "#/$defs/CursedWand",
                 "dagger": "#/$defs/Dagger",
@@ -26902,6 +27024,9 @@
               },
               {
                 "$ref": "#/$defs/DwarfToken"
+              },
+              {
+                "$ref": "#/$defs/CorpseDust"
               },
               {
                 "$ref": "#/$defs/Petal"

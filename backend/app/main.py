@@ -597,6 +597,9 @@ async def game_websocket(websocket: WebSocket, game_id: str, class_type: str = "
             elif isinstance(message, msg.GhostClaimReward):
                 game.ghost_claim_reward(player_id, message.npc_id, message.choice)
 
+            elif isinstance(message, msg.WandmakerClaimReward):
+                game.wandmaker_claim_reward(player_id, message.npc_id, message.choice)
+
             elif isinstance(message, msg.SelectStoneTarget):
                 game.select_stone_target(player_id, message.stone_id, message.item_id)
 

@@ -28,12 +28,15 @@ from app.engine.entities.base import Position
 from app.engine.entities.items_consumable import Key
 from app.engine.entities.items_equip import Armor, LeatherArmor, MailArmor, PlateArmor, ScaleArmor, make_named_melee_weapon
 from app.engine.entities.player import CharacterClass, Item, Player
-from app.engine.entities.items_consumable import DwarfToken
+from app.engine.entities.items_consumable import CorpseDust, DwarfToken
 from app.engine.entities.mobs import Imp, Shopkeeper
 from app.engine.entities.quest_bosses import FetidRat, Ghost, GnollTrickster, GreatCrab
+from app.engine.entities.wandmaker_quest import DustWraith, Wandmaker
 from app.engine.entities.weapon_defs import WEP_TIER_ORDER
+from app.engine.entities.buffs import remove_buff
 from app.engine.game.floor_state import FloorState
 from app.engine.game.constants import KEY_TIME_TO_UNLOCK
+from app.engine.game.spd_adapter import build_wand_item
 
 _FIRE_CARDINALS = [(0, -1), (1, 0), (0, 1), (-1, 0)]
 _ELECTRIC_CARDINALS = [(0, -1), (1, 0), (0, 1), (-1, 0)]
@@ -84,6 +87,48 @@ _GHOST_REWARD_TEXT = (
 )
 _GHOST_BOSS_CLASSES = {1: FetidRat, 2: GnollTrickster, 3: GreatCrab}
 
+# Wandmaker.java messages_en.properties (actors.mobs.npcs.wandmaker.*) --
+# markup (_italics_) stripped. Phase 1 only implements the Corpse Dust
+# variant (type 1) -- see wandmaker_quest.py's module docstring.
+_WANDMAKER_INTRO_BY_CLASS = {
+    "warrior": ("Oh, hello there! What a pleasant surprise to meet a warrior from the north "
+                "in such a depressing place! You must have travelled quite far to get here. "
+                "If you're looking for adventure, I may have a task for you."),
+    "rogue": ("Oh Goodness, you startled me! I haven't met a bandit from this place that "
+              "still has his sanity, so you must be from the surface! If you're up to "
+              "helping a stranger out, I may have a task for you."),
+    "mage": ("Oh, hello {name}! I heard there was some ruckus regarding you and the wizards "
+             "institute? Oh never mind, I never liked those stick-in-the-muds anyway. If "
+             "you're willing, I may have a task for you."),
+    "huntress": ("Oh, hello miss! A friendly face is a pleasant surprise down here isn't it? "
+                 "In fact, I swear I've seen your face before, but I can't put my finger on "
+                 "it... Oh never mind, if you're here for adventure, I may have a task for you."),
+    "duelist": ("Oh, hello miss! What a pleasant surprise to meet a hero in such a depressing "
+                "place! If you're up to helping an old man out, I may have a task for you."),
+    "cleric": ("Oh, hello Your Highness! What a pleasant surprise to meet you in such a "
+               "depressing place! I hate to impose, but I may have a task for you."),
+}
+_WANDMAKER_INTRO_1 = (
+    "\n\nI came here to find a rare ingredient for a wand, but I've gotten myself lost, and "
+    "my magical shield is weakening. I'll need to leave soon, but can't bear to go without "
+    "getting what I came for."
+)
+_WANDMAKER_INTRO_DUST = (
+    "I'm looking for some corpse dust. It's a special kind of cursed bone meal that usually "
+    "shows up in places like this. There should be a barricaded room around here somewhere, "
+    "I'm sure some dust will turn up there. Do be careful though, the curse the dust carries "
+    "is quite potent, get back to me as fast as you can and I'll cleanse it for you."
+)
+_WANDMAKER_INTRO_2 = (
+    "\n\nIf you can get that for me, I'll be happy to pay you with one of my finely crafted "
+    "wands! I brought two with me, so you can take whichever one you prefer."
+)
+_WANDMAKER_REMINDER_DUST = "Any luck with corpse dust, {name}? Look for some barricades."
+_WANDMAKER_REWARD_TEXT = (
+    "Oh, I see you have the dust! Don't worry about the wraiths, I can deal with them. As I "
+    "promised, you can choose one of my high quality wands."
+)
+
 
 def _random_free_cell(floor: FloorState) -> Optional[Tuple[int, int]]:
     """Mirrors Dungeon.level.randomRespawnCell(Char) in spirit (a passable,
@@ -114,6 +159,20 @@ def _make_ghost_reward_item(quest, choice: str) -> Optional[Item]:
         return _ARMOR_TYPES[tier](
             id=str(uuid.uuid4()), level=quest.item_level, level_known=True, cursed=False,
         )
+    return None
+
+
+def _make_wandmaker_wand(quest, choice: str) -> Optional[Item]:
+    """Materializes the Wandmaker reward WandmakerQuestState rolled at NPC-
+    spawn time -- deferred until claim, same reasoning as
+    _make_ghost_reward_item. wand1.cursed/upgrade() in Java forces cursed
+    false regardless of the natural roll -- see WandmakerQuestState."""
+    if choice == "wand1" and quest.wand1_index is not None:
+        return build_wand_item(quest.wand1_index, quest.wand1_level,
+                                cursed=False, cursed_known=False)
+    if choice == "wand2" and quest.wand2_index is not None:
+        return build_wand_item(quest.wand2_index, quest.wand2_level,
+                                cursed=False, cursed_known=False)
     return None
 
 
@@ -668,6 +727,49 @@ class WorldInteractionMixin:
                     player_id=player_id,
                 )
 
+        elif isinstance(npc, Wandmaker):
+            quest = self.run_state.wandmaker_quest
+            if not quest.given:
+                # Wandmaker.interact(): two-part intro (class greeting + task
+                # description), shown once. Java splits this into two
+                # sequential WndQuest popups (hide() chains to the second) --
+                # collapsed into one text block here.
+                greeting = _WANDMAKER_INTRO_BY_CLASS.get(player.class_type, "")
+                text = (greeting.format(name=player.name) + _WANDMAKER_INTRO_1
+                        + _WANDMAKER_INTRO_DUST + _WANDMAKER_INTRO_2)
+                quest.given = True
+                self.add_event(
+                    "WANDMAKER_DIALOGUE",
+                    {"player": player.id, "npc": npc_id, "text": text, "can_claim": False},
+                    player_id=player_id,
+                )
+            else:
+                dust = next((i for i in player.inventory if isinstance(i, CorpseDust)), None)
+                if dust is not None:
+                    wand1 = _make_wandmaker_wand(quest, "wand1")
+                    wand2 = _make_wandmaker_wand(quest, "wand2")
+                    self.add_event(
+                        "WANDMAKER_DIALOGUE",
+                        {
+                            "player": player.id, "npc": npc_id,
+                            "text": _WANDMAKER_REWARD_TEXT,
+                            "can_claim": True,
+                            "wand1": self._serialize_floor_item(wand1) if wand1 else None,
+                            "wand2": self._serialize_floor_item(wand2) if wand2 else None,
+                        },
+                        player_id=player_id,
+                    )
+                else:
+                    self.add_event(
+                        "WANDMAKER_DIALOGUE",
+                        {
+                            "player": player.id, "npc": npc_id,
+                            "text": _WANDMAKER_REMINDER_DUST.format(name=player.name),
+                            "can_claim": False,
+                        },
+                        player_id=player_id,
+                    )
+
     def shop_buy(self, player_id: str, npc_id: str, item_id: str) -> None:
         player = self.players.get(player_id)
         if not player:
@@ -901,6 +1003,54 @@ class WorldInteractionMixin:
         self.add_event("DEATH", {"target": npc.id}, floor_id=player.floor_id)
         self.add_event(
             "GHOST_REWARD",
+            {"player": player.id, "npc": npc_id, "item": reward.id},
+            player_id=player_id,
+        )
+
+    def wandmaker_claim_reward(self, player_id: str, npc_id: str, choice: str) -> None:
+        player = self.players.get(player_id)
+        if not player:
+            return
+        floor = self._get_or_create_floor(player.floor_id)
+        npc = floor.mobs.get(npc_id)
+        if npc is None or not isinstance(npc, Wandmaker):
+            return
+        if max(abs(npc.pos.x - player.pos.x), abs(npc.pos.y - player.pos.y)) > 1:
+            return
+
+        quest = self.run_state.wandmaker_quest
+        if not quest.given:
+            return
+        dust = next((i for i in player.inventory if isinstance(i, CorpseDust)), None)
+        if dust is None:
+            return
+
+        reward = _make_wandmaker_wand(quest, choice)
+        if reward is None:
+            return
+
+        # CorpseDust.onDetach()/DustGhostSpawner.dispel(): drop the dust,
+        # remove the buff, and kill every wraith it spawned -- across all
+        # floors, since the player may have changed floors while carrying it
+        # (a single-level assumption in the original that doesn't hold here).
+        player.belongings.backpack.detach(dust.id)
+        remove_buff(player.buffs, "dust_ghost_spawner")
+        for fid, f in self.floors.items():
+            for mob_id in [m.id for m in f.mobs.values() if isinstance(m, DustWraith)]:
+                del f.mobs[mob_id]
+                self.add_event("DEATH", {"target": mob_id}, floor_id=fid)
+
+        if not player.add_to_inventory(reward):
+            reward.pos = Position(x=npc.pos.x, y=npc.pos.y)
+            floor.items[reward.id] = reward
+
+        # Wandmaker.Quest.complete(): wand1/wand2 nulled -- Wandmaker itself
+        # does NOT despawn (unlike Ghost), matching Java exactly.
+        quest.wand1_index = None
+        quest.wand2_index = None
+
+        self.add_event(
+            "WANDMAKER_REWARD",
             {"player": player.id, "npc": npc_id, "item": reward.id},
             player_id=player_id,
         )

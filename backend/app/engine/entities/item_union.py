@@ -290,7 +290,7 @@ AnyItem = Annotated[
         RegrowthBomb, WoollyBomb, Noisemaker, ArcaneBomb, ShrapnelBomb,
         MetalShard,
         ArcaneStylus, MagicalInfusion,
-        GooBlob, DwarfToken, Petal,
+        GooBlob, DwarfToken, CorpseDust, Petal,
         Chest,
         VelvetPouch, ScrollHolder, MagicalHolster, PotionBandolier, Bag,
         RatSkull, ParchmentScrap, PetrifiedSeed, ExoticCrystals,

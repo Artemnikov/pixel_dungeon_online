@@ -25,6 +25,7 @@ import batSprite from '../assets/pixel-dungeon/sprites/bat.png';
 import gnollSprite from '../assets/pixel-dungeon/sprites/gnoll.png';
 import shopkeeperSprite from '../assets/pixel-dungeon/sprites/shopkeeper.png';
 import impSprite from '../assets/pixel-dungeon/sprites/demon.png';
+import wandmakerSprite from '../assets/pixel-dungeon/sprites/wandmaker.png';
 import ratKingSprite from '../assets/pixel-dungeon/sprites/ratking.png';
 import gooSprite from '../assets/pixel-dungeon/sprites/goo.png';
 import scorpioSprite from '../assets/pixel-dungeon/sprites/scorpio.png';
@@ -96,6 +97,7 @@ export default function useAssetImages() {
     gnoll: null,
     shopkeeper: null,
     imp: null,
+    wandmaker: null,
     ratking: null,
     goo: null,
     scorpio: null,
@@ -206,6 +208,7 @@ export default function useAssetImages() {
     loadImage(gnollSprite, 'gnoll');
     loadImage(shopkeeperSprite, 'shopkeeper');
     loadImage(impSprite, 'imp');
+    loadImage(wandmakerSprite, 'wandmaker');
     loadImage(ratKingSprite, 'ratking');
     loadImage(gooSprite, 'goo');
     loadImage(scorpioSprite, 'scorpio');
