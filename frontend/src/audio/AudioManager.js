@@ -45,6 +45,7 @@ import gasSound from '../assets/sounds/gas.mp3';
 import shatterSound from '../assets/sounds/shatter.mp3';
 import bonesSound from '../assets/sounds/bones.mp3';
 import sheepSound from '../assets/sounds/sheep.mp3';
+import tombSound from '../assets/sounds/tomb.mp3';
 import { effectiveSfxVolume, subscribe } from '../menu/menuSettings';
 
 class AudioManager {
@@ -109,6 +110,7 @@ class AudioManager {
         this.loadSound('SHATTER', shatterSound);
         this.loadSound('BONES', bonesSound);
         this.loadSound('SHEEP', sheepSound);
+        this.loadSound('TOMB', tombSound);
 
         const doorSounds = import.meta.glob('../assets/sounds/door_open.mp3', { eager: true, query: '?url' });
         const doorUrl = doorSounds['../assets/sounds/door_open.mp3']?.default;
@@ -183,11 +185,6 @@ class AudioManager {
             case 'DOOR_OPEN':
                 this.playTone(300, 'triangle', 0.15, 0.2);
                 this.playTone(200, 'triangle', 0.25, 0.15, 0.1);
-                break;
-            case 'TOMB':
-                this.playTone(80, 'sine', 0.6, 0.3);
-                this.playTone(60, 'sine', 0.6, 0.2, 0.15);
-                this.playNoise(0.3, 0.15, 'lowpass', 200);
                 break;
             case 'CHARMS':
                 this.playTone(660, 'sine', 0.15, 0.15);

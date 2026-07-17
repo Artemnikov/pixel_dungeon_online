@@ -4,11 +4,6 @@ import './styles/index.css';
 
 import CharacterSelection from './CharacterSelection';
 import MainMenu from './menu/MainMenu';
-import cursorMouseUrl from './assets/cursors/cursor_mouse.png';
-import cursorMouse2xUrl from './assets/cursors/cursor_mouse@2x.png';
-import cursorControllerUrl from './assets/cursors/cursor_controller.png';
-import cursorController2xUrl from './assets/cursors/cursor_controller@2x.png';
-
 import { TILE_SIZE, TILE_SCALE, MIN_ZOOM, MAX_DPR } from './constants';
 import useAudioUnlock from './audio/useAudioUnlock';
 import useMusicByDepth from './audio/useMusicByDepth';
@@ -17,6 +12,7 @@ import useGameRenderer from './rendering/useGameRenderer';
 import useGameSocket from './net/useGameSocket';
 import useKeyboardControls from './input/useKeyboardControls';
 import useCanvasControls from './input/useCanvasControls';
+import useScaledCursor from './input/useScaledCursor';
 import { resolveTapAction } from './input/resolveTap';
 import { isFloorFadeActive } from './rendering/floorTransition';
 import LoreOverlay from './ui/LoreOverlay';
@@ -617,12 +613,7 @@ function App() {
 
   const isDesktop = interfaceSize > 0;
   const isMac = /Macintosh|MacIntel|MacPPC|Mac68K/.test(navigator.userAgent);
-  const mouseCursorVal = isMac
-    ? `url(${cursorMouse2xUrl}) 2 2, pointer`
-    : `image-set(url(${cursorMouseUrl}) 1x, url(${cursorMouse2xUrl}) 2x) 1 1, pointer`;
-  const controllerCursorVal = isMac
-    ? `url(${cursorController2xUrl}) 16 16, crosshair`
-    : `image-set(url(${cursorControllerUrl}) 1x, url(${cursorController2xUrl}) 2x) 8 8, crosshair`;
+  const { mouseCursorVal, controllerCursorVal } = useScaledCursor(viewport.width, viewport.height, viewport.dpr, isMac);
 
   // Destructure targeting values used in JSX so the linter doesn't flag object-property
   // accesses on a hook return that contains refs.

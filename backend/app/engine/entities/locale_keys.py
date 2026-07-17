@@ -28,6 +28,19 @@ def _camel_to_snake(name: str) -> str:
     return s.lower()
 
 
+# Chest is a single class covering several Heap.Type variants (chest_type
+# field); auto-deriving from the class name alone would collapse Tomb/
+# LockedChest/CrystalChest/Skeleton/Remains into "item.chest".
+_CHEST_TYPE_KEYS: dict[str, str] = {
+    "CHEST": "item.chest",
+    "LOCKED_CHEST": "item.locked_chest",
+    "CRYSTAL_CHEST": "item.crystal_chest",
+    "TOMB": "item.tomb",
+    "SKELETON": "item.skeleton",
+    "REMAINS": "item.remains",
+}
+
+
 # Manual overrides for class/name → locale key where auto-derivation would be
 # wrong or ambiguous.
 _ITEM_OVERRIDES: dict[str, str] = {
@@ -188,6 +201,12 @@ def item_locale_key(item) -> Optional[str]:
     (e.g. untyped potion/scroll base classes).
     """
     cls = item.__class__.__name__
+
+    # Chest covers multiple Heap.Type variants via chest_type; key off that
+    # before the generic class-name derivation collapses them all to "chest".
+    if cls == "Chest":
+        chest_type = getattr(item, "chest_type", "CHEST")
+        return _CHEST_TYPE_KEYS.get(chest_type, "item.chest")
 
     # Concrete class override.
     if cls in _ITEM_OVERRIDES:
