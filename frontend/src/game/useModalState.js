@@ -8,6 +8,7 @@ export default function useModalState() {
   const [shopWindow, setShopWindow] = useState(null);
   const [impWindow, setImpWindow] = useState(null);
   const [ghostWindow, setGhostWindow] = useState(null);
+  const [wandmakerWindow, setWandmakerWindow] = useState(null);
   const [scrollPickerData, setScrollPickerData] = useState(null);
   const [stonePickerData, setStonePickerData] = useState(null);
   const [intuitionData, setIntuitionData] = useState(null);
@@ -45,6 +46,8 @@ export default function useModalState() {
   const [ghostGearData, setGhostGearData] = useState(null);
   const onGhostDialogue = ({ npc, text, can_claim, weapon, armor }) =>
     setGhostWindow({ npc, text, canClaim: can_claim, weapon, armor });
+  const onWandmakerDialogue = ({ npc, text, can_claim, wand1, wand2 }) =>
+    setWandmakerWindow({ npc, text, canClaim: can_claim, wand1, wand2 });
   const onImbueWand = (data) => setImbueWandData(data);
   const onScrollSelectTarget = (data) => setScrollPickerData(data);
   const onStoneSelectTarget = (data) => setStonePickerData(data);
@@ -76,6 +79,7 @@ export default function useModalState() {
     shopWindow, setShopWindow,
     impWindow, setImpWindow,
     ghostWindow, setGhostWindow,
+    wandmakerWindow, setWandmakerWindow,
     ghostGearData, setGhostGearData,
     scrollPickerData, setScrollPickerData,
     stonePickerData, setStonePickerData,
@@ -98,6 +102,7 @@ export default function useModalState() {
     onShopOpen,
     onImpDialogue,
     onGhostDialogue,
+    onWandmakerDialogue,
     onImbueWand,
     onScrollSelectTarget,
     onStoneSelectTarget,

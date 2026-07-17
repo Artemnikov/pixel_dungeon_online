@@ -147,6 +147,7 @@ export const WALL_INDEX = {
   RAISED_WALL_DOOR: atlasIndex(8, 5),
   RAISED_WALL_ALT: atlasIndex(0, 6),
   RAISED_WALL_DECO_ALT: atlasIndex(4, 6),
+  RAISED_WALL_BOOKSHELF: atlasIndex(12, 5),
 
   WALL_INTERNAL: atlasIndex(0, 9),
   WALL_INTERNAL_DECO: atlasIndex(0, 10),
@@ -159,17 +160,22 @@ export const WALL_INDEX = {
   DOOR_SIDEWAYS_OVERHANG: atlasIndex(0, 13),
   DOOR_SIDEWAYS_OVERHANG_CLOSED: atlasIndex(4, 13),
   DOOR_SIDEWAYS_OVERHANG_LOCKED: atlasIndex(8, 13),
+  DOOR_SIDEWAYS_OVERHANG_CRYSTAL: atlasIndex(12, 13),
 
   DOOR_OVERHANG: atlasIndex(0, 14),
   DOOR_OVERHANG_OPEN: atlasIndex(1, 14),
+  DOOR_OVERHANG_CRYSTAL: atlasIndex(2, 14),
   DOOR_SIDEWAYS: atlasIndex(3, 14),
   DOOR_SIDEWAYS_LOCKED: atlasIndex(4, 14),
+  DOOR_SIDEWAYS_CRYSTAL: atlasIndex(5, 14),
+  EXIT_UNDERHANG: atlasIndex(6, 14),
 
   RAISED_DOOR: atlasIndex(0, 7),
   RAISED_DOOR_OPEN: atlasIndex(1, 7),
   RAISED_DOOR_LOCKED: atlasIndex(2, 7),
   RAISED_DOOR_CRYSTAL: atlasIndex(3, 7),
   RAISED_DOOR_SIDEWAYS: atlasIndex(4, 7),
+  RAISED_BARRICADE: atlasIndex(9, 7),
 };
 
 // SPD DungeonTileSheet.CHASM block (verified present in every region atlas
@@ -219,7 +225,6 @@ export const isWallTile = (tile) =>
   tile === BACKEND_TILE.WALL.id ||
   tile === BACKEND_TILE.WALL_DECO.id ||
   tile === BACKEND_TILE.SECRET_DOOR.id ||
-  tile === BACKEND_TILE.BARRICADE.id ||
   tile === BACKEND_TILE.BOOKSHELF.id;
 
 // Used ONLY by wall-autotile stitching: any tile that should visually
@@ -232,7 +237,7 @@ export const isWallStitcheable = (tile) =>
   tile === BACKEND_TILE.WALL.id ||
   tile === BACKEND_TILE.WALL_DECO.id ||
   tile === BACKEND_TILE.SECRET_DOOR.id ||
-  tile === BACKEND_TILE.BARRICADE.id ||
+  tile === BACKEND_TILE.LOCKED_EXIT.id ||
   tile === BACKEND_TILE.BOOKSHELF.id;
 
 export const isDoorTile = (tile) =>

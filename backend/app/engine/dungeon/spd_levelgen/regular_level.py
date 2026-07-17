@@ -21,7 +21,6 @@ exact order SPD does."""
 from __future__ import annotations
 
 import math
-from collections import deque
 from typing import List, Optional, Tuple
 
 from app.engine.dungeon.spd_levelgen import generator as gen
@@ -30,7 +29,7 @@ from app.engine.dungeon.spd_levelgen import standard_rooms as std
 from app.engine.dungeon.spd_levelgen import special_rooms as sr
 from app.engine.dungeon.spd_levelgen import terrain
 from app.engine.dungeon.spd_levelgen.builders import Builder, FigureEightBuilder, LoopBuilder
-from app.engine.dungeon.spd_levelgen.geom import _to_f32
+from app.engine.dungeon.spd_levelgen.geom import _to_f32, build_distance_map_limited
 from app.engine.dungeon.spd_levelgen.level import Feeling, GenLevel, assign_feeling
 from app.engine.dungeon.spd_levelgen.mob_spawner import GenMob
 from app.engine.dungeon.spd_levelgen.room import Room
@@ -61,10 +60,6 @@ _ITEM_DESTROYING_TRAP_NAMES = frozenset({
     "BurningTrap", "BlazingTrap", "ChillingTrap", "FrostTrap",
     "ExplosiveTrap", "DisintegrationTrap", "PitfallTrap",
 })
-
-# PathFinder.dirLR (PathFinder.java:67) as (dx, dy) pairs, in left-to-right
-# scan order: NW, W, SW, N, S, NE, E, SE.
-_DIR_LR = ((-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1))
 
 
 def _builder(rng: SPDRandom) -> Builder:
@@ -195,6 +190,13 @@ def _init_rooms(rng: SPDRandom, depth: int, feeling: Feeling, run_state: RunStat
         if imp_room is not None:
             init_rooms.append(imp_room)
 
+    # PrisonLevel.initRooms(): Wandmaker.Quest.spawnRoom() rolls for a
+    # MassGraveRoom on depths 7-9 (after all other rooms are decided).
+    if region_for_depth(depth) == "prison":
+        quest_room = run_state.wandmaker_quest.maybe_spawn_room(rng, depth)
+        if quest_room is not None:
+            init_rooms.append(quest_room)
+
     return init_rooms
 
 
@@ -254,35 +256,6 @@ def build_floor(rng: SPDRandom, depth: int, run_state: RunState,
     create_items(rng, level, run_state)
 
     return level, rooms
-
-
-def _build_distance_map_limited(to_idx: int, passable: List[bool], width: int,
-                                height: int, limit: int) -> List[Optional[int]]:
-    """Port of PathFinder.buildDistanceMap(int to, boolean[] passable, int
-    limit) (PathFinder.java:248-282) -- BFS that bails out entirely the first
-    time the frontier distance would exceed `limit` (FIFO queue guarantees
-    non-decreasing distances, so this is a safe early-out, not a per-node
-    skip). `dirLR` order + the `start`/`end` edge-wrap guards are reproduced
-    exactly; `None` stands in for Integer.MAX_VALUE."""
-    size = width * height
-    distance: List[Optional[int]] = [None] * size
-    distance[to_idx] = 0
-    queue: deque = deque([to_idx])
-    while queue:
-        step = queue.popleft()
-        next_distance = distance[step] + 1
-        if next_distance > limit:
-            return distance
-        x = step % width
-        start = 3 if x == 0 else 0
-        end = 3 if (x + 1) % width == 0 else 0
-        for i in range(start, 8 - end):
-            dx, dy = _DIR_LR[i]
-            n = step + dx + dy * width
-            if 0 <= n < size and passable[n] and (distance[n] is None or distance[n] > next_distance):
-                queue.append(n)
-                distance[n] = next_distance
-    return distance
 
 
 def _create_mob(rng: SPDRandom, level: GenLevel) -> GenMob:
@@ -351,10 +324,21 @@ def _ghost_quest_spawn(rng: SPDRandom, level: GenLevel, run_state: RunState) -> 
         level.mobs.append(mob)
 
 
+def _wandmaker_quest_spawn(rng: SPDRandom, level: GenLevel, run_state: RunState) -> None:
+    """Port of PrisonLevel.createMobs()'s `Wandmaker.Quest.spawnWandmaker(
+    this, roomEntrance)` call (must run before super.createMobs(), same as
+    Ghost's spawn call above -- matches WandmakerQuestState.maybe_spawn_npc's
+    RNG-order requirements). Only relevant on Prison depths 6-9."""
+    mob = run_state.wandmaker_quest.maybe_spawn_npc(rng, level)
+    if mob is not None:
+        level.mobs.append(mob)
+
+
 def create_mobs(rng: SPDRandom, level: GenLevel, run_state: RunState) -> None:
     """Port of RegularLevel.createMobs (RegularLevel.java:220-326)."""
     depth = level.depth
     _ghost_quest_spawn(rng, level, run_state)
+    _wandmaker_quest_spawn(rng, level, run_state)
     mobs_to_spawn = 8 if depth == 1 else _mob_limit(rng, depth, level.feeling)
 
     std_rooms: List[Room] = []
@@ -379,7 +363,7 @@ def create_mobs(rng: SPDRandom, level: GenLevel, run_state: RunState) -> None:
             if level.passable[cell]:
                 entrance_walkable[cell] = True
 
-    distance = _build_distance_map_limited(entrance_cell, entrance_walkable, width, level.height(), 8)
+    distance = build_distance_map_limited(entrance_cell, entrance_walkable, width, level.height(), 8)
 
     mob: Optional[GenMob] = None
     while mobs_to_spawn > 0:

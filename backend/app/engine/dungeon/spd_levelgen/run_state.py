@@ -38,7 +38,10 @@ from app.engine.dungeon.spd_levelgen.geom import _to_f32
 from app.engine.dungeon.spd_levelgen.generator import GeneratorState, _CategoryDeck, _random_deck_category, init_generator_state
 from app.engine.dungeon.spd_levelgen.mob_spawner import GenMob
 from app.engine.dungeon.spd_levelgen.room import Room
+from app.engine.dungeon.spd_levelgen import room_types
 from app.engine.dungeon.spd_levelgen import special_rooms as sr
+from app.engine.dungeon.spd_levelgen import terrain
+from app.engine.dungeon.spd_levelgen.standard_rooms import _neighbours4
 from app.engine.dungeon.spd_random import SPDRandom
 
 # Number of item classes in each "deck" category that uses an
@@ -308,6 +311,127 @@ class GhostQuestState:
         return GenMob(cls_name="Ghost", pos=pos, depth=depth)
 
 
+class WandmakerQuestState:
+    """Mirrors actors/mobs/npcs/Wandmaker.Quest's static fields (Wandmaker.
+    java): the Prison depths 6-9 side quest. All 3 variants (1=Corpse Dust,
+    2=Ceremonial Candle, 3=Rotberry) are implemented.
+
+    wand1/wand2 are stored as bare deck-index + level descriptors (not
+    concrete Item objects) -- mirrors GhostQuestState's weapon_tier_category/
+    weapon_item_index/item_level split, deferring the actual Wand
+    construction to world.py's claim handler (spd_levelgen must not
+    construct runtime Item objects directly -- see spd_adapter.py's
+    build_wand_item, the one place that conversion happens)."""
+
+    def __init__(self) -> None:
+        self.spawned: bool = False               # Quest.spawned -- NPC actually placed
+        self.quest_type: int = 0                  # Quest.type -- 1=CorpseDust, 2=Candle, 3=Rotberry
+        self.quest_room_spawned: bool = False     # Quest.questRoomSpawned (transient)
+        self.given: bool = False                  # Quest.given -- intro dialogue already shown
+        self.npc_id: Optional[str] = None
+        self.wand1_index: Optional[int] = None
+        self.wand1_level: int = 0
+        self.wand2_index: Optional[int] = None
+        self.wand2_level: int = 0
+        # Ceremonial Candle variant (type 2) only -- CeremonialCandle.ritualPos,
+        # set once RitualSiteRoom is painted (see room_types.RitualSiteRoom).
+        self.ritual_pos: Optional[int] = None
+        self.ritual_floor_id: Optional[int] = None
+
+    def maybe_spawn_room(self, rng: SPDRandom, depth: int):
+        """Wandmaker.Quest.spawnRoom() -- called once all other Prison-floor
+        rooms are decided (only depths 7-9 roll; depth 9's Random.IntMax(1)
+        always succeeds, forcing a decision by then if not already made).
+        Once quest_type is nonzero (decided this floor or an earlier builder
+        retry of the same floor -- `spawned` only flips true later, in
+        maybe_spawn_npc, well after this floor's build finishes), no further
+        roll ever happens -- matches Java's `type != 0` short-circuit."""
+        self.quest_room_spawned = False
+        if self.spawned:
+            return None
+        if self.quest_type == 0:
+            if not (depth > 6 and rng.IntMax(10 - depth) == 0):
+                return None
+            self.quest_type = rng.IntMax(3) + 1
+        if self.quest_type == 1:
+            self.quest_room_spawned = True
+            return sr.MassGraveRoom()
+        if self.quest_type == 2:
+            self.quest_room_spawned = True
+            room = room_types.RitualSiteRoom()
+            # Java's instance initializer runs setSizeCat() at construction
+            # time; the port exposes that as an explicit post-construct call
+            # (see StandardRoom.init_size_cat's docstring).
+            room.init_size_cat(rng)
+            return room
+        if self.quest_type == 3:
+            self.quest_room_spawned = True
+            from app.engine.dungeon.spd_levelgen.rot_garden_room import RotGardenRoom
+            return RotGardenRoom()
+        return None
+
+    def maybe_spawn_npc(self, rng: SPDRandom, level) -> Optional[GenMob]:
+        """Wandmaker.Quest.spawnWandmaker(Level, Room) -- called at the top
+        of create_mobs() for Prison depths (mirrors _ghost_quest_spawn's call
+        site/shape in regular_level.py). Spawns into level.room_entrance
+        (NOT the quest room -- matches PrisonLevel.createMobs() passing
+        `roomEntrance`), via the shrinking-margin room.random(dist) retry.
+        Rolls both reward wands here, in the exact RNG order Java does:
+        placement, then wand1 draw + upgrade roll, then wand2 draw(s)
+        (redrawing on a duplicate class, undoing the rejected draws' deck
+        decrements only after the loop exits, matching Java's toUndo-after-
+        loop timing) + upgrade roll."""
+        if not self.quest_room_spawned:
+            return None
+        self.quest_room_spawned = False
+
+        room = level.room_entrance
+        neighbours4 = _neighbours4(level.width())
+        entrance = level.entrance()
+        tries = 0
+        dist = 2
+        while True:
+            if tries > 30 and dist > 0:
+                tries = 0
+                dist -= 1
+            pos = level.point_to_cell(room.random(rng, dist))
+            valid = pos != entrance and not level.solid[pos]
+            if valid:
+                for nb in neighbours4:
+                    if level.map[pos + nb] == terrain.DOOR:
+                        valid = False
+                        break
+            if valid and (level.traps.get(pos) is not None
+                          or not level.passable[pos]
+                          or level.map[pos] == terrain.EMPTY_SP):
+                valid = False
+            tries += 1
+            if valid:
+                break
+
+        self.spawned = True
+        self.given = False
+
+        gen_state = level.run_state.generator_state
+        wand1_ri = _random_deck_category(gen_state, rng, "WAND")
+        rng.IntMax(3)  # Wand.upgrade()'s cursed=false reroll (already forced false by Quest)
+        self.wand1_index = wand1_ri.item_index
+        self.wand1_level = wand1_ri.level + 1
+
+        wand2_ri = _random_deck_category(gen_state, rng, "WAND")
+        to_undo = []
+        while wand2_ri.item_index == wand1_ri.item_index:
+            to_undo.append(wand2_ri.item_index)
+            wand2_ri = _random_deck_category(gen_state, rng, "WAND")
+        for idx in to_undo:
+            gen_state.decks["WAND"].undo_drop(idx)
+        rng.IntMax(3)  # Wand.upgrade()'s cursed=false reroll
+        self.wand2_index = wand2_ri.item_index
+        self.wand2_level = wand2_ri.level + 1
+
+        return GenMob(cls_name="Wandmaker", pos=pos, depth=level.depth)
+
+
 def is_boss_level(depth: int) -> bool:
     return depth in (5, 10, 15, 20, 25)
 
@@ -360,6 +484,9 @@ class RunState:
 
         # Ghost quest (actors/mobs/npcs/Ghost.Quest), sewers depths 2-4.
         self.ghost_quest = GhostQuestState()
+
+        # Wandmaker quest (actors/mobs/npcs/Wandmaker.Quest), prison depths 6-9.
+        self.wandmaker_quest = WandmakerQuestState()
 
     @property
     def potion_deck(self) -> _CategoryDeck:

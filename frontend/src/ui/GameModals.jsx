@@ -10,6 +10,7 @@ import WndShop from './WndShop';
 import WndImp from './WndImp';
 import WndSadGhost from './WndSadGhost';
 import WndGhostGear from './WndGhostGear';
+import WndWandmaker from './WndWandmaker';
 import WndChasmJump from './WndChasmJump';
 import WndQuickBag from './WndQuickBag';
 
@@ -43,6 +44,7 @@ function GameModals({
     shopWindow, setShopWindow,
     impWindow, setImpWindow,
     ghostWindow, setGhostWindow,
+    wandmakerWindow, setWandmakerWindow,
     ghostGearData, setGhostGearData,
     chasmPrompt, setChasmPrompt,
     showQuickBag, setShowQuickBag,
@@ -125,6 +127,21 @@ function GameModals({
             setGhostWindow(null);
           }}
           onClose={() => setGhostWindow(null)}
+        />
+      )}
+
+      {wandmakerWindow && (
+        <WndWandmaker
+          npcId={wandmakerWindow.npc}
+          text={wandmakerWindow.text}
+          canClaim={wandmakerWindow.canClaim}
+          wand1={wandmakerWindow.wand1}
+          wand2={wandmakerWindow.wand2}
+          onChoose={(npcId, choice) => {
+            send({ type: 'WANDMAKER_CLAIM_REWARD', npc_id: npcId, choice });
+            setWandmakerWindow(null);
+          }}
+          onClose={() => setWandmakerWindow(null)}
         />
       )}
 

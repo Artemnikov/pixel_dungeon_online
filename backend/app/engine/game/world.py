@@ -28,12 +28,16 @@ from app.engine.entities.base import Position
 from app.engine.entities.items_consumable import Key
 from app.engine.entities.items_equip import Armor, LeatherArmor, MailArmor, PlateArmor, ScaleArmor, make_named_melee_weapon
 from app.engine.entities.player import CharacterClass, Item, Player
-from app.engine.entities.items_consumable import DwarfToken
+from app.engine.entities.items_consumable import CorpseDust, DwarfToken
 from app.engine.entities.mobs import Imp, Shopkeeper
 from app.engine.entities.quest_bosses import FetidRat, Ghost, GnollTrickster, GreatCrab
+from app.engine.entities.wandmaker_quest import DustWraith, NewbornFireElemental, Wandmaker
+from app.engine.entities.wandmaker_quest_items import CeremonialCandle, Embers, RotberrySeed
 from app.engine.entities.weapon_defs import WEP_TIER_ORDER
+from app.engine.entities.buffs import remove_buff
 from app.engine.game.floor_state import FloorState
 from app.engine.game.constants import KEY_TIME_TO_UNLOCK
+from app.engine.game.spd_adapter import build_wand_item
 
 _FIRE_CARDINALS = [(0, -1), (1, 0), (0, 1), (-1, 0)]
 _ELECTRIC_CARDINALS = [(0, -1), (1, 0), (0, 1), (-1, 0)]
@@ -84,6 +88,77 @@ _GHOST_REWARD_TEXT = (
 )
 _GHOST_BOSS_CLASSES = {1: FetidRat, 2: GnollTrickster, 3: GreatCrab}
 
+# Wandmaker.java messages_en.properties (actors.mobs.npcs.wandmaker.*) --
+# markup (_italics_) stripped. Types 1 (Corpse Dust) and 3 (Rotberry) are
+# implemented; type 2 (Ceremonial Candle) is still deferred -- see
+# wandmaker_quest.py's module docstring.
+_WANDMAKER_INTRO_BY_CLASS = {
+    "warrior": ("Oh, hello there! What a pleasant surprise to meet a warrior from the north "
+                "in such a depressing place! You must have travelled quite far to get here. "
+                "If you're looking for adventure, I may have a task for you."),
+    "rogue": ("Oh Goodness, you startled me! I haven't met a bandit from this place that "
+              "still has his sanity, so you must be from the surface! If you're up to "
+              "helping a stranger out, I may have a task for you."),
+    "mage": ("Oh, hello {name}! I heard there was some ruckus regarding you and the wizards "
+             "institute? Oh never mind, I never liked those stick-in-the-muds anyway. If "
+             "you're willing, I may have a task for you."),
+    "huntress": ("Oh, hello miss! A friendly face is a pleasant surprise down here isn't it? "
+                 "In fact, I swear I've seen your face before, but I can't put my finger on "
+                 "it... Oh never mind, if you're here for adventure, I may have a task for you."),
+    "duelist": ("Oh, hello miss! What a pleasant surprise to meet a hero in such a depressing "
+                "place! If you're up to helping an old man out, I may have a task for you."),
+    "cleric": ("Oh, hello Your Highness! What a pleasant surprise to meet you in such a "
+               "depressing place! I hate to impose, but I may have a task for you."),
+}
+_WANDMAKER_INTRO_1 = (
+    "\n\nI came here to find a rare ingredient for a wand, but I've gotten myself lost, and "
+    "my magical shield is weakening. I'll need to leave soon, but can't bear to go without "
+    "getting what I came for."
+)
+_WANDMAKER_INTRO_DUST = (
+    "I'm looking for some corpse dust. It's a special kind of cursed bone meal that usually "
+    "shows up in places like this. There should be a barricaded room around here somewhere, "
+    "I'm sure some dust will turn up there. Do be careful though, the curse the dust carries "
+    "is quite potent, get back to me as fast as you can and I'll cleanse it for you."
+)
+_WANDMAKER_INTRO_BERRY = (
+    "The old warden of this prison kept a rotberry plant, and I'm after one of its seeds. The "
+    "plant has probably gone wild by now though, so getting it to give up a seed might be "
+    "tricky. Its garden should be somewhere around here. Try to keep away from its vine "
+    "lashers if you want to stay in one piece. Using fire might be tempting but please don't, "
+    "you'll kill the plant and destroy its seeds."
+)
+_WANDMAKER_INTRO_EMBER = (
+    "I'm looking for some fresh embers from a newborn fire elemental. Elementals usually pop "
+    "up when a summoning ritual isn't controlled, so just find some candles and a ritual site "
+    "and I'm sure you can get one to pop up. You'll want to avoid boxing yourself in while "
+    "fighting it though, or you could keep some sort of freezing item handy. Newborn Elementals "
+    "are pretty powerful and chaotic, but they can't stand the cold."
+)
+_WANDMAKER_INTRO_2 = (
+    "\n\nIf you can get that for me, I'll be happy to pay you with one of my finely crafted "
+    "wands! I brought two with me, so you can take whichever one you prefer."
+)
+_WANDMAKER_INTRO_BY_TYPE = {1: _WANDMAKER_INTRO_DUST, 2: _WANDMAKER_INTRO_EMBER, 3: _WANDMAKER_INTRO_BERRY}
+_WANDMAKER_REMINDER_DUST = "Any luck with corpse dust, {name}? Look for some barricades."
+_WANDMAKER_REMINDER_BERRY = "Any luck with a Rotberry seed, {name}? Look for a room filled with vegetation."
+_WANDMAKER_REMINDER_EMBER = "Any luck with those embers, {name}? You'll need to find four candles and the ritual site."
+_WANDMAKER_REMINDER_BY_TYPE = {1: _WANDMAKER_REMINDER_DUST, 2: _WANDMAKER_REMINDER_EMBER, 3: _WANDMAKER_REMINDER_BERRY}
+_WANDMAKER_REWARD_DUST = (
+    "Oh, I see you have the dust! Don't worry about the wraiths, I can deal with them. As I "
+    "promised, you can choose one of my high quality wands."
+)
+_WANDMAKER_REWARD_BERRY = (
+    "Oh, I see you have the berry! I do hope the rotberry plant didn't trouble you too much. "
+    "As I promised, you can choose one of my high quality wands."
+)
+_WANDMAKER_REWARD_EMBER = (
+    "Oh, I see you have the embers! I do hope the fire elemental wasn't too much trouble. As I "
+    "promised, you can choose one of my high quality wands."
+)
+_WANDMAKER_REWARD_BY_TYPE = {1: _WANDMAKER_REWARD_DUST, 2: _WANDMAKER_REWARD_EMBER, 3: _WANDMAKER_REWARD_BERRY}
+_WANDMAKER_QUEST_ITEM_BY_TYPE = {1: CorpseDust, 2: Embers, 3: RotberrySeed}
+
 
 def _random_free_cell(floor: FloorState) -> Optional[Tuple[int, int]]:
     """Mirrors Dungeon.level.randomRespawnCell(Char) in spirit (a passable,
@@ -114,6 +189,20 @@ def _make_ghost_reward_item(quest, choice: str) -> Optional[Item]:
         return _ARMOR_TYPES[tier](
             id=str(uuid.uuid4()), level=quest.item_level, level_known=True, cursed=False,
         )
+    return None
+
+
+def _make_wandmaker_wand(quest, choice: str) -> Optional[Item]:
+    """Materializes the Wandmaker reward WandmakerQuestState rolled at NPC-
+    spawn time -- deferred until claim, same reasoning as
+    _make_ghost_reward_item. wand1.cursed/upgrade() in Java forces cursed
+    false regardless of the natural roll -- see WandmakerQuestState."""
+    if choice == "wand1" and quest.wand1_index is not None:
+        return build_wand_item(quest.wand1_index, quest.wand1_level,
+                                cursed=False, cursed_known=False)
+    if choice == "wand2" and quest.wand2_index is not None:
+        return build_wand_item(quest.wand2_index, quest.wand2_level,
+                                cursed=False, cursed_known=False)
     return None
 
 
@@ -193,6 +282,8 @@ class WorldInteractionMixin:
         soft-lock."""
         from app.engine.entities.items_consumable import DwarfToken
         from app.engine.entities.mobs import DM300, Golem, Goo, Monk, Necromancer, Pylon, Skeleton, Tengu, YogDzewa
+        from app.engine.entities.wandmaker_quest import NewbornFireElemental, RotHeart
+        from app.engine.entities.wandmaker_quest_items import Embers, RotberrySeed
 
         # Imp.Quest.process(): once the quest is given (and not yet
         # completed), killing a Monk (alternative) or Golem (!alternative)
@@ -203,6 +294,17 @@ class WorldInteractionMixin:
             if isinstance(mob, wanted):
                 token = DwarfToken(id=str(uuid.uuid4()), pos=Position(x=mob.pos.x, y=mob.pos.y))
                 floor.items[token.id] = token
+
+        # RotHeart.die(): always drops the Rotberry seed, regardless of how
+        # the Wandmaker quest's Rotberry variant is currently tracked.
+        if isinstance(mob, RotHeart):
+            seed = RotberrySeed(id=str(uuid.uuid4()), pos=Position(x=mob.pos.x, y=mob.pos.y))
+            floor.items[seed.id] = seed
+
+        # Elemental.NewbornFireElemental.die(): always drops embers.
+        if isinstance(mob, NewbornFireElemental):
+            embers = Embers(id=str(uuid.uuid4()), pos=Position(x=mob.pos.x, y=mob.pos.y))
+            floor.items[embers.id] = embers
 
         # Ghost.Quest.process(): called directly from each quest-boss's
         # die() override in the original (FetidRat/GnollTrickster/GreatCrab),
@@ -668,6 +770,53 @@ class WorldInteractionMixin:
                     player_id=player_id,
                 )
 
+        elif isinstance(npc, Wandmaker):
+            quest = self.run_state.wandmaker_quest
+            if not quest.given:
+                # Wandmaker.interact(): two-part intro (class greeting + task
+                # description), shown once. Java splits this into two
+                # sequential WndQuest popups (hide() chains to the second) --
+                # collapsed into one text block here.
+                greeting = _WANDMAKER_INTRO_BY_CLASS.get(player.class_type, "")
+                task = _WANDMAKER_INTRO_BY_TYPE.get(quest.quest_type, _WANDMAKER_INTRO_DUST)
+                text = (greeting.format(name=player.name) + _WANDMAKER_INTRO_1
+                        + task + _WANDMAKER_INTRO_2)
+                quest.given = True
+                self.add_event(
+                    "WANDMAKER_DIALOGUE",
+                    {"player": player.id, "npc": npc_id, "text": text, "can_claim": False},
+                    player_id=player_id,
+                )
+            else:
+                quest_item_cls = _WANDMAKER_QUEST_ITEM_BY_TYPE.get(quest.quest_type, CorpseDust)
+                held = next((i for i in player.inventory if isinstance(i, quest_item_cls)), None)
+                if held is not None:
+                    wand1 = _make_wandmaker_wand(quest, "wand1")
+                    wand2 = _make_wandmaker_wand(quest, "wand2")
+                    reward_text = _WANDMAKER_REWARD_BY_TYPE.get(quest.quest_type, _WANDMAKER_REWARD_DUST)
+                    self.add_event(
+                        "WANDMAKER_DIALOGUE",
+                        {
+                            "player": player.id, "npc": npc_id,
+                            "text": reward_text,
+                            "can_claim": True,
+                            "wand1": self._serialize_floor_item(wand1) if wand1 else None,
+                            "wand2": self._serialize_floor_item(wand2) if wand2 else None,
+                        },
+                        player_id=player_id,
+                    )
+                else:
+                    reminder_text = _WANDMAKER_REMINDER_BY_TYPE.get(quest.quest_type, _WANDMAKER_REMINDER_DUST)
+                    self.add_event(
+                        "WANDMAKER_DIALOGUE",
+                        {
+                            "player": player.id, "npc": npc_id,
+                            "text": reminder_text.format(name=player.name),
+                            "can_claim": False,
+                        },
+                        player_id=player_id,
+                    )
+
     def shop_buy(self, player_id: str, npc_id: str, item_id: str) -> None:
         player = self.players.get(player_id)
         if not player:
@@ -904,3 +1053,99 @@ class WorldInteractionMixin:
             {"player": player.id, "npc": npc_id, "item": reward.id},
             player_id=player_id,
         )
+
+    def wandmaker_claim_reward(self, player_id: str, npc_id: str, choice: str) -> None:
+        player = self.players.get(player_id)
+        if not player:
+            return
+        floor = self._get_or_create_floor(player.floor_id)
+        npc = floor.mobs.get(npc_id)
+        if npc is None or not isinstance(npc, Wandmaker):
+            return
+        if max(abs(npc.pos.x - player.pos.x), abs(npc.pos.y - player.pos.y)) > 1:
+            return
+
+        quest = self.run_state.wandmaker_quest
+        if not quest.given:
+            return
+        quest_item_cls = _WANDMAKER_QUEST_ITEM_BY_TYPE.get(quest.quest_type, CorpseDust)
+        held = next((i for i in player.inventory if isinstance(i, quest_item_cls)), None)
+        if held is None:
+            return
+
+        reward = _make_wandmaker_wand(quest, choice)
+        if reward is None:
+            return
+
+        player.belongings.backpack.detach(held.id)
+        if isinstance(held, CorpseDust):
+            # CorpseDust.onDetach()/DustGhostSpawner.dispel(): remove the
+            # buff and kill every wraith it spawned -- across all floors,
+            # since the player may have changed floors while carrying it (a
+            # single-level assumption in the original that doesn't hold
+            # here). Rotberry's seed has no such held-item side effect.
+            remove_buff(player.buffs, "dust_ghost_spawner")
+            for fid, f in self.floors.items():
+                for mob_id in [m.id for m in f.mobs.values() if isinstance(m, DustWraith)]:
+                    del f.mobs[mob_id]
+                    self.add_event("DEATH", {"target": mob_id}, floor_id=fid)
+
+        if not player.add_to_inventory(reward):
+            reward.pos = Position(x=npc.pos.x, y=npc.pos.y)
+            floor.items[reward.id] = reward
+
+        # Wandmaker.Quest.complete(): wand1/wand2 nulled -- Wandmaker itself
+        # does NOT despawn (unlike Ghost), matching Java exactly.
+        quest.wand1_index = None
+        quest.wand2_index = None
+
+        self.add_event(
+            "WANDMAKER_REWARD",
+            {"player": player.id, "npc": npc_id, "item": reward.id},
+            player_id=player_id,
+        )
+
+    def _check_ritual_candles(self, floor_id: int) -> None:
+        """CeremonialCandle.checkCandles(): if the 4 cells cardinally
+        adjacent to the ritual's center each hold a landed CeremonialCandle,
+        consume them and spawn a NewbornFireElemental at (or, if occupied,
+        next to) the ritual center, already hunting. Called after any
+        CeremonialCandle lands via drop (item_actions.action_drop) or throw
+        (movement.perform_ranged_attack) -- mirrors Java's doDrop/onThrow
+        both calling checkCandles(). The `aflame` partial-progress visual
+        flag is dropped (see CeremonialCandle's docstring) -- purely
+        cosmetic, no gameplay effect."""
+        quest = self.run_state.wandmaker_quest
+        if quest.ritual_pos is None or quest.ritual_floor_id != floor_id:
+            return
+        floor = self._get_or_create_floor(floor_id)
+        width = floor.width
+        rx, ry = quest.ritual_pos % width, quest.ritual_pos // width
+        cardinals = [(rx, ry - 1), (rx + 1, ry), (rx, ry + 1), (rx - 1, ry)]
+        landed = []
+        for cx, cy in cardinals:
+            item = next(
+                (i for i in floor.items.values()
+                 if isinstance(i, CeremonialCandle) and i.pos and i.pos.x == cx and i.pos.y == cy),
+                None,
+            )
+            if item is None:
+                return
+            landed.append(item)
+
+        for item in landed:
+            del floor.items[item.id]
+
+        occupied = {(m.pos.x, m.pos.y) for m in floor.mobs.values() if m.is_alive}
+        occupied |= {(p.pos.x, p.pos.y) for p in self._players_on_floor(floor_id) if p.is_alive}
+        diagonals = ((-1, -1), (0, -1), (1, -1), (-1, 0), (1, 0), (-1, 1), (0, 1), (1, 1))
+        candidates = [
+            (rx + dx, ry + dy) for dx, dy in diagonals
+            if 0 <= rx + dx < floor.width and 0 <= ry + dy < floor.height
+            and (rx + dx, ry + dy) not in occupied
+            and floor.flags and not floor.flags.solid[ry + dy][rx + dx]
+        ]
+        ex, ey = random.choice(candidates) if candidates else (rx, ry)
+
+        elemental = NewbornFireElemental(id=str(uuid.uuid4()), pos=Position(x=ex, y=ey), ai_state="hunting")
+        floor.mobs[elemental.id] = elemental

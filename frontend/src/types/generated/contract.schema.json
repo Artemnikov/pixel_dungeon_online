@@ -658,12 +658,14 @@
                 "broken_seal": "#/$defs/BrokenSeal",
                 "cape_of_thorns": "#/$defs/CapeOfThorns",
                 "caustic_brew": "#/$defs/CausticBrew",
+                "ceremonial_candle": "#/$defs/CeremonialCandle",
                 "chalice_of_blood": "#/$defs/ChaliceOfBlood",
                 "chaotic_censer": "#/$defs/ChaoticCenser",
                 "chargrilled_meat": "#/$defs/ChargrilledMeat",
                 "chest": "#/$defs/Chest",
                 "cloak_of_shadows": "#/$defs/CloakOfShadows",
                 "cloth_armor": "#/$defs/ClothArmor",
+                "corpse_dust": "#/$defs/CorpseDust",
                 "cracked_spyglass": "#/$defs/CrackedSpyglass",
                 "cursed_wand": "#/$defs/CursedWand",
                 "dagger": "#/$defs/Dagger",
@@ -680,6 +682,7 @@
                 "elixir_of_icy_touch": "#/$defs/ElixirOfIcyTouch",
                 "elixir_of_might": "#/$defs/ElixirOfMight",
                 "elixir_of_toxic_essence": "#/$defs/ElixirOfToxicEssence",
+                "embers": "#/$defs/Embers",
                 "energy_crystal": "#/$defs/EnergyCrystal",
                 "ethereal_chains": "#/$defs/EtherealChains",
                 "exotic_crystals": "#/$defs/ExoticCrystals",
@@ -761,6 +764,7 @@
                 "ring_sharpshooting": "#/$defs/RingOfSharpshooting",
                 "ring_tenacity": "#/$defs/RingOfTenacity",
                 "ring_wealth": "#/$defs/RingOfWealth",
+                "rotberry_seed": "#/$defs/RotberrySeed",
                 "salt_cube": "#/$defs/SaltCube",
                 "sandals_of_nature": "#/$defs/SandalsOfNature",
                 "scale_armor": "#/$defs/ScaleArmor",
@@ -1344,6 +1348,18 @@
                 "$ref": "#/$defs/DwarfToken"
               },
               {
+                "$ref": "#/$defs/CorpseDust"
+              },
+              {
+                "$ref": "#/$defs/RotberrySeed"
+              },
+              {
+                "$ref": "#/$defs/CeremonialCandle"
+              },
+              {
+                "$ref": "#/$defs/Embers"
+              },
+              {
                 "$ref": "#/$defs/Petal"
               },
               {
@@ -1490,12 +1506,14 @@
                   "broken_seal": "#/$defs/BrokenSeal",
                   "cape_of_thorns": "#/$defs/CapeOfThorns",
                   "caustic_brew": "#/$defs/CausticBrew",
+                  "ceremonial_candle": "#/$defs/CeremonialCandle",
                   "chalice_of_blood": "#/$defs/ChaliceOfBlood",
                   "chaotic_censer": "#/$defs/ChaoticCenser",
                   "chargrilled_meat": "#/$defs/ChargrilledMeat",
                   "chest": "#/$defs/Chest",
                   "cloak_of_shadows": "#/$defs/CloakOfShadows",
                   "cloth_armor": "#/$defs/ClothArmor",
+                  "corpse_dust": "#/$defs/CorpseDust",
                   "cracked_spyglass": "#/$defs/CrackedSpyglass",
                   "cursed_wand": "#/$defs/CursedWand",
                   "dagger": "#/$defs/Dagger",
@@ -1512,6 +1530,7 @@
                   "elixir_of_icy_touch": "#/$defs/ElixirOfIcyTouch",
                   "elixir_of_might": "#/$defs/ElixirOfMight",
                   "elixir_of_toxic_essence": "#/$defs/ElixirOfToxicEssence",
+                  "embers": "#/$defs/Embers",
                   "energy_crystal": "#/$defs/EnergyCrystal",
                   "ethereal_chains": "#/$defs/EtherealChains",
                   "exotic_crystals": "#/$defs/ExoticCrystals",
@@ -1593,6 +1612,7 @@
                   "ring_sharpshooting": "#/$defs/RingOfSharpshooting",
                   "ring_tenacity": "#/$defs/RingOfTenacity",
                   "ring_wealth": "#/$defs/RingOfWealth",
+                  "rotberry_seed": "#/$defs/RotberrySeed",
                   "salt_cube": "#/$defs/SaltCube",
                   "sandals_of_nature": "#/$defs/SandalsOfNature",
                   "scale_armor": "#/$defs/ScaleArmor",
@@ -2174,6 +2194,18 @@
                 },
                 {
                   "$ref": "#/$defs/DwarfToken"
+                },
+                {
+                  "$ref": "#/$defs/CorpseDust"
+                },
+                {
+                  "$ref": "#/$defs/RotberrySeed"
+                },
+                {
+                  "$ref": "#/$defs/CeremonialCandle"
+                },
+                {
+                  "$ref": "#/$defs/Embers"
                 },
                 {
                   "$ref": "#/$defs/Petal"
@@ -2315,12 +2347,14 @@
                   "broken_seal": "#/$defs/BrokenSeal",
                   "cape_of_thorns": "#/$defs/CapeOfThorns",
                   "caustic_brew": "#/$defs/CausticBrew",
+                  "ceremonial_candle": "#/$defs/CeremonialCandle",
                   "chalice_of_blood": "#/$defs/ChaliceOfBlood",
                   "chaotic_censer": "#/$defs/ChaoticCenser",
                   "chargrilled_meat": "#/$defs/ChargrilledMeat",
                   "chest": "#/$defs/Chest",
                   "cloak_of_shadows": "#/$defs/CloakOfShadows",
                   "cloth_armor": "#/$defs/ClothArmor",
+                  "corpse_dust": "#/$defs/CorpseDust",
                   "cracked_spyglass": "#/$defs/CrackedSpyglass",
                   "cursed_wand": "#/$defs/CursedWand",
                   "dagger": "#/$defs/Dagger",
@@ -2337,6 +2371,7 @@
                   "elixir_of_icy_touch": "#/$defs/ElixirOfIcyTouch",
                   "elixir_of_might": "#/$defs/ElixirOfMight",
                   "elixir_of_toxic_essence": "#/$defs/ElixirOfToxicEssence",
+                  "embers": "#/$defs/Embers",
                   "energy_crystal": "#/$defs/EnergyCrystal",
                   "ethereal_chains": "#/$defs/EtherealChains",
                   "exotic_crystals": "#/$defs/ExoticCrystals",
@@ -2418,6 +2453,7 @@
                   "ring_sharpshooting": "#/$defs/RingOfSharpshooting",
                   "ring_tenacity": "#/$defs/RingOfTenacity",
                   "ring_wealth": "#/$defs/RingOfWealth",
+                  "rotberry_seed": "#/$defs/RotberrySeed",
                   "salt_cube": "#/$defs/SaltCube",
                   "sandals_of_nature": "#/$defs/SandalsOfNature",
                   "scale_armor": "#/$defs/ScaleArmor",
@@ -2999,6 +3035,18 @@
                 },
                 {
                   "$ref": "#/$defs/DwarfToken"
+                },
+                {
+                  "$ref": "#/$defs/CorpseDust"
+                },
+                {
+                  "$ref": "#/$defs/RotberrySeed"
+                },
+                {
+                  "$ref": "#/$defs/CeremonialCandle"
+                },
+                {
+                  "$ref": "#/$defs/Embers"
                 },
                 {
                   "$ref": "#/$defs/Petal"
@@ -3140,12 +3188,14 @@
                   "broken_seal": "#/$defs/BrokenSeal",
                   "cape_of_thorns": "#/$defs/CapeOfThorns",
                   "caustic_brew": "#/$defs/CausticBrew",
+                  "ceremonial_candle": "#/$defs/CeremonialCandle",
                   "chalice_of_blood": "#/$defs/ChaliceOfBlood",
                   "chaotic_censer": "#/$defs/ChaoticCenser",
                   "chargrilled_meat": "#/$defs/ChargrilledMeat",
                   "chest": "#/$defs/Chest",
                   "cloak_of_shadows": "#/$defs/CloakOfShadows",
                   "cloth_armor": "#/$defs/ClothArmor",
+                  "corpse_dust": "#/$defs/CorpseDust",
                   "cracked_spyglass": "#/$defs/CrackedSpyglass",
                   "cursed_wand": "#/$defs/CursedWand",
                   "dagger": "#/$defs/Dagger",
@@ -3162,6 +3212,7 @@
                   "elixir_of_icy_touch": "#/$defs/ElixirOfIcyTouch",
                   "elixir_of_might": "#/$defs/ElixirOfMight",
                   "elixir_of_toxic_essence": "#/$defs/ElixirOfToxicEssence",
+                  "embers": "#/$defs/Embers",
                   "energy_crystal": "#/$defs/EnergyCrystal",
                   "ethereal_chains": "#/$defs/EtherealChains",
                   "exotic_crystals": "#/$defs/ExoticCrystals",
@@ -3243,6 +3294,7 @@
                   "ring_sharpshooting": "#/$defs/RingOfSharpshooting",
                   "ring_tenacity": "#/$defs/RingOfTenacity",
                   "ring_wealth": "#/$defs/RingOfWealth",
+                  "rotberry_seed": "#/$defs/RotberrySeed",
                   "salt_cube": "#/$defs/SaltCube",
                   "sandals_of_nature": "#/$defs/SandalsOfNature",
                   "scale_armor": "#/$defs/ScaleArmor",
@@ -3824,6 +3876,18 @@
                 },
                 {
                   "$ref": "#/$defs/DwarfToken"
+                },
+                {
+                  "$ref": "#/$defs/CorpseDust"
+                },
+                {
+                  "$ref": "#/$defs/RotberrySeed"
+                },
+                {
+                  "$ref": "#/$defs/CeremonialCandle"
+                },
+                {
+                  "$ref": "#/$defs/Embers"
                 },
                 {
                   "$ref": "#/$defs/Petal"
@@ -3965,12 +4029,14 @@
                   "broken_seal": "#/$defs/BrokenSeal",
                   "cape_of_thorns": "#/$defs/CapeOfThorns",
                   "caustic_brew": "#/$defs/CausticBrew",
+                  "ceremonial_candle": "#/$defs/CeremonialCandle",
                   "chalice_of_blood": "#/$defs/ChaliceOfBlood",
                   "chaotic_censer": "#/$defs/ChaoticCenser",
                   "chargrilled_meat": "#/$defs/ChargrilledMeat",
                   "chest": "#/$defs/Chest",
                   "cloak_of_shadows": "#/$defs/CloakOfShadows",
                   "cloth_armor": "#/$defs/ClothArmor",
+                  "corpse_dust": "#/$defs/CorpseDust",
                   "cracked_spyglass": "#/$defs/CrackedSpyglass",
                   "cursed_wand": "#/$defs/CursedWand",
                   "dagger": "#/$defs/Dagger",
@@ -3987,6 +4053,7 @@
                   "elixir_of_icy_touch": "#/$defs/ElixirOfIcyTouch",
                   "elixir_of_might": "#/$defs/ElixirOfMight",
                   "elixir_of_toxic_essence": "#/$defs/ElixirOfToxicEssence",
+                  "embers": "#/$defs/Embers",
                   "energy_crystal": "#/$defs/EnergyCrystal",
                   "ethereal_chains": "#/$defs/EtherealChains",
                   "exotic_crystals": "#/$defs/ExoticCrystals",
@@ -4068,6 +4135,7 @@
                   "ring_sharpshooting": "#/$defs/RingOfSharpshooting",
                   "ring_tenacity": "#/$defs/RingOfTenacity",
                   "ring_wealth": "#/$defs/RingOfWealth",
+                  "rotberry_seed": "#/$defs/RotberrySeed",
                   "salt_cube": "#/$defs/SaltCube",
                   "sandals_of_nature": "#/$defs/SandalsOfNature",
                   "scale_armor": "#/$defs/ScaleArmor",
@@ -4649,6 +4717,18 @@
                 },
                 {
                   "$ref": "#/$defs/DwarfToken"
+                },
+                {
+                  "$ref": "#/$defs/CorpseDust"
+                },
+                {
+                  "$ref": "#/$defs/RotberrySeed"
+                },
+                {
+                  "$ref": "#/$defs/CeremonialCandle"
+                },
+                {
+                  "$ref": "#/$defs/Embers"
                 },
                 {
                   "$ref": "#/$defs/Petal"
@@ -4790,12 +4870,14 @@
                   "broken_seal": "#/$defs/BrokenSeal",
                   "cape_of_thorns": "#/$defs/CapeOfThorns",
                   "caustic_brew": "#/$defs/CausticBrew",
+                  "ceremonial_candle": "#/$defs/CeremonialCandle",
                   "chalice_of_blood": "#/$defs/ChaliceOfBlood",
                   "chaotic_censer": "#/$defs/ChaoticCenser",
                   "chargrilled_meat": "#/$defs/ChargrilledMeat",
                   "chest": "#/$defs/Chest",
                   "cloak_of_shadows": "#/$defs/CloakOfShadows",
                   "cloth_armor": "#/$defs/ClothArmor",
+                  "corpse_dust": "#/$defs/CorpseDust",
                   "cracked_spyglass": "#/$defs/CrackedSpyglass",
                   "cursed_wand": "#/$defs/CursedWand",
                   "dagger": "#/$defs/Dagger",
@@ -4812,6 +4894,7 @@
                   "elixir_of_icy_touch": "#/$defs/ElixirOfIcyTouch",
                   "elixir_of_might": "#/$defs/ElixirOfMight",
                   "elixir_of_toxic_essence": "#/$defs/ElixirOfToxicEssence",
+                  "embers": "#/$defs/Embers",
                   "energy_crystal": "#/$defs/EnergyCrystal",
                   "ethereal_chains": "#/$defs/EtherealChains",
                   "exotic_crystals": "#/$defs/ExoticCrystals",
@@ -4893,6 +4976,7 @@
                   "ring_sharpshooting": "#/$defs/RingOfSharpshooting",
                   "ring_tenacity": "#/$defs/RingOfTenacity",
                   "ring_wealth": "#/$defs/RingOfWealth",
+                  "rotberry_seed": "#/$defs/RotberrySeed",
                   "salt_cube": "#/$defs/SaltCube",
                   "sandals_of_nature": "#/$defs/SandalsOfNature",
                   "scale_armor": "#/$defs/ScaleArmor",
@@ -5474,6 +5558,18 @@
                 },
                 {
                   "$ref": "#/$defs/DwarfToken"
+                },
+                {
+                  "$ref": "#/$defs/CorpseDust"
+                },
+                {
+                  "$ref": "#/$defs/RotberrySeed"
+                },
+                {
+                  "$ref": "#/$defs/CeremonialCandle"
+                },
+                {
+                  "$ref": "#/$defs/Embers"
                 },
                 {
                   "$ref": "#/$defs/Petal"
@@ -6328,6 +6424,76 @@
       },
       "type": "object"
     },
+    "CeremonialCandle": {
+      "description": "items/quest/CeremonialCandle.java -- the Ceremonial Candle quest\nvariant's collectible. 4 are queued as findPrizeItem() prizes when\nRitualSiteRoom is painted (see room_types.RitualSiteRoom); throwing or\ndropping one onto each of the 4 cells cardinally adjacent to the\nritual's center completes the ritual (see world.py's\n_check_ritual_candles, hooked from item_actions.action_drop and\nmovement.perform_ranged_attack). The `aflame` visual-only flag Java\nflips as candles land is dropped -- purely cosmetic, no gameplay effect.",
+      "properties": {
+        "kind": {
+          "const": "ceremonial_candle",
+          "default": "ceremonial_candle",
+          "type": "string"
+        },
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "name": {
+          "default": "ceremonial candle",
+          "type": "string"
+        },
+        "type": {
+          "default": "misc",
+          "type": "string"
+        },
+        "pos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Position"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "quantity": {
+          "default": 1,
+          "type": "integer"
+        },
+        "level": {
+          "default": 0,
+          "type": "integer"
+        },
+        "level_known": {
+          "default": true,
+          "type": "boolean"
+        },
+        "cursed": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed_known": {
+          "default": true,
+          "type": "boolean"
+        },
+        "unique": {
+          "default": true,
+          "type": "boolean"
+        },
+        "kept_though_lost": {
+          "default": false,
+          "type": "boolean"
+        },
+        "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
     "ChaliceOfBlood": {
       "properties": {
         "kind": {
@@ -6649,12 +6815,14 @@
                 "broken_seal": "#/$defs/BrokenSeal",
                 "cape_of_thorns": "#/$defs/CapeOfThorns",
                 "caustic_brew": "#/$defs/CausticBrew",
+                "ceremonial_candle": "#/$defs/CeremonialCandle",
                 "chalice_of_blood": "#/$defs/ChaliceOfBlood",
                 "chaotic_censer": "#/$defs/ChaoticCenser",
                 "chargrilled_meat": "#/$defs/ChargrilledMeat",
                 "chest": "#/$defs/Chest",
                 "cloak_of_shadows": "#/$defs/CloakOfShadows",
                 "cloth_armor": "#/$defs/ClothArmor",
+                "corpse_dust": "#/$defs/CorpseDust",
                 "cracked_spyglass": "#/$defs/CrackedSpyglass",
                 "cursed_wand": "#/$defs/CursedWand",
                 "dagger": "#/$defs/Dagger",
@@ -6671,6 +6839,7 @@
                 "elixir_of_icy_touch": "#/$defs/ElixirOfIcyTouch",
                 "elixir_of_might": "#/$defs/ElixirOfMight",
                 "elixir_of_toxic_essence": "#/$defs/ElixirOfToxicEssence",
+                "embers": "#/$defs/Embers",
                 "energy_crystal": "#/$defs/EnergyCrystal",
                 "ethereal_chains": "#/$defs/EtherealChains",
                 "exotic_crystals": "#/$defs/ExoticCrystals",
@@ -6752,6 +6921,7 @@
                 "ring_sharpshooting": "#/$defs/RingOfSharpshooting",
                 "ring_tenacity": "#/$defs/RingOfTenacity",
                 "ring_wealth": "#/$defs/RingOfWealth",
+                "rotberry_seed": "#/$defs/RotberrySeed",
                 "salt_cube": "#/$defs/SaltCube",
                 "sandals_of_nature": "#/$defs/SandalsOfNature",
                 "scale_armor": "#/$defs/ScaleArmor",
@@ -7335,6 +7505,18 @@
                 "$ref": "#/$defs/DwarfToken"
               },
               {
+                "$ref": "#/$defs/CorpseDust"
+              },
+              {
+                "$ref": "#/$defs/RotberrySeed"
+              },
+              {
+                "$ref": "#/$defs/CeremonialCandle"
+              },
+              {
+                "$ref": "#/$defs/Embers"
+              },
+              {
                 "$ref": "#/$defs/Petal"
               },
               {
@@ -7639,6 +7821,75 @@
             }
           ],
           "default": null
+        }
+      },
+      "type": "object"
+    },
+    "CorpseDust": {
+      "properties": {
+        "kind": {
+          "const": "corpse_dust",
+          "default": "corpse_dust",
+          "type": "string"
+        },
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "name": {
+          "default": "dust of the corpse",
+          "type": "string"
+        },
+        "type": {
+          "default": "misc",
+          "type": "string"
+        },
+        "pos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Position"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "quantity": {
+          "default": 1,
+          "type": "integer"
+        },
+        "level": {
+          "default": 0,
+          "type": "integer"
+        },
+        "level_known": {
+          "default": true,
+          "type": "boolean"
+        },
+        "cursed": {
+          "default": true,
+          "type": "boolean"
+        },
+        "cursed_known": {
+          "default": true,
+          "type": "boolean"
+        },
+        "unique": {
+          "default": true,
+          "type": "boolean"
+        },
+        "kept_though_lost": {
+          "default": false,
+          "type": "boolean"
+        },
+        "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
         }
       },
       "type": "object"
@@ -9070,6 +9321,76 @@
         "effect": {
           "default": "toxic_essence",
           "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "Embers": {
+      "description": "items/quest/Embers.java -- the Ceremonial Candle quest's turn-in\nitem, dropped by NewbornFireElemental on death (see wandmaker_quest.py\n/ world.py's handle_mob_death). Inert for quest purposes, same as\nRotberrySeed.",
+      "properties": {
+        "kind": {
+          "const": "embers",
+          "default": "embers",
+          "type": "string"
+        },
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "name": {
+          "default": "smoldering embers",
+          "type": "string"
+        },
+        "type": {
+          "default": "misc",
+          "type": "string"
+        },
+        "pos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Position"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "quantity": {
+          "default": 1,
+          "type": "integer"
+        },
+        "level": {
+          "default": 0,
+          "type": "integer"
+        },
+        "level_known": {
+          "default": true,
+          "type": "boolean"
+        },
+        "cursed": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed_known": {
+          "default": true,
+          "type": "boolean"
+        },
+        "unique": {
+          "default": true,
+          "type": "boolean"
+        },
+        "kept_though_lost": {
+          "default": false,
+          "type": "boolean"
+        },
+        "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
         }
       },
       "type": "object"
@@ -10996,12 +11317,14 @@
                 "broken_seal": "#/$defs/BrokenSeal",
                 "cape_of_thorns": "#/$defs/CapeOfThorns",
                 "caustic_brew": "#/$defs/CausticBrew",
+                "ceremonial_candle": "#/$defs/CeremonialCandle",
                 "chalice_of_blood": "#/$defs/ChaliceOfBlood",
                 "chaotic_censer": "#/$defs/ChaoticCenser",
                 "chargrilled_meat": "#/$defs/ChargrilledMeat",
                 "chest": "#/$defs/Chest",
                 "cloak_of_shadows": "#/$defs/CloakOfShadows",
                 "cloth_armor": "#/$defs/ClothArmor",
+                "corpse_dust": "#/$defs/CorpseDust",
                 "cracked_spyglass": "#/$defs/CrackedSpyglass",
                 "cursed_wand": "#/$defs/CursedWand",
                 "dagger": "#/$defs/Dagger",
@@ -11018,6 +11341,7 @@
                 "elixir_of_icy_touch": "#/$defs/ElixirOfIcyTouch",
                 "elixir_of_might": "#/$defs/ElixirOfMight",
                 "elixir_of_toxic_essence": "#/$defs/ElixirOfToxicEssence",
+                "embers": "#/$defs/Embers",
                 "energy_crystal": "#/$defs/EnergyCrystal",
                 "ethereal_chains": "#/$defs/EtherealChains",
                 "exotic_crystals": "#/$defs/ExoticCrystals",
@@ -11099,6 +11423,7 @@
                 "ring_sharpshooting": "#/$defs/RingOfSharpshooting",
                 "ring_tenacity": "#/$defs/RingOfTenacity",
                 "ring_wealth": "#/$defs/RingOfWealth",
+                "rotberry_seed": "#/$defs/RotberrySeed",
                 "salt_cube": "#/$defs/SaltCube",
                 "sandals_of_nature": "#/$defs/SandalsOfNature",
                 "scale_armor": "#/$defs/ScaleArmor",
@@ -11680,6 +12005,18 @@
               },
               {
                 "$ref": "#/$defs/DwarfToken"
+              },
+              {
+                "$ref": "#/$defs/CorpseDust"
+              },
+              {
+                "$ref": "#/$defs/RotberrySeed"
+              },
+              {
+                "$ref": "#/$defs/CeremonialCandle"
+              },
+              {
+                "$ref": "#/$defs/Embers"
               },
               {
                 "$ref": "#/$defs/Petal"
@@ -13957,12 +14294,14 @@
                 "broken_seal": "#/$defs/BrokenSeal",
                 "cape_of_thorns": "#/$defs/CapeOfThorns",
                 "caustic_brew": "#/$defs/CausticBrew",
+                "ceremonial_candle": "#/$defs/CeremonialCandle",
                 "chalice_of_blood": "#/$defs/ChaliceOfBlood",
                 "chaotic_censer": "#/$defs/ChaoticCenser",
                 "chargrilled_meat": "#/$defs/ChargrilledMeat",
                 "chest": "#/$defs/Chest",
                 "cloak_of_shadows": "#/$defs/CloakOfShadows",
                 "cloth_armor": "#/$defs/ClothArmor",
+                "corpse_dust": "#/$defs/CorpseDust",
                 "cracked_spyglass": "#/$defs/CrackedSpyglass",
                 "cursed_wand": "#/$defs/CursedWand",
                 "dagger": "#/$defs/Dagger",
@@ -13979,6 +14318,7 @@
                 "elixir_of_icy_touch": "#/$defs/ElixirOfIcyTouch",
                 "elixir_of_might": "#/$defs/ElixirOfMight",
                 "elixir_of_toxic_essence": "#/$defs/ElixirOfToxicEssence",
+                "embers": "#/$defs/Embers",
                 "energy_crystal": "#/$defs/EnergyCrystal",
                 "ethereal_chains": "#/$defs/EtherealChains",
                 "exotic_crystals": "#/$defs/ExoticCrystals",
@@ -14060,6 +14400,7 @@
                 "ring_sharpshooting": "#/$defs/RingOfSharpshooting",
                 "ring_tenacity": "#/$defs/RingOfTenacity",
                 "ring_wealth": "#/$defs/RingOfWealth",
+                "rotberry_seed": "#/$defs/RotberrySeed",
                 "salt_cube": "#/$defs/SaltCube",
                 "sandals_of_nature": "#/$defs/SandalsOfNature",
                 "scale_armor": "#/$defs/ScaleArmor",
@@ -14643,6 +14984,18 @@
                 "$ref": "#/$defs/DwarfToken"
               },
               {
+                "$ref": "#/$defs/CorpseDust"
+              },
+              {
+                "$ref": "#/$defs/RotberrySeed"
+              },
+              {
+                "$ref": "#/$defs/CeremonialCandle"
+              },
+              {
+                "$ref": "#/$defs/Embers"
+              },
+              {
                 "$ref": "#/$defs/Petal"
               },
               {
@@ -14779,12 +15132,14 @@
                   "broken_seal": "#/$defs/BrokenSeal",
                   "cape_of_thorns": "#/$defs/CapeOfThorns",
                   "caustic_brew": "#/$defs/CausticBrew",
+                  "ceremonial_candle": "#/$defs/CeremonialCandle",
                   "chalice_of_blood": "#/$defs/ChaliceOfBlood",
                   "chaotic_censer": "#/$defs/ChaoticCenser",
                   "chargrilled_meat": "#/$defs/ChargrilledMeat",
                   "chest": "#/$defs/Chest",
                   "cloak_of_shadows": "#/$defs/CloakOfShadows",
                   "cloth_armor": "#/$defs/ClothArmor",
+                  "corpse_dust": "#/$defs/CorpseDust",
                   "cracked_spyglass": "#/$defs/CrackedSpyglass",
                   "cursed_wand": "#/$defs/CursedWand",
                   "dagger": "#/$defs/Dagger",
@@ -14801,6 +15156,7 @@
                   "elixir_of_icy_touch": "#/$defs/ElixirOfIcyTouch",
                   "elixir_of_might": "#/$defs/ElixirOfMight",
                   "elixir_of_toxic_essence": "#/$defs/ElixirOfToxicEssence",
+                  "embers": "#/$defs/Embers",
                   "energy_crystal": "#/$defs/EnergyCrystal",
                   "ethereal_chains": "#/$defs/EtherealChains",
                   "exotic_crystals": "#/$defs/ExoticCrystals",
@@ -14882,6 +15238,7 @@
                   "ring_sharpshooting": "#/$defs/RingOfSharpshooting",
                   "ring_tenacity": "#/$defs/RingOfTenacity",
                   "ring_wealth": "#/$defs/RingOfWealth",
+                  "rotberry_seed": "#/$defs/RotberrySeed",
                   "salt_cube": "#/$defs/SaltCube",
                   "sandals_of_nature": "#/$defs/SandalsOfNature",
                   "scale_armor": "#/$defs/ScaleArmor",
@@ -15463,6 +15820,18 @@
                 },
                 {
                   "$ref": "#/$defs/DwarfToken"
+                },
+                {
+                  "$ref": "#/$defs/CorpseDust"
+                },
+                {
+                  "$ref": "#/$defs/RotberrySeed"
+                },
+                {
+                  "$ref": "#/$defs/CeremonialCandle"
+                },
+                {
+                  "$ref": "#/$defs/Embers"
                 },
                 {
                   "$ref": "#/$defs/Petal"
@@ -15604,12 +15973,14 @@
                   "broken_seal": "#/$defs/BrokenSeal",
                   "cape_of_thorns": "#/$defs/CapeOfThorns",
                   "caustic_brew": "#/$defs/CausticBrew",
+                  "ceremonial_candle": "#/$defs/CeremonialCandle",
                   "chalice_of_blood": "#/$defs/ChaliceOfBlood",
                   "chaotic_censer": "#/$defs/ChaoticCenser",
                   "chargrilled_meat": "#/$defs/ChargrilledMeat",
                   "chest": "#/$defs/Chest",
                   "cloak_of_shadows": "#/$defs/CloakOfShadows",
                   "cloth_armor": "#/$defs/ClothArmor",
+                  "corpse_dust": "#/$defs/CorpseDust",
                   "cracked_spyglass": "#/$defs/CrackedSpyglass",
                   "cursed_wand": "#/$defs/CursedWand",
                   "dagger": "#/$defs/Dagger",
@@ -15626,6 +15997,7 @@
                   "elixir_of_icy_touch": "#/$defs/ElixirOfIcyTouch",
                   "elixir_of_might": "#/$defs/ElixirOfMight",
                   "elixir_of_toxic_essence": "#/$defs/ElixirOfToxicEssence",
+                  "embers": "#/$defs/Embers",
                   "energy_crystal": "#/$defs/EnergyCrystal",
                   "ethereal_chains": "#/$defs/EtherealChains",
                   "exotic_crystals": "#/$defs/ExoticCrystals",
@@ -15707,6 +16079,7 @@
                   "ring_sharpshooting": "#/$defs/RingOfSharpshooting",
                   "ring_tenacity": "#/$defs/RingOfTenacity",
                   "ring_wealth": "#/$defs/RingOfWealth",
+                  "rotberry_seed": "#/$defs/RotberrySeed",
                   "salt_cube": "#/$defs/SaltCube",
                   "sandals_of_nature": "#/$defs/SandalsOfNature",
                   "scale_armor": "#/$defs/ScaleArmor",
@@ -16288,6 +16661,18 @@
                 },
                 {
                   "$ref": "#/$defs/DwarfToken"
+                },
+                {
+                  "$ref": "#/$defs/CorpseDust"
+                },
+                {
+                  "$ref": "#/$defs/RotberrySeed"
+                },
+                {
+                  "$ref": "#/$defs/CeremonialCandle"
+                },
+                {
+                  "$ref": "#/$defs/Embers"
                 },
                 {
                   "$ref": "#/$defs/Petal"
@@ -16601,12 +16986,14 @@
                 "broken_seal": "#/$defs/BrokenSeal",
                 "cape_of_thorns": "#/$defs/CapeOfThorns",
                 "caustic_brew": "#/$defs/CausticBrew",
+                "ceremonial_candle": "#/$defs/CeremonialCandle",
                 "chalice_of_blood": "#/$defs/ChaliceOfBlood",
                 "chaotic_censer": "#/$defs/ChaoticCenser",
                 "chargrilled_meat": "#/$defs/ChargrilledMeat",
                 "chest": "#/$defs/Chest",
                 "cloak_of_shadows": "#/$defs/CloakOfShadows",
                 "cloth_armor": "#/$defs/ClothArmor",
+                "corpse_dust": "#/$defs/CorpseDust",
                 "cracked_spyglass": "#/$defs/CrackedSpyglass",
                 "cursed_wand": "#/$defs/CursedWand",
                 "dagger": "#/$defs/Dagger",
@@ -16623,6 +17010,7 @@
                 "elixir_of_icy_touch": "#/$defs/ElixirOfIcyTouch",
                 "elixir_of_might": "#/$defs/ElixirOfMight",
                 "elixir_of_toxic_essence": "#/$defs/ElixirOfToxicEssence",
+                "embers": "#/$defs/Embers",
                 "energy_crystal": "#/$defs/EnergyCrystal",
                 "ethereal_chains": "#/$defs/EtherealChains",
                 "exotic_crystals": "#/$defs/ExoticCrystals",
@@ -16704,6 +17092,7 @@
                 "ring_sharpshooting": "#/$defs/RingOfSharpshooting",
                 "ring_tenacity": "#/$defs/RingOfTenacity",
                 "ring_wealth": "#/$defs/RingOfWealth",
+                "rotberry_seed": "#/$defs/RotberrySeed",
                 "salt_cube": "#/$defs/SaltCube",
                 "sandals_of_nature": "#/$defs/SandalsOfNature",
                 "scale_armor": "#/$defs/ScaleArmor",
@@ -17285,6 +17674,18 @@
               },
               {
                 "$ref": "#/$defs/DwarfToken"
+              },
+              {
+                "$ref": "#/$defs/CorpseDust"
+              },
+              {
+                "$ref": "#/$defs/RotberrySeed"
+              },
+              {
+                "$ref": "#/$defs/CeremonialCandle"
+              },
+              {
+                "$ref": "#/$defs/Embers"
               },
               {
                 "$ref": "#/$defs/Petal"
@@ -20542,6 +20943,76 @@
       },
       "type": "object"
     },
+    "RotberrySeed": {
+      "description": "plants/Rotberry.java's Seed inner class -- the Rotberry quest's\nturn-in item, dropped by RotHeart on death (see wandmaker_quest.py /\nworld.py's handle_mob_death). Inert for quest purposes (no held-item\nside effect, unlike CorpseDust); the \"plant it to grow a new Rotberry\"\nflavor mechanic is a separate, unrelated Plant/Seed system this port\ndoesn't need to build out for the quest to work.",
+      "properties": {
+        "kind": {
+          "const": "rotberry_seed",
+          "default": "rotberry_seed",
+          "type": "string"
+        },
+        "id": {
+          "default": "",
+          "type": "string"
+        },
+        "name": {
+          "default": "seed of the rotberry",
+          "type": "string"
+        },
+        "type": {
+          "default": "misc",
+          "type": "string"
+        },
+        "pos": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Position"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "quantity": {
+          "default": 1,
+          "type": "integer"
+        },
+        "level": {
+          "default": 0,
+          "type": "integer"
+        },
+        "level_known": {
+          "default": true,
+          "type": "boolean"
+        },
+        "cursed": {
+          "default": false,
+          "type": "boolean"
+        },
+        "cursed_known": {
+          "default": true,
+          "type": "boolean"
+        },
+        "unique": {
+          "default": true,
+          "type": "boolean"
+        },
+        "kept_though_lost": {
+          "default": false,
+          "type": "boolean"
+        },
+        "for_sale": {
+          "default": false,
+          "type": "boolean"
+        },
+        "seen": {
+          "default": false,
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
     "SaltCube": {
       "properties": {
         "kind": {
@@ -20958,12 +21429,14 @@
                 "broken_seal": "#/$defs/BrokenSeal",
                 "cape_of_thorns": "#/$defs/CapeOfThorns",
                 "caustic_brew": "#/$defs/CausticBrew",
+                "ceremonial_candle": "#/$defs/CeremonialCandle",
                 "chalice_of_blood": "#/$defs/ChaliceOfBlood",
                 "chaotic_censer": "#/$defs/ChaoticCenser",
                 "chargrilled_meat": "#/$defs/ChargrilledMeat",
                 "chest": "#/$defs/Chest",
                 "cloak_of_shadows": "#/$defs/CloakOfShadows",
                 "cloth_armor": "#/$defs/ClothArmor",
+                "corpse_dust": "#/$defs/CorpseDust",
                 "cracked_spyglass": "#/$defs/CrackedSpyglass",
                 "cursed_wand": "#/$defs/CursedWand",
                 "dagger": "#/$defs/Dagger",
@@ -20980,6 +21453,7 @@
                 "elixir_of_icy_touch": "#/$defs/ElixirOfIcyTouch",
                 "elixir_of_might": "#/$defs/ElixirOfMight",
                 "elixir_of_toxic_essence": "#/$defs/ElixirOfToxicEssence",
+                "embers": "#/$defs/Embers",
                 "energy_crystal": "#/$defs/EnergyCrystal",
                 "ethereal_chains": "#/$defs/EtherealChains",
                 "exotic_crystals": "#/$defs/ExoticCrystals",
@@ -21061,6 +21535,7 @@
                 "ring_sharpshooting": "#/$defs/RingOfSharpshooting",
                 "ring_tenacity": "#/$defs/RingOfTenacity",
                 "ring_wealth": "#/$defs/RingOfWealth",
+                "rotberry_seed": "#/$defs/RotberrySeed",
                 "salt_cube": "#/$defs/SaltCube",
                 "sandals_of_nature": "#/$defs/SandalsOfNature",
                 "scale_armor": "#/$defs/ScaleArmor",
@@ -21642,6 +22117,18 @@
               },
               {
                 "$ref": "#/$defs/DwarfToken"
+              },
+              {
+                "$ref": "#/$defs/CorpseDust"
+              },
+              {
+                "$ref": "#/$defs/RotberrySeed"
+              },
+              {
+                "$ref": "#/$defs/CeremonialCandle"
+              },
+              {
+                "$ref": "#/$defs/Embers"
               },
               {
                 "$ref": "#/$defs/Petal"
@@ -26218,12 +26705,14 @@
                 "broken_seal": "#/$defs/BrokenSeal",
                 "cape_of_thorns": "#/$defs/CapeOfThorns",
                 "caustic_brew": "#/$defs/CausticBrew",
+                "ceremonial_candle": "#/$defs/CeremonialCandle",
                 "chalice_of_blood": "#/$defs/ChaliceOfBlood",
                 "chaotic_censer": "#/$defs/ChaoticCenser",
                 "chargrilled_meat": "#/$defs/ChargrilledMeat",
                 "chest": "#/$defs/Chest",
                 "cloak_of_shadows": "#/$defs/CloakOfShadows",
                 "cloth_armor": "#/$defs/ClothArmor",
+                "corpse_dust": "#/$defs/CorpseDust",
                 "cracked_spyglass": "#/$defs/CrackedSpyglass",
                 "cursed_wand": "#/$defs/CursedWand",
                 "dagger": "#/$defs/Dagger",
@@ -26240,6 +26729,7 @@
                 "elixir_of_icy_touch": "#/$defs/ElixirOfIcyTouch",
                 "elixir_of_might": "#/$defs/ElixirOfMight",
                 "elixir_of_toxic_essence": "#/$defs/ElixirOfToxicEssence",
+                "embers": "#/$defs/Embers",
                 "energy_crystal": "#/$defs/EnergyCrystal",
                 "ethereal_chains": "#/$defs/EtherealChains",
                 "exotic_crystals": "#/$defs/ExoticCrystals",
@@ -26321,6 +26811,7 @@
                 "ring_sharpshooting": "#/$defs/RingOfSharpshooting",
                 "ring_tenacity": "#/$defs/RingOfTenacity",
                 "ring_wealth": "#/$defs/RingOfWealth",
+                "rotberry_seed": "#/$defs/RotberrySeed",
                 "salt_cube": "#/$defs/SaltCube",
                 "sandals_of_nature": "#/$defs/SandalsOfNature",
                 "scale_armor": "#/$defs/ScaleArmor",
@@ -26902,6 +27393,18 @@
               },
               {
                 "$ref": "#/$defs/DwarfToken"
+              },
+              {
+                "$ref": "#/$defs/CorpseDust"
+              },
+              {
+                "$ref": "#/$defs/RotberrySeed"
+              },
+              {
+                "$ref": "#/$defs/CeremonialCandle"
+              },
+              {
+                "$ref": "#/$defs/Embers"
               },
               {
                 "$ref": "#/$defs/Petal"

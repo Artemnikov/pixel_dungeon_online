@@ -1,6 +1,6 @@
 import AudioManager from '../audio/AudioManager';
 import { INVIS_ALPHA } from '../constants';
-import { isWallTile } from '../rendering/sewers/constants';
+import { isDoorTile, isWallTile } from '../rendering/sewers/constants';
 import type { StateUpdateMessage, SerializedItem } from '../types/contract';
 import type { SyncCtx, RenderPlayer, RenderMob } from './types';
 
@@ -228,14 +228,19 @@ export function syncState(data: StateUpdateMessage, ctx: SyncCtx): void {
     // door room — would otherwise render as black gaps ("missing top_wall").
     // Lighting the wall neighbours of every visible *open* cell fills those gaps
     // at the same brightness as the floor they bound. (Intentional deviation
-    // from SPD, which fogs never-seen walls to solid black.)
+    // from SPD, which fogs never-seen walls to solid black.) Door tiles get the
+    // same treatment as walls here: a door cell is classified separately
+    // (isDoorTile, not isWallTile) but is just as ray-dependent to enter FOV,
+    // so a doorway just outside the shadowcast's exact rays was rendering as
+    // the same black gap as an un-revealed wall.
     const grid = gridRef.current;
+    const isShellTile = (tile: number | undefined) => isWallTile(tile) || isDoorTile(tile);
     for (const t of data.visible_tiles as Array<[number, number]>) {
       const x = t[0], y = t[1];
-      if (isWallTile(grid[y]?.[x])) continue; // spread out from open cells only
+      if (isShellTile(grid[y]?.[x])) continue; // spread out from open cells only
       for (const [dx, dy] of WALL_SHELL_OFFSETS) {
         const nx = x + dx, ny = y + dy;
-        if (isWallTile(grid[ny]?.[nx])) newVisible.add(`${nx},${ny}`);
+        if (isShellTile(grid[ny]?.[nx])) newVisible.add(`${nx},${ny}`);
       }
     }
     visionRef.current.visible = newVisible;

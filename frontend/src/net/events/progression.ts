@@ -9,7 +9,7 @@ export function handleProgressionEvents(event: GameEvent, ctx: HandlerCtx): bool
     onLevelUp, onSubclassChoiceAvailable, onArmorAbilityChoiceAvailable,
     onImbueWandChoiceAvailable, onTalentUpgraded, onMetamorphOpen, onMetamorphOptions,
     onGooFightStarted: _g, onTenguFightStarted: _t,
-    onShopOpen, onImpDialogue, onGhostDialogue, onScrollSelectTarget, onGhostGearOpen, onBossSlain, onGhostQuestGiven, onGhostQuestComplete,
+    onShopOpen, onImpDialogue, onGhostDialogue, onWandmakerDialogue, onScrollSelectTarget, onGhostGearOpen, onBossSlain, onGhostQuestGiven, onGhostQuestComplete,
     onStoneSelectTarget, onStoneIntuitionPickItem, onStoneIntuitionGuessKind, onStoneAugmentPickItem,
     onEnchantChoiceAvailable,
   } = ctx;
@@ -119,6 +119,23 @@ export function handleProgressionEvents(event: GameEvent, ctx: HandlerCtx): bool
     if (event.data.player === myPlayerIdRef.current) {
       AudioManager.play('BOSS');
       onGhostQuestComplete?.();
+    }
+    return true;
+  }
+
+  if (event.type === 'WANDMAKER_DIALOGUE') {
+    if (event.data.player === myPlayerIdRef.current) {
+      onWandmakerDialogue?.({
+        npc: event.data.npc, text: event.data.text,
+        can_claim: event.data.can_claim, wand1: event.data.wand1, wand2: event.data.wand2,
+      });
+    }
+    return true;
+  }
+
+  if (event.type === 'WANDMAKER_REWARD') {
+    if (event.data.player === myPlayerIdRef.current) {
+      AudioManager.play('CLICK');
     }
     return true;
   }

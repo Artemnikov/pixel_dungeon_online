@@ -193,6 +193,12 @@ class GhostClaimReward(_ClientMessageBase):
     choice: Literal["weapon", "armor"]
 
 
+class WandmakerClaimReward(_ClientMessageBase):
+    type: Literal["WANDMAKER_CLAIM_REWARD"]
+    npc_id: str
+    choice: Literal["wand1", "wand2"]
+
+
 class ChooseImbueWand(_ClientMessageBase):
     type: Literal["CHOOSE_IMBUE_WAND"]
     staff_id: str
@@ -326,6 +332,7 @@ ClientMessage = Annotated[
         ShopSell,
         ImpClaimReward,
         GhostClaimReward,
+        WandmakerClaimReward,
         SelectScrollTarget,
         SelectStoneTarget,
         StoneIntuitionChooseItem,

@@ -31,6 +31,7 @@ from app.engine.entities.items_potions import *
 from app.engine.entities.items_scrolls import *
 from app.engine.entities.items_consumable import *
 from app.engine.entities.items_artifacts import *
+from app.engine.entities.wandmaker_quest_items import CeremonialCandle, Embers, RotberrySeed
 
 
 class Scenery(ItemBase):
@@ -290,7 +291,7 @@ AnyItem = Annotated[
         RegrowthBomb, WoollyBomb, Noisemaker, ArcaneBomb, ShrapnelBomb,
         MetalShard,
         ArcaneStylus, MagicalInfusion,
-        GooBlob, DwarfToken, Petal,
+        GooBlob, DwarfToken, CorpseDust, RotberrySeed, CeremonialCandle, Embers, Petal,
         Chest,
         VelvetPouch, ScrollHolder, MagicalHolster, PotionBandolier, Bag,
         RatSkull, ParchmentScrap, PetrifiedSeed, ExoticCrystals,

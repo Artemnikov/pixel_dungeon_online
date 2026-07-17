@@ -292,6 +292,10 @@ export interface Player {
     | MagicalInfusion
     | GooBlob
     | DwarfToken
+    | CorpseDust
+    | RotberrySeed
+    | CeremonialCandle
+    | Embers
     | Petal
     | Chest
     | VelvetPouch
@@ -497,6 +501,10 @@ export interface Player {
         | MagicalInfusion
         | GooBlob
         | DwarfToken
+        | CorpseDust
+        | RotberrySeed
+        | CeremonialCandle
+        | Embers
         | Petal
         | Chest
         | VelvetPouch
@@ -703,6 +711,10 @@ export interface Player {
         | MagicalInfusion
         | GooBlob
         | DwarfToken
+        | CorpseDust
+        | RotberrySeed
+        | CeremonialCandle
+        | Embers
         | Petal
         | Chest
         | VelvetPouch
@@ -938,6 +950,10 @@ export interface Belongings {
         | MagicalInfusion
         | GooBlob
         | DwarfToken
+        | CorpseDust
+        | RotberrySeed
+        | CeremonialCandle
+        | Embers
         | Petal
         | Chest
         | VelvetPouch
@@ -1144,6 +1160,10 @@ export interface Belongings {
         | MagicalInfusion
         | GooBlob
         | DwarfToken
+        | CorpseDust
+        | RotberrySeed
+        | CeremonialCandle
+        | Embers
         | Petal
         | Chest
         | VelvetPouch
@@ -1350,6 +1370,10 @@ export interface Belongings {
         | MagicalInfusion
         | GooBlob
         | DwarfToken
+        | CorpseDust
+        | RotberrySeed
+        | CeremonialCandle
+        | Embers
         | Petal
         | Chest
         | VelvetPouch
@@ -1556,6 +1580,10 @@ export interface Belongings {
         | MagicalInfusion
         | GooBlob
         | DwarfToken
+        | CorpseDust
+        | RotberrySeed
+        | CeremonialCandle
+        | Embers
         | Petal
         | Chest
         | VelvetPouch
@@ -1762,6 +1790,10 @@ export interface Belongings {
         | MagicalInfusion
         | GooBlob
         | DwarfToken
+        | CorpseDust
+        | RotberrySeed
+        | CeremonialCandle
+        | Embers
         | Petal
         | Chest
         | VelvetPouch
@@ -1984,6 +2016,10 @@ export interface Bag {
     | MagicalInfusion
     | GooBlob
     | DwarfToken
+    | CorpseDust
+    | RotberrySeed
+    | CeremonialCandle
+    | Embers
     | Petal
     | Chest
     | VelvetPouch
@@ -5178,6 +5214,94 @@ export interface DwarfToken {
   for_sale?: boolean;
   seen?: boolean;
 }
+export interface CorpseDust {
+  kind?: "corpse_dust";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+}
+/**
+ * plants/Rotberry.java's Seed inner class -- the Rotberry quest's
+ * turn-in item, dropped by RotHeart on death (see wandmaker_quest.py /
+ * world.py's handle_mob_death). Inert for quest purposes (no held-item
+ * side effect, unlike CorpseDust); the "plant it to grow a new Rotberry"
+ * flavor mechanic is a separate, unrelated Plant/Seed system this port
+ * doesn't need to build out for the quest to work.
+ */
+export interface RotberrySeed {
+  kind?: "rotberry_seed";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+}
+/**
+ * items/quest/CeremonialCandle.java -- the Ceremonial Candle quest
+ * variant's collectible. 4 are queued as findPrizeItem() prizes when
+ * RitualSiteRoom is painted (see room_types.RitualSiteRoom); throwing or
+ * dropping one onto each of the 4 cells cardinally adjacent to the
+ * ritual's center completes the ritual (see world.py's
+ * _check_ritual_candles, hooked from item_actions.action_drop and
+ * movement.perform_ranged_attack). The `aflame` visual-only flag Java
+ * flips as candles land is dropped -- purely cosmetic, no gameplay effect.
+ */
+export interface CeremonialCandle {
+  kind?: "ceremonial_candle";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+}
+/**
+ * items/quest/Embers.java -- the Ceremonial Candle quest's turn-in
+ * item, dropped by NewbornFireElemental on death (see wandmaker_quest.py
+ * / world.py's handle_mob_death). Inert for quest purposes, same as
+ * RotberrySeed.
+ */
+export interface Embers {
+  kind?: "embers";
+  id?: string;
+  name?: string;
+  type?: string;
+  pos?: Position | null;
+  quantity?: number;
+  level?: number;
+  level_known?: boolean;
+  cursed?: boolean;
+  cursed_known?: boolean;
+  unique?: boolean;
+  kept_though_lost?: boolean;
+  for_sale?: boolean;
+  seen?: boolean;
+}
 export interface Petal {
   kind?: "petal";
   id?: string;
@@ -5377,6 +5501,10 @@ export interface Chest {
     | MagicalInfusion
     | GooBlob
     | DwarfToken
+    | CorpseDust
+    | RotberrySeed
+    | CeremonialCandle
+    | Embers
     | Petal
     | Chest
     | VelvetPouch
@@ -5600,6 +5728,10 @@ export interface VelvetPouch {
     | MagicalInfusion
     | GooBlob
     | DwarfToken
+    | CorpseDust
+    | RotberrySeed
+    | CeremonialCandle
+    | Embers
     | Petal
     | Chest
     | VelvetPouch
@@ -5821,6 +5953,10 @@ export interface ScrollHolder {
     | MagicalInfusion
     | GooBlob
     | DwarfToken
+    | CorpseDust
+    | RotberrySeed
+    | CeremonialCandle
+    | Embers
     | Petal
     | Chest
     | VelvetPouch
@@ -6042,6 +6178,10 @@ export interface MagicalHolster {
     | MagicalInfusion
     | GooBlob
     | DwarfToken
+    | CorpseDust
+    | RotberrySeed
+    | CeremonialCandle
+    | Embers
     | Petal
     | Chest
     | VelvetPouch
@@ -6263,6 +6403,10 @@ export interface PotionBandolier {
     | MagicalInfusion
     | GooBlob
     | DwarfToken
+    | CorpseDust
+    | RotberrySeed
+    | CeremonialCandle
+    | Embers
     | Petal
     | Chest
     | VelvetPouch

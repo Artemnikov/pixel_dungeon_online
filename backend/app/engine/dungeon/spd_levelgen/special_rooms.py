@@ -22,7 +22,9 @@ deferred to the Painter phase (Task #4) like the other room types."""
 from __future__ import annotations
 
 from app.engine.dungeon.spd_levelgen import terrain
+from app.engine.dungeon.spd_levelgen.generator import _random_armor, generator_random
 from app.engine.dungeon.spd_levelgen.geom import Point, gate
+from app.engine.dungeon.spd_levelgen.mob_spawner import GenMob
 from app.engine.dungeon.spd_levelgen.painter import Painter
 from app.engine.dungeon.spd_levelgen.room import DoorType
 from app.engine.dungeon.spd_levelgen.room_types import SecretRoom, SpecialRoom
@@ -1686,6 +1688,70 @@ def _pathfinder_build_distance_map(maze_w: int, maze_h: int, start: int, passabl
                 distance[n] = next_dist
 
     return distance
+
+
+class MassGraveRoom(SpecialRoom):
+    """Port of rooms/quest/MassGraveRoom.java -- Wandmaker quest room, Corpse
+    Dust variant (Prison depths 7-9, see run_state.WandmakerQuestState).
+    Reuses the existing Skeleton mob and CryptRoom's haunted-loot-heap
+    pattern (SKELETON heap type -> rendered as a container by spd_adapter's
+    _spawn_chest, same as CryptRoom's TOMB type). The purely cosmetic
+    `Bones` CustomTilemap overlay and Heap.setHauntedIfCursed() flourish are
+    dropped -- zero gameplay/RNG impact, and this engine has no
+    CustomTilemap/haunted-heap rendering layer to hang them on."""
+
+    def min_width(self) -> int:
+        return 7
+
+    def min_height(self) -> int:
+        return 7
+
+    def can_connect(self, r: "Room") -> bool:
+        # MassGraveRoom.canConnect(): must be at least 3 rooms from the
+        # entrance (walks up to 3 levels of r's connection graph).
+        if r.is_entrance():
+            return False
+        for r1 in r.connected.keys():
+            if r1.is_entrance():
+                return False
+            for r2 in r1.connected.keys():
+                if r2.is_entrance():
+                    return False
+                for r3 in r2.connected.keys():
+                    if r3.is_entrance():
+                        return False
+        return super().can_connect(r)
+
+    def paint(self, level, rng: SPDRandom) -> None:
+        entrance = self.entrance()
+        entrance.set(DoorType.BARRICADE)
+        level.add_item_to_spawn(frozenset())  # PotionOfLiquidFlame -- never a findPrizeItem match-target
+
+        Painter.fill(level, self, terrain.WALL)
+        Painter.fill(level, self, 1, terrain.CUSTOM_DECO_EMPTY)
+
+        for _ in range(rng.IntMax(2) + 1):
+            pos = level.point_to_cell(self.random(rng))
+            while level.map[pos] != terrain.CUSTOM_DECO_EMPTY or level.find_mob(pos) is not None:
+                pos = level.point_to_cell(self.random(rng))
+            level.mobs.append(GenMob(cls_name="Skeleton", pos=pos, depth=level.depth))
+
+        items = [frozenset({"CorpseDust"}), frozenset({"Gold", "qty:1"}), frozenset({"Gold", "qty:1"})]
+        if rng.Float() <= 0.3:
+            items.append(frozenset({"Gold", "qty:1"}))
+        if rng.Float() <= 0.3:
+            items.append(frozenset({"Gold", "qty:1"}))
+        if rng.Float() <= 0.6:
+            items.append(generator_random(level.run_state.generator_state, rng, level.depth))
+        if rng.Float() <= 0.3:
+            items.append(_random_armor(rng, level.depth))
+
+        for item in items:
+            pos = level.point_to_cell(self.random(rng))
+            while level.map[pos] != terrain.CUSTOM_DECO_EMPTY or level.heaps.get(pos) is not None:
+                pos = level.point_to_cell(self.random(rng))
+            heap = level.drop(item, pos)
+            heap.type = "SKELETON"
 
 
 class SecretGardenRoom(SecretRoom):

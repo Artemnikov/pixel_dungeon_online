@@ -88,6 +88,18 @@ import {
     IMP_FW,
    IMP_FH,
    IMP_DEST,
+   WANDMAKER_FW,
+   WANDMAKER_FH,
+   WANDMAKER_DEST,
+   ROT_HEART_FW,
+   ROT_HEART_FH,
+   ROT_HEART_DEST,
+   ROT_LASHER_FW,
+   ROT_LASHER_FH,
+   ROT_LASHER_DEST,
+   NEWBORN_ELEMENTAL_FW,
+   NEWBORN_ELEMENTAL_FH,
+   NEWBORN_ELEMENTAL_DEST,
    RATKING_FW,
    RATKING_FH,
    RATKING_DEST,
@@ -142,6 +154,10 @@ import {
   getSwarmFrame,
   getKeeperFrame,
   getImpFrame,
+  getWandmakerFrame,
+  getRotHeartFrame,
+  getRotLasherFrame,
+  getNewbornElementalFrame,
    getRatKingFrame,
    getSheepFrame,
 } from '../mobs';
@@ -309,7 +325,7 @@ export function drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef,
     } else if (mob.name === 'Necromancer') {
       mobSprite = assetImages.necromancer;
       sx = getNecromancerFrame(mob, mobAnimRef.current, now);
-    } else if (mob.name === 'Wraith' || mob.name === 'Tormented Spirit') {
+    } else if (mob.name === 'Wraith' || mob.name === 'Tormented Spirit' || mob.name === 'Dust Wraith') {
       mobSprite = assetImages.wraith;
       sx = getWraithFrame(mob, mobAnimRef.current, now);
     } else if (mob.name === 'Piranha' || mob.name === 'Phantom Piranha') {
@@ -387,6 +403,18 @@ export function drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef,
     } else if (mob.name === 'Imp') {
       mobSprite = assetImages.imp;
       sx = getImpFrame(mob, mobAnimRef.current, now);
+    } else if (mob.name === 'Wandmaker') {
+      mobSprite = assetImages.wandmaker;
+      sx = getWandmakerFrame(mob, mobAnimRef.current, now);
+    } else if (mob.name === 'Rot Heart') {
+      mobSprite = assetImages.rotHeart;
+      sx = getRotHeartFrame();
+    } else if (mob.name === 'Rot Lasher') {
+      mobSprite = assetImages.rotLasher;
+      sx = getRotLasherFrame();
+    } else if (mob.name === 'Newborn Fire Elemental') {
+      mobSprite = assetImages.elemental;
+      sx = getNewbornElementalFrame();
     } else if (mob.name === 'Rat King') {
       mobSprite = assetImages.ratking;
       sx = getRatKingFrame(mob, mobAnimRef.current, now);
@@ -422,7 +450,7 @@ export function drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef,
     const isDM200 = mob.name === 'DM-200' || mob.name === 'DM-201';
     const isGuard = mob.name === 'Guard';
     const isGoo = mob.name === 'Goo';
-    const isWraith = mob.name === 'Wraith' || mob.name === 'Tormented Spirit';
+    const isWraith = mob.name === 'Wraith' || mob.name === 'Tormented Spirit' || mob.name === 'Dust Wraith';
     const isPiranha = mob.name === 'Piranha';
     const isPhantomPiranha = mob.name === 'Phantom Piranha';
     const shamanRow = { 'Red Shaman': 0, 'Blue Shaman': 1, 'Purple Shaman': 2 }[mob.name];
@@ -452,6 +480,10 @@ export function drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef,
     const isArmoredBrute = mob.name === 'Armored Brute';
     const isShopkeeper = mob.name === 'Shopkeeper';
     const isImp = mob.name === 'Imp';
+    const isWandmaker = mob.name === 'Wandmaker';
+    const isRotHeart = mob.name === 'Rot Heart';
+    const isRotLasher = mob.name === 'Rot Lasher';
+    const isNewbornElemental = mob.name === 'Newborn Fire Elemental';
     const isRatKing = mob.name === 'Rat King';
     const isGhost = mob.name === 'Ghost' || mob.name === 'Ghost Hero';
     const isSheep = mob.name === 'Sheep';
@@ -536,6 +568,14 @@ export function drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef,
       drawMobSprite(ctx, mob, mobSprite, sx, KEEPER_FW, KEEPER_FH, flash, KEEPER_DEST);
     } else if (isImp) {
       drawMobSprite(ctx, mob, mobSprite, sx, IMP_FW, IMP_FH, flash, IMP_DEST);
+    } else if (isWandmaker) {
+      drawMobSprite(ctx, mob, mobSprite, sx, WANDMAKER_FW, WANDMAKER_FH, flash, WANDMAKER_DEST);
+    } else if (isRotHeart) {
+      drawMobSprite(ctx, mob, mobSprite, sx, ROT_HEART_FW, ROT_HEART_FH, flash, ROT_HEART_DEST);
+    } else if (isRotLasher) {
+      drawMobSprite(ctx, mob, mobSprite, sx, ROT_LASHER_FW, ROT_LASHER_FH, flash, ROT_LASHER_DEST);
+    } else if (isNewbornElemental) {
+      drawMobSprite(ctx, mob, mobSprite, sx, NEWBORN_ELEMENTAL_FW, NEWBORN_ELEMENTAL_FH, flash, NEWBORN_ELEMENTAL_DEST);
     } else if (isRatKing) {
       drawMobSprite(ctx, mob, mobSprite, sx, RATKING_FW, RATKING_FH, flash, RATKING_DEST);
     } else if (isGhost) {
@@ -572,7 +612,7 @@ export function drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef,
     // ('idle' is the default spawn state and maps to SPD's default SLEEPING
     // state). Shopkeeper/Imp are friendly NPCs that default to "sleeping" but
     // are awake (never_wakes just means their AI never transitions) - skip them.
-    if ((mob.ai_state === 'sleeping' || mob.ai_state === 'idle') && !isShopkeeper && !isImp && !isSheep && assetImages.icons) {
+    if ((mob.ai_state === 'sleeping' || mob.ai_state === 'idle') && !isShopkeeper && !isImp && !isWandmaker && !isSheep && assetImages.icons) {
       const pulse = 1 + 0.1 * (Math.sin(now * 0.008) + 1);
       const dw = SLEEP_ICON_W * 2 * pulse;
       const dh = SLEEP_ICON_H * 2 * pulse;

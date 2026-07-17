@@ -284,6 +284,7 @@ function App() {
     onShopOpen: modals.onShopOpen,
     onImpDialogue: modals.onImpDialogue,
     onGhostDialogue: modals.onGhostDialogue,
+    onWandmakerDialogue: modals.onWandmakerDialogue,
     onChasmPrompt: modals.onChasmPrompt,
     onGhostQuestGiven: () => setGhostQuestGiven(true),
     onGhostQuestComplete: () => setGhostQuestGiven(false),

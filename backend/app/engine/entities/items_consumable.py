@@ -352,6 +352,33 @@ class GooBlob(ItemBase):
         return 30 * self.quantity
 
 
+class CorpseDust(ItemBase):
+    # Wandmaker quest item, Corpse Dust variant (SPD items.quest.CorpseDust):
+    # unique, always identified/cursed-known, and -- unlike normal items --
+    # can't be dropped or thrown (actions() below mirrors Java's actions()
+    # returning an empty list). While held it attaches a `dust_ghost_spawner`
+    # buff that periodically summons DustWraiths near the holder (see
+    # movement.py's pickup handler, tick.py's per-player buff loop, and
+    # wandmaker_quest.py for the DustWraith mob itself). Only removed via
+    # world.py's wandmaker_claim_reward (no generic on-detach hook exists in
+    # this engine for non-equippable items, so the dispel lives there).
+    kind: Literal["corpse_dust"] = "corpse_dust"
+    name: str = "dust of the corpse"
+    type: str = "misc"
+    category: ClassVar[str] = ItemCategory.MISC
+    unique: bool = True
+    cursed: bool = True
+    cursed_known: bool = True
+    level_known: bool = True
+    DESC: ClassVar[str] = (
+        "A handful of grim, gritty dust that seems to writhe in your grasp. "
+        "You feel it stirring things that would rather stay buried."
+    )
+
+    def actions(self, player: Optional["Player"] = None) -> List[str]:
+        return []
+
+
 class DwarfToken(ItemBase):
     # Imp quest reward token (SPD items.quest.DwarfToken): stackable, always
     # identified, dropped by Golems/Monks once the quest is given. Not sellable.

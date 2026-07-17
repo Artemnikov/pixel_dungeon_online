@@ -393,6 +393,21 @@ export interface GhostRewardEvent {
   data: { player: string; npc: string; item: string };
 }
 
+/** Wandmaker NPC dialogue (quest offer / reminder / reward-ready). */
+export interface WandmakerDialogueEvent {
+  type: 'WANDMAKER_DIALOGUE';
+  data: {
+    player: string; npc: string; text: string; can_claim: boolean;
+    wand1?: SerializedItem | null; wand2?: SerializedItem | null;
+  };
+}
+
+/** Player claimed one of the Wandmaker's two reward wands (Wandmaker persists). */
+export interface WandmakerRewardEvent {
+  type: 'WANDMAKER_REWARD';
+  data: { player: string; npc: string; item: string };
+}
+
 export interface GhostSummonEvent {
   type: 'GHOST_SUMMON';
   data: { player: string; ghost_id: string; x: number; y: number };
@@ -1002,6 +1017,8 @@ export type GameEvent =
   | ImpRewardEvent
   | GhostDialogueEvent
   | GhostRewardEvent
+  | WandmakerDialogueEvent
+  | WandmakerRewardEvent
   | GhostSummonEvent
   | GhostDirectEvent
   | GhostGearOpenEvent

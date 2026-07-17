@@ -160,6 +160,35 @@ export const IMP_FW = 12;
 export const IMP_FH = 14;
 export const IMP_DEST = { dx: 4, dy: 4, dw: 24, dh: 28 };
 
+// Wandmaker: 12x14 frames (WandmakerSprite TextureFilm(texture, 12, 14)), wandmaker.png.
+// Centered/bottom-aligned in the 32px tile, scaled 2x -> 24x28 @ +4,+4 (same as Imp).
+export const WANDMAKER_FW = 12;
+export const WANDMAKER_FH = 14;
+export const WANDMAKER_DEST = { dx: 4, dy: 4, dw: 24, dh: 28 };
+
+// RotHeart: 16x16 frames (RotHeartSprite TextureFilm(texture, 16, 16)),
+// rot_heart.png. 16px sprite at 2x scale = full 32x32 tile, no offset needed.
+export const ROT_HEART_FW = 16;
+export const ROT_HEART_FH = 16;
+export const ROT_HEART_DEST = { dx: 0, dy: 0, dw: 32, dh: 32 };
+
+// RotLasher: 12x16 frames (RotLasherSprite TextureFilm(texture, 12, 16)),
+// rot_lasher.png. Centered/bottom-aligned in the 32px tile, scaled 2x -> 24x32 @ +4,0.
+export const ROT_LASHER_FW = 12;
+export const ROT_LASHER_FH = 16;
+export const ROT_LASHER_DEST = { dx: 4, dy: 0, dw: 24, dh: 32 };
+
+// NewbornFireElemental: 12x14 frames (ElementalSprite TextureFilm(texture,
+// 12, 14)), elemental.png -- a shared sheet for all 5 Elemental variants,
+// each occupying a 14-frame block (texOffset 0/14/28/42/56 for Fire/
+// NewbornFire/Frost/Shock/Chaos); only NewbornFire is reachable in this
+// port (Wandmaker quest), so only that block is wired. Centered/bottom-
+// aligned in the 32px tile, scaled 2x -> 24x28 @ +4,+4 (same as Imp).
+export const NEWBORN_ELEMENTAL_FW = 12;
+export const NEWBORN_ELEMENTAL_FH = 14;
+export const NEWBORN_ELEMENTAL_DEST = { dx: 4, dy: 4, dw: 24, dh: 28 };
+const NEWBORN_ELEMENTAL_TEX_OFFSET = 14;
+
 // Rat King: 16x17 frames (RatKingSprite TextureFilm(texture, 16, 17)), ratking.png.
 // Centered/bottom-aligned in the 32px tile, scaled 2x -> 32x34 @ 0,-2.
 export const RATKING_FW = 16;
@@ -708,6 +737,22 @@ export const getKeeperFrame = (mob, mobAnim, now) =>
 // cycle of frames 0/4 with occasional 1-3), demon.png, 12x14 frames.
 export const getImpFrame = (mob, mobAnim, now) =>
   [0, 0, 0, 1, 2, 3, 0, 0, 0, 4, 4, 4, 4, 4, 4][Math.floor(now / 100) % 15] * IMP_FW;
+
+// Faithful to original SPD WandmakerSprite (12x14 frames, wandmaker.png):
+//   idle 10fps loop [0*14, 1,2,3,3,3,3,3,3,2,1] -- long static hold, brief wobble
+export const getWandmakerFrame = (mob, mobAnim, now) =>
+  [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2, 3, 3, 3, 3, 3, 3, 2, 1][Math.floor(now / 100) % 24] * WANDMAKER_FW;
+
+// Faithful to original SPD RotHeartSprite/RotLasherSprite (both static
+// single-frame idles, animation reserved for attack/die which don't need a
+// frame-loop function here):
+export const getRotHeartFrame = () => 0;
+export const getRotLasherFrame = () => 0;
+
+// Static single frame (idle's first frame, texOffset+0) -- see module note
+// on NewbornFire's shared-sheet block; full 3-frame idle loop skipped as a
+// low-value animation-fidelity simplification (RotHeart/RotLasher precedent).
+export const getNewbornElementalFrame = () => NEWBORN_ELEMENTAL_TEX_OFFSET * NEWBORN_ELEMENTAL_FW;
 
 // Faithful to original SPD RatKingSprite (16x17 frames, ratking.png):
 //   idle 2fps loop [0,0,0,1]

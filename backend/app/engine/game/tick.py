@@ -25,7 +25,8 @@ from typing import List, Optional, Type
 
 from app.engine.dungeon.generator import TileType
 from app.engine.entities.base import Faction, is_immune, Position
-from app.engine.entities.items_consumable import ChargrilledMeat, FrozenCarpaccio, Gold, MysteryMeat
+from app.engine.entities.items_consumable import ChargrilledMeat, CorpseDust, FrozenCarpaccio, Gold, MysteryMeat
+from app.engine.entities.wandmaker_quest import DustWraith, NewbornFireElemental, RotLasher
 from app.engine.entities.items_wands import Wand
 from app.engine.entities.player import Difficulty, Effect, Player
 from app.engine.entities.buffs import add_buff, get_buff, has_buff, is_frozen, process_buffs, remove_buff
@@ -142,6 +143,7 @@ class TickMixin:
                 dmg = max(1, bleed.level)
                 player.take_damage(dmg)
                 self.add_event("DAMAGE", {"target": player.id, "amount": dmg, "bleed": True})
+            self._tick_dust_ghost_spawner(player)
         for floor_id in active_ids:
             floor = self.floors[floor_id]
             for mob in floor.mobs.values():
@@ -455,6 +457,10 @@ class TickMixin:
                     if self._update_dm200(mob, floor, floor_id):
                         continue
 
+                if isinstance(mob, NewbornFireElemental):
+                    if self._update_newborn_elemental(mob, floor, floor_id):
+                        continue
+
                 move_times = getattr(self, "_mob_move_times", None)
                 if move_times is None:
                     move_times = self._mob_move_times = {}
@@ -592,6 +598,30 @@ class TickMixin:
                 # "idle" is our default spawn state and maps to SPD's default
                 # SLEEPING state (almost every mob starts asleep).
                 if target_player is None and mob.ai_state in ("idle", "sleeping"):
+                    continue
+
+                # Char.Property.IMMOVABLE (getCloser()/getFurther() both
+                # false in SPD): never chases, only attacks (bump-into, same
+                # mechanism the difficulty branches below use) a target
+                # already within range. Not itself difficulty-gated in SPD,
+                # so this intercepts before the branches below.
+                if isinstance(mob, RotLasher) and mob.hp < mob.max_hp and dist > 1:
+                    # RotLasher.act(): heals 5/turn whenever no enemy is
+                    # directly adjacent (checked before the IMMOVABLE
+                    # short-circuit below, same as Java's ordering).
+                    mob.hp = min(mob.max_hp, mob.hp + 5)
+
+                if "IMMOVABLE" in getattr(mob, "properties", []):
+                    if target_player and dist <= atk_range:
+                        if not mob.engaged:
+                            mob.engaged = True
+                            mob.last_attack_time = time.time() - max(
+                                0.0, mob.attack_cooldown - mob.aggro_windup
+                            )
+                        dx, dy = target_player.pos.x - mob.pos.x, target_player.pos.y - mob.pos.y
+                        self.move_entity(mob.id, dx, dy)
+                    else:
+                        mob.engaged = False
                     continue
 
                 in_attack_range = target_player is not None and dist <= atk_range
@@ -1130,6 +1160,56 @@ class TickMixin:
         if 0 <= y < len(floor.grid) and 0 <= x < len(floor.grid[0]) \
                 and floor.grid[y][x] == TileType.FLOOR_WATER:
             entity.add_buff("chill", duration=5.0, level=1, stack_mode="extend")
+
+    def _tick_dust_ghost_spawner(self, player: Player) -> None:
+        """CorpseDust.DustGhostSpawner.act(): while the cursed Corpse Dust
+        quest item is held, escalating "spawn power" periodically summons a
+        DustWraith in the holder's FOV, at least view_distance/3 cells away.
+        Buff.level doubles as the spawnPower counter (same repurposing the
+        "bleeding" buff's level already uses above for its damage amount)."""
+        dust_buff = get_buff(player.buffs, "dust_ghost_spawner")
+        if dust_buff is None:
+            return
+        if not any(isinstance(i, CorpseDust) for i in player.inventory):
+            dust_buff.level = 0
+            return
+
+        dust_buff.level += 1
+        floor = self._get_or_create_floor(player.floor_id)
+        wraiths = 1 + sum(1 for m in floor.mobs.values() if isinstance(m, DustWraith) and m.is_alive)
+        power_needed = min(49, wraiths * wraiths)
+        if power_needed > dust_buff.level:
+            return
+
+        view_dist = self._view_distance(player)
+        fov = self._fov_from(player.pos, floor, view_dist, viewer_id=player.id)
+        min_dist = round(view_dist / 3)
+        occupied = {(m.pos.x, m.pos.y) for m in floor.mobs.values() if m.is_alive}
+        occupied |= {(p.pos.x, p.pos.y) for p in self._players_on_floor(player.floor_id) if p.is_alive}
+        candidates = []
+        for cell_idx, visible in enumerate(fov):
+            if not visible:
+                continue
+            x, y = cell_idx % floor.width, cell_idx // floor.width
+            if floor.flags and floor.flags.solid[y][x]:
+                continue
+            if (x, y) in occupied:
+                continue
+            if self._get_distance(player.pos, Position(x=x, y=y)) <= min_dist:
+                continue
+            candidates.append((x, y))
+
+        if not candidates:
+            # Prevents excessive spawn power buildup while no cell qualifies.
+            dust_buff.level = min(dust_buff.level, 2 * wraiths)
+            return
+
+        x, y = random.choice(candidates)
+        wraith = self._spawn_mob_at(DustWraith, x, y)
+        wraith.ai_state = "hunting"
+        _apply_floor_scaling(wraith, player.floor_id)
+        floor.mobs[wraith.id] = wraith
+        dust_buff.level -= power_needed
 
     def _check_state_buff(self, entity, x, y, floor_id):
         for buff_name, effect_type in self.STATE_BUFF_MAP.items():

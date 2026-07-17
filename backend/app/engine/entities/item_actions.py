@@ -32,6 +32,7 @@ from app.engine.dungeon.constants import TileType
 from app.engine.entities.base import Action, Position
 from app.engine.entities.runestones import Runestone
 from app.engine.entities.items_consumable import Seed, Waterskin
+from app.engine.entities.wandmaker_quest_items import CeremonialCandle
 from app.engine.entities.items_equip import SpiritBow
 from app.engine.entities.items_potions import Potion
 from app.engine.entities.items_wands import Wand
@@ -85,6 +86,8 @@ def action_drop(game, player, item, tx=None, ty=None) -> None:
     player.quickslot.clear_item(detached.id)
     _floor_drop(game, player, detached)
     game.add_event("DROP", {"player": player.id, "item": detached.id, "item_name": detached.name}, floor_id=player.floor_id)
+    if isinstance(detached, CeremonialCandle):
+        game._check_ritual_candles(player.floor_id)
 
 
 def action_drink_waterskin(game, player, item, tx=None, ty=None) -> None:
