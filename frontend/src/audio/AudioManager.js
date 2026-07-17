@@ -10,6 +10,7 @@ import hitStabSound from '../assets/sounds/hit_stab.mp3';
 import hitCrushSound from '../assets/sounds/hit_crush.mp3';
 import hitParrySound from '../assets/sounds/hit_parry.mp3';
 import healthWarnSound from '../assets/pixel-dungeon/audio/health_warn.mp3';
+import healthCriticalSound from '../assets/pixel-dungeon/audio/health_critical.mp3';
 import clickSound from '../assets/pixel-dungeon/audio/click.mp3';
 import itemSound from '../assets/sounds/item.mp3';
 import deathSound from '../assets/sounds/death.mp3';
@@ -77,6 +78,7 @@ class AudioManager {
         this.loadSound('HIT_STRONG', hitStrongSound);
         this.loadSound('HIT_BODY', hitBodySound);
         this.loadSound('HEALTH_WARN', healthWarnSound);
+        this.loadSound('HEALTH_CRITICAL', healthCriticalSound);
         this.loadSound('CLICK', clickSound);
         this.loadSound('PICKUP', itemSound);
         this.loadSound('DEATH', deathSound);

@@ -117,12 +117,10 @@ def test_goo_does_not_freeze_when_player_starts_diagonally_adjacent():
 
 def test_goo_can_chase_through_rat_king_room():
     # On the boss floor, floor.rooms includes the Rat King secret room as
-    # rooms[-1] (and the entrance as rooms[0]) - _is_in_safe_room() treats
-    # both as off-limits to non-player mobs so wandering mobs don't spawn
-    # there. But this room's bounding box can overlap Goo's own arena, and
-    # move_entity() applied that same restriction to the boss itself,
-    # permanently trapping Goo on its spawn tile whenever its only step
-    # toward the hero fell inside that box.
+    # rooms[-1], which can overlap Goo's own arena. Regression test for the
+    # since-removed safe-room movement restriction, which used to trap Goo
+    # on its spawn tile whenever its only step toward the hero fell inside
+    # that room's bounding box.
     game = GameInstance("test-goo-ratking-room")
     game.players = {}
     game.grid = [[TileType.FLOOR for _ in range(20)] for _ in range(20)]

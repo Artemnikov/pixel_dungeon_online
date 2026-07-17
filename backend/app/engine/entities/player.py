@@ -210,6 +210,23 @@ class Mob(Entity):
     def die(self, attacker=None, floor_mobs=None, tile_x=0, tile_y=0, players=None):
         pass
 
+def hurt_warning_sound(damage_dealt: int, post_hp: int, max_hp: int) -> Optional[str]:
+    """SPD Hero.damage(): picks between the low-health warning sound and the
+    louder critical one based on a "flash intensity" combining how much of
+    current HP was just lost and how little HP remains. Audio-only port —
+    SPD also flashes the screen red at the same intensity; not replicated here.
+    """
+    if damage_dealt <= 0 or post_hp <= 0 or max_hp <= 0:
+        return None
+    pre_hp = post_hp + damage_dealt
+    percent_dmg = damage_dealt / pre_hp
+    percent_hp = post_hp / max_hp
+    flash_intensity = 0.25 * percent_dmg * percent_dmg / percent_hp
+    if flash_intensity < 0.05:
+        return None
+    return "HEALTH_CRITICAL" if flash_intensity >= 1 / 6 else "HEALTH_WARN"
+
+
 class Player(Entity):
     type: str = EntityType.PLAYER
     faction: str = Faction.PLAYER
