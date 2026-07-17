@@ -201,27 +201,6 @@ class GenerationMixin:
 
         return floor
 
-    def _is_in_safe_room(self, floor: FloorState, x: int, y: int) -> bool:
-        if not floor.rooms:
-            return False
-
-        start_room = floor.rooms[0]
-        end_room = floor.rooms[-1]
-
-        if (
-            start_room.x <= x < start_room.x + start_room.width
-            and start_room.y <= y < start_room.y + start_room.height
-        ):
-            return True
-
-        if (
-            end_room.x <= x < end_room.x + end_room.width
-            and end_room.y <= y < end_room.y + end_room.height
-        ):
-            return True
-
-        return False
-
     def _is_in_entrance_room(self, floor: FloorState, x: int, y: int) -> bool:
         if not floor.rooms:
             return False
@@ -278,20 +257,16 @@ class GenerationMixin:
             ]
         ]
 
-        unsafe_floor_tiles = [
-            pos for pos in floor_tiles if not self._is_in_safe_room(floor, pos[0], pos[1])
-        ]
-
         self._spawn_floor_keys(floor)
         blocked_item_tiles = {
             (item.pos.x, item.pos.y) for item in floor.items.values() if item.pos is not None
         }
         if blocked_item_tiles:
             floor_tiles = [pos for pos in floor_tiles if pos not in blocked_item_tiles]
-            unsafe_floor_tiles = [pos for pos in unsafe_floor_tiles if pos not in blocked_item_tiles]
+        mob_spawn_tiles = list(floor_tiles)
 
         if floor.floor_id % 5 == 0:
-            self._spawn_boss(floor, unsafe_floor_tiles)
+            self._spawn_boss(floor, mob_spawn_tiles)
 
         if floor.floor_id != 5 and floor.floor_id != 10:
             if floor.floor_id <= SEWERS_MAX_FLOOR:
@@ -321,9 +296,9 @@ class GenerationMixin:
 
             spawn_count = mob_limit if floor.floor_id != 1 else min(mob_limit, len(rotation) * 2)
             for i in range(spawn_count):
-                if not unsafe_floor_tiles:
+                if not mob_spawn_tiles:
                     break
-                x, y = unsafe_floor_tiles.pop(random.randint(0, len(unsafe_floor_tiles) - 1))
+                x, y = mob_spawn_tiles.pop(random.randint(0, len(mob_spawn_tiles) - 1))
                 cls = rotation[i % len(rotation)]
                 rare_cls = rare_alts.get(cls)
                 if rare_cls and random.random() < rare_chance:

@@ -60,6 +60,13 @@ from app.engine.game.ai_spinner import SpinnerAIMixin
 from app.engine.game.ai_dm200 import DM200AIMixin
 from app.engine.game.ai_newborn_elemental import NewbornFireElementalAIMixin
 from app.engine.game.ai_guard import GuardAIMixin
+from app.engine.game.player_tick import PlayerTickMixin
+from app.engine.game.mob_ai_dispatch import MobAIDispatchMixin
+from app.engine.game.mob_ai_movement import MobAIMovementMixin
+from app.engine.game.damage_over_time import DamageOverTimeMixin
+from app.engine.game.spawning import SpawnTickMixin
+from app.engine.game.status_effects_tick import StatusEffectsTickMixin
+from app.engine.game.player_regen import PlayerRegenMixin
 from app.engine.game.tick import TickMixin
 from app.engine.game.vision import VisionMixin
 from app.engine.game.world import WorldInteractionMixin
@@ -95,6 +102,13 @@ class GameInstance(
     DM200AIMixin,
     NewbornFireElementalAIMixin,
     GuardAIMixin,
+    PlayerTickMixin,
+    MobAIDispatchMixin,
+    MobAIMovementMixin,
+    DamageOverTimeMixin,
+    SpawnTickMixin,
+    StatusEffectsTickMixin,
+    PlayerRegenMixin,
     TickMixin,
     ArmorAbilitiesMixin,
     TalentsMixin,

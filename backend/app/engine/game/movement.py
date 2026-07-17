@@ -31,7 +31,7 @@ from app.engine.entities.items_consumable import Amulet, CorpseDust, Dewdrop, En
 from app.engine.entities.items_equip import Bow, MissileWeapon, SpiritBow, Staff
 from app.engine.entities.items_potions import RevivingPotion
 from app.engine.entities.items_wands import Wand, ZapContext
-from app.engine.entities.player import Mob as MobEntity, Player, Weapon
+from app.engine.entities.player import Mob as MobEntity, Player, Weapon, hurt_warning_sound
 from app.engine.entities.buffs import add_buff, get_buff, has_buff, is_frozen, remove_buff
 from app.engine.entities.mobs import CrystalMimic, DM300, Goo, Shopkeeper, Wraith
 from app.engine.entities.wandmaker_quest_items import CeremonialCandle
@@ -391,8 +391,9 @@ class MovementCombatMixin:
                         # covered by the broadcast HIT_BODY above.
                         self.add_event("PLAY_SOUND", {"sound": "HIT_BODY"}, floor_id=floor_id, source_player_id=target_entity.id)
                     if isinstance(target_entity, Player):
-                        if target_entity.hp / target_entity.get_total_max_hp() <= 0.3:
-                            self.add_event("PLAY_SOUND", {"sound": "HEALTH_WARN"}, player_id=target_entity.id)
+                        warn_sound = hurt_warning_sound(dmg, target_entity.hp, target_entity.get_total_max_hp())
+                        if warn_sound:
+                            self.add_event("PLAY_SOUND", {"sound": warn_sound}, player_id=target_entity.id)
                     if isinstance(target_entity, Goo) and isinstance(entity, Player):
                         self._goo_add_locked_floor_time(floor_id, entity, dmg)
 
@@ -461,15 +462,6 @@ class MovementCombatMixin:
             return
 
         if not floor.flags or not floor.flags.passable[new_y][new_x]:
-            return
-
-        # Boss mobs (e.g. Goo) live and fight inside their arena, which can
-        # overlap the level's entrance/secret rooms (e.g. the boss floor's
-        # Rat King room) - the safe-room movement restriction is meant to
-        # keep regular wandering mobs out of entrance/exit rooms, not to trap
-        # a boss inside its own spawn room.
-        if (not isinstance(entity, Player) and getattr(entity, "type", None) != "boss"
-                and self._is_in_safe_room(floor, new_x, new_y)):
             return
 
         old_x, old_y = entity.pos.x, entity.pos.y
@@ -834,8 +826,9 @@ class MovementCombatMixin:
 
                 if isinstance(target_entity, Player):
                     self.add_event("PLAY_SOUND", {"sound": "HIT_BODY"}, floor_id=floor_id, source_player_id=target_entity.id)
-                    if target_entity.hp / target_entity.get_total_max_hp() <= 0.3:
-                        self.add_event("PLAY_SOUND", {"sound": "HEALTH_WARN"}, player_id=target_entity.id)
+                    warn_sound = hurt_warning_sound(damage_dealt, target_entity.hp, target_entity.get_total_max_hp())
+                    if warn_sound:
+                        self.add_event("PLAY_SOUND", {"sound": warn_sound}, player_id=target_entity.id)
                 if isinstance(target_entity, Goo):
                     self._goo_add_locked_floor_time(floor_id, player, damage_dealt)
 

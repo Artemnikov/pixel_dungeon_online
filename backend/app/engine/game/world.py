@@ -27,7 +27,7 @@ from app.engine.dungeon.generator import TileType
 from app.engine.entities.base import Position
 from app.engine.entities.items_consumable import Key
 from app.engine.entities.items_equip import Armor, LeatherArmor, MailArmor, PlateArmor, ScaleArmor, make_named_melee_weapon
-from app.engine.entities.player import CharacterClass, Item, Player
+from app.engine.entities.player import CharacterClass, Item, Player, hurt_warning_sound
 from app.engine.entities.items_consumable import CorpseDust, DwarfToken
 from app.engine.entities.mobs import Imp, Shopkeeper
 from app.engine.entities.quest_bosses import FetidRat, Ghost, GnollTrickster, GreatCrab
@@ -628,8 +628,9 @@ class WorldInteractionMixin:
         if dealt > 0:
             self.add_event("DAMAGE", {"target": player.id, "amount": dealt}, floor_id=floor_id)
             self.add_event("PLAY_SOUND", {"sound": "HIT_BODY"}, floor_id=floor_id, source_player_id=player.id)
-            if player.hp / max(1, player.get_total_max_hp()) <= 0.3:
-                self.add_event("PLAY_SOUND", {"sound": "HEALTH_WARN"}, player_id=player.id)
+            warn_sound = hurt_warning_sound(dealt, player.hp, player.get_total_max_hp())
+            if warn_sound:
+                self.add_event("PLAY_SOUND", {"sound": warn_sound}, player_id=player.id)
 
     # -- Shop / NPC interaction --------------------------------------------
 
