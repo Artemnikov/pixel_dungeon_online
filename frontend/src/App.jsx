@@ -4,6 +4,7 @@ import './styles/index.css';
 
 import CharacterSelection from './CharacterSelection';
 import MainMenu from './menu/MainMenu';
+import RoomSelection from './menu/RoomSelection';
 import { TILE_SIZE, TILE_SCALE, MIN_ZOOM, MAX_DPR } from './constants';
 import useAudioUnlock from './audio/useAudioUnlock';
 import useMusicByDepth from './audio/useMusicByDepth';
@@ -91,7 +92,7 @@ function readResumeBundle() {
     if (!session || !raw) return null;
     const run = JSON.parse(raw);
     if (!run || typeof run !== 'object' || !run.class) return null;
-    return { session, class: run.class, difficulty: run.difficulty || 'normal', name: run.name || '', challenges: run.challenges || '' };
+    return { session, class: run.class, difficulty: run.difficulty || 'normal', name: run.name || '', challenges: run.challenges || '', gameId: run.gameId || 'public' };
   } catch {
     return null;
   }
@@ -112,7 +113,9 @@ function App() {
   const [playerName, setPlayerName] = useState(RESUME?.name || '');
   const [difficulty, setDifficulty] = useState(RESUME?.difficulty || 'normal');
   const [challenges, setChallenges] = useState(RESUME?.challenges || '');
-  const [gameId] = useState('default-lobby');
+  const [gameId, setGameId] = useState(RESUME?.gameId || 'public');
+  const [roomPassword, setRoomPassword] = useState('');
+  const [roomJoinError, setRoomJoinError] = useState('');
   const [sessionId, setSessionId] = useState(
     () => sessionStorage.getItem(RESUME_SESSION_KEY) || ''
   );
@@ -290,8 +293,12 @@ function App() {
 
   const { sendSelectScrollTarget, sendStoneTarget } = useGameSocket({
     enabled: gameState === 'PLAYING',
-    gameId, sessionId, selectedClass, difficulty, challenges, playerName,
+    gameId, roomPassword, sessionId, selectedClass, difficulty, challenges, playerName,
     setConnectionStatus,
+    onRoomRejected: (reason) => {
+      setRoomJoinError(reason || 'Could not join room');
+      setGameState('ROOMS');
+    },
     socketRef, gridRef, myPlayerIdRef, entitiesRef,
     visionRef, openDoorsRef, projectilesRef,
     trapsRef, customTilesRef, customWallsRef, torchesRef,
@@ -704,7 +711,30 @@ function App() {
         <meta name="description" content={t('app.descWelcome')} />
         <div className={isDesktop ? 'desktop-mode' : ''}
              style={isDesktop ? { '--cursor-mouse': mouseCursorVal } : {}}>
-          <MainMenu onStart={() => setGameState('SELECT')} />
+          <MainMenu onStart={() => setGameState('ROOMS')} />
+        </div>
+      </>
+    );
+  }
+
+  if (gameState === 'ROOMS') {
+    return (
+      <>
+        <title>{t('app.titleSelect')}</title>
+        <meta name="description" content={t('app.descSelect')} />
+        <div className={isDesktop ? 'desktop-mode' : ''}
+             style={isDesktop ? { '--cursor-mouse': mouseCursorVal } : {}}>
+          <RoomSelection
+            onJoin={(roomId, password) => {
+              setRoomJoinError('');
+              setGameId(roomId);
+              setRoomPassword(password || '');
+              setGameState('SELECT');
+            }}
+            onBack={() => setGameState('WELCOME')}
+            joinError={roomJoinError}
+            onDismissError={() => setRoomJoinError('')}
+          />
         </div>
       </>
     );
@@ -717,7 +747,7 @@ function App() {
         <meta name="description" content={t('app.descSelect')} />
         <div className={isDesktop ? 'desktop-mode' : ''}
              style={isDesktop ? { '--cursor-mouse': mouseCursorVal } : {}}>
-          <CharacterSelection onSelect={(c, d, n, strongerBosses) => {
+          <CharacterSelection showDifficulty={gameId !== 'public'} onSelect={(c, d, n, strongerBosses) => {
             const runChallenges = strongerBosses ? 'stronger_bosses' : '';
             setSelectedClass(c);
             setDifficulty(d);
@@ -725,7 +755,7 @@ function App() {
             setPlayerName(n);
             const newSession = crypto.randomUUID();
             sessionStorage.setItem(RESUME_SESSION_KEY, newSession);
-            sessionStorage.setItem(RESUME_RUN_KEY, JSON.stringify({ class: c, difficulty: d, name: n, challenges: runChallenges }));
+            sessionStorage.setItem(RESUME_RUN_KEY, JSON.stringify({ class: c, difficulty: d, name: n, challenges: runChallenges, gameId }));
             if (n) localStorage.setItem('opd_last_name', n);
             setSessionId(newSession);
             setGameState('PLAYING');

@@ -11,7 +11,11 @@
     "hideMenu": "Скрыть меню",
     "close": "Закрыть",
     "closeShop": "Закрыть магазин",
-    "language": "Язык"
+    "language": "Язык",
+    "activePlayers_one": "{{count}} игрок онлайн",
+    "activePlayers_few": "{{count}} игрока онлайн",
+    "activePlayers_many": "{{count}} игроков онлайн",
+    "activePlayers_other": "{{count}} игрока онлайн"
   },
   "panel": {
     "changes": "Изменения",
@@ -71,6 +75,26 @@
     "normal": "СРЕДНЕ",
     "hard": "НОРМА"
   },
+  "rooms": {
+    "title": "Выберите комнату",
+    "joinPublic": "Общая комната",
+    "online": "онлайн",
+    "groupsTitle": "Группы",
+    "loading": "Загрузка комнат…",
+    "noGroups": "Пока нет групп — создайте свою ниже.",
+    "join": "Войти",
+    "locked": "Защищено паролем",
+    "passwordPlaceholder": "Пароль",
+    "cancel": "Отмена",
+    "createTitle": "Создать группу",
+    "namePlaceholder": "Название группы",
+    "passwordOptionalPlaceholder": "Пароль (необязательно)",
+    "create": "Создать",
+    "back": "Назад",
+    "rejected": "Не удалось войти: {{reason}}",
+    "reasonWrongPassword": "неверный пароль",
+    "reasonRoomFull": "комната заполнена"
+  },
   "app": {
     "titleWelcome": "Online Pixel Dungeon — мультиплеерный рогалик",
     "descWelcome": "Мультиплеерный рогалик-подземелье, основанный на Shattered Pixel Dungeon. Играйте онлайн бесплатно в браузере, без скачивания.",
@@ -91,9 +115,10 @@
     "newSubclass": "Доступен новый подкласс!",
     "newAbility": "Доступна новая броневая способность!",
     "tierUnlocked": "Тир {{tier}} открыт!",
-    "talentPoints_0": "{{count}} очков талантов",
-    "talentPoints_1": "{{count}} очко таланта",
-    "talentPoints_2": "{{count}} очка талантов",
+    "talentPoints_one": "{{count}} очко таланта",
+    "talentPoints_few": "{{count}} очка талантов",
+    "talentPoints_many": "{{count}} очков талантов",
+    "talentPoints_other": "{{count}} очка талантов",
     "tapToView": "Нажмите для просмотра",
     "points": "Очки: {{current}}/{{max}}",
     "upgrade": "Улучшить",

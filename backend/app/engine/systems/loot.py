@@ -3,6 +3,7 @@ import uuid
 from typing import Dict, List, Optional
 
 from app.engine.entities.base import ItemBase, Position
+from app.engine.game.constants import party_loot_multiplier
 from app.engine.entities.items_consumable import Gold, GooBlob, Key, KingsCrown, MysteryMeat, Seed, TenguMask
 from app.engine.entities.items_equip import ClothArmor, LeatherArmor, MailArmor, make_named_melee_weapon, PlateArmor, ScaleArmor
 from app.engine.entities.items_potions import HealthPotion, Potion
@@ -37,6 +38,11 @@ RANDOM_POTIONS = [
     "heal",
 ]
 
+# Party-size loot scaling applies only to potion/scroll kinds (see
+# party_loot_multiplier) -- other loot (gold, weapons, armor, quest items)
+# is left at its solo rate.
+_PARTY_SCALED_KINDS = {"potion", "health_potion", "scroll"}
+
 
 def roll_drops(
     mob: Mob,
@@ -46,22 +52,37 @@ def roll_drops(
     players: Optional[List] = None,
 ) -> List[ItemBase]:
     items: List[ItemBase] = []
+    party_mult = 1.0
+    if players:
+        alive_n = sum(1 for p in players if getattr(p, "is_alive", True))
+        party_mult = party_loot_multiplier(alive_n)
+
     for entry in mob.loot_table:
         if entry.max_global > 0 and drop_counters.get(entry.item_kind, 0) >= entry.max_global:
             continue
-        if random.random() >= entry.chance:
+        # chance can exceed 1.0 once party-scaled; each whole point is a
+        # guaranteed copy and the remainder is one more Bernoulli trial (same
+        # accumulator idiom as the CrackedSpyglass bonus below).
+        chance = entry.chance * party_mult if entry.item_kind in _PARTY_SCALED_KINDS else entry.chance
+        count = 0
+        while chance > 0:
+            if random.random() < min(chance, 1.0):
+                count += 1
+            chance -= 1.0
+        if count == 0:
             continue
         if entry.item_kind == "tengu_mask" and players:
             if not any(p.subclass_info.subclass is None for p in players):
                 continue
-        item = _make_item(entry.item_kind)
-        if item is None:
-            continue
-        item.id = str(uuid.uuid4())
-        item.pos = Position(x=death_x, y=death_y)
-        items.append(item)
+        for _ in range(count):
+            item = _make_item(entry.item_kind)
+            if item is None:
+                continue
+            item.id = str(uuid.uuid4())
+            item.pos = Position(x=death_x, y=death_y)
+            items.append(item)
         if entry.max_global > 0:
-            drop_counters[entry.item_kind] = drop_counters.get(entry.item_kind, 0) + 1
+            drop_counters[entry.item_kind] = drop_counters.get(entry.item_kind, 0) + count
 
     for wd in mob.weighted_drops:
         if wd.max_global > 0 and drop_counters.get(wd.item_kind, 0) >= wd.max_global:

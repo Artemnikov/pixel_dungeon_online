@@ -64,3 +64,14 @@ RESPAWN_SPAWN_PROTECTION_TURNS = 3
 # the starting bounds. Per-floor dimensions live on FloorState.width/height.
 MAP_WIDTH = 60
 MAP_HEIGHT = 40
+
+# Party-size loot scaling (online-only, no SPD equivalent): potion/scroll
+# drop rate scales linearly with co-op party size, from 1x solo to 3x at a
+# 5-player party (+0.5x per player beyond the first).
+PARTY_LOOT_MAX_PLAYERS = 5
+PARTY_LOOT_STEP = 0.5
+
+
+def party_loot_multiplier(player_count: int) -> float:
+    n = max(1, min(PARTY_LOOT_MAX_PLAYERS, player_count))
+    return 1.0 + PARTY_LOOT_STEP * (n - 1)

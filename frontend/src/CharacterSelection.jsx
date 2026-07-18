@@ -42,7 +42,7 @@ function HeroBust({ sheet, scale = 3, selected }) {
   );
 }
 
-const CharacterSelection = ({ onSelect }) => {
+const CharacterSelection = ({ onSelect, showDifficulty = true }) => {
   const { t } = useTranslation();
   const [selectedClass, setSelectedClass] = useState('warrior');
   const [difficulty, setDifficulty] = useState('normal');
@@ -127,20 +127,22 @@ const CharacterSelection = ({ onSelect }) => {
         <p className="hero-desc">{t(`hero.classes.${heroId}.desc`)}</p>
 
         <div className="hero-options">
-          <div className="hero-difficulty">
-            <span className="hero-opt-label">{t('hero.difficulty')}</span>
-            <div className="hero-diff-btns">
-              {['easy', 'normal', 'hard'].map(d => (
-                <button
-                  key={d}
-                  className={`hero-diff-btn ${difficulty === d ? 'active' : ''}`}
-                  onClick={() => { AudioManager.play('CLICK'); setDifficulty(d); }}
-                >
-                  {t(`hero.${d}`)}
-                </button>
-              ))}
+          {showDifficulty && (
+            <div className="hero-difficulty">
+              <span className="hero-opt-label">{t('hero.difficulty')}</span>
+              <div className="hero-diff-btns">
+                {['easy', 'normal', 'hard'].map(d => (
+                  <button
+                    key={d}
+                    className={`hero-diff-btn ${difficulty === d ? 'active' : ''}`}
+                    onClick={() => { AudioManager.play('CLICK'); setDifficulty(d); }}
+                  >
+                    {t(`hero.${d}`)}
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+          )}
           <label className="hero-challenge-toggle">
             <input
               type="checkbox"
