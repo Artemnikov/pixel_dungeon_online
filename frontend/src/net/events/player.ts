@@ -15,6 +15,8 @@ import { forceAlertMob } from '../../rendering/draw/mobs';
 import { spawnSparkMoving } from '../../rendering/draw/sparkParticle';
 import { spawnLightning } from '../../rendering/draw/lightning';
 import { spawnToxicGas, spawnCorrosiveGas, spawnConfusionGas } from '../../rendering/draw/gasParticle';
+import { spawnWaterRipple } from '../../rendering/draw/waterRipple';
+import { isWaterTile } from '../../rendering/sewers/constants';
 import { addGameLog } from '../../ui/gameLogHelpers';
 import type { GameEvent } from '../../types/contract';
 import type { HandlerCtx } from '../types';
@@ -205,14 +207,14 @@ export function handlePlayerEvents(event: GameEvent, ctx: HandlerCtx): boolean {
   }
 
   if (event.type === 'TRAP_TRIGGERED') {
-    const player = entitiesRef.current.players[event.data.player];
+    const entity = entitiesRef.current.players[event.data.player] || entitiesRef.current.mobs[event.data.player];
     const isElectric = event.data.trap === 'shocking_trap' || event.data.trap === 'storm_trap';
     if (event.data.player === myPlayerIdRef.current) {
       addGameLog(`You trigger a ${event.data.trap} trap${event.data.damage ? ` for ${event.data.damage} damage` : ''}`, 'negative');
     }
-    if (player) {
-      const cx = player.renderPos.x * TILE_SIZE + TILE_SIZE / 2;
-      const cy = player.renderPos.y * TILE_SIZE;
+    if (entity) {
+      const cx = entity.renderPos.x * TILE_SIZE + TILE_SIZE / 2;
+      const cy = entity.renderPos.y * TILE_SIZE;
       if (isElectric) {
         AudioManager.play('LIGHTNING');
         if (event.data.x != null && event.data.y != null) {
@@ -256,7 +258,8 @@ export function handlePlayerEvents(event: GameEvent, ctx: HandlerCtx): boolean {
     const tileY = event.data.y;
     const tileType = ctx.gridRef.current[tileY]?.[tileX];
     const isDoor = tileType === 3;
-    if (event.data.entity === myPlayerIdRef.current) {
+    const isMe = event.data.entity === myPlayerIdRef.current;
+    if (isMe) {
       if (isDoor) AudioManager.play('DOOR_OPEN');
       else if (tileType) AudioManager.playStep(tileType);
       else AudioManager.play('MOVE');
@@ -265,6 +268,23 @@ export function handlePlayerEvents(event: GameEvent, ctx: HandlerCtx): boolean {
       if (visible?.has(`${tileX},${tileY}`)) {
         if (isDoor) AudioManager.play('DOOR_OPEN');
         else AudioManager.play(event.type);
+      }
+    }
+    // Port of CharSprite.move()'s `if (water[from] && !ch.flying) GameScene.ripple(from)`.
+    // Uses the arrival tile (what this event carries, and what STEP_WATER
+    // sound above already keys off) rather than SPD's departure tile.
+    if (isWaterTile(tileType)) {
+      const entityVisible = isMe || !!visionRef?.current?.visible?.has(`${tileX},${tileY}`);
+      if (entityVisible) {
+        const entityId = event.data.entity;
+        const playerEnt = entitiesRef.current?.players?.[entityId];
+        const mobEnt = entitiesRef.current?.mobs?.[entityId];
+        const flying = playerEnt
+          ? (playerEnt.active_effects || []).some((e) => e.key === 'levitation')
+          : !!mobEnt?.flying;
+        if (!flying) {
+          spawnWaterRipple(tileX * TILE_SIZE + TILE_SIZE / 2, tileY * TILE_SIZE + TILE_SIZE / 2);
+        }
       }
     }
     return true;
