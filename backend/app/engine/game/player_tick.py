@@ -104,10 +104,12 @@ class PlayerTickMixin:
         hf_factor = player.get_hold_fast_decay_factor()
         hf_tick = hf_factor >= 1.0 or random.random() < hf_factor
 
-        # Broken Seal (all Warriors): once triggered (see Player.take_damage),
-        # the shield holds until no enemies are nearby for a couple of
-        # turns; unused shield then reduces the remaining cooldown by up
-        # to 50%. The cooldown itself ticks down toward 0 regardless.
+        # Broken Seal (WarriorShield.act): once triggered (see
+        # Player.take_damage), the shield holds until no enemies are nearby
+        # for 5 turns; unused shield then reduces the remaining cooldown by
+        # up to 50%. The cooldown itself ticks down toward 0 regardless of
+        # Hold Fast (only the no-enemy counter is slowed). Combo keeps the
+        # shield from decaying (treated as enemies nearby).
         if player.seal_affixed:
             seal_shield = player.get_shield("broken_seal")
             if seal_shield is not None:
@@ -117,17 +119,17 @@ class PlayerTickMixin:
                     and max(abs(m.pos.x - player.pos.x), abs(m.pos.y - player.pos.y)) <= player.get_view_distance()
                     for m in floor.mobs.values()
                 )
-                if nearby:
+                if nearby or player.combo_count > 0:
                     player.seal_no_enemy_ticks = 0
                 else:
-                    player.seal_no_enemy_ticks += 1
-                    if player.seal_no_enemy_ticks >= 2:
-                        max_shield = max(1, player.get_broken_seal_max_shield())
-                        unused_frac = seal_shield.amount / max_shield
-                        player.seal_cooldown -= round(150 * unused_frac * 0.5)
+                    player.seal_no_enemy_ticks += hf_factor
+                    if player.seal_no_enemy_ticks >= 5:
+                        initial = max(1, player.seal_initial_shield)
+                        unused_frac = seal_shield.amount / initial
+                        player.seal_cooldown = max(0, player.seal_cooldown - round(150 * unused_frac * 0.5))
                         player.shields = [s for s in player.shields if s.name != "broken_seal"]
                         player.seal_no_enemy_ticks = 0
-            if player.seal_cooldown > 0 and hf_tick:
+            if player.seal_cooldown > 0:
                 player.seal_cooldown -= 1
 
         if player.berserk_active:

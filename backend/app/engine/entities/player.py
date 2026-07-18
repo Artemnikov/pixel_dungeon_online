@@ -254,6 +254,10 @@ class Player(Entity):
     websocket_id: Optional[str] = None
     is_downed: bool = False
     death_processed: bool = False
+    # SPD Hero.Doom cause flavour (mirrors Chasm implementing Hero.Doom). Set by
+    # chasm-fall damage so the death screen can show "You fell to death..." and
+    # the DEATH event can carry death_cause. Cleared on resurrect.
+    death_cause: Optional[str] = None
     # True while the hero's WS is disconnected (grace window before reap kills
     # them) -- non-solid ghost: skipped by collision/AI targeting, "(AFK)" tag
     # shown above their head client-side.
@@ -323,8 +327,12 @@ class Player(Entity):
     # trigger its shield again. 150 on trigger, can go negative via Lethal
     # Defense (instant re-trigger once <= 0).
     seal_cooldown: int = 0
-    # Ticks since a hostile mob was last nearby, while the seal shield is up.
-    seal_no_enemy_ticks: int = 0
+    # Turns since a hostile mob was last nearby, while the seal shield is up.
+    # Float to support Hold Fast's buffDecayFactor (0/0.25/0.5/1.0 per turn).
+    seal_no_enemy_ticks: float = 0.0
+    # maxShield() snapshot at activation time — used for the cooldown refund
+    # ratio when the shield decays with no enemies nearby (WarriorShield.act).
+    seal_initial_shield: int = 0
 
     # Endure (warrior armor ability): banked outgoing-damage bonus
     endure_damage_bonus: float = 0.0
@@ -459,19 +467,29 @@ class Player(Entity):
         if pa > 0 and amount > 0:
             add_buff(self.buffs, "provoked_anger_tracker", duration=3.0, level=1)
 
-        # Broken Seal (all Warriors): a hit that drops HP to <=50% (from
-        # above 50%) grants instant shielding, then starts a 150-turn
-        # cooldown (BrokenSeal.java / WarriorShield).
+        # Broken Seal (WarriorShield): a hit that drops HP to <=50% (or
+        # HP is already at <=50%) grants instant shielding, then starts a
+        # 150-turn cooldown (Char.java:937-946 / WarriorShield.activate).
+        # The freshly-activated shield absorbs part of the incoming hit.
+        max_hp = self.get_total_max_hp()
+        seal_max = self.get_broken_seal_max_shield()
         if (
-            self.seal_affixed
+            seal_max > 0
             and self.seal_cooldown <= 0
             and amount > 0
-            and self.hp > self.get_total_max_hp() * 0.5
-            and self.hp - amount <= self.get_total_max_hp() * 0.5
+            and (
+                self.hp <= max_hp * 0.5
+                or self.hp + self.get_total_shield() - amount <= max_hp * 0.5
+            )
         ):
-            self.add_shield("broken_seal", self.get_broken_seal_max_shield(), priority=2, decay=0)
+            self.add_shield("broken_seal", seal_max, priority=2, decay=0)
             self.seal_cooldown = 150
             self.seal_no_enemy_ticks = 0
+            self.seal_initial_shield = seal_max
+
+        # Shield absorption (SPD ShieldBuff.processDamage): shields absorb
+        # damage before it reaches HP, by priority (highest first).
+        amount = self.process_shields(amount)
 
         self.hp -= amount
         if self.hp <= 0:
@@ -536,11 +554,21 @@ class Player(Entity):
         base_shield = 8 + (2 * armor.level if isinstance(armor, Armor) else 0)
         return round(base_shield * shield_mult)
 
+    def get_total_shield(self) -> int:
+        """Total shielding from all active shield entries (SPD shielding())."""
+        return sum(s.amount for s in self.shields)
+
     def get_broken_seal_max_shield(self) -> int:
-        """Broken Seal (all Warriors): maxShield = 3 + 2*armorTier + IRON_WILL pts."""
+        """Broken Seal (WarriorShield.maxShield): requires Iron Will talent
+        to be upgraded. Base = 3 + 2*armorTier, +1/+2 per Iron Will point.
+        Returns 0 if seal not affixed or Iron Will not upgraded."""
+        if not self.seal_affixed:
+            return 0
+        iw = self.subclass_info.talent_info.level(Talent.IRON_WILL)
+        if iw <= 0:
+            return 0
         armor = self.belongings.armor
         armor_tier = armor.tier if isinstance(armor, Armor) else 0
-        iw = self.subclass_info.talent_info.level(Talent.IRON_WILL)
         return 3 + 2 * armor_tier + iw
 
     def get_hold_fast_dr_range(self) -> Tuple[int, int]:
@@ -551,8 +579,9 @@ class Player(Entity):
         return (hf, 2 * hf)
 
     def get_hold_fast_decay_factor(self) -> float:
-        """Hold Fast (warrior T3): while stationary, combo/shield decay and
-        the Broken Seal cooldown tick at 50%/25%/0% of normal speed for +1/+2/+3."""
+        """Hold Fast (warrior T3): while stationary, combo decay and the
+        Broken Seal no-enemy counter tick at 50%/25%/0% of normal speed
+        for +1/+2/+3 (HoldFast.buffDecayFactor)."""
         hf = self.subclass_info.talent_info.level(Talent.HOLD_FAST)
         if hf <= 0 or self.stationary_ticks <= 0:
             return 1.0

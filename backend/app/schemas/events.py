@@ -56,6 +56,9 @@ class DeathData(_EventData):
     loot_dropped: Optional[bool] = None
     respawns_used: Optional[int] = None
     max_respawns: Optional[int] = None
+    # SPD Hero.Doom cause flavour ("fall" -> "You fell to death..."). None for
+    # ordinary combat deaths; mirrors Chasm.onDeath vs. the default death path.
+    death_cause: Optional[str] = None
 
 
 class MoveData(_EventData):
@@ -376,6 +379,35 @@ class ChasmPromptData(_EventData):
     y: int
 
 
+class ChasmFallData(_EventData):
+    # SPD Chasm.heroFall -> InterlevelScene.Mode.FALL -> heroLand. Carries
+    # everything the client needs to drive the fall transition: who fell, whether
+    # it's a new-deepest floor (so GameScene.java's DESCEND sound plays on land),
+    # whether the ElixirOfFeatherFall buff negated the impact, and the WeakFloorRoom
+    # flag threaded from Chasm.heroFall (fall_into_pit biases the landing cell in
+    # RegularLevel.fallCell; stubbed false until PitRoom generation exists).
+    player: str
+    first_visit: bool
+    feather: bool = False
+    fall_into_pit: bool = False
+
+
+class ScreenShakeData(_EventData):
+    # SPD PixelScene.shake(magnitude, durationSec). Emitted for chasm-land impact
+    # and any other server-driven camera shake; the client spawns a screen-shake
+    # effect of matching intensity/duration.
+    intensity: int
+    duration_ms: int
+
+
+class MobChasmFallData(_EventData):
+    # SPD Chasm.mobFall: mob dies and MobSprite.fall() plays a shrink animation.
+    # Carries the mob id + cell so the client can play the fall VFX + FALLING sound.
+    mob: str
+    x: int
+    y: int
+
+
 class MessageData(_EventData):
     text: str
     color: Optional[str] = None
@@ -574,6 +606,9 @@ EVENT_MODELS = {
     "TENGU_BADGE_QUALIFIED": TenguBadgeQualifiedData,
     "GOO_BADGE_QUALIFIED": GooBadgeQualifiedData,
     "CHASM_PROMPT": ChasmPromptData,
+    "CHASM_FALL": ChasmFallData,
+    "SCREEN_SHAKE": ScreenShakeData,
+    "MOB_CHASM_FALL": MobChasmFallData,
     "IMP_DIALOGUE": ImpDialogueData,
     "IMP_REWARD": ImpRewardData,
     "GHOST_DIALOGUE": GhostDialogueData,

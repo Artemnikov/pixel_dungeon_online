@@ -15,6 +15,7 @@ import useCanvasControls from './input/useCanvasControls';
 import useScaledCursor from './input/useScaledCursor';
 import { resolveTapAction } from './input/resolveTap';
 import { isFloorFadeActive } from './rendering/floorTransition';
+import { createShieldFxRef } from './rendering/draw/shieldHalo';
 import LoreOverlay from './ui/LoreOverlay';
 import TutorialOverlay from './ui/TutorialOverlay';
 import { getLoreForDepth } from './game/loreTexts';
@@ -156,6 +157,7 @@ function App() {
   const [respawnsUsed, setRespawnsUsed] = useState(0);
   const [maxRespawns, setMaxRespawns] = useState(3);
   const [lootDropped, setLootDropped] = useState(false);
+  const [deathCause, setDeathCause] = useState(null);
   const [ghostQuestGiven, setGhostQuestGiven] = useState(false);
   const [showBossSlainBanner, setShowBossSlainBanner] = useState(false);
   const [bossSlainData, setBossSlainData] = useState(null);
@@ -221,7 +223,7 @@ function App() {
   const beamRef = useRef([]);
   const blobAreasRef = useRef({});
   const lightningRef = useRef([]);
-  const shieldHaloRef = useRef([]);
+  const shieldHaloRef = createShieldFxRef();
   const stateEffectsRef = useRef([]);
   const surpriseRef = useRef([]);
   const flyingItemsRef = useRef([]);
@@ -346,6 +348,7 @@ function App() {
       setRespawnsUsed(data.respawns_used ?? 0);
       setMaxRespawns(data.max_respawns ?? 3);
       setLootDropped(!!data.loot_dropped);
+      setDeathCause(data.death_cause ?? null);
     },
   });
 
@@ -966,6 +969,7 @@ function App() {
           respawnsUsed={respawnsUsed}
           maxRespawns={maxRespawns}
           lootDropped={lootDropped}
+          deathCause={deathCause}
           onResurrect={() => send({ type: 'RESURRECT' })}
           onNewGame={() => { clearResumeBundle(); resetForRestart(); setGameState('SELECT'); }}
           onMenu={() => { clearResumeBundle(); resetForRestart(); setGameState('WELCOME'); }}

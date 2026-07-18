@@ -15,6 +15,7 @@ export default function GameOverScreen({
   talentDefs,
   inventory,
   scoreBreakdown,
+  deathCause,
   onNewGame,
   onMenu,
 }) {
@@ -62,7 +63,7 @@ export default function GameOverScreen({
             letterSpacing: '2px',
           }}
         >
-          {t('game.youDied')}
+          {deathCause === 'fall' ? t('game.youDiedFell', 'You fell to death...') : t('game.youDied')}
         </div>
         {scoreBreakdown && (
           <div className="game-over-score" style={{ pointerEvents: 'auto' }}>

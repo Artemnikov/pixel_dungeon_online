@@ -246,7 +246,7 @@ def test_confirm_chasm_fall_applies_damage_cripple_and_bleed():
     assert player.bleed_turns > 0
 
 
-def test_confirm_chasm_fall_emits_damage_screen_shake_and_falling_sound():
+def test_confirm_chasm_fall_emits_chasm_fall_damage_screen_shake_and_descend_sound():
     game, floor, player = make_chasm_fall_game()
     player.pending_chasm_fall = (3, 2)
 
@@ -254,11 +254,14 @@ def test_confirm_chasm_fall_emits_damage_screen_shake_and_falling_sound():
 
     events = game.flush_events()
     event_types = [e["type"] for e in events]
+    # CHASM_FALL replaces the old backend FALLING sound — the client plays
+    # FALLING when it sees CHASM_FALL in the floor-change event set.
+    assert "CHASM_FALL" in event_types
     assert "DAMAGE" in event_types
     assert "SCREEN_SHAKE" in event_types
     sounds = [e["data"]["sound"] for e in events if e["type"] == "PLAY_SOUND"]
-    # Mirrors SPD Chasm.heroFall(): Sample.INSTANCE.play(Assets.Sounds.FALLING).
-    assert "FALLING" in sounds
+    # SPD GameScene.java: DESCEND sound on entering a new deepest floor via FALL.
+    assert "STAIRS_DOWN" in sounds
 
 
 def test_confirm_chasm_fall_rejected_at_max_floor_id():
@@ -271,3 +274,68 @@ def test_confirm_chasm_fall_rejected_at_max_floor_id():
 
     assert player.floor_id == MAX_FLOOR_ID
     assert player.pending_chasm_fall is None
+
+
+def test_chasm_fall_sets_death_cause_when_fatal():
+    from unittest.mock import patch
+    from app.engine.entities.player import Player
+    game, floor, player = make_chasm_fall_game()
+    player.pending_chasm_fall = (3, 2)
+    # Patch the class method to guarantee a lethal fall (the damage formula
+    # max(hp//2, randint(hp//2, max_hp//4)) can roll 0 at 1 HP).
+    def lethal(self, amount):
+        self.hp = 0
+        self.is_downed = True
+        self.is_alive = False
+        return amount
+
+    with patch.object(Player, 'take_damage', lethal):
+        game.confirm_chasm_fall(player.id, 3, 2)
+
+    assert not player.is_alive
+    assert player.death_cause == "fall"
+
+
+def test_chasm_fall_clears_death_cause_when_survived():
+    game, floor, player = make_chasm_fall_game()
+    player.pending_chasm_fall = (3, 2)
+    player.hp = player.get_total_max_hp()  # full HP survives the fall
+
+    game.confirm_chasm_fall(player.id, 3, 2)
+
+    assert player.is_alive
+    assert player.death_cause is None
+
+
+def test_chasm_fall_with_feather_fall_skips_damage_and_shake():
+    from app.engine.entities.buffs import add_buff
+    game, floor, player = make_chasm_fall_game()
+    player.pending_chasm_fall = (3, 2)
+    full_hp = player.hp
+    add_buff(player.buffs, "feather_fall", duration=50.0)
+
+    game.confirm_chasm_fall(player.id, 3, 2)
+
+    assert player.hp == full_hp, "feather-fall must negate all fall damage"
+    events = game.flush_events()
+    event_types = [e["type"] for e in events]
+    assert "SCREEN_SHAKE" not in event_types, "feather-fall skips the shake"
+    assert "DAMAGE" not in event_types, "feather-fall skips the damage event"
+    # CHASM_FALL should carry feather=True so the client shows the JET burst.
+    fall_events = [e for e in events if e["type"] == "CHASM_FALL"]
+    assert len(fall_events) == 1
+    assert fall_events[0]["data"]["feather"] is True
+
+
+def test_chasm_fall_emits_screen_shake_with_1s_duration_matching_spd():
+    game, floor, player = make_chasm_fall_game()
+    player.pending_chasm_fall = (3, 2)
+
+    game.confirm_chasm_fall(player.id, 3, 2)
+
+    events = game.flush_events()
+    shake_events = [e for e in events if e["type"] == "SCREEN_SHAKE"]
+    assert len(shake_events) == 1
+    # SPD PixelScene.shake(4, 1f) — 1 second duration.
+    assert shake_events[0]["data"]["intensity"] == 4
+    assert shake_events[0]["data"]["duration_ms"] == 1000

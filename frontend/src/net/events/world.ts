@@ -26,10 +26,51 @@ const BOMB_BLAST_TINT: Record<string, [string, string]> = {
 };
 
 export function handleWorldEvents(event: GameEvent, ctx: HandlerCtx): boolean {
-  const { particlesRef, visionRef, stateEffectsRef, spellSpriteEffectsRef, blobAreasRef, setGrid, gridRef, depth, screenShakeRef } = ctx;
+  const { particlesRef, visionRef, stateEffectsRef, spellSpriteEffectsRef, blobAreasRef, setGrid, gridRef, depth, screenShakeRef, entitiesRef, myPlayerIdRef } = ctx;
 
   if (event.type === 'CHASM_PROMPT') {
     ctx.onChasmPrompt?.(event.data);
+    return true;
+  }
+
+  // SPD Chasm.heroLand with ElixirOfFeatherFall: Speck.JET particle burst, no
+  // damage, no shake. The fade/camera-snap/FALLING-sound are handled by
+  // useGameSocket's floor-change logic; this handler only fires for the
+  // feather-fall VFX on landing (after the fade completes).
+  if (event.type === 'CHASM_FALL' && event.data.player === myPlayerIdRef.current) {
+    if (event.data.feather) {
+      const me = entitiesRef.current.players[event.data.player];
+      if (me) {
+        const px = me.renderPos.x * TILE_SIZE + TILE_SIZE / 2;
+        const py = me.renderPos.y * TILE_SIZE + TILE_SIZE / 2;
+        // Speck.JET burst (SPD: 20 particles). Reuse energy spark for the
+        // feather-fall "soft landing" visual.
+        spawnEnergy(particlesRef, px, py, 20);
+        spawnWhiteSplash(particlesRef, px, py, 10);
+      }
+    }
+    return true;
+  }
+
+  // Server-driven camera shake (SPD PixelScene.shake). Emitted for chasm-land
+  // impact (intensity 4, 1000ms) and available for any other shake source.
+  if (event.type === 'SCREEN_SHAKE') {
+    spawnScreenShake(screenShakeRef, event.data.intensity, event.data.duration_ms);
+    return true;
+  }
+
+  // SPD Chasm.mobFall: a mob falls into a chasm. MobSprite.fall() plays a
+  // shrink animation; the client renders a dust burst + FALLING sound. The
+  // paired DEATH event handles the dying-mob animation.
+  if (event.type === 'MOB_CHASM_FALL') {
+    const { x, y } = event.data;
+    if (!visionRef || visionRef.current?.visible?.has(`${x},${y}`)) {
+      const cx = x * TILE_SIZE + TILE_SIZE / 2;
+      const cy = y * TILE_SIZE + TILE_SIZE / 2;
+      spawnDust(particlesRef, cx, cy, 8, '#8a8a8a');
+      spawnWhiteSplash(particlesRef, cx, cy, 6);
+      AudioManager.play('FALLING');
+    }
     return true;
   }
 

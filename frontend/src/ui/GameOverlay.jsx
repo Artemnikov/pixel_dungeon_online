@@ -9,7 +9,7 @@ export default function GameOverlay({
   gameMenuOpen, onCloseMenu, onLeaveGame,
   isDowned, playerName, classType, level, depth, gold,
   subclass, armorAbility, talentLevels, talentDefs, inventory,
-  selectedClass, scoreBreakdown, canResurrect, isVictory, respawnsUsed, maxRespawns, lootDropped, onResurrect,
+  selectedClass, scoreBreakdown, canResurrect, isVictory, respawnsUsed, maxRespawns, lootDropped, deathCause, onResurrect,
   onNewGame, onMenu, challenges, onReplayTutorial,
 }) {
   const { t } = useTranslation();
@@ -80,6 +80,7 @@ export default function GameOverlay({
           talentDefs={talentDefs}
           inventory={inventory}
           scoreBreakdown={scoreBreakdown}
+          deathCause={deathCause}
           onNewGame={onNewGame}
           onMenu={onMenu}
         />

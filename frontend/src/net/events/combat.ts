@@ -359,6 +359,7 @@ export function handleCombatEvents(event: GameEvent, ctx: HandlerCtx): boolean {
         respawns_used: event.data.respawns_used,
         max_respawns: event.data.max_respawns,
         loot_dropped: event.data.loot_dropped,
+        death_cause: event.data.death_cause,
       });
       return true;
     }

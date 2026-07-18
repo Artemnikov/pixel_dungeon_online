@@ -137,6 +137,13 @@
     "leaveGame": "Leave Game",
     "resume": "Resume",
     "youDied": "You Died",
+    "youDiedFell": "You fell to death...",
+    "chasm": {
+      "title": "Chasm",
+      "desc": "Do you really want to jump into the chasm? A fall that far will be painful.",
+      "yes": "Yes, I know what I'm doing",
+      "no": "No, I changed my mind"
+    },
     "newGame": "New Game",
     "menuBtn": "Menu",
     "resurrect": {

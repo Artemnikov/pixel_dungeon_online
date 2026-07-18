@@ -5,6 +5,7 @@ import { syncState } from './syncState';
 import { handleEvent } from './handleEvent';
 import { startFloorFade } from '../rendering/floorTransition';
 import { TILE_SIZE, FLOOR_FADE_OUT_MS } from '../constants';
+import AudioManager from '../audio/AudioManager';
 import type { ServerMessage, InitMessage, StateUpdateMessage } from '../types/contract';
 import type { HookProps, HandlerCtx } from './types';
 
@@ -13,9 +14,9 @@ const WATCHDOG_TIMEOUT_MS = 30000;
 const RECONNECT_BASE_MS = 500;
 const RECONNECT_MAX_MS = 10000;
 
-// Stairs/chasm events that should fade-and-snap the camera on floor change. A future
-// CHASM_FALL_START call site adds itself here once the chasm-fall mechanic lands.
-const FLOOR_CHANGE_EVENT_TYPES = new Set(['STAIRS_DOWN', 'STAIRS_UP']);
+// Stairs/chasm events that should fade-and-snap the camera on floor change.
+// CHASM_FALL is the fall transition (SPD Chasm.heroFall -> InterlevelScene.Mode.FALL).
+const FLOOR_CHANGE_EVENT_TYPES = new Set(['STAIRS_DOWN', 'STAIRS_UP', 'CHASM_FALL']);
 
 export default function useGameSocket({
   enabled,
@@ -307,14 +308,21 @@ export default function useGameSocket({
         // the screen is fully black, then let the fade play back in. Input is gated
         // client-side for the whole fade window via isFloorFadeActive(floorFadeRef).
         // If this is first descent into a new region, show lore text before the fade.
+        const isChasmFall = floorChangeEvent.type === 'CHASM_FALL';
         const direction = floorChangeEvent.type === 'STAIRS_UP' ? 'up' : 'down';
         const initToApply = pendingInit;
         pendingInit = null;
         const newPos = data.players.find(p => p.id === myPlayerIdRef.current)?.pos;
         deferredApplyPending = true;
 
+        // SPD Chasm.heroFall plays FALLING at fall start (before InterlevelScene).
+        // Play it here, before the fade, so it reads as "falling INTO the pit".
+        if (isChasmFall) {
+          AudioManager.play('FALLING');
+        }
+
         const finishTransition = () => {
-          if (floorFadeRef) startFloorFade(floorFadeRef, direction);
+          if (floorFadeRef) startFloorFade(floorFadeRef, direction, isChasmFall);
           setTimeout(() => {
             deferredApplyPending = false;
             if (initToApply) applyInit(initToApply);
@@ -323,6 +331,8 @@ export default function useGameSocket({
           }, FLOOR_FADE_OUT_MS);
         };
 
+        // Lore only for normal stairs descent into a new region, not chasm falls
+        // (SPD InterlevelScene: "you can't ever fall into a new region").
         const needsLore = floorChangeEvent.type === 'STAIRS_DOWN'
           && floorChangeEvent.data.first_visit
           && [1, 6, 11, 16, 21].includes(data.depth);

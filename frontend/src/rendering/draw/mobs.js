@@ -161,7 +161,7 @@ import {
    getRatKingFrame,
    getSheepFrame,
 } from '../mobs';
-import { drawShieldHalo } from './shieldHalo';
+import { drawShieldFx } from './shieldHalo';
 
 // Gnoll's 12x15 frame, centered/bottom-aligned in the 32px tile per SPD placement
 // (x=(col+0.5)*16-w/2, y=(row+1)*16-h), scaled 2x -> 24x30 at offset (+4,+2).
@@ -211,7 +211,7 @@ export function forceAlertMob(mobId, durationMs = ALERT_DURATION) {
   mobAlertUntil[mobId] = performance.now() + durationMs;
 }
 
-export function drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef, dyingMobsRef }) {
+export function drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef, dyingMobsRef, shieldFxRef }) {
   const now = performance.now();
 
   Object.values(entitiesRef.current.mobs).forEach(mob => {
@@ -646,8 +646,8 @@ export function drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef,
     }
 
     const totalMobShield = (mob.shields || []).reduce((sum, s) => sum + (s.amount || 0), 0);
-    if (totalMobShield > 0) {
-      drawShieldHalo(ctx, x + TILE_SIZE / 2, y, totalMobShield, mob.fadeAlpha ?? 1);
+    if (shieldFxRef) {
+      drawShieldFx(ctx, shieldFxRef, mob.id, x + TILE_SIZE / 2, y, totalMobShield, mob.fadeAlpha ?? 1);
     }
 
     // EmoIcons text fallback for states without a sprite icon.
