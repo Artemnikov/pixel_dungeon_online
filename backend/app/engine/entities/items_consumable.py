@@ -257,6 +257,9 @@ class Waterskin(ItemBase):
     def default_action(self) -> Optional[str]:
         return Action.DRINK if self.volume > 0 else None
 
+    def value(self, identified: bool = False) -> int:
+        return 0
+
     def is_full(self) -> bool:
         return self.volume >= self.MAX_VOLUME
 

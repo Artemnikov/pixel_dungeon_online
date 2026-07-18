@@ -793,7 +793,7 @@ class WorldInteractionMixin:
             stock = [
                 self._serialize_floor_item(i)
                 for i in floor.items.values()
-                if i.for_sale and i.pos and max(abs(i.pos.x - npc.pos.x), abs(i.pos.y - npc.pos.y)) <= 1
+                if i.for_sale and i.pos
             ]
             for item_dict in stock:
                 source_item = floor.items.get(item_dict["id"])

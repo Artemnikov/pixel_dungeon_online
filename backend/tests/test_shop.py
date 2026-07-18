@@ -118,3 +118,54 @@ def test_for_sale_items_not_auto_picked_up():
 
     assert "pot1" in floor.items
     assert not any(isinstance(i, HealthPotion) for i in p.inventory)
+
+
+def test_npc_interact_includes_far_for_sale_items():
+    g = GameInstance("t1")
+    p = g.add_player("p1", "Bob")
+    floor = g._get_or_create_floor(p.floor_id)
+
+    shop_pos = (p.pos.x + 1, p.pos.y)
+    _add_shopkeeper(g, floor, shop_pos)
+
+    far_item = HealthPotion(
+        id="pot_far", pos=Position(x=shop_pos[0] + 3, y=shop_pos[1] + 3), for_sale=True
+    )
+    floor.items["pot_far"] = far_item
+
+    g.npc_interact("p1", "shop1")
+
+    events = [e for e in g.events if e["type"] == "SHOP_OPEN"]
+    assert len(events) == 1
+    stock = events[0]["data"]["stock"]
+    assert any(i["id"] == "pot_far" for i in stock)
+
+
+def test_velvet_pouch_not_sellable():
+    from app.engine.entities.item_union import VelvetPouch
+
+    g = GameInstance("t1")
+    p = g.add_player("p1", "Bob")
+    p.gold = 0
+    pouch = VelvetPouch(id="vp1")
+    p.add_to_inventory(pouch)
+
+    g.shop_sell("p1", "vp1")
+
+    assert p.gold == 0
+    assert p.belongings.get_item("vp1") is not None
+
+
+def test_waterskin_not_sellable():
+    from app.engine.entities.items_consumable import Waterskin
+
+    g = GameInstance("t1")
+    p = g.add_player("p1", "Bob")
+    p.gold = 0
+    ws = Waterskin(id="ws1")
+    p.add_to_inventory(ws)
+
+    g.shop_sell("p1", "ws1")
+
+    assert p.gold == 0
+    assert p.belongings.get_item("ws1") is not None

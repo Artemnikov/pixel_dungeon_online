@@ -183,7 +183,7 @@ class VelvetPouch(Bag):
         return isinstance(item, GooBlob)
 
     def value(self, identified: bool = False) -> int:
-        return 30
+        return 0
 
 
 class ScrollHolder(Bag):
