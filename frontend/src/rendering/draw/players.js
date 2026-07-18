@@ -21,8 +21,6 @@ export function drawPlayers(ctx, { entitiesRef, visionRef, assetImages, playerAn
     const playerSprite = assetImages[CLASS_KEYS[player.class_type] || 'warrior'];
 
     if (playerSprite) {
-      // Note: Currently all armors share row 11 in the sprite sheet. If specific
-      // per-armor rows are added to items.png later, map player.armor_type here.
 
       ctx.save();
 
@@ -76,16 +74,18 @@ export function drawPlayers(ctx, { entitiesRef, visionRef, assetImages, playerAn
       const sWidth = 12;
       const dWidth = sWidth * TILE_SCALE;
       const xOffset = (TILE_SIZE - dWidth) / 2;
-      const FRAME_H = TILE_SIZE / TILE_SCALE;
+      const SRC_FRAME_H = 15;
+      const armorTier = player.equipped_wearable?.tier ?? 0;
+      const sy = Math.max(0, Math.min(armorTier, 6)) * SRC_FRAME_H;
 
       if (player.flipX) {
         ctx.translate(x + TILE_SIZE - xOffset, y);
         ctx.scale(-1, 1);
-        ctx.drawImage(playerSprite, sx, 0, sWidth, FRAME_H, 0, 0, dWidth, TILE_SIZE);
-        if (isFlashing) drawWhiteSilhouette(ctx, playerSprite, sx, 0, sWidth, FRAME_H, 0, 0, dWidth, TILE_SIZE);
+        ctx.drawImage(playerSprite, sx, sy, sWidth, SRC_FRAME_H, 0, 0, dWidth, TILE_SIZE);
+        if (isFlashing) drawWhiteSilhouette(ctx, playerSprite, sx, sy, sWidth, SRC_FRAME_H, 0, 0, dWidth, TILE_SIZE);
       } else {
-        ctx.drawImage(playerSprite, sx, 0, sWidth, FRAME_H, x + xOffset, y, dWidth, TILE_SIZE);
-        if (isFlashing) drawWhiteSilhouette(ctx, playerSprite, sx, 0, sWidth, FRAME_H, x + xOffset, y, dWidth, TILE_SIZE);
+        ctx.drawImage(playerSprite, sx, sy, sWidth, SRC_FRAME_H, x + xOffset, y, dWidth, TILE_SIZE);
+        if (isFlashing) drawWhiteSilhouette(ctx, playerSprite, sx, sy, sWidth, SRC_FRAME_H, x + xOffset, y, dWidth, TILE_SIZE);
       }
       ctx.restore();
     }
