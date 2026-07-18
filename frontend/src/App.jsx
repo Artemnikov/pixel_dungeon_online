@@ -153,6 +153,9 @@ function App() {
   const [scoreBreakdown, setScoreBreakdown] = useState(null);
   const [canResurrect, setCanResurrect] = useState(false);
   const [isVictory, setIsVictory] = useState(false);
+  const [respawnsUsed, setRespawnsUsed] = useState(0);
+  const [maxRespawns, setMaxRespawns] = useState(3);
+  const [lootDropped, setLootDropped] = useState(false);
   const [ghostQuestGiven, setGhostQuestGiven] = useState(false);
   const [showBossSlainBanner, setShowBossSlainBanner] = useState(false);
   const [bossSlainData, setBossSlainData] = useState(null);
@@ -340,6 +343,9 @@ function App() {
       setScoreBreakdown(data.score_breakdown || null);
       setCanResurrect(!!data.can_resurrect);
       setIsVictory(!!data.victory);
+      setRespawnsUsed(data.respawns_used ?? 0);
+      setMaxRespawns(data.max_respawns ?? 3);
+      setLootDropped(!!data.loot_dropped);
     },
   });
 
@@ -539,10 +545,14 @@ function App() {
     setScoreBreakdown(null);
     setCanResurrect(false);
     setIsVictory(false);
+    setRespawnsUsed(0);
+    setMaxRespawns(3);
+    setLootDropped(false);
     talent.resetMetamorph();
   }, [talent.resetMetamorph]);
 
   const handleLeaveGame = useCallback(() => {
+    clearResumeBundle();
     resetForRestart();
     modals.setGameMenuOpen(false);
     setGameState('WELCOME');
@@ -816,6 +826,12 @@ function App() {
           assetImages={assetImages}
         />
 
+        {(difficulty === 'easy' || difficulty === 'normal') && !myStats.isDowned && (
+          <div className="respawn-badge">
+            {t('game.resurrect.remaining', { count: Math.max(0, maxRespawns - (myStats.respawnsUsed ?? 0)), defaultValue: 'Respawns remaining: {{count}}' })}
+          </div>
+        )}
+
         <div className="canvas-wrapper" ref={wrapperRef}>
           <canvas
             ref={canvasRef}
@@ -947,6 +963,9 @@ function App() {
           scoreBreakdown={scoreBreakdown}
           canResurrect={canResurrect}
           isVictory={isVictory}
+          respawnsUsed={respawnsUsed}
+          maxRespawns={maxRespawns}
+          lootDropped={lootDropped}
           onResurrect={() => send({ type: 'RESURRECT' })}
           onNewGame={() => { clearResumeBundle(); resetForRestart(); setGameState('SELECT'); }}
           onMenu={() => { clearResumeBundle(); resetForRestart(); setGameState('WELCOME'); }}

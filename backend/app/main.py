@@ -116,6 +116,13 @@ class ConnectionManager:
         if websocket in self.active_connections[game_id]:
             player_id = self.active_connections[game_id][websocket]
             del self.active_connections[game_id][websocket]
+            # A newer connection for this same hero may already be live -- e.g.
+            # React StrictMode double-invokes the connect effect once in dev, so
+            # a stale first socket's disconnect can arrive after a second socket
+            # for the same session already rebound. Don't let that stale close
+            # mark a still-connected hero AFK ("stuck as a ghost").
+            if player_id in self.active_connections[game_id].values():
+                return
             # Keep the hero in the world during a grace window so the client can
             # reconnect (same session) and resume. The reaper removes it if not.
             game = self.game_instances.get(game_id)
@@ -551,6 +558,9 @@ async def game_websocket(websocket: WebSocket, game_id: str, class_type: str = "
 
             elif isinstance(message, msg.ToolkitEnergize):
                 game.toolkit_energize(player_id, message.toolkit_id, message.levels)
+
+            elif isinstance(message, msg.Resurrect):
+                game.resurrect_player(player_id)
 
             elif isinstance(message, msg.RangedAttack):
                 game.perform_ranged_attack(

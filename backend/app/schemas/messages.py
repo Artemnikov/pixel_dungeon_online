@@ -298,6 +298,10 @@ class ToolkitEnergize(_ClientMessageBase):
     levels: int = 1
 
 
+class Resurrect(_ClientMessageBase):
+    type: Literal["RESURRECT"]
+
+
 ClientMessage = Annotated[
     Union[
         Ping,
@@ -350,6 +354,7 @@ ClientMessage = Annotated[
         AlchemyEnergize,
         AlchemyTrinketChoose,
         ToolkitEnergize,
+        Resurrect,
     ],
     Field(discriminator="type"),
 ]

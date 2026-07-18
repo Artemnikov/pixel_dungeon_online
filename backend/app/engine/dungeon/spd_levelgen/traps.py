@@ -13,17 +13,20 @@
 # See the GNU General Public License for more details.
 #
 """Minimal port of com.shatteredpixel.shatteredpixeldungeon.levels.traps.Trap --
-just enough surface (`avoidsHallways`/`visible`/`set`/`reveal`/`hide`) for
-RegularPainter.paintTraps to run; reveal()/hide()/set() consume no RNG in the
-original, and the concrete trap subclasses used by sewers levels override
-nothing relevant beyond `avoidsHallways` (verified against Trap.java + the 11
-sewers trap class files)."""
+just enough surface (`avoidsHallways`/`canBeHidden`/`visible`/`set`/`reveal`/
+`hide`) for RegularPainter.paintTraps to run; reveal()/hide()/set() consume no
+RNG in the original. Concrete trap subclasses override nothing relevant beyond
+`avoidsHallways` and `canBeHidden` (verified against Trap.java + each trap's
+own class file: WornDartTrap/PoisonDartTrap/RockfallTrap/DisintegrationTrap/
+GrimTrap all set canBeHidden=false, meaning hide() is a no-op for them and
+they're always placed as visible Terrain.TRAP)."""
 
 from __future__ import annotations
 
 
 class Trap:
     avoids_hallways = False
+    can_be_hidden = True
 
     def __init__(self):
         self.visible = True
@@ -38,12 +41,16 @@ class Trap:
         return self
 
     def hide(self) -> "Trap":
-        self.visible = False
-        return self
+        if self.can_be_hidden:
+            self.visible = False
+            return self
+        else:
+            return self.reveal()
 
 
 class WornDartTrap(Trap):
     avoids_hallways = True
+    can_be_hidden = False
 
 
 class ChillingTrap(Trap):
@@ -92,7 +99,7 @@ class BurningTrap(Trap):
 
 
 class PoisonDartTrap(Trap):
-    pass
+    can_be_hidden = False
 
 
 class GrippingTrap(Trap):
@@ -117,7 +124,7 @@ class CorrosionTrap(Trap):
 
 
 class RockfallTrap(Trap):
-    pass
+    can_be_hidden = False
 
 
 class GuardianTrap(Trap):
@@ -138,7 +145,7 @@ class BlazingTrap(Trap):
 
 
 class DisintegrationTrap(Trap):
-    pass
+    can_be_hidden = False
 
 
 class FlashingTrap(Trap):
@@ -163,7 +170,7 @@ class DistortionTrap(Trap):
 
 # Halls new
 class GrimTrap(Trap):
-    pass
+    can_be_hidden = False
 
 
 # MinefieldRoom (universal filler standard room, reachable on all regions

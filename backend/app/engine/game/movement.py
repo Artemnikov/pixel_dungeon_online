@@ -536,6 +536,11 @@ class MovementCombatMixin:
             floor.grid[entity.pos.y][entity.pos.x] = TileType.OPEN_DOOR
             door_changed = True
             door_patches.append({"x": entity.pos.x, "y": entity.pos.y, "tile": TileType.OPEN_DOOR})
+            if not isinstance(entity, Player):
+                # Player door-open sound is inferred client-side from MOVE;
+                # mobs never emit MOVE, so broadcast it explicitly here,
+                # LOS-filtered by tile position (same as mob HIT_BODY).
+                self.add_event("PLAY_SOUND", {"sound": "DOOR_OPEN", "x": entity.pos.x, "y": entity.pos.y}, floor_id=floor_id)
         if floor.grid[old_y][old_x] == TileType.OPEN_DOOR:
             has_entity = any(
                 p.pos.x == old_x and p.pos.y == old_y

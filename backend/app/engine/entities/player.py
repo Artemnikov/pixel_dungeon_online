@@ -135,6 +135,10 @@ Belongings.model_rebuild()
 
 
 class Difficulty:
+    # Internal ids are unchanged from their original meaning, but the UI now
+    # displays NORMAL as "Medium" and HARD as "Normal" -- only the label
+    # moved, not the difficulty progression (easy < normal < hard) or the
+    # mob-AI aggression tiers keyed off these same values.
     EASY = "easy"
     NORMAL = "normal"
     HARD = "hard"
@@ -254,6 +258,12 @@ class Player(Entity):
     # them) -- non-solid ghost: skipped by collision/AI targeting, "(AFK)" tag
     # shown above their head client-side.
     is_afk: bool = False
+    # Easy-mode respawn counters. `respawns_used` ticks up each time this hero
+    # accepts an easy-mode resurrection (cap 3). `witnessed_respawns` ticks up
+    # for every *other* player's resurrection witnessed on the same run -- both
+    # feed score penalties in _score_breakdown.
+    respawns_used: int = 0
+    witnessed_respawns: int = 0
     kills_count: int = 0
     floors_explored: int = 1
     # Over-time healing, mirroring SPD's Healing buff. Each application heals
@@ -264,8 +274,6 @@ class Player(Entity):
     heal_pct_per_tick: float = 0.0
     heal_flat_per_tick: float = 0.0
     heal_cooldown: int = 0
-    # Throttles the passive +10/s healing while standing in a floor's entrance room.
-    room_heal_cooldown: int = 0
     # Elixir of Aquatic Rejuvenation healing pool (SPD AquaHealing buff): heals
     # max(1, maxHP/50) per turn while standing in water, until exhausted.
     aqua_heal_left: float = 0.0
@@ -414,6 +422,11 @@ class Player(Entity):
             return 0
         # Timekeeper's Hourglass Stasis: suspended outside time — immune to harm.
         if self.has_buff("time_stasis"):
+            return 0
+        # Easy-mode spawn protection: brief invulnerability window after a
+        # resurrection so a mob camping STAIRS_UP can't instantly re-kill
+        # the reborn hero.
+        if self.has_buff("spawn_protection"):
             return 0
 
         # Deathless Fury (warrior T3 berserker): a fatal blow while raging with

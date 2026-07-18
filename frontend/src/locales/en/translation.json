@@ -68,8 +68,8 @@
       }
     },
     "easy": "EASY",
-    "normal": "NORMAL",
-    "hard": "HARD"
+    "normal": "MEDIUM",
+    "hard": "NORMAL"
   },
   "app": {
     "titleWelcome": "Online Pixel Dungeon — multiplayer roguelike",
@@ -138,7 +138,15 @@
     "resume": "Resume",
     "youDied": "You Died",
     "newGame": "New Game",
-    "menuBtn": "Menu"
+    "menuBtn": "Menu",
+    "resurrect": {
+      "title": "Rise from the dead?",
+      "desc": "You are reborn on this floor with your gear intact. Half HP, debuffs cleared.",
+      "descLost": "You are reborn on this floor, but your gear was scattered where you fell. Half HP, debuffs cleared.",
+      "yes": "Respawn",
+      "no": "Give up",
+      "remaining": "Respawns remaining: {{count}}"
+    }
   },
   "rankings": {
     "title": "Rankings",
@@ -163,6 +171,8 @@
     "total": "Total Score",
     "winMultiplier": "Win Multiplier",
     "challengeMultiplier": "Challenge Multiplier",
+    "respawnMultiplier": "Respawn Penalty",
+    "witnessMultiplier": "Team Respawn Penalty",
     "progress": {
       "title": "Progression",
       "desc": "Based on maximum depth and hero level."
@@ -909,15 +919,24 @@
     "multiplayer2": "If you fall, you can start a new run or return to the main menu from the game-over screen."
   },
   "changelog": {
-    "title": "v0.6.2",
-    "titleName": "AFK Ghosts, Sewers & Alchemy Polish",
-    "changes0": "When your connection drops, your hero now becomes an invisible, un-targetable \"(AFK)\" ghost instead of freezing in place; if you don't reconnect in time it dies through the normal death path (loot drop, grave) instead of vanishing.",
-    "changes1": "Reconnecting or refreshing the page now resumes your existing hero — position, HP and gear intact — instead of spawning a new one.",
-    "changes2": "Swarm splitting now conserves HP across clones and spawns them next to the Swarm itself, matching the original game instead of appearing behind or beside the player.",
-    "changes3": "Mirror Image clones (Scroll of Mirror Image, Multiplicity glyph, Cursed Wand of Summon Monsters) now fight using the hero's actual weapon and ring stats instead of flat approximations.",
-    "changes4": "Sewers: six previously-empty standard rooms (Minefield, Plants, Aquarium, Fissure, Grassy Grave, Study) now have their real terrain, loot and mobs; Sentry, Magic Well and Sacrifice Fire special rooms are functional again.",
-    "changes5": "New in-game Alchemy Guide available from the alchemy pot's Guide button; ghost reward window and loot indicator visuals reworked to match the original.",
-    "changes6": "Alchemy pot workspace restyled to match the original look (red ingredient slots, correct hint text, matching button colors); tombs and chests now show distinct names and sounds.",
+    "title": "v0.7.0",
+    "titleName": "Easy Respawn & Difficulty Rework",
+    "changes0": "In-place respawn on Easy and Medium difficulty — your hero is reborn at the floor's stairs with 50% HP, debuffs cleared and a 3-turn spawn-protection window. Max 3 resurrections per run; boss-floor deaths are final (no respawn on floors 5, 10, 15, ...).",
+    "changes1": "Easy keeps your full gear on respawn; Medium keeps just your equipped weapon and armor; Hard has no respawn and scatters everything. UI difficulty labels renamed: NORMAL → MEDIUM, HARD → NORMAL — only the labels moved, not the difficulty progression or mob-AI aggression tiers.",
+    "changes2": "Score penalties for respawns: each resurrection halves your score (3 respawns → 12.5%); witnessing a teammate's resurrection shaves 25% per use, floored at 10%.",
+    "changes3": "Resurrect dialog and HUD badge show respawns remaining; the death screen reflects whether your gear was scattered where you fell.",
+    "changes4": "Fixed React StrictMode double-connect leaving heroes stuck as AFK ghosts when a stale first socket's disconnect arrived after the second socket had already rebound for the same session.",
+    "changes5": "Trap visibility fix: Worn Dart, Poison Dart, Rockfall, Disintegration and Grim traps are now always visible (matching SPD's canBeHidden=false) instead of sometimes spawning hidden.",
+    "changes6": "Removed the obsolete entrance-room passive heal; the well_fed buff now drives the 3x regen bonus on its own. Mob door-open sounds now broadcast explicitly, and other players' HP bars are always visible (2px tall, repositioned above the sprite).",
+    "v062": "v0.6.2",
+    "v062Name": "AFK Ghosts, Sewers & Alchemy Polish",
+    "v0620": "When your connection drops, your hero now becomes an invisible, un-targetable \"(AFK)\" ghost instead of freezing in place; if you don't reconnect in time it dies through the normal death path (loot drop, grave) instead of vanishing.",
+    "v0621": "Reconnecting or refreshing the page now resumes your existing hero — position, HP and gear intact — instead of spawning a new one.",
+    "v0622": "Swarm splitting now conserves HP across clones and spawns them next to the Swarm itself, matching the original game instead of appearing behind or beside the player.",
+    "v0623": "Mirror Image clones (Scroll of Mirror Image, Multiplicity glyph, Cursed Wand of Summon Monsters) now fight using the hero's actual weapon and ring stats instead of flat approximations.",
+    "v0624": "Sewers: six previously-empty standard rooms (Minefield, Plants, Aquarium, Fissure, Grassy Grave, Study) now have their real terrain, loot and mobs; Sentry, Magic Well and Sacrifice Fire special rooms are functional again.",
+    "v0625": "New in-game Alchemy Guide available from the alchemy pot's Guide button; ghost reward window and loot indicator visuals reworked to match the original.",
+    "v0626": "Alchemy pot workspace restyled to match the original look (red ingredient slots, correct hint text, matching button colors); tombs and chests now show distinct names and sounds.",
     "v061": "v0.6.1",
     "v061Name": "Combat Feedback & AI Fixes",
     "v0610": "Hit reactions now use SPD's two-tier warning sound — a sharper critical alert layers on top of the low-health warning, based on how much damage just landed and how little HP remains.",

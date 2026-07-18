@@ -31,11 +31,26 @@ from app.engine.entities.items_equip import Bow, ClothArmor, Dagger, SpiritBow, 
 from app.engine.entities.items_potions import PotionOfLiquidFlame
 from app.engine.entities.items_scrolls import ScrollOfIdentify, ScrollOfUpgrade
 from app.engine.entities.items_wands import WandOfMagicMissile
-from app.engine.entities.player import Belongings, CharacterClass, Item, Player, QuickSlot, Weapon
-from app.engine.entities.buffs import add_buff
+from app.engine.entities.player import Belongings, CharacterClass, Difficulty, Item, Player, QuickSlot, Weapon
+from app.engine.entities.buffs import add_buff, remove_buff
 from app.engine.entities.item_catalog import make_catalog_item
-from app.engine.game.constants import MAX_FLOOR_ID
+from app.engine.game.constants import MAX_FLOOR_ID, RESPAWN_MAX_USES, RESPAWN_SPAWN_PROTECTION_TURNS
 from app.engine.game.floor_state import FloorState
+from app.engine.dungeon.spd_levelgen.run_state import is_boss_level
+
+# Difficulty tiers that offer an in-place respawn on death (Easy keeps loot,
+# Medium == Difficulty.NORMAL drops it). Hard never offers a respawn.
+RESPAWN_CAPABLE_DIFFICULTIES = (Difficulty.EASY, Difficulty.NORMAL)
+
+# Harmful buffs cleared on respawn (mirrors SPD ankh's "detachAll harmful"
+# filter). Beneficial buffs (bless, barkskin, haste, invisibility, shadows,
+# empowered_strike trackers, etc.) are kept.
+HARMFUL_BUFFS = frozenset({
+    "poison", "burning", "frozen", "frost", "chilled", "chill",
+    "paralysis", "cripple", "blindness", "blinded", "weakness",
+    "vulnerable", "hex", "ooze", "corrosion", "vertigo", "terror",
+    "death_mark", "bleeding", "rooted", "sheep_timer", "slow",
+})
 
 
 class PlayersMixin:
@@ -331,84 +346,191 @@ class PlayersMixin:
         self._perform_chasm_fall(player, floor_id, x, y)
 
     def _kill_player(self, player: Player, floor: FloorState, floor_id: int):
-        # Run the death sequence once: scatter the backpack and mark the spot
-        # with a grave (mirrors Hero.reallyDie in Shattered Pixel Dungeon).
+        # Run the death sequence once: scatter the backpack (unless Easy
+        # preserves everything, or Medium which keeps just weapon+armor) and
+        # mark the spot with a grave (mirrors Hero.reallyDie in Shattered
+        # Pixel Dungeon), then offer an in-place resurrection on Easy/Medium.
+        # Excluded on boss floors (5/10/15/20/25) and once the respawn cap is
+        # exhausted, so those deaths are final regardless of difficulty.
         player.death_processed = True
 
-        # Collect passable 8-neighbour cells with no item on them, shuffled.
-        free_cells: List[Tuple[int, int]] = []
-        for ox in (-1, 0, 1):
-            for oy in (-1, 0, 1):
-                if ox == 0 and oy == 0:
-                    continue
-                cx, cy = player.pos.x + ox, player.pos.y + oy
-                if not (0 <= cx < floor.width and 0 <= cy < floor.height):
-                    continue
-                if not floor.flags or not floor.flags.passable[cy][cx]:
-                    continue
-                if any(i.pos and i.pos.x == cx and i.pos.y == cy for i in floor.items.values()):
-                    continue
-                free_cells.append((cx, cy))
-        random.shuffle(free_cells)
-
-        # Drop everything the hero carried — equipped gear plus the backpack's
-        # items. Sub-bags drop their contents individually, not the bag itself.
-        # Skip the starting weapon and waterskin (dewdrops from the latter).
-        starting_weapon_class = {
-            CharacterClass.WARRIOR: WornShortsword,
-            CharacterClass.MAGE: Staff,
-            CharacterClass.ROGUE: Dagger,
-        }.get(player.class_type)
-
-        dropped_items = []
-        for s in player.belongings.equipped_slots():
-            if s is None:
-                continue
-            if starting_weapon_class and isinstance(s, starting_weapon_class):
-                continue
-            if player.class_type == CharacterClass.HUNTRESS and s.name == "Gloves":
-                continue
-            if player.class_type == CharacterClass.ROGUE and isinstance(s, CloakOfShadows):
-                continue
-            if isinstance(s, ClothArmor):
-                continue
-            dropped_items.append(s)
-
-        for item in list(player.belongings.backpack.items):
-            if isinstance(item, Bag):
-                dropped_items.extend(item.items)
-            elif isinstance(item, Waterskin):
-                if item.volume > 0:
-                    dropped_items.append(Dewdrop(
-                        id=str(uuid.uuid4()), quantity=item.volume,
-                    ))
-            else:
-                dropped_items.append(item)
-        for idx, item in enumerate(dropped_items):
-            if idx < len(free_cells):
-                cx, cy = free_cells[idx]
-            else:
-                cx, cy = player.pos.x, player.pos.y
-            item.pos = Position(x=cx, y=cy)
-            floor.items[item.id] = item
-        player.belongings = Belongings()
-        player.quickslot = QuickSlot()
-
-        # Grave marker on the death tile.
-        grave_id = f"grave_{uuid.uuid4().hex[:8]}"
-        floor.items[grave_id] = Item(
-            id=grave_id,
-            name="Grave",
-            type="grave",
-            pos=Position(x=player.pos.x, y=player.pos.y),
+        can_resurrect = (
+            self.difficulty in RESPAWN_CAPABLE_DIFFICULTIES
+            and not is_boss_level(floor_id)
+            and player.respawns_used < RESPAWN_MAX_USES
         )
+        # Easy keeps the hero's gear, but only when it's actually respawning
+        # them in place -- a boss-floor/cap-exhausted death is final even on
+        # Easy, so it scatters loot exactly like Medium/Hard.
+        preserve_loot = self.difficulty == Difficulty.EASY and can_resurrect
+        # Medium drops the backpack but lets the hero keep their equipped
+        # weapon and armor -- same "final death is final" gate as Easy above.
+        keep_weapon_armor = self.difficulty == Difficulty.NORMAL and can_resurrect
+
+        if not preserve_loot:
+            # Collect passable 8-neighbour cells with no item on them, shuffled.
+            free_cells: List[Tuple[int, int]] = []
+            for ox in (-1, 0, 1):
+                for oy in (-1, 0, 1):
+                    if ox == 0 and oy == 0:
+                        continue
+                    cx, cy = player.pos.x + ox, player.pos.y + oy
+                    if not (0 <= cx < floor.width and 0 <= cy < floor.height):
+                        continue
+                    if not floor.flags or not floor.flags.passable[cy][cx]:
+                        continue
+                    if any(i.pos and i.pos.x == cx and i.pos.y == cy for i in floor.items.values()):
+                        continue
+                    free_cells.append((cx, cy))
+            random.shuffle(free_cells)
+
+            # Drop everything the hero carried — equipped gear plus the backpack's
+            # items. Sub-bags drop their contents individually, not the bag itself.
+            # Skip the starting weapon and waterskin (dewdrops from the latter).
+            starting_weapon_class = {
+                CharacterClass.WARRIOR: WornShortsword,
+                CharacterClass.MAGE: Staff,
+                CharacterClass.ROGUE: Dagger,
+            }.get(player.class_type)
+
+            dropped_items = []
+            for s in player.belongings.equipped_slots():
+                if s is None:
+                    continue
+                if keep_weapon_armor and (s is player.belongings.weapon or s is player.belongings.armor):
+                    continue
+                if starting_weapon_class and isinstance(s, starting_weapon_class):
+                    continue
+                if player.class_type == CharacterClass.HUNTRESS and s.name == "Gloves":
+                    continue
+                if player.class_type == CharacterClass.ROGUE and isinstance(s, CloakOfShadows):
+                    continue
+                if isinstance(s, ClothArmor):
+                    continue
+                dropped_items.append(s)
+
+            for item in list(player.belongings.backpack.items):
+                if isinstance(item, Bag):
+                    dropped_items.extend(item.items)
+                elif isinstance(item, Waterskin):
+                    if item.volume > 0:
+                        dropped_items.append(Dewdrop(
+                            id=str(uuid.uuid4()), quantity=item.volume,
+                        ))
+                else:
+                    dropped_items.append(item)
+            for idx, item in enumerate(dropped_items):
+                if idx < len(free_cells):
+                    cx, cy = free_cells[idx]
+                else:
+                    cx, cy = player.pos.x, player.pos.y
+                item.pos = Position(x=cx, y=cy)
+                floor.items[item.id] = item
+            kept_weapon = player.belongings.weapon if keep_weapon_armor else None
+            kept_armor = player.belongings.armor if keep_weapon_armor else None
+            player.belongings = Belongings(weapon=kept_weapon, armor=kept_armor)
+            player.quickslot = QuickSlot()
+
+            # Grave marker on the death tile.
+            grave_id = f"grave_{uuid.uuid4().hex[:8]}"
+            floor.items[grave_id] = Item(
+                id=grave_id,
+                name="Grave",
+                type="grave",
+                pos=Position(x=player.pos.x, y=player.pos.y),
+            )
 
         self.add_event("DEATH", {
             "target": player.id,
             "score_breakdown": self._score_breakdown(player, victory=False),
-            "can_resurrect": False,
+            "can_resurrect": can_resurrect,
             "victory": False,
+            "loot_dropped": not preserve_loot,
+            "respawns_used": player.respawns_used,
+            "max_respawns": RESPAWN_MAX_USES,
         }, floor_id=floor_id)
+
+    def _safe_spawn_near_stairs(self, floor: FloorState) -> Position:
+        # Respawn cell picker for in-place resurrect: prefer the STAIRS_UP
+        # tile itself, then its 8-neighbours, then a BFS outward for the
+        # first passable+unoccupied cell. Falls back to a random fall-landing
+        # cell if nothing near the stairs is free. Mirrors the safety pattern
+        # of _random_fall_landing_cell (players.py:265-283).
+        stairs = self._get_stairs_pos(TileType.STAIRS_UP, floor_id=floor.floor_id)
+        occupied = {(p.pos.x, p.pos.y) for p in self._players_on_floor(floor.floor_id)}
+        occupied |= {(m.pos.x, m.pos.y) for m in floor.mobs.values() if m.is_alive}
+
+        def is_free(x: int, y: int) -> bool:
+            if not (0 <= x < floor.width and 0 <= y < floor.height):
+                return False
+            if not floor.flags or not floor.flags.passable[y][x]:
+                return False
+            return (x, y) not in occupied
+
+        if is_free(stairs.x, stairs.y):
+            return stairs
+        for ox in (-1, 0, 1):
+            for oy in (-1, 0, 1):
+                if ox == 0 and oy == 0:
+                    continue
+                cx, cy = stairs.x + ox, stairs.y + oy
+                if is_free(cx, cy):
+                    return Position(x=cx, y=cy)
+        return self._random_fall_landing_cell(floor)
+
+    def resurrect_player(self, player_id: str) -> bool:
+        # In-place resurrection (Easy/Medium): reborn at the same floor's
+        # STAIRS_UP with 50% HP, debuffs cleared, 3-turn spawn-protection.
+        # Inventory was either preserved (Easy) or already scattered by
+        # _kill_player (Medium/Hard) -- this method doesn't touch it. Applies
+        # score penalties (own respawn + witnessed by teammates). Returns
+        # False if the player can't be resurrected (not downed, wrong
+        # difficulty, boss floor, or cap exhausted).
+        player = self.players.get(player_id)
+        if not player or player.is_alive:
+            return False
+        if self.difficulty not in RESPAWN_CAPABLE_DIFFICULTIES:
+            return False
+        if is_boss_level(player.floor_id):
+            return False
+        if player.respawns_used >= RESPAWN_MAX_USES:
+            return False
+
+        floor = self._get_or_create_floor(player.floor_id)
+        player.pos = self._safe_spawn_near_stairs(floor)
+        player.hp = max(1, player.get_total_max_hp() // 2)
+        player.is_alive = True
+        player.is_downed = False
+        player.death_processed = False
+        player.respawns_used += 1
+
+        # Clear harmful buffs; keep beneficial ones (SPD ankh behaviour).
+        for buff_type in list(HARMFUL_BUFFS):
+            remove_buff(player.buffs, buff_type)
+        # Spawn protection: invulnerability window so a mob camping the
+        # stairs can't instantly re-kill the reborn hero.
+        add_buff(player.buffs, "spawn_protection",
+                 duration=float(RESPAWN_SPAWN_PROTECTION_TURNS), level=1)
+
+        # Score penalties: own respawn (multiplicative 0.5 per use) is read
+        # directly from respawns_used in _score_breakdown. Teammates suffer
+        # a flat -25% per witnessed resurrection (also multiplicative).
+        for other in self.players.values():
+            if other.id != player.id and other.is_alive:
+                other.witnessed_respawns += 1
+
+        # Broadcast SPAWN so teammates see the resurrection flash + clients
+        # can play a rebirth sound. Per-floor so only co-heroes on the same
+        # level see it.
+        self.add_event("SPAWN", {
+            "target": player.id,
+            "floor_id": player.floor_id,
+            "is_resurrect": True,
+            "hp": player.hp,
+            "respawns_used": player.respawns_used,
+            "max_respawns": RESPAWN_MAX_USES,
+        }, floor_id=player.floor_id)
+        return True
 
     def _complete_victory(self, player: Player, floor: FloorState, floor_id: int):
         # Parallel to _kill_player, not built on it: a winner keeps every
@@ -437,7 +559,13 @@ class PlayersMixin:
         quest = min(10000, 0)  # quest tracking not yet implemented
         win_mult = 1.5 if victory else 1.0
         chal_mult = 1.25 if "stronger_bosses" in self.challenges else 1.0
-        total = int((progress + treasure + explore + boss + quest) * win_mult * chal_mult)
+        # Easy-mode respawn penalties (multiplicative). Own respawns halve
+        # the score each time (3 respawns → 12.5%). Witnessed teammates'
+        # respawns shave 25% each (floored at 10% final). Both only apply
+        # when the player actually used/witnessed a respawn.
+        respawn_mult = 0.5 ** player.respawns_used if player.respawns_used > 0 else 1.0
+        witness_mult = max(0.1, 1.0 - 0.25 * player.witnessed_respawns) if player.witnessed_respawns > 0 else 1.0
+        total = int((progress + treasure + explore + boss + quest) * win_mult * chal_mult * respawn_mult * witness_mult)
         return {
             "kills": player.kills_count,
             "floors": player.floors_explored,
@@ -449,6 +577,10 @@ class PlayersMixin:
             "quest_score": quest,
             "win_multiplier": win_mult if victory else None,
             "challenge_multiplier": chal_mult if chal_mult > 1 else None,
+            "respawn_multiplier": round(respawn_mult, 3) if respawn_mult < 1 else None,
+            "witness_multiplier": round(witness_mult, 3) if witness_mult < 1 else None,
+            "respawns_used": player.respawns_used,
+            "witnessed_respawns": player.witnessed_respawns,
             "total_score": total,
             "victory": victory,
         }
