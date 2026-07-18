@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import './menu.css';
 import AudioManager from '../audio/AudioManager';
 import useTitleAnimation from './useTitleAnimation';
+import useActivePlayerCount from './useActivePlayerCount';
 import MenuButton from './MenuButton';
 import Icon from './Icon';
 import { APP_VERSION } from './content/changelog';
@@ -18,6 +19,7 @@ const SUPPORT_URL = 'https://github.com/Artemnikov/shattered_pixel_dungeon_onlin
 export default function MainMenu({ onStart }) {
   const { t } = useTranslation();
   const canvasRef = useRef(null);
+  const activePlayerCount = useActivePlayerCount();
   const [panel, setPanel] = useState(null);
   const [uiHidden, setUiHidden] = useState(false);
   const [landscape, setLandscape] = useState(
@@ -68,6 +70,12 @@ export default function MainMenu({ onStart }) {
       )}
 
       <div className={`opd-menu-overlay ${uiHidden ? 'hidden' : ''} ${landscape ? 'landscape' : 'portrait'}`}>
+        {activePlayerCount !== null && (
+          <div className="opd-active-players">
+            {t('menu.activePlayers', { count: activePlayerCount })}
+          </div>
+        )}
+
         <div className="opd-menu-buttons">
           {rows.map((row, i) => (
             <div className="opd-menu-row" key={i}>{row}</div>

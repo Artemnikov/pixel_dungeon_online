@@ -7,13 +7,17 @@ from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Dict, Tuple, Optional
 import asyncio
+import hashlib
 import logging
+import re
+import secrets
 import time
 import uuid
 import os
 from pydantic import ValidationError
 from app.engine.manager import GameInstance
 from app.engine.entities.base import Position
+from app.engine.game.constants import PARTY_LOOT_MAX_PLAYERS
 from app.schemas import (
     CLIENT_MESSAGE_ADAPTER,
     InitMessage,
@@ -41,6 +45,56 @@ app.add_middleware(
 # removes the orphaned player.
 DISCONNECT_GRACE_SECONDS = 60.0
 
+# Rooms: one permanent public room (uncapped) plus player-created private
+# groups (name + optional password), capped at the same party size the loot
+# scaling tops out at (see engine/game/constants.party_loot_multiplier).
+PUBLIC_ROOM_ID = "public"
+PRIVATE_ROOM_MAX_PLAYERS = PARTY_LOOT_MAX_PLAYERS
+
+_SLUG_RE = re.compile(r"[^a-z0-9]+")
+
+
+def _slugify(name: str) -> str:
+    slug = _SLUG_RE.sub("-", name.strip().lower()).strip("-")
+    return slug or "group"
+
+
+def _hash_password(password: str, salt: str) -> str:
+    return hashlib.sha256((salt + password).encode("utf-8")).hexdigest()
+
+
+class RoomMeta:
+    """Lobby-layer room record — deliberately kept out of GameInstance/engine,
+    which stays a pure dungeon-simulation concern. `room_id` doubles as the
+    `game_id` used to route WS connections and look up GameInstance/
+    active_connections/sessions."""
+
+    def __init__(self, room_id: str, name: str, is_public: bool = False,
+                 password: Optional[str] = None, max_players: Optional[int] = None):
+        self.room_id = room_id
+        self.name = name
+        self.is_public = is_public
+        self.max_players = max_players
+        self.created_at = time.monotonic()
+        if password:
+            self.password_salt: Optional[str] = secrets.token_hex(8)
+            self.password_hash: Optional[str] = _hash_password(password, self.password_salt)
+        else:
+            self.password_salt = None
+            self.password_hash = None
+
+    @property
+    def has_password(self) -> bool:
+        return self.password_hash is not None
+
+    def check_password(self, password: str) -> bool:
+        if self.password_hash is None:
+            return True
+        if self.password_salt is None:
+            return False
+        return _hash_password(password, self.password_salt) == self.password_hash
+
+
 class ConnectionManager:
     def __init__(self):
         # game_id -> {websocket: player_id}
@@ -51,6 +105,44 @@ class ConnectionManager:
         self.sessions: Dict[str, Dict[str, str]] = {}
         # game_id -> {player_id: monotonic deadline} — players awaiting reconnect.
         self.disconnect_deadline: Dict[str, Dict[str, float]] = {}
+        # room_id -> RoomMeta. Public room is permanent; private groups are
+        # added by POST /api/rooms and dropped in cleanup_if_empty.
+        self.rooms: Dict[str, RoomMeta] = {
+            PUBLIC_ROOM_ID: RoomMeta(PUBLIC_ROOM_ID, "Public", is_public=True),
+        }
+
+    def _unique_room(self, requested_name: str) -> Tuple[str, str]:
+        """Resolves a user-requested group name to a unique (room_id, name),
+        auto-suffixing -1, -2, ... on collision (including against the
+        public room's id/name)."""
+        base_name = requested_name.strip()[:30] or "Group"
+        slug = _slugify(base_name)
+        room_id, name = slug, base_name
+        n = 1
+        while room_id in self.rooms:
+            room_id, name = f"{slug}-{n}", f"{base_name}-{n}"
+            n += 1
+        return room_id, name
+
+    def check_room_join(self, game_id: str, session_id: str, room_password: str) -> Optional[str]:
+        """Returns a rejection reason, or None if the join should proceed.
+        Unregistered game_ids (not created via POST /api/rooms) are never
+        gated, keeping ad-hoc/legacy game_ids working unchanged."""
+        room = self.rooms.get(game_id)
+        if room is None:
+            return None
+
+        existing_player_id = self.sessions.get(game_id, {}).get(session_id)
+        game = self.game_instances.get(game_id)
+        if existing_player_id and game and existing_player_id in game.players:
+            return None  # reconnect: already a member, no re-check
+
+        if not room.check_password(room_password):
+            return "wrong password"
+        if room.max_players is not None:
+            if len(self.active_connections.get(game_id, {})) >= room.max_players:
+                return "room full"
+        return None
 
     async def connect(self, game_id: str, websocket: WebSocket, session_id: str, seed: str = "") -> Tuple[str, bool]:
         """Accept a connection and resolve its player identity.
@@ -184,6 +276,8 @@ class ConnectionManager:
         self.last_sent_floor.pop(game_id, None)
         self.sessions.pop(game_id, None)
         self.disconnect_deadline.pop(game_id, None)
+        if game_id != PUBLIC_ROOM_ID:
+            self.rooms.pop(game_id, None)
 
     async def broadcast_state(self, game_id: str):
         if game_id in self.active_connections and game_id in self.game_instances:
@@ -376,6 +470,50 @@ async def get_talents(class_type: str):
         "ability_tier4": ability_to_talents,
     }
 
+@app.get("/api/rooms")
+async def list_rooms():
+    def _count(room_id: str) -> int:
+        return len(manager.active_connections.get(room_id, {}))
+
+    public_count = _count(PUBLIC_ROOM_ID)
+    groups = [
+        {
+            "room_id": room.room_id,
+            "name": room.name,
+            "player_count": _count(room.room_id),
+            "max_players": room.max_players,
+            "has_password": room.has_password,
+        }
+        for room in manager.rooms.values()
+        if not room.is_public
+    ]
+    total_players = public_count + sum(g["player_count"] for g in groups)
+    return {
+        "total_players": total_players,
+        "public": {"room_id": PUBLIC_ROOM_ID, "player_count": public_count},
+        "groups": groups,
+    }
+
+
+class CreateRoomRequest(BaseModel):
+    name: str
+    password: Optional[str] = None
+
+
+@app.post("/api/rooms")
+async def create_room(body: CreateRoomRequest):
+    name = (body.name or "").strip()
+    if not name:
+        return {"error": "name required"}
+    room_id, resolved_name = manager._unique_room(name)
+    manager.rooms[room_id] = RoomMeta(
+        room_id, resolved_name, is_public=False,
+        password=(body.password or None),
+        max_players=PRIVATE_ROOM_MAX_PLAYERS,
+    )
+    return {"room_id": room_id, "name": resolved_name}
+
+
 @app.post("/dev/xp/{game_id}/{player_id}/{amount}")
 async def dev_grant_xp(game_id: str, player_id: str, amount: int):
     game = manager.game_instances.get(game_id)
@@ -401,8 +539,20 @@ async def dev_grant_xp(game_id: str, player_id: str, amount: int):
     }
 
 @app.websocket("/ws/game/{game_id}")
-async def game_websocket(websocket: WebSocket, game_id: str, class_type: str = "warrior", difficulty: str = "normal", name: str = None, admin_secret: str = "", session: str = None, seed: str = "", challenges: str = ""):
+async def game_websocket(websocket: WebSocket, game_id: str, class_type: str = "warrior", difficulty: str = "normal", name: str = None, admin_secret: str = "", session: str = None, seed: str = "", challenges: str = "", room_password: str = ""):
     session_id = session or str(uuid.uuid4())
+
+    rejection = manager.check_room_join(game_id, session_id, room_password)
+    if rejection is not None:
+        # Must accept() before close() so the browser's WebSocket actually
+        # receives our code/reason -- closing pre-accept only surfaces to the
+        # client as a bare HTTP 403 handshake failure (verified empirically),
+        # which loses the reason and would look like a generic network error.
+        await websocket.accept()
+        close_code = 4001 if rejection == "wrong password" else 4002
+        await websocket.close(code=close_code, reason=rejection)
+        return
+
     player_id, is_new = await manager.connect(game_id, websocket, session_id, seed=seed)
 
     game = manager.game_instances[game_id]

@@ -123,12 +123,14 @@ export interface MyStats {
 export interface HookProps {
   enabled: boolean;
   gameId: string;
+  roomPassword?: string;
   sessionId: string;
   selectedClass: string;
   difficulty: string;
   challenges?: string;
   playerName: string;
   setConnectionStatus?: (status: string) => void;
+  onRoomRejected?: (reason: string) => void;
   socketRef: Ref<WebSocket | null>;
   gridRef: Ref<number[][]>;
   myPlayerIdRef: Ref<string | null>;

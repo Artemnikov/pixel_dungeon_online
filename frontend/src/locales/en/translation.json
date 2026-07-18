@@ -11,7 +11,9 @@
     "hideMenu": "Hide menu",
     "close": "Close",
     "closeShop": "Close shop",
-    "language": "Language"
+    "language": "Language",
+    "activePlayers_one": "{{count}} player online",
+    "activePlayers_other": "{{count}} players online"
   },
   "panel": {
     "changes": "Changes",
@@ -71,6 +73,26 @@
     "normal": "MEDIUM",
     "hard": "NORMAL"
   },
+  "rooms": {
+    "title": "Choose a Room",
+    "joinPublic": "Join Public Room",
+    "online": "online",
+    "groupsTitle": "Groups",
+    "loading": "Loading rooms…",
+    "noGroups": "No groups yet — create one below.",
+    "join": "Join",
+    "locked": "Password protected",
+    "passwordPlaceholder": "Password",
+    "cancel": "Cancel",
+    "createTitle": "Create a Group",
+    "namePlaceholder": "Group name",
+    "passwordOptionalPlaceholder": "Password (optional)",
+    "create": "Create",
+    "back": "Back",
+    "rejected": "Couldn't join: {{reason}}",
+    "reasonWrongPassword": "wrong password",
+    "reasonRoomFull": "room is full"
+  },
   "app": {
     "titleWelcome": "Online Pixel Dungeon — multiplayer roguelike",
     "descWelcome": "A multiplayer roguelike dungeon crawler based on Shattered Pixel Dungeon. Play online for free in your browser, no download required.",
@@ -91,9 +113,8 @@
     "newSubclass": "New subclass available!",
     "newAbility": "New armor ability available!",
     "tierUnlocked": "Tier {{tier}} unlocked!",
-    "talentPoints_0": "{{count}} talent points",
-    "talentPoints_1": "{{count}} talent point",
-    "talentPoints_2": "{{count}} talent points",
+    "talentPoints_one": "{{count}} talent point",
+    "talentPoints_other": "{{count}} talent points",
     "tapToView": "Tap to view",
     "points": "Points: {{current}}/{{max}}",
     "upgrade": "Upgrade",

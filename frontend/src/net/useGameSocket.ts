@@ -14,6 +14,10 @@ const WATCHDOG_TIMEOUT_MS = 30000;
 const RECONNECT_BASE_MS = 500;
 const RECONNECT_MAX_MS = 10000;
 
+// Room-join rejection close codes (backend/app/main.py's game_websocket):
+// 4001 wrong password, 4002 room full. Never worth retrying.
+const ROOM_REJECT_CODES = new Set([4001, 4002]);
+
 // Stairs/chasm events that should fade-and-snap the camera on floor change.
 // CHASM_FALL is the fall transition (SPD Chasm.heroFall -> InterlevelScene.Mode.FALL).
 const FLOOR_CHANGE_EVENT_TYPES = new Set(['STAIRS_DOWN', 'STAIRS_UP', 'CHASM_FALL']);
@@ -21,12 +25,14 @@ const FLOOR_CHANGE_EVENT_TYPES = new Set(['STAIRS_DOWN', 'STAIRS_UP', 'CHASM_FAL
 export default function useGameSocket({
   enabled,
   gameId,
+  roomPassword,
   sessionId,
   selectedClass,
   difficulty,
   challenges,
   playerName,
   setConnectionStatus,
+  onRoomRejected,
   socketRef,
   gridRef,
   myPlayerIdRef,
@@ -152,7 +158,8 @@ export default function useGameSocket({
       const adminSecret = urlParams.get('admin_secret') || '';
       const adminParam = adminSecret ? `&admin_secret=${encodeURIComponent(adminSecret)}` : '';
       const challengesParam = challenges ? `&challenges=${encodeURIComponent(challenges)}` : '';
-      const ws = new WebSocket(`${wsBaseUrl}/ws/game/${gameId}?class_type=${selectedClass}&difficulty=${difficulty}${challengesParam}${nameParam}${adminParam}${sessionParam}`);
+      const roomPasswordParam = roomPassword ? `&room_password=${encodeURIComponent(roomPassword)}` : '';
+      const ws = new WebSocket(`${wsBaseUrl}/ws/game/${gameId}?class_type=${selectedClass}&difficulty=${difficulty}${challengesParam}${nameParam}${adminParam}${sessionParam}${roomPasswordParam}`);
       socketRef.current = ws;
 
       ws.onopen = () => {
@@ -172,8 +179,13 @@ export default function useGameSocket({
       ws.onerror = () => {
         if (attempt === 0) console.warn('Failed to connect to channel');
       };
-      ws.onclose = () => {
+      ws.onclose = (event) => {
         clearTimers();
+        if (ROOM_REJECT_CODES.has(event.code)) {
+          intentionalClose = true;
+          onRoomRejected?.(event.reason || 'rejected');
+          return;
+        }
         scheduleReconnect();
       };
 

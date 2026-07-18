@@ -197,9 +197,61 @@ class GenerationMixin:
                     mob.hp = 120
                     mob.max_hp = 120
 
+        self._apply_party_loot_bonus(floor)
         self._trinket_apply_post_spawn(floor)
 
         return floor
+
+    def _apply_party_loot_bonus(self, floor: FloorState) -> None:
+        """Online-only, no SPD equivalent: extra potions/scrolls scaled by
+        live co-op party size (party_loot_multiplier), layered on top of
+        SPD-parity generation rather than perturbing its RNG sequence.
+
+        Scales off THIS floor's own just-generated potion/scroll count
+        (general category rolls + the guaranteed Potion of
+        Strength/Scroll of Upgrade minimums -- both already materialize as
+        plain Potion/Scroll instances by this point, see
+        spd_adapter._DESCRIPTOR_ITEM_MAP, so they can't be told apart and
+        are scaled together) rather than a hand-tuned rate, so a 5-player
+        party (3x) ends up with ~3x this floor's own potions and ~3x its
+        own scrolls regardless of depth/region/special-room variance.
+        """
+        from app.engine.game.constants import party_loot_multiplier
+        from app.engine.game.world import _random_free_cell
+        from app.engine.game.spd_adapter import _random_scroll
+        from app.engine.entities.items_potions import Potion
+        from app.engine.entities.items_scrolls import Scroll
+
+        alive = len([p for p in self.players.values() if p.is_alive])
+        mult = party_loot_multiplier(alive)
+        if mult <= 1.0:
+            return
+        extra = mult - 1.0
+
+        base_potions = sum(1 for it in floor.items.values() if isinstance(it, Potion))
+        base_scrolls = sum(1 for it in floor.items.values() if isinstance(it, Scroll))
+
+        def rolled_count(rate: float) -> int:
+            c = rate * extra
+            cnt = 0
+            while c > 0:
+                if random.random() < min(c, 1.0):
+                    cnt += 1
+                c -= 1.0
+            return cnt
+
+        def drop(make_item) -> None:
+            cell = _random_free_cell(floor)
+            if cell is None:
+                return
+            x, y = cell
+            item = make_item(x, y)
+            floor.items[item.id] = item
+
+        for _ in range(rolled_count(base_potions)):
+            drop(lambda x, y: HealthPotion(id=str(uuid.uuid4()), pos=Position(x=x, y=y)))
+        for _ in range(rolled_count(base_scrolls)):
+            drop(lambda x, y: _random_scroll(str(uuid.uuid4()), Position(x=x, y=y)))
 
     def _get_sewers_rotation(self, floor_id: int) -> List[Type[MobEntity]]:
         rotations = {
