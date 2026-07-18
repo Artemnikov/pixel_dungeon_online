@@ -107,6 +107,41 @@ class TrapType:
         EXPLOSIVE_TRAP: True,
     }
 
+    CAN_BE_SEARCHED = {
+        WORN_DART: True,
+        TENGU_DART: False,
+        BURNING_TRAP: True,
+        BLAZING_TRAP: True,
+        SHOCKING_TRAP: True,
+        STORM_TRAP: True,
+        CHILLING_TRAP: True,
+        TOXIC_TRAP: True,
+        POISON_DART_TRAP: True,
+        CONFUSION_TRAP: True,
+        FLOCK_TRAP: True,
+        SUMMONING_TRAP: True,
+        TELEPORTATION_TRAP: True,
+        GATEWAY_TRAP: True,
+        ALARM_TRAP: True,
+        OOZE_TRAP: True,
+        GRIPPING_TRAP: True,
+        GEYSER_TRAP: True,
+        FROST_TRAP: True,
+        CORROSION_TRAP: True,
+        ROCKFALL_TRAP: True,
+        GUARDIAN_TRAP: True,
+        WARPING_TRAP: True,
+        PITFALL_TRAP: True,
+        DISINTEGRATION_TRAP: True,
+        FLASHING_TRAP: True,
+        WEAKENING_TRAP: True,
+        DISARMING_TRAP: True,
+        CURSING_TRAP: True,
+        DISTORTION_TRAP: True,
+        GRIM_TRAP: True,
+        EXPLOSIVE_TRAP: True,
+    }
+
 
 class TrapVisual:
     RED = 0

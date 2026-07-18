@@ -27,6 +27,8 @@ import { advanceAndDrawScreenShake } from './draw/screenShake';
 import { advanceAndDrawBeams } from './draw/beam';
 import { advanceAndDrawBlobAreas, advanceAndDrawBlobParticles } from './draw/blobArea';
 import { advanceAndDrawSinkDrips } from './draw/sinkDrip';
+import { advanceAndDrawWaterRipples } from './draw/waterRipple';
+import { advanceHallsSteam } from './draw/hallsSteam';
 import { advanceAndDrawFadingTraps } from './draw/fadingTraps';
 import { advanceAndDrawAlchemyBubbles } from './draw/alchemyBubbles';
 import { drawBombItem } from './draw/bombOverlay';
@@ -213,6 +215,8 @@ export default function useGameRenderer({
       advanceAndDrawBlobAreas(ctx, { blobAreasRef, visionRef });
       advanceAndDrawBlobParticles(ctx, { blobAreasRef, visionRef, particlesRef });
       advanceAndDrawSinkDrips(ctx, { grid, depth, visionRef, particlesRef });
+      advanceAndDrawWaterRipples(ctx, { assetImages });
+      advanceHallsSteam({ grid, depth, visionRef, particlesRef });
       if (warnedTilesRef) drawWarnedTiles(ctx, { ref: warnedTilesRef });
       drawItems(ctx, { entitiesRef, visionRef, assetImages });
       drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef, dyingMobsRef, shieldFxRef: shieldHaloRef });

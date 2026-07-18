@@ -466,12 +466,6 @@ class WorldInteractionMixin:
             distance += 1
             circular = wide_search == 1
 
-        # TrapMechanism trinket: extra trap reveal chance during search
-        from app.engine.entities.trinkets import TrapMechanism as _TM
-        from app.engine.entities.trinkets import trinket_level
-        tm_lvl = trinket_level(player, "trap_mechanism")
-        trap_reveal_chance = _TM.reveal_hidden_trap_chance(tm_lvl) if tm_lvl >= 0 else 0.0
-
         for dy in range(-distance, distance + 1):
             for dx in range(-distance, distance + 1):
                 if dx == 0 and dy == 0:
@@ -492,13 +486,12 @@ class WorldInteractionMixin:
                     found_secret = True
 
                 trap = floor.traps.get(pos)
-                if trap and trap.hidden:
-                    if trap_reveal_chance > 0 and random.random() < trap_reveal_chance:
-                        trap.hidden = False
-                        found_secret = True
-                        if floor.grid[ty][tx] == TileType.SECRET_TRAP:
-                            floor.grid[ty][tx] = TileType.TRAP
-                            patches.append({"x": tx, "y": ty, "tile": TileType.TRAP})
+                if trap and trap.hidden and trap.can_be_searched:
+                    trap.hidden = False
+                    found_secret = True
+                    if floor.grid[ty][tx] == TileType.SECRET_TRAP:
+                        floor.grid[ty][tx] = TileType.TRAP
+                        patches.append({"x": tx, "y": ty, "tile": TileType.TRAP})
 
         if patches:
             # Tile mutations changed the grid — refresh derived flag maps
@@ -557,7 +550,8 @@ class WorldInteractionMixin:
         player.action_until = max(player.action_until, time.time() + KEY_TIME_TO_UNLOCK)
         return True
 
-    def _trigger_trap_if_needed(self, floor: FloorState, player: Player, floor_id: int):
+    def _trigger_trap_if_needed(self, floor: FloorState, player, floor_id: int):
+        from app.engine.entities.base import Entity as _Entity
         if player.has_buff("levitation"):
             return
         pos = (player.pos.x, player.pos.y)
@@ -565,6 +559,7 @@ class WorldInteractionMixin:
         if not trap or not trap.active:
             return
 
+        is_player = isinstance(player, Player)
         patches: List[dict] = []
         if trap.hidden:
             trap.hidden = False
@@ -582,8 +577,9 @@ class WorldInteractionMixin:
             dealt = player.take_damage(damage)
             from app.engine.entities.buffs import add_buff
             add_buff(player.buffs, "poison", duration=8.0, level=1, stack_mode="extend")
-            self.boss_scores[1] -= 100
-            self.qualified_for_boss_challenge = False
+            if is_player:
+                self.boss_scores[1] -= 100
+                self.qualified_for_boss_challenge = False
         elif trap.trap_type == "burning_trap":
             _spawn_trap_fire(floor, player.pos.x, player.pos.y, 2, 2)
             self.add_event("PLAY_SOUND", {"sound": "BURNING"}, floor_id=floor_id)
@@ -608,7 +604,7 @@ class WorldInteractionMixin:
             from app.engine.entities.buffs import add_buff
             from app.engine.game.terrain_effects import _create_gas
             if trap.trap_type == "toxic_trap":
-                _create_gas(floor, (player.pos.x, player.pos.y), 4 + player.floor_id // 3, "toxic_gas")
+                _create_gas(floor, (player.pos.x, player.pos.y), 4 + floor_id // 3, "toxic_gas")
             else:
                 add_buff(player.buffs, "poison", duration=10.0, level=1, stack_mode="extend")
                 _create_gas(floor, (player.pos.x, player.pos.y), 2, "toxic_gas")
@@ -640,7 +636,7 @@ class WorldInteractionMixin:
             dealt = 0
         elif trap.trap_type == "corrosion_trap":
             from app.engine.game.terrain_effects import _create_gas
-            _create_gas(floor, (player.pos.x, player.pos.y), 1 + player.floor_id // 4, "corrosive_gas")
+            _create_gas(floor, (player.pos.x, player.pos.y), 1 + floor_id // 4, "corrosive_gas")
             self.add_event("PLAY_SOUND", {"sound": "GAS"}, floor_id=floor_id)
             damage = 0
             dealt = 0
@@ -664,10 +660,19 @@ class WorldInteractionMixin:
             damage = 0
             dealt = 0
         elif trap.trap_type == "explosive_trap":
-            _spawn_trap_fire(floor, player.pos.x, player.pos.y, 2, 4)
             damage = max(1, player.hp // 6)
             dealt = player.take_damage(damage)
-            self.add_event("PLAY_SOUND", {"sound": "BURNING"}, floor_id=floor_id)
+            self.add_event("PLAY_SOUND", {"sound": "BLAST"}, floor_id=floor_id)
+            blast_cells = []
+            for ox in (-1, 0, 1):
+                for oy in (-1, 0, 1):
+                    blast_cells.append([player.pos.x + ox, player.pos.y + oy])
+            self.add_event("BOMB_BLAST", {
+                "x": player.pos.x, "y": player.pos.y,
+                "kind": "bomb", "cells": blast_cells,
+            }, floor_id=floor_id)
+            self.add_event("SCREEN_SHAKE", {"intensity": 2, "duration_ms": 300},
+                           floor_id=floor_id)
         elif trap.trap_type == "pitfall_trap":
             # SPD PitfallTrap: opens a 3x3 pit around the trap cell; mobs on
             # those cells fall to their death (Chasm.mobFall) and the hero
@@ -678,9 +683,10 @@ class WorldInteractionMixin:
             dealt = 0
             if is_boss_level(floor_id) or floor_id > 25 or floor_id >= MAX_FLOOR_ID:
                 # Too solid — trap triggers but no pit opens.
-                self.add_event("MESSAGE",
-                    {"text": "The ground is too solid for a pitfall trap to work here."},
-                    player_id=player.id)
+                if is_player:
+                    self.add_event("MESSAGE",
+                        {"text": "The ground is too solid for a pitfall trap to work here."},
+                        player_id=player.id)
             else:
                 # PitfallParticle burst on the 3x3 around the trap cell.
                 pit_cells = []
@@ -712,7 +718,7 @@ class WorldInteractionMixin:
                                 self.handle_mob_death(mob, floor, floor_id)
 
                 # Hero falls last (SPD: "process hero falling last").
-                if not player.has_buff("levitation"):
+                if is_player and not player.has_buff("levitation"):
                     # Emit TRAP_TRIGGERED before the fall moves the player to
                     # the next floor (after which floor_id is stale).
                     if patches:
@@ -723,6 +729,14 @@ class WorldInteractionMixin:
                         floor_id=floor_id)
                     self._perform_chasm_fall(player, floor_id, player.pos.x, player.pos.y)
                     return
+                # Non-player entity falls to death in the pit.
+                elif not is_player and not player.has_buff("levitation"):
+                    player.is_alive = False
+                    self.add_event("MOB_CHASM_FALL",
+                        {"mob": player.id, "x": player.pos.x, "y": player.pos.y},
+                        floor_id=floor_id)
+                    self.add_event("DEATH", {"target": player.id}, floor_id=floor_id)
+                    self.handle_mob_death(player, floor, floor_id)
         else:
             damage = 2
             dealt = player.take_damage(damage)
@@ -738,10 +752,11 @@ class WorldInteractionMixin:
         )
         if dealt > 0:
             self.add_event("DAMAGE", {"target": player.id, "amount": dealt}, floor_id=floor_id)
-            self.add_event("PLAY_SOUND", {"sound": "HIT_BODY"}, floor_id=floor_id, source_player_id=player.id)
-            warn_sound = hurt_warning_sound(dealt, player.hp, player.get_total_max_hp())
-            if warn_sound:
-                self.add_event("PLAY_SOUND", {"sound": warn_sound}, player_id=player.id)
+            self.add_event("PLAY_SOUND", {"sound": "HIT_BODY"}, floor_id=floor_id, source_player_id=player.id if is_player else None)
+            if is_player:
+                warn_sound = hurt_warning_sound(dealt, player.hp, player.get_total_max_hp())
+                if warn_sound:
+                    self.add_event("PLAY_SOUND", {"sound": warn_sound}, player_id=player.id)
 
     # -- Shop / NPC interaction --------------------------------------------
 

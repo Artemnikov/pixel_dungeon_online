@@ -27,6 +27,7 @@ from __future__ import annotations
 class Trap:
     avoids_hallways = False
     can_be_hidden = True
+    can_be_searched = True
 
     def __init__(self):
         self.visible = True
@@ -177,6 +178,11 @@ class GrimTrap(Trap):
 # incl. sewers depths 1-4) -- ExplosiveTrap.java, avoidsHallways not overridden.
 class ExplosiveTrap(Trap):
     pass
+
+
+# Tengu boss arena (not in any regular trap pool)
+class TenguDartTrap(Trap):
+    can_be_searched = False
 
 
 # SewerLevel.trapClasses()/trapChances() -- depth==1 vs depth>1 (Random.java
