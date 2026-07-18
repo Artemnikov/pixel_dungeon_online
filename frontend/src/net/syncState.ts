@@ -94,6 +94,7 @@ export function syncState(data: StateUpdateMessage, ctx: SyncCtx): void {
         talentPoints: p.subclass_info?.talent_points || {},
         bonusTalentPoints: p.subclass_info?.bonus_talent_points || {},
         keys: p.keys || [],
+        respawnsUsed: p.respawns_used ?? 0,
       });
     }
 
@@ -132,6 +133,7 @@ export function syncState(data: StateUpdateMessage, ctx: SyncCtx): void {
       existing.name = p.name;
       existing.hp = p.hp;
       existing.max_hp = p.max_hp;
+      existing.shields = p.shields;
       existing.equipped_wearable = p.equipped_wearable;
       applyInvisFade(existing, p.invisible || 0, !!p.is_afk);
       if (p.is_downed && !existing.is_downed) {

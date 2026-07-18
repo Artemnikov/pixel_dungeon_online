@@ -201,16 +201,6 @@ class GenerationMixin:
 
         return floor
 
-    def _is_in_entrance_room(self, floor: FloorState, x: int, y: int) -> bool:
-        if not floor.rooms:
-            return False
-
-        room = floor.rooms[0]  # entrance / up-stairs room
-        return (
-            room.x <= x < room.x + room.width
-            and room.y <= y < room.y + room.height
-        )
-
     def _get_sewers_rotation(self, floor_id: int) -> List[Type[MobEntity]]:
         rotations = {
             1: [Rat, Rat, Rat, Snake],

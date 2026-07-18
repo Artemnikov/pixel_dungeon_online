@@ -96,27 +96,27 @@ export function drawPlayers(ctx, { entitiesRef, visionRef, assetImages, playerAn
       const maxHp = player.max_hp || 1;
       const shield = (player.shields || []).reduce((sum, s) => sum + (s.amount || 0), 0);
 
-      if (hp < maxHp || shield > 0) {
+      {
         const max = Math.max(hp + shield, maxHp);
         let healthPct = hp / max;
         let shieldPct = (hp + shield) / max;
 
         const barW = TILE_SIZE * (4 / 6);
         const barX = x + (TILE_SIZE - barW) / 2;
-        const barY = y - 2;
+        const barY = y - 8;
 
         const pxW = barW;
 
         ctx.fillStyle = '#cc0000';
-        ctx.fillRect(barX, barY, barW, 1);
+        ctx.fillRect(barX, barY, barW, 2);
 
         const shldW = barW * pixelRound(shieldPct, pxW);
         ctx.fillStyle = '#ffffff';
-        ctx.fillRect(barX, barY, shldW, 1);
+        ctx.fillRect(barX, barY, shldW, 2);
 
         const hpW = barW * pixelRound(healthPct, pxW);
         ctx.fillStyle = '#00ee00';
-        ctx.fillRect(barX, barY, hpW, 1);
+        ctx.fillRect(barX, barY, hpW, 2);
       }
     }
 

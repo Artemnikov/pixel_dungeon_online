@@ -356,6 +356,9 @@ export function handleCombatEvents(event: GameEvent, ctx: HandlerCtx): boolean {
         score_breakdown: event.data.score_breakdown,
         can_resurrect: event.data.can_resurrect,
         victory: event.data.victory,
+        respawns_used: event.data.respawns_used,
+        max_respawns: event.data.max_respawns,
+        loot_dropped: event.data.loot_dropped,
       });
       return true;
     }
@@ -365,6 +368,26 @@ export function handleCombatEvents(event: GameEvent, ctx: HandlerCtx): boolean {
       if (mob.faction === 'enemy') addGameLog(`${mob.name} defeated!`, 'positive');
     }
     if (selectedEnemyIdRef?.current === id) selectedEnemyIdRef.current = null;
+    return true;
+  }
+
+  if (event.type === 'SPAWN') {
+    const id = event.data.target;
+    if (event.data.is_resurrect) {
+      const entity = entitiesRef.current.players[id];
+      if (entity) {
+        const px = entity.renderPos.x * TILE_SIZE + TILE_SIZE / 2;
+        const py = entity.renderPos.y * TILE_SIZE + TILE_SIZE / 2;
+        if (id === myPlayerIdRef.current || visionRef?.current?.visible?.has(`${Math.round(entity.renderPos.x)},${Math.round(entity.renderPos.y)}`)) {
+          spawnWhiteSplash(particlesRef, px, py, 12);
+          spawnEnergy(particlesRef, px, py, 10);
+          AudioManager.play('REVIVE');
+          if (id !== myPlayerIdRef.current) {
+            addGameLog(`${entity.name || 'Player'} was resurrected!`, 'positive');
+          }
+        }
+      }
+    }
     return true;
   }
 

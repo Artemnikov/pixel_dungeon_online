@@ -27,7 +27,6 @@ from app.engine.game.constants import (
     NO_RESPAWN_FLOORS,
     PASSIVE_REGEN_INTERVAL,
     RESPAWN_TURNS,
-    ROOM_HEAL_AMOUNT,
     SEWERS_MAX_FLOOR,
 )
 from app.engine.game.floor_state import FloorState

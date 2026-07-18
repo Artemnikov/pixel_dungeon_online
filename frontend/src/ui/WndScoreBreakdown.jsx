@@ -28,6 +28,10 @@ export default function WndScoreBreakdown({ scoreBreakdown, onClose }) {
     mults.push({ label: t('score.winMultiplier'), value: `${scoreBreakdown.win_multiplier.toFixed(2)}x` });
   if (scoreBreakdown.challenge_multiplier && scoreBreakdown.challenge_multiplier > 1)
     mults.push({ label: t('score.challengeMultiplier'), value: `${scoreBreakdown.challenge_multiplier.toFixed(2)}x` });
+  if (scoreBreakdown.respawn_multiplier != null && scoreBreakdown.respawn_multiplier < 1)
+    mults.push({ label: t('score.respawnMultiplier'), value: `${scoreBreakdown.respawn_multiplier.toFixed(2)}x` });
+  if (scoreBreakdown.witness_multiplier != null && scoreBreakdown.witness_multiplier < 1)
+    mults.push({ label: t('score.witnessMultiplier'), value: `${scoreBreakdown.witness_multiplier.toFixed(2)}x` });
 
   return (
     <div className="wnd-overlay" onClick={onClose}>

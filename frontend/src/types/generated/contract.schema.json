@@ -13142,6 +13142,17 @@
         "summon_lifespan": {
           "default": 0.0,
           "type": "number"
+        },
+        "aggro_target_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "required": [
@@ -13985,6 +13996,14 @@
           "default": false,
           "type": "boolean"
         },
+        "respawns_used": {
+          "default": 0,
+          "type": "integer"
+        },
+        "witnessed_respawns": {
+          "default": 0,
+          "type": "integer"
+        },
         "kills_count": {
           "default": 0,
           "type": "integer"
@@ -14006,10 +14025,6 @@
           "type": "number"
         },
         "heal_cooldown": {
-          "default": 0,
-          "type": "integer"
-        },
-        "room_heal_cooldown": {
           "default": 0,
           "type": "integer"
         },

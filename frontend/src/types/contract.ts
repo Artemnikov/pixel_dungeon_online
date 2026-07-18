@@ -196,6 +196,21 @@ export interface DeathEvent {
     score_breakdown?: { kills: number; floors: number; gold: number };
     can_resurrect?: boolean;
     victory?: boolean;
+    loot_dropped?: boolean;
+    respawns_used?: number;
+    max_respawns?: number;
+  };
+}
+
+export interface SpawnEvent {
+  type: 'SPAWN';
+  data: {
+    target: string;
+    floor_id: number;
+    is_resurrect?: boolean;
+    hp?: number;
+    respawns_used?: number;
+    max_respawns?: number;
   };
 }
 
@@ -1124,7 +1139,8 @@ export type GameEvent =
   | TrinketChoiceEvent
   | ToolkitBrewEvent
   | ToolkitEnergizePromptEvent
-  | ToolkitEnergizedEvent;
+  | ToolkitEnergizedEvent
+  | SpawnEvent;
 
 export type GameEventType = GameEvent['type'];
 
@@ -1242,4 +1258,5 @@ export type ClientMessage =
   | { type: 'ALCHEMY_BREW'; ingredient_ids: string[]; recipe_index: number }
   | { type: 'ALCHEMY_ENERGIZE'; item_id: string; all_items: boolean }
   | { type: 'ALCHEMY_TRINKET_CHOOSE'; catalyst_id: string; kind: string }
-  | { type: 'TOOLKIT_ENERGIZE'; toolkit_id: string; levels: number };
+  | { type: 'TOOLKIT_ENERGIZE'; toolkit_id: string; levels: number }
+  | { type: 'RESURRECT' };

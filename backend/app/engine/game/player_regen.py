@@ -27,7 +27,6 @@ from app.engine.game.constants import (
     HEAL_TICK_INTERVAL,
     PASSIVE_REGEN_INTERVAL,
     RECHARGING_REGEN_MULTIPLIER,
-    ROOM_HEAL_AMOUNT,
 )
 
 
@@ -102,33 +101,6 @@ class PlayerRegenMixin:
             floor_id=player.floor_id,
         )
 
-    def _apply_room_heal_tick(self, player: Player):
-        floor = self.floors.get(player.floor_id)
-        if floor is None or not floor.rooms:
-            return
-
-        if not self._is_in_entrance_room(floor, player.pos.x, player.pos.y):
-            player.room_heal_cooldown = 0
-            return
-
-        max_hp = player.get_total_max_hp()
-        if player.hp >= max_hp:
-            return
-
-        player.room_heal_cooldown -= 1
-        if player.room_heal_cooldown > 0:
-            return
-
-        amt = min(ROOM_HEAL_AMOUNT, max_hp - player.hp)
-        player.hp += amt
-        player.room_heal_cooldown = HEAL_TICK_INTERVAL
-
-        self.add_event(
-            "HEAL",
-            {"target": player.id, "amount": int(amt), "x": player.pos.x, "y": player.pos.y},
-            floor_id=player.floor_id,
-        )
-
     _HUNGER_RATE = 1.0 / 20.0
     _HUNGER_HUNGRY = 300.0
     _HUNGER_STARVING = 450.0
@@ -148,11 +120,7 @@ class PlayerRegenMixin:
             player.take_damage(dmg)
 
     def _apply_passive_regen(self, player: Player):
-        floor = self.floors.get(player.floor_id)
-        if floor is None or not floor.rooms:
-            return
-        in_entrance = self._is_in_entrance_room(floor, player.pos.x, player.pos.y)
-        if not in_entrance and not player.has_buff("well_fed"):
+        if not player.has_buff("well_fed"):
             return
         # SPD Regeneration.regenOn(): LockedFloor (sealed boss arena) pauses
         # passive regen once its timer runs out.
@@ -169,8 +137,7 @@ class PlayerRegenMixin:
         if salt_lvl >= 0:
             mult = _SaltCube.health_regen_multiplier(salt_lvl)
             interval = int(interval / mult) if mult > 0 else interval
-        if player.has_buff("well_fed"):
-            interval = max(1, interval // 3)  # 3x regen rate
+        interval = max(1, interval // 3)  # 3x regen rate while well_fed
         cooldown = getattr(player, "_regen_cooldown", 0)
         cooldown -= 1
         if cooldown > 0:

@@ -79,7 +79,6 @@ class PlayerTickMixin:
 
         self._apply_heal_tick(player)
         self._apply_aqua_heal_tick(player)
-        self._apply_room_heal_tick(player)
         self._apply_passive_regen(player)
         heal_buff = get_buff(player.buffs, "healing")
         if heal_buff and player.hp < player.get_total_max_hp():

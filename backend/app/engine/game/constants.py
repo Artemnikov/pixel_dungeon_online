@@ -32,7 +32,6 @@ PATH_BLOCKED_GIVE_UP_TICKS = 6
 
 GAME_TURN_TICKS = 20  # 20 game-loop ticks per game turn (at 20 Hz → 1 turn/sec)
 HEAL_TICK_INTERVAL = 20
-ROOM_HEAL_AMOUNT = 10
 PASSIVE_REGEN_INTERVAL = 10
 
 # Scroll of Recharging aftereffect: multiplier applied to passive wand regen
@@ -53,6 +52,12 @@ GOO_WATER_HEAL_INTERVAL = 20
 RESPAWN_TURNS = 50
 # No respawns on floor 1
 NO_RESPAWN_FLOORS = {1}
+
+# In-place respawn (Easy and Medium difficulty): max resurrections per run,
+# spawn-protection turns after each respawn (invulnerability window so a mob
+# camping the stairs can't instantly re-kill the reborn hero).
+RESPAWN_MAX_USES = 3
+RESPAWN_SPAWN_PROTECTION_TURNS = 3
 
 # Canvas seed size handed to the generator. The v2 generator resizes its canvas
 # to fit the room layout, so each floor ends up a different size; these are only

@@ -70,13 +70,14 @@ export interface Player {
   is_downed?: boolean;
   death_processed?: boolean;
   is_afk?: boolean;
+  respawns_used?: number;
+  witnessed_respawns?: number;
   kills_count?: number;
   floors_explored?: number;
   heal_left?: number;
   heal_pct_per_tick?: number;
   heal_flat_per_tick?: number;
   heal_cooldown?: number;
-  room_heal_cooldown?: number;
   aqua_heal_left?: number;
   locked_floor_left?: number | null;
   pending_chasm_fall?: [unknown, unknown] | null;
@@ -7039,6 +7040,7 @@ export interface Mob {
   freeze_ticks?: number;
   owner_id?: string | null;
   summon_lifespan?: number;
+  aggro_target_id?: string | null;
 }
 export interface DropEntry {
   item_kind: string;

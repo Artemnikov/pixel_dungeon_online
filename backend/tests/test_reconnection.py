@@ -75,6 +75,11 @@ def test_reaper_kills_hero_after_grace_expires():
         ws = DummyWebSocket()
         player_id, _ = await manager.connect(game_id, ws, session_id)
         game = manager.game_instances[game_id]
+        # Hard: this test wants a plain "everything scatters" death, not
+        # Medium's weapon/armor-survives perk (Medium is the game's default
+        # difficulty, so it must be set explicitly here).
+        from app.engine.entities.player import Difficulty
+        game.change_difficulty(Difficulty.HARD)
         game.add_player(player_id, "Hero")
         player = game.players[player_id]
         # Give the hero something to drop (default class is Warrior, whose
@@ -155,6 +160,37 @@ def test_reaped_corpse_does_not_block_game_cleanup():
         # abandoned game must still be torn down, not leak forever.
         manager.cleanup_if_empty(game_id)
         assert game_id not in manager.game_instances
+
+    asyncio.run(scenario())
+
+
+def test_stale_disconnect_does_not_afk_a_newer_live_connection():
+    # React StrictMode (dev) double-invokes the socket effect on mount: a
+    # first WS connects, then gets torn down almost immediately while a
+    # second WS for the *same session* is already live. The stale first
+    # connection's disconnect callback can arrive after the second connect
+    # rebound the hero -- it must not clobber that live connection's state
+    # and strand the hero AFK ("stuck as a ghost") while still connected.
+    async def scenario():
+        manager = ConnectionManager()
+        game_id, session_id = "g", "sess-1"
+
+        ws1 = DummyWebSocket()
+        player_id, _ = await manager.connect(game_id, ws1, session_id)
+        manager.game_instances[game_id].add_player(player_id, "Hero")
+
+        # Second connection for the same session arrives before the first's
+        # disconnect is processed (both are "live" from the manager's view).
+        ws2 = DummyWebSocket()
+        await manager.connect(game_id, ws2, session_id)
+        assert manager.game_instances[game_id].players[player_id].is_afk is False
+
+        # Now the stale first connection's disconnect fires.
+        manager.disconnect(game_id, ws1)
+
+        player = manager.game_instances[game_id].players[player_id]
+        assert player.is_afk is False, "a still-live newer connection must not be marked AFK"
+        assert player_id not in manager.disconnect_deadline.get(game_id, {})
 
     asyncio.run(scenario())
 

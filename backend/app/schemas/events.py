@@ -50,6 +50,12 @@ class DamageData(_EventData):
 
 class DeathData(_EventData):
     target: str
+    score_breakdown: Optional[dict] = None
+    can_resurrect: Optional[bool] = None
+    victory: Optional[bool] = None
+    loot_dropped: Optional[bool] = None
+    respawns_used: Optional[int] = None
+    max_respawns: Optional[int] = None
 
 
 class MoveData(_EventData):
@@ -512,6 +518,15 @@ class EyeDeathRayData(_EventData):
     target_y: int
 
 
+class SpawnData(_EventData):
+    target: str
+    floor_id: int
+    is_resurrect: Optional[bool] = None
+    hp: Optional[int] = None
+    respawns_used: Optional[int] = None
+    max_respawns: Optional[int] = None
+
+
 # event "type" -> payload model. Used by the opt-in dev validation hook.
 EVENT_MODELS = {
     "ATTACK": AttackData,
@@ -591,4 +606,5 @@ EVENT_MODELS = {
     "TOOLKIT_ENERGIZED": ToolkitEnergizedData,
     "BOMB_LIT": BombLitData,
     "BOMB_BLAST": BombBlastData,
+    "SPAWN": SpawnData,
 }
