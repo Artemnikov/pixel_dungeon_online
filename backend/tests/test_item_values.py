@@ -25,7 +25,7 @@ from app.engine.entities.items_wands import Wand
     (Boomerang(id="i", quantity=2), 40),
     (ThrowableDagger(id="i", quantity=2), 10),
     (ElixirOfAquaticRejuvenation(id="i", quantity=2), 120),
-    (VelvetPouch(id="i"), 30),
+    (VelvetPouch(id="i"), 0),
     (MagicalHolster(id="i"), 60),
     (Bag(id="i", name="Bag"), 0),
     (Key(id="i", name="Key"), 0),
