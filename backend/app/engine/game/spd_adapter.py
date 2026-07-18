@@ -630,6 +630,7 @@ def _convert_traps(gen_level: GenLevel, w: int) -> Dict[Tuple[int, int], TrapInf
             x=x, y=y, trap_type=trap_type,
             hidden=not spd_trap.visible,
             active=True,
+            can_be_searched=getattr(spd_trap, 'can_be_searched', True),
         )
     return traps
 

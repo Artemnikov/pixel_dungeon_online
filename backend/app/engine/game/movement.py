@@ -635,7 +635,7 @@ class MovementCombatMixin:
                 else:
                     self.add_event("TOAST", {"text": "Your backpack is full. Drop something to make room."}, player_id=entity.id, floor_id=floor_id)
 
-            self._trigger_trap_if_needed(floor, entity, floor_id)
+        self._trigger_trap_if_needed(floor, entity, floor_id)
 
         if isinstance(entity, Player) and tile == TileType.STAIRS_DOWN and entity.floor_id < MAX_FLOOR_ID:
             first_visit = entity.floor_id + 1 > entity.floors_explored

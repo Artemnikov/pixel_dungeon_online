@@ -926,8 +926,8 @@
     "multiplayer2": "If you fall, you can start a new run or return to the main menu from the game-over screen."
   },
   "changelog": {
-    "title": "v0.7.0",
-    "titleName": "Easy Respawn & Difficulty Rework",
+    "title": "v0.8.1",
+    "titleName": "Water Effects, Trap & Shield Fixes",
     "changes0": "In-place respawn on Easy and Medium difficulty — your hero is reborn at the floor's stairs with 50% HP, debuffs cleared and a 3-turn spawn-protection window. Max 3 resurrections per run; boss-floor deaths are final (no respawn on floors 5, 10, 15, ...).",
     "changes1": "Easy keeps your full gear on respawn; Medium keeps just your equipped weapon and armor; Hard has no respawn and scatters everything. UI difficulty labels renamed: NORMAL → MEDIUM, HARD → NORMAL — only the labels moved, not the difficulty progression or mob-AI aggression tiers.",
     "changes2": "Score penalties for respawns: each resurrection halves your score (3 respawns → 12.5%); witnessing a teammate's resurrection shaves 25% per use, floored at 10%.",
@@ -935,6 +935,10 @@
     "changes4": "Fixed React StrictMode double-connect leaving heroes stuck as AFK ghosts when a stale first socket's disconnect arrived after the second socket had already rebound for the same session.",
     "changes5": "Trap visibility fix: Worn Dart, Poison Dart, Rockfall, Disintegration and Grim traps are now always visible (matching SPD's canBeHidden=false) instead of sometimes spawning hidden.",
     "changes6": "Removed the obsolete entrance-room passive heal; the well_fed buff now drives the 3x regen bonus on its own. Mob door-open sounds now broadcast explicitly, and other players' HP bars are always visible (2px tall, repositioned above the sprite).",
+    "changes7": "Water effects: footsteps on water tiles now spawn animated ripples (ported from SPD Ripple.java), gated by flying/levitation checks; Halls dungeon floors render animated steam drifting over water (ported from SPD HallsLevel.Stream).",
+    "changes8": "Trap search fix: the Search action now always reveals all searchable hidden traps in range, matching SPD. Tengu's arena dart traps are flagged unsearchable so they stay hidden until triggered.",
+    "changes9": "Explosive trap fix: triggering an Explosive Trap now plays the correct bomb-blast VFX and screen shake instead of fire particles. Traps now properly affect non-player entities (mobs falling into pits, pitfall trap gas scaling uses floor_id not player.floor_id).",
+    "changes10": "Broken seal shield visualization: the Warrior's shield halo now renders correctly with proper layering and glow, matching SPD's shield-above-hp-bar layout.",
     "v062": "v0.6.2",
     "v062Name": "AFK Ghosts, Sewers & Alchemy Polish",
     "v0620": "When your connection drops, your hero now becomes an invisible, un-targetable \"(AFK)\" ghost instead of freezing in place; if you don't reconnect in time it dies through the normal death path (loot drop, grave) instead of vanishing.",

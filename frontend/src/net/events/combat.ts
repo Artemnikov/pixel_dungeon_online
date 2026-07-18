@@ -1,6 +1,6 @@
 import { TILE_SIZE, PLAYER_ATTACK_DURATION, HIT_CONNECT_DELAY, FLASH_DURATION } from '../../constants';
 import AudioManager from '../../audio/AudioManager';
-import { spawnBlood, spawnCorrosionSplash, spawnCritSparkle, spawnGrimShadow, spawnWhiteSplash, spawnEnergy } from '../../rendering/draw/particles';
+import { spawnBlood, spawnCorrosionSplash, spawnCritSparkle, spawnGrimShadow, spawnWhiteSplash, spawnEnergy, spawnBombBlast } from '../../rendering/draw/particles';
 import { spawnSurprise } from '../../rendering/draw/surprise';
 import { spawnFloatingText, TEXT_ICON } from '../../rendering/draw/floatingText';
 import { coordsForItem } from '../../rendering/sprites';
@@ -468,9 +468,9 @@ export function handleCombatEvents(event: GameEvent, ctx: HandlerCtx): boolean {
   if (event.type === 'EXPLOSIVE_PROC') {
     const ex = event.data.x * TILE_SIZE + TILE_SIZE / 2;
     const ey = event.data.y * TILE_SIZE + TILE_SIZE / 2;
-    spawnFlameBurst(particlesRef, ex, ey, 8);
+    spawnBombBlast(particlesRef, ex, ey, 26);
     spawnScreenShake(screenShakeRef, 3, 400);
-    AudioManager.play('EXPLOSION');
+    AudioManager.play('BLAST');
     return true;
   }
 

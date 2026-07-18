@@ -49,3 +49,4 @@ class TrapInfo:
     trap_type: str
     hidden: bool = True
     active: bool = True
+    can_be_searched: bool = True

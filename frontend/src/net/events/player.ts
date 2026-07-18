@@ -225,9 +225,10 @@ export function handlePlayerEvents(event: GameEvent, ctx: HandlerCtx): boolean {
         if (particlesRef) spawnSparkMoving(particlesRef, cx, cy + TILE_SIZE / 2, 6);
         if (floatingTextRef) spawnFloatingText(floatingTextRef, cx, cy, 'ZAP!', '#66ccff');
       } else {
-        AudioManager.play('TRAP');
+        const isExplosive = event.data.trap === 'explosive_trap';
+        if (!isExplosive) AudioManager.play('TRAP');
         if (event.data.damage > 0 && floatingTextRef) spawnFloatingText(floatingTextRef, cx, cy, `-${event.data.damage}`, '#e74c3c');
-        if (particlesRef) {
+        if (particlesRef && !isExplosive) {
           const trap = event.data.trap;
           if (trap === 'toxic_trap' || trap === 'poison_dart_trap') {
             for (let i = 0; i < 6; i++) spawnToxicGas(particlesRef, cx + (Math.random() - 0.5) * 32, cy + TILE_SIZE / 2 + (Math.random() - 0.5) * 32);

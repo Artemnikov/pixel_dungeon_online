@@ -145,7 +145,7 @@ class PrisonBossMixin:
 
         patches = list(cleared)
         for x, y in trap_cells:
-            floor.traps[(x, y)] = TrapInfo(x=x, y=y, trap_type=TrapType.TENGU_DART, hidden=True)
+            floor.traps[(x, y)] = TrapInfo(x=x, y=y, trap_type=TrapType.TENGU_DART, hidden=True, can_be_searched=False)
             floor.grid[y][x] = TileType.SECRET_TRAP
             patches.append({"x": x, "y": y, "tile": TileType.SECRET_TRAP})
 
