@@ -69,6 +69,7 @@ export interface Player {
   websocket_id?: string | null;
   is_downed?: boolean;
   death_processed?: boolean;
+  death_cause?: string | null;
   is_afk?: boolean;
   respawns_used?: number;
   witnessed_respawns?: number;
@@ -101,6 +102,7 @@ export interface Player {
   wealth_drops_to_equip?: number;
   seal_cooldown?: number;
   seal_no_enemy_ticks?: number;
+  seal_initial_shield?: number;
   endure_damage_bonus?: number;
   endure_hits_left?: number;
   endure_banked?: number;

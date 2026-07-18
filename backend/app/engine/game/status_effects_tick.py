@@ -165,4 +165,11 @@ class StatusEffectsTickMixin:
                 key="levitation", name="Levitation", icon=1,
                 remaining=levitation_buff.remaining, duration=30.0,
             ))
+        seal_shield = player.get_shield("broken_seal")
+        if seal_shield is not None and seal_shield.amount > 0:
+            effects.append(Effect(
+                key="seal_shield", name="Shield", icon=84,
+                remaining=seal_shield.amount,
+                duration=player.get_broken_seal_max_shield() or seal_shield.amount,
+            ))
         player.active_effects = effects

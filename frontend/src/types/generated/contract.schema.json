@@ -13992,6 +13992,17 @@
           "default": false,
           "type": "boolean"
         },
+        "death_cause": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "is_afk": {
           "default": false,
           "type": "boolean"
@@ -14170,6 +14181,10 @@
           "type": "integer"
         },
         "seal_no_enemy_ticks": {
+          "default": 0.0,
+          "type": "number"
+        },
+        "seal_initial_shield": {
           "default": 0,
           "type": "integer"
         },

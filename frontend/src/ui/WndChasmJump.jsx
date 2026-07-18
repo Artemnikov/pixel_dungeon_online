@@ -11,22 +11,25 @@ export default function WndChasmJump({ onConfirm, onDecline }) {
   const { t } = useTranslation();
 
   useEffect(() => {
-    const onKey = (e) => { if (e.key === 'Escape') onDecline(); };
+    const onKey = (e) => {
+      if (e.key === 'Escape') onDecline();
+      else if (e.key === 'Enter') onConfirm();
+    };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [onDecline]);
+  }, [onConfirm, onDecline]);
 
   return (
     <div className="wnd-chasm-jump-overlay">
       <div className="wnd-chasm-jump">
-        <div className="wnd-chasm-jump__title">{t('game.chasm.title', 'Jump into the chasm?')}</div>
-        <div className="wnd-chasm-jump__desc">{t('game.chasm.desc', "You'll fall to the floor below and take damage.")}</div>
+        <div className="wnd-chasm-jump__title">{t('game.chasm.title', 'Chasm')}</div>
+        <div className="wnd-chasm-jump__desc">{t('game.chasm.desc', 'Do you really want to jump into the chasm? A fall that far will be painful.')}</div>
         <div className="wnd-chasm-jump__actions">
           <button className="wnd-chasm-jump__btn wnd-chasm-jump__btn--yes" onClick={onConfirm}>
-            {t('game.chasm.yes', 'Yes')}
+            {t('game.chasm.yes', 'Yes, I know what I\'m doing')}
           </button>
           <button className="wnd-chasm-jump__btn wnd-chasm-jump__btn--no" onClick={onDecline}>
-            {t('game.chasm.no', 'No')}
+            {t('game.chasm.no', 'No, I changed my mind')}
           </button>
         </div>
       </div>

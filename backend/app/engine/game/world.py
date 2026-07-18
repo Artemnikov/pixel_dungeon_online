@@ -24,7 +24,7 @@ import uuid
 from typing import List, Optional, Tuple
 
 from app.engine.dungeon.generator import TileType
-from app.engine.entities.base import Position
+from app.engine.entities.base import Faction, Position
 from app.engine.entities.items_consumable import Key
 from app.engine.entities.items_equip import Armor, LeatherArmor, MailArmor, PlateArmor, ScaleArmor, make_named_melee_weapon
 from app.engine.entities.player import CharacterClass, Item, Player, hurt_warning_sound
@@ -668,6 +668,61 @@ class WorldInteractionMixin:
             damage = max(1, player.hp // 6)
             dealt = player.take_damage(damage)
             self.add_event("PLAY_SOUND", {"sound": "BURNING"}, floor_id=floor_id)
+        elif trap.trap_type == "pitfall_trap":
+            # SPD PitfallTrap: opens a 3x3 pit around the trap cell; mobs on
+            # those cells fall to their death (Chasm.mobFall) and the hero
+            # falls to the next floor (Chasm.heroFall). No-op on boss floors
+            # or beyond depth 25 (SPD: "the ground is too solid").
+            from app.engine.dungeon.spd_levelgen.run_state import is_boss_level
+            from app.engine.game.constants import MAX_FLOOR_ID
+            dealt = 0
+            if is_boss_level(floor_id) or floor_id > 25 or floor_id >= MAX_FLOOR_ID:
+                # Too solid — trap triggers but no pit opens.
+                self.add_event("MESSAGE",
+                    {"text": "The ground is too solid for a pitfall trap to work here."},
+                    player_id=player.id)
+            else:
+                # PitfallParticle burst on the 3x3 around the trap cell.
+                pit_cells = []
+                for ox in (-1, 0, 1):
+                    for oy in (-1, 0, 1):
+                        cx, cy = player.pos.x + ox, player.pos.y + oy
+                        if 0 <= cx < floor.width and 0 <= cy < floor.height:
+                            if floor.flags and floor.flags.passable[cy][cx]:
+                                pit_cells.append((cx, cy))
+                # Emit VFX for the pit opening (reuses LEAF_BURST-style per-cell
+                # particle spawn; the client renders a dust/earth burst).
+                for cx, cy in pit_cells:
+                    self.add_event("LEAF_BURST", {"x": cx, "y": cy}, floor_id=floor_id)
+                self.add_event("PLAY_SOUND", {"sound": "SHATTER"}, floor_id=floor_id)
+
+                # Mobs on pit cells fall to their death (Chasm.mobFall).
+                for cx, cy in pit_cells:
+                    for mob in list(floor.mobs.values()):
+                        if mob.is_alive and mob.pos.x == cx and mob.pos.y == cy:
+                            if not mob.flying and mob.faction != Faction.PLAYER:
+                                mob.is_alive = False
+                                self.add_event("MOB_CHASM_FALL",
+                                    {"mob": mob.id, "x": cx, "y": cy},
+                                    floor_id=floor_id)
+                                # DEATH event so the client's death animation
+                                # triggers alongside the fall VFX.
+                                self.add_event("DEATH", {"target": mob.id},
+                                    floor_id=floor_id)
+                                self.handle_mob_death(mob, floor, floor_id)
+
+                # Hero falls last (SPD: "process hero falling last").
+                if not player.has_buff("levitation"):
+                    # Emit TRAP_TRIGGERED before the fall moves the player to
+                    # the next floor (after which floor_id is stale).
+                    if patches:
+                        self.add_event("MAP_PATCH", {"tiles": patches}, floor_id=floor_id)
+                    self.add_event("TRAP_TRIGGERED",
+                        {"player": player.id, "trap": trap.trap_type, "damage": 0,
+                         "x": player.pos.x, "y": player.pos.y},
+                        floor_id=floor_id)
+                    self._perform_chasm_fall(player, floor_id, player.pos.x, player.pos.y)
+                    return
         else:
             damage = 2
             dealt = player.take_damage(damage)

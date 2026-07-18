@@ -194,8 +194,10 @@ class PlayersMixin:
         waterskin_slot = 2 if class_type == CharacterClass.ROGUE else 1
         player.quickslot.set_slot(waterskin_slot, waterskin)
 
-        # HeroClass.initWarrior(): the BrokenSeal starts affixed to the cloth
-        # armor (not in any equip slot), providing shielding on low HP.
+        # HeroClass.initWarrior(): the BrokenSeal is affixed to the cloth
+        # armor at spawn. The shield activates on HP dropping to <=50%
+        # (Char.java:937-946 / WarriorShield.activate) and is invisible
+        # (0 shielding, 0 cooldown) until then.
         if class_type == CharacterClass.WARRIOR:
             player.seal_affixed = True
 
@@ -277,9 +279,13 @@ class PlayersMixin:
         if player.earn_exp(xp_needed):
             self.on_talent_level_up(player)
 
-    def _random_fall_landing_cell(self, floor: FloorState) -> Position:
-        """Any passable, unoccupied cell on `floor` — simplified from SPD's
-        entrance-room-biased randomRespawnCell() (see design spec)."""
+    def _random_fall_landing_cell(self, floor: FloorState, fall_into_pit: bool = False) -> Position:
+        """SPD RegularLevel.fallCell(fallIntoPit): a passable, unoccupied cell on
+        `floor` to land on after a chasm fall. When `fall_into_pit` is true SPD
+        biases toward the PitRoom of a WeakFloorRoom; the remake doesn't yet
+        track PitRoom cells, so both paths collapse to the same random respawn
+        cell picker (mirrors Level.randomRespawnCell). The flag is threaded
+        through so the bias hooks on once PitRoom generation lands."""
         occupied = {
             (p.pos.x, p.pos.y) for p in self._players_on_floor(floor.floor_id)
         }
@@ -298,11 +304,62 @@ class PlayersMixin:
         return Position(x=x, y=y)
 
     def _perform_chasm_fall(self, player: Player, floor_id: int, x: int, y: int):
-        """SPD Chasm.heroLand(): damage, Cripple, a Bleeding-equivalent, a
-        screen shake, then drop to floor_id + 1 at a random landing cell."""
+        """SPD Chasm.heroFall -> InterlevelScene.Mode.FALL -> Chasm.heroLand.
+
+        Ordering mirrors the Java flow so the client can reproduce the FX:
+          1. heroFall: FALLING sound + Mode.FALL (here: emit CHASM_FALL so the
+             client fades the screen and snaps the camera).
+          2. fall(): depth++, land at fallCell(fallIntoPit).
+          3. heroLand (the Falling buff fires next actor turn): if an
+             ElixirOfFeatherFall.FeatherBuff is active, spawn a JET particle
+             burst and skip all damage/shake; else PixelScene.shake(4, 1f),
+             Cripple, Bleeding, and the upfront damage — then the DESCEND sound
+             on a new-deepest floor (GameScene.java).
+          4. onDeath (Chasm implements Hero.Doom): flag the death cause so the
+             death screen reads "You fell to death...".
+        """
         player.pos = Position(x=x, y=y)
         player.pending_chasm_fall = None
 
+        # fall_into_pit is true in SPD when the hero was inside a WeakFloorRoom;
+        # the remake doesn't yet track that room type, so always false here.
+        fall_into_pit = False
+        feather = player.has_buff("feather_fall")
+        first_visit = (floor_id + 1) > player.floors_explored
+
+        # 1. heroFall — broadcast the fall so the client fades + snaps. Tagged
+        #    player-only (no floor) so it reaches the hero regardless of which
+        #    floor the flush sees them on (mirrors STAIRS_DOWN emission).
+        self.add_event("CHASM_FALL", {
+            "player": player.id,
+            "first_visit": first_visit,
+            "feather": feather,
+            "fall_into_pit": fall_into_pit,
+        }, player_id=player.id)
+
+        # 2. fall() — depth++ and land at fallCell.
+        target_floor = self._get_or_create_floor(floor_id + 1)
+        landing = self._random_fall_landing_cell(target_floor, fall_into_pit)
+        player.floor_id = floor_id + 1
+        player.floors_explored = max(player.floors_explored, floor_id + 1)
+        player.pos = landing
+        self.depth = floor_id + 1
+
+        # 3. heroLand — applied after arriving on the new floor so the DAMAGE /
+        #    shake events render at the landing cell on the right floor (fixes
+        #    the prior bug where DAMAGE was emitted with the old floor_id).
+        if feather:
+            # ElixirOfFeatherFall: JET particle burst, no damage, no shake.
+            # The client spawns the feather VFX from the CHASM_FALL feather flag.
+            # Tick down the buff so a single fall consumes one charge's worth,
+            # mirroring FeatherBuff.processFall() (which detaches once exhausted).
+            fb = player.get_buff("feather_fall")
+            if fb is not None:
+                remove_buff(player.buffs, "feather_fall")
+            return
+
+        # Flag the doom cause BEFORE damage so _kill_player (next tick) reads it.
+        player.death_cause = "fall"
         add_buff(player.buffs, "cripple", duration=10.0, level=1)
 
         hp = player.hp
@@ -314,17 +371,17 @@ class PlayersMixin:
         dmg_roll = random.randint(lo, hi) if lo < hi else lo
         dmg = max(hp // 2, dmg_roll)
         dealt = player.take_damage(dmg)
+        # Survived the fall: clear the doom cause so a later, ordinary death
+        # doesn't mislabel itself as a fall death.
+        if player.is_alive:
+            player.death_cause = None
 
-        self.add_event("DAMAGE", {"target": player.id, "amount": dealt}, floor_id=floor_id)
-        self.add_event("SCREEN_SHAKE", {"intensity": 4, "duration_ms": 300}, floor_id=floor_id)
-        self.add_event("PLAY_SOUND", {"sound": "FALLING"}, floor_id=floor_id, player_id=player.id)
-
-        target_floor = self._get_or_create_floor(floor_id + 1)
-        landing = self._random_fall_landing_cell(target_floor)
-        player.floor_id = floor_id + 1
-        player.floors_explored = max(player.floors_explored, floor_id + 1)
-        player.pos = landing
-        self.depth = floor_id + 1
+        self.add_event("SCREEN_SHAKE", {"intensity": 4, "duration_ms": 1000}, player_id=player.id)
+        self.add_event("DAMAGE", {"target": player.id, "amount": dealt}, player_id=player.id)
+        # GameScene.java: DESCEND sound + "descend" log on entering a new
+        # deepest floor via FALL or DESCEND.
+        if first_visit:
+            self.add_event("PLAY_SOUND", {"sound": "STAIRS_DOWN"}, player_id=player.id)
 
     def confirm_chasm_fall(self, player_id: str, x: int, y: int):
         player = self.players.get(player_id)
@@ -448,6 +505,7 @@ class PlayersMixin:
             "loot_dropped": not preserve_loot,
             "respawns_used": player.respawns_used,
             "max_respawns": RESPAWN_MAX_USES,
+            "death_cause": player.death_cause,
         }, floor_id=floor_id)
 
     def _safe_spawn_near_stairs(self, floor: FloorState) -> Position:
@@ -502,6 +560,7 @@ class PlayersMixin:
         player.is_alive = True
         player.is_downed = False
         player.death_processed = False
+        player.death_cause = None
         player.respawns_used += 1
 
         # Clear harmful buffs; keep beneficial ones (SPD ankh behaviour).

@@ -5,12 +5,14 @@ import { FLOOR_FADE_OUT_MS, FLOOR_FADE_HOLD_MS, FLOOR_FADE_IN_MS } from '../cons
 // swap itself is applied by the caller once the "out" half completes (see
 // useGameSocket.ts's stashed-INIT logic), then this plays the fade back in.
 // `direction` is 'down' | 'up', kept for callers (camera snap direction lives in the
-// renderer, not here) and so a future CHASM_FALL_START call site can pass 'down' too.
+// renderer, not here). `isChasmFall` adds the jittery "Falling!" text overlay that SPD's
+// InterlevelScene.Mode.FALL renders (lines 596-605: random ±2px jitter each frame).
 
-export function startFloorFade(fadeRef, direction) {
+export function startFloorFade(fadeRef, direction, isChasmFall = false) {
   const now = performance.now();
   fadeRef.current = {
     direction,
+    isChasmFall,
     startedAt: now,
     outUntil: now + FLOOR_FADE_OUT_MS,
     holdUntil: now + FLOOR_FADE_OUT_MS + FLOOR_FADE_HOLD_MS,
@@ -42,6 +44,24 @@ export function advanceAndDrawFloorFade(ctx, canvas, { fadeRef }) {
 
   ctx.fillStyle = `rgba(0,0,0,${alpha})`;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // SPD InterlevelScene.Mode.FALL: jittery "Falling!" text at bottom-right,
+  // repositioned ±2px every frame (InterlevelScene.java:596-605). Only shown
+  // once the fade has darkened the screen enough for the text to be readable.
+  if (fade.isChasmFall && alpha > 0.3) {
+    const text = 'Falling!';
+    const fontSize = Math.max(14, Math.round(canvas.height * 0.025));
+    ctx.font = `bold ${fontSize}px monospace`;
+    const textWidth = ctx.measureText(text).width;
+    const baseX = canvas.width - textWidth - 16;
+    const baseY = canvas.height - fontSize - 10;
+    // ±4px jitter (SPD uses 4*(Random.Float()-0.5) which is ±2px, but at 2x
+    // render scale this reads as ±4px to match the visual feel).
+    const jx = (Math.random() - 0.5) * 8;
+    const jy = (Math.random() - 0.5) * 8;
+    ctx.fillStyle = `rgba(180,180,180,${Math.min(1, alpha)})`;
+    ctx.fillText(text, baseX + jx, baseY + jy);
+  }
 }
 
 // True from the moment the fade starts until it's fully faded back in — used to gate

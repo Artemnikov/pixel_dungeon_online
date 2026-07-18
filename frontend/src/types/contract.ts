@@ -199,6 +199,8 @@ export interface DeathEvent {
     loot_dropped?: boolean;
     respawns_used?: number;
     max_respawns?: number;
+    /** SPD Hero.Doom cause flavour: "fall" -> "You fell to death..." */
+    death_cause?: string;
   };
 }
 
@@ -327,6 +329,32 @@ export interface MapPatchEvent {
 export interface ChasmPromptEvent {
   type: 'CHASM_PROMPT';
   data: { x: number; y: number };
+}
+
+/** SPD Chasm.heroFall: the hero starts falling to the next floor. Drives the
+ *  fade + camera snap + FALLING sound on the client. */
+export interface ChasmFallEvent {
+  type: 'CHASM_FALL';
+  data: {
+    player: string;
+    first_visit: boolean;
+    /** ElixirOfFeatherFall active — skip damage/shake, show feather VFX. */
+    feather: boolean;
+    fall_into_pit: boolean;
+  };
+}
+
+/** Server-driven camera shake (SPD PixelScene.shake). */
+export interface ScreenShakeEvent {
+  type: 'SCREEN_SHAKE';
+  data: { intensity: number; duration_ms: number };
+}
+
+/** SPD Chasm.mobFall: a mob falls into a chasm and dies. Client plays the
+ *  shrink/fall animation + FALLING sound. */
+export interface MobChasmFallEvent {
+  type: 'MOB_CHASM_FALL';
+  data: { mob: string; x: number; y: number };
 }
 
 export interface PickupEvent {
@@ -1019,6 +1047,9 @@ export type GameEvent =
   | ReadEvent
   | MapPatchEvent
   | ChasmPromptEvent
+  | ChasmFallEvent
+  | ScreenShakeEvent
+  | MobChasmFallEvent
   | PickupEvent
   | DropEvent
   | GoldDropEvent

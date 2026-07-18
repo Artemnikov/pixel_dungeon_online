@@ -1,12 +1,12 @@
 import { TILE_SIZE, TILE_SCALE, ENTITY_LIFT, PLAYER_ATTACK_DURATION, PLAYER_OPERATE_DURATION, PLAYER_READ_DURATION } from '../../constants';
 import { drawWhiteSilhouette } from './flash';
-import { drawShieldHalo } from './shieldHalo';
+import { drawShieldFx } from './shieldHalo';
 
 function pixelRound(value, pixelWidth) {
   return Math.ceil(value * pixelWidth) / pixelWidth;
 }
 
-export function drawPlayers(ctx, { entitiesRef, visionRef, assetImages, playerAnimRef, myPlayerId }) {
+export function drawPlayers(ctx, { entitiesRef, visionRef, assetImages, playerAnimRef, myPlayerId, shieldFxRef }) {
   Object.values(entitiesRef.current.players).forEach(player => {
     const isPlayerVisible = visionRef.current.visible.has(`${Math.round(player.renderPos.x)},${Math.round(player.renderPos.y)}`) || player.id === myPlayerId;
     if (!isPlayerVisible) return;
@@ -137,8 +137,8 @@ export function drawPlayers(ctx, { entitiesRef, visionRef, assetImages, playerAn
     }
 
     const totalShield = (player.shields || []).reduce((sum, s) => sum + (s.amount || 0), 0);
-    if (totalShield > 0) {
-      drawShieldHalo(ctx, x + TILE_SIZE / 2, y, totalShield, player.fadeAlpha ?? 1);
+    if (shieldFxRef) {
+      drawShieldFx(ctx, shieldFxRef, player.id, x + TILE_SIZE / 2, y, totalShield, player.fadeAlpha ?? 1);
     }
   });
 }
