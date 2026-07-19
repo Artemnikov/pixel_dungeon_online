@@ -231,7 +231,7 @@ class GenerationMixin:
         own scrolls regardless of depth/region/special-room variance.
         """
         from app.engine.game.constants import party_loot_multiplier
-        from app.engine.game.world import _random_free_cell
+        from app.engine.game.npc_economy import _random_free_cell
         from app.engine.game.spd_adapter import _random_scroll, _random_potion
         from app.engine.entities.items_potions import Potion
         from app.engine.entities.items_scrolls import Scroll

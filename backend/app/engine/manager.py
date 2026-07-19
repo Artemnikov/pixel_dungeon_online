@@ -54,6 +54,8 @@ from app.engine.game.player_regen import PlayerRegenMixin
 from app.engine.game.tick import TickMixin
 from app.engine.game.vision import VisionMixin
 from app.engine.game.world import WorldInteractionMixin
+from app.engine.game.mob_death import MobDeathMixin
+from app.engine.game.npc_economy import NpcEconomyMixin
 from app.engine.game.artifacts import ArtifactsMixin
 from app.engine.game.duelist import DuelistMixin
 from app.engine.game.cleric import ClericMixin
@@ -65,6 +67,8 @@ class GameInstance(
     GenerationMixin,
     PlayersMixin,
     WorldInteractionMixin,
+    MobDeathMixin,
+    NpcEconomyMixin,
     MovementCombatMixin,
     ItemsMixin,
     AlchemyMixin,
