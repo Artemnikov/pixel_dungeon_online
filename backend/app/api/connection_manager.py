@@ -5,6 +5,7 @@ dungeon-simulation concern (see `RoomMeta` below).
 """
 
 import hashlib
+import logging
 import re
 import secrets
 import time
@@ -13,9 +14,12 @@ from typing import Dict, Optional, Tuple
 
 from fastapi import WebSocket
 
+from app.engine.entities.items_consumable import Amulet
 from app.engine.manager import GameInstance
 from app.engine.game.constants import PARTY_LOOT_MAX_PLAYERS
 from app.schemas import InitMessage, StateUpdateMessage
+
+logger = logging.getLogger(__name__)
 
 # How long a disconnected player's hero is kept alive in the world so the client
 # can reconnect (same session) and resume the same run. After this, the reaper
@@ -300,7 +304,6 @@ class ConnectionManager:
                     player_obj = game.players.get(player_id)
                     gold = player_obj.gold if player_obj else 0
                     energy = player_obj.energy if player_obj else 0
-                    from app.engine.entities.items_consumable import Amulet
                     has_amulet = (
                         any(isinstance(it, Amulet) for it in player_obj.belongings.all_items())
                         if player_obj else False
@@ -323,8 +326,8 @@ class ConnectionManager:
                         events=game.filter_events_for_player(events, player_id),
                     )
                     await connection.send_json(update.model_dump(exclude_none=True))
-                except Exception as e:
-                    print(f"Error broadcasting to {player_id}: {e}")
+                except Exception:
+                    logger.exception("Error broadcasting to player_id=%s", player_id)
                     dead_connections.append(connection)
 
             for conn in dead_connections:

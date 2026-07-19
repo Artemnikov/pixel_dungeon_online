@@ -15,8 +15,15 @@
 """Port of com.shatteredpixel.shatteredpixeldungeon.levels.Terrain (tile id constants).
 
 Only the constants needed by the level-gen port are listed here; flags/behaviour
-tables are not needed for layout/paint transliteration (the remake's renderer
-uses its own tile id space -- conversion happens at the integration boundary).
+tables are not needed for layout/paint transliteration.
+
+Two independent, differently-numbered tile-id spaces coexist by design: these
+SPD layout ids (matching the original Java numbering, used only while
+generating/painting a level) and the remake's own renderer ids
+(app.engine.dungeon.constants.TileType, used everywhere after generation).
+The conversion boundary is `_convert_tile()` in app/engine/game/spd_adapter.py,
+called once per cell by `gen_level_to_floor_state()` when a generated level is
+handed off to the live FloorState.
 """
 
 CHASM = 0

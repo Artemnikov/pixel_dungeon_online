@@ -18,6 +18,7 @@ Shadowcasting-based FOV (mirrors Shattered Pixel Dungeon), per-tick caches, and
 BFS pathfinding used by mob AI and tap-to-travel.
 """
 
+from collections import deque
 from typing import List, Optional, Tuple
 
 from app.engine.dungeon.constants import TileType
@@ -192,11 +193,11 @@ class VisionMixin:
     def _get_next_step_to(self, start: Position, target: Position, floor_id: Optional[int] = None, flying: bool = False) -> Optional[tuple]:
         floor = self._get_or_create_floor(floor_id or self.depth)
 
-        queue = [(start.x, start.y, [])]
+        queue = deque([(start.x, start.y, [])])
         visited = {(start.x, start.y)}
 
         while queue:
-            x, y, path = queue.pop(0)
+            x, y, path = queue.popleft()
 
             if x == target.x and y == target.y:
                 if path:
@@ -233,10 +234,10 @@ class VisionMixin:
 
     def _bfs_full_path(self, start: Position, target: Position, floor_id: int) -> List[Tuple[int, int]]:
         floor = self._get_or_create_floor(floor_id)
-        queue = [(start.x, start.y, [])]
+        queue = deque([(start.x, start.y, [])])
         visited = {(start.x, start.y)}
         while queue:
-            x, y, path = queue.pop(0)
+            x, y, path = queue.popleft()
             if x == target.x and y == target.y:
                 return path
             for dx, dy in [(0, 1), (0, -1), (1, 0), (-1, 0), (1, 1), (1, -1), (-1, 1), (-1, -1)]:
