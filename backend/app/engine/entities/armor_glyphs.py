@@ -416,6 +416,7 @@ def _proc_multiplicity(defender, attacker, armor, raw_damage, floor_mobs, tile_x
 
     from app.engine.entities.base import Position
     from app.engine.entities.mobs import MirrorImage
+    from app.engine.game.ai_mirror_image import _spawn_mirror_images
 
     # SPD Multiplicity: 50% chance to spawn a MirrorImage of the defender
     # (hero), 50% chance to duplicate the attacker. If the attacker can't
@@ -423,7 +424,7 @@ def _proc_multiplicity(defender, attacker, armor, raw_damage, floor_mobs, tile_x
     spawn_mirror = random.random() < 0.5
 
     if spawn_mirror and hasattr(defender, "belongings"):
-        clone_ids = game._spawn_mirror_images(defender, floor, defender.floor_id)
+        clone_ids = _spawn_mirror_images(game, defender, floor, defender.floor_id)
         if clone_ids:
             for cid in clone_ids:
                 if add_event:

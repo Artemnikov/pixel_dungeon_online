@@ -43,23 +43,7 @@ from app.engine.game.rogue import RogueMixin
 from app.engine.game.serialization import SerializationMixin
 from app.engine.game.talents import TalentsMixin
 from app.engine.game.tengu_arena import PrisonBossMixin
-from app.engine.game.ai_goo import GooAIMixin
-from app.engine.game.ai_dwarf_king import DwarfKingAIMixin
-from app.engine.game.ai_yog_dzewa import YogDzewaAIMixin
-from app.engine.game.ai_demon_spawner import DemonSpawnerAIMixin
-from app.engine.game.ai_pylon import PylonAIMixin
-from app.engine.game.ai_sentry import SentryAIMixin
-from app.engine.game.ai_dm300 import DM300AIMixin
-from app.engine.game.ai_necromancer import NecromancerAIMixin
-from app.engine.game.ai_eye import EyeAIMixin
 from app.engine.game.ai_tengu import TenguAIMixin
-from app.engine.game.ai_mirror_image import MirrorImageMixin
-from app.engine.game.ai_shaman import ShamanAIMixin
-from app.engine.game.ai_warlock import WarlockAIMixin
-from app.engine.game.ai_spinner import SpinnerAIMixin
-from app.engine.game.ai_dm200 import DM200AIMixin
-from app.engine.game.ai_newborn_elemental import NewbornFireElementalAIMixin
-from app.engine.game.ai_guard import GuardAIMixin
 from app.engine.game.player_tick import PlayerTickMixin
 from app.engine.game.mob_ai_dispatch import MobAIDispatchMixin
 from app.engine.game.mob_ai_movement import MobAIMovementMixin
@@ -86,23 +70,7 @@ class GameInstance(
     AlchemyMixin,
     BombsMixin,
     PrisonBossMixin,
-    GooAIMixin,
-    EyeAIMixin,
-    DwarfKingAIMixin,
-    YogDzewaAIMixin,
-    DemonSpawnerAIMixin,
-    PylonAIMixin,
-    SentryAIMixin,
-    DM300AIMixin,
-    NecromancerAIMixin,
     TenguAIMixin,
-    MirrorImageMixin,
-    ShamanAIMixin,
-    WarlockAIMixin,
-    SpinnerAIMixin,
-    DM200AIMixin,
-    NewbornFireElementalAIMixin,
-    GuardAIMixin,
     PlayerTickMixin,
     MobAIDispatchMixin,
     MobAIMovementMixin,

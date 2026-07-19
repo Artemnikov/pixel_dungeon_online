@@ -38,6 +38,7 @@ from app.engine.entities.buffs import remove_buff
 from app.engine.game.floor_state import FloorState
 from app.engine.game.constants import KEY_TIME_TO_UNLOCK
 from app.engine.game.spd_adapter import build_wand_item
+from app.engine.game.ai_goo import _goo_unseal_entrance
 
 _FIRE_CARDINALS = [(0, -1), (1, 0), (0, 1), (-1, 0)]
 _ELECTRIC_CARDINALS = [(0, -1), (1, 0), (0, 1), (-1, 0)]
@@ -453,7 +454,7 @@ class WorldInteractionMixin:
         floor.items[key.id] = key
         self.add_event("PLAY_SOUND", {"sound": "BOSS"}, floor_id=floor_id)
         self.add_event("BOSS_SLAIN", {"mob": mob.id, "depth": floor_id, "badge_image": 15}, floor_id=floor_id)
-        self._goo_unseal_entrance(floor, floor_id)
+        _goo_unseal_entrance(self, floor, floor_id)
         self.boss_scores[0] += 1000
         if self.qualified_for_boss_challenge:
             self.add_event("GOO_BADGE_QUALIFIED", {}, floor_id=floor_id)

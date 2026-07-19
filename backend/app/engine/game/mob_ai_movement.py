@@ -29,6 +29,7 @@ from app.engine.entities.player import Difficulty, Player
 from app.engine.entities.wandmaker_quest import RotLasher
 from app.engine.game.constants import AUTO_MOVE_INTERVAL
 from app.engine.game.floor_state import FloorState
+from app.engine.game.ai_goo import _goo_seal_entrance
 
 
 class MobAIMovementMixin:
@@ -152,7 +153,7 @@ class MobAIMovementMixin:
             mob.fight_started = True
             self.add_event("GOO_FIGHT_STARTED", {"mob": mob.id}, floor_id=floor_id)
             self.qualified_for_boss_challenge = True
-            self._goo_seal_entrance(floor, floor_id)
+            _goo_seal_entrance(self, floor, floor_id)
 
         # Track last known position while target is visible (mirrors
         # SPD HUNTING: mob remembers where it last saw the player).

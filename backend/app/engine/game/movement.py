@@ -42,6 +42,8 @@ from app.engine.systems.combat import _dispel_stealth, resolve_melee_attack, res
 from app.engine.systems.loot import roll_drops
 from app.engine.game.constants import KEY_TIME_TO_UNLOCK, MAX_FLOOR_ID
 from app.engine.game.terrain_effects import press_cell
+from app.engine.game.ai_goo import _goo_add_locked_floor_time
+from app.engine.game.ai_pylon import _activate_pylon
 
 
 def _effective_wand_damage(w, lvl_bonus: int = 0) -> int:
@@ -477,7 +479,7 @@ class MovementCombatMixin:
                         if warn_sound:
                             self.add_event("PLAY_SOUND", {"sound": warn_sound}, player_id=target_entity.id)
                     if isinstance(target_entity, Goo) and isinstance(entity, Player):
-                        self._goo_add_locked_floor_time(floor_id, entity, dmg)
+                        _goo_add_locked_floor_time(self, floor_id, entity, dmg)
 
                 self._maybe_trigger_dm300_supercharge(target_entity, floor, floor_id, entity.pos)
 
@@ -693,7 +695,7 @@ class MovementCombatMixin:
         if isinstance(target, DM300) and target.pending_pylon_activation:
             target.pending_pylon_activation = False
             self.add_event("DM300_SUPERCHARGE", {"mob": target.id}, floor_id=floor_id)
-            self._activate_pylon(floor, floor_id, near_pos=near_pos)
+            _activate_pylon(self, floor, floor_id, near_pos=near_pos)
 
     def _autoaim_cell(self, player, target) -> tuple:
         """Mirror of SPD QuickSlotButton.autoAim: aim straight at the target if a
@@ -924,7 +926,7 @@ class MovementCombatMixin:
                     if warn_sound:
                         self.add_event("PLAY_SOUND", {"sound": warn_sound}, player_id=target_entity.id)
                 if isinstance(target_entity, Goo):
-                    self._goo_add_locked_floor_time(floor_id, player, damage_dealt)
+                    _goo_add_locked_floor_time(self, floor_id, player, damage_dealt)
 
                 # Improvised Projectiles (warrior T2): non-launcher thrown
                 # items blind the target on hit (50-turn cooldown).

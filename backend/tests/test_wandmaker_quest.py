@@ -17,6 +17,7 @@ from app.engine.entities.items_consumable import CorpseDust
 from app.engine.entities.items_wands import Wand
 from app.engine.entities.wandmaker_quest import DustWraith, NewbornFireElemental, RotHeart, RotLasher, Wandmaker
 from app.engine.entities.wandmaker_quest_items import CeremonialCandle, Embers, RotberrySeed
+from app.engine.game.ai_newborn_elemental import _update_newborn_elemental
 from app.engine.manager import GameInstance
 
 
@@ -406,7 +407,7 @@ def test_newborn_fire_elemental_ranged_attack_burns_target():
     elem = NewbornFireElemental(id="e1", pos=Position(x=5, y=1), ai_state="hunting", hp=100, max_hp=100)
     floor.mobs[elem.id] = elem
 
-    fired = g._update_newborn_elemental(elem, floor, p.floor_id)
+    fired = _update_newborn_elemental(g, elem, floor, p.floor_id)
 
     assert fired is True
     assert p.hp < 20

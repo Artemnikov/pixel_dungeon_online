@@ -26,6 +26,7 @@ from app.engine.entities.items_wands import Wand
 from app.engine.entities.player import Mob
 from app.engine.entities.item_catalog import TRANSMUTE_GROUPS, make_catalog_item
 from app.engine.entities.scroll_predicates import PREDICATE, player_inventory_items, transmute_group
+from app.engine.game.ai_mirror_image import _spawn_mirror_images
 from app.engine.entities.weapon_enchants import CURSES
 
 _SCROLL_SOUNDS: dict[str, str] = {
@@ -310,7 +311,7 @@ def action_read(game, player, item, tx=None, ty=None) -> None:
             _extra_event_data["discover_positions"] = fov_discover_positions
     elif effect == "scroll_of_mirror_image":
         floor = game._get_or_create_floor(player.floor_id)
-        clone_ids = game._spawn_mirror_images(player, floor, player.floor_id)
+        clone_ids = _spawn_mirror_images(game, player, floor, player.floor_id)
         clone_data = [
             {"id": cid, "x": floor.mobs[cid].pos.x, "y": floor.mobs[cid].pos.y}
             for cid in clone_ids if cid in floor.mobs

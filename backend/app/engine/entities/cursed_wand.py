@@ -155,9 +155,10 @@ def fire_cursed_wand(game, player, item, tx: int, ty: int) -> None:
         # summon hostile mobs (simplified: random enemy for the floor).
         if positive_only:
             from app.engine.entities.base import Position
+            from app.engine.game.ai_mirror_image import _spawn_mirror_images
             spawn_pos = Position(x=tx, y=ty)
-            clone_ids = game._spawn_mirror_images(
-                player, floor, player.floor_id, spawn_pos=spawn_pos,
+            clone_ids = _spawn_mirror_images(
+                game, player, floor, player.floor_id, spawn_pos=spawn_pos,
             )
             clone_data = [
                 {"id": cid, "x": floor.mobs[cid].pos.x, "y": floor.mobs[cid].pos.y}

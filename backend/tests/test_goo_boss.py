@@ -8,6 +8,10 @@ from app.engine.entities.mobs import Goo
 from app.engine.dungeon.constants import TileType
 from app.engine.dungeon.models import Room
 from app.engine.game.constants import OOZE_DURATION
+from app.engine.game.ai_goo import (
+    _goo_sync_enrage, _goo_water_heal, _goo_seal_entrance,
+    _goo_unseal_entrance, _goo_release_charge,
+)
 from app.engine.manager import GameInstance
 
 
@@ -168,7 +172,7 @@ def test_goo_enrage_no_longer_plays_alert_sound():
     player.pos = Position(x=5, y=4)
 
     floor = game._get_or_create_floor(game.depth)
-    game._goo_sync_enrage(goo, floor.floor_id)
+    _goo_sync_enrage(game, goo, floor.floor_id)
     events = game.flush_events()
 
     assert any(e["type"] == "GOO_ENRAGE" for e in events)
@@ -340,14 +344,14 @@ def test_goo_unseal_entrance_restores_stairs_and_is_idempotent():
     floor.grid[2][2] = TileType.FLOOR_WATER
     floor.rebuild_flags()
 
-    game._goo_unseal_entrance(floor, floor.floor_id)
+    _goo_unseal_entrance(game, floor, floor.floor_id)
     assert floor.grid[2][2] == TileType.STAIRS_UP
     patches = [e for e in game.flush_events() if e["type"] == "MAP_PATCH"]
     assert len(patches) == 1
     assert patches[0]["data"]["tiles"] == [{"x": 2, "y": 2, "tile": TileType.STAIRS_UP}]
 
     # Calling again once already unsealed must not re-emit a patch.
-    game._goo_unseal_entrance(floor, floor.floor_id)
+    _goo_unseal_entrance(game, floor, floor.floor_id)
     assert game.flush_events() == []
 
 
@@ -363,7 +367,7 @@ def test_goo_water_heal_disqualifies_boss_challenge_badge():
     goo.hp = goo.max_hp - 10
     goo.heal_cooldown = 0
 
-    game._goo_water_heal(goo, floor, floor.floor_id)
+    _goo_water_heal(game, goo, floor, floor.floor_id)
 
     assert goo.hp == goo.max_hp - 10 + goo.heal_inc
     assert game.qualified_for_boss_challenge is False
@@ -379,7 +383,7 @@ def test_goo_pumped_release_penalizes_score_and_badge():
     goo = Goo(id="goo1", pos=Position(x=0, y=0), faction=Faction.DUNGEON)
     target = Player(id="p1", name="Hero", pos=Position(x=1, y=0), hp=50, max_hp=50, faction=Faction.PLAYER)
 
-    game._goo_release_charge(goo, target, 5)
+    _goo_release_charge(game, goo, target, 5)
 
     assert game.boss_scores[0] == -100
     assert game.qualified_for_boss_challenge is False
@@ -394,7 +398,7 @@ def test_goo_death_unseals_entrance_and_awards_boss_score():
     game = GameInstance("test-goo-death-unseal")
     game.boss_scores[0] = 0
     game.qualified_for_boss_challenge = True
-    game._goo_seal_entrance(floor, floor.floor_id)
+    _goo_seal_entrance(game, floor, floor.floor_id)
     game.flush_events()
     assert floor.grid[1][1] == TileType.FLOOR_WATER
 
@@ -441,7 +445,7 @@ def test_goo_seal_sets_locked_floor_left_for_players_on_floor():
     player = game.add_player("p1", "Hero")
     assert player.locked_floor_left is None
 
-    game._goo_seal_entrance(floor, floor.floor_id)
+    _goo_seal_entrance(game, floor, floor.floor_id)
     assert player.locked_floor_left == 50.0
 
 
@@ -454,7 +458,7 @@ def test_goo_seal_uses_shorter_timer_with_stronger_bosses_challenge():
     floor.rebuild_flags()
     player = game.add_player("p1", "Hero")
 
-    game._goo_seal_entrance(floor, floor.floor_id)
+    _goo_seal_entrance(game, floor, floor.floor_id)
     assert player.locked_floor_left == 20.0
 
 
@@ -467,7 +471,7 @@ def test_goo_unseal_clears_locked_floor_left():
     player = game.add_player("p1", "Hero")
     player.locked_floor_left = 30.0
 
-    game._goo_unseal_entrance(floor, floor.floor_id)
+    _goo_unseal_entrance(game, floor, floor.floor_id)
     assert player.locked_floor_left is None
 
 
@@ -483,7 +487,7 @@ def test_goo_water_heal_drains_locked_floor_time():
     goo.hp = goo.max_hp - 10
     goo.heal_cooldown = 0
 
-    game._goo_water_heal(goo, floor, floor.floor_id)
+    _goo_water_heal(game, goo, floor, floor.floor_id)
 
     assert player.locked_floor_left == 50.0 - goo.heal_inc * 1.5
 
