@@ -303,6 +303,20 @@ class MovementCombatMixin:
         if not was_moving:
             player.last_auto_move_time = 0.0
 
+    def attack_mob(self, player_id: str, target_id: str) -> None:
+        """Click-to-attack (ATTACK): step the player toward a specific mob
+        by one tile; a step onto/into an occupied enemy cell resolves as a
+        melee attack in move_entity."""
+        player = self.players.get(player_id)
+        if not player:
+            return
+        floor = self._get_or_create_floor(player.floor_id)
+        mob = floor.mobs.get(target_id)
+        if mob and mob.is_alive:
+            dx = mob.pos.x - player.pos.x
+            dy = mob.pos.y - player.pos.y
+            self.move_entity(player_id, dx, dy)
+
     def move_entity(self, entity_id: str, dx: int, dy: int):
         floor_id, entity = self._get_floor_for_entity(entity_id)
         if entity is None or floor_id is None:

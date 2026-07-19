@@ -101,34 +101,7 @@ async def game_websocket(websocket: WebSocket, game_id: str, class_type: str = "
                         player.last_auto_move_time = 0.0
 
             elif isinstance(message, msg.PickupFloor):
-                if player_id in game.players:
-                    player = game.players[player_id]
-                    floor = game._get_or_create_floor(player.floor_id)
-                    items_to_pickup = [
-                        i_id for i_id, i in floor.items.items()
-                        if i.pos and i.pos.x == player.pos.x and i.pos.y == player.pos.y
-                        and i.type != "grave" and not getattr(i, 'for_sale', False)
-                    ]
-                    from app.engine.entities.items_consumable import Gold, Dewdrop, EnergyCrystal
-                    from app.engine.entities.items_bombs import Bomb
-                    for i_id in items_to_pickup:
-                        item = floor.items[i_id]
-                        if isinstance(item, Gold):
-                            player.gold += item.quantity
-                            del floor.items[i_id]
-                            game.add_event("PICKUP_GOLD", {"player": player.id, "amount": item.quantity}, floor_id=player.floor_id)
-                        elif isinstance(item, EnergyCrystal):
-                            player.energy += item.quantity
-                            del floor.items[i_id]
-                            game.add_event("PICKUP_ENERGY", {"player": player.id, "amount": item.quantity}, floor_id=player.floor_id)
-                        elif isinstance(item, Dewdrop):
-                            game._pickup_dewdrop(player, floor, player.floor_id, i_id, item)
-                        elif isinstance(item, Bomb) and item.fuse_ticks is not None and \
-                                game.handle_bomb_pickup(player, floor, player.floor_id, i_id, item):
-                            pass
-                        elif player.add_to_inventory(item):
-                            del floor.items[i_id]
-                            game.add_event("PICKUP", {"player": player.id, "item": item.name, "x": player.pos.x, "y": player.pos.y, "item_type": item.type}, floor_id=player.floor_id)
+                game.pickup_floor_items(player_id)
 
             elif isinstance(message, msg.MoveTo):
                 if player_id in game.players:
@@ -179,14 +152,7 @@ async def game_websocket(websocket: WebSocket, game_id: str, class_type: str = "
                 game.change_difficulty(message.difficulty)
 
             elif isinstance(message, msg.Attack):
-                if player_id in game.players:
-                    player = game.players[player_id]
-                    floor = game._get_or_create_floor(player.floor_id)
-                    mob = floor.mobs.get(message.target_id)
-                    if mob and mob.is_alive:
-                        dx = mob.pos.x - player.pos.x
-                        dy = mob.pos.y - player.pos.y
-                        game.move_entity(player_id, dx, dy)
+                game.attack_mob(player_id, message.target_id)
 
             elif isinstance(message, msg.ConfirmChasmFall):
                 game.confirm_chasm_fall(player_id, message.x, message.y)

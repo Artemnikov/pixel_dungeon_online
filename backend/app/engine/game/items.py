@@ -251,3 +251,38 @@ class ItemsMixin:
         self.identified_kinds.add(item.kind)
         item.level_known = True
         item.cursed_known = True
+
+    def pickup_floor_items(self, player_id: str) -> None:
+        """Collect every eligible item on the player's current tile (PICKUP_FLOOR).
+        Gold/energy are absorbed directly; dewdrops and armed bombs get their
+        own pickup handling; everything else goes to the backpack if there's
+        room."""
+        player = self.players.get(player_id)
+        if not player:
+            return
+        floor = self._get_or_create_floor(player.floor_id)
+        items_to_pickup = [
+            i_id for i_id, i in floor.items.items()
+            if i.pos and i.pos.x == player.pos.x and i.pos.y == player.pos.y
+            and i.type != "grave" and not getattr(i, 'for_sale', False)
+        ]
+        from app.engine.entities.items_consumable import Gold, Dewdrop, EnergyCrystal
+        from app.engine.entities.items_bombs import Bomb
+        for i_id in items_to_pickup:
+            item = floor.items[i_id]
+            if isinstance(item, Gold):
+                player.gold += item.quantity
+                del floor.items[i_id]
+                self.add_event("PICKUP_GOLD", {"player": player.id, "amount": item.quantity}, floor_id=player.floor_id)
+            elif isinstance(item, EnergyCrystal):
+                player.energy += item.quantity
+                del floor.items[i_id]
+                self.add_event("PICKUP_ENERGY", {"player": player.id, "amount": item.quantity}, floor_id=player.floor_id)
+            elif isinstance(item, Dewdrop):
+                self._pickup_dewdrop(player, floor, player.floor_id, i_id, item)
+            elif isinstance(item, Bomb) and item.fuse_ticks is not None and \
+                    self.handle_bomb_pickup(player, floor, player.floor_id, i_id, item):
+                pass
+            elif player.add_to_inventory(item):
+                del floor.items[i_id]
+                self.add_event("PICKUP", {"player": player.id, "item": item.name, "x": player.pos.x, "y": player.pos.y, "item_type": item.type}, floor_id=player.floor_id)
