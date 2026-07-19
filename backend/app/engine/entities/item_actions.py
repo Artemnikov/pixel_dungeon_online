@@ -26,7 +26,7 @@ Scroll-specific handlers live in scroll_actions.py.
 """
 import math
 import time
-from typing import Optional
+from typing import Callable, Dict, Optional
 
 from app.engine.dungeon.constants import TileType
 from app.engine.game.terrain_primitives import _create_gas, _plant_seed_at
@@ -85,12 +85,10 @@ def action_drop(game, player, item, tx=None, ty=None) -> None:
     if detached is None and player.belongings.is_equipped(item.id):
         if item.cursed and item.cursed_known:
             return  # cursed gear can't be removed
-        for slot in ("weapon", "armor", "artifact", "misc", "ring"):
-            cur = getattr(player.belongings, slot)
-            if cur is not None and cur.id == item.id:
-                setattr(player.belongings, slot, None)
-                detached = cur
-                break
+        slot = player.belongings.find_equipped_slot(item.id)
+        if slot is not None:
+            detached = getattr(player.belongings, slot)
+            setattr(player.belongings, slot, None)
     if detached is None:
         return
     player.quickslot.clear_item(detached.id)
@@ -515,27 +513,11 @@ def action_throw(game, player, item, tx=None, ty=None) -> None:
         game.light_bomb(player, floor, player.floor_id, removed, tx, ty)
         return
     # Potions that shatter on impact and create area effects
-    _FIRE_SHATTER = {"liquid_flame", "infernal_brew"}
-    _GAS_SHATTER = {"toxic_gas", "paralytic_gas", "corrosive_gas", "shrouding_fog",
-                    "storm_clouds", "blizzard_brew", "shocking_brew"}
-    if isinstance(item, Potion) and item.effect in _FIRE_SHATTER:
-        _shatter_liquid_flame(game, player, item, tx, ty)
-        return
-    if isinstance(item, Potion) and item.effect in _GAS_SHATTER:
-        _shatter_gas(game, player, item, tx, ty)
-        return
-    if isinstance(item, Potion) and item.effect in ("snap_freeze",):
-        _shatter_snap_freeze(game, player, item, tx, ty)
-        return
-    if isinstance(item, Potion) and item.effect in ("aqua_brew",):
-        _shatter_aqua(game, player, item, tx, ty)
-        return
-    if isinstance(item, Potion) and item.effect in ("caustic_brew",):
-        _shatter_caustic(game, player, item, tx, ty)
-        return
-    if isinstance(item, Potion) and item.effect in ("unstable_brew",):
-        _shatter_unstable(game, player, item, tx, ty)
-        return
+    if isinstance(item, Potion):
+        handler = _SHATTER_HANDLERS.get(item.effect)
+        if handler is not None:
+            handler(game, player, item, tx, ty)
+            return
     # Runestones trigger their magical effect instead of dealing physical damage
     if isinstance(item, Runestone):
         action_throw_runestone(game, player, item, tx, ty)
@@ -660,6 +642,21 @@ def _shatter_unstable(game, player, item, tx, ty) -> None:
     else:
         _create_gas(floor, (tx, ty), 4 + player.floor_id // 2, chosen)
     game.add_event("PLAY_SOUND", {"sound": "SHATTER"}, floor_id=player.floor_id)
+
+
+# Potion-effect -> shatter handler, dispatched by action_throw. Mirrors the
+# _PROC_HANDLERS pattern in weapon_enchants.py/armor_glyphs.py.
+_SHATTER_HANDLERS: Dict[str, Callable] = {
+    **{effect: _shatter_liquid_flame for effect in ("liquid_flame", "infernal_brew")},
+    **{effect: _shatter_gas for effect in (
+        "toxic_gas", "paralytic_gas", "corrosive_gas", "shrouding_fog",
+        "storm_clouds", "blizzard_brew", "shocking_brew",
+    )},
+    "snap_freeze": _shatter_snap_freeze,
+    "aqua_brew": _shatter_aqua,
+    "caustic_brew": _shatter_caustic,
+    "unstable_brew": _shatter_unstable,
+}
 
 
 def action_zap(game, player, item, tx=None, ty=None) -> None:

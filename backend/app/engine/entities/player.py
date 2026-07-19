@@ -90,11 +90,21 @@ class Belongings(BaseModel):
     misc: Optional[AnyItem] = None
     ring: Optional[AnyItem] = None
 
+    _EQUIP_SLOT_NAMES = ("weapon", "armor", "artifact", "misc", "ring")
+
     def equipped_slots(self) -> List[Optional["ItemBase"]]:
         return [self.weapon, self.armor, self.artifact, self.misc, self.ring]
 
     def is_equipped(self, item_id: str) -> bool:
         return any(s is not None and s.id == item_id for s in self.equipped_slots())
+
+    def find_equipped_slot(self, item_id: str) -> Optional[str]:
+        """Name of whichever equip slot holds `item_id`, or None."""
+        for slot in self._EQUIP_SLOT_NAMES:
+            cur = getattr(self, slot)
+            if cur is not None and cur.id == item_id:
+                return slot
+        return None
 
     def all_items(self):
         for s in self.equipped_slots():
@@ -703,25 +713,24 @@ class Player(Entity):
 
     def count_worn_unidentified(self) -> int:
         count = 0
-        for slot in ("weapon", "armor", "artifact", "misc", "ring"):
-            item = getattr(self.belongings, slot, None)
+        for item in self.belongings.equipped_slots():
             if item is not None and not item.identified:
                 count += 1
         return count
 
     def unequip_item(self, item_id: str) -> bool:
-        for slot in ("weapon", "armor", "artifact", "misc", "ring"):
-            cur = getattr(self.belongings, slot)
-            if cur is not None and cur.id == item_id:
-                if cur.cursed and cur.cursed_known:
-                    return False  # cursed gear can't be removed (SPD)
-                if not self.belongings.backpack.can_hold(cur):
-                    return False
-                cur.on_unequip(self)
-                setattr(self.belongings, slot, None)
-                self.belongings.backpack.collect(cur)
-                return True
-        return False
+        slot = self.belongings.find_equipped_slot(item_id)
+        if slot is None:
+            return False
+        cur = getattr(self.belongings, slot)
+        if cur.cursed and cur.cursed_known:
+            return False  # cursed gear can't be removed (SPD)
+        if not self.belongings.backpack.can_hold(cur):
+            return False
+        cur.on_unequip(self)
+        setattr(self.belongings, slot, None)
+        self.belongings.backpack.collect(cur)
+        return True
 
     def get_talent_damage_bonus(self) -> float:
         """Return a flat damage bonus from talents (added to damage roll)."""
@@ -793,8 +802,7 @@ class Player(Entity):
     def _try_id_rings(self) -> None:
         """SPD Ring.onHeroGainExp: decrement levelsToID by 1.0 per hero level
         for each equipped un-identified ring. Auto-identifies at <=0."""
-        for slot in ("ring", "misc"):
-            ring = getattr(self.belongings, slot, None)
+        for ring in self.belongings.equipped_slots():
             if not isinstance(ring, Ring) or ring.is_identified():
                 continue
             ring.levels_to_id -= 1.0
