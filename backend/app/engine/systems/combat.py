@@ -1,6 +1,10 @@
 import random
 from typing import Callable, Optional, TYPE_CHECKING
 
+from app.engine.systems.rogue_prep import (
+    prep_tier, prep_damage_bonus, prep_damage_rolls, prep_ko_threshold,
+)
+
 if TYPE_CHECKING:
     from app.engine.entities.base import Entity, Position
 
@@ -17,9 +21,6 @@ def _preparation(attacker: "Entity", defender: "Entity") -> Optional[dict]:
         return None
     if getattr(attacker, "invisible", 0) <= 0:
         return None
-    from app.engine.game.rogue import (
-        prep_tier, prep_damage_bonus, prep_damage_rolls, prep_ko_threshold,
-    )
     secs = getattr(attacker, "prep_seconds", 0.0)
     if prep_tier(secs) < 0:
         return None

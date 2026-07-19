@@ -34,6 +34,7 @@ from typing import Optional
 from app.engine.entities.base import Position
 from app.engine.entities.player import Player
 from app.engine.entities.buffs import add_buff
+from app.engine.systems.rogue_prep import prep_tier, prep_blink_range
 
 
 # --- Cloak of Shadows ------------------------------------------------------
@@ -42,65 +43,6 @@ from app.engine.entities.buffs import add_buff
 CLOAK_DRAIN_INTERVAL = 3.0
 CLOAK_RECHARGE_INTERVAL = 6.0
 CLOAK_EXP_PER_DRAIN = 10  # cloak self-levels as it spends charge
-
-
-# --- Preparation (Assassin) ------------------------------------------------
-# Per tier: (seconds_required, damage_bonus, damage_rolls_keep_highest).
-PREP_TIERS = [
-    (1.0, 0.10, 1),
-    (3.0, 0.20, 1),
-    (5.0, 0.35, 2),
-    (9.0, 0.50, 3),
-]
-# KO HP%-threshold[prep_tier][enhanced_lethality 0..3]
-PREP_KO_THRESHOLDS = [
-    [0.03, 0.04, 0.05, 0.06],
-    [0.10, 0.13, 0.17, 0.20],
-    [0.20, 0.27, 0.33, 0.40],
-    [0.50, 0.67, 0.83, 1.00],
-]
-# Blink range[prep_tier][assassins_reach 0..3]
-PREP_BLINK_RANGES = [
-    [1, 1, 2, 2],
-    [2, 3, 4, 5],
-    [3, 4, 6, 7],
-    [4, 6, 8, 10],
-]
-
-
-def prep_tier(seconds: float) -> int:
-    """0-based Preparation tier for the given seconds invisible (-1 if none)."""
-    tier = -1
-    for i, (req, _b, _r) in enumerate(PREP_TIERS):
-        if seconds >= req:
-            tier = i
-    return tier
-
-
-def prep_damage_bonus(seconds: float) -> float:
-    t = prep_tier(seconds)
-    return PREP_TIERS[t][1] if t >= 0 else 0.0
-
-
-def prep_damage_rolls(seconds: float) -> int:
-    t = prep_tier(seconds)
-    return PREP_TIERS[t][2] if t >= 0 else 1
-
-
-def prep_ko_threshold(seconds: float, enhanced_lethality: int) -> float:
-    t = prep_tier(seconds)
-    if t < 0:
-        return 0.0
-    el = max(0, min(3, enhanced_lethality))
-    return PREP_KO_THRESHOLDS[t][el]
-
-
-def prep_blink_range(seconds: float, assassins_reach: int) -> int:
-    t = prep_tier(seconds)
-    if t < 0:
-        return 0
-    ar = max(0, min(3, assassins_reach))
-    return PREP_BLINK_RANGES[t][ar]
 
 
 # --- Momentum (Freerunner) -------------------------------------------------
