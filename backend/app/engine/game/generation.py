@@ -154,9 +154,23 @@ class GenerationMixin:
                             id=str(uuid.uuid4()),
                             pos=item.pos,
                             faction=Faction.DUNGEON,
+                            disguised=True,
                         )
+                        mimic.carried_items = [
+                            c.model_copy(deep=True) for c in getattr(item, "contents", [])
+                        ]
+                        fake_chest = ChestCls(
+                            id=str(uuid.uuid4()),
+                            name="Chest",
+                            pos=item.pos,
+                            chest_type="CHEST",
+                            contents=[],
+                            mimic_hint=True,
+                        )
+                        mimic.fake_chest_id = fake_chest.id
                         floor.mobs[mimic.id] = mimic
                         del floor.items[item_id]
+                        floor.items[fake_chest.id] = fake_chest
 
     def _generate_floor_spd(self, depth: int) -> FloorState:
         import random
@@ -218,7 +232,7 @@ class GenerationMixin:
         """
         from app.engine.game.constants import party_loot_multiplier
         from app.engine.game.world import _random_free_cell
-        from app.engine.game.spd_adapter import _random_scroll
+        from app.engine.game.spd_adapter import _random_scroll, _random_potion
         from app.engine.entities.items_potions import Potion
         from app.engine.entities.items_scrolls import Scroll
 
@@ -249,7 +263,7 @@ class GenerationMixin:
             floor.items[item.id] = item
 
         for _ in range(rolled_count(base_potions)):
-            drop(lambda x, y: HealthPotion(id=str(uuid.uuid4()), pos=Position(x=x, y=y)))
+            drop(lambda x, y: _random_potion(str(uuid.uuid4()), Position(x=x, y=y)))
         for _ in range(rolled_count(base_scrolls)):
             drop(lambda x, y: _random_scroll(str(uuid.uuid4()), Position(x=x, y=y)))
 

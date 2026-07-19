@@ -1121,6 +1121,8 @@ class Mimic(MobEntity):
     floor_level: int = 1
     disguised: bool = True
     stealthy: bool = False
+    fake_chest_id: str = ""
+    carried_items: List[Any] = Field(default_factory=list)
 
 
 class GoldenMimic(Mimic):
@@ -1136,7 +1138,6 @@ class EbonyMimic(Mimic):
 class CrystalMimic(Mimic):
     """Crystal variant — steals on attack while disguised, teleports target when revealed, then flees."""
     name: str = "Crystal Mimic"
-    fake_chest_id: str = ""
     pending_steal_name: str = ""
     pending_teleport: bool = False
     pending_stolen_item: Optional[Any] = None

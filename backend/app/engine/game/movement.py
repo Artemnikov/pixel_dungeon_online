@@ -33,7 +33,7 @@ from app.engine.entities.items_potions import RevivingPotion
 from app.engine.entities.items_wands import Wand, ZapContext
 from app.engine.entities.player import Mob as MobEntity, Player, Weapon, hurt_warning_sound
 from app.engine.entities.buffs import add_buff, get_buff, has_buff, is_frozen, remove_buff
-from app.engine.entities.mobs import CrystalMimic, DM300, Goo, Shopkeeper, Wraith
+from app.engine.entities.mobs import CrystalMimic, DM300, EbonyMimic, Goo, GoldenMimic, Mimic, Shopkeeper, Wraith
 from app.engine.entities.quest_bosses import Ghost
 from app.engine.entities.wandmaker_quest_items import CeremonialCandle
 from app.engine.entities.subclasses import Talent
@@ -116,6 +116,31 @@ class MovementCombatMixin:
             return True
         return False
 
+    def _reveal_mimic_for_chest(self, player: Player, floor, floor_id: int, chest_id: str) -> bool:
+        """If chest_id is a disguised Mimic/GoldenMimic/EbonyMimic's fake chest,
+        reveal the mimic, remove the fake chest, and return True.
+
+        SPD Mimic.stopHiding: sets state=HUNTING, plays MIMIC sound, bursts
+        star particles.  The fake chest is removed and the mob becomes visible
+        (disguised=False) so the frontend renders the mimic sprite."""
+        for mob in list(floor.mobs.values()):
+            if not isinstance(mob, (Mimic, GoldenMimic, EbonyMimic)):
+                continue
+            if not mob.disguised or not mob.is_alive:
+                continue
+            if mob.fake_chest_id != chest_id:
+                continue
+            floor.items.pop(chest_id, None)
+            mob.disguised = False
+            mob.ai_state = "hunting"
+            mob.target_id = player.id
+            self.add_event("SPAWN_MOB", {"mob": mob.model_dump()}, floor_id=floor_id)
+            self.add_event("PLAY_SOUND", {"sound": "MIMIC"}, floor_id=floor_id)
+            msg = "A chest was a mimic!" if not isinstance(mob, GoldenMimic) else "A locked chest was a mimic!"
+            self.add_event("MESSAGE", {"text": msg, "player": player.id}, floor_id=floor_id)
+            return True
+        return False
+
     def _pickup_dewdrop(self, player, floor, floor_id: int, item_id: str, dew) -> None:
         """SPD Dewdrop.doPickUp: a non-full waterskin collects the drop;
         otherwise it is drunk on the spot (5% max HP per drop, Shielding Dew
@@ -180,6 +205,13 @@ class MovementCombatMixin:
     def _try_open_chest(self, player: Player, floor, floor_id: int, chest: Chest) -> bool:
         if chest.pos is None:
             return False
+
+        # Mimic disguise check -- must run BEFORE key consumption so a fake
+        # LOCKED_CHEST (GoldenMimic) doesn't waste the player's golden key.
+        if chest.mimic_hint and self._reveal_mimic_for_chest(player, floor, floor_id, chest.id):
+            self._spend_unlock_action(player)
+            return True
+
         if chest.chest_type == "LOCKED_CHEST" and not player.remove_key("golden", floor_id):
             self.add_event("LOCKED", {"player": player.id, "x": chest.pos.x, "y": chest.pos.y}, floor_id=floor_id)
             return False

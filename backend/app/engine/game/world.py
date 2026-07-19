@@ -341,6 +341,17 @@ class WorldInteractionMixin:
 
         self._process_sacrifice_fire_death(mob, floor, floor_id)
 
+        # Mimic/GoldenMimic/EbonyMimic die(): drop all carried items at the
+        # mob's death position (SPD Mimic.die drops the `items` LinkedList).
+        from app.engine.entities.mobs import EbonyMimic, GoldenMimic, Mimic as MimicCls
+        if isinstance(mob, (MimicCls, GoldenMimic, EbonyMimic)) and mob.carried_items:
+            for item in mob.carried_items:
+                drop = item.model_copy(deep=True)
+                drop.id = str(uuid.uuid4())
+                drop.pos = Position(x=mob.pos.x, y=mob.pos.y)
+                floor.items[drop.id] = drop
+            mob.carried_items = []
+
         # Imp.Quest.process(): once the quest is given (and not yet
         # completed), killing a Monk (alternative) or Golem (!alternative)
         # anywhere in the dungeon (except floor 20) drops a DwarfToken.
