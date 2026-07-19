@@ -186,6 +186,12 @@ class CapeOfThorns(Artifact):
         pass  # cape levels grant increased retaliation, no charge_cap change
 
 
+def _chalice_heal_rate(level: int) -> float:
+    """SPD ChaliceOfBlood heal rate: 5 / (10 - (1.33 + level*0.667)) HP per turn
+    (≈ HP/sec here) — ~0.58/1.07/1.5/1.88/2.5 at +0/+6/+8/+9/+10."""
+    return 5.0 / (10.0 - (1.33 + level * 0.667))
+
+
 class ChaliceOfBlood(Artifact):
     kind: Literal["chalice_of_blood"] = "chalice_of_blood"
     name: str = "Chalice of Blood"
@@ -208,7 +214,6 @@ class ChaliceOfBlood(Artifact):
 
     def _info_lines(self, player: Optional["Player"] = None) -> List[str]:
         lines = super()._info_lines(player)
-        from app.engine.game.artifacts import _chalice_heal_rate
         rate = _chalice_heal_rate(self.level)
         lines.append(f"Regenerates about {rate:.2f} HP per second while equipped.")
         return lines

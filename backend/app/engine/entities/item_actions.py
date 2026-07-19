@@ -29,6 +29,7 @@ import time
 from typing import Optional
 
 from app.engine.dungeon.constants import TileType
+from app.engine.game.terrain_primitives import _create_gas, _plant_seed_at
 from app.engine.entities.base import Action, Position
 from app.engine.entities.runestones import Runestone
 from app.engine.entities.items_consumable import Seed, Waterskin
@@ -217,7 +218,6 @@ def action_drink(game, player, item, tx=None, ty=None) -> None:
         game.add_event("DAMAGE", {"target": player.id, "amount": dmg}, floor_id=player.floor_id)
         cx, cy = player.pos.x, player.pos.y
         floor = game._get_or_create_floor(player.floor_id)
-        from app.engine.game.terrain_effects import _create_gas
         _create_gas(floor, (cx, cy), 4 + player.floor_id // 2, "toxic_gas")
         game.add_event("PLAY_SOUND", {"sound": "SHATTER"}, floor_id=player.floor_id)
     elif effect == "paralytic_gas":
@@ -225,7 +225,6 @@ def action_drink(game, player, item, tx=None, ty=None) -> None:
         _consume_item(player, item)
         cx, cy = player.pos.x, player.pos.y
         floor = game._get_or_create_floor(player.floor_id)
-        from app.engine.game.terrain_effects import _create_gas
         _create_gas(floor, (cx, cy), 4 + player.floor_id // 2, "paralytic_gas")
         game.add_event("PLAY_SOUND", {"sound": "SHATTER"}, floor_id=player.floor_id)
     elif effect == "levitation":
@@ -282,7 +281,6 @@ def action_drink(game, player, item, tx=None, ty=None) -> None:
         # Drink: release at player's feet (like throwing at self)
         cx, cy = player.pos.x, player.pos.y
         floor = game._get_or_create_floor(player.floor_id)
-        from app.engine.game.terrain_effects import _create_gas
         _create_gas(floor, (cx, cy), 5 + player.floor_id // 2, "corrosive_gas")
         dmg = max(1, player.hp // 4)
         player.take_damage(dmg)
@@ -346,7 +344,6 @@ def action_drink(game, player, item, tx=None, ty=None) -> None:
     elif effect == "shrouding_fog":
         cx, cy = player.pos.x, player.pos.y
         floor = game._get_or_create_floor(player.floor_id)
-        from app.engine.game.terrain_effects import _create_gas
         _create_gas(floor, (cx, cy), 8 + player.floor_id // 2, "smoke_screen")
         _consume_item(player, item)
         game.add_event("PLAY_SOUND", {"sound": "SHATTER"}, floor_id=player.floor_id)
@@ -371,7 +368,6 @@ def action_drink(game, player, item, tx=None, ty=None) -> None:
     elif effect == "storm_clouds":
         cx, cy = player.pos.x, player.pos.y
         floor = game._get_or_create_floor(player.floor_id)
-        from app.engine.game.terrain_effects import _create_gas
         _create_gas(floor, (cx, cy), 6 + player.floor_id // 2, "storm_cloud")
         _consume_item(player, item)
         game.add_event("PLAY_SOUND", {"sound": "SHATTER"}, floor_id=player.floor_id)
@@ -469,7 +465,6 @@ def action_plant(game, player, item, tx=None, ty=None) -> None:
     if tile not in valid_terrains:
         return  # can't plant here
     floor.grid[ty][tx] = TileType.FLOOR_GRASS
-    from app.engine.game.terrain_effects import _plant_seed_at
     _plant_seed_at(floor, (tx, ty), item.plant_type)
     _consume_item(player, item)
     game.add_event("MAP_PATCH", {"tiles": [{"x": tx, "y": ty, "tile": TileType.FLOOR_GRASS}]}, floor_id=player.floor_id)
@@ -586,7 +581,6 @@ def _shatter_liquid_flame(game, player, item, tx, ty) -> None:
 
 
 def _shatter_gas(game, player, item, tx, ty) -> None:
-    from app.engine.game.terrain_effects import _create_gas
     floor = game._get_or_create_floor(player.floor_id)
     if not (0 <= tx < floor.width and 0 <= ty < floor.height):
         return
@@ -601,7 +595,6 @@ def _shatter_gas(game, player, item, tx, ty) -> None:
 
 
 def _shatter_snap_freeze(game, player, item, tx, ty) -> None:
-    from app.engine.game.terrain_effects import _create_gas
     floor = game._get_or_create_floor(player.floor_id)
     if not (0 <= tx < floor.width and 0 <= ty < floor.height):
         return
@@ -649,7 +642,6 @@ def _shatter_unstable(game, player, item, tx, ty) -> None:
     import random as _rand
     effects = ["liquid_flame", "toxic_gas", "paralytic_gas", "corrosive_gas", "frost_gas"]
     chosen = _rand.choice(effects)
-    from app.engine.game.terrain_effects import _create_gas
     floor = game._get_or_create_floor(player.floor_id)
     if not (0 <= tx < floor.width and 0 <= ty < floor.height):
         return
