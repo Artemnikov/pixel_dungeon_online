@@ -1,6 +1,6 @@
 import asyncio
 
-from app.main import ConnectionManager
+from app.api.connection_manager import ConnectionManager
 
 
 class DummyWebSocket:
