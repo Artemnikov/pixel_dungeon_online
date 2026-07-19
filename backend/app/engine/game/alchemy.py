@@ -17,7 +17,7 @@ from app.engine.alchemy.recipes import (
     POTION_TO_EXOTIC, SCROLL_TO_EXOTIC, TrinketCatalystRecipe, usable_in_recipe,
 )
 from app.engine.alchemy.registry import find_recipes
-from app.engine.dungeon.generator import TileType
+from app.engine.dungeon.constants import TileType
 from app.engine.entities.base import Position
 from app.engine.entities.items_artifacts import AlchemistsToolkit
 from app.engine.entities.items_potions import ELIXIR_BREW_KINDS, Potion

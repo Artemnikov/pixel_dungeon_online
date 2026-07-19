@@ -22,7 +22,7 @@ import random
 import uuid
 from typing import List, Tuple, Type
 
-from app.engine.dungeon.generator import TileType
+from app.engine.dungeon.constants import TileType
 from app.engine.dungeon.dungeon_seed import seed_for_depth
 from app.engine.entities.base import EntityType, Faction, Position
 from app.engine.entities.items_consumable import Boomerang, SmallRation, Ration, Pasty, Key, Stone, ThrowableDagger

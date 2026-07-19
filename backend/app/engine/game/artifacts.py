@@ -22,7 +22,7 @@ import random
 
 from app.engine.entities.items_artifacts import AlchemistsToolkit, CapeOfThorns, ChaliceOfBlood, EtherealChains, HolyTome, HornOfPlenty, LloydsBeacon, MasterThievesArmband, SandalsOfNature, SkeletonKey, TalismanOfForesight, TimekeepersHourglass, UnstableSpellbook
 from app.engine.entities.player import Player
-from app.engine.dungeon.generator import TileType
+from app.engine.dungeon.constants import TileType
 
 # Seconds per charge tick for passive-recharge artifacts.
 _SLOW_RECHARGE = 50.0    # ~50s per charge (EtherealChains, LloydsBeacon, SkeletonKey, Armband, Hourglass)

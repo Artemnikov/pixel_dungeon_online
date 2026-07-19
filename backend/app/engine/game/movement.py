@@ -23,7 +23,7 @@ import time
 import uuid
 from typing import Optional
 
-from app.engine.dungeon.generator import TileType
+from app.engine.dungeon.constants import TileType
 from app.engine.entities.base import Faction, Position, is_immune
 from app.engine.entities.item_union import Chest
 from app.engine.entities.items_bombs import Bomb

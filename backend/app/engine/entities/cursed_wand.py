@@ -79,7 +79,7 @@ def fire_cursed_wand(game, player, item, tx: int, ty: int) -> None:
         from app.engine.game.terrain_effects import _create_gas
         _create_gas(floor, (tx, ty), 5, "toxic_gas")
     elif effect == "regrowth":
-        from app.engine.dungeon.generator import TileType
+        from app.engine.dungeon.constants import TileType
         count = 0
         for dy in range(-2, 3):
             for dx in range(-2, 3):

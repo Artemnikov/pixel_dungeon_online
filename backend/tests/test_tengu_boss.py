@@ -3,7 +3,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 from app.engine.entities.base import Position, Faction
 from app.engine.entities.mobs import Tengu
-from app.engine.dungeon.generator import TileType
+from app.engine.dungeon.constants import TileType
 from app.engine.game.floor_state import FloorState
 from app.engine.manager import GameInstance
 from app.engine.systems.loot import roll_drops

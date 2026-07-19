@@ -20,7 +20,7 @@ BFS pathfinding used by mob AI and tap-to-travel.
 
 from typing import List, Optional, Tuple
 
-from app.engine.dungeon.generator import TileType
+from app.engine.dungeon.constants import TileType
 from app.engine.entities.base import Position
 from app.engine.mechanics import shadowcaster
 

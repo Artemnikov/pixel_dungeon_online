@@ -19,7 +19,7 @@ entrance-room healing, passive HP regen, and passive wand recharge.
 import math
 import random
 
-from app.engine.dungeon.generator import TileType
+from app.engine.dungeon.constants import TileType
 from app.engine.entities.items_wands import Wand
 from app.engine.entities.player import Player
 from app.engine.entities.scroll_predicates import player_inventory_items

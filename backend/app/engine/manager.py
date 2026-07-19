@@ -14,7 +14,7 @@ import time
 from typing import Dict, List, Optional, Tuple
 
 # Re-exported for backward-compatible imports (main.py, tests).
-from app.engine.dungeon.generator import TileType
+from app.engine.dungeon.constants import TileType
 from app.engine.entities.base import Position
 from app.engine.entities.player import CharacterClass, Difficulty, Player
 

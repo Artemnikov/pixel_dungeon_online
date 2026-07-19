@@ -15,7 +15,7 @@
 
 import random
 
-from app.engine.dungeon.generator import TileType
+from app.engine.dungeon.constants import TileType
 from app.engine.dungeon.spd_levelgen.level import _CIRCLE8_OFFSETS
 from app.engine.entities.base import Position, is_immune
 from app.engine.entities.buffs import add_buff

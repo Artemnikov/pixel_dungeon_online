@@ -122,7 +122,7 @@ def test_pickup_snuffs_lit_bomb(game_with_player):
     assert picked.fuse_ticks is None                      # snuffed (SPD)
 
 
-from app.engine.dungeon.generator import TileType
+from app.engine.dungeon.constants import TileType
 
 
 def _place(floor, item):
@@ -201,7 +201,7 @@ def test_regrowth_bomb_deals_no_damage(game_with_player):
     g, p, floor = game_with_player
     from app.engine.entities.player import Mob
     cx, cy = p.pos.x + 3, p.pos.y
-    from app.engine.dungeon.generator import TileType
+    from app.engine.dungeon.constants import TileType
     for x in range(cx - 3, cx + 4):
         for y in range(cy - 3, cy + 4):
             if 0 <= x < floor.width and 0 <= y < floor.height:
@@ -216,7 +216,7 @@ def test_regrowth_bomb_deals_no_damage(game_with_player):
 
 def test_explosion_spares_equipment_and_uniques(game_with_player):
     g, p, floor = game_with_player
-    from app.engine.dungeon.generator import TileType
+    from app.engine.dungeon.constants import TileType
     cx, cy = p.pos.x + 3, p.pos.y
     for x in range(cx - 2, cx + 3):
         floor.grid[cy][x] = TileType.FLOOR

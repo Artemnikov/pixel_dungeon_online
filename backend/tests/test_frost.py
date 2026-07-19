@@ -2,7 +2,7 @@
 leaves Chill when thawing on water. Mirrors items/../buffs/Frost.java."""
 import pytest
 
-from app.engine.dungeon.generator import TileType
+from app.engine.dungeon.constants import TileType
 from app.engine.entities.base import Position
 from app.engine.entities.buffs import add_buff, has_buff, is_frozen
 from app.engine.entities.player import Mob

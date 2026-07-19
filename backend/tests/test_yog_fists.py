@@ -9,7 +9,7 @@ from app.engine.entities.buffs import has_buff, get_buff
 from app.engine.entities.mobs import (
     BurningFist, SoiledFist, RottingFist, RustedFist, BrightFist, DarkFist,
 )
-from app.engine.dungeon.generator import TileType
+from app.engine.dungeon.constants import TileType
 from app.engine.game.floor_state import FloorState
 from app.engine.manager import GameInstance
 

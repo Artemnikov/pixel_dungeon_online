@@ -21,7 +21,7 @@ Registered into ITEM_ACTION_DISPATCH in item_actions.py.
 """
 import random
 
-from app.engine.dungeon.generator import TileType
+from app.engine.dungeon.constants import TileType
 from app.engine.entities.base import Action, Position
 from app.engine.entities.items_artifacts import AlchemistsToolkit, ChaliceOfBlood, EtherealChains, HolyTome, HornOfPlenty, LloydsBeacon, MasterThievesArmband, SandalsOfNature, SkeletonKey, TalismanOfForesight, TimekeepersHourglass, UnstableSpellbook
 

@@ -1,4 +1,4 @@
-from app.engine.dungeon.generator import TileType
+from app.engine.dungeon.constants import TileType
 from app.engine.manager import GameInstance
 
 

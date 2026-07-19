@@ -16,7 +16,7 @@
 the player active_effects list synced to the frontend HUD each tick.
 """
 
-from app.engine.dungeon.generator import TileType
+from app.engine.dungeon.constants import TileType
 from app.engine.entities.buffs import get_buff, has_buff
 from app.engine.entities.player import Effect, Player
 

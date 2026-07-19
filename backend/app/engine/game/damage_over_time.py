@@ -19,7 +19,7 @@ their side effects (inventory burning, igniting flammable floor tiles).
 import random
 from typing import List
 
-from app.engine.dungeon.generator import TileType
+from app.engine.dungeon.constants import TileType
 from app.engine.entities.base import is_immune
 from app.engine.entities.buffs import get_buff, has_buff, remove_buff
 from app.engine.entities.items_consumable import ChargrilledMeat, FrozenCarpaccio, Gold, MysteryMeat

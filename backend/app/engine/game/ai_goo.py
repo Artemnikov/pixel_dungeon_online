@@ -16,7 +16,7 @@
 import random
 import time
 
-from app.engine.dungeon.generator import TileType
+from app.engine.dungeon.constants import TileType
 from app.engine.entities.base import Position
 from app.engine.entities.mobs import Goo
 from app.engine.game.constants import GOO_WATER_HEAL_INTERVAL
