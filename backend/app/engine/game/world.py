@@ -21,7 +21,7 @@ locked doors, and resolves trap triggers when a player steps onto one.
 import random
 import time
 import uuid
-from typing import List, Optional, Tuple
+from typing import Callable, Dict, List, Optional, Tuple
 
 from app.engine.dungeon.constants import TileType
 from app.engine.entities.base import Faction, Position
@@ -291,6 +291,233 @@ def _sacrifice_exp_value(mob) -> int:
     if mob.exp > 0:
         return 1 + mob.exp
     return 0
+
+
+# --- Trap handlers, dispatched by _trigger_trap_if_needed ------------------
+# Each handler returns (damage, dealt) for the common MAP_PATCH/TRAP_TRIGGERED/
+# DAMAGE epilogue, or None if it already fully handled its own event emission
+# and outcome (pitfall_trap's hero-fall path -- see its docstring).
+
+def _trap_tengu_dart(game, floor, player, floor_id, is_player, patches):
+    damage = 8
+    dealt = player.take_damage(damage)
+    from app.engine.entities.buffs import add_buff
+    add_buff(player.buffs, "poison", duration=8.0, level=1, stack_mode="extend")
+    if is_player:
+        game.boss_scores[1] -= 100
+        game.qualified_for_boss_challenge = False
+    return damage, dealt
+
+
+def _trap_burning(game, floor, player, floor_id, is_player, patches):
+    _spawn_trap_fire(floor, player.pos.x, player.pos.y, 2, 2)
+    game.add_event("PLAY_SOUND", {"sound": "BURNING"}, floor_id=floor_id)
+    return 0, 0
+
+
+def _trap_blazing(game, floor, player, floor_id, is_player, patches):
+    _spawn_blazing_trap_fire(floor, player.pos.x, player.pos.y)
+    game.add_event("PLAY_SOUND", {"sound": "BURNING"}, floor_id=floor_id)
+    return 0, 0
+
+
+def _trap_shocking(game, floor, player, floor_id, is_player, patches):
+    _spawn_trap_electricity(floor, player.pos.x, player.pos.y, 1, 10)
+    game.add_event("PLAY_SOUND", {"sound": "LIGHTNING"}, floor_id=floor_id)
+    return 0, 0
+
+
+def _trap_storm(game, floor, player, floor_id, is_player, patches):
+    _spawn_trap_electricity(floor, player.pos.x, player.pos.y, 2, 20)
+    game.add_event("PLAY_SOUND", {"sound": "LIGHTNING"}, floor_id=floor_id)
+    return 0, 0
+
+
+def _trap_toxic(game, floor, player, floor_id, is_player, patches):
+    from app.engine.game.terrain_effects import _create_gas
+    _create_gas(floor, (player.pos.x, player.pos.y), 4 + floor_id // 3, "toxic_gas")
+    game.add_event("PLAY_SOUND", {"sound": "GAS"}, floor_id=floor_id)
+    return 0, 0
+
+
+def _trap_poison_dart(game, floor, player, floor_id, is_player, patches):
+    from app.engine.entities.buffs import add_buff
+    from app.engine.game.terrain_effects import _create_gas
+    add_buff(player.buffs, "poison", duration=10.0, level=1, stack_mode="extend")
+    _create_gas(floor, (player.pos.x, player.pos.y), 2, "toxic_gas")
+    game.add_event("PLAY_SOUND", {"sound": "GAS"}, floor_id=floor_id)
+    return 0, 0
+
+
+def _trap_chilling(game, floor, player, floor_id, is_player, patches):
+    from app.engine.game.terrain_effects import _freeze_area
+    _freeze_area(floor, (player.pos.x, player.pos.y))
+    player.add_buff("chilled", duration=5.0, level=1, stack_mode="extend")
+    game.add_event("PLAY_SOUND", {"sound": "SHATTER"}, floor_id=floor_id)
+    return 0, 0
+
+
+def _trap_frost(game, floor, player, floor_id, is_player, patches):
+    from app.engine.game.terrain_effects import _freeze_area
+    _freeze_area(floor, (player.pos.x, player.pos.y))
+    player.add_buff("frozen", duration=5.0, level=1, stack_mode="extend")
+    game.add_event("PLAY_SOUND", {"sound": "SHATTER"}, floor_id=floor_id)
+    return 0, 0
+
+
+def _trap_confusion(game, floor, player, floor_id, is_player, patches):
+    player.add_buff("vertigo", duration=5.0, level=1, stack_mode="replace")
+    game.add_event("PLAY_SOUND", {"sound": "SHATTER"}, floor_id=floor_id)
+    return 0, 0
+
+
+def _trap_ooze(game, floor, player, floor_id, is_player, patches):
+    player.add_buff("ooze", duration=10.0, level=1, stack_mode="extend")
+    return 0, 0
+
+
+def _trap_corrosion(game, floor, player, floor_id, is_player, patches):
+    from app.engine.game.terrain_effects import _create_gas
+    _create_gas(floor, (player.pos.x, player.pos.y), 1 + floor_id // 4, "corrosive_gas")
+    game.add_event("PLAY_SOUND", {"sound": "GAS"}, floor_id=floor_id)
+    return 0, 0
+
+
+def _trap_flock(game, floor, player, floor_id, is_player, patches):
+    game.add_event("PLAY_SOUND", {"sound": "SHATTER"}, floor_id=floor_id)
+    return 0, 0
+
+
+def _trap_weakening(game, floor, player, floor_id, is_player, patches):
+    player.add_buff("weakness", duration=10.0, level=1, stack_mode="extend")
+    game.add_event("PLAY_SOUND", {"sound": "SHATTER"}, floor_id=floor_id)
+    return 0, 0
+
+
+def _trap_gripping(game, floor, player, floor_id, is_player, patches):
+    _spawn_trap_fire(floor, player.pos.x, player.pos.y, 1, 1)
+    game.add_event("PLAY_SOUND", {"sound": "BURNING"}, floor_id=floor_id)
+    return 0, 0
+
+
+def _trap_geyser(game, floor, player, floor_id, is_player, patches):
+    _spawn_trap_electricity(floor, player.pos.x, player.pos.y, 1, 5)
+    game.add_event("PLAY_SOUND", {"sound": "LIGHTNING"}, floor_id=floor_id)
+    return 0, 0
+
+
+def _trap_explosive(game, floor, player, floor_id, is_player, patches):
+    damage = max(1, player.hp // 6)
+    dealt = player.take_damage(damage)
+    game.add_event("PLAY_SOUND", {"sound": "BLAST"}, floor_id=floor_id)
+    blast_cells = []
+    for ox in (-1, 0, 1):
+        for oy in (-1, 0, 1):
+            blast_cells.append([player.pos.x + ox, player.pos.y + oy])
+    game.add_event("BOMB_BLAST", {
+        "x": player.pos.x, "y": player.pos.y,
+        "kind": "bomb", "cells": blast_cells,
+    }, floor_id=floor_id)
+    game.add_event("SCREEN_SHAKE", {"intensity": 2, "duration_ms": 300},
+                   floor_id=floor_id)
+    return damage, dealt
+
+
+def _trap_pitfall(game, floor, player, floor_id, is_player, patches):
+    """SPD PitfallTrap: opens a 3x3 pit around the trap cell; mobs on those
+    cells fall to their death (Chasm.mobFall) and the hero falls to the next
+    floor (Chasm.heroFall). No-op on boss floors or beyond depth 25 (SPD:
+    "the ground is too solid").
+
+    Returns None instead of a (damage, dealt) pair when the hero-fall path
+    already fully handled its own event emission and outcome: it must emit
+    TRAP_TRIGGERED itself before the fall moves the player to the next floor
+    (after which floor_id is stale), so _trigger_trap_if_needed's common
+    epilogue has to be skipped entirely in that case.
+    """
+    from app.engine.dungeon.spd_levelgen.run_state import is_boss_level
+    from app.engine.game.constants import MAX_FLOOR_ID
+    dealt = 0
+    if is_boss_level(floor_id) or floor_id > 25 or floor_id >= MAX_FLOOR_ID:
+        # Too solid — trap triggers but no pit opens.
+        if is_player:
+            game.add_event("MESSAGE",
+                {"text": "The ground is too solid for a pitfall trap to work here."},
+                player_id=player.id)
+        return 0, dealt
+
+    # PitfallParticle burst on the 3x3 around the trap cell.
+    pit_cells = []
+    for ox in (-1, 0, 1):
+        for oy in (-1, 0, 1):
+            cx, cy = player.pos.x + ox, player.pos.y + oy
+            if 0 <= cx < floor.width and 0 <= cy < floor.height:
+                if floor.flags and floor.flags.passable[cy][cx]:
+                    pit_cells.append((cx, cy))
+    # Emit VFX for the pit opening (reuses LEAF_BURST-style per-cell
+    # particle spawn; the client renders a dust/earth burst).
+    for cx, cy in pit_cells:
+        game.add_event("LEAF_BURST", {"x": cx, "y": cy}, floor_id=floor_id)
+    game.add_event("PLAY_SOUND", {"sound": "SHATTER"}, floor_id=floor_id)
+
+    # Mobs on pit cells fall to their death (Chasm.mobFall).
+    for cx, cy in pit_cells:
+        for mob in list(floor.mobs.values()):
+            if mob.is_alive and mob.pos.x == cx and mob.pos.y == cy:
+                if not mob.flying and mob.faction != Faction.PLAYER:
+                    mob.is_alive = False
+                    game.add_event("MOB_CHASM_FALL",
+                        {"mob": mob.id, "x": cx, "y": cy},
+                        floor_id=floor_id)
+                    # DEATH event so the client's death animation
+                    # triggers alongside the fall VFX.
+                    game.add_event("DEATH", {"target": mob.id},
+                        floor_id=floor_id)
+                    game.handle_mob_death(mob, floor, floor_id)
+
+    # Hero falls last (SPD: "process hero falling last").
+    if is_player and not player.has_buff("levitation"):
+        # Emit TRAP_TRIGGERED before the fall moves the player to
+        # the next floor (after which floor_id is stale).
+        if patches:
+            game.add_event("MAP_PATCH", {"tiles": patches}, floor_id=floor_id)
+        game.add_event("TRAP_TRIGGERED",
+            {"player": player.id, "trap": "pitfall_trap", "damage": 0,
+             "x": player.pos.x, "y": player.pos.y},
+            floor_id=floor_id)
+        game._perform_chasm_fall(player, floor_id, player.pos.x, player.pos.y)
+        return None
+    # Non-player entity falls to death in the pit.
+    elif not is_player and not player.has_buff("levitation"):
+        player.is_alive = False
+        game.add_event("MOB_CHASM_FALL",
+            {"mob": player.id, "x": player.pos.x, "y": player.pos.y},
+            floor_id=floor_id)
+        game.add_event("DEATH", {"target": player.id}, floor_id=floor_id)
+        game.handle_mob_death(player, floor, floor_id)
+    return 0, dealt
+
+
+_TRAP_HANDLERS: Dict[str, Callable] = {
+    "tengu_dart": _trap_tengu_dart,
+    "burning_trap": _trap_burning,
+    "blazing_trap": _trap_blazing,
+    "shocking_trap": _trap_shocking,
+    "storm_trap": _trap_storm,
+    "toxic_trap": _trap_toxic,
+    "poison_dart_trap": _trap_poison_dart,
+    "chilling_trap": _trap_chilling,
+    "frost_trap": _trap_frost,
+    "confusion_trap": _trap_confusion,
+    "ooze_trap": _trap_ooze,
+    "corrosion_trap": _trap_corrosion,
+    "flock_trap": _trap_flock,
+    "weakening_trap": _trap_weakening,
+    "gripping_trap": _trap_gripping,
+    "geyser_trap": _trap_geyser,
+    "explosive_trap": _trap_explosive,
+    "pitfall_trap": _trap_pitfall,
+}
 
 
 class WorldInteractionMixin:
@@ -584,171 +811,12 @@ class WorldInteractionMixin:
 
         trap.active = False
 
-        if trap.trap_type == "tengu_dart":
-            damage = 8
-            dealt = player.take_damage(damage)
-            from app.engine.entities.buffs import add_buff
-            add_buff(player.buffs, "poison", duration=8.0, level=1, stack_mode="extend")
-            if is_player:
-                self.boss_scores[1] -= 100
-                self.qualified_for_boss_challenge = False
-        elif trap.trap_type == "burning_trap":
-            _spawn_trap_fire(floor, player.pos.x, player.pos.y, 2, 2)
-            self.add_event("PLAY_SOUND", {"sound": "BURNING"}, floor_id=floor_id)
-            damage = 0
-            dealt = 0
-        elif trap.trap_type == "blazing_trap":
-            _spawn_blazing_trap_fire(floor, player.pos.x, player.pos.y)
-            self.add_event("PLAY_SOUND", {"sound": "BURNING"}, floor_id=floor_id)
-            damage = 0
-            dealt = 0
-        elif trap.trap_type == "shocking_trap":
-            _spawn_trap_electricity(floor, player.pos.x, player.pos.y, 1, 10)
-            self.add_event("PLAY_SOUND", {"sound": "LIGHTNING"}, floor_id=floor_id)
-            damage = 0
-            dealt = 0
-        elif trap.trap_type == "storm_trap":
-            _spawn_trap_electricity(floor, player.pos.x, player.pos.y, 2, 20)
-            self.add_event("PLAY_SOUND", {"sound": "LIGHTNING"}, floor_id=floor_id)
-            damage = 0
-            dealt = 0
-        elif trap.trap_type in ("toxic_trap", "poison_dart_trap"):
-            from app.engine.entities.buffs import add_buff
-            from app.engine.game.terrain_effects import _create_gas
-            if trap.trap_type == "toxic_trap":
-                _create_gas(floor, (player.pos.x, player.pos.y), 4 + floor_id // 3, "toxic_gas")
-            else:
-                add_buff(player.buffs, "poison", duration=10.0, level=1, stack_mode="extend")
-                _create_gas(floor, (player.pos.x, player.pos.y), 2, "toxic_gas")
-            self.add_event("PLAY_SOUND", {"sound": "GAS"}, floor_id=floor_id)
-            damage = 0
-            dealt = 0
-        elif trap.trap_type == "chilling_trap":
-            from app.engine.game.terrain_effects import _freeze_area
-            _freeze_area(floor, (player.pos.x, player.pos.y))
-            player.add_buff("chilled", duration=5.0, level=1, stack_mode="extend")
-            self.add_event("PLAY_SOUND", {"sound": "SHATTER"}, floor_id=floor_id)
-            damage = 0
-            dealt = 0
-        elif trap.trap_type == "frost_trap":
-            from app.engine.game.terrain_effects import _freeze_area
-            _freeze_area(floor, (player.pos.x, player.pos.y))
-            player.add_buff("frozen", duration=5.0, level=1, stack_mode="extend")
-            self.add_event("PLAY_SOUND", {"sound": "SHATTER"}, floor_id=floor_id)
-            damage = 0
-            dealt = 0
-        elif trap.trap_type == "confusion_trap":
-            player.add_buff("vertigo", duration=5.0, level=1, stack_mode="replace")
-            self.add_event("PLAY_SOUND", {"sound": "SHATTER"}, floor_id=floor_id)
-            damage = 0
-            dealt = 0
-        elif trap.trap_type == "ooze_trap":
-            player.add_buff("ooze", duration=10.0, level=1, stack_mode="extend")
-            damage = 0
-            dealt = 0
-        elif trap.trap_type == "corrosion_trap":
-            from app.engine.game.terrain_effects import _create_gas
-            _create_gas(floor, (player.pos.x, player.pos.y), 1 + floor_id // 4, "corrosive_gas")
-            self.add_event("PLAY_SOUND", {"sound": "GAS"}, floor_id=floor_id)
-            damage = 0
-            dealt = 0
-        elif trap.trap_type == "flock_trap":
-            self.add_event("PLAY_SOUND", {"sound": "SHATTER"}, floor_id=floor_id)
-            damage = 0
-            dealt = 0
-        elif trap.trap_type == "weakening_trap":
-            player.add_buff("weakness", duration=10.0, level=1, stack_mode="extend")
-            self.add_event("PLAY_SOUND", {"sound": "SHATTER"}, floor_id=floor_id)
-            damage = 0
-            dealt = 0
-        elif trap.trap_type == "gripping_trap":
-            _spawn_trap_fire(floor, player.pos.x, player.pos.y, 1, 1)
-            self.add_event("PLAY_SOUND", {"sound": "BURNING"}, floor_id=floor_id)
-            damage = 0
-            dealt = 0
-        elif trap.trap_type == "geyser_trap":
-            _spawn_trap_electricity(floor, player.pos.x, player.pos.y, 1, 5)
-            self.add_event("PLAY_SOUND", {"sound": "LIGHTNING"}, floor_id=floor_id)
-            damage = 0
-            dealt = 0
-        elif trap.trap_type == "explosive_trap":
-            damage = max(1, player.hp // 6)
-            dealt = player.take_damage(damage)
-            self.add_event("PLAY_SOUND", {"sound": "BLAST"}, floor_id=floor_id)
-            blast_cells = []
-            for ox in (-1, 0, 1):
-                for oy in (-1, 0, 1):
-                    blast_cells.append([player.pos.x + ox, player.pos.y + oy])
-            self.add_event("BOMB_BLAST", {
-                "x": player.pos.x, "y": player.pos.y,
-                "kind": "bomb", "cells": blast_cells,
-            }, floor_id=floor_id)
-            self.add_event("SCREEN_SHAKE", {"intensity": 2, "duration_ms": 300},
-                           floor_id=floor_id)
-        elif trap.trap_type == "pitfall_trap":
-            # SPD PitfallTrap: opens a 3x3 pit around the trap cell; mobs on
-            # those cells fall to their death (Chasm.mobFall) and the hero
-            # falls to the next floor (Chasm.heroFall). No-op on boss floors
-            # or beyond depth 25 (SPD: "the ground is too solid").
-            from app.engine.dungeon.spd_levelgen.run_state import is_boss_level
-            from app.engine.game.constants import MAX_FLOOR_ID
-            dealt = 0
-            if is_boss_level(floor_id) or floor_id > 25 or floor_id >= MAX_FLOOR_ID:
-                # Too solid — trap triggers but no pit opens.
-                if is_player:
-                    self.add_event("MESSAGE",
-                        {"text": "The ground is too solid for a pitfall trap to work here."},
-                        player_id=player.id)
-            else:
-                # PitfallParticle burst on the 3x3 around the trap cell.
-                pit_cells = []
-                for ox in (-1, 0, 1):
-                    for oy in (-1, 0, 1):
-                        cx, cy = player.pos.x + ox, player.pos.y + oy
-                        if 0 <= cx < floor.width and 0 <= cy < floor.height:
-                            if floor.flags and floor.flags.passable[cy][cx]:
-                                pit_cells.append((cx, cy))
-                # Emit VFX for the pit opening (reuses LEAF_BURST-style per-cell
-                # particle spawn; the client renders a dust/earth burst).
-                for cx, cy in pit_cells:
-                    self.add_event("LEAF_BURST", {"x": cx, "y": cy}, floor_id=floor_id)
-                self.add_event("PLAY_SOUND", {"sound": "SHATTER"}, floor_id=floor_id)
-
-                # Mobs on pit cells fall to their death (Chasm.mobFall).
-                for cx, cy in pit_cells:
-                    for mob in list(floor.mobs.values()):
-                        if mob.is_alive and mob.pos.x == cx and mob.pos.y == cy:
-                            if not mob.flying and mob.faction != Faction.PLAYER:
-                                mob.is_alive = False
-                                self.add_event("MOB_CHASM_FALL",
-                                    {"mob": mob.id, "x": cx, "y": cy},
-                                    floor_id=floor_id)
-                                # DEATH event so the client's death animation
-                                # triggers alongside the fall VFX.
-                                self.add_event("DEATH", {"target": mob.id},
-                                    floor_id=floor_id)
-                                self.handle_mob_death(mob, floor, floor_id)
-
-                # Hero falls last (SPD: "process hero falling last").
-                if is_player and not player.has_buff("levitation"):
-                    # Emit TRAP_TRIGGERED before the fall moves the player to
-                    # the next floor (after which floor_id is stale).
-                    if patches:
-                        self.add_event("MAP_PATCH", {"tiles": patches}, floor_id=floor_id)
-                    self.add_event("TRAP_TRIGGERED",
-                        {"player": player.id, "trap": trap.trap_type, "damage": 0,
-                         "x": player.pos.x, "y": player.pos.y},
-                        floor_id=floor_id)
-                    self._perform_chasm_fall(player, floor_id, player.pos.x, player.pos.y)
-                    return
-                # Non-player entity falls to death in the pit.
-                elif not is_player and not player.has_buff("levitation"):
-                    player.is_alive = False
-                    self.add_event("MOB_CHASM_FALL",
-                        {"mob": player.id, "x": player.pos.x, "y": player.pos.y},
-                        floor_id=floor_id)
-                    self.add_event("DEATH", {"target": player.id}, floor_id=floor_id)
-                    self.handle_mob_death(player, floor, floor_id)
+        handler = _TRAP_HANDLERS.get(trap.trap_type)
+        if handler is not None:
+            result = handler(self, floor, player, floor_id, is_player, patches)
+            if result is None:
+                return
+            damage, dealt = result
         else:
             damage = 2
             dealt = player.take_damage(damage)
