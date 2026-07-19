@@ -1,3 +1,4 @@
+from enum import StrEnum
 from typing import Dict, Optional, List, Set
 
 from pydantic import BaseModel, Field
@@ -60,7 +61,7 @@ class ArmorAbilityType:
     POWER_OF_MANY = "power_of_many"
 
 
-class Talent:
+class Talent(StrEnum):
     # Tier 1 (level 2, universal, 2pts)
     HEARTY_MEAL = "hearty_meal"
     VETERANS_INTUITION = "veterans_intuition"
@@ -279,7 +280,14 @@ class Talent:
     DIVINE_SHIELD = "divine_shield"
     # Tier 3 — Priest
     RADIANCE = "radiance"
-    EMPOWERED_STRIKE = "empowered_strike"
+    # Was PRIEST_EMPOWERED_STRIKE's talent id up until this fix: an exact
+    # duplicate of Battlemage's EMPOWERED_STRIKE above ("empowered_strike"),
+    # which silently overwrote Battlemage's TALENT_DEFS/TALENT_CLASS_REQ
+    # entries (same dict, same key -- last write wins) and made Battlemage's
+    # real, already-implemented tier-3 talent unselectable. Given a distinct
+    # id here instead; still has no title/description text, consistent with
+    # its RADIANCE/SMITE siblings (cleric talent tree content is unfinished).
+    PRIEST_EMPOWERED_STRIKE = "priest_empowered_strike"
     SMITE = "smite"
     # Tier 3 — Paladin
     SHIELD_OF_LIGHT = "shield_of_light"
@@ -500,7 +508,7 @@ TALENT_DEFS: Dict[str, tuple[int, int, Optional[str]]] = {
     Talent.DIVINE_INTERVENTION: (3, 3, None),
     Talent.DIVINE_SHIELD: (3, 3, None),
     Talent.RADIANCE: (3, 3, Subclass.PRIEST),
-    Talent.EMPOWERED_STRIKE: (3, 3, Subclass.PRIEST),
+    Talent.PRIEST_EMPOWERED_STRIKE: (3, 3, Subclass.PRIEST),
     Talent.SMITE: (3, 3, Subclass.PRIEST),
     Talent.SHIELD_OF_LIGHT: (3, 3, Subclass.PALADIN),
     Talent.HOLY_ARMOR: (3, 3, Subclass.PALADIN),
@@ -585,7 +593,7 @@ TALENT_CLASS_REQ: Dict[str, str] = {
     Talent.TESTED_METTLE: "cleric", Talent.TOME_OF_DIVINITY: "cleric",
     Talent.SHARED_ARMAMENTS: "cleric", Talent.SPIRITUAL_GRACE: "cleric",
     Talent.DIVINE_INTERVENTION: "cleric", Talent.DIVINE_SHIELD: "cleric",
-    Talent.RADIANCE: "cleric", Talent.EMPOWERED_STRIKE: "cleric", Talent.SMITE: "cleric",
+    Talent.RADIANCE: "cleric", Talent.PRIEST_EMPOWERED_STRIKE: "cleric", Talent.SMITE: "cleric",
     Talent.SHIELD_OF_LIGHT: "cleric", Talent.HOLY_ARMOR: "cleric", Talent.UNDYING_FAITH: "cleric",
     Talent.ASCENDED_FORM_ABILITY: "cleric", Talent.TRINITY_ABILITY: "cleric", Talent.POWER_OF_MANY_ABILITY: "cleric",
     Talent.EMPOWERED_ASCENSION: "cleric", Talent.RADIANT_ASCENSION: "cleric", Talent.HEALING_ASCENSION: "cleric",
