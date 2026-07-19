@@ -35,7 +35,7 @@ either map, so their dispatch never consumes that extra Float()."""
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from typing import Dict, List, Optional, Tuple
 
 from app.engine.dungeon.spd_levelgen.geom import _to_f32, gate
@@ -137,6 +137,23 @@ _CAT_TABLE: Tuple[tuple, ...] = (
     ("GOLD", 10.0, 10.0, GOLD_KIND, None, None, False),
 )
 _CAT_INDEX: Dict[str, int] = {row[0]: i for i, row in enumerate(_CAT_TABLE)}
+
+# Generator.defaultCatProbs -- combined firstProb+secondProb per category.
+# Used by randomUsingDefaults() for category selection (non-deck-consuming).
+_DEFAULT_CAT_PROBS: List[Tuple[str, float]] = [
+    (name, first + second)
+    for name, first, second, *_ in _CAT_TABLE
+    if first + second > 0
+]
+
+# Categories that represent EquipableItem or Wand in SPD -- eligible for
+# GoldenMimic's quality upgrade (uncursed + 50% chance +1).
+_EQUIPABLE_OR_WAND_CATS = frozenset({
+    "WEAPON", "WEP_T1", "WEP_T2", "WEP_T3", "WEP_T4", "WEP_T5",
+    "ARMOR",
+    "MISSILE", "MIS_T1", "MIS_T2", "MIS_T3", "MIS_T4", "MIS_T5",
+    "WAND", "RING", "ARTIFACT",
+})
 
 _WEP_TIERS = ("WEP_T1", "WEP_T2", "WEP_T3", "WEP_T4", "WEP_T5")
 _MIS_TIERS = ("MIS_T1", "MIS_T2", "MIS_T3", "MIS_T4", "MIS_T5")
@@ -405,10 +422,12 @@ def spawn_mimic(rng: SPDRandom, level, pos: int, item: RolledItem, depth: int):
 
 def spawn_golden_mimic(rng: SPDRandom, level, pos: int, item: RolledItem, depth: int):
     """Port of `Mimic.spawnAt(pos, GoldenMimic.class, toDrop)` -- same
-    useDecks=true reward roll, GoldenMimic identity."""
+    useDecks=true reward roll, GoldenMimic identity, plus quality upgrade
+    (GoldenMimic.generatePrize: uncursed + 50% chance +1 for equipables)."""
     from app.engine.dungeon.spd_levelgen.mob_spawner import GenMob
     prize = roll_mimic_prize(level.run_state.generator_state, rng, depth)
-    return GenMob(cls_name="GoldenMimic", pos=pos, items=[item, prize])
+    items = _apply_golden_mimic_quality([item, prize], rng)
+    return GenMob(cls_name="GoldenMimic", pos=pos, items=items)
 
 
 def spawn_crystal_mimic(rng: SPDRandom, level, pos: int, item: RolledItem, depth: int):
@@ -438,6 +457,33 @@ def generator_random(state: GeneratorState, rng: SPDRandom, depth: int) -> Rolle
     if cat == "SEED":
         return _random_using_defaults_seed(rng)
     return _dispatch_random_category(state, rng, depth, cat)
+
+
+def generator_random_using_defaults(state: GeneratorState, rng: SPDRandom, depth: int) -> RolledItem:
+    """Port of Generator.randomUsingDefaults() (no-arg) -- category selection
+    uses combined firstProb+secondProb (non-deck-consuming), item pick
+    within category uses existing dispatch."""
+    cat = _chances_map(rng, _DEFAULT_CAT_PROBS)
+    if cat is None:
+        return RolledItem(category="GOLD", is_artifact=False, is_upgradable=False, level=0)
+    if cat == "SEED":
+        return _random_using_defaults_seed(rng)
+    return _dispatch_random_category(state, rng, depth, cat)
+
+
+def _apply_golden_mimic_quality(items: List[RolledItem], rng: SPDRandom) -> List[RolledItem]:
+    """Port of GoldenMimic.generatePrize (GoldenMimic.java:89-108).
+
+    All equipable/wand items become uncursed; non-artifact +0 items have
+    50% chance to upgrade to +1. Iterates items in order [to_drop, prize]."""
+    result = []
+    for item in items:
+        if item.category in _EQUIPABLE_OR_WAND_CATS:
+            item = replace(item, cursed=False)
+            if item.category != "ARTIFACT" and item.level == 0 and rng.IntMax(2) == 0:
+                item = replace(item, level=1)
+        result.append(item)
+    return result
 
 
 def _dispatch_random_category(state: GeneratorState, rng: SPDRandom, depth: int, cat: str) -> RolledItem:

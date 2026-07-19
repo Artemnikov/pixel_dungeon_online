@@ -36,11 +36,15 @@ from app.engine.entities.item_union import Chest
 from app.engine.entities.items_consumable import Amulet, CorpseDust, Dewdrop, EnergyCrystal, Food, Gold, Key, Seed, Stone
 from app.engine.entities.items_bombs import Bomb, MetalShard
 from app.engine.entities.items_equip import Armor, ClothArmor, LeatherArmor, MailArmor, make_named_melee_weapon, PlateArmor, ScaleArmor
-from app.engine.entities.items_potions import HealthPotion
+from app.engine.entities.items_potions import (
+    HealthPotion, PotionOfStrength, PotionOfMindVision, PotionOfFrost,
+    PotionOfLiquidFlame, PotionOfToxicGas, PotionOfHaste, PotionOfInvisibility,
+    PotionOfLevitation, PotionOfParalyticGas, PotionOfPurity, PotionOfExperience,
+)
 from app.engine.entities.items_scrolls import Scroll
 from app.engine.entities.items_wands import Wand
 from app.engine.entities.player import Item, Mob as MobEntity, Weapon
-from app.engine.dungeon.spd_levelgen.run_state import SCROLL_DEFAULT_PROBS_TOTAL
+from app.engine.dungeon.spd_levelgen.run_state import SCROLL_DEFAULT_PROBS_TOTAL, POTION_DEFAULT_PROBS_TOTAL
 from app.engine.entities.item_catalog import FLOOR_SCROLL_KINDS, TRANSMUTE_GROUPS, make_catalog_item
 from app.engine.entities.weapon_defs import WEP_TIER_ORDER
 from app.engine.entities.quest_bosses import FetidRat, Ghost, GnollTrickster, GreatCrab
@@ -157,6 +161,24 @@ WAND_CLASS_BY_INDEX = [
     WandOfCorrosion, WandOfBlastWave, WandOfLivingEarth, WandOfFrost,
     WandOfPrismaticLight, WandOfWarding, WandOfTransfusion, WandOfCorruption,
     WandOfRegrowth,
+]
+
+# SPD Generator.Category.POTION.classes order (index -> class).
+# Index 0 (PotionOfStrength) has prob 0 in the deck — handled separately via
+# SPAWN_POTION_OF_STRENGTH, never drawn from random floor loot.
+POTION_CLASS_BY_INDEX = [
+    PotionOfStrength,       # 0
+    HealthPotion,           # 1
+    PotionOfMindVision,     # 2
+    PotionOfFrost,          # 3
+    PotionOfLiquidFlame,    # 4
+    PotionOfToxicGas,       # 5
+    PotionOfHaste,          # 6
+    PotionOfInvisibility,   # 7
+    PotionOfLevitation,     # 8
+    PotionOfParalyticGas,   # 9
+    PotionOfPurity,         # 10
+    PotionOfExperience,     # 11
 ]
 
 
@@ -355,6 +377,21 @@ def _random_scroll(iid: str, pos: Position) -> Item:
     return item
 
 
+def _random_potion(iid: str, pos: Position) -> Item:
+    """Picks a random potion subclass weighted by SPD's POTION.defaultProbs
+    (index 0 / PotionOfStrength has prob 0 — never drawn here, it is placed
+    exclusively via the SPAWN_POTION_OF_STRENGTH descriptor)."""
+    pool = []
+    weights = []
+    for idx, cls in enumerate(POTION_CLASS_BY_INDEX):
+        w = POTION_DEFAULT_PROBS_TOTAL[idx]
+        if w > 0:
+            pool.append(cls)
+            weights.append(w)
+    cls = _random.choices(pool, weights=weights, k=1)[0]
+    return cls(id=iid, pos=pos)
+
+
 def _register_trap(spd_cls: type[SpdTrap], trap_type: str) -> None:
     _SPD_TRAP_TYPE[spd_cls] = trap_type
 
@@ -515,6 +552,9 @@ def _rolled_item_to_item(ri: RolledItem, cx: int, cy: int) -> Item:
     if ri.category == "GOLD":
         return Gold(id=iid, pos=pos, name="Gold")
     if ri.category == "POTION":
+        idx = ri.item_index
+        if 0 <= idx < len(POTION_CLASS_BY_INDEX):
+            return POTION_CLASS_BY_INDEX[idx](id=iid, pos=pos)
         return HealthPotion(id=iid, pos=pos)
     if ri.category == "SCROLL":
         return _random_scroll(iid, pos)
@@ -569,7 +609,7 @@ def _rolled_item_to_item(ri: RolledItem, cx: int, cy: int) -> Item:
 
 
 _DESCRIPTOR_ITEM_MAP = {
-    "PotionOfStrength": lambda iid, pos: HealthPotion(id=iid, pos=pos),
+    "PotionOfStrength": lambda iid, pos: PotionOfStrength(id=iid, pos=pos),
     "Scroll": lambda iid, pos: _random_scroll(iid, pos),
     "Runestone": lambda iid, pos: Stone(id=iid, pos=pos, name="Runestone", damage=1, range=5),
     "TrinketCatalyst": lambda iid, pos: TrinketCatalyst(id=iid, pos=pos, name="Trinket Catalyst"),
@@ -581,7 +621,7 @@ _DESCRIPTOR_ITEM_MAP = {
     "DocumentPage": lambda iid, pos: Scroll(id=iid, pos=pos, name="Document Page"),
     "Food": lambda iid, pos: Food(id=iid, pos=pos, name="Food"),
     "EnergyCrystal": lambda iid, pos: EnergyCrystal(id=iid, pos=pos),
-    "Potion": lambda iid, pos: HealthPotion(id=iid, pos=pos),
+    "Potion": lambda iid, pos: _random_potion(iid, pos),
     "Bomb": lambda iid, pos: Bomb(id=iid, pos=pos),
     "MetalShard": lambda iid, pos: MetalShard(id=iid, pos=pos),
     "Gold": lambda iid, pos: Gold(id=iid, pos=pos, name="Gold"),
@@ -653,8 +693,8 @@ def _extract_doors(gen_level: GenLevel, width: int, height: int) -> Tuple[Dict[T
     return hidden_doors, locked_doors
 
 
-def _apply_depth_scaling_mimic(mob: "CrystalMimic", depth: int) -> None:
-    """Set base stats for a crystal mimic (depth scaling applied at runtime)."""
+def _apply_depth_scaling_mimic(mob, depth: int) -> None:
+    """Set base stats for a mimic variant (depth scaling applied at runtime)."""
     level = depth
     mob.floor_level = level
     mob.max_hp = (1 + level) * 6
@@ -702,9 +742,39 @@ def _adapt_gen_mobs_and_items(gen_mobs, width: int):
             mob.fake_chest_id = fake_chest.id
             mobs[mob.id] = mob
             extra_items[fake_chest.id] = fake_chest
-        elif gen_mob.cls_name in ("Mimic", "GoldenMimic") and gen_mob.items:
-            item = _spawn_item(gen_mob.items, x, y)
-            extra_items[item.id] = item
+        elif gen_mob.cls_name in ("Mimic", "GoldenMimic", "EbonyMimic") and gen_mob.items:
+            mob_cls = {"Mimic": Mimic, "GoldenMimic": GoldenMimic, "EbonyMimic": EbonyMimic}[gen_mob.cls_name]
+            mob = mob_cls(
+                id=str(uuid.uuid4()),
+                pos=Position(x=x, y=y),
+                faction=Faction.DUNGEON,
+                disguised=True,
+            )
+            _apply_depth_scaling_mimic(mob, gen_mob.depth)
+            ri_items = [it for it in gen_mob.items if isinstance(it, RolledItem)]
+            carried = [_rolled_item_to_item(ri, x, y) for ri in ri_items]
+            mob.carried_items = carried
+            if gen_mob.cls_name == "GoldenMimic":
+                fake_chest = Chest(
+                    id=str(uuid.uuid4()),
+                    name="Locked Chest",
+                    pos=Position(x=x, y=y),
+                    chest_type="LOCKED_CHEST",
+                    contents=[],
+                    mimic_hint=True,
+                )
+            else:
+                fake_chest = Chest(
+                    id=str(uuid.uuid4()),
+                    name="Chest",
+                    pos=Position(x=x, y=y),
+                    chest_type="CHEST",
+                    contents=[],
+                    mimic_hint=True,
+                )
+            mob.fake_chest_id = fake_chest.id
+            mobs[mob.id] = mob
+            extra_items[fake_chest.id] = fake_chest
         else:
             mob = _spawn_mob(gen_mob, width)
             mobs[mob.id] = mob
