@@ -30,7 +30,7 @@ from app.engine.entities.mobs import Bee, CrystalMimic, EbonyMimic, MobEntity, R
 from app.engine.entities.player import Player
 from app.engine.entities.wandmaker_quest import DustWraith
 from app.engine.game.constants import (
-    NO_RESPAWN_FLOORS, PRISON_MAX_FLOOR, PUBLIC_MOB_RESPAWN_SPEEDUP,
+    BOSS_FLOORS, NO_RESPAWN_FLOORS, PRISON_MAX_FLOOR, PUBLIC_MOB_RESPAWN_SPEEDUP,
     PUBLIC_ROOM_ID, RESPAWN_TURNS, SEWERS_MAX_FLOOR,
 )
 from app.engine.game.floor_state import FloorState
