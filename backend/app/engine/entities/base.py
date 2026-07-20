@@ -358,6 +358,12 @@ class ItemBase(BaseModel):
     # player's FOV (mirrors SPD's Heap.seen).
     seen: bool = False
 
+    # Server time.time() this item was created by a chest-open or monster-death
+    # drop (see loot.roll_drops / movement._drop_chest_contents). Used to derive
+    # the wire-only `just_dropped` flag so the client only plays the drop-bounce
+    # animation for genuinely fresh loot, not floor items revealed by FOV.
+    dropped_at: Optional[float] = None
+
     # Type-intrinsic, so kept off the wire as ClassVars.
     stackable: ClassVar[bool] = False
     # True for Bag (a container). Kept as a flag so base need not import Bag,

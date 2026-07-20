@@ -442,6 +442,14 @@ class GhostRewardData(_EventData):
     item: str
 
 
+class GhostQuestProcessedData(_EventData):
+    # Ghost.Quest.process() (Ghost.java:367-385): fires when the quest boss
+    # dies, not when the reward is claimed. This is the client's cue to stop
+    # the sewers_tense music and resume the ambient track (SewerLevel.
+    # playLevelMusic() gates on Quest.active(), which turns false here).
+    pass
+
+
 class TeleportData(_EventData):
     player: str
     x: int
@@ -613,6 +621,7 @@ EVENT_MODELS = {
     "IMP_REWARD": ImpRewardData,
     "GHOST_DIALOGUE": GhostDialogueData,
     "GHOST_REWARD": GhostRewardData,
+    "GHOST_QUEST_PROCESSED": GhostQuestProcessedData,
     "GHOST_SUMMON": GhostSummonData,
     "GHOST_DIRECT": GhostDirectData,
     "GHOST_GEAR_OPEN": GhostGearOpenData,

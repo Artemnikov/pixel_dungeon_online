@@ -326,6 +326,7 @@ function App() {
     onWandmakerDialogue: modals.onWandmakerDialogue,
     onChasmPrompt: modals.onChasmPrompt,
     onGhostQuestGiven: () => setGhostQuestGiven(true),
+    onGhostQuestProcessed: () => setGhostQuestGiven(false),
     onGhostQuestComplete: () => setGhostQuestGiven(false),
     onImbueWandChoiceAvailable: modals.onImbueWand,
     onScrollSelectTarget: modals.onScrollSelectTarget,
@@ -858,12 +859,6 @@ function App() {
           onBuffClick={(buff) => setInspectBuff(buff)}
           assetImages={assetImages}
         />
-
-        {(difficulty === 'easy' || difficulty === 'normal') && !myStats.isDowned && (
-          <div className="respawn-badge">
-            {t('game.resurrect.remaining', { count: Math.max(0, maxRespawns - (myStats.respawnsUsed ?? 0)), defaultValue: 'Respawns remaining: {{count}}' })}
-          </div>
-        )}
 
         <div className="canvas-wrapper" ref={wrapperRef}>
           <canvas

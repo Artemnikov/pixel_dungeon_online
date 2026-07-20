@@ -98,6 +98,7 @@ class MovementCombatMixin:
             item = contained.model_copy(deep=True)
             item.id = str(uuid.uuid4())
             item.pos = Position(x=x, y=y)
+            item.dropped_at = time.time()
             floor.items[item.id] = item
 
     def _reveal_crystal_mimic_for_chest(self, player: Player, floor, floor_id: int, chest_id: str) -> bool:
@@ -238,6 +239,7 @@ class MovementCombatMixin:
             self.add_event("PLAY_SOUND", {"sound": "UNLOCK"}, floor_id=floor_id)
         self._drop_chest_contents(floor, chest, x, y)
         self.add_event("OPEN_CHEST", {"player": player.id, "x": x, "y": y, "chest_type": chest.chest_type}, floor_id=floor_id)
+        self._queue_chest_respawn(floor, chest)
         return True
 
     def _drink_from_well(self, player: Player, floor, floor_id: int, x: int, y: int) -> None:

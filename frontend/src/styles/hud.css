@@ -85,8 +85,7 @@
 
 .floor-picker {
   position: absolute;
-  bottom: 100%;
-  top: auto;
+  top: 100%;
   left: 0;
   background: #1a1a2e;
   border: 1px solid #5b6f56;

@@ -19,6 +19,7 @@ the names/appearance of still-unidentified potions and scrolls (SPD's randomised
 potion colours / scroll runes, shared per-run across the co-op party).
 """
 
+import time
 from typing import Dict, Optional
 
 from app.engine.alchemy.energy import energy_val
@@ -26,6 +27,13 @@ from app.engine.entities.item_union import Bag
 from app.engine.entities.items_potions import ELIXIR_BREW_KINDS
 from app.engine.entities.player import Difficulty
 from app.engine.entities.locale_keys import item_locale_key, mob_locale_key
+
+# How long a freshly-dropped item (chest-open / monster-death loot) keeps
+# reporting `just_dropped` over the wire, so the client's drop-bounce
+# animation only fires for genuine fresh drops -- not for old floor loot
+# re-entering FOV. Only needs to outlast typical poll latency, not the
+# 400ms client-side bounce animation itself.
+DROP_ANIM_WINDOW = 2.0
 
 
 class SerializationMixin:
@@ -205,6 +213,11 @@ class SerializationMixin:
         lk = item_locale_key(item)
         if lk:
             d["locale_key"] = lk
+        d["just_dropped"] = (
+            item.dropped_at is not None
+            and (time.time() - item.dropped_at) < DROP_ANIM_WINDOW
+        )
+        d.pop("dropped_at", None)
         return self._mask_item_dict(d)
 
     def _serialize_mob(self, mob) -> dict:

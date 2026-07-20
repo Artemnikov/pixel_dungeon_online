@@ -41,6 +41,7 @@ import wraithSprite from '../assets/pixel-dungeon/sprites/wraith.png';
 import piranhaSprite from '../assets/pixel-dungeon/sprites/piranha.png';
 import mimicSprite from '../assets/pixel-dungeon/sprites/mimic.png';
 import statueSprite from '../assets/pixel-dungeon/sprites/statue.png';
+import sentrySprite from '../assets/pixel-dungeon/sprites/red_sentry.png';
 import beeSprite from '../assets/pixel-dungeon/sprites/bee.png';
 import kingSprite from '../assets/pixel-dungeon/sprites/king.png';
 import ghoulSprite from '../assets/pixel-dungeon/sprites/ghoul.png';
@@ -116,6 +117,7 @@ export default function useAssetImages() {
     piranha: null,
     mimic: null,
     statue: null,
+    sentry: null,
     bee: null,
     king: null,
     ghoul: null,
@@ -230,6 +232,7 @@ export default function useAssetImages() {
     loadImage(piranhaSprite, 'piranha');
     loadImage(mimicSprite, 'mimic');
     loadImage(statueSprite, 'statue');
+    loadImage(sentrySprite, 'sentry');
     loadImage(beeSprite, 'bee');
     loadImage(kingSprite, 'king');
     loadImage(ghoulSprite, 'ghoul');

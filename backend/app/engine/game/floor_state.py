@@ -54,6 +54,14 @@ class FloorState:
     entrance_pos: Optional[Tuple[int, int]] = None
     exit_pos: Optional[Tuple[int, int]] = None
 
+    # Public-room-only: item respawn timer and boss respawn tracker.
+    item_respawn_counter: int = 0
+    boss_dead_ticks: int = 0
+    # Snapshot of item count at generation time; item respawn refills toward this.
+    original_item_count: int = 0
+    # Chest respawn queue: [{ticks_left, chest_type, key_id}] — public room only.
+    chest_respawn_queue: List[dict] = field(default_factory=list)
+
     def rebuild_flags(self) -> None:
         self.flags = build_flag_maps(self.grid, region=self.region)
 

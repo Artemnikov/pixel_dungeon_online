@@ -55,7 +55,11 @@ export const BACKEND_TILE = {
   LOCKED_EXIT: { id: 21, atlasIndex: atlasIndex(8, 3), seethrough: false },
   ALCHEMY: { id: 23, atlasIndex: atlasIndex(8, 7), seethrough: true, overhangIndex: atlasIndex(8, 14) },
   WELL: { id: 24, atlasIndex: null, seethrough: true },
-  STATUE: { id: 25, atlasIndex: atlasIndex(0, 8), seethrough: true },
+  // DungeonTileSheet.java: FLAT_STATUE = FLAT_OTHER+8 = xy(1,5)+8 -> atlasIndex(8,4)
+  // (xy() is 1-indexed and subtracts 1 from both axes before packing). The old
+  // atlasIndex(0,8) pointed at an unrelated small prop, which read as a
+  // cropped/floating statue when scaled to a full tile.
+  STATUE: { id: 25, atlasIndex: atlasIndex(8, 4), seethrough: true },
   BOOKSHELF: { id: 27, atlasIndex: atlasIndex(12, 5), seethrough: false },
   FURROWED_GRASS: { id: 30, atlasIndex: null, seethrough: false },
   CRYSTAL_DOOR: { id: 31, atlasIndex: atlasIndex(3, 7), seethrough: false },

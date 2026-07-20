@@ -29,7 +29,10 @@ from app.engine.entities.items_consumable import CorpseDust
 from app.engine.entities.mobs import Bee, CrystalMimic, EbonyMimic, MobEntity, Rat, TormentedSpirit, Wraith
 from app.engine.entities.player import Player
 from app.engine.entities.wandmaker_quest import DustWraith
-from app.engine.game.constants import NO_RESPAWN_FLOORS, PRISON_MAX_FLOOR, RESPAWN_TURNS, SEWERS_MAX_FLOOR
+from app.engine.game.constants import (
+    NO_RESPAWN_FLOORS, PRISON_MAX_FLOOR, PUBLIC_MOB_RESPAWN_SPEEDUP,
+    PUBLIC_ROOM_ID, RESPAWN_TURNS, SEWERS_MAX_FLOOR,
+)
 from app.engine.game.floor_state import FloorState
 
 
@@ -107,14 +110,19 @@ class SpawnTickMixin:
         return _DS.daytime_spawn_multiplier(ds_lvl)
 
     def _process_respawns(self, floor_id: int, floor: FloorState, active_players: List[Player]):
-        if floor_id in NO_RESPAWN_FLOORS:
+        if floor_id in BOSS_FLOORS:
+            return
+        # Public room: floor 1 also respawns; tooms keep original behavior.
+        is_public = self.game_id == PUBLIC_ROOM_ID
+        if not is_public and floor_id in NO_RESPAWN_FLOORS:
             return
         live_mobs = sum(1 for m in floor.mobs.values() if m.is_alive)
         if live_mobs >= floor.mob_limit:
             floor.respawn_counter = 0
             return
         floor.respawn_counter += 1
-        if floor.respawn_counter < RESPAWN_TURNS:
+        threshold = int(RESPAWN_TURNS * PUBLIC_MOB_RESPAWN_SPEEDUP) if is_public else RESPAWN_TURNS
+        if floor.respawn_counter < threshold:
             return
         floor.respawn_counter = 0
 

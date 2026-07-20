@@ -337,6 +337,8 @@ export function drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef,
     } else if (mob.name === 'Statue' || mob.name === 'Armored Statue') {
       mobSprite = assetImages.statue;
       sx = getStatueFrame(mob, mobAnimRef.current, now);
+    } else if (mob.name === 'Sentry') {
+      mobSprite = assetImages.sentry;
     } else if (mob.name === 'Bee') {
       mobSprite = assetImages.bee;
       sx = getBeeFrame(mob, mobAnimRef.current, now);

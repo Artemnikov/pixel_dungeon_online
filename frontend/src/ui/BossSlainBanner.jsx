@@ -12,7 +12,7 @@ function BossSlainBanner({ badgeImage, onDismiss }) {
   useEffect(() => { onDismissRef.current = onDismiss; });
 
   useEffect(() => {
-    timerRef.current = setTimeout(() => onDismissRef.current?.(), 5600);
+    timerRef.current = setTimeout(() => onDismissRef.current?.(), 3000);
     return () => clearTimeout(timerRef.current);
   }, []);
 

@@ -221,8 +221,10 @@ export function syncState(data: StateUpdateMessage, ctx: SyncCtx): void {
     const existing = oldDropBounce.get(id);
     if (existing) {
       newItemWithBounce.dropBounce = existing;
-    } else if (!oldItemIds.has(id) && newItem.pos) {
-      // Brand-new server item — start the drop-from-above animation
+    } else if (!oldItemIds.has(id) && newItem.pos && newItem.just_dropped) {
+      // Genuinely fresh chest-open/monster-death drop — start the
+      // drop-from-above animation. Items merely re-entering FOV (or seen
+      // for the first time as pre-placed loot) don't set just_dropped.
       newItemWithBounce.dropBounce = {
         startTime: performance.now(),
         startY: newItem.pos.y - 1.5,

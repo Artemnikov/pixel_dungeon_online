@@ -60,7 +60,7 @@
 }
 .boss-slain-badge {
   position: fixed;
-  top: 50%;
+  top: 20%;
   left: 50%;
   transform: translate(-50%, -50%) translateY(-72px);
   background: transparent url('../assets/pixel-dungeon/interfaces/badges.png') no-repeat;
@@ -73,7 +73,7 @@
 }
 .boss-slain-banner {
   position: fixed;
-  top: 50%;
+  top: 20%;
   left: 50%;
   transform: translate(-50%, -50%);
   background: transparent url('../assets/pixel-dungeon/interfaces/banners.png') no-repeat;
