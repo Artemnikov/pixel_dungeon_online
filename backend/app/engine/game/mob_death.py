@@ -24,8 +24,10 @@ import uuid
 
 from app.engine.entities.base import Position
 from app.engine.entities.items_consumable import Key
+from app.engine.entities.mobs import DM300, Goo, Tengu, YogDzewa, DwarfKing
 from app.engine.game.floor_state import FloorState
 from app.engine.game.ai_goo import _goo_unseal_entrance
+from app.engine.game.constants import PUBLIC_ROOM_ID
 
 def _sacrifice_exp_value(mob) -> int:
     """Port of SacrificialFire.sacrifice()'s per-type exp lookup (same rates
@@ -97,6 +99,10 @@ class MobDeathMixin:
 
         self._process_sacrifice_fire_death(mob, floor, floor_id)
 
+        # Public room: start boss respawn timer when any boss dies.
+        if self.game_id == PUBLIC_ROOM_ID and isinstance(mob, (Goo, Tengu, DM300, DwarfKing, YogDzewa)):
+            floor.boss_dead_ticks = 0
+
         # Mimic/GoldenMimic/EbonyMimic die(): drop all carried items at the
         # mob's death position (SPD Mimic.die drops the `items` LinkedList).
         from app.engine.entities.mobs import EbonyMimic, GoldenMimic, Mimic as MimicCls
@@ -136,6 +142,10 @@ class MobDeathMixin:
         if ghost_quest.boss_id and mob.id == ghost_quest.boss_id and ghost_quest.process(floor_id):
             self.add_event("MESSAGE", {"text": "Thank you... come find me..."}, floor_id=floor_id)
             self.add_event("PLAY_SOUND", {"sound": "GHOST"}, floor_id=floor_id)
+            # Quest.active() just went false -- tell clients on this floor to
+            # drop the sewers_tense track back to ambient (see SewerLevel.
+            # playLevelMusic()'s fadeOut->replay in the original).
+            self.add_event("GHOST_QUEST_PROCESSED", {}, floor_id=floor_id)
 
         # CavesBossLevel.eliminatePylon -> DM300.loseSupercharge: when an
         # activated Pylon dies, DM300 becomes vulnerable again. No
@@ -177,6 +187,8 @@ class MobDeathMixin:
             self.add_event("BOSS_SLAIN", {"mob": mob.id, "depth": floor_id, "badge_image": 48}, floor_id=floor_id)
             self.add_event("BOSS_YELL", {"mob": mob.id, "text": "Free at last...",
                                          "x": mob.pos.x, "y": mob.pos.y}, floor_id=floor_id)
+            if self.game_id == PUBLIC_ROOM_ID:
+                self.add_event("MESSAGE", {"text": f"{mob.name} has been slain!"})
             return
 
         if isinstance(mob, YogDzewa):
@@ -191,7 +203,12 @@ class MobDeathMixin:
                 )
                 floor.items[key.id] = key
             self.add_event("PLAY_SOUND", {"sound": "BOSS"}, floor_id=floor_id)
+            if self.game_id == PUBLIC_ROOM_ID:
+                self.add_event("MESSAGE", {"text": f"{mob.name} has been slain!"})
             return
+
+        if isinstance(mob, (DM300, DwarfKing)) and self.game_id == PUBLIC_ROOM_ID:
+            self.add_event("MESSAGE", {"text": f"{mob.name} has been slain!"})
 
         if not isinstance(mob, Goo):
             return
@@ -213,3 +230,5 @@ class MobDeathMixin:
         self.boss_scores[0] += 1000
         if self.qualified_for_boss_challenge:
             self.add_event("GOO_BADGE_QUALIFIED", {}, floor_id=floor_id)
+        if self.game_id == PUBLIC_ROOM_ID:
+            self.add_event("MESSAGE", {"text": f"{mob.name} has been slain!"})

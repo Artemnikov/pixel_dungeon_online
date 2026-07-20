@@ -111,6 +111,8 @@ export interface SerializationExtras {
   energy_value_one?: number;
   /** Buffed upgrade level (SPD buffedVisiblyUpgraded); differs from `level` only for temporary modifiers e.g. an imbued staff. */
   buffed_level?: number;
+  /** True for a short window after a genuine chest-open/monster-death drop (not FOV reveal); gates the client drop-bounce animation. */
+  just_dropped: boolean;
 }
 
 /** An item as it actually arrives over the wire (model + serialization extras). */
@@ -434,6 +436,13 @@ export interface GhostDialogueEvent {
 export interface GhostRewardEvent {
   type: 'GHOST_REWARD';
   data: { player: string; npc: string; item: string };
+}
+
+/** Ghost quest boss died -- floor-wide cue to stop the sewers_tense music
+ * and resume the ambient track (fires well before the reward is claimed). */
+export interface GhostQuestProcessedEvent {
+  type: 'GHOST_QUEST_PROCESSED';
+  data: Record<string, never>;
 }
 
 /** Wandmaker NPC dialogue (quest offer / reminder / reward-ready). */
@@ -1063,6 +1072,7 @@ export type GameEvent =
   | ImpRewardEvent
   | GhostDialogueEvent
   | GhostRewardEvent
+  | GhostQuestProcessedEvent
   | WandmakerDialogueEvent
   | WandmakerRewardEvent
   | GhostSummonEvent

@@ -55,7 +55,7 @@ def trigger_respawn(game, floor, monkeypatch, random_value, choice_index=0):
 
 
 def test_universal_pool_spawns_wraith_with_floor_scaling(monkeypatch):
-    floor = make_floor(floor_id=5)
+    floor = make_floor(floor_id=2)
     game = make_game(floor)
 
     # random.random() < 0.01 -> universal extra branch
@@ -65,16 +65,16 @@ def test_universal_pool_spawns_wraith_with_floor_scaling(monkeypatch):
     wraiths = [m for m in floor.mobs.values() if isinstance(m, Wraith) and not isinstance(m, TormentedSpirit)]
     assert len(wraiths) == 1
     w = wraiths[0]
-    assert w.floor_level == 5
-    assert w.attack_skill == 15        # 10 + 5
-    assert w.defense_skill == 75       # 15 * 5
-    assert w.damage_min == 3           # 1 + 5//2
-    assert w.damage_max == 7           # 2 + 5
+    assert w.floor_level == 2
+    assert w.attack_skill == 12        # 10 + 2
+    assert w.defense_skill == 60       # 12 * 5
+    assert w.damage_min == 2           # 1 + 2//2
+    assert w.damage_max == 4           # 2 + 2
     assert w.hp == 1 and w.max_hp == 1
 
 
 def test_universal_pool_spawns_tormented_spirit_with_scaling(monkeypatch):
-    floor = make_floor(floor_id=10)
+    floor = make_floor(floor_id=7)
     game = make_game(floor)
 
     calls = {"n": 0}
@@ -93,12 +93,12 @@ def test_universal_pool_spawns_tormented_spirit_with_scaling(monkeypatch):
     spirits = [m for m in floor.mobs.values() if isinstance(m, TormentedSpirit)]
     assert len(spirits) == 1
     s = spirits[0]
-    assert s.floor_level == 10
-    expected_attack = 10 + round(1.5 * 10)  # 25
+    assert s.floor_level == 7
+    expected_attack = 10 + round(1.5 * 7)  # 21
     assert s.attack_skill == expected_attack
     assert s.defense_skill == expected_attack * 5
-    assert s.damage_min == 1 + (round(1.5 * 10) // 2)
-    assert s.damage_max == 2 + round(1.5 * 10)
+    assert s.damage_min == 1 + (round(1.5 * 7) // 2)
+    assert s.damage_max == 2 + round(1.5 * 7)
 
 
 def test_universal_pool_spawns_bee_with_scaling(monkeypatch):
@@ -148,7 +148,7 @@ def test_ebony_mimic_excluded_from_pool_on_floor_1(monkeypatch):
 
 
 def test_no_universal_spawn_when_above_one_percent_threshold(monkeypatch):
-    floor = make_floor(floor_id=5)
+    floor = make_floor(floor_id=2)
     game = make_game(floor)
 
     monkeypatch.setattr(random, "random", lambda: 0.5)

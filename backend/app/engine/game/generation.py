@@ -53,6 +53,7 @@ class GenerationMixin:
         self.depth = depth
 
         floor = self._generate_floor_spd(depth)
+        floor.original_item_count = len(floor.items)
 
         self.floors[depth] = floor
         return floor

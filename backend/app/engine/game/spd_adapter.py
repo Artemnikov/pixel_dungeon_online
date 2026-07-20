@@ -870,6 +870,7 @@ def gen_level_to_floor_state(gen_level: GenLevel, depth: int) -> FloorState:
         traps=traps,
         plants=plants,
         key_spawns=key_spawns,
+        mob_limit=len(mobs),
         generation_meta={
             "seed": str(getattr(gen_level, '_seed', '')),
             "spd_generated": True,

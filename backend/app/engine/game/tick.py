@@ -129,6 +129,9 @@ class TickMixin:
             self._process_burning(floor_id, active_players)
             self._process_poison_corrosion(floor_id, active_players)
             self._process_respawns(floor_id, floor, active_players)
+            self._process_item_respawns(floor_id, floor, active_players)
+            self._process_boss_respawns(floor_id, floor, active_players)
+            self._process_chest_respawns(floor_id, floor, active_players)
             self._update_prison_boss(floor, floor_id)
 
             for mob in list(floor.mobs.values()):

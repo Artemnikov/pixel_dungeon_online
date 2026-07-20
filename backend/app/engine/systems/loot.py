@@ -1,4 +1,5 @@
 import random
+import time
 import uuid
 from typing import Dict, List, Optional
 
@@ -142,6 +143,9 @@ def roll_drops(
                                 dup.pos = Position(x=death_x, y=death_y)
                                 items.append(dup)
 
+    now = time.time()
+    for it in items:
+        it.dropped_at = now
     return items
 
 

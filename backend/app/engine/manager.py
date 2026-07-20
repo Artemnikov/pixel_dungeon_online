@@ -59,6 +59,7 @@ from app.engine.game.npc_economy import NpcEconomyMixin
 from app.engine.game.artifacts import ArtifactsMixin
 from app.engine.game.duelist import DuelistMixin
 from app.engine.game.cleric import ClericMixin
+from app.engine.game.public_room import PublicRoomMixin
 
 
 class GameInstance(
@@ -91,6 +92,7 @@ class GameInstance(
     ClericMixin,
     VisionMixin,
     SerializationMixin,
+    PublicRoomMixin,
 ):
     def __init__(self, game_id: str, seed: Optional[str] = None):
         self.game_id = game_id

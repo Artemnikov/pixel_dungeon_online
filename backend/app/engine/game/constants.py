@@ -50,14 +50,26 @@ GOO_WATER_HEAL_INTERVAL = 20
 
 # Respawn timer: 50 turns (ticks) base
 RESPAWN_TURNS = 50
-# No respawns on floor 1
-NO_RESPAWN_FLOORS = {1}
+# Boss floors: only the boss respawns, no regular mobs/items/chests.
+BOSS_FLOORS = {5, 10, 15, 20, 25}
+# No respawns on floor 1 or boss floors.
+NO_RESPAWN_FLOORS = {1} | BOSS_FLOORS
 
 # In-place respawn (Easy and Medium difficulty): max resurrections per run,
 # spawn-protection turns after each respawn (invulnerability window so a mob
 # camping the stairs can't instantly re-kill the reborn hero).
 RESPAWN_MAX_USES = 3
 RESPAWN_SPAWN_PROTECTION_TURNS = 3
+
+# Public-room-only: item replenishment and boss respawn.
+PUBLIC_ROOM_ID = "public"
+ITEM_RESPAWN_TURNS = 100          # ticks between item respawn waves (~5s at 20Hz)
+ITEM_RESPAWN_BASE_COUNT = 2       # base items per wave
+ITEM_RESPAWN_PLAYER_BONUS = 1     # extra items per active player
+BOSS_RESPAWN_TICKS = 600          # ticks before a dead boss respawns (~30s)
+CHEST_RESPAWN_TICKS = 400         # ticks before a looted chest respawns (~20s)
+# Public room uses a faster mob respawn cadence.
+PUBLIC_MOB_RESPAWN_SPEEDUP = 0.75  # multiplier on RESPAWN_TURNS (25% faster)
 
 # Canvas seed size handed to the generator. The v2 generator resizes its canvas
 # to fit the room layout, so each floor ends up a different size; these are only

@@ -61,6 +61,7 @@ async def game_websocket(websocket: WebSocket, game_id: str, class_type: str = "
         is_admin = bool(admin_secret and admin_secret == os.environ.get("ADMIN_SECRET", "admin"))
         player_name = "admin" if is_admin else (name.strip()[:20] if name and name.strip() else f"Player_{player_id[:4]}")
         game.add_player(player_id, player_name, class_type, is_admin=is_admin)
+        game.add_event("MESSAGE", {"text": f"{player_name} joined the game."})
     await manager.send_player_init(game_id, websocket, player_id, is_new=is_new)
 
     try:
@@ -258,6 +259,9 @@ async def game_websocket(websocket: WebSocket, game_id: str, class_type: str = "
                 game.choose_enchant(player_id, message.target_id, message.choice_index)
 
     except WebSocketDisconnect:
+        # Emit a user-left event before disconnecting so other players see it.
+        if player_id in game.players:
+            game.add_event("MESSAGE", {"text": f"{game.players[player_id].name} left the game."})
         # Keep the hero alive for the reconnect grace window (see reaper); the
         # player is only removed once the deadline elapses without a reconnect.
         manager.disconnect(game_id, websocket)

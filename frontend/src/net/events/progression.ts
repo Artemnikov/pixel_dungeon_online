@@ -9,7 +9,7 @@ export function handleProgressionEvents(event: GameEvent, ctx: HandlerCtx): bool
     onLevelUp, onSubclassChoiceAvailable, onArmorAbilityChoiceAvailable,
     onImbueWandChoiceAvailable, onTalentUpgraded, onMetamorphOpen, onMetamorphOptions,
     onGooFightStarted: _g, onTenguFightStarted: _t,
-    onShopOpen, onImpDialogue, onGhostDialogue, onWandmakerDialogue, onScrollSelectTarget, onGhostGearOpen, onBossSlain, onGhostQuestGiven, onGhostQuestComplete,
+    onShopOpen, onImpDialogue, onGhostDialogue, onWandmakerDialogue, onScrollSelectTarget, onGhostGearOpen, onBossSlain, onGhostQuestGiven, onGhostQuestProcessed, onGhostQuestComplete,
     onStoneSelectTarget, onStoneIntuitionPickItem, onStoneIntuitionGuessKind, onStoneAugmentPickItem,
     onEnchantChoiceAvailable,
   } = ctx;
@@ -112,6 +112,13 @@ export function handleProgressionEvents(event: GameEvent, ctx: HandlerCtx): bool
         onGhostQuestGiven?.();
       }
     }
+    return true;
+  }
+
+  if (event.type === 'GHOST_QUEST_PROCESSED') {
+    // Ghost.Quest.process(): quest boss died -- ends the tense phase
+    // regardless of whether the reward has been claimed yet.
+    onGhostQuestProcessed?.();
     return true;
   }
 

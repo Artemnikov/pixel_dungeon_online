@@ -66,6 +66,17 @@
           "default": false,
           "type": "boolean"
         },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "strength_requirement": {
           "default": 10,
           "type": "integer"
@@ -150,6 +161,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "type": "object"
@@ -219,6 +241,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "effect": {
           "default": "aqua_brew",
@@ -292,6 +325,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "fuse_ticks": {
           "anyOf": [
@@ -376,6 +420,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "type": "object"
@@ -444,6 +499,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "strength_requirement": {
           "default": 10,
@@ -551,6 +617,17 @@
           "default": false,
           "type": "boolean"
         },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "strength_requirement": {
           "default": 10,
           "type": "integer"
@@ -633,6 +710,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "capacity": {
           "default": 20,
@@ -5759,6 +5847,17 @@
           "default": false,
           "type": "boolean"
         },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "energy": {
           "default": 100,
           "type": "integer"
@@ -5832,6 +5931,17 @@
           "default": false,
           "type": "boolean"
         },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "effect": {
           "default": "blizzard_brew",
           "type": "string"
@@ -5904,6 +6014,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "fuse_ticks": {
           "anyOf": [
@@ -5989,6 +6110,17 @@
           "default": false,
           "type": "boolean"
         },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "damage": {
           "default": 3,
           "type": "integer"
@@ -6073,6 +6205,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "strength_requirement": {
           "default": 10,
@@ -6209,6 +6352,17 @@
           "default": false,
           "type": "boolean"
         },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "strength_requirement": {
           "default": 10,
           "type": "integer"
@@ -6332,6 +6486,17 @@
           "default": false,
           "type": "boolean"
         },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "strength_requirement": {
           "default": 10,
           "type": "integer"
@@ -6417,6 +6582,17 @@
           "default": false,
           "type": "boolean"
         },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "effect": {
           "default": "caustic_brew",
           "type": "string"
@@ -6490,6 +6666,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "type": "object"
@@ -6559,6 +6746,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "strength_requirement": {
           "default": 10,
@@ -6641,6 +6839,17 @@
           "default": false,
           "type": "boolean"
         },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "strength_requirement": {
           "default": 0,
           "type": "integer"
@@ -6714,6 +6923,17 @@
           "default": false,
           "type": "boolean"
         },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "energy": {
           "default": 300,
           "type": "integer"
@@ -6786,6 +7006,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "chest_type": {
           "default": "CHEST",
@@ -7715,6 +7946,17 @@
           "default": false,
           "type": "boolean"
         },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "strength_requirement": {
           "default": 10,
           "type": "integer"
@@ -7799,6 +8041,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "strength_requirement": {
           "default": 10,
@@ -7890,6 +8143,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "type": "object"
@@ -7959,6 +8223,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "strength_requirement": {
           "default": 0,
@@ -8032,6 +8307,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "damage": {
           "default": 0,
@@ -8155,6 +8441,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "strength_requirement": {
           "default": 9,
@@ -8302,6 +8599,17 @@
           "default": false,
           "type": "boolean"
         },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "damage": {
           "default": 0,
           "type": "integer"
@@ -8427,6 +8735,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "type": "object"
@@ -8496,6 +8815,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "strength_requirement": {
           "default": 0,
@@ -8569,6 +8899,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "strength_requirement": {
           "default": 10,
@@ -8710,6 +9051,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "type": "object"
@@ -8807,6 +9159,17 @@
           "default": false,
           "type": "boolean"
         },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "effect": {
           "default": "aqua_rejuv",
           "type": "string"
@@ -8879,6 +9242,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "effect": {
           "default": "arcane_armor",
@@ -8953,6 +9327,17 @@
           "default": false,
           "type": "boolean"
         },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "effect": {
           "default": "dragons_blood",
           "type": "string"
@@ -9025,6 +9410,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "effect": {
           "default": "feather_fall",
@@ -9099,6 +9495,17 @@
           "default": false,
           "type": "boolean"
         },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "effect": {
           "default": "honeyed_healing",
           "type": "string"
@@ -9171,6 +9578,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "effect": {
           "default": "icy_touch",
@@ -9245,6 +9663,17 @@
           "default": false,
           "type": "boolean"
         },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "effect": {
           "default": "might",
           "type": "string"
@@ -9317,6 +9746,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "effect": {
           "default": "toxic_essence",
@@ -9391,6 +9831,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "type": "object"
@@ -9460,6 +9911,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "type": "object"
@@ -9529,6 +9991,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "strength_requirement": {
           "default": 10,
@@ -9615,6 +10088,17 @@
           "default": false,
           "type": "boolean"
         },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "strength_requirement": {
           "default": 0,
           "type": "integer"
@@ -9687,6 +10171,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "type": "object"
@@ -9756,6 +10251,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "strength_requirement": {
           "default": 0,
@@ -9830,6 +10336,17 @@
           "default": false,
           "type": "boolean"
         },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "strength_requirement": {
           "default": 0,
           "type": "integer"
@@ -9902,6 +10419,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "fuse_ticks": {
           "anyOf": [
@@ -9987,6 +10515,17 @@
           "default": false,
           "type": "boolean"
         },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "fuse_ticks": {
           "anyOf": [
             {
@@ -10070,6 +10609,17 @@
           "default": false,
           "type": "boolean"
         },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "energy": {
           "default": 0,
           "type": "integer"
@@ -10145,6 +10695,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "fuse_ticks": {
           "anyOf": [
@@ -10230,6 +10791,17 @@
           "default": false,
           "type": "boolean"
         },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "energy": {
           "default": 300,
           "type": "integer"
@@ -10303,6 +10875,17 @@
           "default": false,
           "type": "boolean"
         },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "effect": {
           "default": "fury",
           "type": "string"
@@ -10374,6 +10957,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "required": [
@@ -10446,6 +11040,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "type": "object"
@@ -10515,6 +11120,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "effect": {
           "default": "regen",
@@ -10588,6 +11204,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "fuse_ticks": {
           "anyOf": [
@@ -10672,6 +11299,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "strength_requirement": {
           "default": 10,
@@ -10758,6 +11396,17 @@
           "default": false,
           "type": "boolean"
         },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "strength_requirement": {
           "default": 10,
           "type": "integer"
@@ -10843,6 +11492,17 @@
           "default": false,
           "type": "boolean"
         },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "effect": {
           "default": "infernal_brew",
           "type": "string"
@@ -10914,6 +11574,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "key_id": {
           "default": "",
@@ -11014,6 +11685,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "type": "object"
@@ -11083,6 +11765,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "strength_requirement": {
           "default": 12,
@@ -11174,6 +11867,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "strength_requirement": {
           "default": 10,
@@ -11292,6 +11996,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "capacity": {
           "default": 20,
@@ -12201,6 +12916,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "type": "object"
@@ -12270,6 +12996,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "strength_requirement": {
           "default": 14,
@@ -12362,6 +13099,17 @@
           "default": false,
           "type": "boolean"
         },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "strength_requirement": {
           "default": 10,
           "type": "integer"
@@ -12447,6 +13195,17 @@
           "default": false,
           "type": "boolean"
         },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "energy": {
           "default": 900,
           "type": "integer"
@@ -12518,6 +13277,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "strength_requirement": {
           "default": 10,
@@ -12667,6 +13437,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "type": "object"
@@ -12736,6 +13517,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "strength_requirement": {
           "default": 0,
@@ -12808,6 +13600,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "strength_requirement": {
           "default": 10,
@@ -13230,6 +14033,17 @@
           "default": false,
           "type": "boolean"
         },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "strength_requirement": {
           "default": 0,
           "type": "integer"
@@ -13303,6 +14117,17 @@
           "default": false,
           "type": "boolean"
         },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "energy": {
           "default": 0,
           "type": "integer"
@@ -13375,6 +14200,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "fuse_ticks": {
           "anyOf": [
@@ -13460,6 +14296,17 @@
           "default": false,
           "type": "boolean"
         },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "strength_requirement": {
           "default": 0,
           "type": "integer"
@@ -13533,6 +14380,17 @@
           "default": false,
           "type": "boolean"
         },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "energy": {
           "default": 450,
           "type": "integer"
@@ -13605,6 +14463,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "type": "object"
@@ -13674,6 +14543,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "strength_requirement": {
           "default": 0,
@@ -13747,6 +14627,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "strength_requirement": {
           "default": 18,
@@ -16920,6 +17811,17 @@
           "default": false,
           "type": "boolean"
         },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "effect": {
           "default": "",
           "type": "string"
@@ -16995,6 +17897,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "capacity": {
           "default": 20,
@@ -17905,6 +18818,17 @@
           "default": false,
           "type": "boolean"
         },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "effect": {
           "default": "cleansing",
           "type": "string"
@@ -17977,6 +18901,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "effect": {
           "default": "corrosive_gas",
@@ -18051,6 +18986,17 @@
           "default": false,
           "type": "boolean"
         },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "effect": {
           "default": "divine_inspiration",
           "type": "string"
@@ -18123,6 +19069,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "effect": {
           "default": "dragons_breath",
@@ -18197,6 +19154,17 @@
           "default": false,
           "type": "boolean"
         },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "effect": {
           "default": "earthen_armor",
           "type": "string"
@@ -18269,6 +19237,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "effect": {
           "default": "experience",
@@ -18343,6 +19322,17 @@
           "default": false,
           "type": "boolean"
         },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "effect": {
           "default": "frost",
           "type": "string"
@@ -18415,6 +19405,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "effect": {
           "default": "haste",
@@ -18489,6 +19490,17 @@
           "default": false,
           "type": "boolean"
         },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "effect": {
           "default": "invisibility",
           "type": "string"
@@ -18561,6 +19573,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "effect": {
           "default": "levitation",
@@ -18635,6 +19658,17 @@
           "default": false,
           "type": "boolean"
         },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "effect": {
           "default": "liquid_flame",
           "type": "string"
@@ -18707,6 +19741,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "effect": {
           "default": "magical_sight",
@@ -18781,6 +19826,17 @@
           "default": false,
           "type": "boolean"
         },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "effect": {
           "default": "mastery",
           "type": "string"
@@ -18853,6 +19909,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "effect": {
           "default": "mind_vision",
@@ -18927,6 +19994,17 @@
           "default": false,
           "type": "boolean"
         },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "effect": {
           "default": "paralytic_gas",
           "type": "string"
@@ -18999,6 +20077,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "effect": {
           "default": "purity",
@@ -19073,6 +20162,17 @@
           "default": false,
           "type": "boolean"
         },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "effect": {
           "default": "shielding",
           "type": "string"
@@ -19145,6 +20245,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "effect": {
           "default": "shrouding_fog",
@@ -19219,6 +20330,17 @@
           "default": false,
           "type": "boolean"
         },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "effect": {
           "default": "snap_freeze",
           "type": "string"
@@ -19291,6 +20413,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "effect": {
           "default": "stamina",
@@ -19365,6 +20498,17 @@
           "default": false,
           "type": "boolean"
         },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "effect": {
           "default": "storm_clouds",
           "type": "string"
@@ -19438,6 +20582,17 @@
           "default": false,
           "type": "boolean"
         },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "effect": {
           "default": "strength",
           "type": "string"
@@ -19510,6 +20665,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "effect": {
           "default": "toxic_gas",
@@ -19626,6 +20792,17 @@
           "default": false,
           "type": "boolean"
         },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "strength_requirement": {
           "default": 0,
           "type": "integer"
@@ -19699,6 +20876,17 @@
           "default": false,
           "type": "boolean"
         },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "energy": {
           "default": 300,
           "type": "integer"
@@ -19771,6 +20959,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "fuse_ticks": {
           "anyOf": [
@@ -19856,6 +21055,17 @@
           "default": false,
           "type": "boolean"
         },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "effect": {
           "default": "revive",
           "type": "string"
@@ -19927,6 +21137,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "strength_requirement": {
           "default": 10,
@@ -20023,6 +21244,17 @@
           "default": false,
           "type": "boolean"
         },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "strength_requirement": {
           "default": 10,
           "type": "integer"
@@ -20107,6 +21339,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "strength_requirement": {
           "default": 10,
@@ -20193,6 +21436,17 @@
           "default": false,
           "type": "boolean"
         },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "strength_requirement": {
           "default": 10,
           "type": "integer"
@@ -20277,6 +21531,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "strength_requirement": {
           "default": 10,
@@ -20363,6 +21628,17 @@
           "default": false,
           "type": "boolean"
         },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "strength_requirement": {
           "default": 10,
           "type": "integer"
@@ -20447,6 +21723,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "strength_requirement": {
           "default": 10,
@@ -20533,6 +21820,17 @@
           "default": false,
           "type": "boolean"
         },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "strength_requirement": {
           "default": 10,
           "type": "integer"
@@ -20617,6 +21915,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "strength_requirement": {
           "default": 10,
@@ -20703,6 +22012,17 @@
           "default": false,
           "type": "boolean"
         },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "strength_requirement": {
           "default": 10,
           "type": "integer"
@@ -20787,6 +22107,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "strength_requirement": {
           "default": 10,
@@ -20873,6 +22204,17 @@
           "default": false,
           "type": "boolean"
         },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "strength_requirement": {
           "default": 10,
           "type": "integer"
@@ -20957,6 +22299,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "strength_requirement": {
           "default": 10,
@@ -21043,6 +22396,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "type": "object"
@@ -21112,6 +22476,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "strength_requirement": {
           "default": 0,
@@ -21185,6 +22560,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "strength_requirement": {
           "default": 10,
@@ -21277,6 +22663,17 @@
           "default": false,
           "type": "boolean"
         },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "strength_requirement": {
           "default": 16,
           "type": "integer"
@@ -21366,6 +22763,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "required": [
@@ -21438,6 +22846,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "capacity": {
           "default": 20,
@@ -22347,6 +23766,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "type": "object"
@@ -22416,6 +23846,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "type": "object"
@@ -22485,6 +23926,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "type": "object"
@@ -22554,6 +24006,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "type": "object"
@@ -22623,6 +24086,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "type": "object"
@@ -22692,6 +24166,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "type": "object"
@@ -22761,6 +24246,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "type": "object"
@@ -22830,6 +24326,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "type": "object"
@@ -22899,6 +24406,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "type": "object"
@@ -22968,6 +24486,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "type": "object"
@@ -23037,6 +24566,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "type": "object"
@@ -23106,6 +24646,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "type": "object"
@@ -23175,6 +24726,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "type": "object"
@@ -23244,6 +24806,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "type": "object"
@@ -23313,6 +24886,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "type": "object"
@@ -23382,6 +24966,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "type": "object"
@@ -23451,6 +25046,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "type": "object"
@@ -23520,6 +25126,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "type": "object"
@@ -23589,6 +25206,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "type": "object"
@@ -23658,6 +25286,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "type": "object"
@@ -23727,6 +25366,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "type": "object"
@@ -23796,6 +25446,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "type": "object"
@@ -23865,6 +25526,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "type": "object"
@@ -23934,6 +25606,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "type": "object"
@@ -24002,6 +25685,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "plant_type": {
           "default": "sungrass",
@@ -24078,6 +25772,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "strength_requirement": {
           "default": 0,
@@ -24173,6 +25878,17 @@
           "default": false,
           "type": "boolean"
         },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "effect": {
           "default": "shocking_brew",
           "type": "string"
@@ -24245,6 +25961,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "fuse_ticks": {
           "anyOf": [
@@ -24329,6 +26056,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "strength_requirement": {
           "default": 10,
@@ -24415,6 +26153,17 @@
           "default": false,
           "type": "boolean"
         },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "energy": {
           "default": 150,
           "type": "integer"
@@ -24487,6 +26236,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "fuse_ticks": {
           "anyOf": [
@@ -24571,6 +26331,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "strength_requirement": {
           "default": 10,
@@ -24710,6 +26481,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "strength_requirement": {
           "default": 10,
@@ -24881,6 +26663,17 @@
           "default": false,
           "type": "boolean"
         },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "energy": {
           "default": 150,
           "type": "integer"
@@ -24953,6 +26746,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "damage": {
           "default": 1,
@@ -25038,6 +26842,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "type": "object"
@@ -25107,6 +26922,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "type": "object"
@@ -25176,6 +27002,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "type": "object"
@@ -25245,6 +27082,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "type": "object"
@@ -25314,6 +27162,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "type": "object"
@@ -25383,6 +27242,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "type": "object"
@@ -25452,6 +27322,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "type": "object"
@@ -25521,6 +27402,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "type": "object"
@@ -25590,6 +27482,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "type": "object"
@@ -25659,6 +27562,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "type": "object"
@@ -25728,6 +27642,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "type": "object"
@@ -25797,6 +27722,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "type": "object"
@@ -25915,6 +27851,17 @@
           "default": false,
           "type": "boolean"
         },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "strength_requirement": {
           "default": 10,
           "type": "integer"
@@ -25999,6 +27946,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "type": "object"
@@ -26068,6 +28026,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "strength_requirement": {
           "default": 0,
@@ -26140,6 +28109,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "damage": {
           "default": 1,
@@ -26229,6 +28209,17 @@
           "default": false,
           "type": "boolean"
         },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "damage": {
           "default": 4,
           "type": "integer"
@@ -26313,6 +28304,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "strength_requirement": {
           "default": 10,
@@ -26399,6 +28401,17 @@
           "default": false,
           "type": "boolean"
         },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "strength_requirement": {
           "default": 0,
           "type": "integer"
@@ -26471,6 +28484,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "rolled_kinds": {
           "items": {
@@ -26547,6 +28571,17 @@
           "default": false,
           "type": "boolean"
         },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "effect": {
           "default": "unstable_brew",
           "type": "string"
@@ -26619,6 +28654,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "strength_requirement": {
           "default": 10,
@@ -26714,6 +28760,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "capacity": {
           "default": 19,
@@ -27624,6 +29681,17 @@
           "default": false,
           "type": "boolean"
         },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "strength_requirement": {
           "default": 0,
           "type": "integer"
@@ -27695,6 +29763,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "damage": {
           "default": 0,
@@ -27822,6 +29901,17 @@
           "default": false,
           "type": "boolean"
         },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "damage": {
           "default": 0,
           "type": "integer"
@@ -27937,6 +30027,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "damage": {
           "default": 0,
@@ -28054,6 +30155,17 @@
           "default": false,
           "type": "boolean"
         },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "damage": {
           "default": 0,
           "type": "integer"
@@ -28170,6 +30282,17 @@
           "default": false,
           "type": "boolean"
         },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "damage": {
           "default": 0,
           "type": "integer"
@@ -28278,6 +30401,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "damage": {
           "default": 0,
@@ -28395,6 +30529,17 @@
           "default": false,
           "type": "boolean"
         },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "damage": {
           "default": 0,
           "type": "integer"
@@ -28510,6 +30655,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "damage": {
           "default": 0,
@@ -28627,6 +30783,17 @@
           "default": false,
           "type": "boolean"
         },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "damage": {
           "default": 0,
           "type": "integer"
@@ -28742,6 +30909,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "damage": {
           "default": 0,
@@ -28859,6 +31037,17 @@
           "default": false,
           "type": "boolean"
         },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "damage": {
           "default": 0,
           "type": "integer"
@@ -28974,6 +31163,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "damage": {
           "default": 0,
@@ -29091,6 +31291,17 @@
           "default": false,
           "type": "boolean"
         },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "damage": {
           "default": 0,
           "type": "integer"
@@ -29206,6 +31417,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "damage": {
           "default": 0,
@@ -29323,6 +31545,17 @@
           "default": false,
           "type": "boolean"
         },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "volume": {
           "default": 0,
           "type": "integer"
@@ -29422,6 +31655,17 @@
           "default": false,
           "type": "boolean"
         },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
         "strength_requirement": {
           "default": 0,
           "type": "integer"
@@ -29494,6 +31738,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "fuse_ticks": {
           "anyOf": [
@@ -29578,6 +31833,17 @@
         "seen": {
           "default": false,
           "type": "boolean"
+        },
+        "dropped_at": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         },
         "strength_requirement": {
           "default": 10,
