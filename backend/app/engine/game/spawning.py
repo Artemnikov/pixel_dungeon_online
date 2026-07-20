@@ -110,7 +110,9 @@ class SpawnTickMixin:
         return _DS.daytime_spawn_multiplier(ds_lvl)
 
     def _process_respawns(self, floor_id: int, floor: FloorState, active_players: List[Player]):
-        # Public room: floor 1 also respawns; private rooms keep original behavior.
+        if floor_id in BOSS_FLOORS:
+            return
+        # Public room: floor 1 also respawns; tooms keep original behavior.
         is_public = self.game_id == PUBLIC_ROOM_ID
         if not is_public and floor_id in NO_RESPAWN_FLOORS:
             return
