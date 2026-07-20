@@ -11,6 +11,7 @@ from collections import deque
 from typing import TYPE_CHECKING, Callable, Dict, Optional, Tuple
 
 from app.engine.dungeon.constants import TileType
+from app.engine.game.terrain_primitives import plant_grass
 
 if TYPE_CHECKING:
     from app.engine.entities.base import Entity
@@ -267,7 +268,6 @@ def _proc_blooming(attacker, defender, weapon, raw_damage, actual_damage, hp_bef
     if random.random() >= chance:
         return
     power_multi = _power_mult(chance)
-    from app.engine.game.terrain_effects import plant_grass
     plants_raw = (1 + 0.1 * lvl) * power_multi
     plants = _dmg_mult_round(plants_raw)
     if plants <= 0:

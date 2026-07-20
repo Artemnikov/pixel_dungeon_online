@@ -40,7 +40,11 @@ class CavesPainter(RegularPainter):
                     merge_tile = terrain.REGION_DECO if rng.IntMax(3) == 0 else terrain.CHASM
                     self._merge_rooms(rng, level, r, n, None, merge_tile)
 
-        # Pass 2: corner-fill large rooms (square > 8, random per corner)
+        # Pass 2: corner-fill large rooms (square > 8, random per corner). The
+        # 4 corners are mirror images of each other across the room's two
+        # axes; RNG.IntMax(s) is still called exactly once per corner, in the
+        # same top-left/top-right/bottom-left/bottom-right order as SPD's
+        # unrolled original, which is required for seed-parity.
         for room in rooms:
             if not isinstance(room, StandardRoom):
                 continue
@@ -48,55 +52,21 @@ class CavesPainter(RegularPainter):
                 continue
             s = room.square()
 
-            # top-left
-            if rng.IntMax(s) > 8:
-                corner = (room.left + 1) + (room.top + 1) * w
+            for is_top, is_left in ((True, True), (True, False), (False, True), (False, False)):
+                if rng.IntMax(s) <= 8:
+                    continue
+                x_pos = room.left + 1 if is_left else room.right - 1
+                y_pos = room.top + 1 if is_top else room.bottom - 1
+                corner = x_pos + y_pos * w
+                x_wall = -1 if is_left else 1
+                y_wall = -w if is_top else w
                 if (m[corner] not in terrain.SOLID
-                        and m[corner - 1] == terrain.WALL
-                        and level.cell_to_point(corner - 1) not in room.connected.values()
-                        and m[corner - w] == terrain.WALL
-                        and level.cell_to_point(corner - w) not in room.connected.values()
-                        and m[corner + 1] != terrain.TRAP
-                        and m[corner + w] != terrain.TRAP):
-                    m[corner] = terrain.WALL
-                    level.traps.pop(corner, None)
-
-            # top-right
-            if rng.IntMax(s) > 8:
-                corner = (room.right - 1) + (room.top + 1) * w
-                if (m[corner] not in terrain.SOLID
-                        and m[corner + 1] == terrain.WALL
-                        and level.cell_to_point(corner + 1) not in room.connected.values()
-                        and m[corner - w] == terrain.WALL
-                        and level.cell_to_point(corner - w) not in room.connected.values()
-                        and m[corner - 1] != terrain.TRAP
-                        and m[corner + w] != terrain.TRAP):
-                    m[corner] = terrain.WALL
-                    level.traps.pop(corner, None)
-
-            # bottom-left
-            if rng.IntMax(s) > 8:
-                corner = (room.left + 1) + (room.bottom - 1) * w
-                if (m[corner] not in terrain.SOLID
-                        and m[corner - 1] == terrain.WALL
-                        and level.cell_to_point(corner - 1) not in room.connected.values()
-                        and m[corner + w] == terrain.WALL
-                        and level.cell_to_point(corner + w) not in room.connected.values()
-                        and m[corner + 1] != terrain.TRAP
-                        and m[corner - w] != terrain.TRAP):
-                    m[corner] = terrain.WALL
-                    level.traps.pop(corner, None)
-
-            # bottom-right
-            if rng.IntMax(s) > 8:
-                corner = (room.right - 1) + (room.bottom - 1) * w
-                if (m[corner] not in terrain.SOLID
-                        and m[corner + 1] == terrain.WALL
-                        and level.cell_to_point(corner + 1) not in room.connected.values()
-                        and m[corner + w] == terrain.WALL
-                        and level.cell_to_point(corner + w) not in room.connected.values()
-                        and m[corner - 1] != terrain.TRAP
-                        and m[corner - w] != terrain.TRAP):
+                        and m[corner + x_wall] == terrain.WALL
+                        and level.cell_to_point(corner + x_wall) not in room.connected.values()
+                        and m[corner + y_wall] == terrain.WALL
+                        and level.cell_to_point(corner + y_wall) not in room.connected.values()
+                        and m[corner - x_wall] != terrain.TRAP
+                        and m[corner - y_wall] != terrain.TRAP):
                     m[corner] = terrain.WALL
                     level.traps.pop(corner, None)
 

@@ -5,7 +5,7 @@ import uuid
 from app.engine.entities.base import Position, Faction
 from app.engine.entities.item_union import Chest
 from app.engine.entities.mobs import CrystalMimic
-from app.engine.dungeon.generator import TileType
+from app.engine.dungeon.constants import TileType
 from app.engine.game.floor_state import FloorState
 from app.engine.manager import GameInstance
 

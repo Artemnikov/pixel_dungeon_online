@@ -17,30 +17,29 @@ from app.engine.entities.mobs import Guard
 from app.engine.game.floor_state import FloorState
 
 
-class GuardAIMixin:
-    def _update_guard(self, guard: Guard, floor: FloorState, floor_id: int) -> bool:
-        """On first hunt: pull chain → wake every mob on the floor."""
-        if guard.ai_state != "hunting" or guard.chain_pulled:
-            return False
+def _update_guard(game, guard: Guard, floor: FloorState, floor_id: int) -> bool:
+    """On first hunt: pull chain → wake every mob on the floor."""
+    if guard.ai_state != "hunting" or guard.chain_pulled:
+        return False
 
-        guard.chain_pulled = True
+    guard.chain_pulled = True
 
-        target = self._find_nearest_player(guard.pos, floor_id)
-        for mob in floor.mobs.values():
-            if mob.id == guard.id or not mob.is_alive:
-                continue
-            if mob.ai_state in ("idle", "sleeping", "wandering"):
-                mob.ai_state = "hunting"
-                if target is not None:
-                    from app.engine.entities.base import Position
-                    mob.last_known_target_pos = Position(
-                        x=target.pos.x, y=target.pos.y
-                    )
+    target = game._find_nearest_player(guard.pos, floor_id)
+    for mob in floor.mobs.values():
+        if mob.id == guard.id or not mob.is_alive:
+            continue
+        if mob.ai_state in ("idle", "sleeping", "wandering"):
+            mob.ai_state = "hunting"
+            if target is not None:
+                from app.engine.entities.base import Position
+                mob.last_known_target_pos = Position(
+                    x=target.pos.x, y=target.pos.y
+                )
 
-        self.add_event(
-            "GUARD_CHAIN_PULL",
-            {"mob": guard.id, "x": guard.pos.x, "y": guard.pos.y},
-            floor_id=floor_id,
-        )
-        self.add_event("PLAY_SOUND", {"sound": "ALERT"}, floor_id=floor_id)
-        return False  # let normal movement proceed this tick
+    game.add_event(
+        "GUARD_CHAIN_PULL",
+        {"mob": guard.id, "x": guard.pos.x, "y": guard.pos.y},
+        floor_id=floor_id,
+    )
+    game.add_event("PLAY_SOUND", {"sound": "ALERT"}, floor_id=floor_id)
+    return False  # let normal movement proceed this tick

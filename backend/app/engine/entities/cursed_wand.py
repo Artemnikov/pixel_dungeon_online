@@ -10,6 +10,8 @@ Wondrous Resin trinket restricts pool to positive-only effects.
 """
 import random
 
+from app.engine.game.terrain_primitives import _create_gas
+
 _COMMON = [
     "magic_missile", "slow", "knockback", "toxic_gas", "regrowth",
     "blindness", "teleport_other", "recharge", "summon_monsters",
@@ -76,10 +78,9 @@ def fire_cursed_wand(game, player, item, tx: int, ty: int) -> None:
                     game.add_event("PUSH", {"target": target_mob.id, "x": nx, "y": ny}, floor_id=player.floor_id)
                     break
     elif effect == "toxic_gas":
-        from app.engine.game.terrain_effects import _create_gas
         _create_gas(floor, (tx, ty), 5, "toxic_gas")
     elif effect == "regrowth":
-        from app.engine.dungeon.generator import TileType
+        from app.engine.dungeon.constants import TileType
         count = 0
         for dy in range(-2, 3):
             for dx in range(-2, 3):
@@ -154,9 +155,10 @@ def fire_cursed_wand(game, player, item, tx: int, ty: int) -> None:
         # summon hostile mobs (simplified: random enemy for the floor).
         if positive_only:
             from app.engine.entities.base import Position
+            from app.engine.game.ai_mirror_image import _spawn_mirror_images
             spawn_pos = Position(x=tx, y=ty)
-            clone_ids = game._spawn_mirror_images(
-                player, floor, player.floor_id, spawn_pos=spawn_pos,
+            clone_ids = _spawn_mirror_images(
+                game, player, floor, player.floor_id, spawn_pos=spawn_pos,
             )
             clone_data = [
                 {"id": cid, "x": floor.mobs[cid].pos.x, "y": floor.mobs[cid].pos.y}

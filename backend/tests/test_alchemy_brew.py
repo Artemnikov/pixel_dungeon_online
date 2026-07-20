@@ -1,7 +1,7 @@
 """AlchemyMixin: gates, preview round-trip, atomic brew, energize."""
 import pytest
 
-from app.engine.dungeon.generator import TileType
+from app.engine.dungeon.constants import TileType
 from app.engine.entities.base import Position
 from app.engine.entities.items_consumable import GooBlob, MysteryMeat
 from app.engine.entities.items_potions import ElixirOfAquaticRejuvenation, HealthPotion

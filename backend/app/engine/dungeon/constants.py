@@ -1,4 +1,11 @@
 class TileType:
+    """The remake's own renderer tile-id space -- used everywhere after level
+    generation. Independent from, and differently-numbered than, the SPD
+    layout ids used during generation/painting (see
+    app.engine.dungeon.spd_levelgen.terrain.Terrain). Conversion boundary:
+    `_convert_tile()` in app/engine/game/spd_adapter.py.
+    """
+
     VOID = 0
     WALL = 1
     FLOOR = 2

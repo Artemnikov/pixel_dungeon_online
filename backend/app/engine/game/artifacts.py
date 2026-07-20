@@ -20,9 +20,9 @@ via tick_artifacts(player, dt).
 """
 import random
 
-from app.engine.entities.items_artifacts import AlchemistsToolkit, CapeOfThorns, ChaliceOfBlood, EtherealChains, HolyTome, HornOfPlenty, LloydsBeacon, MasterThievesArmband, SandalsOfNature, SkeletonKey, TalismanOfForesight, TimekeepersHourglass, UnstableSpellbook
+from app.engine.entities.items_artifacts import AlchemistsToolkit, CapeOfThorns, ChaliceOfBlood, EtherealChains, HolyTome, HornOfPlenty, LloydsBeacon, MasterThievesArmband, SandalsOfNature, SkeletonKey, TalismanOfForesight, TimekeepersHourglass, UnstableSpellbook, _chalice_heal_rate
 from app.engine.entities.player import Player
-from app.engine.dungeon.generator import TileType
+from app.engine.dungeon.constants import TileType
 
 # Seconds per charge tick for passive-recharge artifacts.
 _SLOW_RECHARGE = 50.0    # ~50s per charge (EtherealChains, LloydsBeacon, SkeletonKey, Armband, Hourglass)
@@ -30,12 +30,6 @@ _TOOLKIT_RECHARGE = 10.0  # 10s per energy charge (AlchemistsToolkit)
 _HORN_RECHARGE = 20.0    # 20s per food charge (HornOfPlenty)
 _TALISMAN_RECHARGE = 1.0  # 1s per talisman charge (TalismanOfForesight, 100-cap)
 _SPELLBOOK_RECHARGE = 90.0  # ~90s per charge (UnstableSpellbook; SPD ~80-120 turns)
-
-
-def _chalice_heal_rate(level: int) -> float:
-    """SPD ChaliceOfBlood heal rate: 5 / (10 - (1.33 + level*0.667)) HP per turn
-    (≈ HP/sec here) — ~0.58/1.07/1.5/1.88/2.5 at +0/+6/+8/+9/+10."""
-    return 5.0 / (10.0 - (1.33 + level * 0.667))
 
 
 def _gain_exp(item, amount: int) -> None:

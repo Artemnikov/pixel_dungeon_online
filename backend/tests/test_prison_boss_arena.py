@@ -3,7 +3,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
 from app.engine.entities.base import Position
 from app.engine.entities.mobs import Tengu
-from app.engine.dungeon.generator import TileType
+from app.engine.dungeon.constants import TileType
 from app.engine.dungeon.spd_levelgen import prison_boss_layout as layout
 from app.engine.manager import GameInstance
 
@@ -109,7 +109,7 @@ def test_arena_to_won_on_tengu_death():
 
 
 def test_chasm_in_post_tengu_reveal_can_be_fallen_through():
-    from app.engine.dungeon.generator import TileType as TT
+    from app.engine.dungeon.constants import TileType as TT
 
     game, floor = make_game()
     player = game.add_player("p1", "Hero")

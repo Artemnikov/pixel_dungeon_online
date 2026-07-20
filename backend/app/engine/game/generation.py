@@ -22,7 +22,7 @@ import random
 import uuid
 from typing import List, Tuple, Type
 
-from app.engine.dungeon.generator import TileType
+from app.engine.dungeon.constants import TileType
 from app.engine.dungeon.dungeon_seed import seed_for_depth
 from app.engine.entities.base import EntityType, Faction, Position
 from app.engine.entities.items_consumable import Boomerang, SmallRation, Ration, Pasty, Key, Stone, ThrowableDagger
@@ -231,7 +231,7 @@ class GenerationMixin:
         own scrolls regardless of depth/region/special-room variance.
         """
         from app.engine.game.constants import party_loot_multiplier
-        from app.engine.game.world import _random_free_cell
+        from app.engine.game.npc_economy import _random_free_cell
         from app.engine.game.spd_adapter import _random_scroll, _random_potion
         from app.engine.entities.items_potions import Potion
         from app.engine.entities.items_scrolls import Scroll

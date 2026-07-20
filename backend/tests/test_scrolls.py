@@ -10,6 +10,7 @@ from app.engine.entities.scroll_actions import action_read
 from app.engine.entities.scroll_predicates import player_inventory_items
 from app.engine.entities.subclasses import Talent
 from app.engine.dungeon.constants import TileType
+from app.engine.game.ai_mirror_image import _refresh_mirror_image_stats
 from app.engine.manager import GameInstance
 
 
@@ -824,7 +825,7 @@ def test_refresh_mirror_image_stats_removes_clone_when_owner_left_floor():
     # Owner leaves the floor.
     p.floor_id = p.floor_id + 1
 
-    g._refresh_mirror_image_stats(clone, p, floor, floor.floor_id)
+    _refresh_mirror_image_stats(g, clone, p, floor, floor.floor_id)
 
     assert clone.is_alive is False
     assert clone.hp == 0

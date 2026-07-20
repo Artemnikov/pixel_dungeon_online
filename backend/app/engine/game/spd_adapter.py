@@ -30,7 +30,7 @@ from app.engine.dungeon.spd_levelgen.traps import (
     DisarmingTrap, CursingTrap, DistortionTrap, GrimTrap,
     ExplosiveTrap,
 )
-from app.engine.dungeon.generator import TileType
+from app.engine.dungeon.constants import TileType
 from app.engine.entities.base import EntityType, Position
 from app.engine.entities.item_union import Chest
 from app.engine.entities.items_consumable import Amulet, CorpseDust, Dewdrop, EnergyCrystal, Food, Gold, Key, Seed, Stone

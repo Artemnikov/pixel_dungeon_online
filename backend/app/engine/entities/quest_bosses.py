@@ -48,6 +48,7 @@ from typing import List
 from app.engine.entities.base import Faction
 from app.engine.entities.player import DropEntry, Mob as MobEntity, WeightedCountDrop
 from app.engine.entities.mobs import Crab, Gnoll, Rat
+from app.engine.game.constants import OOZE_DURATION
 
 
 class FetidRat(Rat):
@@ -66,7 +67,6 @@ class FetidRat(Rat):
     def attack_proc(self, target) -> None:
         # FetidRat.attackProc(): 1/3 chance to ooze the target on a landed hit.
         import random
-        from app.engine.game.constants import OOZE_DURATION
         if random.randint(0, 2) == 0:
             target.ooze_amount = OOZE_DURATION
 

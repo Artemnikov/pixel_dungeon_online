@@ -30,6 +30,22 @@ from app.engine.entities.mobs import (
 from app.engine.entities.wandmaker_quest import NewbornFireElemental
 from app.engine.game.constants import AUTO_MOVE_INTERVAL
 from app.engine.game.floor_state import FloorState
+from app.engine.game.ai_demon_spawner import _update_demon_spawner
+from app.engine.game.ai_dm200 import _update_dm200
+from app.engine.game.ai_dm300 import _update_dm300_chase
+from app.engine.game.ai_dwarf_king import _update_dwarf_king
+from app.engine.game.ai_eye import _update_eye
+from app.engine.game.ai_goo import _update_goo
+from app.engine.game.ai_guard import _update_guard
+from app.engine.game.ai_mirror_image import _refresh_mirror_image_stats
+from app.engine.game.ai_necromancer import _update_necromancer
+from app.engine.game.ai_newborn_elemental import _update_newborn_elemental
+from app.engine.game.ai_pylon import _update_pylon
+from app.engine.game.ai_sentry import _update_sentry
+from app.engine.game.ai_shaman import _update_shaman
+from app.engine.game.ai_spinner import _update_spinner
+from app.engine.game.ai_warlock import _update_warlock
+from app.engine.game.ai_yog_dzewa import _update_yog_dzewa, _update_yog_fist
 
 
 class MobAIDispatchMixin:
@@ -48,7 +64,7 @@ class MobAIDispatchMixin:
                     return
             if isinstance(mob, MirrorImage):
                 owner = self.players.get(mob.owner_id)
-                self._refresh_mirror_image_stats(mob, owner, floor, floor_id)
+                _refresh_mirror_image_stats(self, mob, owner, floor, floor_id)
                 if not mob.is_alive:
                     return
             if mob.type not in ("ninja_log", "npc"):
@@ -56,16 +72,16 @@ class MobAIDispatchMixin:
             return
 
         if isinstance(mob, Goo):
-            if self._update_goo(mob, floor, floor_id):
+            if _update_goo(self, mob, floor, floor_id):
                 return
 
         if isinstance(mob, DwarfKing):
-            self._update_dwarf_king(mob, floor, floor_id)
+            _update_dwarf_king(self, mob, floor, floor_id)
             if "IMMOVABLE" in getattr(mob, "properties", []):
                 return
 
         if isinstance(mob, YogDzewa):
-            self._update_yog_dzewa(mob, floor, floor_id)
+            _update_yog_dzewa(self, mob, floor, floor_id)
             return
 
         if isinstance(mob, DM300):
@@ -75,32 +91,32 @@ class MobAIDispatchMixin:
                     mob.fight_started = True
                     self.add_event("DM300_FIGHT_STARTED", {"mob": mob.id}, floor_id=floor_id)
             if mob.supercharged:
-                self._update_dm300_chase(mob, floor, floor_id)
-                self._update_dm300_chase(mob, floor, floor_id)
+                _update_dm300_chase(self, mob, floor, floor_id)
+                _update_dm300_chase(self, mob, floor, floor_id)
                 return
 
         if isinstance(mob, DemonSpawner):
-            self._update_demon_spawner(mob, floor, floor_id)
+            _update_demon_spawner(self, mob, floor, floor_id)
             return
 
         if isinstance(mob, Pylon):
-            self._update_pylon(mob, floor, floor_id)
+            _update_pylon(self, mob, floor, floor_id)
             return
 
         if isinstance(mob, Sentry):
-            self._update_sentry(mob, floor, floor_id)
+            _update_sentry(self, mob, floor, floor_id)
             return
 
         if isinstance(mob, (BurningFist, SoiledFist, RottingFist,
                              RustedFist, BrightFist, DarkFist)):
-            if self._update_yog_fist(mob, floor, floor_id):
+            if _update_yog_fist(self, mob, floor, floor_id):
                 return
 
         if isinstance(mob, Guard):
-            self._update_guard(mob, floor, floor_id)
+            _update_guard(self, mob, floor, floor_id)
 
         if isinstance(mob, Necromancer):
-            if self._update_necromancer(mob, floor, floor_id):
+            if _update_necromancer(self, mob, floor, floor_id):
                 return
 
         if isinstance(mob, Tengu):
@@ -108,27 +124,27 @@ class MobAIDispatchMixin:
                 return
 
         if isinstance(mob, Eye):
-            if self._update_eye(mob, floor, floor_id):
+            if _update_eye(self, mob, floor, floor_id):
                 return
 
         if isinstance(mob, (RedShaman, BlueShaman, PurpleShaman)):
-            if self._update_shaman(mob, floor, floor_id):
+            if _update_shaman(self, mob, floor, floor_id):
                 return
 
         if isinstance(mob, Warlock):
-            if self._update_warlock(mob, floor, floor_id):
+            if _update_warlock(self, mob, floor, floor_id):
                 return
 
         if isinstance(mob, Spinner):
-            if self._update_spinner(mob, floor, floor_id):
+            if _update_spinner(self, mob, floor, floor_id):
                 return
 
         if isinstance(mob, DM200):
-            if self._update_dm200(mob, floor, floor_id):
+            if _update_dm200(self, mob, floor, floor_id):
                 return
 
         if isinstance(mob, NewbornFireElemental):
-            if self._update_newborn_elemental(mob, floor, floor_id):
+            if _update_newborn_elemental(self, mob, floor, floor_id):
                 return
 
         return self._tick_generic_mob_ai(mob, floor, floor_id)

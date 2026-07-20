@@ -21,7 +21,8 @@ Registered into ITEM_ACTION_DISPATCH in item_actions.py.
 """
 import random
 
-from app.engine.dungeon.generator import TileType
+from app.engine.dungeon.constants import TileType
+from app.engine.game.terrain_primitives import _plant_seed_at
 from app.engine.entities.base import Action, Position
 from app.engine.entities.items_artifacts import AlchemistsToolkit, ChaliceOfBlood, EtherealChains, HolyTome, HornOfPlenty, LloydsBeacon, MasterThievesArmband, SandalsOfNature, SkeletonKey, TalismanOfForesight, TimekeepersHourglass, UnstableSpellbook
 
@@ -419,7 +420,6 @@ def action_plant_seed_from_sandals(game, player, item, tx=None, ty=None) -> None
         return
     seed_kind = item.stored_seeds.pop(0)
     floor.grid[ty][tx] = TileType.FLOOR_GRASS
-    from app.engine.game.terrain_effects import _plant_seed_at
     _plant_seed_at(floor, (tx, ty), seed_kind.replace("_seed", ""))
     _artifact_gain_exp(item, 10)
     game.add_event("MAP_PATCH", {"tiles": [{"x": tx, "y": ty, "tile": TileType.FLOOR_GRASS}]},

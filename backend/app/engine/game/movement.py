@@ -23,7 +23,7 @@ import time
 import uuid
 from typing import Optional
 
-from app.engine.dungeon.generator import TileType
+from app.engine.dungeon.constants import TileType
 from app.engine.entities.base import Faction, Position, is_immune
 from app.engine.entities.item_union import Chest
 from app.engine.entities.items_bombs import Bomb
@@ -42,6 +42,8 @@ from app.engine.systems.combat import _dispel_stealth, resolve_melee_attack, res
 from app.engine.systems.loot import roll_drops
 from app.engine.game.constants import KEY_TIME_TO_UNLOCK, MAX_FLOOR_ID
 from app.engine.game.terrain_effects import press_cell
+from app.engine.game.ai_goo import _goo_add_locked_floor_time
+from app.engine.game.ai_pylon import _activate_pylon
 
 
 def _effective_wand_damage(w, lvl_bonus: int = 0) -> int:
@@ -301,6 +303,20 @@ class MovementCombatMixin:
         if not was_moving:
             player.last_auto_move_time = 0.0
 
+    def attack_mob(self, player_id: str, target_id: str) -> None:
+        """Click-to-attack (ATTACK): step the player toward a specific mob
+        by one tile; a step onto/into an occupied enemy cell resolves as a
+        melee attack in move_entity."""
+        player = self.players.get(player_id)
+        if not player:
+            return
+        floor = self._get_or_create_floor(player.floor_id)
+        mob = floor.mobs.get(target_id)
+        if mob and mob.is_alive:
+            dx = mob.pos.x - player.pos.x
+            dy = mob.pos.y - player.pos.y
+            self.move_entity(player_id, dx, dy)
+
     def move_entity(self, entity_id: str, dx: int, dy: int):
         floor_id, entity = self._get_floor_for_entity(entity_id)
         if entity is None or floor_id is None:
@@ -347,178 +363,7 @@ class MovementCombatMixin:
                     break
 
         if target_entity:
-            # Sheep interaction: player bump → baa message, 1s action cost, sound
-            if isinstance(entity, Player) and getattr(target_entity, "name", "") == "Sheep":
-                entity.action_until = time.time() + 1.0
-                baa = random.choice(["Baa!", "Baa?", "Baa.", "Baa..."])
-                self.add_event("MESSAGE", {"text": baa}, floor_id=floor_id, player_id=entity.id)
-                self.add_event("PLAY_SOUND", {"sound": "SHEEP",
-                                               "rate": random.uniform(0.91, 1.1)},
-                               floor_id=floor_id)
-                sheep_buff = get_buff(target_entity.buffs, "sheep_timer")
-                if sheep_buff and sheep_buff.remaining >= 20:
-                    sheep_buff.remaining = 0
-                return
-
-            if isinstance(entity, Player) and isinstance(target_entity, Shopkeeper):
-                self.npc_interact(entity.id, target_entity.id)
-                return
-
-            if isinstance(entity, Player) and isinstance(target_entity, Ghost):
-                self.npc_interact(entity.id, target_entity.id)
-                return
-
-            # Mirrors SPD's enemyInFOV check (Mob.java:252): a mob cannot
-            # perceive an invisible player, so it treats the tile as blocked
-            # rather than attacking.
-            if isinstance(entity, MobEntity) and isinstance(target_entity, Player) and target_entity.invisible > 0:
-                return
-
-            if (
-                isinstance(entity, Player)
-                and isinstance(target_entity, Player)
-                and target_entity.is_downed
-                and entity.faction == target_entity.faction
-            ):
-                revive_potion_idx = next(
-                    (i for i, item in enumerate(entity.inventory) if isinstance(item, RevivingPotion)),
-                    -1,
-                )
-                if revive_potion_idx != -1:
-                    entity.inventory.pop(revive_potion_idx)
-                    target_entity.is_downed = False
-                    target_entity.hp = target_entity.get_total_max_hp() // 2
-                    self.add_event("REVIVE", {"target": target_entity.id, "source": entity.id}, floor_id=floor_id)
-                    return
-
-            if entity.faction != target_entity.faction:
-                if isinstance(entity, Player) and entity.is_downed:
-                    return
-
-                current_time = time.time()
-                cooldown = entity.attack_cooldown
-                if isinstance(entity, Player) and entity.equipped_weapon:
-                    cooldown = entity.equipped_weapon.attack_cooldown
-                if isinstance(entity, Player):
-                    from app.engine.entities.rings import furor_multiplier
-                    cooldown /= furor_multiplier(entity)
-
-                if current_time - entity.last_attack_time < cooldown:
-                    return
-
-                entity.last_attack_time = current_time
-
-                # Parry (warrior combo move): a riposte-primed defender
-                # counter-strikes the attacker before damage resolves.
-                if isinstance(target_entity, Player) and target_entity.has_buff("riposte_tracker"):
-                    self._riposte_counter(target_entity, entity, floor, floor_id)
-
-                if isinstance(entity, Player):
-                    entity._last_action = ""
-                result = resolve_melee_attack(
-                    entity, target_entity,
-                    floor.mobs, entity.pos.x, entity.pos.y,
-                    is_in_los=lambda a, b: self._is_in_los(a, b, floor_id=floor_id),
-                    floor=floor,
-                    add_event=lambda type, data, **kw: self.add_event(type, data, **{
-                        "floor_id": floor_id,
-                        "source_player_id": entity.id if isinstance(entity, Player) else None,
-                        **kw,
-                    }),
-                    game=self,
-                )
-                if result["missed"]:
-                    self.add_event("MISS", {"source": entity.id, "target": target_entity.id, "defense_verb": result.get("defense_verb", "dodged")}, floor_id=floor_id)
-                    self.add_event("ATTACK", {"source": entity.id, "target": target_entity.id, "damage": 0, "surprise": False}, floor_id=floor_id)
-                    return
-                dmg = result["damage"]
-                self.add_event("ATTACK", {
-                    "source": entity.id,
-                    "target": target_entity.id,
-                    "damage": dmg,
-                    "surprise": result["surprise"],
-                    "crit": result.get("crit", False),
-                    "grim_proc": result.get("grim_proc", False),
-                }, floor_id=floor_id)
-                # SPD Char.java:509 plays hitSound(Random.Float(0.87f, 1.15f)),
-                # then KindOfWeapon multiplies by hitSoundPitch. Mobs use the
-                # default HIT/HIT_BODY at pitch 1.0 (no mob overrides hitSound).
-                pitch_jitter = random.uniform(0.87, 1.15)
-                if isinstance(entity, Player):
-                    weapon = getattr(getattr(entity, "belongings", None), "weapon", None)
-                    if result.get("crit"):
-                        sound = "HIT_STRONG"
-                        rate = pitch_jitter
-                    elif weapon and getattr(weapon, "hit_sound", None):
-                        sound = weapon.hit_sound
-                        rate = pitch_jitter * getattr(weapon, "hit_sound_pitch", 1.0)
-                    else:
-                        sound = "HIT_SLASH"
-                        rate = pitch_jitter
-                    self.add_event("PLAY_SOUND", {"sound": sound, "rate": rate}, floor_id=floor_id, source_player_id=entity.id)
-                else:
-                    # Mob melee: broadcast HIT_BODY from the mob's position so
-                    # every player who can see it hears the hit.
-                    self.add_event("PLAY_SOUND", {"sound": "HIT_BODY", "rate": pitch_jitter, "x": entity.pos.x, "y": entity.pos.y}, floor_id=floor_id)
-                if dmg > 0:
-                    self.add_event("DAMAGE", {
-                        "target": target_entity.id,
-                        "amount": dmg,
-                        "grim_proc": result.get("grim_proc", False),
-                    }, floor_id=floor_id)
-                    if result.get("grim_proc"):
-                        self.add_event("PLAY_SOUND", {"sound": "HIT_STRONG"}, floor_id=floor_id, source_player_id=entity.id)
-                    if isinstance(target_entity, Player) and isinstance(entity, Player):
-                        # Friendly-fire only: mob-on-player hits are already
-                        # covered by the broadcast HIT_BODY above.
-                        self.add_event("PLAY_SOUND", {"sound": "HIT_BODY"}, floor_id=floor_id, source_player_id=target_entity.id)
-                    if isinstance(target_entity, Player):
-                        warn_sound = hurt_warning_sound(dmg, target_entity.hp, target_entity.get_total_max_hp())
-                        if warn_sound:
-                            self.add_event("PLAY_SOUND", {"sound": warn_sound}, player_id=target_entity.id)
-                    if isinstance(target_entity, Goo) and isinstance(entity, Player):
-                        self._goo_add_locked_floor_time(floor_id, entity, dmg)
-
-                self._maybe_trigger_dm300_supercharge(target_entity, floor, floor_id, entity.pos)
-
-                # Warrior subclass: combo / berserk events after successful damage
-                if isinstance(entity, Player) and dmg > 0:
-                    if entity.subclass_info.subclass == "gladiator":
-                        self.add_event("COMBO_UPDATE", {"player": entity.id, "count": entity.combo_count}, floor_id=floor_id, source_player_id=entity.id)
-                        if entity.combo_count in (2, 4, 6, 8, 10):
-                            moves = {2: "clobber", 4: "slam", 6: "parry", 8: "crush", 10: "fury"}
-                            self.add_event("COMBO_MOVE_UNLOCKED", {"player": entity.id, "move": moves[entity.combo_count]}, floor_id=floor_id, source_player_id=entity.id)
-                    if entity.subclass_info.subclass == "berserker":
-                        self.add_event("RAGE_CHANGED", {"player": entity.id, "power": entity.berserk_power}, floor_id=floor_id, source_player_id=entity.id)
-
-                if not target_entity.is_alive:
-                    if isinstance(target_entity, MobEntity):
-                        self.process_death_mark_kill(entity, target_entity, floor, floor_id)
-                        self.handle_mob_death(target_entity, floor, floor_id)
-                    if isinstance(entity, Player):
-                        self.on_kill(entity, target_entity, floor.mobs, floor_id)
-                        # Lethal Momentum (warrior T2): a killing blow that
-                        # procced the free follow-up doesn't consume the
-                        # attack's cooldown, allowing an immediate re-attack.
-                        if remove_buff(entity.buffs, "lethal_momentum_tracker"):
-                            entity.last_attack_time = 0.0
-                    self.add_event("DEATH", {"target": target_entity.id}, floor_id=floor_id)
-                    if isinstance(target_entity, MobEntity):
-                        target_entity.die(
-                            attacker=entity,
-                            floor_mobs=floor.mobs,
-                            tile_x=target_entity.pos.x,
-                            tile_y=target_entity.pos.y,
-                            players=list(self._players_on_floor(floor_id)),
-                        )
-                    if isinstance(entity, Player) and isinstance(target_entity, MobEntity):
-                        if entity.earn_exp(target_entity.exp):
-                            self.on_talent_level_up(entity)
-                        drops = roll_drops(target_entity, self.drop_counters, target_entity.pos.x, target_entity.pos.y, players=list(self._players_on_floor(floor_id)))
-                        for item in drops:
-                            floor.items[item.id] = item
-                        if any(isinstance(d, Gold) for d in drops):
-                            self.add_event("GOLD_DROP", {"x": target_entity.pos.x, "y": target_entity.pos.y}, floor_id=floor_id)
+            self._resolve_bump(entity, target_entity, floor, floor_id)
             return
 
         tile = floor.grid[new_y][new_x]
@@ -554,14 +399,218 @@ class MovementCombatMixin:
         old_x, old_y = entity.pos.x, entity.pos.y
         entity.move(dx, dy)
 
-        # Fire tiles ignite entities on contact (SPD: Blob checks on movement)
+        self._ignite_if_on_fire(entity, floor, new_x, new_y)
+        self._handle_door_transition(entity, floor, floor_id, old_x, old_y)
+
+        # Position changed: door mutation may have changed flags and FOV.
+        self._invalidate_fov_cache()
+
+        # Terrain interaction (trample grass, trigger plants, etc.)
+        result = press_cell(floor, (entity.pos.x, entity.pos.y), entity)
+        if result["tile_changed"]:
+            self.add_event("MAP_PATCH", {"tiles": [{"x": entity.pos.x, "y": entity.pos.y, "tile": floor.grid[entity.pos.y][entity.pos.x]}]}, floor_id=floor_id)
+            self.add_event("PLAY_SOUND", {"sound": "STEP_GRASS", "x": entity.pos.x, "y": entity.pos.y}, floor_id=floor_id, source_player_id=entity.id if isinstance(entity, Player) else None)
+            # HighGrass.trample()'s CellEmitter.get(pos).burst(LeafParticle.LEVEL_SPECIFIC, 4)
+            self.add_event("LEAF_BURST", {"x": entity.pos.x, "y": entity.pos.y}, floor_id=floor_id)
+        if result["triggered_plant"]:
+            self.add_event("PLAY_SOUND", {"sound": "PLANT_TRIGGER", "x": entity.pos.x, "y": entity.pos.y}, floor_id=floor_id, source_player_id=entity.id if isinstance(entity, Player) else None)
+
+        if isinstance(entity, Player):
+            self._player_step_effects(entity, entity_id, floor_id)
+            self._auto_pickup_on_step(entity, floor, floor_id)
+
+        self._trigger_trap_if_needed(floor, entity, floor_id)
+
+        if isinstance(entity, Player):
+            self._handle_stairs_tile(entity, entity_id, tile, floor, floor_id)
+
+    def _resolve_bump(self, entity, target_entity, floor, floor_id: int) -> None:
+        """Handle stepping into an occupied cell: sheep/NPC bump, ally revive,
+        or melee combat (invoked from move_entity when the destination tile
+        is occupied)."""
+        # Sheep interaction: player bump → baa message, 1s action cost, sound
+        if isinstance(entity, Player) and getattr(target_entity, "name", "") == "Sheep":
+            entity.action_until = time.time() + 1.0
+            baa = random.choice(["Baa!", "Baa?", "Baa.", "Baa..."])
+            self.add_event("MESSAGE", {"text": baa}, floor_id=floor_id, player_id=entity.id)
+            self.add_event("PLAY_SOUND", {"sound": "SHEEP",
+                                           "rate": random.uniform(0.91, 1.1)},
+                           floor_id=floor_id)
+            sheep_buff = get_buff(target_entity.buffs, "sheep_timer")
+            if sheep_buff and sheep_buff.remaining >= 20:
+                sheep_buff.remaining = 0
+            return
+
+        if isinstance(entity, Player) and isinstance(target_entity, Shopkeeper):
+            self.npc_interact(entity.id, target_entity.id)
+            return
+
+        if isinstance(entity, Player) and isinstance(target_entity, Ghost):
+            self.npc_interact(entity.id, target_entity.id)
+            return
+
+        # Mirrors SPD's enemyInFOV check (Mob.java:252): a mob cannot
+        # perceive an invisible player, so it treats the tile as blocked
+        # rather than attacking.
+        if isinstance(entity, MobEntity) and isinstance(target_entity, Player) and target_entity.invisible > 0:
+            return
+
+        if (
+            isinstance(entity, Player)
+            and isinstance(target_entity, Player)
+            and target_entity.is_downed
+            and entity.faction == target_entity.faction
+        ):
+            revive_potion_idx = next(
+                (i for i, item in enumerate(entity.inventory) if isinstance(item, RevivingPotion)),
+                -1,
+            )
+            if revive_potion_idx != -1:
+                entity.inventory.pop(revive_potion_idx)
+                target_entity.is_downed = False
+                target_entity.hp = target_entity.get_total_max_hp() // 2
+                self.add_event("REVIVE", {"target": target_entity.id, "source": entity.id}, floor_id=floor_id)
+                return
+
+        if entity.faction != target_entity.faction:
+            if isinstance(entity, Player) and entity.is_downed:
+                return
+
+            current_time = time.time()
+            cooldown = entity.attack_cooldown
+            if isinstance(entity, Player) and entity.equipped_weapon:
+                cooldown = entity.equipped_weapon.attack_cooldown
+            if isinstance(entity, Player):
+                from app.engine.entities.rings import furor_multiplier
+                cooldown /= furor_multiplier(entity)
+
+            if current_time - entity.last_attack_time < cooldown:
+                return
+
+            entity.last_attack_time = current_time
+
+            # Parry (warrior combo move): a riposte-primed defender
+            # counter-strikes the attacker before damage resolves.
+            if isinstance(target_entity, Player) and target_entity.has_buff("riposte_tracker"):
+                self._riposte_counter(target_entity, entity, floor, floor_id)
+
+            if isinstance(entity, Player):
+                entity._last_action = ""
+            result = resolve_melee_attack(
+                entity, target_entity,
+                floor.mobs, entity.pos.x, entity.pos.y,
+                is_in_los=lambda a, b: self._is_in_los(a, b, floor_id=floor_id),
+                floor=floor,
+                add_event=lambda type, data, **kw: self.add_event(type, data, **{
+                    "floor_id": floor_id,
+                    "source_player_id": entity.id if isinstance(entity, Player) else None,
+                    **kw,
+                }),
+                game=self,
+            )
+            if result["missed"]:
+                self.add_event("MISS", {"source": entity.id, "target": target_entity.id, "defense_verb": result.get("defense_verb", "dodged")}, floor_id=floor_id)
+                self.add_event("ATTACK", {"source": entity.id, "target": target_entity.id, "damage": 0, "surprise": False}, floor_id=floor_id)
+                return
+            dmg = result["damage"]
+            self.add_event("ATTACK", {
+                "source": entity.id,
+                "target": target_entity.id,
+                "damage": dmg,
+                "surprise": result["surprise"],
+                "crit": result.get("crit", False),
+                "grim_proc": result.get("grim_proc", False),
+            }, floor_id=floor_id)
+            # SPD Char.java:509 plays hitSound(Random.Float(0.87f, 1.15f)),
+            # then KindOfWeapon multiplies by hitSoundPitch. Mobs use the
+            # default HIT/HIT_BODY at pitch 1.0 (no mob overrides hitSound).
+            pitch_jitter = random.uniform(0.87, 1.15)
+            if isinstance(entity, Player):
+                weapon = getattr(getattr(entity, "belongings", None), "weapon", None)
+                if result.get("crit"):
+                    sound = "HIT_STRONG"
+                    rate = pitch_jitter
+                elif weapon and getattr(weapon, "hit_sound", None):
+                    sound = weapon.hit_sound
+                    rate = pitch_jitter * getattr(weapon, "hit_sound_pitch", 1.0)
+                else:
+                    sound = "HIT_SLASH"
+                    rate = pitch_jitter
+                self.add_event("PLAY_SOUND", {"sound": sound, "rate": rate}, floor_id=floor_id, source_player_id=entity.id)
+            else:
+                # Mob melee: broadcast HIT_BODY from the mob's position so
+                # every player who can see it hears the hit.
+                self.add_event("PLAY_SOUND", {"sound": "HIT_BODY", "rate": pitch_jitter, "x": entity.pos.x, "y": entity.pos.y}, floor_id=floor_id)
+            if dmg > 0:
+                self.add_event("DAMAGE", {
+                    "target": target_entity.id,
+                    "amount": dmg,
+                    "grim_proc": result.get("grim_proc", False),
+                }, floor_id=floor_id)
+                if result.get("grim_proc"):
+                    self.add_event("PLAY_SOUND", {"sound": "HIT_STRONG"}, floor_id=floor_id, source_player_id=entity.id)
+                if isinstance(target_entity, Player) and isinstance(entity, Player):
+                    # Friendly-fire only: mob-on-player hits are already
+                    # covered by the broadcast HIT_BODY above.
+                    self.add_event("PLAY_SOUND", {"sound": "HIT_BODY"}, floor_id=floor_id, source_player_id=target_entity.id)
+                if isinstance(target_entity, Player):
+                    warn_sound = hurt_warning_sound(dmg, target_entity.hp, target_entity.get_total_max_hp())
+                    if warn_sound:
+                        self.add_event("PLAY_SOUND", {"sound": warn_sound}, player_id=target_entity.id)
+                if isinstance(target_entity, Goo) and isinstance(entity, Player):
+                    _goo_add_locked_floor_time(self, floor_id, entity, dmg)
+
+            self._maybe_trigger_dm300_supercharge(target_entity, floor, floor_id, entity.pos)
+
+            # Warrior subclass: combo / berserk events after successful damage
+            if isinstance(entity, Player) and dmg > 0:
+                if entity.subclass_info.subclass == "gladiator":
+                    self.add_event("COMBO_UPDATE", {"player": entity.id, "count": entity.combo_count}, floor_id=floor_id, source_player_id=entity.id)
+                    if entity.combo_count in (2, 4, 6, 8, 10):
+                        moves = {2: "clobber", 4: "slam", 6: "parry", 8: "crush", 10: "fury"}
+                        self.add_event("COMBO_MOVE_UNLOCKED", {"player": entity.id, "move": moves[entity.combo_count]}, floor_id=floor_id, source_player_id=entity.id)
+                if entity.subclass_info.subclass == "berserker":
+                    self.add_event("RAGE_CHANGED", {"player": entity.id, "power": entity.berserk_power}, floor_id=floor_id, source_player_id=entity.id)
+
+            if not target_entity.is_alive:
+                if isinstance(target_entity, MobEntity):
+                    self.process_death_mark_kill(entity, target_entity, floor, floor_id)
+                    self.handle_mob_death(target_entity, floor, floor_id)
+                if isinstance(entity, Player):
+                    self.on_kill(entity, target_entity, floor.mobs, floor_id)
+                    # Lethal Momentum (warrior T2): a killing blow that
+                    # procced the free follow-up doesn't consume the
+                    # attack's cooldown, allowing an immediate re-attack.
+                    if remove_buff(entity.buffs, "lethal_momentum_tracker"):
+                        entity.last_attack_time = 0.0
+                self.add_event("DEATH", {"target": target_entity.id}, floor_id=floor_id)
+                if isinstance(target_entity, MobEntity):
+                    target_entity.die(
+                        attacker=entity,
+                        floor_mobs=floor.mobs,
+                        tile_x=target_entity.pos.x,
+                        tile_y=target_entity.pos.y,
+                        players=list(self._players_on_floor(floor_id)),
+                    )
+                if isinstance(entity, Player) and isinstance(target_entity, MobEntity):
+                    if entity.earn_exp(target_entity.exp):
+                        self.on_talent_level_up(entity)
+                    drops = roll_drops(target_entity, self.drop_counters, target_entity.pos.x, target_entity.pos.y, players=list(self._players_on_floor(floor_id)))
+                    for item in drops:
+                        floor.items[item.id] = item
+                    if any(isinstance(d, Gold) for d in drops):
+                        self.add_event("GOLD_DROP", {"x": target_entity.pos.x, "y": target_entity.pos.y}, floor_id=floor_id)
+
+    def _ignite_if_on_fire(self, entity, floor, x: int, y: int) -> None:
+        """Fire tiles ignite entities on contact (SPD: Blob checks on movement)."""
         for b in floor.blob_areas.values():
-            if b.get("type") == "fire" and (new_x, new_y) in b.get("cells", set()):
+            if b.get("type") == "fire" and (x, y) in b.get("cells", set()):
                 if not has_buff(entity.buffs, "burning") and not is_immune(entity, "burning"):
                     add_buff(entity.buffs, "burning", duration=8.0, level=1, stack_mode="extend")
 
-        # Door enter/leave tile mutation: stepping onto a closed DOOR opens it;
-        # leaving an open door closes it (if no other entity is on it).
+    def _handle_door_transition(self, entity, floor, floor_id: int, old_x: int, old_y: int) -> None:
+        """Door enter/leave tile mutation: stepping onto a closed DOOR opens
+        it; leaving an open door closes it (if no other entity is on it)."""
         door_changed = False
         door_patches = []
         if floor.grid[entity.pos.y][entity.pos.x] == TileType.DOOR:
@@ -595,90 +644,83 @@ class MovementCombatMixin:
             # MAP_PATCH event, same mechanism as unlocking/grass-trample.
             self.add_event("MAP_PATCH", {"tiles": door_patches}, floor_id=floor_id)
 
-        # Position changed: door mutation may have changed flags and FOV.
-        self._invalidate_fov_cache()
+    def _player_step_effects(self, entity: Player, entity_id: str, floor_id: int) -> None:
+        """MOVE event + per-step player-only effects (Freerunner Momentum,
+        Rejuvenating Steps healing)."""
+        self.add_event("MOVE", {"entity": entity_id, "x": entity.pos.x, "y": entity.pos.y}, floor_id=floor_id)
+        # Freerunner builds Momentum on each step.
+        self.gain_momentum(entity)
+        # Rejuvenating Steps (huntress T2): heal small amount per step
+        rs = entity.talent_info.level("rejuvenating_steps")
+        if rs > 0:
+            heal = rs
+            entity.hp = min(entity.get_total_max_hp(), entity.hp + heal)
+            self.add_event("HEAL", {"target": entity.id, "amount": heal, "x": entity.pos.x, "y": entity.pos.y}, floor_id=floor_id)
 
-        # Terrain interaction (trample grass, trigger plants, etc.)
-        result = press_cell(floor, (entity.pos.x, entity.pos.y), entity)
-        if result["tile_changed"]:
-            self.add_event("MAP_PATCH", {"tiles": [{"x": entity.pos.x, "y": entity.pos.y, "tile": floor.grid[entity.pos.y][entity.pos.x]}]}, floor_id=floor_id)
-            self.add_event("PLAY_SOUND", {"sound": "STEP_GRASS", "x": entity.pos.x, "y": entity.pos.y}, floor_id=floor_id, source_player_id=entity.id if isinstance(entity, Player) else None)
-            # HighGrass.trample()'s CellEmitter.get(pos).burst(LeafParticle.LEVEL_SPECIFIC, 4)
-            self.add_event("LEAF_BURST", {"x": entity.pos.x, "y": entity.pos.y}, floor_id=floor_id)
-        if result["triggered_plant"]:
-            self.add_event("PLAY_SOUND", {"sound": "PLANT_TRIGGER", "x": entity.pos.x, "y": entity.pos.y}, floor_id=floor_id, source_player_id=entity.id if isinstance(entity, Player) else None)
-
-        if isinstance(entity, Player):
-            self.add_event("MOVE", {"entity": entity_id, "x": entity.pos.x, "y": entity.pos.y}, floor_id=floor_id)
-            # Freerunner builds Momentum on each step.
-            self.gain_momentum(entity)
-            # Rejuvenating Steps (huntress T2): heal small amount per step
-            rs = entity.talent_info.level("rejuvenating_steps")
-            if rs > 0:
-                heal = rs
-                entity.hp = min(entity.get_total_max_hp(), entity.hp + heal)
-                self.add_event("HEAL", {"target": entity.id, "amount": heal, "x": entity.pos.x, "y": entity.pos.y}, floor_id=floor_id)
-
-        if isinstance(entity, Player):
-            items_to_pickup = [
-                i_id
-                for i_id, i in floor.items.items()
-                if i.pos and i.pos.x == entity.pos.x and i.pos.y == entity.pos.y
-                and i.type != "grave"  # graves are scenery, not pickable
-                and not i.for_sale  # shop stock is bought via SHOP_BUY, not auto-picked-up
-            ]
-            for i_id in items_to_pickup:
-                item = floor.items[i_id]
-                if isinstance(item, Gold):
-                    entity.gold += item.quantity
-                    del floor.items[i_id]
-                    self.add_event("PICKUP_GOLD", {"player": entity.id, "amount": item.quantity}, floor_id=floor_id)
+    def _auto_pickup_on_step(self, entity: Player, floor, floor_id: int) -> None:
+        """SPD-style auto-pickup: items under the hero's feet after a step
+        (distinct from the explicit PICKUP_FLOOR action -- see
+        ItemsMixin.pickup_floor_items)."""
+        items_to_pickup = [
+            i_id
+            for i_id, i in floor.items.items()
+            if i.pos and i.pos.x == entity.pos.x and i.pos.y == entity.pos.y
+            and i.type != "grave"  # graves are scenery, not pickable
+            and not i.for_sale  # shop stock is bought via SHOP_BUY, not auto-picked-up
+        ]
+        for i_id in items_to_pickup:
+            item = floor.items[i_id]
+            if isinstance(item, Gold):
+                entity.gold += item.quantity
+                del floor.items[i_id]
+                self.add_event("PICKUP_GOLD", {"player": entity.id, "amount": item.quantity}, floor_id=floor_id)
+                continue
+            if isinstance(item, EnergyCrystal):
+                entity.energy += item.quantity
+                del floor.items[i_id]
+                self.add_event("PICKUP_ENERGY", {"player": entity.id, "amount": item.quantity}, floor_id=floor_id)
+                continue
+            if isinstance(item, Dewdrop):
+                self._pickup_dewdrop(entity, floor, floor_id, i_id, item)
+                continue
+            if isinstance(item, Key):
+                entity.add_key(item.key_id, floor_id, item.name)
+                del floor.items[i_id]
+                self.add_event("PICKUP_KEY", {"player": entity.id, "key_id": item.key_id, "name": item.name}, floor_id=floor_id)
+                continue
+            if isinstance(item, Bomb) and item.fuse_ticks is not None:
+                if self.handle_bomb_pickup(entity, floor, floor_id, i_id, item):
                     continue
-                if isinstance(item, EnergyCrystal):
-                    entity.energy += item.quantity
-                    del floor.items[i_id]
-                    self.add_event("PICKUP_ENERGY", {"player": entity.id, "amount": item.quantity}, floor_id=floor_id)
-                    continue
-                if isinstance(item, Dewdrop):
-                    self._pickup_dewdrop(entity, floor, floor_id, i_id, item)
-                    continue
-                if isinstance(item, Key):
-                    entity.add_key(item.key_id, floor_id, item.name)
-                    del floor.items[i_id]
-                    self.add_event("PICKUP_KEY", {"player": entity.id, "key_id": item.key_id, "name": item.name}, floor_id=floor_id)
-                    continue
-                if isinstance(item, Bomb) and item.fuse_ticks is not None:
-                    if self.handle_bomb_pickup(entity, floor, floor_id, i_id, item):
-                        continue
-                if isinstance(item, CorpseDust):
-                    # CorpseDust.doPickUp(): attaches the DustGhostSpawner
-                    # buff (very long duration -- dispelled explicitly by
-                    # wandmaker_claim_reward, never by natural decay).
-                    if entity.add_to_inventory(item):
-                        del floor.items[i_id]
-                        entity.add_buff("dust_ghost_spawner", duration=999999.0)
-                        self.add_event("PICKUP", {"player": entity.id, "item": item.name, "x": entity.pos.x, "y": entity.pos.y, "item_type": item.type}, floor_id=floor_id)
-                    continue
+            if isinstance(item, CorpseDust):
+                # CorpseDust.doPickUp(): attaches the DustGhostSpawner
+                # buff (very long duration -- dispelled explicitly by
+                # wandmaker_claim_reward, never by natural decay).
                 if entity.add_to_inventory(item):
                     del floor.items[i_id]
+                    entity.add_buff("dust_ghost_spawner", duration=999999.0)
                     self.add_event("PICKUP", {"player": entity.id, "item": item.name, "x": entity.pos.x, "y": entity.pos.y, "item_type": item.type}, floor_id=floor_id)
-                    if entity.is_admin and item.type in ("potion", "scroll"):
-                        self.identify_kind(item)
-                else:
-                    self.add_event("TOAST", {"text": "Your backpack is full. Drop something to make room."}, player_id=entity.id, floor_id=floor_id)
+                continue
+            if entity.add_to_inventory(item):
+                del floor.items[i_id]
+                self.add_event("PICKUP", {"player": entity.id, "item": item.name, "x": entity.pos.x, "y": entity.pos.y, "item_type": item.type}, floor_id=floor_id)
+                if entity.is_admin and item.type in ("potion", "scroll"):
+                    self.identify_kind(item)
+            else:
+                self.add_event("TOAST", {"text": "Your backpack is full. Drop something to make room."}, player_id=entity.id, floor_id=floor_id)
 
-        self._trigger_trap_if_needed(floor, entity, floor_id)
-
-        if isinstance(entity, Player) and tile == TileType.STAIRS_DOWN and entity.floor_id < MAX_FLOOR_ID:
+    def _handle_stairs_tile(self, entity: Player, entity_id: str, tile: int, floor, floor_id: int) -> None:
+        """STAIRS_DOWN/STAIRS_UP transitions, including the depth-1 victory
+        check when stepping onto the surface exit with the Amulet."""
+        if tile == TileType.STAIRS_DOWN and entity.floor_id < MAX_FLOOR_ID:
             first_visit = entity.floor_id + 1 > entity.floors_explored
             self._move_player_to_floor(entity, entity.floor_id + 1, TileType.STAIRS_UP)
             self.add_event("STAIRS_DOWN", {"player": entity_id, "first_visit": first_visit}, player_id=entity_id)
 
-        if isinstance(entity, Player) and tile == TileType.STAIRS_UP and entity.floor_id > 1:
+        if tile == TileType.STAIRS_UP and entity.floor_id > 1:
             self._move_player_to_floor(entity, entity.floor_id - 1, TileType.STAIRS_DOWN)
             self.add_event("STAIRS_UP", {"player": entity_id}, player_id=entity_id)
 
-        if isinstance(entity, Player) and tile == TileType.STAIRS_UP and entity.floor_id == 1:
+        if tile == TileType.STAIRS_UP and entity.floor_id == 1:
             if any(isinstance(it, Amulet) for it in entity.belongings.all_items()):
                 self._complete_victory(entity, floor, floor_id)
             else:
@@ -693,7 +735,7 @@ class MovementCombatMixin:
         if isinstance(target, DM300) and target.pending_pylon_activation:
             target.pending_pylon_activation = False
             self.add_event("DM300_SUPERCHARGE", {"mob": target.id}, floor_id=floor_id)
-            self._activate_pylon(floor, floor_id, near_pos=near_pos)
+            _activate_pylon(self, floor, floor_id, near_pos=near_pos)
 
     def _autoaim_cell(self, player, target) -> tuple:
         """Mirror of SPD QuickSlotButton.autoAim: aim straight at the target if a
@@ -924,7 +966,7 @@ class MovementCombatMixin:
                     if warn_sound:
                         self.add_event("PLAY_SOUND", {"sound": warn_sound}, player_id=target_entity.id)
                 if isinstance(target_entity, Goo):
-                    self._goo_add_locked_floor_time(floor_id, player, damage_dealt)
+                    _goo_add_locked_floor_time(self, floor_id, player, damage_dealt)
 
                 # Improvised Projectiles (warrior T2): non-launcher thrown
                 # items blind the target on hit (50-turn cooldown).

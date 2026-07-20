@@ -26,9 +26,10 @@ Scroll-specific handlers live in scroll_actions.py.
 """
 import math
 import time
-from typing import Optional
+from typing import Callable, Dict, Optional
 
 from app.engine.dungeon.constants import TileType
+from app.engine.game.terrain_primitives import _create_gas, _plant_seed_at
 from app.engine.entities.base import Action, Position
 from app.engine.entities.runestones import Runestone
 from app.engine.entities.items_consumable import Seed, Waterskin
@@ -61,6 +62,15 @@ def _floor_drop(game, player, item) -> None:
     floor.items[item.id] = item
 
 
+def _consume_item(player, item) -> None:
+    """Detach a consumed (drunk/read/thrown-and-used-up) item from the
+    backpack, converting any quickslot binding to a placeholder so the slot
+    index is preserved for the next stack/replacement item."""
+    removed = player.belongings.backpack.detach(item.id)
+    if removed is not None and player.belongings.get_item(item.id) is None:
+        player.quickslot.convert_to_placeholder(removed)
+
+
 def action_equip(game, player, item, tx=None, ty=None) -> None:
     player.equip_item(item.id)
 
@@ -75,12 +85,10 @@ def action_drop(game, player, item, tx=None, ty=None) -> None:
     if detached is None and player.belongings.is_equipped(item.id):
         if item.cursed and item.cursed_known:
             return  # cursed gear can't be removed
-        for slot in ("weapon", "armor", "artifact", "misc", "ring"):
-            cur = getattr(player.belongings, slot)
-            if cur is not None and cur.id == item.id:
-                setattr(player.belongings, slot, None)
-                detached = cur
-                break
+        slot = player.belongings.find_equipped_slot(item.id)
+        if slot is not None:
+            detached = getattr(player.belongings, slot)
+            setattr(player.belongings, slot, None)
     if detached is None:
         return
     player.quickslot.clear_item(detached.id)
@@ -129,6 +137,12 @@ def action_drink_waterskin(game, player, item, tx=None, ty=None) -> None:
     game.add_event("DRINK", {"player": player.id, "type": "waterskin"}, floor_id=player.floor_id, source_player_id=player.id)
 
 
+# PotionOfPurity's debuff list; Cleansing/HoneyedHealing cure that same set
+# plus the five debuffs Purity leaves untouched (SPD PotionOfCleansing).
+_PURITY_DEBUFFS = ("poison", "blindness", "bleeding", "weakness", "slow", "burning", "cripple")
+_FULL_DEBUFF_CLEANSE = _PURITY_DEBUFFS + ("paralysis", "terror", "drowsy", "frost", "ooze")
+
+
 def action_drink(game, player, item, tx=None, ty=None) -> None:
     if isinstance(item, Waterskin):
         action_drink_waterskin(game, player, item, tx, ty)
@@ -142,46 +156,34 @@ def action_drink(game, player, item, tx=None, ty=None) -> None:
     if effect == "regen":
         amount = round(0.8 * player.get_total_max_hp() + 14)
         player.set_heal(amount, 0.25, 0)
-        removed = player.belongings.backpack.detach(item.id)
-        if removed is not None and player.belongings.get_item(item.id) is None:
-            player.quickslot.convert_to_placeholder(removed)
+        _consume_item(player, item)
         game.add_event("DRINK", {"player": player.id, "type": "regen"}, floor_id=player.floor_id, source_player_id=player.id)
     elif effect == "fury":
         player.has_fury = True
         player.fury_turns_remaining = 10
-        removed = player.belongings.backpack.detach(item.id)
-        if removed is not None and player.belongings.get_item(item.id) is None:
-            player.quickslot.convert_to_placeholder(removed)
+        _consume_item(player, item)
         game.add_event("DRINK", {"player": player.id, "type": "fury"}, floor_id=player.floor_id, source_player_id=player.id)
     elif effect == "aqua_rejuv":
         pool = round(player.get_total_max_hp() * 1.5)
         player.aqua_heal_left = max(player.aqua_heal_left, pool)
-        removed = player.belongings.backpack.detach(item.id)
-        if removed is not None and player.belongings.get_item(item.id) is None:
-            player.quickslot.convert_to_placeholder(removed)
+        _consume_item(player, item)
         game.add_event("DRINK", {"player": player.id, "type": "aqua_rejuv"}, floor_id=player.floor_id, source_player_id=player.id)
     elif effect == "mind_vision":
         # SPD MindVision: 20-turn buff revealing every mob's position through walls.
         player.add_buff("mind_vision", duration=20.0)
-        removed = player.belongings.backpack.detach(item.id)
-        if removed is not None and player.belongings.get_item(item.id) is None:
-            player.quickslot.convert_to_placeholder(removed)
+        _consume_item(player, item)
         game.add_event("DRINK", {"player": player.id, "type": "mind_vision"}, floor_id=player.floor_id, source_player_id=player.id)
     elif effect == "invisibility":
         # SPD Invisibility: 20-turn buff. Attacking breaks invisibility (see
         # combat._dispel_stealth). Reference-counted on Entity.invisible.
         player.add_buff("invisibility", duration=20.0)
-        removed = player.belongings.backpack.detach(item.id)
-        if removed is not None and player.belongings.get_item(item.id) is None:
-            player.quickslot.convert_to_placeholder(removed)
+        _consume_item(player, item)
         game.add_event("DRINK", {"player": player.id, "type": "invisibility"}, floor_id=player.floor_id, source_player_id=player.id)
     elif effect == "liquid_flame":
         dmg = max(1, player.hp // 3)
         player.take_damage(dmg)
         player.add_buff("burning", duration=8.0, level=1, stack_mode="extend")
-        removed = player.belongings.backpack.detach(item.id)
-        if removed is not None and player.belongings.get_item(item.id) is None:
-            player.quickslot.convert_to_placeholder(removed)
+        _consume_item(player, item)
         game.add_event("DAMAGE", {"target": player.id, "amount": dmg, "burning": True}, floor_id=player.floor_id)
         game.add_event("FLAME_BURST", {"x": player.pos.x, "y": player.pos.y}, floor_id=player.floor_id)
         cx, cy = player.pos.x, player.pos.y
@@ -210,55 +212,41 @@ def action_drink(game, player, item, tx=None, ty=None) -> None:
         dmg = max(1, player.hp // 4)
         player.take_damage(dmg)
         player.add_buff("poison", duration=10.0, level=1, stack_mode="extend")
-        removed = player.belongings.backpack.detach(item.id)
-        if removed is not None and player.belongings.get_item(item.id) is None:
-            player.quickslot.convert_to_placeholder(removed)
+        _consume_item(player, item)
         game.add_event("DAMAGE", {"target": player.id, "amount": dmg}, floor_id=player.floor_id)
         cx, cy = player.pos.x, player.pos.y
         floor = game._get_or_create_floor(player.floor_id)
-        from app.engine.game.terrain_effects import _create_gas
         _create_gas(floor, (cx, cy), 4 + player.floor_id // 2, "toxic_gas")
         game.add_event("PLAY_SOUND", {"sound": "SHATTER"}, floor_id=player.floor_id)
     elif effect == "paralytic_gas":
         player.add_buff("paralysis", duration=5.0, level=1, stack_mode="extend")
-        removed = player.belongings.backpack.detach(item.id)
-        if removed is not None and player.belongings.get_item(item.id) is None:
-            player.quickslot.convert_to_placeholder(removed)
+        _consume_item(player, item)
         cx, cy = player.pos.x, player.pos.y
         floor = game._get_or_create_floor(player.floor_id)
-        from app.engine.game.terrain_effects import _create_gas
         _create_gas(floor, (cx, cy), 4 + player.floor_id // 2, "paralytic_gas")
         game.add_event("PLAY_SOUND", {"sound": "SHATTER"}, floor_id=player.floor_id)
     elif effect == "levitation":
         player.add_buff("levitation", duration=20.0)
-        removed = player.belongings.backpack.detach(item.id)
-        if removed is not None and player.belongings.get_item(item.id) is None:
-            player.quickslot.convert_to_placeholder(removed)
+        _consume_item(player, item)
         game.add_event("PLAY_SOUND", {"sound": "SHATTER"}, floor_id=player.floor_id)
         game.add_event("DRINK", {"player": player.id, "type": "levitation"}, floor_id=player.floor_id, source_player_id=player.id)
     elif effect == "haste":
         player.add_buff("haste", duration=20.0)
-        removed = player.belongings.backpack.detach(item.id)
-        if removed is not None and player.belongings.get_item(item.id) is None:
-            player.quickslot.convert_to_placeholder(removed)
+        _consume_item(player, item)
         game.add_event("PLAY_SOUND", {"sound": "SHATTER"}, floor_id=player.floor_id)
         game.add_event("DRINK", {"player": player.id, "type": "haste"}, floor_id=player.floor_id, source_player_id=player.id)
     elif effect == "frost":
         dmg = max(1, round(player.get_total_max_hp() * 0.1))
         player.take_damage(dmg)
         player.add_buff("frost", duration=10.0, level=1)
-        removed = player.belongings.backpack.detach(item.id)
-        if removed is not None and player.belongings.get_item(item.id) is None:
-            player.quickslot.convert_to_placeholder(removed)
+        _consume_item(player, item)
         game.add_event("DAMAGE", {"target": player.id, "amount": dmg}, floor_id=player.floor_id)
         game.add_event("PLAY_SOUND", {"sound": "SHATTER"}, floor_id=player.floor_id)
         game.add_event("DRINK", {"player": player.id, "type": "frost"}, floor_id=player.floor_id)
     elif effect == "purity":
-        for debuff in ("poison", "blindness", "bleeding", "weakness", "slow", "burning", "cripple"):
+        for debuff in _PURITY_DEBUFFS:
             player.remove_buff(debuff)
-        removed = player.belongings.backpack.detach(item.id)
-        if removed is not None and player.belongings.get_item(item.id) is None:
-            player.quickslot.convert_to_placeholder(removed)
+        _consume_item(player, item)
         game.add_event("PLAY_SOUND", {"sound": "SHATTER"}, floor_id=player.floor_id)
         game.add_event("DRINK", {"player": player.id, "type": "purity"}, floor_id=player.floor_id, source_player_id=player.id)
     elif effect == "experience":
@@ -266,22 +254,17 @@ def action_drink(game, player, item, tx=None, ty=None) -> None:
         leveled = player.earn_exp(amount)
         if leveled:
             game.add_event("LEVEL_UP", {"player": player.id, "level": player.level}, floor_id=player.floor_id)
-        removed = player.belongings.backpack.detach(item.id)
-        if removed is not None and player.belongings.get_item(item.id) is None:
-            player.quickslot.convert_to_placeholder(removed)
+        _consume_item(player, item)
         game.add_event("PLAY_SOUND", {"sound": "SHATTER"}, floor_id=player.floor_id)
         game.add_event("DRINK", {"player": player.id, "type": "experience"}, floor_id=player.floor_id, source_player_id=player.id)
     elif effect == "strength":
         player.strength = min(player.strength + 1, 30)
-        removed = player.belongings.backpack.detach(item.id)
-        if removed is not None and player.belongings.get_item(item.id) is None:
-            player.quickslot.convert_to_placeholder(removed)
+        _consume_item(player, item)
         game.add_event("PLAY_SOUND", {"sound": "SHATTER"}, floor_id=player.floor_id)
         game.add_event("DRINK", {"player": player.id, "type": "strength"}, floor_id=player.floor_id, source_player_id=player.id)
     # ── Exotic Potions ──────────────────────────────────────────────────────
     elif effect == "cleansing":
-        for debuff in ("poison", "blindness", "bleeding", "weakness", "slow", "burning",
-                       "cripple", "paralysis", "terror", "drowsy", "frost", "ooze"):
+        for debuff in _FULL_DEBUFF_CLEANSE:
             player.remove_buff(debuff)
         floor = game._get_or_create_floor(player.floor_id)
         cx, cy = player.pos.x, player.pos.y
@@ -289,23 +272,18 @@ def action_drink(game, player, item, tx=None, ty=None) -> None:
                      if any(abs(x-cx)<=2 and abs(y-cy)<=2 for x, y in b.get("cells", set()))]
         for bid in to_remove:
             del floor.blob_areas[bid]
-        removed = player.belongings.backpack.detach(item.id)
-        if removed is not None and player.belongings.get_item(item.id) is None:
-            player.quickslot.convert_to_placeholder(removed)
+        _consume_item(player, item)
         game.add_event("PLAY_SOUND", {"sound": "SHATTER"}, floor_id=player.floor_id)
         game.add_event("DRINK", {"player": player.id, "type": "cleansing"}, floor_id=player.floor_id, source_player_id=player.id)
     elif effect == "corrosive_gas":
         # Drink: release at player's feet (like throwing at self)
         cx, cy = player.pos.x, player.pos.y
         floor = game._get_or_create_floor(player.floor_id)
-        from app.engine.game.terrain_effects import _create_gas
         _create_gas(floor, (cx, cy), 5 + player.floor_id // 2, "corrosive_gas")
         dmg = max(1, player.hp // 4)
         player.take_damage(dmg)
         player.add_buff("ooze", duration=10.0, level=1, stack_mode="extend")
-        removed = player.belongings.backpack.detach(item.id)
-        if removed is not None and player.belongings.get_item(item.id) is None:
-            player.quickslot.convert_to_placeholder(removed)
+        _consume_item(player, item)
         game.add_event("DAMAGE", {"target": player.id, "amount": dmg}, floor_id=player.floor_id)
         game.add_event("PLAY_SOUND", {"sound": "SHATTER"}, floor_id=player.floor_id)
     elif effect == "dragons_breath":
@@ -337,48 +315,35 @@ def action_drink(game, player, item, tx=None, ty=None) -> None:
             blob_id = f"fire_breath_{player.id}"
             floor.blob_areas[blob_id] = {"type": "fire", "cells": fire_cells, "volume": fire_vol}
             game.add_event("FLAME_BURST", {"x": player.pos.x, "y": player.pos.y}, floor_id=player.floor_id)
-        removed = player.belongings.backpack.detach(item.id)
-        if removed is not None and player.belongings.get_item(item.id) is None:
-            player.quickslot.convert_to_placeholder(removed)
+        _consume_item(player, item)
         game.add_event("DRINK", {"player": player.id, "type": "dragons_breath"}, floor_id=player.floor_id, source_player_id=player.id)
     elif effect == "earthen_armor":
         armor_level = 2 + player.level // 3
         player.add_buff("barkskin", duration=50.0, level=armor_level)
-        removed = player.belongings.backpack.detach(item.id)
-        if removed is not None and player.belongings.get_item(item.id) is None:
-            player.quickslot.convert_to_placeholder(removed)
+        _consume_item(player, item)
         game.add_event("PLAY_SOUND", {"sound": "SHATTER"}, floor_id=player.floor_id)
         game.add_event("DRINK", {"player": player.id, "type": "earthen_armor"}, floor_id=player.floor_id, source_player_id=player.id)
     elif effect == "magical_sight":
         player.add_buff("magical_sight", duration=50.0, level=12)
-        removed = player.belongings.backpack.detach(item.id)
-        if removed is not None and player.belongings.get_item(item.id) is None:
-            player.quickslot.convert_to_placeholder(removed)
+        _consume_item(player, item)
         game.add_event("PLAY_SOUND", {"sound": "SHATTER"}, floor_id=player.floor_id)
         game.add_event("DRINK", {"player": player.id, "type": "magical_sight"}, floor_id=player.floor_id, source_player_id=player.id)
     elif effect == "mastery":
         # Stub: open item selection dialog for strength reduction
-        removed = player.belongings.backpack.detach(item.id)
-        if removed is not None and player.belongings.get_item(item.id) is None:
-            player.quickslot.convert_to_placeholder(removed)
+        _consume_item(player, item)
         game.add_event("MASTERY_SELECT", {"player": player.id}, floor_id=player.floor_id, player_id=player.id)
     elif effect == "shielding":
         shield_amount = round(0.6 * player.get_total_max_hp() + 10)
         player.shield_hp = getattr(player, "shield_hp", 0) + shield_amount
         player.add_buff("shielded", duration=999.0, level=shield_amount)
-        removed = player.belongings.backpack.detach(item.id)
-        if removed is not None and player.belongings.get_item(item.id) is None:
-            player.quickslot.convert_to_placeholder(removed)
+        _consume_item(player, item)
         game.add_event("PLAY_SOUND", {"sound": "SHATTER"}, floor_id=player.floor_id)
         game.add_event("DRINK", {"player": player.id, "type": "shielding"}, floor_id=player.floor_id, source_player_id=player.id)
     elif effect == "shrouding_fog":
         cx, cy = player.pos.x, player.pos.y
         floor = game._get_or_create_floor(player.floor_id)
-        from app.engine.game.terrain_effects import _create_gas
         _create_gas(floor, (cx, cy), 8 + player.floor_id // 2, "smoke_screen")
-        removed = player.belongings.backpack.detach(item.id)
-        if removed is not None and player.belongings.get_item(item.id) is None:
-            player.quickslot.convert_to_placeholder(removed)
+        _consume_item(player, item)
         game.add_event("PLAY_SOUND", {"sound": "SHATTER"}, floor_id=player.floor_id)
     elif effect == "snap_freeze":
         cx, cy = player.pos.x, player.pos.y
@@ -390,74 +355,54 @@ def action_drink(game, player, item, tx=None, ty=None) -> None:
                 mob.add_buff("frost", duration=10.0, level=1)
                 mob.add_buff("roots", duration=10.0)
         player.add_buff("frost", duration=5.0, level=1)
-        removed = player.belongings.backpack.detach(item.id)
-        if removed is not None and player.belongings.get_item(item.id) is None:
-            player.quickslot.convert_to_placeholder(removed)
+        _consume_item(player, item)
         game.add_event("PLAY_SOUND", {"sound": "SHATTER"}, floor_id=player.floor_id)
         game.add_event("DRINK", {"player": player.id, "type": "snap_freeze"}, floor_id=player.floor_id, source_player_id=player.id)
     elif effect == "stamina":
         player.add_buff("stamina", duration=100.0)
-        removed = player.belongings.backpack.detach(item.id)
-        if removed is not None and player.belongings.get_item(item.id) is None:
-            player.quickslot.convert_to_placeholder(removed)
+        _consume_item(player, item)
         game.add_event("PLAY_SOUND", {"sound": "SHATTER"}, floor_id=player.floor_id)
         game.add_event("DRINK", {"player": player.id, "type": "stamina"}, floor_id=player.floor_id, source_player_id=player.id)
     elif effect == "storm_clouds":
         cx, cy = player.pos.x, player.pos.y
         floor = game._get_or_create_floor(player.floor_id)
-        from app.engine.game.terrain_effects import _create_gas
         _create_gas(floor, (cx, cy), 6 + player.floor_id // 2, "storm_cloud")
-        removed = player.belongings.backpack.detach(item.id)
-        if removed is not None and player.belongings.get_item(item.id) is None:
-            player.quickslot.convert_to_placeholder(removed)
+        _consume_item(player, item)
         game.add_event("PLAY_SOUND", {"sound": "SHATTER"}, floor_id=player.floor_id)
     elif effect == "divine_inspiration":
         # Stub: grant 1 talent point to all tiers
         game.add_event("DIVINE_INSPIRATION", {"player": player.id}, floor_id=player.floor_id, player_id=player.id)
-        removed = player.belongings.backpack.detach(item.id)
-        if removed is not None and player.belongings.get_item(item.id) is None:
-            player.quickslot.convert_to_placeholder(removed)
+        _consume_item(player, item)
         game.add_event("PLAY_SOUND", {"sound": "SHATTER"}, floor_id=player.floor_id)
     # ── Elixirs ─────────────────────────────────────────────────────────────
     elif effect == "arcane_armor":
         armor_level = 5 + player.level // 2
         player.add_buff("arcane_armor", duration=60.0, level=armor_level)
-        removed = player.belongings.backpack.detach(item.id)
-        if removed is not None and player.belongings.get_item(item.id) is None:
-            player.quickslot.convert_to_placeholder(removed)
+        _consume_item(player, item)
         game.add_event("PLAY_SOUND", {"sound": "SHATTER"}, floor_id=player.floor_id)
         game.add_event("DRINK", {"player": player.id, "type": "arcane_armor"}, floor_id=player.floor_id, source_player_id=player.id)
     elif effect == "dragons_blood":
         player.add_buff("fire_imbue", duration=30.0)
-        removed = player.belongings.backpack.detach(item.id)
-        if removed is not None and player.belongings.get_item(item.id) is None:
-            player.quickslot.convert_to_placeholder(removed)
+        _consume_item(player, item)
         game.add_event("PLAY_SOUND", {"sound": "SHATTER"}, floor_id=player.floor_id)
         game.add_event("DRINK", {"player": player.id, "type": "dragons_blood"}, floor_id=player.floor_id, source_player_id=player.id)
     elif effect == "feather_fall":
         player.add_buff("feather_fall", duration=50.0)
-        removed = player.belongings.backpack.detach(item.id)
-        if removed is not None and player.belongings.get_item(item.id) is None:
-            player.quickslot.convert_to_placeholder(removed)
+        _consume_item(player, item)
         game.add_event("PLAY_SOUND", {"sound": "SHATTER"}, floor_id=player.floor_id)
         game.add_event("DRINK", {"player": player.id, "type": "feather_fall"}, floor_id=player.floor_id, source_player_id=player.id)
     elif effect == "honeyed_healing":
         max_hp = player.get_total_max_hp()
         player.hp = max_hp
-        for debuff in ("poison", "blindness", "bleeding", "weakness", "slow", "burning",
-                       "cripple", "paralysis", "terror", "drowsy", "frost", "ooze"):
+        for debuff in _FULL_DEBUFF_CLEANSE:
             player.remove_buff(debuff)
-        removed = player.belongings.backpack.detach(item.id)
-        if removed is not None and player.belongings.get_item(item.id) is None:
-            player.quickslot.convert_to_placeholder(removed)
+        _consume_item(player, item)
         game.add_event("HEAL", {"target": player.id, "amount": max_hp}, floor_id=player.floor_id)
         game.add_event("PLAY_SOUND", {"sound": "SHATTER"}, floor_id=player.floor_id)
         game.add_event("DRINK", {"player": player.id, "type": "honeyed_healing"}, floor_id=player.floor_id, source_player_id=player.id)
     elif effect == "icy_touch":
         player.add_buff("frost_imbue", duration=30.0)
-        removed = player.belongings.backpack.detach(item.id)
-        if removed is not None and player.belongings.get_item(item.id) is None:
-            player.quickslot.convert_to_placeholder(removed)
+        _consume_item(player, item)
         game.add_event("PLAY_SOUND", {"sound": "SHATTER"}, floor_id=player.floor_id)
         game.add_event("DRINK", {"player": player.id, "type": "icy_touch"}, floor_id=player.floor_id, source_player_id=player.id)
     elif effect == "might":
@@ -465,16 +410,12 @@ def action_drink(game, player, item, tx=None, ty=None) -> None:
         old_max = player.max_hp
         player.max_hp += 5
         player.hp = min(player.hp + 5, player.max_hp)
-        removed = player.belongings.backpack.detach(item.id)
-        if removed is not None and player.belongings.get_item(item.id) is None:
-            player.quickslot.convert_to_placeholder(removed)
+        _consume_item(player, item)
         game.add_event("PLAY_SOUND", {"sound": "SHATTER"}, floor_id=player.floor_id)
         game.add_event("DRINK", {"player": player.id, "type": "might", "str_gained": 1, "hp_gained": 5}, floor_id=player.floor_id, source_player_id=player.id)
     elif effect == "toxic_essence":
         player.add_buff("toxic_imbue", duration=30.0)
-        removed = player.belongings.backpack.detach(item.id)
-        if removed is not None and player.belongings.get_item(item.id) is None:
-            player.quickslot.convert_to_placeholder(removed)
+        _consume_item(player, item)
         game.add_event("PLAY_SOUND", {"sound": "SHATTER"}, floor_id=player.floor_id)
         game.add_event("DRINK", {"player": player.id, "type": "toxic_essence"}, floor_id=player.floor_id, source_player_id=player.id)
     game.on_potion_drunk(player, item)
@@ -522,11 +463,8 @@ def action_plant(game, player, item, tx=None, ty=None) -> None:
     if tile not in valid_terrains:
         return  # can't plant here
     floor.grid[ty][tx] = TileType.FLOOR_GRASS
-    from app.engine.game.terrain_effects import _plant_seed_at
     _plant_seed_at(floor, (tx, ty), item.plant_type)
-    removed = player.belongings.backpack.detach(item.id)
-    if removed is not None and player.belongings.get_item(item.id) is None:
-        player.quickslot.convert_to_placeholder(removed)
+    _consume_item(player, item)
     game.add_event("MAP_PATCH", {"tiles": [{"x": tx, "y": ty, "tile": TileType.FLOOR_GRASS}]}, floor_id=player.floor_id)
     # Warden bonus: surrounding cells become FURROWED_GRASS
     subclass_info = getattr(player, "subclass_info", None)
@@ -575,27 +513,11 @@ def action_throw(game, player, item, tx=None, ty=None) -> None:
         game.light_bomb(player, floor, player.floor_id, removed, tx, ty)
         return
     # Potions that shatter on impact and create area effects
-    _FIRE_SHATTER = {"liquid_flame", "infernal_brew"}
-    _GAS_SHATTER = {"toxic_gas", "paralytic_gas", "corrosive_gas", "shrouding_fog",
-                    "storm_clouds", "blizzard_brew", "shocking_brew"}
-    if isinstance(item, Potion) and item.effect in _FIRE_SHATTER:
-        _shatter_liquid_flame(game, player, item, tx, ty)
-        return
-    if isinstance(item, Potion) and item.effect in _GAS_SHATTER:
-        _shatter_gas(game, player, item, tx, ty)
-        return
-    if isinstance(item, Potion) and item.effect in ("snap_freeze",):
-        _shatter_snap_freeze(game, player, item, tx, ty)
-        return
-    if isinstance(item, Potion) and item.effect in ("aqua_brew",):
-        _shatter_aqua(game, player, item, tx, ty)
-        return
-    if isinstance(item, Potion) and item.effect in ("caustic_brew",):
-        _shatter_caustic(game, player, item, tx, ty)
-        return
-    if isinstance(item, Potion) and item.effect in ("unstable_brew",):
-        _shatter_unstable(game, player, item, tx, ty)
-        return
+    if isinstance(item, Potion):
+        handler = _SHATTER_HANDLERS.get(item.effect)
+        if handler is not None:
+            handler(game, player, item, tx, ty)
+            return
     # Runestones trigger their magical effect instead of dealing physical damage
     if isinstance(item, Runestone):
         action_throw_runestone(game, player, item, tx, ty)
@@ -609,9 +531,7 @@ def _shatter_liquid_flame(game, player, item, tx, ty) -> None:
         return
 
     # Remove potion from inventory
-    removed = player.belongings.backpack.detach(item.id)
-    if removed is not None and player.belongings.get_item(item.id) is None:
-        player.quickslot.convert_to_placeholder(removed)
+    _consume_item(player, item)
 
     # Create fire blob in 3x3 area centered on impact, SPD strength 1+depth
     blob_id = f"fire_potion_{player.id}_{tx}_{ty}"
@@ -643,14 +563,11 @@ def _shatter_liquid_flame(game, player, item, tx, ty) -> None:
 
 
 def _shatter_gas(game, player, item, tx, ty) -> None:
-    from app.engine.game.terrain_effects import _create_gas
     floor = game._get_or_create_floor(player.floor_id)
     if not (0 <= tx < floor.width and 0 <= ty < floor.height):
         return
 
-    removed = player.belongings.backpack.detach(item.id)
-    if removed is not None and player.belongings.get_item(item.id) is None:
-        player.quickslot.convert_to_placeholder(removed)
+    _consume_item(player, item)
 
     gas_type = item.effect
     strength = 4 + player.floor_id // 2
@@ -660,13 +577,10 @@ def _shatter_gas(game, player, item, tx, ty) -> None:
 
 
 def _shatter_snap_freeze(game, player, item, tx, ty) -> None:
-    from app.engine.game.terrain_effects import _create_gas
     floor = game._get_or_create_floor(player.floor_id)
     if not (0 <= tx < floor.width and 0 <= ty < floor.height):
         return
-    removed = player.belongings.backpack.detach(item.id)
-    if removed is not None and player.belongings.get_item(item.id) is None:
-        player.quickslot.convert_to_placeholder(removed)
+    _consume_item(player, item)
     for mob in floor.mobs.values():
         if not mob.is_alive or mob.faction == "player":
             continue
@@ -681,9 +595,7 @@ def _shatter_aqua(game, player, item, tx, ty) -> None:
     floor = game._get_or_create_floor(player.floor_id)
     if not (0 <= tx < floor.width and 0 <= ty < floor.height):
         return
-    removed = player.belongings.backpack.detach(item.id)
-    if removed is not None and player.belongings.get_item(item.id) is None:
-        player.quickslot.convert_to_placeholder(removed)
+    _consume_item(player, item)
     for mob in floor.mobs.values():
         if not mob.is_alive or mob.faction == "player":
             continue
@@ -699,9 +611,7 @@ def _shatter_caustic(game, player, item, tx, ty) -> None:
     floor = game._get_or_create_floor(player.floor_id)
     if not (0 <= tx < floor.width and 0 <= ty < floor.height):
         return
-    removed = player.belongings.backpack.detach(item.id)
-    if removed is not None and player.belongings.get_item(item.id) is None:
-        player.quickslot.convert_to_placeholder(removed)
+    _consume_item(player, item)
     for mob in floor.mobs.values():
         if not mob.is_alive or mob.faction == "player":
             continue
@@ -714,13 +624,10 @@ def _shatter_unstable(game, player, item, tx, ty) -> None:
     import random as _rand
     effects = ["liquid_flame", "toxic_gas", "paralytic_gas", "corrosive_gas", "frost_gas"]
     chosen = _rand.choice(effects)
-    from app.engine.game.terrain_effects import _create_gas
     floor = game._get_or_create_floor(player.floor_id)
     if not (0 <= tx < floor.width and 0 <= ty < floor.height):
         return
-    removed = player.belongings.backpack.detach(item.id)
-    if removed is not None and player.belongings.get_item(item.id) is None:
-        player.quickslot.convert_to_placeholder(removed)
+    _consume_item(player, item)
     if chosen == "liquid_flame":
         blob_id = f"fire_unstable_{player.id}_{tx}_{ty}"
         cells, volume = set(), {}
@@ -735,6 +642,21 @@ def _shatter_unstable(game, player, item, tx, ty) -> None:
     else:
         _create_gas(floor, (tx, ty), 4 + player.floor_id // 2, chosen)
     game.add_event("PLAY_SOUND", {"sound": "SHATTER"}, floor_id=player.floor_id)
+
+
+# Potion-effect -> shatter handler, dispatched by action_throw. Mirrors the
+# _PROC_HANDLERS pattern in weapon_enchants.py/armor_glyphs.py.
+_SHATTER_HANDLERS: Dict[str, Callable] = {
+    **{effect: _shatter_liquid_flame for effect in ("liquid_flame", "infernal_brew")},
+    **{effect: _shatter_gas for effect in (
+        "toxic_gas", "paralytic_gas", "corrosive_gas", "shrouding_fog",
+        "storm_clouds", "blizzard_brew", "shocking_brew",
+    )},
+    "snap_freeze": _shatter_snap_freeze,
+    "aqua_brew": _shatter_aqua,
+    "caustic_brew": _shatter_caustic,
+    "unstable_brew": _shatter_unstable,
+}
 
 
 def action_zap(game, player, item, tx=None, ty=None) -> None:
@@ -870,10 +792,7 @@ def _wear_tengu_mask(game, player, item) -> None:
     options = list(CLASS_SUBCLASSES.get(player.class_type, ()))
     if not options:
         return
-    removed = player.belongings.backpack.detach(item.id)
-    if removed is not None:
-        if player.belongings.get_item(item.id) is None:
-            player.quickslot.convert_to_placeholder(removed)
+    _consume_item(player, item)
     game.add_event("SUBCLASS_CHOICE_AVAILABLE", {
         "player": player.id, "options": options,
     }, floor_id=player.floor_id, source_player_id=player.id)
@@ -890,10 +809,7 @@ def _wear_kings_crown(game, player, item) -> None:
     options = list(CLASS_ARMOR_ABILITIES.get(player.class_type, ()))
     if not options:
         return
-    removed = player.belongings.backpack.detach(item.id)
-    if removed is not None:
-        if player.belongings.get_item(item.id) is None:
-            player.quickslot.convert_to_placeholder(removed)
+    _consume_item(player, item)
     game.add_event("ARMOR_ABILITY_CHOICE_AVAILABLE", {
         "player": player.id, "options": options,
     }, floor_id=player.floor_id, source_player_id=player.id)

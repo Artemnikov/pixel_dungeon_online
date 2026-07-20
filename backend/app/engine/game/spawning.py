@@ -22,7 +22,7 @@ import random
 import time
 from typing import List, Type
 
-from app.engine.dungeon.generator import TileType
+from app.engine.dungeon.constants import TileType
 from app.engine.entities.base import Position
 from app.engine.entities.buffs import get_buff
 from app.engine.entities.items_consumable import CorpseDust

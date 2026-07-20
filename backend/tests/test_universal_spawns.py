@@ -5,7 +5,7 @@ import random
 
 from app.engine.entities.base import Faction
 from app.engine.entities.mobs import Wraith, TormentedSpirit, Bee, EbonyMimic
-from app.engine.dungeon.generator import TileType
+from app.engine.dungeon.constants import TileType
 from app.engine.game.constants import RESPAWN_TURNS
 from app.engine.game.floor_state import FloorState
 from app.engine.manager import GameInstance

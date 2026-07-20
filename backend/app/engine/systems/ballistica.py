@@ -31,6 +31,18 @@ def ballistica_trace(
 
     cells = _bresenham(src_x, src_y, target_x, target_y)
 
+    # Position -> blocking entity, built once instead of rescanning every
+    # player/mob per traced cell. Players are inserted first so a player
+    # takes precedence over a mob sharing the same cell, matching the order
+    # entities were checked in before this was a lookup table.
+    occupied = {}
+    for p in players:
+        if p.id != exclude_id and getattr(p, "is_alive", True):
+            occupied[(p.pos.x, p.pos.y)] = p
+    for m in mobs:
+        if getattr(m, "is_alive", True):
+            occupied.setdefault((m.pos.x, m.pos.y), m)
+
     for i in range(1, len(cells)):
         cx, cy = cells[i]
         if not (0 <= cx < width and 0 <= cy < height):
@@ -39,14 +51,8 @@ def ballistica_trace(
         if flags is not None and flags.solid[cy][cx]:
             return (cells[i - 1][0], cells[i - 1][1])
 
-        for p in players:
-            if p.id != exclude_id and p.pos.x == cx and p.pos.y == cy:
-                if getattr(p, "is_alive", True):
-                    return (cx, cy)
-
-        for m in mobs:
-            if m.pos.x == cx and m.pos.y == cy and getattr(m, "is_alive", True):
-                return (cx, cy)
+        if (cx, cy) in occupied:
+            return (cx, cy)
 
     return (target_x, target_y)
 

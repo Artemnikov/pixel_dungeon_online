@@ -14,7 +14,7 @@ import time
 from typing import Dict, List, Optional, Tuple
 
 # Re-exported for backward-compatible imports (main.py, tests).
-from app.engine.dungeon.generator import TileType
+from app.engine.dungeon.constants import TileType
 from app.engine.entities.base import Position
 from app.engine.entities.player import CharacterClass, Difficulty, Player
 
@@ -43,23 +43,7 @@ from app.engine.game.rogue import RogueMixin
 from app.engine.game.serialization import SerializationMixin
 from app.engine.game.talents import TalentsMixin
 from app.engine.game.tengu_arena import PrisonBossMixin
-from app.engine.game.ai_goo import GooAIMixin
-from app.engine.game.ai_dwarf_king import DwarfKingAIMixin
-from app.engine.game.ai_yog_dzewa import YogDzewaAIMixin
-from app.engine.game.ai_demon_spawner import DemonSpawnerAIMixin
-from app.engine.game.ai_pylon import PylonAIMixin
-from app.engine.game.ai_sentry import SentryAIMixin
-from app.engine.game.ai_dm300 import DM300AIMixin
-from app.engine.game.ai_necromancer import NecromancerAIMixin
-from app.engine.game.ai_eye import EyeAIMixin
 from app.engine.game.ai_tengu import TenguAIMixin
-from app.engine.game.ai_mirror_image import MirrorImageMixin
-from app.engine.game.ai_shaman import ShamanAIMixin
-from app.engine.game.ai_warlock import WarlockAIMixin
-from app.engine.game.ai_spinner import SpinnerAIMixin
-from app.engine.game.ai_dm200 import DM200AIMixin
-from app.engine.game.ai_newborn_elemental import NewbornFireElementalAIMixin
-from app.engine.game.ai_guard import GuardAIMixin
 from app.engine.game.player_tick import PlayerTickMixin
 from app.engine.game.mob_ai_dispatch import MobAIDispatchMixin
 from app.engine.game.mob_ai_movement import MobAIMovementMixin
@@ -70,6 +54,8 @@ from app.engine.game.player_regen import PlayerRegenMixin
 from app.engine.game.tick import TickMixin
 from app.engine.game.vision import VisionMixin
 from app.engine.game.world import WorldInteractionMixin
+from app.engine.game.mob_death import MobDeathMixin
+from app.engine.game.npc_economy import NpcEconomyMixin
 from app.engine.game.artifacts import ArtifactsMixin
 from app.engine.game.duelist import DuelistMixin
 from app.engine.game.cleric import ClericMixin
@@ -81,28 +67,14 @@ class GameInstance(
     GenerationMixin,
     PlayersMixin,
     WorldInteractionMixin,
+    MobDeathMixin,
+    NpcEconomyMixin,
     MovementCombatMixin,
     ItemsMixin,
     AlchemyMixin,
     BombsMixin,
     PrisonBossMixin,
-    GooAIMixin,
-    EyeAIMixin,
-    DwarfKingAIMixin,
-    YogDzewaAIMixin,
-    DemonSpawnerAIMixin,
-    PylonAIMixin,
-    SentryAIMixin,
-    DM300AIMixin,
-    NecromancerAIMixin,
     TenguAIMixin,
-    MirrorImageMixin,
-    ShamanAIMixin,
-    WarlockAIMixin,
-    SpinnerAIMixin,
-    DM200AIMixin,
-    NewbornFireElementalAIMixin,
-    GuardAIMixin,
     PlayerTickMixin,
     MobAIDispatchMixin,
     MobAIMovementMixin,

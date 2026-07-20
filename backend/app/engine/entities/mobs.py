@@ -20,6 +20,7 @@ from pydantic import BaseModel, Field
 
 from app.engine.entities.base import Faction, Position
 from app.engine.entities.player import Mob as MobEntity, DropEntry, WeightedCountDrop
+from app.engine.game.constants import OOZE_DURATION
 
 if TYPE_CHECKING:
     from app.engine.entities.base import Entity
@@ -326,7 +327,6 @@ class Goo(MobEntity):
 
     def attack_proc(self, target: "Entity") -> None:
         # 1/3 chance to coat the target in caustic ooze (SPD Goo.attackProc).
-        from app.engine.game.constants import OOZE_DURATION
         if random.randint(0, 2) == 0:
             target.ooze_amount = OOZE_DURATION
 

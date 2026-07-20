@@ -7,7 +7,7 @@ rooms, live mobs/items, door/trap metadata and derived terrain flag maps.
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Tuple
 
-from app.engine.dungeon.generator import TrapInfo
+from app.engine.dungeon.models import TrapInfo
 from app.engine.dungeon.terrain_flags import FloorFlagMaps, build_flag_maps
 from app.engine.entities.player import Item, Mob as MobEntity
 

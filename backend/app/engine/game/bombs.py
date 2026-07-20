@@ -123,7 +123,7 @@ class BombsMixin:
 
     def _explosion_destroy(self, floor, floor_id: int, cells, chained: list) -> None:
         from app.engine.game.blobs import _BURN_RESULT  # underscore-private; repo precedent for cross-module reuse
-        from app.engine.dungeon.generator import TileType
+        from app.engine.dungeon.constants import TileType
         patches = []
         for (x, y) in cells:
             if floor.flags and floor.flags.flamable[y][x]:
@@ -315,7 +315,7 @@ class BombsMixin:
         # whose GRASS_TILES excludes plain floor.
         from app.engine.entities.base import Faction
         from app.engine.entities.player import Player
-        from app.engine.dungeon.generator import TileType
+        from app.engine.dungeon.constants import TileType
         from app.engine.game.terrain_effects import _plant_seed_at
 
         for ch in victims:

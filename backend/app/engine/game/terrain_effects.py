@@ -21,36 +21,7 @@ from app.engine.entities.base import Position, Entity
 from app.engine.entities.items_consumable import Berry, Dewdrop, Seed
 from app.engine.entities.player import Player
 from app.engine.game.floor_state import FloorState
-
-
-GRASS_TILES = {TileType.FLOOR_GRASS, TileType.EMPTY_DECO, TileType.EMBERS,
-               TileType.HIGH_GRASS, TileType.FURROWED_GRASS}
-
-
-def plant_grass(floor: FloorState, x: int, y: int, furrow: bool = False):
-    """Plant grass at (x,y). Sets FURROWED_GRASS if furrow=True and regen off,
-    else HIGH_GRASS. Only on empty/deco/embers/grass/furrowed tiles."""
-    from app.engine.dungeon.constants import TileType
-    if not (0 <= x < floor.width and 0 <= y < floor.height):
-        return
-    t = floor.grid[y][x]
-    if t not in GRASS_TILES:
-        return
-    if floor.plants and (x, y) in floor.plants:
-        return
-    if furrow:
-        floor.grid[y][x] = TileType.FURROWED_GRASS
-    else:
-        floor.grid[y][x] = TileType.HIGH_GRASS
-
-
-def _plant_seed_at(floor: FloorState, pos: Tuple[int, int], plant_type: str):
-    plant = {
-        "pos": pos,
-        "plant_type": plant_type,
-        "triggered": False,
-    }
-    floor.plants[pos] = plant
+from app.engine.game.terrain_primitives import GRASS_TILES, plant_grass, _plant_seed_at, _create_gas
 
 
 def _drop_seed(floor: FloorState, pos: Tuple[int, int]):
@@ -322,25 +293,6 @@ def _freeze_area(floor: FloorState, pos: Tuple[int, int]):
                 if tile == TileType.FLOOR_GRASS or tile == TileType.HIGH_GRASS or tile == TileType.FURROWED_GRASS:
                     floor.grid[ny][nx] = TileType.FLOOR
     floor.rebuild_flags()
-
-
-def _create_gas(floor: FloorState, pos: Tuple[int, int], strength: int, gas_type: str = "toxic_gas"):
-    blob_id = f"{gas_type}_{pos[0]}_{pos[1]}"
-    cells = set()
-    volume = {}
-    for dy in (-1, 0, 1):
-        for dx in (-1, 0, 1):
-            nx, ny = pos[0] + dx, pos[1] + dy
-            if 0 <= nx < floor.width and 0 <= ny < floor.height:
-                if floor.flags and not floor.flags.solid[ny][nx]:
-                    cells.add((nx, ny))
-                    volume[(nx, ny)] = strength
-    if cells:
-        for bid in list(floor.blob_areas.keys()):
-            b = floor.blob_areas[bid]
-            if b.get("type") == gas_type and b.get("cells", set()) & cells:
-                del floor.blob_areas[bid]
-        floor.blob_areas[blob_id] = {"type": gas_type, "cells": cells, "volume": volume}
 
 
 def _cure_debuffs(entity: Entity):

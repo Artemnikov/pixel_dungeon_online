@@ -9,8 +9,9 @@ from app.engine.entities.buffs import has_buff, get_buff
 from app.engine.entities.mobs import (
     BurningFist, SoiledFist, RottingFist, RustedFist, BrightFist, DarkFist,
 )
-from app.engine.dungeon.generator import TileType
+from app.engine.dungeon.constants import TileType
 from app.engine.game.floor_state import FloorState
+from app.engine.game.ai_yog_dzewa import _update_yog_fist
 from app.engine.manager import GameInstance
 
 
@@ -62,7 +63,7 @@ def test_burning_fist_zaps_at_range_with_los_and_sets_cooldown(monkeypatch):
     monkeypatch.setattr(random, "randint", lambda a, b: 10)
     monkeypatch.setattr(random, "uniform", lambda a, b: 9.0)
 
-    consumed = game._update_yog_fist(fist, floor, floor.floor_id)
+    consumed = _update_yog_fist(game, fist, floor, floor.floor_id)
 
     assert consumed is True
     assert fist.ranged_cooldown == 9.0
@@ -83,7 +84,7 @@ def test_burning_fist_melees_when_adjacent_and_on_cooldown(monkeypatch):
 
     monkeypatch.setattr(random, "random", lambda: 0.5)
 
-    consumed = game._update_yog_fist(fist, floor, floor.floor_id)
+    consumed = _update_yog_fist(game, fist, floor, floor.floor_id)
 
     # Adjacent + cooldown>0 -> let generic melee/chase AI handle it.
     assert consumed is False
@@ -109,7 +110,7 @@ def test_soiled_fist_zap_roots_on_hit(monkeypatch):
     monkeypatch.setattr(random, "random", lambda: next(rand_calls))
     monkeypatch.setattr(random, "uniform", lambda a, b: 9.0)
 
-    assert game._update_yog_fist(fist, floor, floor.floor_id) is True
+    assert _update_yog_fist(game, fist, floor, floor.floor_id) is True
     assert has_buff(target.buffs, "rooted")
     assert target.hp == 100  # no direct damage
 
@@ -131,7 +132,7 @@ def test_rotting_fist_zap_damage_and_ooze_chance(monkeypatch):
     monkeypatch.setattr(random, "randint", lambda a, b: 15)
     monkeypatch.setattr(random, "uniform", lambda a, b: 9.0)
 
-    assert game._update_yog_fist(fist, floor, floor.floor_id) is True
+    assert _update_yog_fist(game, fist, floor, floor.floor_id) is True
     assert target.hp == 85
     assert has_buff(target.buffs, "ooze")
 
@@ -151,7 +152,7 @@ def test_rusted_fist_zap_applies_cripple_no_damage(monkeypatch):
     monkeypatch.setattr(random, "random", lambda: next(rand_calls))
     monkeypatch.setattr(random, "uniform", lambda a, b: 9.0)
 
-    assert game._update_yog_fist(fist, floor, floor.floor_id) is True
+    assert _update_yog_fist(game, fist, floor, floor.floor_id) is True
     assert has_buff(target.buffs, "cripple")
     assert target.hp == 100
 
@@ -171,7 +172,7 @@ def test_bright_fist_zap_damages_and_blinds(monkeypatch):
     monkeypatch.setattr(random, "randint", lambda a, b: 15)
 
     # BrightFist always zaps when in LOS, regardless of distance/cooldown.
-    assert game._update_yog_fist(fist, floor, floor.floor_id) is True
+    assert _update_yog_fist(game, fist, floor, floor.floor_id) is True
     assert target.hp == 85
     assert has_buff(target.buffs, "blindness")
 
@@ -190,7 +191,7 @@ def test_dark_fist_zap_damages_and_blinds(monkeypatch):
     monkeypatch.setattr(random, "random", lambda: next(rand_calls))
     monkeypatch.setattr(random, "randint", lambda a, b: 12)
 
-    assert game._update_yog_fist(fist, floor, floor.floor_id) is True
+    assert _update_yog_fist(game, fist, floor, floor.floor_id) is True
     assert target.hp == 88
     assert has_buff(target.buffs, "blindness")
 
@@ -211,7 +212,7 @@ def test_burning_fist_zap_miss(monkeypatch):
     monkeypatch.setattr(random, "random", lambda: next(rand_calls))
     monkeypatch.setattr(random, "uniform", lambda a, b: 9.0)
 
-    assert game._update_yog_fist(fist, floor, floor.floor_id) is True
+    assert _update_yog_fist(game, fist, floor, floor.floor_id) is True
     assert target.hp == 100
     assert not has_buff(target.buffs, "burning")
     assert fist.ranged_cooldown == 9.0
@@ -237,7 +238,7 @@ def test_rusted_fist_defers_damage_and_releases_gradually(monkeypatch):
     monkeypatch.setattr(random, "random", lambda: 0.5)
     fist.ranged_cooldown = 0
 
-    game._update_yog_fist(fist, floor, floor.floor_id)
+    _update_yog_fist(game, fist, floor, floor.floor_id)
     assert fist.hp == 295  # 50 // 10 == 5 released
     assert fist.viscosity_stacks == 45
 
@@ -253,7 +254,7 @@ def test_rusted_fist_eventually_dies_from_released_viscosity(monkeypatch):
     fist.viscosity_stacks = 100  # release = 10 > hp
     monkeypatch.setattr(random, "random", lambda: 0.5)
 
-    game._update_yog_fist(fist, floor, floor.floor_id)
+    _update_yog_fist(game, fist, floor, floor.floor_id)
 
     assert fist.hp == 0
     assert fist.is_alive is False
@@ -281,7 +282,7 @@ def test_bright_fist_teleports_at_half_hp(monkeypatch):
     monkeypatch.setattr(random, "random", lambda: 0.9)  # subsequent hit-roll, if any
     monkeypatch.setattr(random, "choice", lambda seq: seq[0])
 
-    game._update_yog_fist(fist, floor, floor.floor_id)
+    _update_yog_fist(game, fist, floor, floor.floor_id)
 
     assert fist.pending_teleport is False
     assert (fist.pos.x, fist.pos.y) != (2, 2)

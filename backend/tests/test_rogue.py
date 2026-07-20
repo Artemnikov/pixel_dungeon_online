@@ -7,9 +7,10 @@ from app.engine.entities.player import Mob as MobEntity
 from app.engine.entities.subclasses import Subclass, Talent, ArmorAbilityType
 from app.engine.systems.combat import resolve_melee_attack
 from app.engine.game.rogue import (
-    prep_tier, prep_blink_range, prep_ko_threshold,
+    prep_tier, prep_blink_range,
     CLOAK_DRAIN_INTERVAL, CLOAK_RECHARGE_INTERVAL, MOMENTUM_DECAY_INTERVAL,
 )
+from app.engine.systems.rogue_prep import prep_ko_threshold
 
 
 def _level_up(game, player, level):

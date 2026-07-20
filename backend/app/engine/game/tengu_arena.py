@@ -25,8 +25,8 @@ from __future__ import annotations
 import uuid
 from typing import List, Optional, Tuple
 
-from app.engine.dungeon.constants import TrapType
-from app.engine.dungeon.generator import TileType, TrapInfo
+from app.engine.dungeon.constants import TileType, TrapType
+from app.engine.dungeon.models import TrapInfo
 from app.engine.dungeon.spd_levelgen import patch
 from app.engine.dungeon.spd_levelgen import prison_boss_layout as layout
 from app.engine.dungeon.spd_levelgen.geom import Point

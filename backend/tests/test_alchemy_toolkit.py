@@ -1,7 +1,7 @@
 """AlchemistsToolkit: charge-first brewing, exp charging, energize upgrades."""
 import pytest
 
-from app.engine.dungeon.generator import TileType
+from app.engine.dungeon.constants import TileType
 from app.engine.entities.items_artifacts import AlchemistsToolkit
 from app.engine.entities.items_consumable import GooBlob
 from app.engine.entities.items_potions import HealthPotion
