@@ -443,6 +443,20 @@ class MovementCombatMixin:
                 sheep_buff.remaining = 0
             return
 
+        # Push past an owned ally (Mirror Image / Ghost Hero) instead of
+        # being blocked -- without this, reading Mirror Image in a tight
+        # corridor could trap the hero behind their own clones for good,
+        # since same-faction bumps don't attack and nothing else moves them.
+        if (
+            isinstance(entity, Player)
+            and isinstance(target_entity, MobEntity)
+            and entity.faction == target_entity.faction
+            and getattr(target_entity, "owner_id", None) == entity.id
+        ):
+            entity.pos, target_entity.pos = target_entity.pos, entity.pos
+            self.add_event("MOVE", {"entity": entity.id, "x": entity.pos.x, "y": entity.pos.y}, floor_id=floor_id)
+            return
+
         if isinstance(entity, Player) and isinstance(target_entity, Shopkeeper):
             self.npc_interact(entity.id, target_entity.id)
             return
