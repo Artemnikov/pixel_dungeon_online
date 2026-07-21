@@ -835,6 +835,33 @@ def test_refresh_mirror_image_stats_removes_clone_when_owner_left_floor():
     assert len(death_events) == 1
 
 
+def test_bumping_into_own_mirror_image_swaps_places_instead_of_blocking():
+    # A hero reading the scroll in a dead-end corridor must be able to push
+    # past their own clone rather than getting trapped behind it.
+    g = GameInstance("t")
+    p = _player(g)
+    floor = g._get_or_create_floor(p.floor_id)
+
+    clone = MirrorImage(id="mi_swap", pos=Position(x=p.pos.x + 1, y=p.pos.y))
+    clone.owner_id = p.id
+    floor.mobs[clone.id] = clone
+
+    player_start = Position(x=p.pos.x, y=p.pos.y)
+    clone_start = Position(x=clone.pos.x, y=clone.pos.y)
+
+    g.move_entity(p.id, 1, 0)
+
+    assert (p.pos.x, p.pos.y) == (clone_start.x, clone_start.y)
+    assert (clone.pos.x, clone.pos.y) == (player_start.x, player_start.y)
+    assert clone.is_alive is True
+    assert clone.hp == 1
+
+    move_events = [e for e in g.events if e["type"] == "MOVE" and e["data"]["entity"] == p.id]
+    assert len(move_events) == 1
+    assert move_events[0]["data"]["x"] == clone_start.x
+    assert move_events[0]["data"]["y"] == clone_start.y
+
+
 def test_scroll_of_magic_mapping_marks_floor_mapped_and_consumes_scroll():
     g = GameInstance("t")
     p = _player(g)
