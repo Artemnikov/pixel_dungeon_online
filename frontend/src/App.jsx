@@ -156,6 +156,8 @@ function App() {
   const [exitPos, setExitPos] = useState(null);
   const [scoreBreakdown, setScoreBreakdown] = useState(null);
   const [canResurrect, setCanResurrect] = useState(false);
+  const [hasAnkh, setHasAnkh] = useState(false);
+  const [keptItems, setKeptItems] = useState([]);
   const [isVictory, setIsVictory] = useState(false);
   const [respawnsUsed, setRespawnsUsed] = useState(0);
   const [maxRespawns, setMaxRespawns] = useState(3);
@@ -352,6 +354,8 @@ function App() {
     onPlayerDeath: (data) => {
       setScoreBreakdown(data.score_breakdown || null);
       setCanResurrect(!!data.can_resurrect);
+      setHasAnkh(!!data.has_ankh);
+      setKeptItems([]);
       setIsVictory(!!data.victory);
       setRespawnsUsed(data.respawns_used ?? 0);
       setMaxRespawns(data.max_respawns ?? 3);
@@ -950,6 +954,7 @@ function App() {
           strength={myStats.strength}
           isDesktop={isDesktop}
           depth={depth}
+          guidePages={myStats.guidePages || []}
           executeItemAction={executeItemAction}
           assignQuickslot={assignQuickslot}
           sendSelectScrollTarget={sendSelectScrollTarget}
@@ -981,6 +986,7 @@ function App() {
           classType={myStats.classType}
           level={myStats.level}
           depth={depth}
+          guidePages={myStats.guidePages || []}
           gold={gold}
           subclass={myStats.subclass}
           armorAbility={myStats.armorAbility}
@@ -990,12 +996,31 @@ function App() {
           selectedClass={selectedClass}
           scoreBreakdown={scoreBreakdown}
           canResurrect={canResurrect}
+          hasAnkh={hasAnkh}
+          keptItems={keptItems}
+          onToggleItem={(itemId) => setKeptItems(prev =>
+            prev.includes(itemId) ? prev.filter(id => id !== itemId) : [...prev, itemId].slice(0, 2)
+          )}
           isVictory={isVictory}
           respawnsUsed={respawnsUsed}
           maxRespawns={maxRespawns}
           lootDropped={lootDropped}
           deathCause={deathCause}
-          onResurrect={() => send({ type: 'RESURRECT' })}
+          onResurrect={() => {
+            if (hasAnkh && keptItems.length === 2) {
+              send({ type: 'ANKH_CHOICE', kept_item_ids: keptItems });
+            } else if (hasAnkh) {
+              // Auto-select first 2 items if none selected
+              const autoSelect = inventory
+                .filter(item => item.kind !== 'ankh' && item.kind !== 'lost_backpack' && !item.is_bag)
+                .slice(0, 2)
+                .map(i => i.id);
+              if (autoSelect.length === 2) {
+                send({ type: 'ANKH_CHOICE', kept_item_ids: autoSelect });
+              }
+            }
+          }}
+          onAnkhChoice={(ids) => send({ type: 'ANKH_CHOICE', kept_item_ids: ids })}
           onNewGame={() => { clearResumeBundle(); resetForRestart(); setGameState('SELECT'); }}
           onMenu={() => { clearResumeBundle(); resetForRestart(); setGameState('WELCOME'); }}
           challenges={challenges}

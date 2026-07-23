@@ -217,18 +217,7 @@ export default function StatusPane({ myStats, depth, exitPos, isAdmin, onSearch,
           ctx.restore();
         }
 
-        // --- CircleArc (action timer around avatar) ---
         const nowSec = performance.now() / 1000;
-        const sweep = 1 - (nowSec % 1);
-        ctx.save();
-        ctx.strokeStyle = '#808080';
-        ctx.lineWidth = 4.25 * SCALE / 3;
-        ctx.translate((9 + FRAME_W / 2) * SCALE, (8 + FRAME_H / 2) * SCALE);
-        ctx.rotate(-Math.PI / 2);
-        ctx.beginPath();
-        ctx.arc(0, 0, 18 * SCALE / 3, 0, Math.PI * 2 * sweep);
-        ctx.stroke();
-        ctx.restore();
 
         // --- BusyIndicator (rotating dots around center when busy) ---
         if (isBusy) {

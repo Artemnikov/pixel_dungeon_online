@@ -27,7 +27,7 @@ from app.engine.dungeon.constants import TileType
 from app.engine.entities.base import Faction, Position, is_immune
 from app.engine.entities.item_union import Chest
 from app.engine.entities.items_bombs import Bomb
-from app.engine.entities.items_consumable import Amulet, CorpseDust, Dewdrop, EnergyCrystal, Gold, Key, Throwable, Waterskin
+from app.engine.entities.items_consumable import Amulet, CorpseDust, Dewdrop, EnergyCrystal, Gold, Key, LostBackpack, Throwable, Waterskin
 from app.engine.entities.items_equip import Bow, MissileWeapon, SpiritBow, Staff
 from app.engine.entities.items_potions import RevivingPotion
 from app.engine.entities.items_wands import Wand, ZapContext
@@ -698,6 +698,17 @@ class MovementCombatMixin:
                 continue
             if isinstance(item, Dewdrop):
                 self._pickup_dewdrop(entity, floor, floor_id, i_id, item)
+                continue
+            if isinstance(item, LostBackpack):
+                if item.owner_id == entity.id:
+                    for stored in item.stored_items:
+                        entity.add_to_inventory(stored)
+                    del floor.items[i_id]
+                    self.add_event("PICKUP", {
+                        "player": entity.id, "item": "Lost Backpack",
+                        "x": entity.pos.x, "y": entity.pos.y,
+                        "item_type": "lost_backpack",
+                    }, floor_id=floor_id)
                 continue
             if isinstance(item, Key):
                 entity.add_key(item.key_id, floor_id, item.name)

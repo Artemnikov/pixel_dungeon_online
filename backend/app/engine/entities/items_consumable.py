@@ -40,7 +40,7 @@ class Food(ItemBase):
     type: str = "food"
     category: ClassVar[str] = ItemCategory.FOOD
     stackable: ClassVar[bool] = True
-    energy: int = 0
+    energy: int = 300  # Hunger.HUNGRY
     DESC: ClassVar[str] = "Edible provisions. Eat it to stave off hunger."
 
     def default_action(self) -> Optional[str]:
@@ -209,6 +209,7 @@ class Seed(ItemBase):
 class MysteryMeat(Food):
     kind: Literal["mystery_meat"] = "mystery_meat"
     name: str = "Mystery Meat"
+    energy: int = 150  # Hunger.HUNGRY / 2
     DESC: ClassVar[str] = "Raw meat from a defeated creature. Eat it to restore some health — if you dare."
 
 
@@ -310,15 +311,29 @@ class Pasty(Food):
 class ChargrilledMeat(Food):
     kind: Literal["chargrilled_meat"] = "chargrilled_meat"
     name: str = "Chargrilled Meat"
-    energy: int = 300
+    energy: int = 150  # Hunger.HUNGRY / 2
     DESC: ClassVar[str] = "Properly cooked mystery meat. Smells delicious."
 
 
 class FrozenCarpaccio(Food):
     kind: Literal["frozen_carpaccio"] = "frozen_carpaccio"
     name: str = "Frozen Carpaccio"
-    energy: int = 300
+    energy: int = 150  # Hunger.HUNGRY / 2
     DESC: ClassVar[str] = "Raw meat that has been frozen solid. Can be defrosted by cooking it."
+
+
+class PhantomMeat(Food):
+    kind: Literal["phantom_meat"] = "phantom_meat"
+    name: str = "Phantom Meat"
+    energy: int = 450  # Hunger.STARVING
+    DESC: ClassVar[str] = "Spectral meat from a phantom creature. It fills you with an otherworldly nourishment."
+
+
+class SupplyRation(Food):
+    kind: Literal["supply_ration"] = "supply_ration"
+    name: str = "Supply Ration"
+    energy: int = 200  # 2 * Hunger.HUNGRY / 3
+    DESC: ClassVar[str] = "A military-issue ration. Compact but nutritious, and comes with a bit of healing."
 
 
 class StewedMeat(Food):
@@ -386,10 +401,85 @@ class DwarfToken(ItemBase):
     # Imp quest reward token (SPD items.quest.DwarfToken): stackable, always
     # identified, dropped by Golems/Monks once the quest is given. Not sellable.
     kind: Literal["dwarf_token"] = "dwarf_token"
-    name: str = "Dwarf token"
+    name: str = "Dwarf Token"
     type: str = "misc"
     category: ClassVar[str] = ItemCategory.MISC
     stackable: ClassVar[bool] = True
     level_known: bool = True
     cursed_known: bool = True
     DESC: ClassVar[str] = "A small clay token, traded by dwarves of the Imp's homeland."
+
+
+class Ankh(ItemBase):
+    # Resurrection item (SPD items.Ankh): auto-triggers on death. Blessed
+    # variant requires full Waterskin and grants instant revive at 25% HP
+    # (Easy: 75%) with all items preserved. Unblessed lets the player pick
+    # 2 items to keep; rest goes into a LostBackpack on the ground.
+    kind: Literal["ankh"] = "ankh"
+    name: str = "Ankh"
+    type: str = "ankh"
+    category: ClassVar[str] = ItemCategory.MISC
+    stackable: ClassVar[bool] = False
+    unique: bool = True
+    cursed_known: bool = True
+    level_known: bool = True
+    blessed: bool = False
+    # bones=True: can appear as cross-run remains (SPD Ankh.bones=true)
+    bones: bool = True
+    DESC: ClassVar[str] = (
+        "An ancient artifact of resurrection. When you die, this will "
+        "bring you back to life. It can be blessed using a full waterskin, "
+        "which will preserve all of your items on resurrection."
+    )
+    DESC_BLESSED: ClassVar[str] = (
+        "An ancient artifact of resurrection, blessed with sacred waters. "
+        "When you die, it will restore you to life with all of your items intact."
+    )
+
+    def actions(self, player: Optional["Player"] = None) -> List[str]:
+        base = super().actions(player)
+        if not self.blessed and player is not None:
+            for item in player.belongings.all_items():
+                if isinstance(item, Waterskin) and item.is_full():
+                    return [Action.BLESS] + base
+        return base
+
+    def default_action(self) -> Optional[str]:
+        return None
+
+    def description(self, player: Optional["Player"] = None) -> str:
+        if self.blessed:
+            return self.DESC_BLESSED
+        return self.DESC
+
+    def value(self, identified: bool = False) -> int:
+        return 50 * self.quantity
+
+
+class LostBackpack(ItemBase):
+    # Drop container placed at death position when player resurrects via
+    # unblessed ankh. Contains all items not chosen by the player. Only
+    # the owning player can pick it up.
+    kind: Literal["lost_backpack"] = "lost_backpack"
+    name: str = "Lost Backpack"
+    type: str = "lost_backpack"
+    category: ClassVar[str] = ItemCategory.MISC
+    unique: bool = True
+    cursed_known: bool = True
+    level_known: bool = True
+    # Items stored inside the backpack (serialized on the wire).
+    stored_items: List["AnyItem"] = Field(default_factory=list)
+    # Only this player can pick up the backpack.
+    owner_id: str = ""
+    DESC: ClassVar[str] = (
+        "Your lost belongings. Step on them to recover everything."
+    )
+
+    def actions(self, player: Optional["Player"] = None) -> List[str]:
+        return []
+
+    def default_action(self) -> Optional[str]:
+        return None
+
+    def value(self, identified: bool = False) -> int:
+        return 0

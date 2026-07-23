@@ -285,7 +285,7 @@ AnyItem = Annotated[
         MysteryMeat, FrozenCarpaccio, StewedMeat, MeatPie, Berry, SmallRation, Ration, Pasty, ChargrilledMeat, Food,
         Key,
         TenguMask, KingsCrown,
-        Seed, Dewdrop, Waterskin, Amulet, Stone, Boomerang, ThrowableDagger, Throwable,
+        Seed, Dewdrop, Waterskin, Amulet, Ankh, LostBackpack, Stone, Boomerang, ThrowableDagger, Throwable,
         EnergyCrystal,
         Bomb, Firebomb, FrostBomb, SmokeBomb, FlashBangBomb, HolyBomb,
         RegrowthBomb, WoollyBomb, Noisemaker, ArcaneBomb, ShrapnelBomb,
@@ -305,6 +305,9 @@ AnyItem = Annotated[
     ],
     Field(discriminator="kind"),
 ]
+
+
+LostBackpack.model_rebuild()
 
 
 # --- quickslots ------------------------------------------------------------

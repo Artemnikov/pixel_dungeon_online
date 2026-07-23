@@ -146,6 +146,7 @@ export const ITEM_SPRITES = {
   "Scroll Holder":    [3, 30],  // HOLDER
   "Potion Bandolier": [4, 30],  // BANDOLIER
   "Magical Holster":  [5, 30],  // HOLSTER
+  "Lost Backpack":    [1, 30],  // BACKPACK (same sprite as Bag; BAGS+1)
 
   // Consumables (generic first entry of each section)
   "Metamorphosis":    [5, 19],  // SCROLL_METAMORPH (SCROLLS+5 = idx 309)
@@ -179,6 +180,8 @@ export const ITEM_SPRITES = {
   "ceremonial candle":  [2, 29], // CANDLE (QUEST+2)
   "smoldering embers":  [3, 29], // EMBER (QUEST+3)
   "seed of the rotberry": [0, 24], // SEED_ROTBERRY (SEEDS+0)
+  "Ankh":             [0, 3],   // ANKH (MISC_CONSUMABLE+0 = idx 48)
+  "Dwarf Token":      [14, 29], // TOKEN (QUEST+6 = idx 470)
   "King's Crown":     [12, 3],  // CROWN (MISC_CONSUMABLE+12 = idx 60 = col 12, row 3)
   "Crystal Chest":    [6, 2],   // CRYSTAL_CHEST (CONTAINER+2 = idx 38) — before "Chest"
   "Locked Chest":     [5, 2],   // LOCKED_CHEST (CONTAINER+1 = idx 37) — before "Chest"
@@ -198,6 +201,15 @@ export const ITEM_SPRITES = {
   "Energy Crystal":   [3, 1],   // ENERGY (UNCOLLECTIBLE+1 = idx 19)
   "Stewed Meat":      [2, 27],  // STEWED (FOOD+2 = idx 434)
   "Meat Pie":         [7, 27],  // MEAT_PIE (FOOD+7 = idx 439)
+  "Mystery Meat":     [0, 27],  // MEAT (FOOD+0)
+  "Phantom Meat":     [11, 27], // PHANTOM_MEAT (FOOD+11)
+  "Chargrilled Meat": [1, 27],  // STEAK (FOOD+1)
+  "Frozen Carpaccio": [4, 27],  // CARPACCIO (FOOD+4)
+  "Small Ration":     [3, 27],  // OVERPRICED (FOOD+3)
+  "Ration":           [5, 27],  // RATION (FOOD+5)
+  "Pasty":            [6, 27],  // PASTY (FOOD+6)
+  "Supply Ration":    [12, 27], // SUPPLY_RATION (FOOD+12)
+  "Berry":            [10, 27], // BERRY (FOOD+10)
 
   // Trinkets (TRINKETS section = xy(1,18) → [0,17], 17 trinkets + 1 catalyst)
   "Trinket Catalyst": [6, 4],   // TRINKET_CATA = MISC_CONSUMABLE+22 = [6,4]
@@ -259,6 +271,14 @@ export const getItemSpriteCoords = (itemName, itemType) => {
   if (itemType === 'runestone') return [0, 21];
   if (itemType === 'dewdrop')   return [5, 1];   // DEWDROP
   if (itemType === 'grave')     return [0, 2];   // BONES
+  if (itemType === 'ankh')      return [0, 3];   // ANKH (MISC_CONSUMABLE+0)
+  if (itemType === 'lost_backpack') return [1, 30]; // BACKPACK (BAGS+1)
+  if (itemType === 'bomb')      return [0, 5];   // BOMB (generic)
+  if (itemType === 'waterskin') return [0, 30];  // WATERSKIN (BAGS+0)
+  if (itemType === 'amulet')    return [14, 4];  // AMULET (MISC_CONSUMABLE+13)
+  if (itemType === 'energy_crystal') return [3, 1]; // ENERGY (UNCOLLECTIBLE+1)
+  if (itemType === 'bag')       return [1, 30];  // BACKPACK (BAGS+1)
+  if (itemType === 'chest')     return [4, 2];   // CHEST (CONTAINER+0)
   return ITEM_SPRITES["default"];
 };
 
@@ -280,6 +300,9 @@ const PLACEHOLDER_TYPE_BY_KIND_PREFIX = [
   ['chargrilled_meat', 'food'],
   ['stewed_meat', 'food'],
   ['meat_pie', 'food'],
+  ['phantom_meat', 'food'],
+  ['supply_ration', 'food'],
+  ['frozen_carpaccio', 'food'],
   ['dewdrop', 'dewdrop'],
   ['gold', 'gold'],
   ['wand', 'wand'],
@@ -427,6 +450,15 @@ const KIND_COORDS = {
   'energy_crystal':       [3, 1],
   'stewed_meat':          [2, 27],
   'meat_pie':             [7, 27],
+  'mystery_meat':         [0, 27],
+  'phantom_meat':         [11, 27],
+  'chargrilled_meat':     [1, 27],
+  'frozen_carpaccio':     [4, 27],
+  'small_ration':         [3, 27],
+  'ration':               [5, 27],
+  'pasty':                [6, 27],
+  'supply_ration':        [12, 27],
+  'berry':                [10, 27],
 };
 
 export function coordsForKind(kind) {

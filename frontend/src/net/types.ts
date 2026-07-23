@@ -117,6 +117,7 @@ export interface MyStats {
   bonusTalentPoints?: Record<string, number>;
   pos?: { x: number; y: number } | null;
   keys?: Player['keys'];
+  guidePages?: string[];
   respawnsUsed?: number;
 }
 
@@ -218,7 +219,7 @@ export interface HookProps {
     weapon?: Record<string, unknown> | null; armor?: Record<string, unknown> | null;
   }) => void;
   onBossSlain?: (data: { mob: string; depth: number; badge_image: number }) => void;
-  onPlayerDeath?: (data: { score_breakdown?: { kills: number; floors: number; gold: number }; can_resurrect?: boolean; victory?: boolean; respawns_used?: number; max_respawns?: number; loot_dropped?: boolean; death_cause?: string }) => void;
+  onPlayerDeath?: (data: { score_breakdown?: { kills: number; floors: number; gold: number }; can_resurrect?: boolean; has_ankh?: boolean; victory?: boolean; respawns_used?: number; max_respawns?: number; loot_dropped?: boolean; death_cause?: string }) => void;
   onAlchemyPreviewResult?: (data: AlchemyPreviewResultEvent['data']) => void;
   onAlchemyBrewed?: (data: AlchemyBrewedEvent['data']) => void;
   onAlchemyEnergized?: (data: AlchemyEnergizedEvent['data']) => void;

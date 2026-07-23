@@ -519,10 +519,83 @@ class TalentsMixin:
     # Talent effect callbacks — called from item_actions, combat, tick
     # ------------------------------------------------------------------
 
+    _CURE_DEBUFFS = (
+        "poison", "blindness", "bleeding", "weakness",
+        "slow", "cripple", "burning", "chill", "frost",
+    )
+
+    def _apply_food_effects(self, player: Player, food_item) -> None:
+        """Apply food-specific on-eat effects (SPD Food.satisfy overrides).
+
+        Called from on_food_eaten after hunger satisfaction, before talent
+        callbacks.  Each food kind maps to its intrinsic effect; foods with
+        no special effect are no-ops.
+        """
+        kind = getattr(food_item, "kind", "")
+
+        if kind == "mystery_meat":
+            roll = random.randint(0, 4)
+            if roll == 0:
+                add_buff(player.buffs, "burning", duration=10.0)
+            elif roll == 1:
+                add_buff(player.buffs, "roots", duration=10.0, stack_mode="extend")
+            elif roll == 2:
+                poison_dmg = max(1, player.get_total_max_hp() // 5)
+                add_buff(player.buffs, "poison", duration=float(poison_dmg), level=1)
+            elif roll == 3:
+                add_buff(player.buffs, "slow", duration=10.0)
+
+        elif kind == "frozen_carpaccio":
+            roll = random.randint(0, 4)
+            if roll == 0:
+                add_buff(player.buffs, "invisibility", duration=20.0)
+            elif roll == 1:
+                armor = max(1, player.get_total_max_hp() // 4)
+                add_buff(player.buffs, "barkskin", duration=6.0, level=armor)
+            elif roll == 2:
+                for debuff in self._CURE_DEBUFFS:
+                    remove_buff(player.buffs, debuff)
+            elif roll == 3:
+                heal = max(1, player.get_total_max_hp() // 4)
+                player.hp = min(player.get_total_max_hp(), player.hp + heal)
+
+        elif kind == "phantom_meat":
+            # All four FrozenCarpaccio buffs simultaneously (SPD PhantomMeat.effect)
+            armor = max(1, player.get_total_max_hp() // 4)
+            add_buff(player.buffs, "barkskin", duration=6.0, level=armor)
+            add_buff(player.buffs, "invisibility", duration=20.0)
+            heal = max(1, player.get_total_max_hp() // 4)
+            player.hp = min(player.get_total_max_hp(), player.hp + heal)
+            for debuff in self._CURE_DEBUFFS:
+                remove_buff(player.buffs, debuff)
+
+        elif kind == "meat_pie":
+            add_buff(player.buffs, "well_fed", duration=50.0, level=1)
+
+        elif kind == "supply_ration":
+            heal = min(5, player.get_total_max_hp() - player.hp)
+            if heal > 0:
+                player.hp += heal
+            cloak = player.belongings.artifact
+            if cloak is not None and getattr(cloak, "kind", "") == "cloak_of_shadows":
+                cloak.charge = min(cloak.charge_cap, cloak.charge + 1)
+
+        elif kind == "berry":
+            # SeedCounter: every 2 berries eaten drops a random seed on the floor
+            counter = add_buff(player.buffs, "seed_counter", duration=99999.0,
+                               level=1, stack_mode="stack")
+            if counter.level >= 2:
+                remove_buff(player.buffs, "seed_counter")
+                floor = self._get_or_create_floor(player.floor_id)
+                from app.engine.game.terrain_effects import _drop_seed
+                _drop_seed(floor, (player.pos.x, player.pos.y))
+
     def on_food_eaten(self, player: Player, food_item) -> None:
         energy = getattr(food_item, "energy", 0)
         if energy > 0:
             player.hunger = max(0.0, player.hunger - energy)
+
+        self._apply_food_effects(player, food_item)
 
         ti = player.subclass_info.talent_info
 

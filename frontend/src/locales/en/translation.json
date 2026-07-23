@@ -929,31 +929,82 @@
     "noMatch": "No items match \"{{query}}\""
   },
   "guide": {
-    "title": "Getting Started",
-    "body1": "Pick a class from the hero select screen, optionally set a difficulty and name, then enter the dungeon.",
-    "body2": "Click a tile to walk there. Click an adjacent enemy to attack it.",
-    "body3": "Your goal is to descend as deep as you can — find the stairs down on each floor.",
-    "combatTitle": "Combat & Items",
-    "combat1": "Equip weapons and armor from your inventory; ranged weapons enter a targeting mode — click a tile to fire.",
-    "combat2": "Drink potions and use items from the toolbar at the bottom of the screen.",
-    "combat3": "Watch your health: it regenerates slowly over time, and a low-health warning will sound.",
-    "classesTitle": "Classes",
-    "classes1": "Warrior — sturdy melee fighter, starts with a shortsword and cloth armor.",
-    "classes2": "Mage — wields a magic staff with limited charges.",
-    "classes3": "Rogue — agile, starts with a dagger and cloak.",
-    "classes4": "Archer — ranged specialist with a spirit bow.",
-    "multiplayerTitle": "Multiplayer",
-    "multiplayer1": "The dungeon is shared in real time over WebSocket — other players appear on your floor.",
-    "multiplayer2": "If you fall, you can start a new run or return to the main menu from the game-over screen."
+    "title": "Tome of Dungeon Mastery",
+    "missing": "Missing",
+    "pages": {
+      "Intro": {
+        "title": "Introduction",
+        "body": "Greetings Adventurer, you are reading the Tome of Dungeon Mastery! This guidebook is best used as a reference, and will magically let you know when it's best to read each page.\n\n(When the journal button flashes, select it to read what the guidebook has to tell you! Some pages are missing though, perhaps you can find them in the dungeon?)"
+      },
+      "Examining": {
+        "title": "Examining",
+        "body": "It's important to study your enemies and surroundings instead of rushing in blindly! Get in the habit of examining everything new.\n\n(You can examine by using the magnifying glass button and then selecting what you want to examine. You can also examine buffs or debuffs by selecting their icons.)"
+      },
+      "Surprise_Attacks": {
+        "title": "Surprise Attacks",
+        "body": "Surprise attacks are guaranteed to hit, making them especially useful against evasive enemies like snakes and wraiths.\n\nYou can surprise enemies right after they enter a doorway while chasing you, or when they otherwise lose sight of you."
+      },
+      "Identifying": {
+        "title": "Identifying Items",
+        "body": "The colors of potions and symbols on scrolls are different in each dungeon. Unidentified equipment can be upgraded or enchanted if you're lucky, or it might be cursed!\n\nScrolls of identify, upgrade, or remove curse are very useful if you want to reduce the risk of using unidentified equipment.\n\n(You can find a list of all the items you've identified in the catalog tab of your journal)"
+      },
+      "Food": {
+        "title": "Dealing with Hunger",
+        "body": "Rationing effectively is one of the best ways to improve your odds of survival, you don't always need to eat right when you get hungry!\n\nWhen you aren't starving you will slowly regenerate health, so if you eat at full health that regeneration will be wasted!\n\nIf you pace out when you eat based on your health, your food will last much longer."
+      },
+      "Alchemy": {
+        "title": "Alchemy & Trinkets",
+        "body": "If you don't find a consumable item useful, you can use it as an alchemy ingredient or turn it into all-purpose alchemical energy. Energizing potions and scrolls also identifies them!\n\nTrinkets are a unique kind of equipment that are created and upgraded using alchemy. They're made with a magical trinket catalyst and a bit of alchemical energy.\n\n(The first alchemy pot is on the 3rd or 4th floor of the dungeon. There are alchemy recipe book pages near these pots as well.)"
+      },
+      "Dieing": {
+        "title": "Handling Defeat",
+        "body": "Dungeoneering is dangerous and most adventurers eventually meet their demise.\n\nLuck helps, but the best adventurers use every little trick to improve their chances.\n\n(Don't be upset if you are dying a lot, this game is hard! Focus on learning the game and steadily improving, not on winning right away.)"
+      },
+      "Searching": {
+        "title": "Searching",
+        "body": "Dungeons are full of secret doors and traps that appear invisible at first glance. You can spend some time and carefully search if you suspect a door or trap is hidden nearby.\n\n(You can search all the tiles around you by using the magnifying glass button twice. Maybe there are some hidden doors near where you found this page!)"
+      },
+      "Strength": {
+        "title": "Strength",
+        "body": "There isn't time to train with weapons and armor you find in the dungeon, so you'll need brute strength to use them effectively.\n\nPotions of strength and scrolls of upgrade are the most effective way to meet the strength requirements of higher tier gear.\n\nIt's important to eventually start using high tier items, but don't ignore equipment you can use right now."
+      },
+      "Upgrades": {
+        "title": "Upgrades",
+        "body": "The deeper you go into a dungeon, the more important it is that you're using magically upgraded high tier gear, but you'll also need the strength to use them properly.\n\nWands, rings, and artifacts don't need strength, but have limited usages or don't help as directly in combat.\n\nMaking good choices about what you upgrade is very important for surviving early in the dungeon, and for setting yourself up for success later in the dungeon."
+      },
+      "Looting": {
+        "title": "Effective Looting",
+        "body": "Rooms that are behind locked doors or that contain obstacles usually have better loot. When an obstacle blocks your path, you can usually find an item to help on the same floor.\n\nYou will always be able to find 2 potions of strength and 3 scrolls of upgrade in each five floor dungeon region, so they're a great indicator of how well you're exploring.\n\n(You can see a list of landmarks and unused keys in the notes tab of the journal window.)"
+      },
+      "Levelling": {
+        "title": "Gaining Experience",
+        "body": "Levelling up boosts your stats and awards talent points, which can make a big difference in combat. It's best to have at least one level for each floor of the dungeon.\n\nIt can be tempting to rush and avoiding exploration or combat, but doing so will deprive you of supplies and experience.\n\n(You can see information about your hero, including exp, on the status pane at the corner of the game interface. Select your hero portrait to get even more info.)"
+      },
+      "Positioning": {
+        "title": "Positioning",
+        "body": "Strategy is just as important as equipment. Bad situations like getting surrounded can usually be avoided with good positioning.\n\nFor instance, most dungeons have thin corridors which force enemies to fight you one at a time. These corridors often have doorways for surprise attacks too!\n\nThere are lots of little ways to use environment features like grass, water, pits, or traps to your advantage as well."
+      },
+      "Magic": {
+        "title": "Magical Attacks",
+        "body": "Magical attacks cut right through armor and are difficult to dodge. This means that damage from wands is very reliable, but also makes magical enemies very dangerous!\n\nMagical attacks always have a drawback though. Wands have limited charges and magical enemies usually won't be able to use their magic in close range.\n\nWhen facing enemies that use magic it is important to learn how to prevent them from using it on you."
+      }
+    }
   },
   "changelog": {
-    "title": "v0.9.0",
-    "titleName": "Public Room Replenishment & Chat",
-    "changes0": "Public room keeps repopulating: floor items respawn in waves on empty tiles (base 2 + 1 per active player, roughly every 5s) so late joiners can still find loot, and defeated bosses come back after a ~30s cooldown so new players get a shot at the fight; looted chests respawn too (~20s).",
-    "changes1": "Mob respawns are now blocked on every boss floor (5, 10, 15, 20, 25), not just floor 1; the public room's regular mob respawn timer also runs 25% faster than solo/private games.",
-    "changes2": "Chat now shows join/leave messages (\"X joined the game.\" / \"X left the game.\") and boss-kill announcements in the public room.",
-    "changes3": "Fixed the ghost sewer quest's tense music continuing to play after the quest boss died; it now cuts back to the ambient track immediately instead of waiting for the reward to be claimed.",
-    "changes4": "Rendering fixes: Sentry mobs now draw their sprite, the Statue floor prop no longer looks cropped/floating (wrong atlas offset), the floor picker dropdown opens downward instead of off-screen upward, and the boss-slain banner/badge moved higher so it doesn't sit on top of the HUD.",
+    "title": "v0.10.0",
+    "titleName": "Ankh Resurrection & Adventurer's Guide",
+    "changes0": "Ankh resurrection system replaces difficulty-based respawns: find Ankhs in the dungeon to cheat death. Blessed Ankhs (use a full Waterskin on one) instantly revive you with all items preserved — 75% HP on Easy, 25% on Normal/Hard. Unblessed Ankhs let you choose 2 items to keep; the rest drop in a LostBackpack you can recover later.",
+    "changes1": "Adventurer's Guide pages are discovered progressively on first floor visits and via Guide Page floor items. 14 pages covering combat, looting, alchemy, positioning and more — read them in the journal to learn SPD's core mechanics.",
+    "changes2": "New food items: Phantom Meat (spectral, fills Hunger.STARVING) and Supply Ration (military-issue, compact but nutritious). Food energy values corrected to match SPD: base Ration=300, cooked meat=150, Mystery Meat=150.",
+    "changes3": "Death screen reworked: when you have an unblessed Ankh, the death screen now shows an item picker where you select 2 items to keep. The Ankh is consumed and a LostBackpack appears at your death location with the remaining gear.",
+    "changes4": "Shop rooms now stock 19 items (up from 18). New sprites added for Ankh, Lost Backpack, Dwarf Token, and all food variants. Guide panel completely rewritten with paginated SPD-style content.",
+    "v090": "v0.9.0",
+    "v090Name": "Public Room Replenishment & Chat",
+    "v0900": "Public room keeps repopulating: floor items respawn in waves on empty tiles (base 2 + 1 per active player, roughly every 5s) so late joiners can still find loot, and defeated bosses come back after a ~30s cooldown so new players get a shot at the fight; looted chests respawn too (~20s).",
+    "v0901": "Mob respawns are now blocked on every boss floor (5, 10, 15, 20, 25), not just floor 1; the public room's regular mob respawn timer also runs 25% faster than solo/private games.",
+    "v0902": "Chat now shows join/leave messages (\"X joined the game.\" / \"X left the game.\") and boss-kill announcements in the public room.",
+    "v0903": "Fixed the ghost sewer quest's tense music continuing to play after the quest boss died; it now cuts back to the ambient track immediately instead of waiting for the reward to be claimed.",
+    "v0904": "Rendering fixes: Sentry mobs now draw their sprite, the Statue floor prop no longer looks cropped/floating (wrong atlas offset), the floor picker dropdown opens downward instead of off-screen upward, and the boss-slain banner/badge moved higher so it doesn't sit on top of the HUD.",
     "v082": "v0.8.2",
     "v082Name": "Room Selection, Shop & Mimic Fixes",
     "v0820": "Fixed equipped-armor rendering on other players: the correct sprite-sheet row is now picked from the item's armor tier, and a row-height bug (16px vs the actual 15px stride) that misaligned the sprite is fixed.",

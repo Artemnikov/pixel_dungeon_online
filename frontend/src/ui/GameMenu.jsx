@@ -4,7 +4,7 @@ import SettingsPanel from '../menu/SettingsPanel';
 import WndJournal from './WndJournal';
 import WndChallenges from './WndChallenges';
 
-export default function GameMenu({ depth, challenges, onClose, onLeaveGame, onReplayTutorial }) {
+export default function GameMenu({ depth, guidePages, challenges, onClose, onLeaveGame, onReplayTutorial }) {
   const { t } = useTranslation();
   const [showSettings, setShowSettings] = useState(false);
   const [showJournal, setShowJournal] = useState(false);
@@ -28,7 +28,7 @@ export default function GameMenu({ depth, challenges, onClose, onLeaveGame, onRe
   }
 
   if (showJournal) {
-    return <WndJournal depth={depth} onClose={() => setShowJournal(false)} />;
+    return <WndJournal depth={depth} guidePages={guidePages} onClose={() => setShowJournal(false)} />;
   }
 
   if (showSettings) {

@@ -24,7 +24,7 @@ from app.engine.entities.base import ItemBase
 from app.engine.entities.rings import RingOfAccuracy, RingOfEvasion, RingOfHaste, RingOfFuror, RingOfMight, RingOfTenacity, RingOfEnergy, RingOfArcana, RingOfSharpshooting
 from app.engine.entities.item_union import Bag, MagicalHolster, PotionBandolier, ScrollHolder, VelvetPouch
 from app.engine.entities.items_artifacts import BrokenSeal, CloakOfShadows, DriedRose, Petal
-from app.engine.entities.items_consumable import Amulet, Berry, Boomerang, ChargrilledMeat, CorpseDust, Dewdrop, DwarfToken, EnergyCrystal, Food, GooBlob, Gold, Key, KingsCrown, MeatPie, MysteryMeat, Pasty, Ration, Seed, SmallRation, Stone, StewedMeat, Throwable, ThrowableDagger, TenguMask, Waterskin, ArcaneStylus, MagicalInfusion
+from app.engine.entities.items_consumable import Amulet, Ankh, Berry, Boomerang, ChargrilledMeat, CorpseDust, Dewdrop, DwarfToken, EnergyCrystal, Food, FrozenCarpaccio, GooBlob, Gold, Key, KingsCrown, LostBackpack, MeatPie, MysteryMeat, Pasty, PhantomMeat, Ration, Seed, SmallRation, Stone, StewedMeat, SupplyRation, Throwable, ThrowableDagger, TenguMask, Waterskin, ArcaneStylus, MagicalInfusion
 from app.engine.entities.wandmaker_quest_items import CeremonialCandle, Embers, RotberrySeed
 from app.engine.entities.items_equip import Armor, ClothArmor, LeatherArmor, MailArmor, ScaleArmor, PlateArmor, Artifact, Bow, SpiritBow, Dagger, MeleeWeapon, MissileWeapon, Ring, Staff, WornShortsword
 from app.engine.entities.items_potions import ElixirOfAquaticRejuvenation, FuryPotion, HealthPotion, Potion, PotionOfExperience, PotionOfFrost, PotionOfHaste, PotionOfInvisibility, PotionOfLevitation, PotionOfLiquidFlame, PotionOfMindVision, PotionOfParalyticGas, PotionOfPurity, PotionOfStrength, PotionOfToxicGas, RevivingPotion
@@ -181,8 +181,11 @@ _CATALOG: List[tuple] = [
     ("ration", "Ration", "food", lambda: Ration()),
     ("pasty", "Pasty", "food", lambda: Pasty()),
     ("chargrilled_meat", "Chargrilled Meat", "food", lambda: ChargrilledMeat()),
+    ("frozen_carpaccio", "Frozen Carpaccio", "food", lambda: FrozenCarpaccio()),
     ("stewed_meat", "Stewed Meat", "food", lambda: StewedMeat()),
     ("meat_pie", "Meat Pie", "food", lambda: MeatPie()),
+    ("phantom_meat", "Phantom Meat", "food", lambda: PhantomMeat()),
+    ("supply_ration", "Supply Ration", "food", lambda: SupplyRation()),
     ("food", "Food", "food", lambda: Food(name="Food")),
 
     # Misc
@@ -190,6 +193,8 @@ _CATALOG: List[tuple] = [
     ("seed", "Seed of Sunlight", "misc", lambda: Seed(name="Seed of Sunlight")),
     ("dewdrop", "Dewdrop", "misc", lambda: Dewdrop()),
     ("waterskin", "Waterskin", "misc", lambda: Waterskin()),
+    ("ankh", "Ankh", "misc", lambda: Ankh()),
+    ("lost_backpack", "Lost Backpack", "misc", lambda: LostBackpack()),
     ("stone", "Stone", "misc", lambda: Stone()),
     ("boomerang", "Boomerang", "misc", lambda: Boomerang()),
     ("throwable_dagger", "Throwable Dagger", "misc", lambda: ThrowableDagger()),

@@ -18,7 +18,7 @@ def test_shop_floor_has_shopkeeper_and_stock(depth):
     assert len(shopkeepers) == 1
 
     for_sale = [i for i in floor.items.values() if i.for_sale]
-    assert len(for_sale) == 18
+    assert len(for_sale) == 19
 
     # Artifacts are intentionally priceless (value()==0, matches SPD); every
     # other shop item should have a positive sell-back value.

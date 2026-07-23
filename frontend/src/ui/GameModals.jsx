@@ -30,7 +30,7 @@ const SCROLL_PICKER_KEYS = {
 function GameModals({
   modals, itemsById, toolbarItems,
   belongings, gold, energy, strength,
-  depth,
+  depth, guidePages,
   executeItemAction, assignQuickslot, sendSelectScrollTarget, sendStoneTarget,
   send,
 }) {
@@ -410,7 +410,7 @@ function GameModals({
       )}
 
       {journalOpen && (
-        <WndJournal depth={depth} onClose={() => setJournalOpen(false)} />
+        <WndJournal depth={depth} guidePages={guidePages} onClose={() => setJournalOpen(false)} />
       )}
     </>
   );

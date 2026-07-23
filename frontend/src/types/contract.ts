@@ -197,6 +197,7 @@ export interface DeathEvent {
     target: string;
     score_breakdown?: { kills: number; floors: number; gold: number };
     can_resurrect?: boolean;
+    has_ankh?: boolean;
     victory?: boolean;
     loot_dropped?: boolean;
     respawns_used?: number;
@@ -1300,4 +1301,4 @@ export type ClientMessage =
   | { type: 'ALCHEMY_ENERGIZE'; item_id: string; all_items: boolean }
   | { type: 'ALCHEMY_TRINKET_CHOOSE'; catalyst_id: string; kind: string }
   | { type: 'TOOLKIT_ENERGIZE'; toolkit_id: string; levels: number }
-  | { type: 'RESURRECT' };
+  | { type: 'ANKH_CHOICE'; kept_item_ids: string[] };

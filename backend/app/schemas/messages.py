@@ -298,8 +298,9 @@ class ToolkitEnergize(_ClientMessageBase):
     levels: int = 1
 
 
-class Resurrect(_ClientMessageBase):
-    type: Literal["RESURRECT"]
+class AnkhChoice(_ClientMessageBase):
+    type: Literal["ANKH_CHOICE"]
+    kept_item_ids: List[str]  # exactly 2 item IDs to keep
 
 
 ClientMessage = Annotated[
@@ -354,7 +355,7 @@ ClientMessage = Annotated[
         AlchemyEnergize,
         AlchemyTrinketChoose,
         ToolkitEnergize,
-        Resurrect,
+        AnkhChoice,
     ],
     Field(discriminator="type"),
 ]

@@ -52,6 +52,7 @@ class DeathData(_EventData):
     target: str
     score_breakdown: Optional[dict] = None
     can_resurrect: Optional[bool] = None
+    has_ankh: Optional[bool] = None
     victory: Optional[bool] = None
     loot_dropped: Optional[bool] = None
     respawns_used: Optional[int] = None

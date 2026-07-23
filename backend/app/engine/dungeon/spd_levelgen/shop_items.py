@@ -26,7 +26,7 @@ Deviations from SPD, per the approved plan:
    belongings, which isn't available here: shop stock is generated once per
    shared multiplayer floor, not per player.
  - Bomb/DoubleBomb/Honeypot -> +1 Food ("Mystery Meat")
- - Ankh / StoneOfAugmentation / TimekeepersHourglass.sandBag -> skipped
+ - StoneOfAugmentation / TimekeepersHourglass.sandBag -> skipped
  - Stylus (7/10 rare roll) -> redistributed to Wand/Ring
  - Torch x3 (depth 20/21) -> not reachable (shopOnLevel() is 6/11/16 only)
 
@@ -44,7 +44,7 @@ from app.engine.dungeon.spd_levelgen.generator import _WEP_T1, _WEP_T2, _WEP_T3,
 from app.engine.dungeon.spd_random import SPDRandom
 from app.engine.entities.item_union import MagicalHolster, PotionBandolier, ScrollHolder
 from app.engine.entities.items_bombs import Bomb
-from app.engine.entities.items_consumable import Food, Stone
+from app.engine.entities.items_consumable import Ankh, Food, Stone
 from app.engine.entities.items_equip import Armor, ClothArmor, LeatherArmor, MailArmor, ScaleArmor, PlateArmor, Artifact, make_named_melee_weapon, MissileWeapon, Ring
 from app.engine.entities.items_potions import HealthPotion
 from app.engine.entities.items_scrolls import ScrollOfIdentify, ScrollOfMagicMapping, ScrollOfRemoveCurse, ScrollOfUpgrade
@@ -121,6 +121,7 @@ def generate_shop_items(rng: SPDRandom, depth: int) -> List[Item]:
         HealthPotion(),
         Food(name="Small Ration of Food"),
         Food(name="Small Ration of Food"),
+        Ankh(),
     ]
 
     # ShopRoom switch(Random.Int(4)): 0 -> Bomb, 1|2 -> DoubleBomb (a 2-stack
