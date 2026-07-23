@@ -355,6 +355,7 @@ export function handleCombatEvents(event: GameEvent, ctx: HandlerCtx): boolean {
       onPlayerDeath?.({
         score_breakdown: event.data.score_breakdown,
         can_resurrect: event.data.can_resurrect,
+        has_ankh: event.data.has_ankh,
         victory: event.data.victory,
         respawns_used: event.data.respawns_used,
         max_respawns: event.data.max_respawns,

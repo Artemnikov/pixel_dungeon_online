@@ -94,6 +94,7 @@ export function syncState(data: StateUpdateMessage, ctx: SyncCtx): void {
         talentPoints: p.subclass_info?.talent_points || {},
         bonusTalentPoints: p.subclass_info?.bonus_talent_points || {},
         keys: p.keys || [],
+        guidePages: p.guide_pages || [],
         respawnsUsed: p.respawns_used ?? 0,
       });
     }

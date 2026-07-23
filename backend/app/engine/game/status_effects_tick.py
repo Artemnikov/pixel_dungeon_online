@@ -157,7 +157,7 @@ class StatusEffectsTickMixin:
         if well_fed_buff is not None:
             effects.append(Effect(
                 key="well_fed", name="Well Fed", icon=43,
-                remaining=well_fed_buff.remaining, duration=30.0,
+                remaining=well_fed_buff.remaining, duration=50.0,
             ))
         levitation_buff = get_buff(player.buffs, "levitation")
         if levitation_buff is not None:

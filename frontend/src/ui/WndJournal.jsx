@@ -1,26 +1,58 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
-// SPD WndJournal.java port (simplified): tabbed journal with Guide, Catalog,
-// and Story tabs. The Guide tab reuses the existing GuidePanel content. The
-// Catalog tab shows discovered items (not yet tracked server-side — shows a
-// placeholder). The Story tab shows lore texts for visited depths.
-// Opens from the GameMenu or a journal button.
+// SPD WndJournal.java port: tabbed journal with Guide, Catalog, and Story
+// tabs. The Guide tab shows the Adventurer's Guide pages with progressive
+// discovery — pages are "Missing" until found via floor pickups or
+// first-visit grants.
 
-function GuideTab() {
+const GUIDE_PAGE_IDS = [
+  'Intro', 'Examining', 'Surprise_Attacks', 'Identifying',
+  'Food', 'Alchemy', 'Dieing', 'Searching', 'Strength',
+  'Upgrades', 'Looting', 'Levelling', 'Positioning', 'Magic',
+];
+
+function GuideTab({ guidePages = [] }) {
   const { t } = useTranslation();
+  const [openPage, setOpenPage] = useState(null);
+
+  if (openPage) {
+    return (
+      <div className="wnd-journal-tab">
+        <button
+          className="wnd-journal-guide-back"
+          onClick={() => setOpenPage(null)}
+        >
+          &larr; {t('ui.close')}
+        </button>
+        <h3 className="wnd-journal-guide-page-title">
+          {t(`guide.pages.${openPage}.title`)}
+        </h3>
+        {t(`guide.pages.${openPage}.body`).split('\n\n').map((p, i) => (
+          <p key={i} className="wnd-journal-guide-page-text">{p}</p>
+        ))}
+      </div>
+    );
+  }
+
   return (
     <div className="wnd-journal-tab">
-      <div className="wnd-info-desc">
-        {t('journal.guideText', 'The dungeon is divided into 5 regions, each with a boss. Defeat bosses to progress deeper. Find the Amulet of Yendor on floor 26 and return to the surface to win.')}
-      </div>
-      <div className="wnd-journal-depths">
-        <div className="wnd-journal-depth-row"><span>Sewers</span><span>1-5</span></div>
-        <div className="wnd-journal-depth-row"><span>Prison</span><span>6-10</span></div>
-        <div className="wnd-journal-depth-row"><span>Caves</span><span>11-15</span></div>
-        <div className="wnd-journal-depth-row"><span>Dwarven City</span><span>16-20</span></div>
-        <div className="wnd-journal-depth-row"><span>Demon Halls</span><span>21-26</span></div>
-      </div>
+      <div className="wnd-journal-guide-title">{t('guide.title')}</div>
+      {GUIDE_PAGE_IDS.map((pageId) => {
+        const found = guidePages.includes(pageId);
+        return (
+          <button
+            key={pageId}
+            className={`wnd-journal-guide-entry${found ? ' found' : ''}`}
+            onClick={() => found && setOpenPage(pageId)}
+            disabled={!found}
+          >
+            <span className="wnd-journal-guide-entry-title">
+              {found ? t(`guide.pages.${pageId}.title`) : t('guide.missing')}
+            </span>
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -62,7 +94,7 @@ function StoryTab({ depth }) {
   );
 }
 
-export default function WndJournal({ depth, onClose }) {
+export default function WndJournal({ depth, guidePages, onClose }) {
   const { t } = useTranslation();
   const [tab, setTab] = useState(0);
 
@@ -94,7 +126,7 @@ export default function WndJournal({ depth, onClose }) {
           ))}
         </div>
         <div className="wnd-hero-content">
-          {tab === 0 && <GuideTab />}
+          {tab === 0 && <GuideTab guidePages={guidePages} />}
           {tab === 1 && <CatalogTab />}
           {tab === 2 && <StoryTab depth={depth} />}
         </div>

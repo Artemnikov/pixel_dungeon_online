@@ -266,7 +266,7 @@ class ItemsMixin:
             if i.pos and i.pos.x == player.pos.x and i.pos.y == player.pos.y
             and i.type != "grave" and not getattr(i, 'for_sale', False)
         ]
-        from app.engine.entities.items_consumable import Gold, Dewdrop, EnergyCrystal
+        from app.engine.entities.items_consumable import Gold, Dewdrop, EnergyCrystal, LostBackpack
         from app.engine.entities.items_bombs import Bomb
         for i_id in items_to_pickup:
             item = floor.items[i_id]
@@ -278,11 +278,47 @@ class ItemsMixin:
                 player.energy += item.quantity
                 del floor.items[i_id]
                 self.add_event("PICKUP_ENERGY", {"player": player.id, "amount": item.quantity}, floor_id=player.floor_id)
+            elif isinstance(item, LostBackpack):
+                # Only the owner can pick up their lost backpack.
+                if item.owner_id == player.id:
+                    for stored in item.stored_items:
+                        player.add_to_inventory(stored)
+                    del floor.items[i_id]
+                    self.add_event("PICKUP", {
+                        "player": player.id, "item": "Lost Backpack",
+                        "x": player.pos.x, "y": player.pos.y,
+                        "item_type": "lost_backpack",
+                    }, floor_id=player.floor_id)
             elif isinstance(item, Dewdrop):
                 self._pickup_dewdrop(player, floor, player.floor_id, i_id, item)
             elif isinstance(item, Bomb) and item.fuse_ticks is not None and \
                     self.handle_bomb_pickup(player, floor, player.floor_id, i_id, item):
                 pass
+            elif item.name == "Guide Page":
+                # Guide Page floor items unlock a random missing page instead
+                # of going into the backpack (SPD Guidebook.doPickUp).
+                page_id = self._next_missing_guide_page(player)
+                if page_id and player.discover_guide_page(page_id):
+                    del floor.items[i_id]
+                    self.add_event("GUIDE_PAGE_DISCOVERED",
+                                   {"player": player.id, "page": page_id},
+                                   player_id=player.id)
             elif player.add_to_inventory(item):
                 del floor.items[i_id]
                 self.add_event("PICKUP", {"player": player.id, "item": item.name, "x": player.pos.x, "y": player.pos.y, "item_type": item.type}, floor_id=player.floor_id)
+
+    # All Adventurer's Guide page IDs in discovery order (SPD Document
+    # ADVENTURERS_GUIDE pageNames). Used by Guide Page floor item pickup.
+    _ALL_GUIDE_PAGES = [
+        "Intro", "Examining", "Surprise_Attacks", "Identifying",
+        "Food", "Alchemy", "Dieing", "Searching", "Strength",
+        "Upgrades", "Looting", "Levelling", "Positioning", "Magic",
+    ]
+
+    def _next_missing_guide_page(self, player) -> Optional[str]:
+        """Return the first undiscovered guide page, or None if all found
+        (SPD Document.ADVENTURERS_GUIDE missingPages logic)."""
+        for page_id in self._ALL_GUIDE_PAGES:
+            if not player.has_guide_page(page_id):
+                return page_id
+        return None

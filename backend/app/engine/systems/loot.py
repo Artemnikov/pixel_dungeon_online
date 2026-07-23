@@ -5,7 +5,7 @@ from typing import Dict, List, Optional
 
 from app.engine.entities.base import ItemBase, Position
 from app.engine.game.constants import party_loot_multiplier
-from app.engine.entities.items_consumable import Gold, GooBlob, Key, KingsCrown, MysteryMeat, Seed, TenguMask
+from app.engine.entities.items_consumable import Gold, GooBlob, Key, KingsCrown, MysteryMeat, PhantomMeat, Seed, TenguMask
 from app.engine.entities.items_equip import ClothArmor, LeatherArmor, MailArmor, make_named_melee_weapon, PlateArmor, ScaleArmor
 from app.engine.entities.items_potions import HealthPotion, Potion
 from app.engine.entities.player import DropEntry, Mob
@@ -195,6 +195,8 @@ def _make_item(item_kind: str) -> Optional[ItemBase]:
         return HealthPotion()
     elif item_kind == "mystery_meat":
         return MysteryMeat()
+    elif item_kind == "phantom_meat":
+        return PhantomMeat()
     elif item_kind == "tier2_weapon":
         return _random_dungeon_weapon(random.choice(TIER2_WEAPONS))
     elif item_kind == "weapon":

@@ -259,6 +259,10 @@ class Player(Entity):
     # Keys never enter the bag (mirrors SPD's Notes-based key tracking) — see
     # add_key/key_count/remove_key.
     keys: List[KeyRecord] = Field(default_factory=list)
+    # Guide pages: list of discovered Adventurer's Guide page IDs (SPD
+    # Document.ADVENTURERS_GUIDE). Pages are granted on first floor visits
+    # and when picking up Guide Page floor items.
+    guide_pages: List[str] = Field(default_factory=list)
     gold: int = 0
     energy: int = 0
     websocket_id: Optional[str] = None
@@ -268,6 +272,9 @@ class Player(Entity):
     # chasm-fall damage so the death screen can show "You fell to death..." and
     # the DEATH event can carry death_cause. Cleared on resurrect.
     death_cause: Optional[str] = None
+    # True when the player died with an unblessed ankh and is awaiting the
+    # ANKH_CHOICE message to select 2 items to keep.
+    pending_ankh: bool = False
     # True while the hero's WS is disconnected (grace window before reap kills
     # them) -- non-solid ghost: skipped by collision/AI targeting, "(AFK)" tag
     # shown above their head client-side.
@@ -694,6 +701,17 @@ class Player(Entity):
                     self.keys.remove(rec)
                 return True
         return False
+
+    def discover_guide_page(self, page_id: str) -> bool:
+        """Add a guide page to the player's discovered pages (SPD
+        Document.ADVENTURERS_GUIDE.findPage). Returns True if newly found."""
+        if page_id not in self.guide_pages:
+            self.guide_pages.append(page_id)
+            return True
+        return False
+
+    def has_guide_page(self, page_id: str) -> bool:
+        return page_id in self.guide_pages
 
     def equip_item(self, item_id: str) -> bool:
         item = self.belongings.backpack.find(item_id)

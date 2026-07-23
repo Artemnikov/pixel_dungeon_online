@@ -7,9 +7,11 @@ import WndResurrect from './WndResurrect';
 
 export default function GameOverlay({
   gameMenuOpen, onCloseMenu, onLeaveGame,
-  isDowned, playerName, classType, level, depth, gold,
+  isDowned, playerName, classType, level, depth, guidePages, gold,
   subclass, armorAbility, talentLevels, talentDefs, inventory,
-  selectedClass, scoreBreakdown, canResurrect, isVictory, respawnsUsed, maxRespawns, lootDropped, deathCause, onResurrect,
+  selectedClass, scoreBreakdown, canResurrect, hasAnkh, keptItems, onToggleItem,
+  isVictory, respawnsUsed, maxRespawns, lootDropped, deathCause,
+  onResurrect, onAnkhChoice,
   onNewGame, onMenu, challenges, onReplayTutorial,
 }) {
   const { t } = useTranslation();
@@ -45,6 +47,7 @@ export default function GameOverlay({
       {gameMenuOpen && (
         <GameMenu
           depth={depth}
+          guidePages={guidePages}
           challenges={challenges}
           onClose={onCloseMenu}
           onLeaveGame={onLeaveGame}
@@ -55,6 +58,11 @@ export default function GameOverlay({
         <WndResurrect
           onConfirm={onResurrect}
           onDecline={onMenu}
+          onAnkhChoice={onAnkhChoice}
+          hasAnkh={hasAnkh}
+          inventory={inventory}
+          keptItems={keptItems}
+          onToggleItem={onToggleItem}
           respawnsUsed={respawnsUsed}
           maxRespawns={maxRespawns}
           lootDropped={lootDropped}

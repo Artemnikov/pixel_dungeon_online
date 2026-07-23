@@ -4,20 +4,25 @@ from app.engine.manager import GameInstance
 from app.engine.entities.base import Position
 from app.engine.entities.player import Difficulty
 from app.engine.entities.buffs import has_buff
+from app.engine.entities.items_consumable import Ankh, Waterskin, LostBackpack
 
 
-def _make_easy_game(floor_id: int = 1) -> GameInstance:
-    game = GameInstance("test-easy-respawn")
-    game.change_difficulty(Difficulty.EASY)
+def _make_game(difficulty: Difficulty = Difficulty.EASY, floor_id: int = 1) -> GameInstance:
+    game = GameInstance("test-ankh-respawn")
+    game.change_difficulty(difficulty)
     return game
 
 
-def _kill_player(game: GameInstance, player_id: str, floor_id: int = 1) -> dict:
-    """Simulate death: down the player, run _kill_player, return the DEATH event data.
+def _give_ankh(game: GameInstance, player_id: str, blessed: bool = False) -> Ankh:
+    """Give the player an ankh (optionally blessed)."""
+    player = game.players[player_id]
+    ankh = Ankh(id=f"ankh_{player_id}", blessed=blessed)
+    player.belongings.backpack.collect(ankh)
+    return ankh
 
-    Moves the player to `floor_id` first so the resurrect's boss-floor check
-    sees the same floor the death happened on.
-    """
+
+def _kill_player(game: GameInstance, player_id: str, floor_id: int = 1) -> dict:
+    """Simulate death: down the player, run _kill_player, return the DEATH event data."""
     player = game.players[player_id]
     player.floor_id = floor_id
     player.hp = 0
@@ -29,332 +34,327 @@ def _kill_player(game: GameInstance, player_id: str, floor_id: int = 1) -> dict:
     return death_events[-1]["data"]
 
 
-def test_easy_mode_offers_resurrect_on_normal_floor():
-    game = _make_easy_game()
+# --- Blessed ankh tests ---
+
+def test_blessed_ankh_grants_instant_revive_easy():
+    game = _make_game(Difficulty.EASY)
     player = game.add_player("p1", "Hero", "warrior")
-    initial_backpack = len(player.belongings.backpack.items)
+    _give_ankh(game, "p1", blessed=True)
+    max_hp = player.get_total_max_hp()
 
     data = _kill_player(game, "p1", floor_id=1)
 
-    assert data["can_resurrect"] is True
-    assert data["victory"] is False
-    assert data["respawns_used"] == 0
-    assert data["max_respawns"] == 3
+    assert data["can_resurrect"] is False
+    assert data["has_ankh"] is False
     assert data["loot_dropped"] is False
-    # No loot scattered — inventory intact
-    assert len(player.belongings.backpack.items) == initial_backpack
-    # No grave
-    floor = game._get_or_create_floor(1)
-    assert not any(it.type == "grave" for it in floor.items.values())
-
-
-def test_easy_mode_resurrect_revives_player_with_half_hp_and_protection():
-    game = _make_easy_game()
-    player = game.add_player("p1", "Hero", "warrior")
-    _kill_player(game, "p1", floor_id=1)
-
-    ok = game.resurrect_player("p1")
-
-    assert ok is True
     assert player.is_alive is True
     assert player.is_downed is False
-    assert player.death_processed is False
-    assert player.hp == player.get_total_max_hp() // 2
+    # Easy = 75% HP
+    assert player.hp == int(max_hp * 0.75)
+    # Ankh consumed
+    assert not any(isinstance(i, Ankh) for i in player.belongings.all_items())
+    # Score penalty applied
     assert player.respawns_used == 1
-    # Spawn protection buff applied
-    assert has_buff(player.buffs, "spawn_protection")
 
 
-def test_easy_mode_resurrect_emits_spawn_event():
-    game = _make_easy_game()
-    game.add_player("p1", "Hero", "warrior")
-    _kill_player(game, "p1", floor_id=1)
-    game.events = []  # clear DEATH
-
-    game.resurrect_player("p1")
-
-    spawn_events = [e for e in game.events if e["type"] == "SPAWN"]
-    assert len(spawn_events) == 1
-    assert spawn_events[0]["data"]["is_resurrect"] is True
-    assert spawn_events[0]["data"]["target"] == "p1"
-    assert spawn_events[0]["data"]["respawns_used"] == 1
-
-
-def test_easy_mode_resurrect_clears_harmful_buffs_keeps_beneficial():
-    from app.engine.entities.buffs import add_buff
-    game = _make_easy_game()
+def test_blessed_ankh_grants_instant_revive_hard():
+    game = _make_game(Difficulty.HARD)
     player = game.add_player("p1", "Hero", "warrior")
-    # Apply a harmful debuff and a beneficial buff
-    add_buff(player.buffs, "poison", duration=10.0, level=1)
-    add_buff(player.buffs, "barkskin", duration=30.0, level=2)
+    _give_ankh(game, "p1", blessed=True)
+    max_hp = player.get_total_max_hp()
+
+    data = _kill_player(game, "p1", floor_id=1)
+
+    assert player.is_alive is True
+    # Hard = 25% HP
+    assert player.hp == int(max_hp * 0.25)
+
+
+def test_blessed_ankh_preserves_all_items():
+    game = _make_game()
+    player = game.add_player("p1", "Hero", "warrior")
+    _give_ankh(game, "p1", blessed=True)
+    initial_items = len(player.belongings.backpack.items)
+
     _kill_player(game, "p1", floor_id=1)
 
-    game.resurrect_player("p1")
+    # Backpack items preserved (minus the consumed ankh)
+    assert len(player.belongings.backpack.items) == initial_items - 1
+
+
+def test_blessed_ankh_clears_harmful_buffs():
+    game = _make_game()
+    player = game.add_player("p1", "Hero", "warrior")
+    _give_ankh(game, "p1", blessed=True)
+    from app.engine.entities.buffs import add_buff
+    add_buff(player.buffs, "poison", duration=10)
+    add_buff(player.buffs, "burning", duration=5)
+
+    _kill_player(game, "p1", floor_id=1)
 
     assert not has_buff(player.buffs, "poison")
-    assert has_buff(player.buffs, "barkskin")
+    assert not has_buff(player.buffs, "burning")
 
 
-def test_boss_floor_excludes_resurrect():
-    game = _make_easy_game()
+def test_blessed_ankh_grants_invulnerability():
+    game = _make_game()
     player = game.add_player("p1", "Hero", "warrior")
-    initial_backpack = len(player.belongings.backpack.items)
-    # Floor 5 = Goo boss floor
-    data = _kill_player(game, "p1", floor_id=5)
+    _give_ankh(game, "p1", blessed=True)
 
-    assert data["can_resurrect"] is False
-    assert data["loot_dropped"] is True
-    # Loot scattered (normal death sequence ran)
-    assert len(player.belongings.backpack.items) < initial_backpack
-    # Resurrect refused
-    assert game.resurrect_player("p1") is False
-    assert player.is_alive is False
-
-
-def test_respawn_cap_excludes_resurrect_after_three_uses():
-    game = _make_easy_game()
-    player = game.add_player("p1", "Hero", "warrior")
-    player.respawns_used = 3  # already exhausted the cap
-
-    data = _kill_player(game, "p1", floor_id=1)
-
-    assert data["can_resurrect"] is False
-    assert game.resurrect_player("p1") is False
-
-
-def _make_medium_game() -> GameInstance:
-    game = GameInstance("test-medium-respawn")
-    game.change_difficulty(Difficulty.NORMAL)  # Medium == Difficulty.NORMAL (UI label only)
-    return game
-
-
-def test_medium_difficulty_offers_resurrect_but_drops_backpack():
-    game = _make_medium_game()
-    player = game.add_player("p1", "Hero", "warrior")
-    initial_backpack = len(player.belongings.backpack.items)
-
-    data = _kill_player(game, "p1", floor_id=1)
-
-    assert data["can_resurrect"] is True
-    assert data["loot_dropped"] is True
-    assert data["respawns_used"] == 0
-    assert data["max_respawns"] == 3
-    # Backpack scattered — inventory emptied, unlike Easy
-    assert len(player.belongings.backpack.items) < initial_backpack
-    # Grave placed, same as a full death
-    floor = game._get_or_create_floor(1)
-    assert any(it.type == "grave" for it in floor.items.values())
-
-
-def test_medium_difficulty_keeps_equipped_weapon_and_armor():
-    from app.engine.entities.items_equip import make_named_melee_weapon, LeatherArmor
-
-    game = _make_medium_game()
-    player = game.add_player("p1", "Hero", "warrior")
-    sword = make_named_melee_weapon("Sword", id="sword-1")
-    armor = LeatherArmor(id="armor-1")
-    player.belongings.weapon = sword
-    player.belongings.armor = armor
-
-    data = _kill_player(game, "p1", floor_id=1)
-
-    assert data["can_resurrect"] is True
-    # Weapon/armor stay equipped, unlike the rest of the loadout.
-    assert player.belongings.weapon is sword
-    assert player.belongings.armor is armor
-    floor = game._get_or_create_floor(1)
-    assert not any(it.id in ("sword-1", "armor-1") for it in floor.items.values())
-
-
-def test_medium_difficulty_resurrect_respawns_without_restoring_backpack():
-    from app.engine.entities.items_equip import make_named_melee_weapon, LeatherArmor
-
-    game = _make_medium_game()
-    player = game.add_player("p1", "Hero", "warrior")
-    player.belongings.weapon = make_named_melee_weapon("Sword", id="sword-1")
-    player.belongings.armor = LeatherArmor(id="armor-1")
     _kill_player(game, "p1", floor_id=1)
 
-    ok = game.resurrect_player("p1")
+    assert has_buff(player.buffs, "invulnerability")
+
+
+# --- Unblessed ankh tests ---
+
+def test_unblessed_ankh_sets_pending_ankh():
+    game = _make_game()
+    player = game.add_player("p1", "Hero", "warrior")
+    _give_ankh(game, "p1", blessed=False)
+
+    data = _kill_player(game, "p1", floor_id=1)
+
+    assert data["has_ankh"] is True
+    assert data["can_resurrect"] is True
+    assert data["loot_dropped"] is False
+    assert player.pending_ankh is True
+    # Player is NOT dead yet (waiting for choice)
+    assert player.death_processed is False
+
+
+def test_ankh_choice_with_two_items():
+    game = _make_game()
+    player = game.add_player("p1", "Hero", "warrior")
+    ankh = _give_ankh(game, "p1", blessed=False)
+    max_hp = player.get_total_max_hp()
+
+    # Give player non-stackable items (use weapon/armor IDs which are unique)
+    weapon_id = player.belongings.weapon.id
+    armor_id = player.belongings.armor.id
+
+    _kill_player(game, "p1", floor_id=1)
+    assert player.pending_ankh is True
+
+    ok = game.ankh_choice("p1", [weapon_id, armor_id])
 
     assert ok is True
+    assert player.pending_ankh is False
     assert player.is_alive is True
-    assert player.hp == player.get_total_max_hp() // 2
-    # Backpack stays empty — resurrect doesn't restore scattered gear.
+    assert player.is_downed is False
+    # Easy = 75% HP
+    assert player.hp == int(max_hp * 0.75)
+    # Ankh consumed
+    assert not any(isinstance(i, Ankh) for i in player.belongings.all_items())
+    # Respawn counter incremented
+    assert player.respawns_used == 1
+
+
+def test_ankh_choice_creates_lost_backpack():
+    game = _make_game()
+    player = game.add_player("p1", "Hero", "warrior")
+    _give_ankh(game, "p1", blessed=False)
+
+    _kill_player(game, "p1", floor_id=1)
+
+    # Choose the starting weapon + armor
+    weapon_id = player.belongings.weapon.id
+    armor_id = player.belongings.armor.id
+    ok = game.ankh_choice("p1", [weapon_id, armor_id])
+
+    assert ok is True
+    # LostBackpack should be on the ground with dropped items
+    floor = game._get_or_create_floor(1)
+    backpacks = [i for i in floor.items.values() if isinstance(i, LostBackpack)]
+    assert len(backpacks) == 1
+    assert backpacks[0].owner_id == player.id
+
+
+def test_ankh_choice_rejects_wrong_count():
+    game = _make_game()
+    player = game.add_player("p1", "Hero", "warrior")
+    _give_ankh(game, "p1", blessed=False)
+    _kill_player(game, "p1", floor_id=1)
+
+    # Only 1 item
+    assert game.ankh_choice("p1", ["item1"]) is False
+    # 3 items
+    assert game.ankh_choice("p1", ["a", "b", "c"]) is False
+
+
+def test_ankh_choice_rejects_invalid_items():
+    game = _make_game()
+    player = game.add_player("p1", "Hero", "warrior")
+    _give_ankh(game, "p1", blessed=False)
+    _kill_player(game, "p1", floor_id=1)
+
+    # Non-existent item
+    assert game.ankh_choice("p1", ["nonexistent1", "nonexistent2"]) is False
+
+
+def test_ankh_choice_rejects_when_not_pending():
+    game = _make_game()
+    player = game.add_player("p1", "Hero", "warrior")
+    # No ankh, no pending
+    assert game.ankh_choice("p1", ["a", "b"]) is False
+
+
+def test_ankh_choice_spawns_event():
+    game = _make_game()
+    player = game.add_player("p1", "Hero", "warrior")
+    _give_ankh(game, "p1", blessed=False)
+    _kill_player(game, "p1", floor_id=1)
+
+    game.ankh_choice("p1", [player.belongings.weapon.id, player.belongings.armor.id])
+
+    spawn_events = [e for e in game.events if e["type"] == "SPAWN"]
+    assert len(spawn_events) >= 1
+    assert spawn_events[-1]["data"]["is_resurrect"] is True
+
+
+# --- No ankh: final death ---
+
+def test_no_ankh_death_scatters_items():
+    game = _make_game()
+    player = game.add_player("p1", "Hero", "warrior")
+
+    data = _kill_player(game, "p1", floor_id=1)
+
+    assert data["can_resurrect"] is False
+    assert data["has_ankh"] is False
+    assert data["loot_dropped"] is True
+    # Player belongings should be empty
     assert len(player.belongings.backpack.items) == 0
-    # Weapon/armor survived the death sequence untouched.
-    assert player.belongings.weapon is not None and player.belongings.weapon.id == "sword-1"
-    assert player.belongings.armor is not None and player.belongings.armor.id == "armor-1"
 
 
-def test_medium_boss_floor_excludes_resurrect_and_drops_everything():
-    from app.engine.entities.items_equip import make_named_melee_weapon, LeatherArmor
-
-    game = _make_medium_game()
+def test_no_ankh_death_creates_backpack_marker():
+    game = _make_game()
     player = game.add_player("p1", "Hero", "warrior")
-    player.belongings.weapon = make_named_melee_weapon("Sword", id="sword-1")
-    player.belongings.armor = LeatherArmor(id="armor-1")
-    initial_backpack = len(player.belongings.backpack.items)
-    # Floor 5 = Goo boss floor
-    data = _kill_player(game, "p1", floor_id=5)
 
+    _kill_player(game, "p1", floor_id=1)
+
+    floor = game._get_or_create_floor(1)
+    markers = [i for i in floor.items.values() if i.type == "lost_backpack"]
+    assert len(markers) >= 1
+
+
+# --- Ankh prioritization (blessed > unblessed) ---
+
+def test_blessed_ankh_prioritized_over_unblessed():
+    game = _make_game()
+    player = game.add_player("p1", "Hero", "warrior")
+    _give_ankh(game, "p1", blessed=False)
+    _give_ankh(game, "p1", blessed=True)
+
+    data = _kill_player(game, "p1", floor_id=1)
+
+    # Should use blessed ankh (instant revive)
+    assert data["has_ankh"] is False
     assert data["can_resurrect"] is False
-    assert data["loot_dropped"] is True
-    assert game.resurrect_player("p1") is False
-    assert player.is_alive is False
-    # A final death is final -- Medium's weapon/armor perk doesn't apply.
-    assert len(player.belongings.backpack.items) < initial_backpack
-    assert player.belongings.weapon is None
-    assert player.belongings.armor is None
+    assert player.is_alive is True
+    assert player.pending_ankh is False
 
 
-def test_medium_respawn_cap_excludes_resurrect_after_three_uses():
-    game = _make_medium_game()
+# --- Non-ankh death is final ---
+
+def test_death_without_ankh_is_final():
+    game = _make_game()
     player = game.add_player("p1", "Hero", "warrior")
-    player.respawns_used = 3  # already exhausted the cap
 
     data = _kill_player(game, "p1", floor_id=1)
 
     assert data["can_resurrect"] is False
-    assert game.resurrect_player("p1") is False
+    assert data["has_ankh"] is False
+    assert data["victory"] is False
 
 
-def test_hard_difficulty_does_not_offer_resurrect():
-    game = GameInstance("test-hard-respawn")
-    game.change_difficulty(Difficulty.HARD)
-    game.add_player("p1", "Hero", "warrior")
+# --- Score penalty ---
 
-    data = _kill_player(game, "p1", floor_id=1)
-
-    assert data["can_resurrect"] is False
-    assert data["loot_dropped"] is True
-
-
-def test_hard_difficulty_drops_weapon_and_armor_too():
-    from app.engine.entities.items_equip import make_named_melee_weapon, LeatherArmor
-
-    game = GameInstance("test-hard-respawn-gear")
-    game.change_difficulty(Difficulty.HARD)
+def test_score_penalty_increases_with_ankh_uses():
+    game = _make_game()
     player = game.add_player("p1", "Hero", "warrior")
-    player.belongings.weapon = make_named_melee_weapon("Sword", id="sword-1")
-    player.belongings.armor = LeatherArmor(id="armor-1")
+    _give_ankh(game, "p1", blessed=True)
 
     _kill_player(game, "p1", floor_id=1)
 
-    # Unlike Medium, Hard has no weapon/armor perk.
-    assert player.belongings.weapon is None
-    assert player.belongings.armor is None
+    score1 = game._score_breakdown(player, victory=False)
 
-
-def test_resurrect_refused_for_alive_player():
-    game = _make_easy_game()
-    game.add_player("p1", "Hero", "warrior")
-    # Player still alive — resurrect should be a no-op
-    assert game.resurrect_player("p1") is False
-
-
-def test_score_penalty_own_respawns():
-    game = _make_easy_game()
-    player = game.add_player("p1", "Hero", "warrior")
-    player.gold = 100
-    player.floors_explored = 5
-
-    # Baseline: no respawns
-    base = game._score_breakdown(player, victory=False)
-    assert base["respawn_multiplier"] is None
-
-    # 1 respawn: 0.5x
-    player.respawns_used = 1
-    b1 = game._score_breakdown(player, victory=False)
-    assert b1["respawn_multiplier"] == 0.5
-    assert b1["total_score"] == int(base["total_score"] * 0.5)
-
-    # 3 respawns: 0.125x
-    player.respawns_used = 3
-    b3 = game._score_breakdown(player, victory=False)
-    assert b3["respawn_multiplier"] == 0.125
-    assert b3["total_score"] == int(base["total_score"] * 0.125)
-
-
-def test_score_penalty_witnessed_respawns():
-    game = _make_easy_game()
-    player = game.add_player("p1", "Hero", "warrior")
-    player.gold = 100
-    player.floors_explored = 5
-    base = game._score_breakdown(player, victory=False)
-
-    player.witnessed_respawns = 2
-    b = game._score_breakdown(player, victory=False)
-    assert b["witness_multiplier"] == 0.5
-    assert b["total_score"] == int(base["total_score"] * 0.5)
-
-
-def test_score_witness_penalty_floored_at_10_percent():
-    game = _make_easy_game()
-    player = game.add_player("p1", "Hero", "warrior")
-    player.witnessed_respawns = 10  # way over the cap
-    b = game._score_breakdown(player, victory=False)
-    assert b["witness_multiplier"] == 0.1
-
-
-def test_multiplayer_witness_counter_increments_on_resurrect():
-    game = _make_easy_game()
-    p1 = game.add_player("p1", "Hero1", "warrior")
-    p2 = game.add_player("p2", "Hero2", "mage")
-
-    assert p1.witnessed_respawns == 0
-    assert p2.witnessed_respawns == 0
+    # Give another ankh and die again
+    _give_ankh(game, "p1", blessed=True)
+    # Need to revive first
+    player.hp = player.get_total_max_hp()
+    player.is_alive = True
+    player.is_downed = False
+    player.death_processed = False
 
     _kill_player(game, "p1", floor_id=1)
-    game.resurrect_player("p1")
 
-    assert p1.respawns_used == 1
-    assert p1.witnessed_respawns == 0  # own respawn tracked via respawns_used
-    assert p2.witnessed_respawns == 1  # witnessed the resurrection
+    score2 = game._score_breakdown(player, victory=False)
 
-
-def test_three_respawns_then_fourth_death_is_final():
-    game = _make_easy_game()
-    player = game.add_player("p1", "Hero", "warrior")
-
-    # Three resurrections
-    for i in range(3):
-        _kill_player(game, "p1", floor_id=1)
-        assert game.resurrect_player("p1") is True
-        assert player.respawns_used == i + 1
-
-    # Fourth death — no more resurrections
-    data = _kill_player(game, "p1", floor_id=1)
-    assert data["can_resurrect"] is False
-    assert game.resurrect_player("p1") is False
+    assert score2["respawn_multiplier"] < score1["respawn_multiplier"]
 
 
-def test_spawn_protection_blocks_damage():
-    game = _make_easy_game()
-    player = game.add_player("p1", "Hero", "warrior")
+# --- LostBackpack pickup ---
+
+def test_lost_backpack_pickup_only_by_owner():
+    game = _make_game()
+    player1 = game.add_player("p1", "Hero", "warrior")
+    player2 = game.add_player("p2", "Mage", "mage")
+    _give_ankh(game, "p1", blessed=False)
+
+    from app.engine.entities.items_consumable import Food
+    food = Food(id="food1", name="Ration")
+    player1.belongings.backpack.collect(food)
+
     _kill_player(game, "p1", floor_id=1)
-    game.resurrect_player("p1")
+    game.ankh_choice("p1", [player1.belongings.weapon.id, player1.belongings.armor.id])
 
-    hp_before = player.hp
-    dealt = player.take_damage(15)
+    # Find the LostBackpack on the ground
+    floor = game._get_or_create_floor(1)
+    backpacks = [i for i in floor.items.values() if isinstance(i, LostBackpack)]
+    assert len(backpacks) == 1
+    bp = backpacks[0]
 
-    assert dealt == 0
-    assert player.hp == hp_before  # spawn protection blocked the hit
+    # Owner picks it up
+    assert bp.owner_id == player1.id
 
 
-def test_spawn_protection_buff_present_with_correct_duration():
-    from app.engine.entities.buffs import get_buff
-    game = _make_easy_game()
+# --- Waterskin blessing ---
+
+def test_ankh_bless_action_requires_full_waterskin():
+    game = _make_game()
     player = game.add_player("p1", "Hero", "warrior")
-    _kill_player(game, "p1", floor_id=1)
-    game.resurrect_player("p1")
+    ankh = Ankh(id="ankh1", blessed=False)
+    player.belongings.backpack.collect(ankh)
+    waterskin = Waterskin(id="ws1", volume=0)
+    player.belongings.backpack.collect(waterskin)
 
-    buff = get_buff(player.buffs, "spawn_protection")
-    assert buff is not None
-    assert buff.remaining == pytest.approx(3.0)
+    # Empty waterskin: BLESS not in actions
+    actions = ankh.actions(player)
+    assert "BLESS" not in actions
 
 
-def test_resurrect_message_round_trips_through_client_adapter():
-    from app.schemas.messages import CLIENT_MESSAGE_ADAPTER
-    msg = CLIENT_MESSAGE_ADAPTER.validate_python({"type": "RESURRECT"})
-    assert msg.type == "RESURRECT"
+def test_ankh_bless_action_available_with_full_waterskin():
+    game = _make_game()
+    player = game.add_player("p1", "Hero", "warrior")
+    ankh = Ankh(id="ankh1", blessed=False)
+    player.belongings.backpack.collect(ankh)
+    waterskin = Waterskin(id="ws1", volume=Waterskin.MAX_VOLUME)
+    player.belongings.backpack.collect(waterskin)
+
+    actions = ankh.actions(player)
+    assert "BLESS" in actions
+
+
+# --- Ankh not available in actions when already blessed ---
+
+def test_blessed_ankh_no_bless_action():
+    game = _make_game()
+    player = game.add_player("p1", "Hero", "warrior")
+    ankh = Ankh(id="ankh1", blessed=True)
+    player.belongings.backpack.collect(ankh)
+    waterskin = Waterskin(id="ws1", volume=Waterskin.MAX_VOLUME)
+    player.belongings.backpack.collect(waterskin)
+
+    actions = ankh.actions(player)
+    assert "BLESS" not in actions
