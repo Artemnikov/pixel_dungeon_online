@@ -7,6 +7,7 @@ import { resolveTapAction } from '../input/resolveTap';
 import * as movementPredictor from '../net/movementPredictor';
 import { runLocalBumpFlow } from '../net/events/combat';
 import { isFloorFadeActive } from '../rendering/floorTransition';
+import AudioManager from '../audio/AudioManager';
 
 export default function useInputHooks({
   gameState, showTutorial, loreOverlay, myStats,
@@ -113,6 +114,7 @@ export default function useInputHooks({
           me: myPlayer,
           playerAnimRef,
           onOpenAlchemy: () => onOpenAlchemyRef.current?.(),
+          audio: AudioManager,
         });
         if (action.type === 'MOVE') {
           const dirMap = { UP: [0,-1], DOWN: [0,1], LEFT: [-1,0], RIGHT: [1,0], UP_LEFT: [-1,-1], UP_RIGHT: [1,-1], DOWN_LEFT: [-1,1], DOWN_RIGHT: [1,1] };

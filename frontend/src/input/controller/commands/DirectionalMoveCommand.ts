@@ -4,6 +4,7 @@ import { DIRECTION_KEYS, getVector } from '../../directionUtils';
 import * as movementPredictor from '../../../net/movementPredictor';
 import { defaultMoveResultDispatcher } from '../../../net/movement/MoveResultDispatcher';
 import { startLocalPlayerMeleeAnim } from '../../../net/events/combat';
+import AudioManager from '../../../audio/AudioManager';
 
 export class DirectionalMoveCommand implements IKeyCommand {
   private pressedKeys: Set<string>;
@@ -87,7 +88,7 @@ export class DirectionalMoveCommand implements IKeyCommand {
       myPlayer: context.myPlayer,
       playerAnimRef: context.playerAnimRef,
       onOpenAlchemyRef: context.onOpenAlchemyRef,
-      onMeleeAttack: () => startLocalPlayerMeleeAnim(context.myPlayer, context.playerAnimRef),
+      onMeleeAttack: () => startLocalPlayerMeleeAnim(context.myPlayer, context.playerAnimRef, AudioManager),
       socket: context.socket,
       dx,
       dy,
