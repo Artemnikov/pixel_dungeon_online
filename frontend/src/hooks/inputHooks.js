@@ -5,7 +5,8 @@ import useCanvasControls from '../input/useCanvasControls';
 import useScaledCursor from '../input/useScaledCursor';
 import { resolveTapAction } from '../input/resolveTap';
 import * as movementPredictor from '../net/movementPredictor';
-import { runLocalBumpFlow } from '../net/events/combat';
+import { defaultMoveResultDispatcher } from '../net/movement/MoveResultDispatcher';
+import { startLocalPlayerMeleeAnim } from '../net/events/combat';
 import { isFloorFadeActive } from '../rendering/floorTransition';
 import AudioManager from '../audio/AudioManager';
 
@@ -108,20 +109,39 @@ export default function useInputHooks({
         return;
       }
       if (action.type === 'MOVE' || action.type === 'PATH_STEPS') isRefocusingRef.current = true;
-      socketRef.current.send(JSON.stringify(action));
-      if (myPlayer) {
-        const flow = (res) => runLocalBumpFlow(res, {
-          me: myPlayer,
+      // One-shot actions (WAIT, NPC_INTERACT) and far-tap PATH_STEPS go out as
+      // the plain message. Adjacent-tap MOVE is NOT sent raw: it goes through
+      // the same paced, seq-acked MOVE_STEP machinery as the keyboard, so the
+      // server can't race ahead of the client animation (which caused the
+      // position to snap/teleport back).
+      if (!myPlayer || action.type === 'WAIT' || action.type === 'NPC_INTERACT' || action.type === 'PATH_STEPS') {
+        socketRef.current.send(JSON.stringify(action));
+      }
+      if (myPlayer && action.type === 'MOVE') {
+        const dirMap = { UP: [0,-1], DOWN: [0,1], LEFT: [-1,0], RIGHT: [1,0], UP_LEFT: [-1,-1], UP_RIGHT: [1,-1], DOWN_LEFT: [-1,1], DOWN_RIGHT: [1,1] };
+        const d = dirMap[action.direction];
+        if (!d) return;
+        const res = movementPredictor.predictMove(myPlayer, d[0], d[1], myPlayerIdRef.current, gridRef.current, entitiesRef.current);
+        defaultMoveResultDispatcher.dispatch(res, {
+          myPlayer,
           playerAnimRef,
-          onOpenAlchemy: () => onOpenAlchemyRef.current?.(),
-          audio: AudioManager,
+          onOpenAlchemyRef,
+          onMeleeAttack: () => startLocalPlayerMeleeAnim(myPlayer, playerAnimRef, AudioManager),
+          socket: socketRef.current,
+          dx: d[0],
+          dy: d[1],
         });
-        if (action.type === 'MOVE') {
-          const dirMap = { UP: [0,-1], DOWN: [0,1], LEFT: [-1,0], RIGHT: [1,0], UP_LEFT: [-1,-1], UP_RIGHT: [1,-1], DOWN_LEFT: [-1,1], DOWN_RIGHT: [1,1] };
-          const d = dirMap[action.direction];
-          if (d) flow(movementPredictor.predictMove(myPlayer, d[0], d[1], myPlayerIdRef.current, gridRef.current, entitiesRef.current));
-        } else if (action.type === 'PATH_STEPS' && action.steps.length > 0) {
-          flow(movementPredictor.startPath(myPlayer, action.steps.map(s => ({ dx: s[0], dy: s[1] })), myPlayerIdRef.current, gridRef.current, entitiesRef.current));
+      } else if (myPlayer && action.type === 'PATH_STEPS' && action.steps.length > 0) {
+        // Server-paced auto-walk: preview the first step for animation only.
+        // No seq'd MOVE_STEP is dispatched (there's no client-side path pump),
+        // so no stray zero-delta steps reach the server.
+        const preview = movementPredictor.startPath(myPlayer, action.steps.map(s => ({ dx: s[0], dy: s[1] })), myPlayerIdRef.current, gridRef.current, entitiesRef.current);
+        // Keep the immediate melee feedback when the path's first step bumps a
+        // mob: the server bump-attacks once the paced walk arrives, but the
+        // local swing should start now (mirrors the moved-tap bump outcome).
+        if (preview?.kind === 'bumped') {
+          const primary = movementPredictor.primaryBlocker(preview.blockers);
+          if (primary?.action === 'melee-attack') startLocalPlayerMeleeAnim(myPlayer, playerAnimRef, AudioManager);
         }
       }
     }

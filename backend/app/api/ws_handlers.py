@@ -8,10 +8,27 @@ logger = logging.getLogger(__name__)
 
 @dispatcher.register(msg.Move)
 def handle_move(game: GameInstance, player_id: str, message: msg.Move):
+    player = game.players.get(player_id)
+    if player is None or player.is_downed or not player.is_alive:
+        return
+    player.movement.stop()
+    # Pace the legacy one-shot MOVE through the same server-side step cooldown
+    # the tick uses for queued steps -- otherwise a flood of MOVE messages
+    # moves the hero once per message, faster than the client can animate.
+    # (The live client sends paced MOVE_STEP instead; this guards compat paths.)
+    if not player.movement.is_ready_for_step():
+        return
     dx, dy = message.direction.delta
-    if player_id in game.players:
-        game.players[player_id].movement.stop()
+    floor = game._get_or_create_floor(player.floor_id)
+    pre_x, pre_y = player.pos.x, player.pos.y
     game.move_entity(player_id, dx, dy)
+    if (player.pos.x, player.pos.y) != (pre_x, pre_y):
+        step_duration = player.get_step_duration(
+            enemies_nearby=game._has_enemies_nearby(floor, player, radius=3)
+        )
+        player.movement.on_step_executed(None, step_duration, dx, dy)
+    else:
+        player.movement.on_step_failed(None)
 
 
 @dispatcher.register(msg.MoveIntent)
@@ -48,7 +65,15 @@ def handle_pickup_floor(game: GameInstance, player_id: str, message: msg.PickupF
 @dispatcher.register(msg.PathSteps)
 def handle_path_steps(game: GameInstance, player_id: str, message: msg.PathSteps):
     if player_id in game.players:
-        game.players[player_id].movement.set_path([(int(s[0]), int(s[1])) for s in message.steps])
+        # Path steps are 8-dir unit deltas; drop anything else so a crafted
+        # path can't warp the player (the auto-walker feeds these to
+        # move_entity).
+        steps = [
+            (int(s[0]), int(s[1]))
+            for s in message.steps
+            if max(abs(int(s[0])), abs(int(s[1]))) <= 1
+        ]
+        game.players[player_id].movement.set_path(steps)
 
 
 @dispatcher.register(msg.ExecuteItemAction)
