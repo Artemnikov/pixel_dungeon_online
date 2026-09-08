@@ -158,6 +158,7 @@ export interface AttackEvent {
     surprise: boolean;
     crit: boolean;
     grim_proc: boolean;
+    next_attack_in_ms?: number;
   };
 }
 
@@ -266,6 +267,7 @@ export interface RangedAttackEvent {
     is_bow?: boolean;
     /** Serialized thrown item, present for thrown inventory items (not wands). */
     item?: SerializedItem;
+    next_attack_in_ms?: number;
   };
 }
 

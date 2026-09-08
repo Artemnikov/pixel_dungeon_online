@@ -1,6 +1,7 @@
 import { useCallback, useState, useRef, useEffect } from 'react';
 import { describeCell } from '../input/describeCell';
 import { playLocalPlayerSearch } from '../rendering/draw/searchEffects';
+import { isAttackReady, consumeAttackCooldown } from '../net/events/combat';
 
 const TARGETED_ABILITIES = ['heroic_leap', 'smoke_bomb', 'death_mark'];
 
@@ -41,12 +42,17 @@ export default function useTargetingExamine({
       return;
     }
     if (tm && typeof tm === 'object' && tm.action) {
+      const isCombatAction = tm.action === 'THROW' || tm.action === 'ZAP';
+      if (isCombatAction && !isAttackReady()) return;
+      if (isCombatAction) consumeAttackCooldown();
       send({ type: 'EXECUTE_ITEM_ACTION', item_id: tm.itemId, action: tm.action, target_x: tileX, target_y: tileY });
       setTargetingMode(false);
       return;
     }
     const weaponId = typeof tm === 'string' ? tm : equippedItems.weapon?.id;
     if (weaponId) {
+      if (!isAttackReady()) return;
+      consumeAttackCooldown((equippedItems.weapon?.attack_cooldown ?? 1.0) * 1000);
       // If the tapped cell is the locked target's cell, let the server auto-aim
       // (angle around corners) via target_entity_id; SPD QuickSlotButton.autoAim.
       const lockId = selectedEnemyIdRef?.current || null;
