@@ -6,7 +6,7 @@
 """
 
 from .common import Difficulty, Direction
-from .envelopes import InitMessage, PongMessage, StateUpdateMessage
+from .envelopes import InitMessage, MoveResultMessage, PongMessage, StateUpdateMessage
 from .events import EVENT_MODELS
 from .messages import CLIENT_MESSAGE_ADAPTER, ClientMessage
 
@@ -14,6 +14,7 @@ __all__ = [
     "Difficulty",
     "Direction",
     "InitMessage",
+    "MoveResultMessage",
     "PongMessage",
     "StateUpdateMessage",
     "EVENT_MODELS",

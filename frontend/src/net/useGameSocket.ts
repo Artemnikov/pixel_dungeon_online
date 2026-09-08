@@ -409,6 +409,17 @@ export default function useGameSocket({
           return;
         }
 
+        if (data.type === 'MOVE_RESULT') {
+          // MOVE_RESULT fast lane: step confirmations are sent by the server as
+          // compact top-level messages ahead of the bulk STATE_UPDATE frame, so
+          // they arrive at RTT speed instead of riding inside the 40Hz frame
+          // payload. Reuse the frame event path -- the MOVE_RESULT handler in
+          // events/player.ts confirms the step to the movement predictor.
+          eventContext.myPlayerId = entities.getMyPlayerId();
+          defaultEventDispatcher.dispatch(data, eventContext);
+          return;
+        }
+
         if (data.type !== 'STATE_UPDATE') return;
 
         // A fade triggered by an earlier tick is still mid-flight (screen is fading to

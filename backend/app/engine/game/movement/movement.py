@@ -26,6 +26,12 @@ class MovementMixin:
         player = self.players.get(entity_id)
         if player is None or player.is_downed or not player.is_alive:
             return
+        # Client-supplied deltas must be unit steps (8-dir); anything larger
+        # would teleport through walls since move_entity only validates the
+        # final cell. Non-unit steps are dropped, not clamped, so a broken
+        # client is visible and a malicious one gains nothing.
+        if max(abs(dx), abs(dy)) > 1:
+            return
         player.movement.enqueue_step(seq, dx, dy, replaces=replaces)
 
     def stop_move(self, entity_id: str, last_seq: Optional[int] = None):
@@ -45,6 +51,11 @@ class MovementMixin:
         player = self.players.get(entity_id)
         if player is None:
             return
+        # Held-direction intents are single-tile steps; clamp client-supplied
+        # values to the unit range so a crafted MOVE_INTENT can't warp the
+        # player across the floor one step at a time.
+        dx = max(-1, min(1, dx))
+        dy = max(-1, min(1, dy))
         if dx == 0 and dy == 0:
             if player.movement.move_intent is not None and player.movement.initial_step_pending:
                 step_dx, step_dy = player.movement.move_intent
@@ -68,6 +79,12 @@ class MovementMixin:
         if mob and mob.is_alive:
             dx = mob.pos.x - player.pos.x
             dy = mob.pos.y - player.pos.y
+            # Melee only reaches chebyshev-adjacent targets. Without this a
+            # crafted ATTACK would feed the full delta to move_entity, which
+            # only validates the final cell -- letting the player teleport
+            # through walls and hit anything on the floor in one step.
+            if max(abs(dx), abs(dy)) > 1:
+                return
             self.move_entity(player_id, dx, dy)
 
     def move_entity(self, entity_id: str, dx: int, dy: int, seq: Optional[int] = None):
@@ -81,6 +98,16 @@ class MovementMixin:
             return
 
         if isinstance(entity, Player) and entity.is_downed:
+            return
+
+        # Defense-in-depth: seq'd steps come from the client message path and
+        # must be unit moves. Internal multi-tile pushes (knockback, wall-slam)
+        # never carry a seq, so they're unaffected.
+        if (
+            isinstance(entity, Player)
+            and seq is not None
+            and max(abs(dx), abs(dy)) > 1
+        ):
             return
 
         # Stagger blocks all movement and attacks (bump-attacks route through

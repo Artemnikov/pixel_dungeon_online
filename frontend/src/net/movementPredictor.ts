@@ -37,6 +37,10 @@ export function getNextSeq(): number {
   return instance.getNextSeq();
 }
 
+export function getUnconfirmedSteps(): UnconfirmedStep[] {
+  return instance.getUnconfirmedSteps();
+}
+
 export function redirectMove(
   player: RenderPlayer,
   dx: number,

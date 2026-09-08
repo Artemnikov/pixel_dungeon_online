@@ -22,7 +22,7 @@ import app.api.ws_handlers  # noqa: F401 - Register handlers
 from app.engine.entities.items.consumables import Amulet
 from app.engine.manager import GameInstance
 from app.engine.game.constants import PARTY_LOOT_MAX_PLAYERS, PUBLIC_ROOM_ID
-from app.schemas import CLIENT_MESSAGE_ADAPTER, InitMessage, StateUpdateMessage
+from app.schemas import CLIENT_MESSAGE_ADAPTER, InitMessage, MoveResultMessage, StateUpdateMessage
 
 logger = logging.getLogger(__name__)
 
@@ -111,6 +111,10 @@ class ConnectionManager:
         self.last_sent_floor: Dict[str, Dict[str, Tuple[int, int]]] = {}
         self.last_sent_items: Dict[str, Dict[str, List[Any]]] = {}
         self.last_sent_player: Dict[str, Dict[str, Dict[str, Any]]] = {}
+        # Per-player FOV diff cache: the frame omits visible_tiles/mapped_tiles
+        # when they haven't changed since the last send (see send_to_client).
+        self.last_sent_visible: Dict[str, Dict[str, List[Any]]] = {}
+        self.last_sent_mapped: Dict[str, Dict[str, List[Any]]] = {}
         # game_id -> {session_id: player_id} — stable identity across reconnects.
         self.sessions: Dict[str, Dict[str, str]] = {}
         # game_id -> {player_id: monotonic deadline} — players awaiting reconnect.
@@ -242,6 +246,12 @@ class ConnectionManager:
             await websocket.send_json(init.model_dump(exclude_none=True))
             self.last_sent_floor.setdefault(game_id, {})[player_id] = (player_floor, map_version)
             self.last_sent_items.setdefault(game_id, {})[player_id] = items
+            # Reset the FOV diff cursors: this INIT resets the client's fog
+            # (initFloor wipes `discovered`), so the next STATE_UPDATE must ship
+            # a full visible/mapped snapshot regardless of whether the FOV is
+            # unchanged since the last connection (reconnect at the same spot).
+            self.last_sent_visible.get(game_id, {}).pop(player_id, None)
+            self.last_sent_mapped.get(game_id, {}).pop(player_id, None)
             stripped_sp = _strip_transient_player_fields(self_player)
             if stripped_sp is not None:
                 self.last_sent_player.setdefault(game_id, {})[player_id] = stripped_sp
@@ -264,30 +274,38 @@ class ConnectionManager:
             await dispatcher.dispatch(game, player_id, message, websocket)
 
 
+    def _mark_disconnected(self, game_id: str, player_id: str) -> None:
+        """Mark a player's hero AFK with a reconnect-grace deadline so
+        reap_expired_players eventually removes it. Safe to call from
+        disconnect() (normal WebSocketDisconnect) or directly after the
+        broadcast loop drops a dead connection that is no longer present in
+        active_connections (abnormal close, e.g. a crashed tab)."""
+        # A newer connection for this same hero may already be live -- e.g.
+        # React StrictMode double-invokes the connect effect once in dev, so
+        # a stale first socket's disconnect can arrive after a second socket
+        # for the same session already rebound. Don't let that stale close
+        # mark a still-connected hero AFK ("stuck as a ghost").
+        if player_id in self.active_connections.get(game_id, {}).values():
+            return
+        # Keep the hero in the world during a grace window so the client can
+        # reconnect (same session) and resume. The reaper removes it if not.
+        game = self.game_instances.get(game_id)
+        if game and player_id in game.players:
+            player = game.players[player_id]
+            player.movement.stop()
+            # Ghost mode: non-solid, un-targetable, "(AFK)" tag client-side.
+            player.is_afk = True
+            self.disconnect_deadline.setdefault(game_id, {})[player_id] = (
+                time.monotonic() + DISCONNECT_GRACE_SECONDS
+            )
+
     def disconnect(self, game_id: str, websocket: WebSocket):
         if game_id not in self.active_connections:
             return
         if websocket in self.active_connections[game_id]:
             player_id = self.active_connections[game_id][websocket]
             del self.active_connections[game_id][websocket]
-            # A newer connection for this same hero may already be live -- e.g.
-            # React StrictMode double-invokes the connect effect once in dev, so
-            # a stale first socket's disconnect can arrive after a second socket
-            # for the same session already rebound. Don't let that stale close
-            # mark a still-connected hero AFK ("stuck as a ghost").
-            if player_id in self.active_connections[game_id].values():
-                return
-            # Keep the hero in the world during a grace window so the client can
-            # reconnect (same session) and resume. The reaper removes it if not.
-            game = self.game_instances.get(game_id)
-            if game and player_id in game.players:
-                player = game.players[player_id]
-                player.movement.stop()
-                # Ghost mode: non-solid, un-targetable, "(AFK)" tag client-side.
-                player.is_afk = True
-                self.disconnect_deadline.setdefault(game_id, {})[player_id] = (
-                    time.monotonic() + DISCONNECT_GRACE_SECONDS
-                )
+            self._mark_disconnected(game_id, player_id)
 
     def reap_expired_players(self, game_id: str):
         """Kill heroes whose reconnect grace window has elapsed."""
@@ -308,6 +326,8 @@ class ConnectionManager:
             self.last_sent_floor.get(game_id, {}).pop(player_id, None)
             self.last_sent_items.get(game_id, {}).pop(player_id, None)
             self.last_sent_player.get(game_id, {}).pop(player_id, None)
+            self.last_sent_visible.get(game_id, {}).pop(player_id, None)
+            self.last_sent_mapped.get(game_id, {}).pop(player_id, None)
             if game and player_id in game.players:
                 player = game.players[player_id]
                 # Didn't reconnect in time -- die for real (gear scatter, grave,
@@ -344,6 +364,8 @@ class ConnectionManager:
         self.last_sent_floor.pop(game_id, None)
         self.last_sent_items.pop(game_id, None)
         self.last_sent_player.pop(game_id, None)
+        self.last_sent_visible.pop(game_id, None)
+        self.last_sent_mapped.pop(game_id, None)
         self.sessions.pop(game_id, None)
         self.disconnect_deadline.pop(game_id, None)
         self.retained_corpses.pop(game_id, None)
@@ -395,6 +417,11 @@ class ConnectionManager:
                         await connection.send_json(init.model_dump(exclude_none=True))
                         self.last_sent_floor[game_id][player_id] = (player_floor, map_version)
                         self.last_sent_items.setdefault(game_id, {})[player_id] = items
+                        # Reset the FOV diff cursor so the next frame definitely
+                        # ships a fresh visible/mapped snapshot (the client's fog
+                        # is reset by initFloor on connect/floor change).
+                        self.last_sent_visible.get(game_id, {}).pop(player_id, None)
+                        self.last_sent_mapped.get(game_id, {}).pop(player_id, None)
                         stripped_sp_init = _strip_transient_player_fields(self_player_init)
                         if stripped_sp_init is not None:
                             self.last_sent_player.setdefault(game_id, {})[player_id] = stripped_sp_init
@@ -417,13 +444,48 @@ class ConnectionManager:
                     else:
                         self_player_payload = None
 
+                    # Per-player event filter once; movement acks then split out.
+                    filtered_events = game.filter_events_for_player(events, player_id)
+
+                    # MOVE_RESULT fast lane: each player's own step confirmations
+                    # go out as compact top-level messages ahead of the bulk
+                    # frame (and are excluded from the frame's events, so the
+                    # client never processes them twice). Step acks are then
+                    # bounded by RTT instead of full-frame serialization -- the
+                    # client's predictor notches one ack per step in real time
+                    # instead of stalling its step buffer on frame latency.
+                    move_acks = [e for e in filtered_events if e.get("type") == "MOVE_RESULT"]
+                    frame_events = [e for e in filtered_events if e.get("type") != "MOVE_RESULT"]
+                    for ack in move_acks:
+                        await connection.send_json(MoveResultMessage(data=ack["data"]).model_dump(exclude_none=True))
+
+                    # FOV diff: visible_tiles/mapped_tiles only change when the
+                    # player moves (or a scroll/burst affects vision). Omitting
+                    # them when unchanged turns a static screen into ~0 FOV bytes
+                    # instead of re-serializing ~200 cells at 40Hz.
+                    current_visible = state.get("visible_tiles", [])
+                    last_visible = self.last_sent_visible.setdefault(game_id, {}).get(player_id)
+                    if last_visible is None or current_visible != last_visible:
+                        visible_payload = current_visible
+                        self.last_sent_visible[game_id][player_id] = current_visible
+                    else:
+                        visible_payload = None
+
+                    current_mapped = state.get("mapped_tiles", [])
+                    last_mapped = self.last_sent_mapped.setdefault(game_id, {}).get(player_id)
+                    if last_mapped is None or current_mapped != last_mapped:
+                        mapped_payload = current_mapped
+                        self.last_sent_mapped[game_id][player_id] = current_mapped
+                    else:
+                        mapped_payload = None
+
                     update = StateUpdateMessage(
                         players=state["players"],
                         mobs=state["mobs"],
                         items=items_payload,
-                        visible_tiles=state.get("visible_tiles", []),
-                        mapped_tiles=state.get("mapped_tiles", []),
-                        events=game.filter_events_for_player(events, player_id),
+                        visible_tiles=visible_payload,
+                        mapped_tiles=mapped_payload,
+                        events=frame_events,
                         self_player=self_player_payload,
                     )
                     await connection.send_json(update.model_dump(exclude_none=True))
@@ -440,12 +502,16 @@ class ConnectionManager:
             for (conn, pid), res in zip(connections_snapshot, results):
                 if isinstance(res, Exception):
                     logger.debug("Cleanly dropping closed connection for player_id=%s", pid)
-                    dead_connections.append(conn)
+                    dead_connections.append((conn, pid))
 
-            for conn in dead_connections:
+            for conn, pid in dead_connections:
                 if game_id in self.active_connections and conn in self.active_connections[game_id]:
                     del self.active_connections[game_id][conn]
-                self.disconnect(game_id, conn)
+                # The socket is already gone from active_connections here, so a
+                # plain disconnect() call would no-op and the hero would stay
+                # alive forever. Mark AFK directly so the normal grace window +
+                # reaper apply to abnormal closes too.
+                self._mark_disconnected(game_id, pid)
 
 
 manager = ConnectionManager()

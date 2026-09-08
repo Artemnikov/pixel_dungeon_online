@@ -1318,7 +1318,8 @@ export interface StateUpdateMessage {
   type: 'STATE_UPDATE';
   players: Player[];
   mobs: Mob[];
-  visible_tiles: Vec2[];
+  /** Omitted when the per-player FOV is unchanged since the last frame (server-side diff). */
+  visible_tiles?: Vec2[];
   events: GameEvent[];
   items?: SerializedItem[];
   depth?: number;
@@ -1339,8 +1340,14 @@ export interface PongMessage {
   type: 'PONG';
 }
 
+/** Compact movement-ack fast lane: sent ahead of the bulk STATE_UPDATE frame. */
+export interface MoveResultMessage {
+  type: 'MOVE_RESULT';
+  data: { entity: string; seq?: number; x: number; y: number; ok: boolean };
+}
+
 /** Any frame the client can receive. */
-export type ServerMessage = InitMessage | StateUpdateMessage | PongMessage;
+export type ServerMessage = InitMessage | StateUpdateMessage | PongMessage | MoveResultMessage;
 
 // --- client -> server: messages --------------------------------------------
 // Mirrors the handlers in backend/app/main.py:211-293.

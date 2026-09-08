@@ -427,6 +427,41 @@ test('onMoveResult: handles rejection ok=false by rolling back', () => {
   assert.deepEqual(player.targetPos, { x: 10, y: 10 });
 });
 
+test('onMoveResult: a single rejected seq step keeps later steps re-anchored to server pos', async () => {
+  movementPredictor.clear();
+  const player = createMockPlayer(10, 10);
+
+  // First step succeeds server-side.
+  assert.equal(movementPredictor.predictMove(player, 1, 0, 'p1', mockGrid, mockEntities).seq, 1);
+  movementPredictor.onMoveResult({ entity: 'p1', seq: 1, x: 11, y: 10, ok: true }, player);
+  assert.equal(movementPredictor.isPending(), false);
+
+  // Second step goes in-flight; wait out the step cooldown, then pace a third.
+  player.renderPos = { x: 11, y: 10 };
+  player.animStartTime = performance.now() - 200;
+  await new Promise(resolve => setTimeout(resolve, 190));
+  const move2 = movementPredictor.predictMove(player, 1, 0, 'p1', mockGrid, mockEntities);
+  assert.equal(move2.seq, 2);
+
+  player.renderPos = { x: 12, y: 10 };
+  player.animStartTime = performance.now() - 200;
+  await new Promise(resolve => setTimeout(resolve, 190));
+  const move3 = movementPredictor.paceStep(player, 1, 0, 'p1', mockGrid, mockEntities);
+  assert.equal(move3.seq, 3);
+  assert.equal(movementPredictor.isPending(), true);
+  assert.deepEqual(movementPredictor.getUnconfirmedSteps().map(s => s.seq), [2, 3]);
+
+  // The server rejects only step 2 -- step 3 must survive, re-anchored to the
+  // authoritative position instead of the whole buffer being wiped.
+  movementPredictor.onMoveResult({ entity: 'p1', seq: 2, x: 11, y: 10, ok: false }, player);
+
+  assert.equal(movementPredictor.isPending(), true, 'later steps survive one rejected step');
+  assert.deepEqual(movementPredictor.getUnconfirmedSteps().map(s => s.seq), [3]);
+  assert.equal(movementPredictor.getUnconfirmedSteps()[0].targetX, 12, 'survivor starts from server pos (11,10) + dx');
+  assert.equal(movementPredictor.getUnconfirmedSteps()[0].targetY, 10);
+  assert.deepEqual(player.targetPos, { x: 11, y: 10 }, 'glides to the server position, no hard snap');
+});
+
 test('reconcile: acknowledges steps via lastProcessedSeq', () => {
   movementPredictor.clear();
   const player = createMockPlayer(10, 10);
@@ -445,4 +480,163 @@ test('getStepDuration: adapts dynamically to player step_duration_ms', () => {
 
   player.step_duration_ms = 300;
   assert.equal(movementPredictor.getStepDuration(player), 300);
+});
+
+test('paceStep: buffer holds 3 in-flight steps before going busy', async () => {
+  movementPredictor.clear();
+  const player = createMockPlayer(10, 10);
+
+  // Step 1 (from rest).
+  assert.equal(movementPredictor.predictMove(player, 1, 0, 'p1', mockGrid, mockEntities).seq, 1);
+
+  // Chain step 2 (anim complete, cooldown elapsed).
+  player.renderPos = { x: 11, y: 10 };
+  player.animStartTime = performance.now() - 200;
+  await new Promise(resolve => setTimeout(resolve, 190));
+  assert.equal(movementPredictor.paceStep(player, 1, 0, 'p1', mockGrid, mockEntities).seq, 2);
+
+  // Chain step 3 while step 1 and 2 are still un-acked.
+  player.renderPos = { x: 12, y: 10 };
+  player.animStartTime = performance.now() - 200;
+  await new Promise(resolve => setTimeout(resolve, 190));
+  assert.equal(movementPredictor.paceStep(player, 1, 0, 'p1', mockGrid, mockEntities).seq, 3);
+  assert.deepEqual(movementPredictor.getUnconfirmedSteps().map(s => s.seq), [1, 2, 3]);
+
+  // A 4th in-flight step is refused while the 3-step buffer is full.
+  const busy = movementPredictor.paceStep(player, 1, 0, 'p1', mockGrid, mockEntities);
+  assert.equal(busy.kind, 'busy');
+});
+
+test('paceStep: chains up to 3 steps without an ack, then caps (live-RTT behavior)', async () => {
+  movementPredictor.clear();
+  const player = createMockPlayer(10, 10);
+
+  // Build 3 in-flight steps back-to-back (no acks at all -- worst-case RTT).
+  assert.equal(movementPredictor.predictMove(player, 1, 0, 'p1', mockGrid, mockEntities).seq, 1);
+
+  player.renderPos = { x: 11, y: 10 };
+  player.animStartTime = performance.now() - 200;
+  await new Promise(resolve => setTimeout(resolve, 190));
+  assert.equal(movementPredictor.paceStep(player, 1, 0, 'p1', mockGrid, mockEntities).seq, 2);
+
+  player.renderPos = { x: 12, y: 10 };
+  player.animStartTime = performance.now() - 200;
+  await new Promise(resolve => setTimeout(resolve, 190));
+  assert.equal(movementPredictor.paceStep(player, 1, 0, 'p1', mockGrid, mockEntities).seq, 3);
+
+  assert.deepEqual(movementPredictor.getUnconfirmedSteps().map(s => s.seq), [1, 2, 3]);
+
+  // One ack frees a slot immediately -- no stall waits for the whole buffer.
+  movementPredictor.onMoveResult({ entity: 'p1', seq: 1, x: 11, y: 10, ok: true }, player);
+  player.renderPos = { x: 13, y: 10 };
+  player.animStartTime = performance.now() - 200;
+  await new Promise(resolve => setTimeout(resolve, 190));
+  assert.equal(movementPredictor.paceStep(player, 1, 0, 'p1', mockGrid, mockEntities).seq, 4);
+});
+
+test('reconcile: never hard-resets while walking when the server trails a tile', async () => {
+  movementPredictor.clear();
+  const player = createMockPlayer(10, 10);
+
+  // Steps 1 and 2 accepted, confirmed at (12,10).
+  assert.equal(movementPredictor.predictMove(player, 1, 0, 'p1', mockGrid, mockEntities).seq, 1);
+  movementPredictor.onMoveResult({ entity: 'p1', seq: 1, x: 11, y: 10, ok: true }, player);
+
+  player.renderPos = { x: 11, y: 10 };
+  player.animStartTime = performance.now() - 200;
+  await new Promise(resolve => setTimeout(resolve, 190));
+  assert.equal(movementPredictor.paceStep(player, 1, 0, 'p1', mockGrid, mockEntities).seq, 2);
+  movementPredictor.onMoveResult({ entity: 'p1', seq: 2, x: 12, y: 10, ok: true }, player);
+  assert.equal(movementPredictor.isPending(), false);
+
+  // Chain step 3 off the confirmed anchor.
+  player.renderPos = { x: 12, y: 10 };
+  player.animStartTime = performance.now() - 200;
+  await new Promise(resolve => setTimeout(resolve, 190));
+  assert.equal(movementPredictor.paceStep(player, 1, 0, 'p1', mockGrid, mockEntities).seq, 3);
+  assert.deepEqual(movementPredictor.getUnconfirmedSteps().map(s => s.seq), [3]);
+  assert.deepEqual(player.targetPos, { x: 13, y: 10 });
+
+  // A state frame built one tick earlier arrives behind the fast-lane ack:
+  // server pos (11,10), lastProcessedSeq=1, while confirmedPos is already
+  // (12,10). This used to register as a mismatch and retarget-glide the hero
+  // back a tile ("spring-back"). Now it folds the server tile into the anchor.
+  movementPredictor.reconcile({ x: 11, y: 10 }, player, 1);
+
+  assert.equal(movementPredictor.isPending(), true, 'the walk continues');
+  assert.deepEqual(player.targetPos, { x: 13, y: 10 }, 'no spring-back retarget');
+  assert.deepEqual(movementPredictor.getUnconfirmedSteps().map(s => s.seq), [3]);
+});
+
+test('reconcile: still hard-resets on a genuine divergence of more than one tile', async () => {
+  movementPredictor.clear();
+  const player = createMockPlayer(10, 10);
+
+  assert.equal(movementPredictor.predictMove(player, 1, 0, 'p1', mockGrid, mockEntities).seq, 1);
+  movementPredictor.onMoveResult({ entity: 'p1', seq: 1, x: 11, y: 10, ok: true }, player);
+
+  player.renderPos = { x: 11, y: 10 };
+  player.animStartTime = performance.now() - 200;
+  await new Promise(resolve => setTimeout(resolve, 190));
+  assert.equal(movementPredictor.paceStep(player, 1, 0, 'p1', mockGrid, mockEntities).seq, 2);
+
+  // Server ends up 2 tiles off the confirmed anchor (e.g. knockback that moves
+  // the player without consuming a client seq) -- nowhere on the predicted
+  // chain. The hard reset stays.
+  movementPredictor.reconcile({ x: 14, y: 12 }, player, 1);
+
+  assert.equal(movementPredictor.isPending(), false);
+  assert.deepEqual(movementPredictor.getUnconfirmedSteps(), []);
+  assert.deepEqual(player.targetPos, { x: 14, y: 12 });
+});
+
+test('reconcile: a 1-tile divergence while walking is folded, not hard-reset', async () => {
+  // Deliberate tradeoff of the spring-back guard: a 1-tile displacement that
+  // didn't consume a client seq (e.g. small knockback) is folded into the
+  // confirmed anchor and the walk continues, self-correcting when the step
+  // acks land -- instead of snapping the hero back a tile.
+  movementPredictor.clear();
+  const player = createMockPlayer(10, 10);
+
+  assert.equal(movementPredictor.predictMove(player, 1, 0, 'p1', mockGrid, mockEntities).seq, 1);
+  movementPredictor.onMoveResult({ entity: 'p1', seq: 1, x: 11, y: 10, ok: true }, player);
+
+  player.renderPos = { x: 11, y: 10 };
+  player.animStartTime = performance.now() - 200;
+  await new Promise(resolve => setTimeout(resolve, 190));
+  const m2 = movementPredictor.paceStep(player, 1, 0, 'p1', mockGrid, mockEntities);
+  assert.equal(m2.seq, 2);
+  assert.deepEqual(player.targetPos, { x: 12, y: 10 });
+
+  // Server moves the hero one tile off the chain (upward) without a seq ack.
+  movementPredictor.reconcile({ x: 11, y: 9 }, player, 1);
+
+  assert.equal(movementPredictor.isPending(), true, '1-tile divergence folds, not reset');
+  assert.deepEqual(player.targetPos, { x: 12, y: 10 }, 'no snap-back; the walk continues');
+  assert.deepEqual(movementPredictor.getUnconfirmedSteps().map(s => s.seq), [2]);
+});
+
+test('onMoveResult: no-seq rejection mid-walk re-anchors instead of wiping the chain', async () => {
+  movementPredictor.clear();
+  const player = createMockPlayer(10, 10);
+
+  assert.equal(movementPredictor.predictMove(player, 1, 0, 'p1', mockGrid, mockEntities).seq, 1);
+  movementPredictor.onMoveResult({ entity: 'p1', seq: 1, x: 11, y: 10, ok: true }, player);
+
+  // Step 2 in flight (no ack yet).
+  player.renderPos = { x: 11, y: 10 };
+  player.animStartTime = performance.now() - 200;
+  await new Promise(resolve => setTimeout(resolve, 190));
+  assert.equal(movementPredictor.paceStep(player, 1, 0, 'p1', mockGrid, mockEntities).seq, 2);
+  assert.deepEqual(movementPredictor.getUnconfirmedSteps().map(s => s.seq), [2]);
+
+  // A no-seq rejection (path/auto-move step blocked server-side) lands while
+  // the keyboard walk is still pending. It must re-anchor, not wipe.
+  movementPredictor.onMoveResult({ entity: 'p1', x: 11, y: 10, ok: false }, player);
+
+  assert.equal(movementPredictor.isPending(), true, 'live walk survives a no-seq rejection');
+  assert.deepEqual(movementPredictor.getUnconfirmedSteps().map(s => s.seq), [2]);
+  assert.equal(movementPredictor.getUnconfirmedSteps()[0].targetX, 12, 'survivor continues from server anchor');
+  assert.equal(movementPredictor.getUnconfirmedSteps()[0].targetY, 10);
+  assert.deepEqual(player.targetPos, { x: 11, y: 10 }, 'glides to the server pos, no wipe');
 });

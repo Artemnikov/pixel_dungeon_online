@@ -50,11 +50,25 @@ class InitMessage(_Envelope):
     self_player: Optional[Dict[str, Any]] = None
 
 
+class MoveResultMessage(_Envelope):
+    """Compact movement-ack fast lane sent ahead of the bulk STATE_UPDATE.
+
+    broadcast_state splits each player's MOVE_RESULT events out of the frame and
+    ships them as dedicated top-level messages (one per step), so step
+    confirmation is bounded by RTT instead of frame serialization + payload.
+    """
+
+    type: Literal["MOVE_RESULT"] = "MOVE_RESULT"
+    data: Dict[str, Any]
+
+
 class StateUpdateMessage(_Envelope):
     type: Literal["STATE_UPDATE"] = "STATE_UPDATE"
     players: List[Any]
     mobs: List[Any]
-    visible_tiles: List[Any]
+    # Optional on purpose: broadcast_state diffs the per-player FOV and omits
+    # the field when it hasn't changed (a static screen sends zero FOV bytes).
+    visible_tiles: Optional[List[Any]] = None
     events: List[Any]
     items: Optional[List[Any]] = None
     depth: Optional[int] = None

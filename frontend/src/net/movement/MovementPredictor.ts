@@ -18,7 +18,12 @@ export interface UnconfirmedStep {
 const BLOCKING_DEBUFFS = new Set(['paralysis', 'frozen', 'stagger', 'roots', 'daze']);
 const PENDING_TIMEOUT_MS = MOVE_DURATION * 2.5;
 const SMOOTH_GLIDE_MAX_TILES = 3;
-const MAX_IN_FLIGHT_STEPS = 2;
+// In-flight step buffer. Was 2: on a live WAN the step ack cadence lags the
+// local animation cadence (RTT + 40Hz state-frame batching), so the buffer
+// would fill and paceStep() would return 'busy' -- freezing the walk for a
+// beat every few steps. 3 absorbs that jitter; the server queues up to 8 and
+// steps are still blocked locally by walls/mobs, so it can't walk off-grid.
+const MAX_IN_FLIGHT_STEPS = 3;
 
 function chebyshevDist(ax: number, ay: number, bx: number, by: number): number {
   return Math.max(Math.abs(ax - bx), Math.abs(ay - by));
@@ -300,12 +305,71 @@ export class MovementPredictor {
     }
 
     this.confirmedPos = { x: rx, y: ry };
+    if (data.seq !== undefined) {
+      // A specific seq'd step was rejected by the server. Drop only that step
+      // (and anything before it) instead of wiping the whole in-flight buffer:
+      // surviving steps are re-anchored to the authoritative server position by
+      // re-accumulating their stored deltas, so one blocked step no longer yanks
+      // the player all the way back ("teleport-back").
+      const failedIdx = this.unconfirmedSteps.findIndex(s => s.seq === data.seq);
+      if (failedIdx >= 0) {
+        this.unconfirmedSteps = this.unconfirmedSteps.slice(failedIdx + 1);
+      }
+      this.rejectAndReanchor(player, rx, ry);
+      return;
+    }
+
+    if (this.unconfirmedSteps.length > 0) {
+      // A no-seq rejection (path/auto-move step blocked server-side) must not
+      // wipe a live keyboard walk. Re-anchor the surviving steps to the
+      // authoritative position and continue; a full reset here is what used to
+      // yank the hero back a tile mid-walk ("spring-back").
+      this.rejectAndReanchor(player, rx, ry);
+      return;
+    }
+
     this.predictedPos = null;
     this.pendingMove = false;
     this.pendingPathSteps = [];
     this.unconfirmedSteps = [];
     this.lastStepTime = performance.now();
     this.retarget(player, rx, ry, false);
+  }
+
+  /**
+   * Shared tail for a rejected step: re-anchor the surviving unconfirmed steps
+   * to the authoritative server position, refresh the chain's predicted head,
+   * and glide the hero back to the server tile (no hard snap).
+   */
+  private rejectAndReanchor(player: RenderPlayer, rx: number, ry: number): void {
+    this.reanchorTo(rx, ry);
+    if (this.unconfirmedSteps.length === 0) {
+      this.predictedPos = null;
+      this.pendingMove = false;
+    } else {
+      const latest = this.unconfirmedSteps[this.unconfirmedSteps.length - 1];
+      this.predictedPos = { x: latest.targetX, y: latest.targetY };
+      this.pendingMove = true;
+    }
+    this.pendingPathSteps = [];
+    this.lastStepTime = performance.now();
+    this.retarget(player, rx, ry, false);
+  }
+
+  /**
+   * Shift every surviving unconfirmed step so its target is recomputed from a
+   * given anchor position (used after a rejected step: the server never moved,
+   * so every later prediction is one step too far along).
+   */
+  private reanchorTo(anchorX: number, anchorY: number): void {
+    let x = anchorX;
+    let y = anchorY;
+    for (const step of this.unconfirmedSteps) {
+      x += step.dx;
+      y += step.dy;
+      step.targetX = x;
+      step.targetY = y;
+    }
   }
 
   public reconcile(
@@ -354,6 +418,29 @@ export class MovementPredictor {
         const latest = this.unconfirmedSteps[this.unconfirmedSteps.length - 1];
         this.predictedPos = { x: latest.targetX, y: latest.targetY };
       }
+      return;
+    }
+
+    // Spring-back guard: while a prediction chain is live, a server position
+    // within one tile of the last confirmed tile means the server is simply
+    // trailing the walk (RTT + frame batching), not diverging from it. Adopt
+    // it as the confirmed anchor and keep walking. Without this, the idle
+    // check below misses (confirmedPos near but not equal to serverPos) and
+    // the hard reset would retarget the hero back a tile -- the "spring-back".
+    //
+    // Deliberately NOT re-anchoring the surviving steps here: in the normal
+    // trailing-server case the chain targets remain valid (the server will step
+    // through them), and shrinking them would stall the walk one step per fold.
+    // Side effect accepted: a genuine 1-tile divergence (e.g. a 1-tile knockback
+    // that didn't consume a client seq) is also folded and the walk continues;
+    // the residual chain then self-corrects when the step acks land, which beats
+    // a visible snap-back for a rare, small displacement.
+    if (
+      this.unconfirmedSteps.length > 0 &&
+      this.confirmedPos !== null &&
+      Math.max(Math.abs(sx - this.confirmedPos.x), Math.abs(sy - this.confirmedPos.y)) <= 1
+    ) {
+      this.confirmedPos = { x: sx, y: sy };
       return;
     }
 
