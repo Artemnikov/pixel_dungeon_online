@@ -9,6 +9,7 @@ import { findTalentDef } from '../game/talents/talentQueries';
 export default function TalentLayer({
   talent, myStats, gameState, depth, gold,
   showItemBrowser, setShowItemBrowser, itemCatalog,
+  effects,
   send,
 }) {
   const {
@@ -24,7 +25,6 @@ export default function TalentLayer({
     armorAbilityOptions,
     showLevelUpBanner, setShowLevelUpBanner,
     levelUpData,
-    upgradedTalentId, setUpgradedTalentId,
     showMetamorphMode,
     metamorphOldTalent,
     metamorphOptions,
@@ -40,15 +40,12 @@ export default function TalentLayer({
     talentDefs,
     talentLevels: myStats.talentLevels || {},
     talentPoints,
-    bonusTalentPoints: myStats.bonusTalentPoints,
     level: myStats.level || 1,
     subclass: myStats.subclass || null,
     armorAbility: myStats.armorAbility || null,
-    abilityTier4: talentDefs?.ability_tier4 || {},
-    upgradedTalentId,
+    effects,
     isAdmin: myStats.isAdmin,
     onAdminLevelUp: () => send({ type: 'ADMIN_LEVEL_UP' }),
-    onAnimationDone: () => setUpgradedTalentId(null),
     onUpgradeTalent: sendUpgradeTalent,
     loading: talentDefsLoading,
     error: talentDefsError,

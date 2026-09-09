@@ -13,13 +13,11 @@ export default function useTalents({ gameState, selectedClass, myStats, send }) 
   const handleChooseSubclass = (subclass) => {
     send({ type: 'CHOOSE_SUBCLASS', subclass });
     ui.setShowHeroWindow(false);
-    ui.setUpgradedTalentId(null);
   };
 
   const handleChooseArmorAbility = (ability) => {
     send({ type: 'CHOOSE_ARMOR_ABILITY', ability });
     ui.setShowHeroWindow(false);
-    ui.setUpgradedTalentId(null);
   };
 
   const onLevelUp = (levelUpPayload) => {
@@ -47,10 +45,6 @@ export default function useTalents({ gameState, selectedClass, myStats, send }) 
     ui.setMetamorphOptions(options);
   };
 
-  const onTalentUpgraded = ({ talent }) => {
-    ui.setUpgradedTalentId(talent);
-  };
-
   return {
     ...data,
     ...ui,
@@ -64,6 +58,5 @@ export default function useTalents({ gameState, selectedClass, myStats, send }) 
     onArmorAbilityChoiceAvailable,
     onMetamorphOpen,
     onMetamorphOptions,
-    onTalentUpgraded,
   };
 }

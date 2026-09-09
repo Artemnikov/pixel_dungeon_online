@@ -238,7 +238,6 @@ export interface HookProps {
   onSubclassChoiceAvailable?: (data: { options: string[] }) => void;
   onArmorAbilityChoiceAvailable?: (data: { options: string[] }) => void;
   onImbueWandChoiceAvailable?: (data: { staff_id: string; candidates: string[] }) => void;
-  onTalentUpgraded?: (data: { talent: string; level: number }) => void;
   onMetamorphOpen?: () => void;
   onMetamorphOptions?: (data: { old_talent: string; options: string[] }) => void;
   onGooFightStarted?: (data: { mob: string }) => void;
@@ -312,7 +311,6 @@ export type HandlerCtx = Pick<
   onSubclassChoiceAvailable?: HookProps['onSubclassChoiceAvailable'];
   onArmorAbilityChoiceAvailable?: HookProps['onArmorAbilityChoiceAvailable'];
   onImbueWandChoiceAvailable?: HookProps['onImbueWandChoiceAvailable'];
-  onTalentUpgraded?: HookProps['onTalentUpgraded'];
   onMetamorphOpen?: HookProps['onMetamorphOpen'];
   onMetamorphOptions?: HookProps['onMetamorphOptions'];
   onGooFightStarted?: HookProps['onGooFightStarted'];

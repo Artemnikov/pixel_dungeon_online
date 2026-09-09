@@ -1,19 +1,9 @@
-import { useRef, useState, useEffect } from 'react';
+import { useCallback, useState } from 'react';
 import TalentIcon from './TalentIcon';
 import AudioManager from '../audio/AudioManager';
 
 const BTN_W = 40;
 const BTN_H = 52;
-
-const PARTICLE_STYLES = Array.from({ length: 12 }, (_, i) => {
-  const angle = (Math.PI * 2 * i) / 12 + Math.random() * 0.3;
-  const dist = 20 + Math.random() * 15;
-  return {
-    '--dx': `${Math.cos(angle) * dist}px`,
-    '--dy': `${Math.sin(angle) * dist}px`,
-    '--delay': `${Math.random() * 0.1}s`,
-  };
-});
 
 export default function TalentButton({
   talentId,
@@ -24,41 +14,26 @@ export default function TalentButton({
   pointsAvailable,
   locked,
   onInfo,
-  upgradedTalentId,
-  onAnimationDone,
+  effects,
   metamorphMode,
   onMetamorphChoose,
 }) {
   const canUpgrade = !locked && currentLevel < maxPoints && pointsAvailable > 0;
   const frameCol = maxPoints - 1;
   const fillRatio = currentLevel / Math.max(maxPoints, 1);
-  const btnRef = useRef(null);
   const [pressed, setPressed] = useState(false);
-  const [burstKey, setBurstKey] = useState(0);
-  const mountedRef = useRef(false);
 
-  // Trigger burst when upgradedTalentId matches this talent (SPD-style particle effect).
-  // Only plays sound when upgradedTalentId CHANGES to match (real upgrade), not on initial
-  // mount with a stale value (e.g. pane reopened after an incomplete animation).
-  useEffect(() => {
-    if (!mountedRef.current) {
-      mountedRef.current = true;
-      return;
-    }
-    if (upgradedTalentId === talentId && !locked) {
-      AudioManager.play('LEVELUP', 1.2);
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setBurstKey(k => k + 1);
-    }
-  }, [upgradedTalentId, talentId, locked]);
-
-  useEffect(() => {
-    if (burstKey === 0) return;
-    const timer = setTimeout(() => {
-      onAnimationDone?.();
-    }, 500);
-    return () => clearTimeout(timer);
-  }, [burstKey, onAnimationDone]);
+  // The upgrade burst animation is owned by the animation manager
+  // (VisualEffectsManager). It plays when the backend confirms the upgrade
+  // (TALENT_UPGRADED WS event) and imperatively appends/removes the burst to
+  // this button's DOM node, so no state or effects are needed here.
+  const registerBurstNode = useCallback(
+    (node) => {
+      effects?.registerTalentButton?.(talentId, node);
+      return () => effects?.registerTalentButton?.(talentId, null);
+    },
+    [effects, talentId],
+  );
 
   const handlePointerDown = () => {
     if (locked) return;
@@ -69,7 +44,7 @@ export default function TalentButton({
 
   return (
     <button
-      ref={btnRef}
+      ref={registerBurstNode}
       className={`talent-btn ${locked ? 'locked' : ''} ${currentLevel > 0 ? 'has-pts' : ''} ${pressed ? 'pressed' : ''} ${metamorphMode && currentLevel > 0 ? 'metamorph-target' : ''}`}
       title={name}
       onClick={() => {
@@ -114,21 +89,6 @@ export default function TalentButton({
           borderRadius: 0,
         }}
       />
-      {burstKey > 0 && (
-        <div className="talent-burst" key={burstKey}>
-          {PARTICLE_STYLES.map((s, i) => (
-            <div
-              key={i}
-              className="talent-star-particle"
-              style={{
-                '--dx': s['--dx'],
-                '--dy': s['--dy'],
-                '--delay': s['--delay'],
-              }}
-            />
-          ))}
-        </div>
-      )}
     </button>
   );
 }

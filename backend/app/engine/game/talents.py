@@ -86,7 +86,7 @@ class TalentsMixin:
             "talent_points": dict(player.subclass_info.talent_points),
             "can_choose_armor_ability": False,
             "can_choose_subclass": False,
-        }, floor_id=player.floor_id, source_player_id=player.id)
+        }, player_id=player.id)
 
     def choose_subclass(self, player_id: str, subclass: str) -> bool:
         player = self.players.get(player_id)
@@ -211,7 +211,7 @@ class TalentsMixin:
 
         self._recompute_talent_points(player)
 
-        self.add_event("TALENT_UPGRADED", {"player": player.id, "talent": talent_name, "level": current + 1}, floor_id=player.floor_id, source_player_id=player.id)
+        self.add_event("TALENT_UPGRADED", {"player": player.id, "talent": talent_name, "level": current + 1}, player_id=player.id)
         return True
 
     def trigger_berserk(self, player_id: str) -> bool:
@@ -524,7 +524,7 @@ class TalentsMixin:
             return False
         self.add_event("METAMORPH_OPTIONS", {
             "player": player.id, "old_talent": old_talent, "options": options,
-        }, floor_id=player.floor_id, source_player_id=player.id)
+        }, player_id=player.id)
         return True
 
     def metamorph_replace(self, player_id: str, old_talent: str, new_talent: str) -> bool:
@@ -556,7 +556,7 @@ class TalentsMixin:
         self._recompute_talent_points(player)
         self.add_event("TALENT_METAMORPHED", {
             "player": player.id, "old_talent": old_talent, "new_talent": new_talent,
-        }, floor_id=player.floor_id, source_player_id=player.id)
+        }, player_id=player.id)
         return True
 
     # ------------------------------------------------------------------

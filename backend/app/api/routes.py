@@ -191,6 +191,7 @@ async def get_talents(class_type: str):
             "tier": tier,
             "subclass": subclass_req,
             "is_ability_selector": talent_id in ABILITY_TALENTS,
+            "ability": T4_ABILITY_TALENTS.get(talent_id),
         }
 
         if talent_id in ABILITY_TALENTS:

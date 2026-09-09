@@ -51,7 +51,6 @@ export function handleEvent(event: GameEvent, ctx: HandlerCtx): void {
     onSubclassChoiceAvailable: ctx.onSubclassChoiceAvailable,
     onArmorAbilityChoiceAvailable: ctx.onArmorAbilityChoiceAvailable,
     onImbueWandChoiceAvailable: ctx.onImbueWandChoiceAvailable,
-    onTalentUpgraded: ctx.onTalentUpgraded,
     onMetamorphOpen: ctx.onMetamorphOpen,
     onMetamorphOptions: ctx.onMetamorphOptions,
     onGooFightStarted: ctx.onGooFightStarted,

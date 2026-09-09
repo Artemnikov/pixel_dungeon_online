@@ -95,7 +95,6 @@ export default function useGameSocket({
   onSubclassChoiceAvailable,
   onArmorAbilityChoiceAvailable,
   onImbueWandChoiceAvailable,
-  onTalentUpgraded,
   onMetamorphOpen,
   onMetamorphOptions,
   onGooFightStarted,
@@ -132,6 +131,36 @@ export default function useGameSocket({
 }: HookProps) {
   const depthRef = useRef(1);
 
+  // The effects manager owns all gameplay/UI effects (projectiles, particles,
+  // talent upgrade bursts, ...). It must be created once and be stable for the
+  // hook lifetime: the socket handler closure and the UI components (which
+  // register talent button DOM nodes) must all share the exact same instance.
+  const effectsRef = useRef<VisualEffectsManager | null>(null);
+  if (effectsRef.current === null) {
+    effectsRef.current = new VisualEffectsManager({
+      projectilesRef,
+      mobAnimRef,
+      playerAnimRef,
+      particlesRef,
+      searchEffectsRef,
+      floatingTextRef,
+      warnedTilesRef,
+      screenFlashRef,
+      transmuteEffectsRef,
+      flareEffectsRef,
+      spellSpriteEffectsRef,
+      lightningRef,
+      shieldHaloRef,
+      stateEffectsRef,
+      screenShakeRef,
+      magicMissileRef,
+      beamRef,
+      surpriseRef,
+      flyingItemsRef,
+    });
+  }
+  const effects = effectsRef.current;
+
   useEffect(() => {
     if (!enabled) return;
 
@@ -158,28 +187,6 @@ export default function useGameSocket({
       selectedEnemyIdRef,
     });
 
-    const effects = new VisualEffectsManager({
-      projectilesRef,
-      mobAnimRef,
-      playerAnimRef,
-      particlesRef,
-      searchEffectsRef,
-      floatingTextRef,
-      warnedTilesRef,
-      screenFlashRef,
-      transmuteEffectsRef,
-      flareEffectsRef,
-      spellSpriteEffectsRef,
-      lightningRef,
-      shieldHaloRef,
-      stateEffectsRef,
-      screenShakeRef,
-      magicMissileRef,
-      beamRef,
-      surpriseRef,
-      flyingItemsRef,
-    });
-
     const heroState = new HeroStateSync({
       setMyStats,
       setInventory,
@@ -199,7 +206,6 @@ export default function useGameSocket({
       onSubclassChoiceAvailable,
       onArmorAbilityChoiceAvailable,
       onImbueWandChoiceAvailable,
-      onTalentUpgraded,
       onMetamorphOpen,
       onMetamorphOptions,
       onGooFightStarted,
@@ -513,5 +519,5 @@ export default function useGameSocket({
     }
   };
 
-  return { sendSelectScrollTarget, sendStoneTarget };
+  return { sendSelectScrollTarget, sendStoneTarget, effects };
 }

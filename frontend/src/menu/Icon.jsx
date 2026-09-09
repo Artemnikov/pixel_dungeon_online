@@ -15,6 +15,7 @@ const ICON_FRAMES = {
   AUDIO:    { x: 64,  y: 16, w: 14, h: 14 },
   DISPLAY:  { x: 32,  y: 16, w: 16, h: 12 },
   CLOSE:    { x: 80,  y: 32, w: 11, h: 11 },
+  TALENT:   { x: 16,  y: 48, w: 13, h: 13 },
 };
 
 const SHEET_W = 256;

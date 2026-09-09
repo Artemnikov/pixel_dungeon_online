@@ -26,13 +26,10 @@ export default function TalentPane({
   talentDefs,
   talentLevels,
   talentPoints,
-  bonusTalentPoints,
   level,
   subclass,
   armorAbility,
-  abilityTier4,
-  upgradedTalentId,
-  onAnimationDone,
+  effects,
   onUpgradeTalent,
   onClose,
   loading,
@@ -166,13 +163,9 @@ export default function TalentPane({
                 talents={normalTalents}
                 talentLevels={talentLevels}
                 talentPoints={talentPoints}
-                bonusTalentPoints={bonusTalentPoints}
-                tierThresholds={TIER_THRESHOLDS}
                 subclass={subclass}
                 armorAbility={armorAbility}
-                abilityTier4={abilityTier4}
-                upgradedTalentId={upgradedTalentId}
-                onAnimationDone={onAnimationDone}
+                effects={effects}
                 onUpgradeTalent={onUpgradeTalent}
                 onInfo={handleInfo}
                 metamorphMode={metamorphMode}

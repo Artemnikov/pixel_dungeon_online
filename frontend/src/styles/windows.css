@@ -239,9 +239,7 @@
   cursor: default;
 }
 .wnd-upgrade-icon {
-  width: 16px;
-  height: 16px;
-  background-size: 512px 128px !important;
+  flex-shrink: 0;
 }
 .wnd-close-btn {
   padding: 8px 16px;

@@ -12,7 +12,6 @@ export interface GameCallbacksConfig {
   onSubclassChoiceAvailable?: (data: { options: string[] }) => void;
   onArmorAbilityChoiceAvailable?: (data: { options: string[] }) => void;
   onImbueWandChoiceAvailable?: (data: { staff_id: string; candidates: string[] }) => void;
-  onTalentUpgraded?: (data: { talent: string; level: number }) => void;
   onMetamorphOpen?: () => void;
   onMetamorphOptions?: (data: { old_talent: string; options: string[] }) => void;
   onGooFightStarted?: (data: { mob: string }) => void;
@@ -83,10 +82,6 @@ export class GameCallbacks {
 
   public imbueWandChoiceAvailable(data: { staff_id: string; candidates: string[] }): void {
     this.config.onImbueWandChoiceAvailable?.(data);
-  }
-
-  public talentUpgraded(data: { talent: string; level: number }): void {
-    this.config.onTalentUpgraded?.(data);
   }
 
   public metamorphOpen(): void {

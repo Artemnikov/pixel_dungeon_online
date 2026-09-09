@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import TalentIcon from './TalentIcon';
+import Icon from '../menu/Icon';
 import WndOverlay from './WndOverlay';
 import { WindowLevel } from '../game/window/WindowTypes';
 
@@ -37,7 +38,7 @@ export default function WndInfoTalent({
         <div className="wnd-info-actions">
           {canUpgrade ? (
             <button className="wnd-upgrade-btn" onClick={() => { onUpgrade?.(talentId); onClose?.(); }}>
-              <TalentIcon talentId={talentId} className="wnd-upgrade-icon" />
+              <Icon name="TALENT" scale={1} className="wnd-upgrade-icon" />
               {t('ui.upgrade')}
             </button>
           ) : (
