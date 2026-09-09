@@ -59,10 +59,7 @@ class PendingUnlocksMixin:
         floor.rebuild_flags()
         self.add_event("MAP_PATCH", {"tiles": [{"x": x, "y": y, "tile": new_tile}]},
                        floor_id=floor_id)
-        if tile == TileType.CRYSTAL_DOOR:
-            self.add_event("PLAY_SOUND", {"sound": "TELEPORT"}, floor_id=floor_id)
-        else:
-            self.add_event("PLAY_SOUND", {"sound": "UNLOCK"}, floor_id=floor_id)
+        self.add_event("PLAY_SOUND", {"sound": "UNLOCK"}, floor_id=floor_id)
 
     def _finish_chest_unlock(self, floor, floor_id: int, x: int, y: int, entry) -> None:
         chest = floor.items.pop(entry.get("chest_id"), None)

@@ -124,7 +124,7 @@ def _skeleton_door_action(game, player, item, floor, tx: int, ty: int, tile: int
         floor.locked_doors.pop((tx, ty), None)
         item.charge -= 5
         _artifact_gain_exp(item, 7)
-        _patch_tile(game, player, floor, tx, ty, TileType.FLOOR, "TELEPORT")
+        _patch_tile(game, player, floor, tx, ty, TileType.FLOOR, "UNLOCK")
         return
 
     # Normal DOOR / OPEN_DOOR — lock it with the hero's own key (HERO_LKD_DR).

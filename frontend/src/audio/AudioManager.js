@@ -31,6 +31,7 @@ const bossSound = new URL('../assets/pixel-dungeon/audio/boss.mp3', import.meta.
 const ghostSound = new URL('../assets/pixel-dungeon/audio/ghost.mp3', import.meta.url).href;
 const alertSound = new URL('../assets/pixel-dungeon/audio/alert.mp3', import.meta.url).href;
 const unlockSound = new URL('../assets/sounds/unlock.mp3', import.meta.url).href;
+const lockedSound = new URL('../assets/sounds/locked.mp3', import.meta.url).href;
 const readSound = new URL('../assets/sounds/read.mp3', import.meta.url).href;
 const raySound = new URL('../assets/sounds/ray.mp3', import.meta.url).href;
 const blastSound = new URL('../assets/sounds/blast.mp3', import.meta.url).href;
@@ -109,6 +110,7 @@ class AudioManager {
         this.loadSound('GHOST', ghostSound);
         this.loadSound('ALERT', alertSound);
         this.loadSound('UNLOCK', unlockSound);
+        this.loadSound('LOCKED', lockedSound);
         this.loadSound('READ', readSound);
         this.loadSound('RAY', raySound);
         this.loadSound('BLAST', blastSound);
@@ -222,8 +224,9 @@ class AudioManager {
                 this.playTone(1100, 'sine', 0.12, 0.2, 0.16);
                 break;
             case 'LOCKED':
-                this.playTone(250, 'square', 0.08, 0.12);
-                this.playTone(200, 'square', 0.08, 0.08, 0.06);
+                this.playTone(190, 'triangle', 0.10, 0.25);
+                this.playTone(165, 'triangle', 0.10, 0.2, 0.12);
+                this.playTone(1100, 'square', 0.04, 0.06);
                 break;
             case 'CURSE':
                 this.playTone(120, 'sawtooth', 0.3, 0.4);

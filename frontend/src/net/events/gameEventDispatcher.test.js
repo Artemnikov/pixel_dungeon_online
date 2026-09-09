@@ -149,3 +149,62 @@ test('DefaultEventDispatcher: handles combat, world, and boss events correctly',
   assert.equal(playedSound, 'MIMIC');
   assert.equal(playedRate, 1.25);
 });
+
+test('DefaultEventDispatcher: LOCKED event plays the locked sound for doors/chests', () => {
+  const dispatcher = createDefaultEventDispatcher();
+
+  const gridRef = { current: [[1, 2], [1, 2]] };
+  const visionRef = { current: { visible: new Set(['0,0', '1,0', '1,1']), discovered: new Set() } };
+  const world = new WorldManager({
+    gridRef,
+    setGrid: () => {},
+    visionRef,
+  });
+
+  const entitiesRef = { current: { players: {}, mobs: {}, items: [], traps: [] } };
+  const entities = new EntityManager({
+    entitiesRef,
+    dyingMobsRef: { current: {} },
+    myPlayerIdRef: { current: 'hero' },
+  });
+
+  const particlesRef = { current: [] };
+  const screenShakeRef = { current: null };
+  const floatingTextRef = { current: [] };
+  const warnedTilesRef = { current: null };
+  const playerAnimRef = { current: {} };
+  const mobAnimRef = { current: {} };
+
+  const effects = new VisualEffectsManager({
+    particlesRef,
+    screenShakeRef,
+    floatingTextRef,
+    warnedTilesRef,
+    playerAnimRef,
+    mobAnimRef,
+  });
+
+  const ui = new GameCallbacks({});
+
+  let playedLocked = false;
+  const mockAudio = {
+    play: (sound) => { if (sound === 'LOCKED') playedLocked = true; },
+    playStep: () => {},
+  };
+
+  const ctx = {
+    myPlayerId: 'hero',
+    world,
+    entities,
+    effects,
+    ui,
+    audio: mockAudio,
+  };
+
+  dispatcher.dispatch({
+    type: 'LOCKED',
+    data: { player: 'hero', x: 1, y: 1 },
+  }, ctx);
+
+  assert.equal(playedLocked, true, 'LOCKED event must invoke audio.play("LOCKED")');
+});
