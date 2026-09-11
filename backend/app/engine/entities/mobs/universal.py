@@ -185,7 +185,7 @@ class CrystalMimic(Mimic):
                 candidate = random.choice(bp.items) if bp.items else None
                 if candidate is None:
                     break
-                if not candidate.unique and candidate.level < 1 and candidate.category != 'KEY':
+                if not candidate.unique and candidate.level < 1 and candidate.type != 'key':
                     stolen = candidate
                     break
             if stolen is not None:

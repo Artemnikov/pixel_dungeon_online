@@ -18,7 +18,6 @@ from app.engine.entities.base import *  # noqa: F401,F403
 class Scroll(ItemBase):
     kind: Literal["scroll"] = "scroll"
     type: str = "scroll"
-    category: ClassVar[str] = ItemCategory.SCROLL
     stackable: ClassVar[bool] = True
     DESC: ClassVar[str] = "A magical scroll inscribed with arcane runes. Read it to invoke its power."
 

@@ -19,7 +19,6 @@ class Potion(ItemBase):
     kind: Literal["potion"] = "potion"
     type: str = "potion"
     throw_behavior: str = "potion"
-    category: ClassVar[str] = ItemCategory.POTION
     stackable: ClassVar[bool] = True
     effect: str = ""
     # Shown only once the potion's type is identified; the masked generic text is

@@ -194,7 +194,6 @@ class SerializationMixin:
             if live is not None:
                 node["actions"] = live.actions(p)
                 node["default_action"] = live.default_action()
-                node["is_throwable"] = getattr(live, "is_throwable", False)
                 node["throw_behavior"] = getattr(live, "throw_behavior", "regular")
                 if hasattr(live, "get_reach"):
                     node["range"] = live.get_reach()

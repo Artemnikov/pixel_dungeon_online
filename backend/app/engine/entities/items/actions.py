@@ -720,7 +720,7 @@ _THROW_DISPATCH: Dict[str, Callable] = {
 def action_throw(game, player, item, tx=None, ty=None) -> None:
     if tx is None or ty is None:
         return
-    behavior = "missile" if getattr(item, "is_throwable", False) else getattr(item, "throw_behavior", "regular")
+    behavior = getattr(item, "throw_behavior", "regular")
     handler = _THROW_DISPATCH.get(behavior, _action_throw_regular_item)
     handler(game, player, item, tx, ty)
 

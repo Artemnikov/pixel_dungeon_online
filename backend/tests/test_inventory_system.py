@@ -80,7 +80,7 @@ def test_grab_items_pulls_matching():
     holder = ScrollHolder(id="holder")
     holder.grab_items(p.belongings.backpack)
     assert holder.contains("s1") and holder.contains("s2")
-    assert all(i.category != "scroll" for i in p.belongings.backpack.items)
+    assert all(i.type != "scroll" for i in p.belongings.backpack.items)
 
 
 def test_collecting_bag_grabs_existing_matching_items():

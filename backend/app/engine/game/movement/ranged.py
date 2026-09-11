@@ -13,7 +13,6 @@ from typing import Optional
 from app.engine.entities.base import Position, consume_backpack_item
 from app.engine.entities.buffs import add_buff, get_buff, remove_buff
 from app.engine.entities.wands.cursed_dispatcher import fire_cursed_wand
-from app.engine.entities.items.consumables import Throwable
 from app.engine.entities.items.equip import Bow, MissileWeapon, SpiritBow, Staff
 from app.engine.entities.wands import Wand, ZapContext
 from app.engine.entities.mobs import Goo
@@ -99,7 +98,7 @@ class RangedAttackMixin:
         if not item:
             return None
 
-        is_throwable = getattr(item, "is_throwable", False)
+        is_throwable = getattr(item, "throw_behavior", "") == "missile"
         is_weapon = isinstance(item, (Weapon, Bow, SpiritBow))
         is_wand = isinstance(item, Wand)
         is_staff = isinstance(item, Staff)

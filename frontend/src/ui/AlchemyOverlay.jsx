@@ -57,7 +57,7 @@ export default function AlchemyOverlay({
   }, [ids, send]);
 
   const usableFilter = (item) => {
-    if (item.category === 'bag' || item.kind === 'gold' || item.kind === 'key') return false;
+    if (item.type === 'bag' || item.kind === 'gold' || item.kind === 'key') return false;
     if ((counts[item.id] || 0) >= item.quantity) return false;
     if (item.type === 'trinket') return !item.cursed;
     if (item.type === 'wand') return item.cursed_known && !item.cursed;

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any, ClassVar, List, Literal, Optional
 
-from app.engine.entities.base import Action, ItemBase, ItemCategory
+from app.engine.entities.base import Action, ItemBase
 from app.engine.game.constants import GAME_TURN_TICKS
 
 
@@ -11,7 +11,6 @@ class Bomb(ItemBase):
     name: str = "Bomb"
     type: str = "bomb"
     throw_behavior: str = "bomb"
-    category: ClassVar[str] = ItemCategory.MISC
     stackable: ClassVar[bool] = True
     level_known: bool = True
     cursed_known: bool = True
@@ -161,7 +160,6 @@ class MetalShard(ItemBase):
     kind: Literal["metal_shard"] = "metal_shard"
     name: str = "Metal Shard"
     type: str = "misc"
-    category: ClassVar[str] = ItemCategory.MISC
     stackable: ClassVar[bool] = True
     level_known: bool = True
     cursed_known: bool = True

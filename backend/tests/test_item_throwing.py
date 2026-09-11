@@ -31,45 +31,35 @@ def _setup_test_scene(game_id: str, char_class: str = "warrior"):
 
 
 def test_item_classification_keys():
-    """Verify is_throwable and throw_behavior defaults and subclass overrides."""
+    """Verify throw_behavior defaults and subclass overrides."""
     food = Ration()
-    assert food.is_throwable is False
     assert food.throw_behavior == "regular"
 
     armor = Armor(name="Cloth Armor")
-    assert armor.is_throwable is False
     assert armor.throw_behavior == "regular"
 
     weapon = MeleeWeapon(name="Shortsword", damage=4)
-    assert weapon.is_throwable is False
     assert weapon.throw_behavior == "regular"
 
     stone = Stone()
-    assert stone.is_throwable is True
     assert stone.throw_behavior == "missile"
 
     dagger = ThrowableDagger()
-    assert dagger.is_throwable is True
     assert dagger.throw_behavior == "missile"
 
     missile_wep = MissileWeapon(name="Dart")
-    assert missile_wep.is_throwable is True
     assert missile_wep.throw_behavior == "missile"
 
     seed = Seed(plant_type="sungrass")
-    assert seed.is_throwable is False
     assert seed.throw_behavior == "seed"
 
     potion = HealthPotion()
-    assert potion.is_throwable is False
     assert potion.throw_behavior == "potion"
 
     bomb = Bomb()
-    assert bomb.is_throwable is False
     assert bomb.throw_behavior == "bomb"
 
     runestone = StoneOfBlast()
-    assert runestone.is_throwable is False
     assert runestone.throw_behavior == "runestone"
 
 

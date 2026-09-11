@@ -11,7 +11,7 @@ from __future__ import annotations
 
 from typing import ClassVar, List, Literal, Optional
 
-from app.engine.entities.base import Action, ItemBase, ItemCategory
+from app.engine.entities.base import Action, ItemBase
 from app.engine.entities.items.consumables import Seed
 
 
@@ -23,7 +23,6 @@ class RotberrySeed(Seed):
     kind: Literal["rotberry_seed"] = "rotberry_seed"
     name: str = "seed of the rotberry"
     type: str = "seed"
-    category: ClassVar[str] = ItemCategory.SEED
     unique: bool = True
     level_known: bool = True
     cursed_known: bool = True
@@ -43,7 +42,6 @@ class CeremonialCandle(ItemBase):
     kind: Literal["ceremonial_candle"] = "ceremonial_candle"
     name: str = "ceremonial candle"
     type: str = "misc"
-    category: ClassVar[str] = "misc"
     unique: bool = True
     stackable: ClassVar[bool] = True
     level_known: bool = True
@@ -69,7 +67,6 @@ class Embers(ItemBase):
     kind: Literal["embers"] = "embers"
     name: str = "smoldering embers"
     type: str = "misc"
-    category: ClassVar[str] = "misc"
     unique: bool = True
     level_known: bool = True
     cursed_known: bool = True

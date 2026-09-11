@@ -329,7 +329,7 @@ def action_read(game, player, item, tx=None, ty=None) -> None:
     elif effect == "scroll_of_divination":
         unid = [it for it in player.belongings.all_items()
                 if getattr(it, "kind", "") not in game.identified_kinds
-                and hasattr(it, "kind") and getattr(it, "category", None) in ("potion", "scroll", "wand", "ring")]
+                and getattr(it, "type", None) in ("potion", "scroll", "wand", "ring")]
         random.shuffle(unid)
         identified = []
         for it in unid[:4]:

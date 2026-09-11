@@ -669,7 +669,7 @@ def test_scroll_of_transmutation_potion_stack_splits_off_new_kind():
     # A new 1-quantity item of a different potion kind appears in the backpack.
     new_items = [
         it for it in player_inventory_items(p)
-        if it.category == "potion" and it.id != potions.id
+        if it.type == "potion" and it.id != potions.id
     ]
     assert len(new_items) == 1
     assert new_items[0].kind != "health_potion"
@@ -695,7 +695,7 @@ def test_scroll_of_transmutation_armor_group_fallback_does_not_crash():
 
     new_armor = p.belongings.armor
     assert new_armor.id == original_id
-    assert new_armor.category == "armor"
+    assert new_armor.type == "wearable"
     assert new_armor.level == 1
     assert new_armor.level_known is True
     assert new_armor.cursed is True

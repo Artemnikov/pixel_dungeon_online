@@ -115,7 +115,6 @@ def knockback_char(floor, char, dx, dy, power, damage_on_collision=True,
 class Wand(ItemBase):
     kind: Literal["wand"] = "wand"
     type: str = "wand"
-    category: ClassVar[str] = ItemCategory.WAND
     damage: int = 0
     charges: int = 2
     max_charges: int = 2

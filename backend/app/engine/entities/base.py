@@ -320,33 +320,13 @@ class Entity(BaseModel):
             self.is_alive = False
         return max(0, amount)
 
-class ItemCategory:
-    WEAPON = "weapon"
-    ARMOR = "armor"
-    RING = "ring"
-    ARTIFACT = "artifact"
-    WAND = "wand"
-    POTION = "potion"
-    SCROLL = "scroll"
-    SEED = "seed"
-    STONE = "stone"
-    RUNESTONE = "runestone"
-    FOOD = "food"
-    GOLD = "gold"
-    KEY = "key"
-    MISC = "misc"
-    BAG = "bag"
-    TRINKET = "trinket"
-    SCENERY = "scenery"
-    STYLUS = "stylus"
-
-# Sort order inside a bag (mirrors SPD's itemComparator grouping by category).
+# Sort order inside a bag (mirrors SPD's itemComparator grouping by item type).
 CATEGORY_ORDER = [
-    ItemCategory.WEAPON, ItemCategory.ARMOR, ItemCategory.RING, ItemCategory.ARTIFACT,
-    ItemCategory.WAND, ItemCategory.SCROLL, ItemCategory.POTION, ItemCategory.SEED,
-    ItemCategory.STONE, ItemCategory.RUNESTONE, ItemCategory.FOOD, ItemCategory.KEY,
-    ItemCategory.GOLD, ItemCategory.TRINKET, ItemCategory.MISC, ItemCategory.BAG,
-    ItemCategory.SCENERY,
+    "weapon", "wearable", "armor", "ring", "artifact",
+    "wand", "scroll", "potion", "seed",
+    "throwable", "stone", "runestone", "food", "key",
+    "gold", "trinket", "misc", "bag",
+    "scenery",
 ]
 
 class Action:
@@ -403,9 +383,9 @@ def _new_id() -> str:
 
 
 class ItemBase(BaseModel):
-    kind: Literal["item"] = "item"
+    kind: str = "item"
     id: str = ""
-    name: str
+    name: str = ""
     type: str = "item"
     pos: Optional[Position] = None
 
@@ -416,7 +396,6 @@ class ItemBase(BaseModel):
     cursed_known: bool = False
     unique: bool = False
     kept_though_lost: bool = False
-    is_throwable: bool = False
     throw_behavior: str = "regular"
     # Sitting on a Shopkeeper's stock pile (SPD's Heap.Type.FOR_SALE) — not
     # auto-picked-up by walking over it; bought via SHOP_BUY instead.
@@ -437,7 +416,6 @@ class ItemBase(BaseModel):
     # True for Bag (a container). Kept as a flag so base need not import Bag,
     # which lives in the item_union module (avoids an import cycle).
     is_bag: ClassVar[bool] = False
-    category: ClassVar[str] = ItemCategory.MISC
     # Flavour text shown in the item info window (SPD's Item.desc()).
     DESC: ClassVar[str] = ""
 

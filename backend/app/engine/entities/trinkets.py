@@ -4,7 +4,7 @@ from typing import ClassVar, List, Literal, Optional, TYPE_CHECKING
 
 from pydantic import Field
 
-from app.engine.entities.base import ItemBase, ItemCategory
+from app.engine.entities.base import ItemBase
 
 if TYPE_CHECKING:
     from app.engine.entities.player import Player
@@ -15,7 +15,6 @@ class Trinket(ItemBase):
     type: str = "trinket"
     unique: bool = True
     level_known: bool = True
-    category: ClassVar[str] = ItemCategory.TRINKET
     DESC: ClassVar[str] = "A mystical trinket that grants a passive bonus while in your inventory."
 
     def upgrade_energy_cost(self) -> int:
@@ -294,7 +293,6 @@ class TrinketCatalyst(ItemBase):
     name: str = "Trinket Catalyst"
     unique: bool = True
     level_known: bool = True
-    category: ClassVar[str] = ItemCategory.MISC
     DESC: ClassVar[str] = "Can be used at an Alchemy Pot to create a random trinket."
 
     @classmethod

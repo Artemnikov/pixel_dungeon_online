@@ -2,14 +2,13 @@
 #
 from typing import ClassVar, List, Optional, Literal
 
-from app.engine.entities.base import Action, ItemBase, ItemCategory
+from app.engine.entities.base import Action, ItemBase
 
 
 class Runestone(ItemBase):
     kind: Literal["runestone"] = "runestone"
     type: str = "runestone"
     throw_behavior: str = "runestone"
-    category: ClassVar[str] = ItemCategory.RUNESTONE
     stackable: ClassVar[bool] = True
     DESC: ClassVar[str] = "A small stone inscribed with arcane runes."
 

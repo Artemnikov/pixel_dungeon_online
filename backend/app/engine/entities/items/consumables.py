@@ -18,7 +18,6 @@ from app.engine.entities.base import *  # noqa: F401,F403
 class Gold(ItemBase):
     kind: Literal["gold"] = "gold"
     type: str = "gold"
-    category: ClassVar[str] = ItemCategory.GOLD
     stackable: ClassVar[bool] = True
     DESC: ClassVar[str] = "A pile of gold coins. Spend it at shops scattered through the dungeon."
 
@@ -32,7 +31,6 @@ class Gold(ItemBase):
 class Food(ItemBase):
     kind: Literal["food"] = "food"
     type: str = "food"
-    category: ClassVar[str] = ItemCategory.FOOD
     stackable: ClassVar[bool] = True
     energy: int = 300  # Hunger.HUNGRY
     DESC: ClassVar[str] = "Edible provisions. Eat it to stave off hunger."
@@ -50,7 +48,6 @@ class Food(ItemBase):
 class Key(ItemBase):
     kind: Literal["key"] = "key"
     type: str = "key"
-    category: ClassVar[str] = ItemCategory.KEY
     key_id: str = ""
     DESC: ClassVar[str] = "A key that unlocks a matching door or chest somewhere on this floor."
 
@@ -78,7 +75,6 @@ class TenguMask(ItemBase):
     kind: Literal["tengu_mask"] = "tengu_mask"
     name: str = "Tengu's Mask"
     type: str = "misc"
-    category: ClassVar[str] = ItemCategory.MISC
     unique: bool = True
     DESC: ClassVar[str] = "The mask of the infamous Tengu assassin. Wearing it grants the power to choose a subclass path."
 
@@ -93,7 +89,6 @@ class ArcaneStylus(ItemBase):
     kind: Literal["arcane_stylus"] = "arcane_stylus"
     name: str = "Arcane Stylus"
     type: str = "stylus"
-    category: ClassVar[str] = ItemCategory.STYLUS
     stackable: ClassVar[bool] = True
     DESC: ClassVar[str] = "A stylus enchanted with magical energy. Use it to inscribe a random glyph onto a piece of armor."
 
@@ -114,7 +109,6 @@ class MagicalInfusion(ItemBase):
     kind: Literal["magical_infusion"] = "magical_infusion"
     name: str = "Magical Infusion"
     type: str = "spell"
-    category: ClassVar[str] = ItemCategory.MISC
     unique: bool = True
     stackable: ClassVar[bool] = True
     DESC: ClassVar[str] = "A magical infusion that upgrades a weapon or armor by one level. If the item already has an enchantment or glyph, it is preserved."
@@ -133,7 +127,6 @@ class KingsCrown(ItemBase):
     kind: Literal["kings_crown"] = "kings_crown"
     name: str = "King's Crown"
     type: str = "misc"
-    category: ClassVar[str] = ItemCategory.MISC
     unique: bool = True
     DESC: ClassVar[str] = "A crown taken from a fallen king. Wearing it while armor is equipped grants the power to imbue that armor with a special ability."
 
@@ -146,9 +139,7 @@ class KingsCrown(ItemBase):
 class Throwable(ItemBase):
     kind: Literal["throwable"] = "throwable"
     type: str = "throwable"
-    is_throwable: bool = True
     throw_behavior: str = "missile"
-    category: ClassVar[str] = ItemCategory.STONE
     stackable: ClassVar[bool] = True
     damage: int = 1
     range: int = 5
@@ -256,7 +247,6 @@ class Seed(ItemBase):
     name: str = "Seed"
     type: str = "seed"
     throw_behavior: str = "seed"
-    category: ClassVar[str] = ItemCategory.SEED
     stackable: ClassVar[bool] = True
     plant_type: str = "sungrass"
     DESC: ClassVar[str] = "Throw this seed to the place where you want to grow a plant."
@@ -359,7 +349,6 @@ class Dewdrop(ItemBase):
     kind: Literal["dewdrop"] = "dewdrop"
     name: str = "Dewdrop"
     type: str = "dewdrop"
-    category: ClassVar[str] = ItemCategory.POTION
     stackable: ClassVar[bool] = True
     DESC: ClassVar[str] = "A drop of magical dew. It radiates healing energy."
 
@@ -374,7 +363,6 @@ class EnergyCrystal(ItemBase):
     kind: Literal["energy_crystal"] = "energy_crystal"
     name: str = "Energy Crystal"
     type: str = "energy_crystal"
-    category: ClassVar[str] = ItemCategory.MISC
     stackable: ClassVar[bool] = True
     level_known: bool = True
     cursed_known: bool = True
@@ -391,7 +379,6 @@ class Waterskin(ItemBase):
     kind: Literal["waterskin"] = "waterskin"
     name: str = "Waterskin"
     type: str = "waterskin"
-    category: ClassVar[str] = ItemCategory.MISC
     stackable: ClassVar[bool] = False
     unique: bool = True
     MAX_VOLUME: ClassVar[int] = 20
@@ -425,7 +412,6 @@ class Amulet(ItemBase):
     kind: Literal["amulet"] = "amulet"
     name: str = "Amulet of Yendor"
     type: str = "amulet"
-    category: ClassVar[str] = ItemCategory.MISC
     stackable: ClassVar[bool] = False
     unique: bool = True
     DESC: ClassVar[str] = "The legendary Amulet of Yendor. Carry it to the surface to win."
@@ -513,7 +499,6 @@ class GooBlob(ItemBase):
     kind: Literal["goo_blob"] = "goo_blob"
     name: str = "Goo Blob"
     type: str = "misc"
-    category: ClassVar[str] = ItemCategory.MISC
     stackable: ClassVar[bool] = True
     DESC: ClassVar[str] = "A blob of black ooze left behind by Goo. Can be combined with a Health Potion at an Alchemy Pot."
 
@@ -534,7 +519,6 @@ class CorpseDust(ItemBase):
     kind: Literal["corpse_dust"] = "corpse_dust"
     name: str = "dust of the corpse"
     type: str = "misc"
-    category: ClassVar[str] = ItemCategory.MISC
     unique: bool = True
     cursed: bool = True
     cursed_known: bool = True
@@ -560,7 +544,6 @@ class DwarfToken(ItemBase):
     kind: Literal["dwarf_token"] = "dwarf_token"
     name: str = "Dwarf Token"
     type: str = "misc"
-    category: ClassVar[str] = ItemCategory.MISC
     stackable: ClassVar[bool] = True
     level_known: bool = True
     cursed_known: bool = True
@@ -575,7 +558,6 @@ class Ankh(ItemBase):
     kind: Literal["ankh"] = "ankh"
     name: str = "Ankh"
     type: str = "ankh"
-    category: ClassVar[str] = ItemCategory.MISC
     stackable: ClassVar[bool] = False
     unique: bool = True
     cursed_known: bool = True
@@ -620,7 +602,6 @@ class LostBackpack(ItemBase):
     kind: Literal["lost_backpack"] = "lost_backpack"
     name: str = "Lost Backpack"
     type: str = "lost_backpack"
-    category: ClassVar[str] = ItemCategory.MISC
     unique: bool = True
     cursed_known: bool = True
     level_known: bool = True

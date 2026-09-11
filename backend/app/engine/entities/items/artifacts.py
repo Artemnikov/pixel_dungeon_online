@@ -587,7 +587,6 @@ class Petal(ItemBase):
     kind: Literal["petal"] = "petal"
     name: str = "Petal"
     type: str = "misc"
-    category: ClassVar[str] = ItemCategory.MISC
     stackable: ClassVar[bool] = True
     level_known: bool = True
     cursed_known: bool = True
