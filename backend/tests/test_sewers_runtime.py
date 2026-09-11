@@ -140,6 +140,72 @@ def test_locked_door_requires_matching_key_and_unlocks_with_patch():
     )
 
 
+def _place_locked_door(floor, tile, key_id):
+    """Set a locked-door tile (with its lock registry entry) on the first cell
+    that has a walkable neighbour, so a player can bump it."""
+    for y in range(len(floor.grid)):
+        for x in range(len(floor.grid[y])):
+            if _find_adjacent_walkable(floor, x, y) is not None:
+                floor.grid[y][x] = tile
+                floor.locked_doors[(x, y)] = key_id
+                floor.rebuild_flags()
+                return x, y
+    raise AssertionError("no cell with a walkable neighbour")
+
+
+def _crystal_door_fixture(seed_suffix):
+    game = GameInstance(f"crystal-lock-{seed_suffix}")
+    floor = game._get_or_create_floor(1)
+    floor.mobs = {}
+    door_x, door_y = _place_locked_door(floor, TileType.CRYSTAL_DOOR, "crystal")
+    player = game.add_player(f"p-{seed_suffix}", "CrystalBumper")
+    nb = _find_adjacent_walkable(floor, door_x, door_y)
+    assert nb is not None, "crystal door needs a walkable neighbour"
+    player.pos.x, player.pos.y = nb
+    player.floor_id = floor.floor_id
+    return game, floor, player, door_x, door_y
+
+
+def test_crystal_door_no_key_emits_locked_sound():
+    """Bumping a crystal door without the matching key must emit the LOCKED
+    event (locked-sound jingle on the client) and deliver it to the bumper."""
+    game, floor, player, door_x, door_y = _crystal_door_fixture("nokey")
+    assert player.key_count("crystal", floor.floor_id) == 0
+
+    game.flush_events()
+    game.move_entity(player.id, door_x - player.pos.x, door_y - player.pos.y)
+
+    raw = game.flush_events()
+    locked = [e for e in raw if e["type"] == "LOCKED"]
+    assert locked, "LOCKED event must be emitted for a crystal door without a key"
+    assert locked[0]["data"] == {"player": player.id, "x": door_x, "y": door_y}
+
+    delivered = game.filter_events_for_player(raw, player.id)
+    assert any(e["type"] == "LOCKED" for e in delivered), \
+        "LOCKED event must survive per-player LOS filtering for the bumper"
+    assert floor.grid[door_y][door_x] == TileType.CRYSTAL_DOOR, "door stays locked"
+
+
+def test_crystal_door_unlock_completes_with_unlock_sound():
+    """Unlocking a crystal door must complete with the UNLOCK sample (SPD
+    parity with iron doors), not the old TELEPORT sound."""
+    game, floor, player, door_x, door_y = _crystal_door_fixture("inok")
+    player.add_key("crystal", floor.floor_id, "Crystal Key")
+
+    game.flush_events()
+    game.move_entity(player.id, door_x - player.pos.x, door_y - player.pos.y)
+    assert (door_x, door_y) in floor.pending_unlocks
+
+    floor.pending_unlocks[(door_x, door_y)]["ready_at"] = 0
+    game._process_pending_unlocks(floor, floor.floor_id)
+
+    events = game.flush_events()
+    sounds = [e["data"]["sound"] for e in events if e["type"] == "PLAY_SOUND"]
+    assert "UNLOCK" in sounds, "crystal door unlock must play UNLOCK"
+    assert "TELEPORT" not in sounds, "crystal door unlock must not play TELEPORT"
+    assert floor.grid[door_y][door_x] == TileType.FLOOR
+
+
 def test_worn_dart_trap_triggers_once_and_deals_low_damage():
     game = GameInstance("trap-sewers")
     floor = game._get_or_create_floor(1)

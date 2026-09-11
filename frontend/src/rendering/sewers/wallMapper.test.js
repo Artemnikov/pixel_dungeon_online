@@ -316,3 +316,31 @@ test('getSewerWallInstructions — non-wall tile returns empty list', () => {
   );
   assert.deepEqual(getSewerWallInstructions(grid, 1, 1), []);
 });
+
+test('getSewerCap — cell above HIGH_GRASS returns HIGH_GRASS_OVERHANG', () => {
+  const HG = BACKEND_TILE.HIGH_GRASS.id;
+  const grid = g(
+    [F, F, F],
+    [F, F, F],
+    [F, HG, F],
+  );
+  const cap = getSewerCap(grid, 1, 1, F, new Set());
+  assert.ok(
+    cap === WALL_INDEX.HIGH_GRASS_OVERHANG || cap === WALL_INDEX.HIGH_GRASS_OVERHANG_ALT,
+    `expected HIGH_GRASS_OVERHANG, got ${cap}`
+  );
+});
+
+test('getSewerCap — cell above FURROWED_GRASS returns FURROWED_OVERHANG', () => {
+  const FG = BACKEND_TILE.FURROWED_GRASS.id;
+  const grid = g(
+    [F, F, F],
+    [F, F, F],
+    [F, FG, F],
+  );
+  const cap = getSewerCap(grid, 1, 1, F, new Set());
+  assert.ok(
+    cap === WALL_INDEX.FURROWED_OVERHANG || cap === WALL_INDEX.FURROWED_OVERHANG_ALT,
+    `expected FURROWED_OVERHANG, got ${cap}`
+  );
+});

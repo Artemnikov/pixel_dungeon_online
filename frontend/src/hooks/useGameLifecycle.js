@@ -13,7 +13,7 @@ export function useGameLifecycle({
     if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
       socketRef.current.close();
     }
-    entitiesRef.current = { players: {}, mobs: {} };
+    entitiesRef.current = { players: {}, mobs: {}, items: [], traps: [], plants: [] };
     visionRef.current = { visible: new Set(), discovered: new Set() };
     myPlayerIdRef.current = null;
     wasDownedRef.current = false;

@@ -180,3 +180,26 @@ def test_admin_give_item_elixir_stays_unmasked():
     player_state = state["self_player"]
     items = {i["kind"]: i for i in player_state["inventory"]}
     assert items["elixir_aqua_rejuv"]["name"] == "Elixir of Aquatic Rejuvenation"
+
+
+def test_admin_catalog_seeds():
+    from app.engine.entities.items.catalog import get_item_catalog, make_catalog_item, TRANSMUTE_GROUPS
+    from app.engine.entities.items.consumables import Seed
+
+    catalog = get_item_catalog()
+    catalog_kinds = {entry["kind"] for entry in catalog}
+
+    assert "seed" not in catalog_kinds
+    assert "sungrass_seed" in catalog_kinds
+
+    seed_item = make_catalog_item("sungrass_seed")
+    assert isinstance(seed_item, Seed)
+    assert seed_item.plant_type == "sungrass"
+    assert seed_item.name == "Sungrass Seed"
+
+    for seed_kind in TRANSMUTE_GROUPS["seed"]:
+        assert seed_kind in catalog_kinds
+        item = make_catalog_item(seed_kind)
+        assert isinstance(item, Seed)
+        assert item.plant_type is not None
+

@@ -109,6 +109,7 @@ class MeleeCombatMixin:
 
             if isinstance(entity, Player):
                 entity._last_action = ""
+            next_attack_in_ms = round(max(0.0, entity.last_attack_time + cooldown - time.time()) * 1000)
             result = resolve_melee_attack(
                 entity, target_entity,
                 floor.mobs, entity.pos.x, entity.pos.y,
@@ -123,7 +124,13 @@ class MeleeCombatMixin:
             )
             if result["missed"]:
                 self.add_event("MISS", {"source": entity.id, "target": target_entity.id, "defense_verb": result.get("defense_verb", "dodged")}, floor_id=floor_id)
-                self.add_event("ATTACK", {"source": entity.id, "target": target_entity.id, "damage": 0, "surprise": False}, floor_id=floor_id)
+                self.add_event("ATTACK", {
+                    "source": entity.id,
+                    "target": target_entity.id,
+                    "damage": 0,
+                    "surprise": False,
+                    "next_attack_in_ms": next_attack_in_ms,
+                }, floor_id=floor_id)
                 return
             dmg = result["damage"]
             self.add_event("ATTACK", {
@@ -133,6 +140,7 @@ class MeleeCombatMixin:
                 "surprise": result["surprise"],
                 "crit": result.get("crit", False),
                 "grim_proc": result.get("grim_proc", False),
+                "next_attack_in_ms": next_attack_in_ms,
             }, floor_id=floor_id)
             # SPD Char.java:509 plays hitSound(Random.Float(0.87f, 1.15f)),
             # then KindOfWeapon multiplies by hitSoundPitch. Mobs use the

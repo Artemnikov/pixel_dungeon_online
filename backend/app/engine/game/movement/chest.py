@@ -118,7 +118,7 @@ class ChestMixin:
         overflow to a shield) and refused entirely when it would do nothing —
         unless standing on an entrance/exit tile, which force-consumes it."""
         waterskin = next(
-            (i for i in player.inventory if isinstance(i, Waterskin) and not i.is_full()),
+            (i for i in player.belongings.all_items() if isinstance(i, Waterskin) and not i.is_full()),
             None,
         )
         if waterskin is not None:

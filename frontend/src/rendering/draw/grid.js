@@ -1,7 +1,6 @@
-import { TILE_SIZE } from '../../constants';
+import { BACKEND_TILE, hashCell, isGrassTile, isWallTile, TILE_SIZE } from '../../constants';
 import { drawSpriteTile, fallbackTileMap } from '../sprites';
 import { drawSewerTileBase, drawSewerTileCap } from '../sewers/draw';
-import { isWallTile } from '../../constants';
 import { tilesForDepth } from '../regions';
 import { VIS_DISCOVERED, VIS_UNSEEN, wallEdgeDarkness } from './wallFog';
 
@@ -86,7 +85,8 @@ export function drawGrid(ctx, { grid, depth, assetImages, visionRef, openDoorsRe
           x,
           y,
           tile,
-          openDoorsRef.current
+          openDoorsRef.current,
+          depth
         );
       }
 
@@ -109,6 +109,31 @@ export function drawGrid(ctx, { grid, depth, assetImages, visionRef, openDoorsRe
         else if (tile === 10) ctx.fillStyle = '#8a5d23';
         else ctx.fillStyle = '#222';
         ctx.fillRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+      }
+
+      if (assetImages?.terrainFeatures && (isGrassTile(tile) || tile === BACKEND_TILE.EMBERS.id)) {
+        const stage = Math.min(Math.max(0, Math.floor(((depth || 1) - 1) / 5)), 4);
+        const alt = (hashCell(x, y) % 100) >= 50 ? 1 : 0;
+        let featureIndex = null;
+        if (tile === BACKEND_TILE.HIGH_GRASS.id) {
+          featureIndex = 9 + 16 * stage + alt;
+        } else if (tile === BACKEND_TILE.FURROWED_GRASS.id) {
+          featureIndex = 11 + 16 * stage + alt;
+        } else if (tile === BACKEND_TILE.FLOOR_GRASS.id) {
+          featureIndex = 13 + 16 * stage + alt;
+        } else if (tile === BACKEND_TILE.EMBERS.id) {
+          featureIndex = 89 + alt;
+        }
+
+        if (featureIndex != null) {
+          const fsx = (featureIndex % 16) * 16;
+          const fsy = Math.floor(featureIndex / 16) * 16;
+          ctx.drawImage(
+            assetImages.terrainFeatures,
+            fsx, fsy, 16, 16,
+            x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE
+          );
+        }
       }
 
       fogAlpha[(y * cols + x) * 4 + 3] = isVisible ? 0 : 153;

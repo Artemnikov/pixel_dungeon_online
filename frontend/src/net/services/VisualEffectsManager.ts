@@ -29,6 +29,11 @@ export interface FloatingTextOptions {
   icon?: number;
 }
 
+/** Budget for the talent upgrade star-burst (≥ the 0.4s .talent-star-fly animation in talents.css, so the DOM node is always cleaned up after the animation ends). */
+const TALENT_BURST_DURATION_MS = 500;
+/** Number of star particles spawned for a talent upgrade burst. */
+const TALENT_BURST_PARTICLE_COUNT = 12;
+
 export interface VisualEffectsRefs {
   projectilesRef?: Ref<Projectile[]>;
   mobAnimRef?: Ref<Record<string, AnimState>>;
@@ -54,6 +59,8 @@ export interface VisualEffectsRefs {
 export class VisualEffectsManager {
   private refs: VisualEffectsRefs;
   private animationManager: ItemAnimationManager;
+  /** DOM nodes of talent buttons keyed by talentId, used by playTalentUpgrade. */
+  private talentButtonNodes: Map<string, HTMLElement> = new Map();
 
   constructor(refs: VisualEffectsRefs = {}, animationManager: ItemAnimationManager = defaultItemAnimationManager) {
     this.refs = refs;
@@ -241,6 +248,49 @@ export class VisualEffectsManager {
   public spawnSurprise(cx: number, cy: number): void {
     if (this.refs.surpriseRef) {
       spawnSurprise(this.refs.surpriseRef, cx, cy);
+    }
+  }
+
+  /**
+   * Play the star-burst "level up" animation on a talent button after a
+   * confirmed talent upgrade (TALENT_UPGRADED WS event).
+   *
+   * The manager owns the full animation lifecycle: it finds the registered
+   * talent button DOM node, appends a burst of star particles, and removes it
+   * after the animation duration (auto-clear). No component state or effects
+   * are involved.
+   */
+  public playTalentUpgrade(talentId: string): void {
+    const el = this.talentButtonNodes.get(talentId);
+    if (!el) return;
+
+    const burst = document.createElement('div');
+    burst.className = 'talent-burst';
+    for (let i = 0; i < TALENT_BURST_PARTICLE_COUNT; i++) {
+      const angle = (Math.PI * 2 * i) / TALENT_BURST_PARTICLE_COUNT + Math.random() * 0.3;
+      const dist = 20 + Math.random() * 15;
+      const p = document.createElement('div');
+      p.className = 'talent-star-particle';
+      p.style.setProperty('--dx', `${Math.cos(angle) * dist}px`);
+      p.style.setProperty('--dy', `${Math.sin(angle) * dist}px`);
+      p.style.setProperty('--delay', `${Math.random() * 0.1}s`);
+      burst.appendChild(p);
+    }
+
+    el.appendChild(burst);
+    window.setTimeout(() => burst.remove(), TALENT_BURST_DURATION_MS);
+  }
+
+  /**
+   * Register (or unregister, when el is null) the DOM node of a talent button.
+   * Called from a React ref callback so the manager can animate the right
+   * button when its upgrade is confirmed.
+   */
+  public registerTalentButton(talentId: string, el: HTMLElement | null): void {
+    if (el) {
+      this.talentButtonNodes.set(talentId, el);
+    } else {
+      this.talentButtonNodes.delete(talentId);
     }
   }
 

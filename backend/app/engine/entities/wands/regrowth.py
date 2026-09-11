@@ -88,11 +88,29 @@ class WandOfRegrowth(Wand):
                         on_grass = True
                         break
         if on_grass:
+            from app.engine.entities.buffs import get_buff
             lvl = max(0, self.level)
             healing = round(damage * (lvl + 2) / (lvl + 6) / 2)
-            healing = round(healing * max(1.0, (lvl + 1) / (lvl + 5)))
-            if healing > 0:
-                attacker.hp = min(attacker.get_total_max_hp(), attacker.hp + healing)
+            if healing <= 0:
+                return
+            max_hp = attacker.get_total_max_hp() if hasattr(attacker, "get_total_max_hp") else getattr(attacker, "max_hp", 20)
+            attacker_pos = getattr(attacker, "pos", None)
+            subclass_info = getattr(attacker, "subclass_info", None)
+            is_warden = getattr(subclass_info, "subclass", None) == "warden"
+            source_id = None if is_warden else (f"{attacker_pos.x},{attacker_pos.y}" if attacker_pos else None)
+            existing_buff = get_buff(getattr(attacker, "buffs", []), "sungrass_health")
+            if existing_buff is not None:
+                existing_buff.level = min(max_hp, existing_buff.level + healing)
+                if existing_buff.source_id is not None and not is_warden:
+                    existing_buff.source_id = source_id
+                existing_buff.remaining = 999999.0
+            else:
+                attacker.add_buff(
+                    "sungrass_health",
+                    duration=999999.0,
+                    level=min(max_hp, healing),
+                    source_id=source_id,
+                )
 
     def handle_zap(self, ctx):
         from app.engine.dungeon.constants import TileType
@@ -200,11 +218,9 @@ class WandOfRegrowth(Wand):
         # Chance to spawn random seed plant (33%/66%/100% for cpc 1/2/3)
         if filtered and _random.random() > furrowed_chance and _random.randint(0, 2) < cpc:
             sx, sy = filtered.pop(0)
-            from app.engine.entities.items.consumables import Seed
-            seed_types = ("sungrass", "earthroot", "firebloom", "icecap", "sorrowmoss",
-                          "starwort", "swifthistle")
-            seed_name = _random.choice(seed_types)
-            seed = Seed(id=str(_uuid.uuid4()), pos=Position(x=sx, y=sy), name=seed_name)
+            from app.engine.entities.items.consumables import Seed, STANDARD_SEEDS
+            seed_name = _random.choice(STANDARD_SEEDS)
+            seed = Seed(id=str(_uuid.uuid4()), pos=Position(x=sx, y=sy), plant_type=seed_name)
             floor.items[seed.id] = seed
             ctx.add_event("ITEM_DROP", {"x": sx, "y": sy, "item": seed.id, "kind": seed.kind},
                           floor_id=ctx.floor_id)

@@ -4,9 +4,183 @@
 the player active_effects list synced to the frontend HUD each tick.
 """
 
+from typing import Callable, Dict, List, Optional, Protocol
+
 from app.engine.dungeon.constants import TileType
 from app.engine.entities.buffs import get_buff, has_buff
 from app.engine.entities.player import Effect, Player
+
+
+class StatusEffectProvider(Protocol):
+    def provide(self, player: Player, existing: Dict[str, Effect]) -> Optional[Effect]:
+        ...
+
+
+class BuffStatusEffectProvider:
+    """Strategy for standard buff-based active HUD status effects."""
+
+    def __init__(
+        self,
+        buff_type: str,
+        key: str,
+        name: str,
+        icon: int,
+        duration: float = 30.0,
+        level_as_remaining: bool = False,
+        duration_calculator: Optional[Callable[[Player, object], float]] = None,
+        fallback_buff_type: Optional[str] = None,
+    ):
+        self.buff_type = buff_type
+        self.key = key
+        self.name = name
+        self.icon = icon
+        self.default_duration = duration
+        self.level_as_remaining = level_as_remaining
+        self.duration_calculator = duration_calculator
+        self.fallback_buff_type = fallback_buff_type
+
+    def provide(self, player: Player, existing: Dict[str, Effect]) -> Optional[Effect]:
+        buff = get_buff(player.buffs, self.buff_type)
+        if buff is None and self.fallback_buff_type:
+            buff = get_buff(player.buffs, self.fallback_buff_type)
+        if buff is None:
+            return None
+
+        remaining = float(buff.level) if self.level_as_remaining else buff.remaining
+        if self.duration_calculator is not None:
+            dur = self.duration_calculator(player, buff)
+        else:
+            dur = self.default_duration
+
+        return Effect(
+            key=self.key,
+            name=self.name,
+            icon=self.icon,
+            remaining=remaining,
+            duration=dur,
+        )
+
+
+class PropertyStatusEffectProvider:
+    """Strategy for player property-backed active HUD status effects."""
+
+    def __init__(self, extractor: Callable[[Player, Dict[str, Effect]], Optional[Effect]]):
+        self.extractor = extractor
+
+    def provide(self, player: Player, existing: Dict[str, Effect]) -> Optional[Effect]:
+        return self.extractor(player, existing)
+
+
+def _provide_regen(player: Player, existing: Dict[str, Effect]) -> Optional[Effect]:
+    if player.heal_left <= 0:
+        return None
+    prev = existing.get("regen")
+    duration = max(prev.duration if prev else 0.0, player.heal_left)
+    return Effect(
+        key="regen", name="Healing", icon=44,
+        remaining=player.heal_left, duration=duration,
+    )
+
+
+def _provide_aqua_rejuv(player: Player, existing: Dict[str, Effect]) -> Optional[Effect]:
+    if player.aqua_heal_left <= 0:
+        return None
+    return Effect(
+        key="aqua_rejuv", name="Aquatic Rejuvenation", icon=44,
+        remaining=player.aqua_heal_left, duration=player.aqua_heal_left,
+    )
+
+
+def _provide_berserk(player: Player, existing: Dict[str, Effect]) -> Optional[Effect]:
+    if not player.berserk_active:
+        return None
+    return Effect(
+        key="berserk", name="Berserk", icon=13,
+        remaining=player.berserk_power, duration=1.0,
+    )
+
+
+def _provide_fury(player: Player, existing: Dict[str, Effect]) -> Optional[Effect]:
+    if not player.has_fury:
+        return None
+    return Effect(
+        key="fury", name="Fury", icon=5,
+        remaining=float(player.fury_turns_remaining), duration=10.0,
+    )
+
+
+def _provide_locked_floor(player: Player, existing: Dict[str, Effect]) -> Optional[Effect]:
+    if player.locked_floor_left is None:
+        return None
+    return Effect(
+        key="locked_floor", name="Locked Floor", icon=35,
+        remaining=max(0.0, min(50.0, player.locked_floor_left)), duration=50.0,
+    )
+
+
+def _provide_seal_shield(player: Player, existing: Dict[str, Effect]) -> Optional[Effect]:
+    seal_shield = player.get_shield("broken_seal")
+    if seal_shield is None or seal_shield.amount <= 0:
+        return None
+    return Effect(
+        key="seal_shield", name="Shield", icon=84,
+        remaining=seal_shield.amount,
+        duration=player.get_broken_seal_max_shield() or seal_shield.amount,
+    )
+
+
+class StatusEffectRegistry:
+    def __init__(self, providers: List[StatusEffectProvider]):
+        self._providers = providers
+
+    def collect(self, player: Player) -> List[Effect]:
+        existing = {e.key: e for e in player.active_effects}
+        effects: List[Effect] = []
+        for provider in self._providers:
+            effect = provider.provide(player, existing)
+            if effect is not None:
+                effects.append(effect)
+        return effects
+
+
+DEFAULT_STATUS_EFFECT_REGISTRY = StatusEffectRegistry([
+    PropertyStatusEffectProvider(_provide_regen),
+    BuffStatusEffectProvider(
+        "sungrass_health", "sungrass_health", "Herbal Healing", 19,
+        level_as_remaining=True,
+        duration_calculator=lambda p, b: float(p.get_total_max_hp()),
+    ),
+    BuffStatusEffectProvider(
+        "earthroot_armor", "earthroot_armor", "Earthroot", 20,
+        level_as_remaining=True,
+        duration_calculator=lambda p, b: float(p.get_total_max_hp()),
+    ),
+    PropertyStatusEffectProvider(_provide_aqua_rejuv),
+    PropertyStatusEffectProvider(_provide_berserk),
+    BuffStatusEffectProvider("endure_tracker", "endure", "Endure", 6, duration=12.0),
+    PropertyStatusEffectProvider(_provide_fury),
+    PropertyStatusEffectProvider(_provide_locked_floor),
+    BuffStatusEffectProvider("invisibility", "invisibility", "Invisible", 12, duration=20.0, fallback_buff_type="shadows"),
+    BuffStatusEffectProvider("slow", "slow", "Slowed", 23, duration=30.0),
+    BuffStatusEffectProvider("bleeding", "bleeding", "Bleeding", 26, duration=30.0),
+    BuffStatusEffectProvider("barkskin", "barkskin", "Barkskin", 24, duration=50.0),
+    BuffStatusEffectProvider("roots", "roots", "Rooted", 11, duration=10.0),
+    BuffStatusEffectProvider("daze", "daze", "Dazed", 70, duration=30.0),
+    BuffStatusEffectProvider("stagger", "stagger", "Staggered", 70, duration=5.0),
+    BuffStatusEffectProvider("bless", "bless", "Blessed", 37, duration=30.0),
+    BuffStatusEffectProvider("healing", "healing_buff", "Healing", 44, duration=30.0),
+    BuffStatusEffectProvider("well_fed", "well_fed", "Well Fed", 43, duration=450.0),
+    BuffStatusEffectProvider(
+        "nourished", "nourished", "Nourished", 44,
+        duration_calculator=lambda p, b: getattr(p, "_nourished_duration", 0.0) or getattr(b, "remaining", 0.0),
+    ),
+    BuffStatusEffectProvider("levitation", "levitation", "Levitation", 1, duration=30.0),
+    PropertyStatusEffectProvider(_provide_seal_shield),
+    BuffStatusEffectProvider("provoked_anger_tracker", "provoked_anger", "Provoked Anger", 45, duration=5.0),
+    BuffStatusEffectProvider("frost_imbue", "frost_imbue", "Frost Imbue", 55, duration=30.0),
+    BuffStatusEffectProvider("fire_imbue", "fire_imbue", "Fire Imbue", 55, duration=30.0),
+    BuffStatusEffectProvider("toxic_imbue", "toxic_imbue", "Toxic Imbue", 55, duration=30.0),
+])
 
 
 class StatusEffectsTickMixin:
@@ -66,130 +240,5 @@ class StatusEffectsTickMixin:
                 }, floor_id=floor_id)
 
     def _sync_effects(self, player: Player):
-        from app.engine.entities.buffs import has_buff, get_buff
-        existing = {e.key: e for e in player.active_effects}
-        effects = []
-        if player.heal_left > 0:
-            prev = existing.get("regen")
-            duration = max(prev.duration if prev else 0.0, player.heal_left)
-            effects.append(Effect(
-                key="regen", name="Healing", icon=44,
-                remaining=player.heal_left, duration=duration,
-            ))
-        if player.aqua_heal_left > 0:
-            effects.append(Effect(
-                key="aqua_rejuv", name="Aquatic Rejuvenation", icon=44,
-                remaining=player.aqua_heal_left, duration=player.aqua_heal_left,
-            ))
-        if player.berserk_active:
-            effects.append(Effect(
-                key="berserk", name="Berserk", icon=13,
-                remaining=player.berserk_power, duration=1.0,
-            ))
-        endure_buff = get_buff(player.buffs, "endure_tracker")
-        if endure_buff is not None:
-            effects.append(Effect(
-                key="endure", name="Endure", icon=6,
-                remaining=endure_buff.remaining, duration=12.0,
-            ))
-        if player.has_fury:
-            effects.append(Effect(
-                key="fury", name="Fury", icon=5,
-                remaining=float(player.fury_turns_remaining), duration=10.0,
-            ))
-        if player.locked_floor_left is not None:
-            effects.append(Effect(
-                key="locked_floor", name="Locked Floor", icon=35,
-                remaining=max(0.0, min(50.0, player.locked_floor_left)), duration=50.0,
-            ))
-        invis_buff = get_buff(player.buffs, "invisibility")
-        if invis_buff is not None:
-            effects.append(Effect(
-                key="invisibility", name="Invisible", icon=12,
-                remaining=invis_buff.remaining, duration=20.0,
-            ))
-        elif get_buff(player.buffs, "shadows") is not None:
-            effects.append(Effect(
-                key="invisibility", name="Invisible", icon=12,
-            ))
-        slow_buff = get_buff(player.buffs, "slow")
-        if slow_buff is not None:
-            effects.append(Effect(
-                key="slow", name="Slowed", icon=23,
-                remaining=slow_buff.remaining, duration=30.0,
-            ))
-        bleed_buff = get_buff(player.buffs, "bleeding")
-        if bleed_buff is not None:
-            effects.append(Effect(
-                key="bleeding", name="Bleeding", icon=26,
-                remaining=bleed_buff.remaining, duration=30.0,
-            ))
-        barkskin_buff = get_buff(player.buffs, "barkskin")
-        if barkskin_buff is not None:
-            effects.append(Effect(
-                key="barkskin", name="Barkskin", icon=24,
-                remaining=barkskin_buff.remaining, duration=50.0,
-            ))
-        roots_buff = get_buff(player.buffs, "roots")
-        if roots_buff is not None:
-            effects.append(Effect(
-                key="roots", name="Rooted", icon=11,
-                remaining=roots_buff.remaining, duration=10.0,
-            ))
-        daze_buff = get_buff(player.buffs, "daze")
-        if daze_buff is not None:
-            effects.append(Effect(
-                key="daze", name="Dazed", icon=70,
-                remaining=daze_buff.remaining, duration=30.0,
-            ))
-        stagger_buff = get_buff(player.buffs, "stagger")
-        if stagger_buff is not None:
-            effects.append(Effect(
-                key="stagger", name="Staggered", icon=70,
-                remaining=stagger_buff.remaining, duration=5.0,
-            ))
-        bless_buff = get_buff(player.buffs, "bless")
-        if bless_buff is not None:
-            effects.append(Effect(
-                key="bless", name="Blessed", icon=37,
-                remaining=bless_buff.remaining, duration=30.0,
-            ))
-        heal_buff = get_buff(player.buffs, "healing")
-        if heal_buff is not None:
-            effects.append(Effect(
-                key="healing_buff", name="Healing", icon=44,
-                remaining=heal_buff.remaining, duration=30.0,
-            ))
-        well_fed_buff = get_buff(player.buffs, "well_fed")
-        if well_fed_buff is not None:
-            effects.append(Effect(
-                key="well_fed", name="Well Fed", icon=43,
-                remaining=well_fed_buff.remaining, duration=450.0,
-            ))
-        nourished_buff = get_buff(player.buffs, "nourished")
-        if nourished_buff is not None:
-            effects.append(Effect(
-                key="nourished", name="Nourished", icon=44,
-                remaining=nourished_buff.remaining,
-                duration=getattr(player, "_nourished_duration", 0.0) or nourished_buff.remaining,
-            ))
-        levitation_buff = get_buff(player.buffs, "levitation")
-        if levitation_buff is not None:
-            effects.append(Effect(
-                key="levitation", name="Levitation", icon=1,
-                remaining=levitation_buff.remaining, duration=30.0,
-            ))
-        seal_shield = player.get_shield("broken_seal")
-        if seal_shield is not None and seal_shield.amount > 0:
-            effects.append(Effect(
-                key="seal_shield", name="Shield", icon=84,
-                remaining=seal_shield.amount,
-                duration=player.get_broken_seal_max_shield() or seal_shield.amount,
-            ))
-        anger_buff = get_buff(player.buffs, "provoked_anger_tracker")
-        if anger_buff is not None:
-            effects.append(Effect(
-                key="provoked_anger", name="Provoked Anger", icon=45,
-                remaining=anger_buff.remaining, duration=5.0,
-            ))
-        player.active_effects = effects
+        player.active_effects = DEFAULT_STATUS_EFFECT_REGISTRY.collect(player)
+

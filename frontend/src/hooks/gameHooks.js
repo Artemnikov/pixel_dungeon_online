@@ -50,7 +50,7 @@ export default function useGameHooks(state) {
   // --- shared refs ---
   const socketRef = useRef(null);
   const gridRef = useRef([]);
-  const entitiesRef = useRef({ players: {}, mobs: {}, items: [], traps: [] });
+  const entitiesRef = useRef({ players: {}, mobs: {}, items: [], traps: [], plants: [] });
   const myPlayerIdRef = useRef(null);
   const projectilesRef = useRef([]);
   const visionRef = useRef({ visible: new Set(), discovered: new Set() });
@@ -176,7 +176,7 @@ export default function useGameHooks(state) {
   const assetImages = useAssetImages();
   useMusicByDepth({ enabled: true, menu: gameState !== 'PLAYING', depth, bossFightActive: bossFightActive && !!bossInfo, bossBleeding: bossBleedingEffective, bossLurking, tense: ghostQuestGiven && depth <= 5, amuletObtained: hasAmulet });
 
-  const { sendSelectScrollTarget, sendStoneTarget } = useGameSocket({
+  const { sendSelectScrollTarget, sendStoneTarget, effects } = useGameSocket({
     enabled: gameState === 'PLAYING',
     gameId, roomPassword, sessionId, selectedClass, difficulty, challenges, playerName,
     setConnectionStatus,
@@ -227,7 +227,6 @@ export default function useGameHooks(state) {
     onTrinketChoice: modals.onTrinketChoice,
     onToolkitEnergizePrompt: modals.onToolkitEnergizePrompt,
     onOpenAlchemy: modals.onOpenAlchemy,
-    onTalentUpgraded: talent.onTalentUpgraded,
     onBossSlain: (data) => {
       setBossSlainData(data);
       setShowBossSlainBanner(true);
@@ -386,6 +385,8 @@ export default function useGameHooks(state) {
     assetImages,
     // game socket
     sendSelectScrollTarget, sendStoneTarget,
+    // animation manager
+    effects,
     // busy
     isBusy,
     // handlers

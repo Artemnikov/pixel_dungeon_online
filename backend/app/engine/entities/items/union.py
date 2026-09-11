@@ -27,14 +27,12 @@ class Scenery(ItemBase):
     # collectable. Kept out of AnyItem since it only ever lives on the ground.
     kind: Literal["scenery"] = "scenery"
     type: str = "scenery"
-    category: ClassVar[str] = ItemCategory.SCENERY
 
 
 class Chest(ItemBase):
     kind: Literal["chest"] = "chest"
     name: str = "Chest"
     type: str = "chest"
-    category: ClassVar[str] = ItemCategory.SCENERY
     chest_type: str = "CHEST"
     opened: bool = False
     contents: List["AnyItem"] = Field(default_factory=list)
@@ -45,7 +43,6 @@ class Chest(ItemBase):
 class Bag(ItemBase):
     kind: Literal["bag"] = "bag"
     type: str = "bag"
-    category: ClassVar[str] = ItemCategory.BAG
     is_bag: ClassVar[bool] = True
     unique: bool = True
     capacity: int = 20
@@ -53,7 +50,7 @@ class Bag(ItemBase):
     DESC: ClassVar[str] = "A container that expands how much you can carry. Open it to view its contents."
 
     # None => general backpack (accepts everything). A set => a specialised
-    # sub-bag that only accepts those item categories (SPD's pouches/holders).
+    # sub-bag that only accepts those item types (SPD's pouches/holders).
     accepts: ClassVar[Optional[set]] = None
 
     def default_action(self) -> Optional[str]:
@@ -83,13 +80,13 @@ class Bag(ItemBase):
 
     def _accepts_extra(self, item: "ItemBase") -> bool:
         # Hook for specialised bags that accept a specific item class outside
-        # of their category set (e.g. VelvetPouch + GooBlob in SPD).
+        # of their type set (e.g. VelvetPouch + GooBlob in SPD).
         return False
 
     def can_hold(self, item: "ItemBase") -> bool:
         if isinstance(item, Bag) and self.accepts is not None:
             return False  # specialised pouches can't nest bags
-        if (self.accepts is not None and item.category not in self.accepts
+        if (self.accepts is not None and item.type not in self.accepts
                 and not self._accepts_extra(item)):
             return False
         if item.stackable:
@@ -100,8 +97,8 @@ class Bag(ItemBase):
 
     # --- mutations ---------------------------------------------------------
     def _sort(self) -> None:
-        self.items.sort(key=lambda i: CATEGORY_ORDER.index(i.category)
-                        if i.category in CATEGORY_ORDER else len(CATEGORY_ORDER))
+        self.items.sort(key=lambda i: CATEGORY_ORDER.index(i.type)
+                        if i.type in CATEGORY_ORDER else len(CATEGORY_ORDER))
 
     def collect(self, item: "ItemBase") -> bool:
         if item.quantity <= 0:
@@ -158,7 +155,7 @@ class Bag(ItemBase):
             return
         movable = [i for i in list(source.items)
                    if not isinstance(i, Bag)
-                   and (i.category in self.accepts or self._accepts_extra(i))]
+                   and (i.type in self.accepts or self._accepts_extra(i))]
         for it in movable:
             source.items.remove(it)
             # Roll back if this bag is full (SPD Bag.grabItems).
@@ -170,7 +167,7 @@ class VelvetPouch(Bag):
     kind: Literal["velvet_pouch"] = "velvet_pouch"
     name: str = "Velvet Pouch"
     capacity: int = 19
-    accepts: ClassVar[Optional[set]] = {ItemCategory.SEED, ItemCategory.RUNESTONE}
+    accepts: ClassVar[Optional[set]] = {"seed", "runestone"}
     DESC: ClassVar[str] = "This small velvet pouch can store seeds and other small alchemy ingredients."
 
     def _accepts_extra(self, item: "ItemBase") -> bool:
@@ -183,7 +180,7 @@ class VelvetPouch(Bag):
 class ScrollHolder(Bag):
     kind: Literal["scroll_holder"] = "scroll_holder"
     name: str = "Scroll Holder"
-    accepts: ClassVar[Optional[set]] = {ItemCategory.SCROLL}
+    accepts: ClassVar[Optional[set]] = {"scroll"}
 
     def value(self, identified: bool = False) -> int:
         return 40
@@ -192,7 +189,7 @@ class ScrollHolder(Bag):
 class MagicalHolster(Bag):
     kind: Literal["magical_holster"] = "magical_holster"
     name: str = "Magical Holster"
-    accepts: ClassVar[Optional[set]] = {ItemCategory.WAND, ItemCategory.STONE}
+    accepts: ClassVar[Optional[set]] = {"wand", "throwable"}
 
     def value(self, identified: bool = False) -> int:
         return 60
@@ -201,7 +198,7 @@ class MagicalHolster(Bag):
 class PotionBandolier(Bag):
     kind: Literal["potion_bandolier"] = "potion_bandolier"
     name: str = "Potion Bandolier"
-    accepts: ClassVar[Optional[set]] = {ItemCategory.POTION}
+    accepts: ClassVar[Optional[set]] = {"potion"}
 
     def value(self, identified: bool = False) -> int:
         return 40

@@ -184,7 +184,17 @@ _CATALOG: List[tuple] = [
 
     # Misc
     ("key", "Key", "misc", lambda: Key(name="Key")),
-    ("seed", "Seed of Sunlight", "misc", lambda: Seed(name="Seed of Sunlight")),
+    ("sungrass_seed", "Sungrass Seed", "misc", lambda: Seed(plant_type="sungrass")),
+    ("earthroot_seed", "Earthroot Seed", "misc", lambda: Seed(plant_type="earthroot")),
+    ("firebloom_seed", "Firebloom Seed", "misc", lambda: Seed(plant_type="firebloom")),
+    ("icecap_seed", "Icecap Seed", "misc", lambda: Seed(plant_type="icecap")),
+    ("sorrowmoss_seed", "Sorrowmoss Seed", "misc", lambda: Seed(plant_type="sorrowmoss")),
+    ("swiftthistle_seed", "Swiftthistle Seed", "misc", lambda: Seed(plant_type="swiftthistle")),
+    ("blindweed_seed", "Blindweed Seed", "misc", lambda: Seed(plant_type="blindweed")),
+    ("stormvine_seed", "Stormvine Seed", "misc", lambda: Seed(plant_type="stormvine")),
+    ("fadeleaf_seed", "Fadeleaf Seed", "misc", lambda: Seed(plant_type="fadeleaf")),
+    ("mageroyal_seed", "Mageroyal Seed", "misc", lambda: Seed(plant_type="mageroyal")),
+    ("starflower_seed", "Starflower Seed", "misc", lambda: Seed(plant_type="starflower")),
     ("dewdrop", "Dewdrop", "misc", lambda: Dewdrop()),
     ("waterskin", "Waterskin", "misc", lambda: Waterskin()),
     ("ankh", "Ankh", "misc", lambda: Ankh()),
@@ -313,7 +323,7 @@ TRANSMUTE_GROUPS: dict = {
     "scroll": [kind for kind, _name, category, _factory in _CATALOG
                if category == "scroll" and kind != "scroll_of_transmutation"],
     "seed": [kind for kind, _name, category, _factory in _CATALOG
-             if category == "misc" and kind == "seed"],
+             if category == "misc" and kind.endswith("_seed") and kind != "rotberry_seed"],
     "stone": [kind for kind, _name, category, _factory in _CATALOG
               if category == "misc" and kind == "stone"],
     "runestone": [kind for kind, _name, category, _factory in _CATALOG

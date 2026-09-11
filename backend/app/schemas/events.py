@@ -27,6 +27,7 @@ class AttackData(_EventData):
     surprise: bool
     crit: bool
     grim_proc: bool
+    next_attack_in_ms: Optional[int] = None
 
 
 class MissData(_EventData):
@@ -96,6 +97,7 @@ class RangedAttackData(_EventData):
     is_wand: Optional[bool] = None
     # Present for thrown inventory items (not wands); a serialized item dict.
     item: Optional[dict] = None
+    next_attack_in_ms: Optional[int] = None
 
 
 class PlaySoundData(_EventData):
@@ -124,6 +126,13 @@ class TrapTriggeredData(_EventData):
     player: str
     trap: str
     damage: int
+
+
+class PlantTriggeredData(_EventData):
+    plant: str
+    x: int
+    y: int
+    player: Optional[str] = None
 
 
 class DrinkData(_EventData):
@@ -681,6 +690,7 @@ EVENT_MODELS = {
     "SEARCH": SearchData,
     "HEAL": HealData,
     "TRAP_TRIGGERED": TrapTriggeredData,
+    "PLANT_TRIGGERED": PlantTriggeredData,
     "DRINK": DrinkData,
     "READ": ReadData,
     "MAP_PATCH": MapPatchData,

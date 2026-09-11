@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.4] - 2026-09-11
+
+### Added
+- **Seeds & Plants System**: Full port of SPD seeds and plants (Firebloom, Icecap, Earthroot, Sorrowmoss, Starflower, Fadeleaf, Rotberry, Sungrass, Blindweed, Stormvine, Dreamfoil, Blandfruit Bush). Plants grow on dungeon tiles, trigger upon being stepped on or hit by thrown items/seeds, creating elemental hazards, buffs, and status effects. Includes `PlantsSynchronizer`, plant inspection UI (`WndInfoPlant`), blooming particle effects, and `plant.mp3` audio.
+- **Combat & Attack Cooldown Sync**: Synchronized attack cooldowns (`next_attack_in_ms`) between server and client for melee and ranged attacks with client-side readiness tracking (`isAttackReady`, `consumeAttackCooldown`), preventing desynchronized actions.
+- **Instant Hit Effects**: Removed artificial timeout delays (`HIT_CONNECT_DELAY`, `missileDelay`) so hits, damage numbers, blood splatters, and particle effects trigger immediately upon receipt.
+- **Choice Dialog Reliability**: Fixed delivery and reconnect re-emission of subclass (Tengu's Mask) and armor ability (King's Crown) choice dialogs over WebSockets.
+- **Talent Upgrade Visuals**: Talent upgrade star-bursts are now handled directly by `VisualEffectsManager` upon `TALENT_UPGRADED` event, removing UI component state overhead. Added `TALENT` icon.
+- **Audio**: Added dedicated `locked.mp3` sound effect for locked doors and chests.
+
+### Changed
+- Backend entity hierarchy cleanup across base entities, consumables, equip, union types, and scroll predicates.
+- Wand of Regrowth and Wandmaker quest item integration updated for the new plant system.
+- Simplified talent window and tier pane structures.
+
+### Removed
+- Legacy `speck_star.png` asset and obsolete tier star indicators in talent panes.
+- Deprecated entity methods and redundant imports across backend modules.
+
 ## [1.0.2] - 2026-09-06
 
 ### Added

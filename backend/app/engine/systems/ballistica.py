@@ -49,6 +49,8 @@ def ballistica_trace(
             return (cells[i - 1][0], cells[i - 1][1])
 
         if stop_solid and flags is not None and flags.solid[cy][cx]:
+            if flags.passable[cy][cx]:
+                return (cx, cy)
             return (cells[i - 1][0], cells[i - 1][1])
 
         if (cx, cy) in occupied:

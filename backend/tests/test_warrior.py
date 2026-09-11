@@ -149,10 +149,13 @@ def test_wear_kings_crown_with_armor_emits_choice_event():
 
     g.execute_item_action(p.id, crown.id, Action.WEAR)
 
-    events = [e for e in g.flush_events() if e["type"] == "ARMOR_ABILITY_CHOICE_AVAILABLE"]
+    raw_events = g.flush_events()
+    events = [e for e in raw_events if e["type"] == "ARMOR_ABILITY_CHOICE_AVAILABLE"]
     assert len(events) == 1
     assert events[0]["data"]["player"] == p.id
     assert events[0]["data"]["options"] == list(CLASS_ARMOR_ABILITIES.get(p.class_type, ()))
+    filtered = [e for e in g.filter_events_for_player(raw_events, p.id) if e["type"] == "ARMOR_ABILITY_CHOICE_AVAILABLE"]
+    assert len(filtered) == 1
     # Wearing opens the choice window but does NOT consume the crown (SPD:
     # it is only detached once an ability is actually picked), so the choice
     # can be re-opened by re-wearing after dismissing.
@@ -213,9 +216,12 @@ def test_wear_tengu_mask_opens_choice_without_consuming():
 
     g.execute_item_action(p.id, mask.id, Action.WEAR)
 
-    events = [e for e in g.flush_events() if e["type"] == "SUBCLASS_CHOICE_AVAILABLE"]
+    raw_events = g.flush_events()
+    events = [e for e in raw_events if e["type"] == "SUBCLASS_CHOICE_AVAILABLE"]
     assert len(events) == 1
     assert events[0]["data"]["player"] == p.id
+    filtered = [e for e in g.filter_events_for_player(raw_events, p.id) if e["type"] == "SUBCLASS_CHOICE_AVAILABLE"]
+    assert len(filtered) == 1
     # Still in the backpack: dismissing the window keeps the choice re-openable.
     assert p.belongings.get_item(mask.id) is not None
     assert p._tengu_mask_worn is True

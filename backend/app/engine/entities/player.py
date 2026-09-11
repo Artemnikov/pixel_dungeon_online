@@ -321,6 +321,10 @@ class Player(Entity):
     # on a CHASM tile; cleared unconditionally on every other move_entity
     # call for that player, or once confirm_chasm_fall consumes it.
     pending_chasm_fall: Optional[Tuple[int, int]] = None
+    # Set by terrain_effects when a Warden steps on a Fadeleaf plant (SPD
+    # Fadeleaf warden path): consumed by movement.move_entity which performs
+    # the actual transition up one depth like a STAIRS_UP step.
+    pending_ascend: bool = False
     action_until: float = 0.0
     # Hold Fast (warrior T3): ticks since the player last moved.
     stationary_ticks: int = 0

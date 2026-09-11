@@ -501,6 +501,30 @@ export function spawnBombBlast(particlesRef, cx, cy, count = 24, color = '#FFDD6
   }
 }
 
+// ShaftParticle (effects/particles/ShaftParticle.java): upward drifting white light
+// shafts with additive blending, expanding from 0 to 4 px wide and 16 to 32 px tall,
+// fading in and out with peak alpha 0.5 at midpoint. Used for Sungrass activation,
+// Well of Health, and holy/spirit effects.
+export function spawnShaft(particlesRef, cx, cy, count = 3) {
+  for (let i = 0; i < count; i++) {
+    const life = 1.2;
+    particlesRef.current.push({
+      x: cx + (Math.random() - 0.5) * 8,
+      y: cy + (Math.random() - 0.5) * 6,
+      vx: 0,
+      vy: -6,
+      delay: i * 0.15,
+      life,
+      maxLife: life,
+      color: '#ffffff',
+      additive: true,
+      gravity: false,
+      shrink: false,
+      isShaft: true,
+    });
+  }
+}
+
 export function advanceAndDrawParticles(ctx, { particlesRef }) {
   const now = performance.now();
   if (lastNow == null) lastNow = now;
@@ -510,6 +534,10 @@ export function advanceAndDrawParticles(ctx, { particlesRef }) {
   const particles = particlesRef.current;
   for (let i = particles.length - 1; i >= 0; i--) {
     const p = particles[i];
+    if (p.delay && p.delay > 0) {
+      p.delay -= dt;
+      continue;
+    }
     p.life -= dt;
     if (p.life <= 0) {
       particles.splice(i, 1);
@@ -529,7 +557,9 @@ export function advanceAndDrawParticles(ctx, { particlesRef }) {
 
     const t = p.life / p.maxLife;
     let alpha = t;
-    if (p.fadeIn) {
+    if (p.isShaft) {
+      alpha = t < 0.5 ? t : 1 - t;
+    } else if (p.fadeIn) {
       alpha = t > 0.8 ? (1 - t) * 5 : 1;
     }
     if (p.triangleAlpha) {
@@ -561,7 +591,13 @@ export function advanceAndDrawParticles(ctx, { particlesRef }) {
     if (p.additive) setLightMode(ctx);
     ctx.globalAlpha = Math.max(0, Math.min(1, alpha));
     ctx.fillStyle = p.color;
-    ctx.fillRect(Math.round(p.x), Math.round(p.y), p.size, p.size);
+    if (p.isShaft) {
+      const width = Math.max(1, (1 - t) * 4);
+      const height = 16 + (1 - t) * 16;
+      ctx.fillRect(Math.round(p.x - width / 2), Math.round(p.y - height / 2), Math.round(width), Math.round(height));
+    } else {
+      ctx.fillRect(Math.round(p.x), Math.round(p.y), p.size, p.size);
+    }
     ctx.restore();
   }
 }

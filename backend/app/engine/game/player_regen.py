@@ -6,6 +6,7 @@ entrance-room healing, passive HP regen, and passive wand recharge.
 
 import math
 import random
+from typing import Optional
 
 from app.engine.dungeon.constants import TileType
 from app.engine.entities.base import Faction
@@ -116,6 +117,53 @@ class PlayerRegenMixin:
     # regen formula (this port maps 1 SPD turn to 1 real second, matching
     # how Hunger.STARVING=450 turns is already ported as a 450s clock).
     _WELL_FED_HEAL_INTERVAL = 18.0
+
+    def _apply_sungrass_heal(self, entity, dt: float, floor_id: Optional[int] = None):
+        """SPD Sungrass.Health: fractional heal accumulator advancing at
+        (40 + HT) / 150 HP/sec (this port maps 1 SPD turn to 1 second).
+        Walking off the plant tile breaks stationary buffs (source_id != None)."""
+        from app.engine.entities.buffs import break_stationary_plant_buffs, get_buff, remove_buff
+
+        break_stationary_plant_buffs(entity)
+        buff = get_buff(getattr(entity, "buffs", []), "sungrass_health")
+        if buff is None:
+            entity._sungrass_heal_accum = 0.0
+            return
+        if getattr(entity, "hp", 0) <= 0:
+            entity._sungrass_heal_accum = 0.0
+            return
+
+        max_hp = entity.get_total_max_hp() if hasattr(entity, "get_total_max_hp") else getattr(entity, "max_hp", 20)
+        if entity.hp >= max_hp:
+            entity._sungrass_heal_accum = 0.0
+            return
+
+        rate = (40.0 + max_hp) / 150.0
+        accum = getattr(entity, "_sungrass_heal_accum", 0.0) + dt * rate
+        if accum >= 1.0:
+            heal_units = int(accum)
+            actual_heal = min(heal_units, max_hp - entity.hp, buff.level)
+            if actual_heal > 0:
+                entity.hp += actual_heal
+                buff.level -= actual_heal
+                accum -= heal_units
+                f_id = floor_id if floor_id is not None else getattr(entity, "floor_id", 1)
+                pos = getattr(entity, "pos", None)
+                px = pos.x if pos else 0
+                py = pos.y if pos else 0
+                self.add_event(
+                    "HEAL",
+                    {"target": entity.id, "amount": int(actual_heal), "x": px, "y": py},
+                    floor_id=f_id,
+                )
+            if buff.level <= 0:
+                if hasattr(entity, "remove_buff"):
+                    entity.remove_buff("sungrass_health")
+                else:
+                    remove_buff(entity.buffs, "sungrass_health")
+                entity._sungrass_heal_accum = 0.0
+                return
+        entity._sungrass_heal_accum = accum
 
     def _apply_passive_regen(self, player: Player, dt: float):
         if not player.has_buff("well_fed"):

@@ -19,11 +19,17 @@ from app.engine.systems.combat import resolve_melee_attack, resolve_ranged_attac
 
 
 def _open_game(w: int = 12, h: int = 12) -> GameInstance:
-    game = GameInstance("test-game")
+    import uuid
+    game = GameInstance(f"test-surprise-{uuid.uuid4()}")
     game.players = {}
     game.mobs = {}
-    game.grid = [[TileType.FLOOR for _ in range(w)] for _ in range(h)]
-    game._get_or_create_floor(game.depth).rebuild_flags()
+    floor = game._get_or_create_floor(game.depth)
+    floor.grid = [[TileType.FLOOR for _ in range(w)] for _ in range(h)]
+    floor.mobs.clear()
+    floor.items.clear()
+    floor.traps.clear()
+    floor.plants.clear()
+    floor.rebuild_flags()
     game.difficulty = Difficulty.NORMAL
     return game
 
@@ -122,12 +128,14 @@ def test_los_reacquisition_arms_window_then_zap_crits():
 
     mob = game._spawn_mob_at(Rat, 6, 5)
     game.mobs[mob.id] = mob
+    floor.mobs[mob.id] = mob
     mob.ai_state = "hunting"
     mob.max_hp = 50
     mob.hp = 50
+    mob.speed = 0.0
     mob.defense_skill = 0
-    # Pin the mob so it can't chase and disturb the LOS setup.
-    game._mob_move_times = {mob.id: time.time() + 9999}
+    mob.dr_min = 0
+    mob.dr_max = 0
 
     # Phase 1: mob has LOS on the player (first sight arms no window).
     for _ in range(50):
@@ -153,11 +161,14 @@ def test_los_reacquisition_arms_window_then_zap_crits():
     assert mob.surprise_windows.get("p1", 0.0) > time.time()
 
     # Phase 4: a wand zap during the window is a crit surprise hit.
+    mob.surprise_windows["p1"] = time.time() + 10.0
     player.last_attack_time = 0.0
+    player.attack_skill = 999
+    mob.defense_skill = 0
     wand = WandOfMagicMissile(id="w1", charges=3)
-    player.add_to_inventory(wand)
+    player.belongings.backpack.items.append(wand)
     game.events.clear()
-    game.perform_ranged_attack("p1", "w1", 6, 5)
+    game.perform_ranged_attack("p1", "w1", mob.pos.x, mob.pos.y)
     damage_events = [
         ev for ev in game.events
         if ev["type"] == "DAMAGE" and ev["data"].get("target") == mob.id
@@ -170,7 +181,7 @@ def test_los_reacquisition_arms_window_then_zap_crits():
     mob.surprise_windows["p1"] = time.time() - 1.0
     player.last_attack_time = 0.0
     game.events.clear()
-    game.perform_ranged_attack("p1", "w1", 6, 5)
+    game.perform_ranged_attack("p1", "w1", mob.pos.x, mob.pos.y)
     damage_events = [
         ev for ev in game.events
         if ev["type"] == "DAMAGE" and ev["data"].get("target") == mob.id

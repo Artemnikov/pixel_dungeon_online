@@ -14,32 +14,33 @@ Remove Curse) are also implemented.
 
 from typing import List, Optional
 
-from app.engine.entities.base import ItemCategory, ItemBase
-from app.engine.entities.items.consumables import Seed, Stone
+from app.engine.entities.base import ItemBase
 from app.engine.entities.items.equip import Armor, Artifact, Bow, KindOfWeapon, MeleeWeapon, MissileWeapon, Staff
 from app.engine.entities.player import Player
 from app.engine.entities.armors.armor_glyphs import CURSE_GLYPHS as _ARMOR_CURSES
 from app.engine.entities.weapons.weapon_enchants import CURSES
 
 
-# Categories with a `level` field that Scroll of Upgrade can affect.
-UPGRADABLE_CATEGORIES = {
-    ItemCategory.WEAPON,
-    ItemCategory.ARMOR,
-    ItemCategory.WAND,
-    ItemCategory.RING,
-    ItemCategory.ARTIFACT,
+# Types with a `level` field that Scroll of Upgrade can affect.
+UPGRADABLE_TYPES = {
+    "weapon",
+    "wearable",
+    "armor",
+    "wand",
+    "ring",
+    "artifact",
 }
 
-# Categories Scroll of Identify can reveal (excludes seeds).
-IDENTIFIABLE_CATEGORIES = {
-    ItemCategory.WEAPON,
-    ItemCategory.ARMOR,
-    ItemCategory.WAND,
-    ItemCategory.RING,
-    ItemCategory.ARTIFACT,
-    ItemCategory.POTION,
-    ItemCategory.SCROLL,
+# Types Scroll of Identify can reveal (excludes seeds).
+IDENTIFIABLE_TYPES = {
+    "weapon",
+    "wearable",
+    "armor",
+    "wand",
+    "ring",
+    "artifact",
+    "potion",
+    "scroll",
 }
 
 
@@ -51,7 +52,7 @@ def player_inventory_items(player: "Player") -> List["ItemBase"]:
 
 def is_upgradable(item, game) -> bool:
     """True if `item` is a weapon/armor/wand/ring/artifact with a `level`."""
-    if item.category not in UPGRADABLE_CATEGORIES:
+    if item.type not in UPGRADABLE_TYPES:
         return False
     if not hasattr(item, "level"):
         return False
@@ -59,9 +60,9 @@ def is_upgradable(item, game) -> bool:
 
 
 def is_unidentified_target(item, game) -> bool:
-    """True if `item`'s kind is not yet identified and its category is one
+    """True if `item`'s kind is not yet identified and its type is one
     Scroll of Identify can reveal (weapon/armor/wand/ring/artifact/potion/scroll)."""
-    if item.category not in IDENTIFIABLE_CATEGORIES:
+    if item.type not in IDENTIFIABLE_TYPES:
         return False
     if item.level_known:
         return False
@@ -71,7 +72,7 @@ def is_unidentified_target(item, game) -> bool:
 def is_cursed_or_suspect(item, game) -> bool:
     """True if `item` is a weapon/armor/wand/ring/artifact that is cursed or
     has a curse enchant/glyph — items that actually need cleansing."""
-    if item.category not in UPGRADABLE_CATEGORIES:
+    if item.type not in UPGRADABLE_TYPES:
         return False
     if item.cursed:
         return True
@@ -94,23 +95,23 @@ def transmute_group(item) -> Optional[str]:
         return "weapon_melee"
     if isinstance(item, (Bow, MissileWeapon)):
         return "weapon_missile"
-    if item.category == ItemCategory.ARMOR:
+    if item.type in ("wearable", "armor"):
         return "armor"
-    if item.category == ItemCategory.WAND:
+    if item.type == "wand":
         return "wand"
-    if item.category == ItemCategory.RING:
+    if item.type == "ring":
         return "ring"
-    if item.category == ItemCategory.ARTIFACT:
+    if item.type == "artifact":
         return "artifact"
-    if item.category == ItemCategory.POTION:
+    if item.type == "potion":
         return "potion"
-    if item.category == ItemCategory.SCROLL:
+    if item.type == "scroll":
         return "scroll"
-    if item.category == ItemCategory.SEED:
+    if item.type == "seed":
         return "seed"
-    if item.category == ItemCategory.STONE:
+    if item.type in ("throwable", "stone"):
         return "stone"
-    if item.category == ItemCategory.RUNESTONE:
+    if item.type == "runestone":
         return "runestone"
     return None
 

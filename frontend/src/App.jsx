@@ -216,7 +216,7 @@ function App() {
     handleReplayTutorial, handleLeaveGame, resetForRestart, cycleEnemyCamera,
     emergencyHealItem, drinkEmergencyHeal, itemsById,
     visionRef, entitiesRef, myPlayerIdRef, modals, talent, targeting,
-    sendSelectScrollTarget, sendStoneTarget,
+    sendSelectScrollTarget, sendStoneTarget, effects,
   } = game;
 
   const { handleCanvasClick, mouseCursorVal, controllerCursorVal } = input;
@@ -438,6 +438,7 @@ function App() {
           showItemBrowser={modals.showItemBrowser}
           setShowItemBrowser={modals.setShowItemBrowser}
           itemCatalog={modals.itemCatalog}
+          effects={effects}
           send={send}
         />
 

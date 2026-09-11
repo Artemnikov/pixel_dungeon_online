@@ -250,7 +250,7 @@ class NpcEconomyMixin:
                 )
             else:
                 tokens_item = next(
-                    (i for i in player.inventory if isinstance(i, DwarfToken)), None
+                    (i for i in player.belongings.all_items() if isinstance(i, DwarfToken)), None
                 )
                 tokens = tokens_item.quantity if tokens_item else 0
                 required = 5 if quest.alternative else 4
@@ -340,7 +340,7 @@ class NpcEconomyMixin:
                 )
             else:
                 quest_item_cls = _WANDMAKER_QUEST_ITEM_BY_TYPE.get(quest.quest_type, CorpseDust)
-                held = next((i for i in player.inventory if isinstance(i, quest_item_cls)), None)
+                held = next((i for i in player.belongings.all_items() if isinstance(i, quest_item_cls)), None)
                 if held is not None:
                     wand1 = _make_wandmaker_wand(quest, "wand1")
                     wand2 = _make_wandmaker_wand(quest, "wand2")
@@ -521,7 +521,7 @@ class NpcEconomyMixin:
         if not quest.given or quest.completed:
             return
 
-        tokens_item = next((i for i in player.inventory if isinstance(i, DwarfToken)), None)
+        tokens_item = next((i for i in player.belongings.all_items() if isinstance(i, DwarfToken)), None)
         tokens = tokens_item.quantity if tokens_item else 0
         required = 5 if quest.alternative else 4
         if tokens < required:
@@ -596,7 +596,7 @@ class NpcEconomyMixin:
         if not quest.given:
             return
         quest_item_cls = _WANDMAKER_QUEST_ITEM_BY_TYPE.get(quest.quest_type, CorpseDust)
-        held = next((i for i in player.inventory if isinstance(i, quest_item_cls)), None)
+        held = next((i for i in player.belongings.all_items() if isinstance(i, quest_item_cls)), None)
         if held is None:
             return
 

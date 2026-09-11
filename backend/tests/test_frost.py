@@ -93,3 +93,72 @@ def test_frost_thaw_on_dry_land_no_chill(game):
     floor.grid[p.pos.y][p.pos.x] = TileType.FLOOR
     g._frost_thaw(p, floor)
     assert not p.has_buff("chill")
+
+
+def test_frost_imbue_cleanses_and_blocks_frost_and_chill():
+    # FrostImbue.attachTo clears Frost & Chill, and FrostImbue grants immunity to Frost & Chill
+    buffs = []
+    add_buff(buffs, "frost", duration=10.0, level=1)
+    add_buff(buffs, "chill", duration=5.0, level=1)
+    assert has_buff(buffs, "frost") and has_buff(buffs, "chill")
+
+    add_buff(buffs, "frost_imbue", duration=15.0, level=1)
+    assert has_buff(buffs, "frost_imbue")
+    # Cleansed on attach
+    assert not has_buff(buffs, "frost")
+    assert not has_buff(buffs, "chill")
+
+    # Immune to incoming frost and chill while frost_imbue is active
+    res_frost = add_buff(buffs, "frost", duration=10.0, level=1)
+    res_chill = add_buff(buffs, "chill", duration=5.0, level=1)
+    assert res_frost is None
+    assert res_chill is None
+    assert not has_buff(buffs, "frost")
+    assert not has_buff(buffs, "chill")
+
+
+def test_frost_imbue_melee_and_ranged_proc(game):
+    from app.engine.systems.combat import resolve_melee_attack, resolve_ranged_attack
+    from app.engine.entities.items.equip import MeleeWeapon, MissileWeapon
+
+    g, p, floor = game
+    p.add_buff("frost_imbue", duration=30.0, level=1)
+
+    mob = Mob(id="target_mob", name="Gnoll", pos=Position(x=p.pos.x + 1, y=p.pos.y), hp=50, max_hp=50, faction="dungeon")
+    floor.mobs[mob.id] = mob
+
+    # Melee attack procs chill
+    p.strength = 20
+    p.attack_skill = 100
+    mob.defense_skill = 0
+    weapon = MeleeWeapon(id="w1", name="Sword", tier=3)
+    p.belongings.weapon = weapon
+
+    res_melee = resolve_melee_attack(p, mob, floor.mobs, mob.pos.x, mob.pos.y, floor=floor)
+    assert res_melee.get("hit")
+    assert mob.has_buff("chill")
+
+    # Reset chill for ranged test
+    mob.remove_buff("chill")
+    assert not mob.has_buff("chill")
+
+    dart = MissileWeapon(id="d1", name="Dart", tier=1)
+    res_ranged = resolve_ranged_attack(p, mob, dart, floor.mobs, mob.pos.x, mob.pos.y, floor=floor, game=g)
+    assert res_ranged.get("hit")
+    assert mob.has_buff("chill")
+
+
+def test_frost_imbue_hud_status_effect_sync(game):
+    from app.engine.game.status_effects_tick import DEFAULT_STATUS_EFFECT_REGISTRY
+
+    g, p, floor = game
+    p.add_buff("frost_imbue", duration=15.0, level=1)
+
+    effects = DEFAULT_STATUS_EFFECT_REGISTRY.collect(p)
+    frost_imbue_eff = next((e for e in effects if e.key == "frost_imbue"), None)
+
+    assert frost_imbue_eff is not None
+    assert frost_imbue_eff.name == "Frost Imbue"
+    assert frost_imbue_eff.icon == 55
+    assert frost_imbue_eff.remaining == 15.0
+

@@ -31,6 +31,9 @@ export function advanceAndDrawProjectiles(ctx, { projectilesRef, assetImages }) 
     if (ratio >= 1) {
       proj.finished = true;
       finishedIndices.push(index);
+      if (typeof proj.onComplete === 'function') {
+        proj.onComplete();
+      }
     }
 
     if (!NON_ROTATING_PROJECTILES.has(proj.type)) {

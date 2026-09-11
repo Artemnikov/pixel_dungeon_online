@@ -138,6 +138,12 @@ export interface TrapInfo {
   trap_type: string;
 }
 
+export interface PlantInfo {
+  x: number;
+  y: number;
+  plant_type: string;
+}
+
 /** A single tile mutation in a MAP_PATCH event. */
 export interface TilePatch {
   x: number;
@@ -158,6 +164,7 @@ export interface AttackEvent {
     surprise: boolean;
     crit: boolean;
     grim_proc: boolean;
+    next_attack_in_ms?: number;
   };
 }
 
@@ -266,6 +273,7 @@ export interface RangedAttackEvent {
     is_bow?: boolean;
     /** Serialized thrown item, present for thrown inventory items (not wands). */
     item?: SerializedItem;
+    next_attack_in_ms?: number;
   };
 }
 
@@ -304,6 +312,11 @@ export interface HealEvent {
 export interface TrapTriggeredEvent {
   type: 'TRAP_TRIGGERED';
   data: { player: string; trap: string; damage: number; x?: number; y?: number };
+}
+
+export interface PlantTriggeredEvent {
+  type: 'PLANT_TRIGGERED';
+  data: { plant: string; x: number; y: number; player?: string };
 }
 
 /** Single lightning arc from source cell to target cell. */
@@ -1134,6 +1147,7 @@ export type GameEvent =
   | SearchEvent
   | HealEvent
   | TrapTriggeredEvent
+  | PlantTriggeredEvent
   | DrinkEvent
   | EatEvent
   | EnergyBurstEvent
@@ -1288,6 +1302,7 @@ export interface InitMessage {
   width: number;
   height: number;
   traps: TrapInfo[];
+  plants?: PlantInfo[];
   items?: SerializedItem[];
   difficulty?: Difficulty;
   /** Decorative custom tilemaps (e.g. GooNest), cosmetic only. */
@@ -1324,6 +1339,7 @@ export interface StateUpdateMessage {
   items?: SerializedItem[];
   depth?: number;
   traps?: TrapInfo[];
+  plants?: PlantInfo[];
   mapped_tiles?: Vec2[];
   gold?: number;
   energy?: number;

@@ -34,6 +34,7 @@ class TickMixin:
                 if self._process_removed_buffs(mob, removed, floor=floor, floor_id=floor_id, is_player=False):
                     continue  # mob died to its own buff expiry (e.g. sheep)
                 self._apply_bleed(mob)
+                self._apply_sungrass_heal(mob, dt, floor_id=floor_id)
 
         if active_ids:
             active_floors = {fid: self.floors[fid] for fid in active_ids}

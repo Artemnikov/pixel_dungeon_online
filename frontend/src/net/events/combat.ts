@@ -1,4 +1,4 @@
-import { TILE_SIZE, PLAYER_ATTACK_DURATION, HIT_CONNECT_DELAY, FLASH_DURATION } from '../../constants';
+import { TILE_SIZE, PLAYER_ATTACK_DURATION, FLASH_DURATION } from '../../constants';
 import {
   spawnBlood,
   spawnCorrosionSplash,
@@ -11,7 +11,6 @@ import {
 import { TEXT_ICON } from '../../rendering/draw/floatingTextIcons';
 import { coordsForItem } from '../../rendering/sprites';
 import { playChainPull } from './chainsEffect';
-import { MISSILE_TYPES } from '../../rendering/draw/magicMissile';
 import { spawnSparkMoving } from '../../rendering/draw/sparkParticle';
 import { spawnFlameBurst } from '../../rendering/draw/flameParticle';
 import { spawnEarthBurst } from '../../rendering/draw/earthParticle';
@@ -55,7 +54,29 @@ import { defaultMoveResultDispatcher } from '../movement/MoveResultDispatcher';
 
 const BLOOD_COLORS: Record<string, string> = { Goo: '#000000' };
 
-let lastLocalAttackTs = 0;
+let nextAttackReadyAt = 0;
+let lastAttackCooldownMs = 1000;
+
+export function noteNextAttackReady(inMs?: number): void {
+  const cd = inMs ?? lastAttackCooldownMs;
+  lastAttackCooldownMs = cd;
+  nextAttackReadyAt = performance.now() + cd;
+}
+
+export function isAttackReady(): boolean {
+  return performance.now() >= nextAttackReadyAt;
+}
+
+export function consumeAttackCooldown(cooldownMs?: number): void {
+  const cd = cooldownMs ?? lastAttackCooldownMs;
+  lastAttackCooldownMs = cd;
+  nextAttackReadyAt = performance.now() + cd;
+}
+
+export function resetAttackCooldown(): void {
+  nextAttackReadyAt = 0;
+  lastAttackCooldownMs = 1000;
+}
 
 export interface EquippedWeaponMeta {
   name?: string;
@@ -69,28 +90,21 @@ function weaponMeta(me: RenderPlayer | null | undefined): EquippedWeaponMeta | n
   return me?.equipped_weapon as EquippedWeaponMeta | null | undefined;
 }
 
-function meleeCooldownMs(me: RenderPlayer | null | undefined): number {
-  return (weaponMeta(me)?.attack_cooldown || 1.0) * 1000;
-}
-
-function noteServerAttackConfirmed(): void {
-  lastLocalAttackTs = performance.now();
-}
-
 export function startLocalPlayerMeleeAnim(
   me: RenderPlayer | null | undefined,
   playerAnimRef: Ref<Record<string, AnimState>> | undefined,
   audioService?: { play: (sound: string, rate?: number) => void },
 ): void {
   if (!me || me.is_downed || !playerAnimRef) return;
+  if (!isAttackReady()) return;
+
   const now = performance.now();
-  if (now - lastLocalAttackTs < meleeCooldownMs(me)) return;
-  lastLocalAttackTs = now;
+  const weapon = weaponMeta(me);
+  consumeAttackCooldown((weapon?.attack_cooldown ?? 1.0) * 1000);
 
   if (!playerAnimRef.current[me.id]) playerAnimRef.current[me.id] = {};
   playerAnimRef.current[me.id].attackUntil = now + PLAYER_ATTACK_DURATION;
 
-  const weapon = weaponMeta(me);
   audioService?.play(weapon?.hit_sound || 'HIT_BODY', (weapon?.hit_sound_pitch ?? 1.0) * (0.87 + Math.random() * 0.28));
 }
 
@@ -187,8 +201,26 @@ export function createCombatEventHandlers(): IGameEventHandler[] {
         const spriteCoords = thrownItem ? coordsForItem(thrownItem) : null;
         const projType = event.data.projectile || 'arrow';
         const beamType = event.data.beam_type;
+        const src = event.data.source;
+        const isLocal = src === ctx.myPlayerId;
+        const audible = isLocal || ctx.world.isVisible(event.data.x, event.data.y);
+
+        if (isLocal && event.data.next_attack_in_ms != null) {
+          noteNextAttackReady(event.data.next_attack_in_ms);
+        }
 
         if (!MAGIC_PROJECTILES.has(projType)) {
+          const itemAny = thrownItem as Record<string, unknown> | undefined;
+          const isSeed = projType === 'seed'
+            || Boolean(itemAny && (itemAny.type === 'seed' || itemAny.plant_type || itemAny.kind === 'seed' || itemAny.kind === 'rotberry_seed'));
+
+          const onComplete = isSeed ? () => {
+            const isTargetAudible = isLocal || ctx.world.isAudible(event.data.target_x, event.data.target_y, ctx.myPlayerId);
+            if (isTargetAudible) {
+              ctx.audio.play('PLANT');
+            }
+          } : undefined;
+
           ctx.effects.pushProjectile({
             x: startX,
             y: startY,
@@ -201,12 +233,9 @@ export function createCombatEventHandlers(): IGameEventHandler[] {
             progress: 0,
             rotation: 0,
             finished: false,
+            onComplete,
           });
         }
-
-        const src = event.data.source;
-        const isLocal = src === ctx.myPlayerId;
-        const audible = isLocal || ctx.world.isVisible(event.data.x, event.data.y);
 
         const srcPlayer = ctx.entities.getPlayer(src);
         if (srcPlayer && event.data.is_wand) {
@@ -265,7 +294,9 @@ export function createCombatEventHandlers(): IGameEventHandler[] {
         }
 
         if (src === ctx.myPlayerId) {
-          noteServerAttackConfirmed();
+          if (event.data.next_attack_in_ms != null) {
+            noteNextAttackReady(event.data.next_attack_in_ms);
+          }
           if (event.data.crit || event.data.grim_proc) ctx.audio.play('HIT_STRONG');
         }
 
@@ -301,39 +332,37 @@ export function createCombatEventHandlers(): IGameEventHandler[] {
             : src === ctx.myPlayerId ? TEXT_ICON.HIT_WEP
             : TEXT_ICON.HIT_BLS;
 
-          setTimeout(() => {
-            const flashDuration = isCrit ? FLASH_DURATION * 2 : FLASH_DURATION;
-            const flashUntil = performance.now() + flashDuration;
-            const particlesRef = ctx.effects.particlesRef;
+          const flashDuration = isCrit ? FLASH_DURATION * 2 : FLASH_DURATION;
+          const flashUntil = performance.now() + flashDuration;
+          const particlesRef = ctx.effects.particlesRef;
 
-            if (isMobTarget) {
-              if (ctx.effects.mobAnimRef) {
-                if (!ctx.effects.mobAnimRef.current[tgt]) ctx.effects.mobAnimRef.current[tgt] = {};
-                ctx.effects.mobAnimRef.current[tgt].flashUntil = flashUntil;
-              }
-              if (particlesRef) {
-                const awayAngle = sc ? Math.atan2(tc.y - sc.y, tc.x - sc.x) : -Math.PI / 2;
-                if (isCrit) {
-                  const critCount = Math.min(Math.round(14 * Math.sqrt(damage / maxHp)), 14);
-                  spawnBlood(particlesRef, tc.x, tc.y, awayAngle, critCount, '#ffcc00');
-                  spawnCritSparkle(particlesRef, tc.x, tc.y, 10);
-                  ctx.effects.spawnFloatingText(tc.x, tc.y - TILE_SIZE / 2, 'CRIT!', '#ffcc00', hitIcon);
-                } else {
-                  const count = Math.min(Math.round(9 * Math.sqrt(damage / maxHp)), 9);
-                  spawnBlood(particlesRef, tc.x, tc.y, awayAngle, count, color);
-                }
-                if (isGrim) spawnGrimShadow(particlesRef, tc.x, tc.y, 8);
-              }
-            } else {
-              if (ctx.effects.playerAnimRef) {
-                if (!ctx.effects.playerAnimRef.current[tgt]) ctx.effects.playerAnimRef.current[tgt] = {};
-                ctx.effects.playerAnimRef.current[tgt].flashUntil = flashUntil;
-              }
-              if (isCrit) ctx.effects.spawnFloatingText(tc.x, tc.y - TILE_SIZE / 2, 'CRIT!', '#ffcc00', hitIcon);
-              if (isGrim && particlesRef) spawnGrimShadow(particlesRef, tc.x, tc.y, 8);
+          if (isMobTarget) {
+            if (ctx.effects.mobAnimRef) {
+              if (!ctx.effects.mobAnimRef.current[tgt]) ctx.effects.mobAnimRef.current[tgt] = {};
+              ctx.effects.mobAnimRef.current[tgt].flashUntil = flashUntil;
             }
-            if (isSurprise) ctx.effects.spawnSurprise(tc.x, tc.y);
-          }, HIT_CONNECT_DELAY);
+            if (particlesRef) {
+              const awayAngle = sc ? Math.atan2(tc.y - sc.y, tc.x - sc.x) : -Math.PI / 2;
+              if (isCrit) {
+                const critCount = Math.min(Math.round(14 * Math.sqrt(damage / maxHp)), 14);
+                spawnBlood(particlesRef, tc.x, tc.y, awayAngle, critCount, '#ffcc00');
+                spawnCritSparkle(particlesRef, tc.x, tc.y, 10);
+                ctx.effects.spawnFloatingText(tc.x, tc.y - TILE_SIZE / 2, 'CRIT!', '#ffcc00', hitIcon);
+              } else {
+                const count = Math.min(Math.round(9 * Math.sqrt(damage / maxHp)), 9);
+                spawnBlood(particlesRef, tc.x, tc.y, awayAngle, count, color);
+              }
+              if (isGrim) spawnGrimShadow(particlesRef, tc.x, tc.y, 8);
+            }
+          } else {
+            if (ctx.effects.playerAnimRef) {
+              if (!ctx.effects.playerAnimRef.current[tgt]) ctx.effects.playerAnimRef.current[tgt] = {};
+              ctx.effects.playerAnimRef.current[tgt].flashUntil = flashUntil;
+            }
+            if (isCrit) ctx.effects.spawnFloatingText(tc.x, tc.y - TILE_SIZE / 2, 'CRIT!', '#ffcc00', hitIcon);
+            if (isGrim && particlesRef) spawnGrimShadow(particlesRef, tc.x, tc.y, 8);
+          }
+          if (isSurprise) ctx.effects.spawnSurprise(tc.x, tc.y);
         }
         return true;
       },
@@ -381,99 +410,96 @@ export function createCombatEventHandlers(): IGameEventHandler[] {
         };
         const projectile = event.data.projectile;
         const isMagic = projectile && MAGIC_PROJECTILES.has(projectile);
-        const missileDelay = isMagic ? ((MISSILE_TYPES as Record<string, { life: number }>)[projectile]?.life ?? 400) : 0;
 
-        setTimeout(() => {
-          const particlesRef = ctx.effects.particlesRef;
-          if (isMagic && particlesRef) {
-            const count = event.data.splash_count ?? 3;
-            if (projectile === 'beam') {
-              const sx = event.data.source_x;
-              const sy = event.data.source_y;
-              if (sx != null && sy != null) {
-                const beamType = event.data.beam_type;
-                const cells = rasterizeLine(sx, sy, Math.round(tgtEntity.renderPos.x), Math.round(tgtEntity.renderPos.y));
-                for (const cell of cells) {
-                  if (!ctx.world.isVisible(cell.x, cell.y)) continue;
-                  const px = cell.x * TILE_SIZE + TILE_SIZE / 2;
-                  const py = cell.y * TILE_SIZE + TILE_SIZE / 2;
-                  if (beamType === 'health_ray') {
-                    spawnBlood(particlesRef, px, py, -Math.PI / 2, 1, '#cc0000');
-                  } else if (beamType === 'light_ray') {
-                    spawnRainbowBurst(particlesRef, px, py, 2);
-                  } else {
-                    spawnPurpleBurst(particlesRef, px, py, 1);
-                  }
+        const particlesRef = ctx.effects.particlesRef;
+        if (isMagic && particlesRef) {
+          const count = event.data.splash_count ?? 3;
+          if (projectile === 'beam') {
+            const sx = event.data.source_x;
+            const sy = event.data.source_y;
+            if (sx != null && sy != null) {
+              const beamType = event.data.beam_type;
+              const cells = rasterizeLine(sx, sy, Math.round(tgtEntity.renderPos.x), Math.round(tgtEntity.renderPos.y));
+              for (const cell of cells) {
+                if (!ctx.world.isVisible(cell.x, cell.y)) continue;
+                const px = cell.x * TILE_SIZE + TILE_SIZE / 2;
+                const py = cell.y * TILE_SIZE + TILE_SIZE / 2;
+                if (beamType === 'health_ray') {
+                  spawnBlood(particlesRef, px, py, -Math.PI / 2, 1, '#cc0000');
+                } else if (beamType === 'light_ray') {
+                  spawnRainbowBurst(particlesRef, px, py, 2);
+                } else {
+                  spawnPurpleBurst(particlesRef, px, py, 1);
                 }
               }
-            } else {
-              switch (projectile) {
-                case 'fire_bolt':
-                  spawnFlameBurst(particlesRef, tc.x, tc.y, 5);
-                  break;
-                case 'frost':
-                  spawnWhiteSplash(particlesRef, tc.x, tc.y, 5);
-                  break;
-                case 'corrosion':
-                  spawnCorrosionSplash(particlesRef, tc.x, tc.y, 5);
-                  break;
-                case 'earth':
-                case 'force':
-                  spawnEarthBurst(particlesRef, tc.x, tc.y, 8);
-                  break;
-                case 'shadow':
-                case 'ward':
-                  spawnPurpleBurst(particlesRef, tc.x, tc.y, 6);
-                  break;
-                case 'rainbow':
-                  spawnRainbowBurst(particlesRef, tc.x, tc.y, 10);
-                  break;
-                case 'elmo':
-                  spawnElmo(particlesRef, tc.x, tc.y, 4);
-                  break;
-                case 'foliage':
-                  spawnEarthBurst(particlesRef, tc.x, tc.y, 6);
-                  break;
-              }
             }
-            spawnWhiteSplash(particlesRef, tc.x, tc.y, count);
-            const isAudible = tgt === ctx.myPlayerId
-              || ctx.world.isVisible(Math.round(tgtEntity.renderPos.x), Math.round(tgtEntity.renderPos.y));
-            if (isAudible) ctx.audio.play('HIT_MAGIC', 0.87 + Math.random() * 0.28);
-            if (isAudible) {
-              switch (projectile) {
-                case 'fire_bolt': ctx.audio.play('BURNING', 1.0, 250); break;
-                case 'frost': ctx.audio.play('SHATTER', 0.9, 250); break;
-                case 'force': ctx.audio.play('BLAST', 0.9, 250); break;
-                case 'corrosion': ctx.audio.play('GAS', 0.9, 250); break;
-                case 'earth': ctx.audio.play('HIT_MAGIC', 0.85, 250); break;
-                case 'shadow': ctx.audio.play('HIT_MAGIC', 0.8, 250); break;
-              }
+          } else {
+            switch (projectile) {
+              case 'fire_bolt':
+                spawnFlameBurst(particlesRef, tc.x, tc.y, 5);
+                break;
+              case 'frost':
+                spawnWhiteSplash(particlesRef, tc.x, tc.y, 5);
+                break;
+              case 'corrosion':
+                spawnCorrosionSplash(particlesRef, tc.x, tc.y, 5);
+                break;
+              case 'earth':
+              case 'force':
+                spawnEarthBurst(particlesRef, tc.x, tc.y, 8);
+                break;
+              case 'shadow':
+              case 'ward':
+                spawnPurpleBurst(particlesRef, tc.x, tc.y, 6);
+                break;
+              case 'rainbow':
+                spawnRainbowBurst(particlesRef, tc.x, tc.y, 10);
+                break;
+              case 'elmo':
+                spawnElmo(particlesRef, tc.x, tc.y, 4);
+                break;
+              case 'foliage':
+                spawnEarthBurst(particlesRef, tc.x, tc.y, 6);
+                break;
             }
           }
-          if (isMagic) {
-            const flashDuration = isCrit ? FLASH_DURATION * 2 : FLASH_DURATION;
-            const flashUntil = performance.now() + flashDuration;
-            if (ctx.entities.getMob(tgt)) {
-              if (ctx.effects.mobAnimRef) {
-                if (!ctx.effects.mobAnimRef.current[tgt]) ctx.effects.mobAnimRef.current[tgt] = {};
-                ctx.effects.mobAnimRef.current[tgt].flashUntil = flashUntil;
-              }
-            } else if (ctx.entities.getPlayer(tgt)) {
-              if (ctx.effects.playerAnimRef) {
-                if (!ctx.effects.playerAnimRef.current[tgt]) ctx.effects.playerAnimRef.current[tgt] = {};
-                ctx.effects.playerAnimRef.current[tgt].flashUntil = flashUntil;
-              }
+          spawnWhiteSplash(particlesRef, tc.x, tc.y, count);
+          const isAudible = tgt === ctx.myPlayerId
+            || ctx.world.isVisible(Math.round(tgtEntity.renderPos.x), Math.round(tgtEntity.renderPos.y));
+          if (isAudible) ctx.audio.play('HIT_MAGIC', 0.87 + Math.random() * 0.28);
+          if (isAudible) {
+            switch (projectile) {
+              case 'fire_bolt': ctx.audio.play('BURNING', 1.0, 250); break;
+              case 'frost': ctx.audio.play('SHATTER', 0.9, 250); break;
+              case 'force': ctx.audio.play('BLAST', 0.9, 250); break;
+              case 'corrosion': ctx.audio.play('GAS', 0.9, 250); break;
+              case 'earth': ctx.audio.play('HIT_MAGIC', 0.85, 250); break;
+              case 'shadow': ctx.audio.play('HIT_MAGIC', 0.8, 250); break;
             }
           }
-          if (amount > 0) {
-            const color = isCrit ? '#ffcc00' : '#ff6666';
-            const text = isCrit ? `${amount} CRIT!` : `-${amount}`;
-            ctx.effects.spawnFloatingText(tc.x, tc.y - TILE_SIZE / 2, text, color, TEXT_ICON.PHYS_DMG);
+        }
+        if (isMagic) {
+          const flashDuration = isCrit ? FLASH_DURATION * 2 : FLASH_DURATION;
+          const flashUntil = performance.now() + flashDuration;
+          if (ctx.entities.getMob(tgt)) {
+            if (ctx.effects.mobAnimRef) {
+              if (!ctx.effects.mobAnimRef.current[tgt]) ctx.effects.mobAnimRef.current[tgt] = {};
+              ctx.effects.mobAnimRef.current[tgt].flashUntil = flashUntil;
+            }
+          } else if (ctx.entities.getPlayer(tgt)) {
+            if (ctx.effects.playerAnimRef) {
+              if (!ctx.effects.playerAnimRef.current[tgt]) ctx.effects.playerAnimRef.current[tgt] = {};
+              ctx.effects.playerAnimRef.current[tgt].flashUntil = flashUntil;
+            }
           }
-          if (isGrim && particlesRef) spawnGrimShadow(particlesRef, tc.x, tc.y, 8);
-          if (isCrit) ctx.effects.spawnFloatingText(tc.x, tc.y - TILE_SIZE / 2, 'CRIT!', '#ffcc00');
-        }, missileDelay);
+        }
+        if (amount > 0) {
+          const color = isCrit ? '#ffcc00' : '#ff6666';
+          const text = isCrit ? `${amount} CRIT!` : `-${amount}`;
+          ctx.effects.spawnFloatingText(tc.x, tc.y - TILE_SIZE / 2, text, color, TEXT_ICON.PHYS_DMG);
+        }
+        if (isGrim && particlesRef) spawnGrimShadow(particlesRef, tc.x, tc.y, 8);
+        if (isCrit) ctx.effects.spawnFloatingText(tc.x, tc.y - TILE_SIZE / 2, 'CRIT!', '#ffcc00');
         return true;
       },
     },

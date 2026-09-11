@@ -61,7 +61,8 @@ export function createProgressionEventHandlers(): IGameEventHandler[] {
       eventType: 'TALENT_UPGRADED',
       handle(event: Extract<GameEvent, { type: 'TALENT_UPGRADED' }>, ctx: GameEventContext) {
         if (event.data.player === ctx.myPlayerId) {
-          ctx.ui.talentUpgraded({ talent: event.data.talent, level: event.data.level });
+          ctx.audio.play('LEVELUP', 1.2);
+          ctx.effects.playTalentUpgrade(event.data.talent);
         }
         return true;
       },

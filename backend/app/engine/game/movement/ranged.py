@@ -13,7 +13,6 @@ from typing import Optional
 from app.engine.entities.base import Position, consume_backpack_item
 from app.engine.entities.buffs import add_buff, get_buff, remove_buff
 from app.engine.entities.wands.cursed_dispatcher import fire_cursed_wand
-from app.engine.entities.items.consumables import Throwable
 from app.engine.entities.items.equip import Bow, MissileWeapon, SpiritBow, Staff
 from app.engine.entities.wands import Wand, ZapContext
 from app.engine.entities.mobs import Goo
@@ -99,11 +98,16 @@ class RangedAttackMixin:
         if not item:
             return None
 
-        is_throwable = isinstance(item, Throwable)
+        is_throwable = getattr(item, "throw_behavior", "") == "missile"
         is_weapon = isinstance(item, (Weapon, Bow, SpiritBow))
         is_wand = isinstance(item, Wand)
         is_staff = isinstance(item, Staff)
         is_bow = isinstance(item, (Bow, SpiritBow))
+
+        if not is_weapon and not is_wand and not is_staff and not is_bow and not is_throwable:
+            from app.engine.entities.items.actions import action_throw
+            action_throw(self, player, item, target_x, target_y)
+            return 0
 
         # Staff zap: delegate to imbued wand for charge/damage checks
         staff_wand = item.imbued_wand if is_staff else None
@@ -191,6 +195,7 @@ class RangedAttackMixin:
         # curse becomes known. Rainbow bolt visual + ZAP sound (SPD fx()).
         if effective_wand is not None and effective_wand.cursed:
             effective_wand.cursed_known = True
+            next_attack_in_ms = round(max(0.0, player.last_attack_time + cooldown - time.time()) * 1000)
             self.add_event("RANGED_ATTACK", {
                 "source": player_id,
                 "x": player.pos.x, "y": player.pos.y,
@@ -200,6 +205,7 @@ class RangedAttackMixin:
                 "beam_type": None, "target_hp_ratio": None,
                 "sound": "ATTACK_MAGIC",
                 "is_wand": True, "is_bow": False,
+                "next_attack_in_ms": next_attack_in_ms,
             }, floor_id=floor_id)
             fire_cursed_wand(self, player, effective_wand, target_x, target_y,
                              consume_charge=False)
@@ -232,6 +238,7 @@ class RangedAttackMixin:
         target_hp_ratio = None
         if beam_type == "health_ray" and target_entity and target_entity.get_total_max_hp() > 0:
             target_hp_ratio = target_entity.hp / target_entity.get_total_max_hp()
+        next_attack_in_ms = round(max(0.0, player.last_attack_time + cooldown - time.time()) * 1000)
         ranged_event_data = {
             "source": player_id,
             "x": player.pos.x,
@@ -246,6 +253,7 @@ class RangedAttackMixin:
             "sound": getattr(effective_wand or item, "wand_sound", None),
             "is_wand": is_wand or is_staff,
             "is_bow": is_bow,
+            "next_attack_in_ms": next_attack_in_ms,
         }
         # Thrown inventory items fly as their own sprite (not a generic dart).
         # Wands keep the magic_bolt projectile. Bows are not thrown — they fire

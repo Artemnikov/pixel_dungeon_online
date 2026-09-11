@@ -5,6 +5,7 @@ import type {
 } from '../types';
 import { MOVE_DURATION } from '../../constants.js';
 import { BlockerResolver } from './BlockerResolver';
+import { resetAttackCooldown } from '../events/combat';
 
 export interface UnconfirmedStep {
   seq: number;
@@ -470,6 +471,7 @@ export class MovementPredictor {
     this.lastStepTime = 0;
     this.confirmedPos = null;
     this.unconfirmedSteps = [];
+    resetAttackCooldown();
   }
 
   /**
@@ -486,6 +488,7 @@ export class MovementPredictor {
     this.lastStepTime = 0;
     this.confirmedPos = null;
     this.unconfirmedSteps = [];
+    resetAttackCooldown();
     // seqCounter is intentionally NOT reset — must remain monotonically increasing
     // so the backend accepts every new MOVE_STEP on the next floor.
   }

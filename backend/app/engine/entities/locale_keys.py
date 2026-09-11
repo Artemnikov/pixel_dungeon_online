@@ -208,6 +208,10 @@ def item_locale_key(item) -> Optional[str]:
         chest_type = getattr(item, "chest_type", "CHEST")
         return _CHEST_TYPE_KEYS.get(chest_type, "item.chest")
 
+    if cls in ("Seed", "RotberrySeed") or getattr(item, "kind", "") == "seed":
+        plant_type = getattr(item, "plant_type", "sungrass")
+        return f"item.{plant_type}_seed"
+
     # Concrete class override.
     if cls in _ITEM_OVERRIDES:
         return _ITEM_OVERRIDES[cls]

@@ -193,7 +193,7 @@ def _weighted_choice(weights: List[float]) -> int:
 
 def _make_item(item_kind: str) -> Optional[ItemBase]:
     if item_kind == "seed":
-        return Seed(name="Seed of Sunlight")
+        return Seed(plant_type="sungrass")
     elif item_kind == "gold":
         return Gold(name="Gold", quantity=random.randint(5, 20))
     elif item_kind == "health_potion":

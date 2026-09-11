@@ -9,7 +9,6 @@ export default function useTalentUI() {
   const [armorAbilityOptions, setArmorAbilityOptions] = useState([]);
   const [showLevelUpBanner, setShowLevelUpBanner] = useState(false);
   const [levelUpData, setLevelUpData] = useState({});
-  const [upgradedTalentId, setUpgradedTalentId] = useState(null);
   const [showMetamorphMode, setShowMetamorphMode] = useState(false);
   const [metamorphOldTalent, setMetamorphOldTalent] = useState(null);
   const [metamorphOptions, setMetamorphOptions] = useState(null);
@@ -27,7 +26,6 @@ export default function useTalentUI() {
 
   const closeHero = useCallback(() => {
     setShowHeroWindow(false);
-    setUpgradedTalentId(null);
     resetMetamorph();
   }, [resetMetamorph]);
 
@@ -48,8 +46,6 @@ export default function useTalentUI() {
     setShowLevelUpBanner,
     levelUpData,
     setLevelUpData,
-    upgradedTalentId,
-    setUpgradedTalentId,
     showMetamorphMode,
     setShowMetamorphMode,
     metamorphOldTalent,

@@ -4,6 +4,7 @@ import IconTitle from './IconTitle';
 import WndInfoMob from './WndInfoMob';
 import WndInfoItem from './WndInfoItem';
 import WndInfoTrap from './WndInfoTrap';
+import WndInfoPlant from './WndInfoPlant';
 import useRegisterWindow from '../game/window/useRegisterWindow';
 import { WindowLevel } from '../game/window/WindowTypes';
 
@@ -66,6 +67,9 @@ export default function WndInfoCell({ cellInfo, style, onClose }) {
       break;
     case 'trap':
       content = <WndInfoTrap trapType={cellInfo.trapType} />;
+      break;
+    case 'plant':
+      content = <WndInfoPlant name={cellInfo.name} description={cellInfo.description} plantType={cellInfo.plantType} />;
       break;
     case 'darkness':
       content = (

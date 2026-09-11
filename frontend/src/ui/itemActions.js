@@ -3,6 +3,7 @@ export const ACTION_KEYS = {
   UNEQUIP: 'action.unequip',
   DROP: 'action.drop',
   THROW: 'action.throw',
+  PLANT: 'action.plant',
   DRINK: 'action.drink',
   READ: 'action.read',
   ZAP: 'action.zap',

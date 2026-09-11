@@ -50,7 +50,6 @@ class EquipableItem(ItemBase):
 
 class KindOfWeapon(EquipableItem):
     type: str = "weapon"
-    category: ClassVar[str] = ItemCategory.WEAPON
     damage: int = 1
     range: int = 1
     attack_cooldown: float = 1.0
@@ -382,6 +381,7 @@ class Staff(MeleeWeapon):
 class MissileWeapon(KindOfWeapon):
     kind: Literal["missile_weapon"] = "missile_weapon"
     tier: int = 1
+    throw_behavior: str = "missile"
     stackable: ClassVar[bool] = True
     DESC: ClassVar[str] = "A thrown weapon. Hurl it at an enemy from afar."
 
@@ -405,7 +405,6 @@ class ArmorEnchantment(BaseModel):
 class Armor(EquipableItem):
     kind: Literal["armor"] = "armor"
     type: str = "wearable"
-    category: ClassVar[str] = ItemCategory.ARMOR
     tier: int = 1
     enchantment: ArmorEnchantment = Field(default_factory=ArmorEnchantment)
     augment: Optional[str] = None
@@ -465,7 +464,6 @@ class KindofMisc(EquipableItem):
 class Ring(KindofMisc):
     kind: Literal["ring"] = "ring"
     type: str = "ring"
-    category: ClassVar[str] = ItemCategory.RING
     # Identifies which RingBuff subclass this ring grants (e.g. "accuracy",
     # "haste"). Used by ring_bonus() to find matching rings across both slots.
     buff_class: Optional[str] = None
@@ -490,7 +488,6 @@ class Ring(KindofMisc):
 class Artifact(KindofMisc):
     kind: Literal["artifact"] = "artifact"
     type: str = "artifact"
-    category: ClassVar[str] = ItemCategory.ARTIFACT
     charge: int = 0
     charge_cap: int = 100
     DESC: ClassVar[str] = "A unique artifact with a special power that grows as you use it."

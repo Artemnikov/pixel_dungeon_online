@@ -391,6 +391,7 @@ def action_plant_seed_from_sandals(game, player, item, tx=None, ty=None) -> None
     floor.grid[ty][tx] = TileType.FLOOR_GRASS
     _plant_seed_at(floor, (tx, ty), seed_kind.replace("_seed", ""))
     _artifact_gain_exp(item, 10)
+    game.add_event("PLAY_SOUND", {"sound": "PLANT", "x": tx, "y": ty}, floor_id=player.floor_id)
     game.add_event("MAP_PATCH", {"tiles": [{"x": tx, "y": ty, "tile": TileType.FLOOR_GRASS}]},
                    floor_id=player.floor_id)
     floor.rebuild_flags()

@@ -53,7 +53,7 @@ export function useItemActions({ send, equippedItems, targetingMode, setTargetin
       }
     } else if (item.type === 'wearable') {
       equipItem(item.id);
-    } else if (item.type === 'throwable') {
+    } else if (item.throw_behavior === 'missile' || item.type === 'throwable' || item.throw_behavior === 'seed' || item.type === 'seed' || item.default_action === 'THROW') {
       if (targetingMode && typeof targetingMode === 'object' && targetingMode.itemId === item.id) {
         setTargetingMode(false);
       } else {

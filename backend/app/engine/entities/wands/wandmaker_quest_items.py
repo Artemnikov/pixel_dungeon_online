@@ -12,27 +12,21 @@ from __future__ import annotations
 from typing import ClassVar, List, Literal, Optional
 
 from app.engine.entities.base import Action, ItemBase
+from app.engine.entities.items.consumables import Seed
 
 
-class RotberrySeed(ItemBase):
+class RotberrySeed(Seed):
     """plants/Rotberry.java's Seed inner class -- the Rotberry quest's
     turn-in item, dropped by RotHeart on death (see wandmaker_quest.py /
-    world.py's handle_mob_death). Inert for quest purposes (no held-item
-    side effect, unlike CorpseDust); the "plant it to grow a new Rotberry"
-    flavor mechanic is a separate, unrelated Plant/Seed system this port
-    doesn't need to build out for the quest to work."""
+    world.py's handle_mob_death)."""
 
     kind: Literal["rotberry_seed"] = "rotberry_seed"
     name: str = "seed of the rotberry"
-    type: str = "misc"
-    category: ClassVar[str] = "misc"
+    type: str = "seed"
     unique: bool = True
     level_known: bool = True
     cursed_known: bool = True
-    DESC: ClassVar[str] = (
-        "A dark, wrinkled seed pod, still faintly warm from the plant it "
-        "came from. The Wandmaker will want this."
-    )
+    plant_type: str = "rotberry"
 
 
 class CeremonialCandle(ItemBase):
@@ -48,7 +42,6 @@ class CeremonialCandle(ItemBase):
     kind: Literal["ceremonial_candle"] = "ceremonial_candle"
     name: str = "ceremonial candle"
     type: str = "misc"
-    category: ClassVar[str] = "misc"
     unique: bool = True
     stackable: ClassVar[bool] = True
     level_known: bool = True
@@ -74,7 +67,6 @@ class Embers(ItemBase):
     kind: Literal["embers"] = "embers"
     name: str = "smoldering embers"
     type: str = "misc"
-    category: ClassVar[str] = "misc"
     unique: bool = True
     level_known: bool = True
     cursed_known: bool = True

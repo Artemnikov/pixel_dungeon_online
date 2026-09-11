@@ -376,12 +376,12 @@ def test_naturalism_level_mapping():
 # SPD Level.plants seeds trigger when stepped on (Plant.trigger()). Generated
 # seeds are normalized to runtime plant dicts by spd_adapter._convert_plants;
 # Seedpod drops 2-4 seeds and Dewcatcher drops 3-6 dewdrops on adjacent cells
-# (WandOfRegrowth.Seedpod/Dewcatcher.activate).
-
+# (WandOfRegrowth.Seedpod/Dewcatcher.activate). This is the exact pool
+# _drop_seed can generate (Rotberry is a unique quest seed and excluded).
 _VALID_SEED_TYPES = {
     "sungrass", "fadeleaf", "icecap", "sorrowmoss", "swiftthistle",
-    "blindweed", "stormvine", "earthroot", "dreamfoil", "starflower",
-    "seedpod", "dewcatcher", "firebloom", "rotberry",
+    "blindweed", "stormvine", "earthroot", "mageroyal",
+    "starflower", "firebloom",
 }
 
 

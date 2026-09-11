@@ -20,7 +20,7 @@ const EQUIP_SLOTS = [
   { key: 'ring', labelKey: 'slot.ring' },
 ];
 
-const EQUIPPABLE_TYPES = new Set(['weapon', 'wearable', 'ring', 'artifact', 'trinket']);
+const EQUIPPABLE_TYPES = new Set(['weapon', 'wearable', 'ring', 'artifact']);
 const LONG_PRESS_MS = 450;
 
 // All Bag subtypes (generic backpack + the SPD-style category pouches/holsters).

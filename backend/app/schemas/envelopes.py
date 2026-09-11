@@ -34,6 +34,7 @@ class InitMessage(_Envelope):
     width: int
     height: int
     traps: List[Dict[str, Any]]
+    plants: List[Dict[str, Any]] = []
     items: List[Any] = []
     difficulty: Difficulty = "normal"
     custom_tiles: List[Dict[str, Any]] = []
@@ -73,6 +74,7 @@ class StateUpdateMessage(_Envelope):
     items: Optional[List[Any]] = None
     depth: Optional[int] = None
     traps: Optional[List[Dict[str, Any]]] = None
+    plants: Optional[List[Dict[str, Any]]] = None
     mapped_tiles: Optional[List[Tuple[int, int]]] = None
     gold: Optional[int] = None
     energy: Optional[int] = None

@@ -5,6 +5,7 @@ import { SelfPlayerSynchronizer } from './SelfPlayerSynchronizer';
 import { MobsSynchronizer } from './MobsSynchronizer';
 import { ItemsSynchronizer } from './ItemsSynchronizer';
 import { TrapsSynchronizer } from './TrapsSynchronizer';
+import { PlantsSynchronizer } from './PlantsSynchronizer';
 import { VisionSynchronizer } from './VisionSynchronizer';
 import { EnvironmentSynchronizer } from './EnvironmentSynchronizer';
 
@@ -18,6 +19,7 @@ export class StateSynchronizer {
       new MobsSynchronizer(),
       new ItemsSynchronizer(),
       new TrapsSynchronizer(),
+      new PlantsSynchronizer(),
       new VisionSynchronizer(),
       new EnvironmentSynchronizer(),
     ];

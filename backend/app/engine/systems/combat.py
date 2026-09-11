@@ -1,6 +1,6 @@
 import random
 import time
-from typing import Callable, Optional, TYPE_CHECKING
+from typing import Callable, Dict, Optional, TYPE_CHECKING
 
 from app.engine.systems.rogue_prep import (
     prep_tier, prep_damage_bonus, prep_damage_rolls, prep_ko_threshold,
@@ -8,6 +8,83 @@ from app.engine.systems.rogue_prep import (
 
 if TYPE_CHECKING:
     from app.engine.entities.base import Entity, Position
+
+
+class AttackProcStrategy:
+    """Strategy interface for on-hit procs from active buffs / imbues."""
+    def proc(self, attacker: "Entity", defender: "Entity", damage: int, is_ranged: bool = False, add_event: Optional[Callable] = None, **kwargs) -> None:
+        pass
+
+
+class FrostImbueProc(AttackProcStrategy):
+    def proc(self, attacker: "Entity", defender: "Entity", damage: int, is_ranged: bool = False, add_event: Optional[Callable] = None, **kwargs) -> None:
+        if damage > 0 and hasattr(defender, "add_buff"):
+            defender.add_buff("chill", duration=3.0, level=1, stack_mode="extend")
+            if add_event:
+                floor_id = getattr(attacker, "floor_id", 0)
+                pos = getattr(defender, "pos", None)
+                x = getattr(pos, "x", 0) if pos else 0
+                y = getattr(pos, "y", 0) if pos else 0
+                add_event("PLAY_SOUND", {"sound": "FREEZE", "x": x, "y": y}, floor_id=floor_id)
+
+
+class FireImbueProc(AttackProcStrategy):
+    def proc(self, attacker: "Entity", defender: "Entity", damage: int, is_ranged: bool = False, add_event: Optional[Callable] = None, **kwargs) -> None:
+        if damage > 0 and hasattr(defender, "add_buff"):
+            defender.add_buff("burning", duration=3.0, level=1, stack_mode="extend")
+
+
+class ToxicImbueProc(AttackProcStrategy):
+    def proc(self, attacker: "Entity", defender: "Entity", damage: int, is_ranged: bool = False, add_event: Optional[Callable] = None, **kwargs) -> None:
+        if damage > 0 and hasattr(defender, "add_buff"):
+            defender.add_buff("poison", duration=3.0, level=1, stack_mode="extend")
+
+
+ATTACK_BUFF_PROCS: Dict[str, AttackProcStrategy] = {
+    "frost_imbue": FrostImbueProc(),
+    "fire_imbue": FireImbueProc(),
+    "toxic_imbue": ToxicImbueProc(),
+}
+
+
+def apply_attack_buff_procs(attacker: "Entity", defender: "Entity", damage: int, is_ranged: bool = False, add_event: Optional[Callable] = None, **kwargs) -> None:
+    buffs = getattr(attacker, "buffs", None)
+    if not buffs or damage <= 0:
+        return
+    for buff in buffs:
+        proc_strategy = ATTACK_BUFF_PROCS.get(buff.type)
+        if proc_strategy is not None:
+            proc_strategy.proc(attacker, defender, damage, is_ranged=is_ranged, add_event=add_event, **kwargs)
+
+
+def _apply_earthroot_armor(defender, amount: int, depth: int) -> int:
+    """Absorbs flat damage from an `earthroot_armor` reservoir.
+
+    A plant-earthroot buff (stamped with the plant tile in source_id) matches
+    SPD Earthroot.Armor.absorb (Earthroot.java:93-101):
+    - Detaches if the defender is no longer at the source position.
+    - Dynamically blocks up to (scalingDepth+5)//2 per hit, depleting the pool.
+    The Entanglement armour glyph's armor carries no source_id and drains its
+    reservoir 1:1 per hit regardless of position.
+    Returns the leftover damage."""
+    from app.engine.entities.buffs import break_stationary_plant_buffs, get_buff, remove_buff
+
+    if amount <= 0:
+        return amount
+    break_stationary_plant_buffs(defender)
+    armor = get_buff(getattr(defender, "buffs", []), "earthroot_armor")
+    if armor is None:
+        return amount
+    if armor.source_id:
+        max_absorb = max(1, (depth + 5) // 2)
+        blocked = min(max_absorb, armor.level, amount)
+    else:
+        blocked = min(armor.level, amount)
+    if blocked > 0:
+        armor.level -= blocked
+        if armor.level <= 0:
+            remove_buff(getattr(defender, "buffs", []), "earthroot_armor")
+    return amount - blocked
 
 
 def _preparation(attacker: "Entity", defender: "Entity") -> Optional[dict]:
@@ -418,6 +495,11 @@ def resolve_melee_attack(
         from app.engine.entities.rings import tenacity_multiplier
         effective_damage = int(effective_damage * tenacity_multiplier(defender))
 
+    # Earthroot armor: absorbs a flat chunk from the hit, depleting the pool.
+    effective_damage = _apply_earthroot_armor(
+        defender, max(0, effective_damage), getattr(floor, "floor_id", 1)
+    )
+
     hp_before = defender.hp
     actual_damage = defender.take_damage(max(0, effective_damage))
     result["damage"] = actual_damage
@@ -534,6 +616,11 @@ def resolve_melee_attack(
                     floor=floor, add_event=add_event,
                 )
 
+    add_event_fn = add_event or (getattr(game, "add_event", None) if game is not None else None)
+
+    if actual_damage > 0:
+        apply_attack_buff_procs(attacker, defender, actual_damage, is_ranged=False, add_event=add_event_fn)
+
     # Sucker Punch (rogue T1): a surprise attack staggers the target.
     if result.get("surprise"):
         _apply_sucker_punch_stagger(attacker, defender)
@@ -550,6 +637,7 @@ def resolve_ranged_attack(
     tile_y: int,
     is_in_los: Optional[Callable[["Position", "Position"], bool]] = None,
     floor=None,
+    add_event=None,
     game=None,
 ) -> dict:
     result = {
@@ -619,6 +707,11 @@ def resolve_ranged_attack(
     if getattr(attacker, "is_admin", False):
         effective_damage *= 4
 
+    # Earthroot armor: absorbs a flat chunk from the hit, depleting the pool.
+    effective_damage = _apply_earthroot_armor(
+        defender, max(0, effective_damage), getattr(floor, "floor_id", 1)
+    )
+
     hp_before = defender.hp
     actual_damage = defender.take_damage(max(0, effective_damage))
     result["damage"] = actual_damage
@@ -629,12 +722,16 @@ def resolve_ranged_attack(
 
     _check_kinetic(attacker, raw_damage, defender, hp_before)
 
+    add_event_fn = add_event or (getattr(game, "add_event", None) if game is not None else None)
     if hasattr(attacker, "attack_proc") and actual_damage > 0:
         attacker.attack_proc(defender)
         pending = getattr(attacker, "_pending_sound", None)
-        if pending:
-            add_event("PLAY_SOUND", {"sound": pending}, floor_id=getattr(attacker, "floor_id", 0))
+        if pending and add_event_fn:
+            add_event_fn("PLAY_SOUND", {"sound": pending}, floor_id=getattr(attacker, "floor_id", 0))
             attacker._pending_sound = None
+
+    if actual_damage > 0:
+        apply_attack_buff_procs(attacker, defender, actual_damage, is_ranged=True, add_event=add_event_fn)
 
     # Sucker Punch (rogue T1): a surprise attack staggers the target.
     if result.get("surprise"):
