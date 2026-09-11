@@ -241,8 +241,9 @@ class ArtifactsMixin:
         # At full charge, absorb a seed from the tile if one exists.
         if artifact.charge >= artifact.charge_cap:
             tile_seeds = floor.plants.get((player.pos.x, player.pos.y))
-            if tile_seeds and len(artifact.stored_seeds) < 5:
-                artifact.stored_seeds.append(tile_seeds + "_seed")
+            if isinstance(tile_seeds, dict) and len(artifact.stored_seeds) < 5:
+                plant_type = tile_seeds.get("plant_type", "sungrass")
+                artifact.stored_seeds.append(plant_type + "_seed")
                 floor.plants.pop((player.pos.x, player.pos.y), None)
                 _gain_exp(artifact, 5)
 

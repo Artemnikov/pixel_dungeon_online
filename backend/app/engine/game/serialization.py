@@ -194,6 +194,8 @@ class SerializationMixin:
             if live is not None:
                 node["actions"] = live.actions(p)
                 node["default_action"] = live.default_action()
+                node["is_throwable"] = getattr(live, "is_throwable", False)
+                node["throw_behavior"] = getattr(live, "throw_behavior", "regular")
                 if hasattr(live, "get_reach"):
                     node["range"] = live.get_reach()
                 node["description"] = live.description(p)
@@ -315,6 +317,11 @@ class SerializationMixin:
                 {"x": x, "y": y, "trap_type": t.trap_type}
                 for (x, y), t in floor.traps.items()
             ]
+            admin_plants = [
+                {"x": x, "y": y, "plant_type": p.get("plant_type", "sungrass")}
+                for (x, y), p in floor.plants.items()
+                if isinstance(p, dict)
+            ]
             if player.is_admin:
                 all_tiles = [(x, y) for y in range(floor.height) for x in range(floor.width)]
                 return {
@@ -330,6 +337,7 @@ class SerializationMixin:
                     "width": floor.width,
                     "height": floor.height,
                     "traps": admin_traps,
+                    "plants": admin_plants,
                     "custom_tiles": floor.custom_tiles,
                     "custom_walls": floor.custom_walls,
                     "torches": floor.torches,
@@ -344,6 +352,11 @@ class SerializationMixin:
                 {"x": x, "y": y, "trap_type": t.trap_type}
                 for (x, y), t in floor.traps.items()
                 if (x, y) in visible_set and not t.hidden
+            ]
+            player_plants = [
+                {"x": x, "y": y, "plant_type": p.get("plant_type", "sungrass")}
+                for (x, y), p in floor.plants.items()
+                if (x, y) in visible_set and isinstance(p, dict)
             ]
 
             # SPD MindVision: while active, every mob's 3x3 neighbourhood is
@@ -408,7 +421,6 @@ class SerializationMixin:
                 "players": stubs,
                 "mobs": visible_mobs,
                 "items": visible_items,
-                "items": visible_items,
                 "visible_tiles": visible_tiles,
                 "mapped_tiles": floor.mapped_tiles if floor.mapped else [],
                 "open_doors": self._get_open_doors(floor),
@@ -416,12 +428,18 @@ class SerializationMixin:
                 "width": floor.width,
                 "height": floor.height,
                 "traps": player_traps,
+                "plants": player_plants,
                 "custom_tiles": floor.custom_tiles,
                 "custom_walls": floor.custom_walls,
                 "torches": floor.torches,
             }
 
         floor = self._get_or_create_floor(self.depth)
+        fallback_plants = [
+            {"x": x, "y": y, "plant_type": p.get("plant_type", "sungrass")}
+            for (x, y), p in floor.plants.items()
+            if isinstance(p, dict)
+        ]
         return {
             "depth": self.depth,
             "players": [self._serialize_player(p) for p in self._players_on_floor(self.depth)],
@@ -432,6 +450,7 @@ class SerializationMixin:
             "width": floor.width,
             "height": floor.height,
             "traps": [],
+            "plants": fallback_plants,
             "custom_tiles": floor.custom_tiles,
             "custom_walls": floor.custom_walls,
             "torches": floor.torches,

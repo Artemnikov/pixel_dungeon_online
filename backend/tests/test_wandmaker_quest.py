@@ -318,6 +318,34 @@ def test_wandmaker_claim_reward_rotberry_grants_wand():
     assert len(reward_events) == 1
 
 
+def test_wandmaker_dialogue_and_reward_with_rotberry_in_velvet_pouch():
+    from app.engine.entities.items.union import VelvetPouch
+    g = GameInstance("wandmaker-berry-pouch")
+    p = g.add_player("p1", "Bob")
+    floor = g._get_or_create_floor(p.floor_id)
+    npc = Wandmaker(id="wm1", pos=Position(x=p.pos.x + 1, y=p.pos.y))
+    floor.mobs[npc.id] = npc
+    quest = g.run_state.wandmaker_quest
+    quest.given = True
+    quest.quest_type = 3
+    quest.wand1_index = 5
+    quest.wand1_level = 3
+    quest.wand2_index = 7
+    quest.wand2_level = 2
+
+    p.add_to_inventory(RotberrySeed(id="seed1"))
+    pouch = next(i for i in p.belongings.backpack.items if isinstance(i, VelvetPouch))
+    assert pouch.contains("seed1")
+
+    g.npc_interact("p1", npc.id)
+    events = [e for e in g.events if e["type"] == "WANDMAKER_DIALOGUE"]
+    assert events[-1]["data"]["can_claim"] is True
+
+    g.wandmaker_claim_reward("p1", npc.id, "wand1")
+    assert not pouch.contains("seed1")
+    assert any(isinstance(i, Wand) for i in p.belongings.backpack.items)
+
+
 # ---------------------------------------------------------------------------
 # Ceremonial Candle variant (RitualSiteRoom, NewbornFireElemental, Embers)
 # ---------------------------------------------------------------------------

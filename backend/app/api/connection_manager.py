@@ -110,6 +110,8 @@ class ConnectionManager:
         self.game_instances: Dict[str, GameInstance] = {}
         self.last_sent_floor: Dict[str, Dict[str, Tuple[int, int]]] = {}
         self.last_sent_items: Dict[str, Dict[str, List[Any]]] = {}
+        self.last_sent_traps: Dict[str, Dict[str, List[Any]]] = {}
+        self.last_sent_plants: Dict[str, Dict[str, List[Any]]] = {}
         self.last_sent_player: Dict[str, Dict[str, Dict[str, Any]]] = {}
         # Per-player FOV diff cache: the frame omits visible_tiles/mapped_tiles
         # when they haven't changed since the last send (see send_to_client).
@@ -233,6 +235,7 @@ class ConnectionManager:
             width=state["width"],
             height=state["height"],
             traps=state.get("traps", []),
+            plants=state.get("plants", []),
             items=items,
             difficulty=game.difficulty,  # type: ignore[arg-type]
             custom_tiles=state.get("custom_tiles", []),
@@ -246,6 +249,8 @@ class ConnectionManager:
             await websocket.send_json(init.model_dump(exclude_none=True))
             self.last_sent_floor.setdefault(game_id, {})[player_id] = (player_floor, map_version)
             self.last_sent_items.setdefault(game_id, {})[player_id] = items
+            self.last_sent_traps.setdefault(game_id, {})[player_id] = state.get("traps", [])
+            self.last_sent_plants.setdefault(game_id, {})[player_id] = state.get("plants", [])
             # Reset the FOV diff cursors: this INIT resets the client's fog
             # (initFloor wipes `discovered`), so the next STATE_UPDATE must ship
             # a full visible/mapped snapshot regardless of whether the FOV is
@@ -325,6 +330,8 @@ class ConnectionManager:
             deadlines.pop(player_id, None)
             self.last_sent_floor.get(game_id, {}).pop(player_id, None)
             self.last_sent_items.get(game_id, {}).pop(player_id, None)
+            self.last_sent_traps.get(game_id, {}).pop(player_id, None)
+            self.last_sent_plants.get(game_id, {}).pop(player_id, None)
             self.last_sent_player.get(game_id, {}).pop(player_id, None)
             self.last_sent_visible.get(game_id, {}).pop(player_id, None)
             self.last_sent_mapped.get(game_id, {}).pop(player_id, None)
@@ -363,6 +370,8 @@ class ConnectionManager:
         self.game_instances.pop(game_id, None)
         self.last_sent_floor.pop(game_id, None)
         self.last_sent_items.pop(game_id, None)
+        self.last_sent_traps.pop(game_id, None)
+        self.last_sent_plants.pop(game_id, None)
         self.last_sent_player.pop(game_id, None)
         self.last_sent_visible.pop(game_id, None)
         self.last_sent_mapped.pop(game_id, None)
@@ -405,6 +414,7 @@ class ConnectionManager:
                             width=state["width"],
                             height=state["height"],
                             traps=state.get("traps", []),
+                            plants=state.get("plants", []),
                             items=items,
                             difficulty=game.difficulty,  # type: ignore[arg-type]
                             custom_tiles=state.get("custom_tiles", []),
@@ -417,6 +427,8 @@ class ConnectionManager:
                         await connection.send_json(init.model_dump(exclude_none=True))
                         self.last_sent_floor[game_id][player_id] = (player_floor, map_version)
                         self.last_sent_items.setdefault(game_id, {})[player_id] = items
+                        self.last_sent_traps.setdefault(game_id, {})[player_id] = state.get("traps", [])
+                        self.last_sent_plants.setdefault(game_id, {})[player_id] = state.get("plants", [])
                         # Reset the FOV diff cursor so the next frame definitely
                         # ships a fresh visible/mapped snapshot (the client's fog
                         # is reset by initFloor on connect/floor change).
@@ -433,6 +445,22 @@ class ConnectionManager:
                         self.last_sent_items[game_id][player_id] = current_items
                     else:
                         items_payload = None
+
+                    current_traps = state.get("traps", [])
+                    last_traps = self.last_sent_traps.setdefault(game_id, {}).get(player_id)
+                    if last_traps is None or current_traps != last_traps:
+                        traps_payload = current_traps
+                        self.last_sent_traps[game_id][player_id] = current_traps
+                    else:
+                        traps_payload = None
+
+                    current_plants = state.get("plants", [])
+                    last_plants = self.last_sent_plants.setdefault(game_id, {}).get(player_id)
+                    if last_plants is None or current_plants != last_plants:
+                        plants_payload = current_plants
+                        self.last_sent_plants[game_id][player_id] = current_plants
+                    else:
+                        plants_payload = None
 
                     current_self_player = state.get("self_player")
                     stripped_current_sp = _strip_transient_player_fields(current_self_player)
@@ -483,6 +511,8 @@ class ConnectionManager:
                         players=state["players"],
                         mobs=state["mobs"],
                         items=items_payload,
+                        traps=traps_payload,
+                        plants=plants_payload,
                         visible_tiles=visible_payload,
                         mapped_tiles=mapped_payload,
                         events=frame_events,

@@ -1,11 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { StateSynchronizer } from './StateSynchronizer';
+import { PlantsSynchronizer } from './PlantsSynchronizer';
 import { WorldManager } from '../services/WorldManager';
 import { EntityManager } from '../services/EntityManager';
 import { HeroStateSync } from '../services/HeroStateSync';
 
-test('StateSynchronizer: reconciles players, mobs, items, traps, and vision', () => {
+test('StateSynchronizer: reconciles players, mobs, items, traps, plants, and vision', () => {
   let gridState = [
     [1, 1, 1, 1],
     [1, 2, 2, 1],
@@ -23,6 +24,7 @@ test('StateSynchronizer: reconciles players, mobs, items, traps, and vision', ()
       mobs: {},
       items: [],
       traps: [],
+      plants: [],
     },
   };
   const dyingMobsRef = { current: {} };
@@ -88,6 +90,9 @@ test('StateSynchronizer: reconciles players, mobs, items, traps, and vision', ()
     traps: [
       { x: 2, y: 1, trap_type: 'toxic_trap' },
     ],
+    plants: [
+      { x: 1, y: 2, plant_type: 'sungrass' },
+    ],
     visible_tiles: [[1, 1], [2, 1]],
     open_doors: [[1, 0]],
     events: [],
@@ -108,6 +113,8 @@ test('StateSynchronizer: reconciles players, mobs, items, traps, and vision', ()
   assert.ok(entities.getMob('mob_1'));
   assert.equal(entities.getItems().length, 1);
   assert.equal(entities.getTraps().length, 1);
+  assert.equal(entities.getPlants().length, 1);
+  assert.equal(entities.getPlants()[0].plant_type, 'sungrass');
   assert.equal(world.isVisible(1, 1), true);
   assert.equal(world.isOpenDoor(1, 0), true);
 
@@ -127,4 +134,55 @@ test('StateSynchronizer: reconciles players, mobs, items, traps, and vision', ()
   assert.equal(Object.keys(entities.getMobs()).length, 0);
   assert.ok(dyingMobsRef.current.mob_1);
   assert.equal(dyingMobsRef.current.mob_1.name, 'Gnoll');
+});
+
+test('PlantsSynchronizer: updates existing plant types and adds new ones with reveal timestamp', () => {
+  const entitiesRef = {
+    current: {
+      players: {},
+      mobs: {},
+      items: [],
+      traps: [],
+      plants: [
+        { x: 3, y: 3, plant_type: 'sungrass', renderPos: { x: 3, y: 3 }, revealStartTime: null },
+      ],
+    },
+  };
+  const entities = new EntityManager({
+    entitiesRef,
+    dyingMobsRef: { current: {} },
+    myPlayerIdRef: { current: 'p1' },
+  });
+
+  const synchronizer = new PlantsSynchronizer();
+  const ctx = {
+    world: {},
+    entities,
+    heroState: {},
+  };
+
+  synchronizer.sync({
+    type: 'STATE_UPDATE',
+    players: [],
+    mobs: [],
+    events: [],
+    plants: [
+      { x: 3, y: 3, plant_type: 'earthroot' },
+      { x: 4, y: 4, plant_type: 'firebloom' },
+    ],
+  }, ctx);
+
+  const plants = entities.getPlants();
+  assert.equal(plants.length, 2);
+  const plant1 = plants.find(p => p.x === 3 && p.y === 3);
+  const plant2 = plants.find(p => p.x === 4 && p.y === 4);
+  assert.ok(plant1);
+  assert.equal(plant1.plant_type, 'earthroot');
+  assert.equal(plant1.revealStartTime, null);
+
+  assert.ok(plant2);
+  assert.equal(plant2.plant_type, 'firebloom');
+  assert.equal(plant2.renderPos?.x, 4);
+  assert.equal(plant2.renderPos?.y, 4);
+  assert.ok(typeof plant2.revealStartTime === 'number');
 });

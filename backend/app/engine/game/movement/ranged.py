@@ -99,11 +99,16 @@ class RangedAttackMixin:
         if not item:
             return None
 
-        is_throwable = isinstance(item, Throwable)
+        is_throwable = getattr(item, "is_throwable", False)
         is_weapon = isinstance(item, (Weapon, Bow, SpiritBow))
         is_wand = isinstance(item, Wand)
         is_staff = isinstance(item, Staff)
         is_bow = isinstance(item, (Bow, SpiritBow))
+
+        if not is_weapon and not is_wand and not is_staff and not is_bow and not is_throwable:
+            from app.engine.entities.items.actions import action_throw
+            action_throw(self, player, item, target_x, target_y)
+            return 0
 
         # Staff zap: delegate to imbued wand for charge/damage checks
         staff_wand = item.imbued_wand if is_staff else None

@@ -134,7 +134,7 @@ test('WorldManager: handles grid patching, visibility and audibility queries', (
   assert.equal(world.getTile(1, 1), 6);
 });
 
-test('EntityManager: tracks entities, traps, items, and dying mobs', () => {
+test('EntityManager: tracks entities, traps, plants, items, and dying mobs', () => {
   const entitiesRef = {
     current: {
       players: {
@@ -145,6 +145,7 @@ test('EntityManager: tracks entities, traps, items, and dying mobs', () => {
       },
       items: [],
       traps: [],
+      plants: [{ x: 5, y: 6, plant_type: 'sungrass' }],
     },
   };
   const dyingMobsRef = { current: {} };
@@ -169,6 +170,8 @@ test('EntityManager: tracks entities, traps, items, and dying mobs', () => {
   entities.recordDyingMob('rat', entities.getMob('rat'));
   assert.ok(dyingMobsRef.current.rat);
   assert.equal(dyingMobsRef.current.rat.name, 'Rat');
+  assert.equal(entities.getPlants().length, 1);
+  assert.equal(entities.getPlants()[0].plant_type, 'sungrass');
 });
 
 test('HeroStateSync: invokes setters correctly for player HUD data', () => {

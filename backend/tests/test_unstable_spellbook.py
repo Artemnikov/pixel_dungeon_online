@@ -76,10 +76,9 @@ def test_book_read_resolve_exotic_spends_second_charge(monkeypatch):
 def test_book_read_resolve_normal_keeps_second_charge(monkeypatch):
     g, p, book = _game_with_book(level=5)
     book.charge = 2
-    missing = next(k for k in [
-        "scroll_of_lullaby", "scroll_of_rage", "scroll_of_terror",
-        "scroll_of_teleportation",
-    ] if k not in book.scroll_index)
+    missing = "scroll_of_lullaby"
+    if missing in book.scroll_index:
+        book.scroll_index.remove(missing)
     monkeypatch.setattr(aa, "_roll_book_scroll_kind", lambda b: missing)
     aa.action_book_read(g, p, book)
     aa.action_book_read_resolve(g, p, book, 0)       # 0 = normal
@@ -90,10 +89,9 @@ def test_book_read_resolve_normal_keeps_second_charge(monkeypatch):
 def test_pending_choice_auto_resolves_on_reread(monkeypatch):
     g, p, book = _game_with_book(level=5)
     book.charge = 3
-    missing = next(k for k in [
-        "scroll_of_lullaby", "scroll_of_rage", "scroll_of_terror",
-        "scroll_of_teleportation",
-    ] if k not in book.scroll_index)
+    missing = "scroll_of_lullaby"
+    if missing in book.scroll_index:
+        book.scroll_index.remove(missing)
     monkeypatch.setattr(aa, "_roll_book_scroll_kind", lambda b: missing)
     aa.action_book_read(g, p, book)                  # -> pending (charge 2)
     assert getattr(p, "_pending_book_item_id") == book.id

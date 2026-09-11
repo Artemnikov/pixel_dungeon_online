@@ -4,6 +4,7 @@ import pytest
 from app.engine.entities.base import Position, Action
 from app.engine.entities.items.union import Bag, PotionBandolier, ScrollHolder, VelvetPouch
 from app.engine.entities.items.consumables import Seed, GooBlob, Stone
+from app.engine.entities.wands.wandmaker_quest_items import RotberrySeed
 from app.engine.entities.items.equip import MeleeWeapon, Armor, Ring
 from app.engine.entities.items.potions import HealthPotion, RevivingPotion
 from app.engine.entities.items.scrolls import Scroll
@@ -115,6 +116,55 @@ def test_velvet_pouch_holds_seeds_and_goo_blob_not_throwables():
     # backpack, not get swept into the seed pouch.
     assert not pouch.contains("stone1")
     assert any(i.id == "stone1" for i in p.belongings.backpack.items)
+
+
+def test_velvet_pouch_holds_rotberry_seed():
+    p = make_player()
+    p.add_to_inventory(VelvetPouch(id="vp"))
+    p.add_to_inventory(RotberrySeed(id="rot1"))
+    pouch = p.belongings.backpack.find("vp")
+    assert pouch.contains("rot1")
+
+
+def test_seeds_merge_by_plant_type_in_velvet_pouch():
+    p = make_player()
+    p.add_to_inventory(VelvetPouch(id="vp"))
+    p.add_to_inventory(Seed(id="s1", plant_type="sungrass", quantity=1))
+    p.add_to_inventory(Seed(id="s2", plant_type="sungrass", quantity=2))
+    pouch = p.belongings.backpack.find("vp")
+    assert len(pouch.items) == 1
+    assert pouch.items[0].plant_type == "sungrass"
+    assert pouch.items[0].quantity == 3
+
+
+def test_different_plant_type_seeds_do_not_merge():
+    p = make_player()
+    p.add_to_inventory(VelvetPouch(id="vp"))
+    p.add_to_inventory(Seed(id="s1", plant_type="sungrass", quantity=1))
+    p.add_to_inventory(Seed(id="s2", plant_type="earthroot", quantity=1))
+    pouch = p.belongings.backpack.find("vp")
+    assert len(pouch.items) == 2
+    types = {i.plant_type for i in pouch.items}
+    assert types == {"sungrass", "earthroot"}
+
+
+def test_auto_pickup_seed_and_rotberry_into_velvet_pouch():
+    from app.engine.manager import GameInstance
+    from app.engine.game.terrain_effects import _drop_seed
+    g = GameInstance("test-seed-pickup")
+    p = g.add_player("p1", "Hero")
+    floor = g._get_or_create_floor(1)
+
+    _drop_seed(floor, (p.pos.x, p.pos.y), "firebloom")
+    g._auto_pickup_on_step(p, floor)
+
+    pouch = next(i for i in p.belongings.backpack.items if isinstance(i, VelvetPouch))
+    assert any(getattr(i, "plant_type", None) == "firebloom" for i in pouch.items)
+
+    rot_seed = RotberrySeed(id="rot_floor", pos=Position(x=p.pos.x, y=p.pos.y))
+    floor.items[rot_seed.id] = rot_seed
+    g._auto_pickup_on_step(p, floor)
+    assert pouch.contains("rot_floor")
 
 
 def test_capacity_limit():

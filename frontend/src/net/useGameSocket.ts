@@ -344,7 +344,12 @@ export default function useGameSocket({
           renderPos: { x: t.x, y: t.y },
           revealStartTime: null,
         })));
-        entities.setItems([]);
+        entities.setPlants((data.plants || []).map(p => ({
+          ...p,
+          renderPos: { x: p.x, y: p.y },
+          revealStartTime: null,
+        })));
+        entities.setItems(data.items || []);
         const mobs = entities.getMobs();
         Object.keys(mobs).forEach(id => delete mobs[id]);
         if (entities.dyingMobsRef) entities.dyingMobsRef.current = {};

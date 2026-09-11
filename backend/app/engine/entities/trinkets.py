@@ -4,22 +4,19 @@ from typing import ClassVar, List, Literal, Optional, TYPE_CHECKING
 
 from pydantic import Field
 
-from app.engine.entities.base import Action, ItemBase, ItemCategory
-from app.engine.entities.items.equip import EquipableItem, KindofMisc
+from app.engine.entities.base import ItemBase, ItemCategory
 
 if TYPE_CHECKING:
     from app.engine.entities.player import Player
 
 
-class Trinket(KindofMisc):
+class Trinket(ItemBase):
     kind: Literal["trinket"] = "trinket"
     type: str = "trinket"
     unique: bool = True
     level_known: bool = True
     category: ClassVar[str] = ItemCategory.TRINKET
-    level: int = 0
-    strength_requirement: int = 0
-    DESC: ClassVar[str] = "A mystical trinket that grants a passive bonus while worn."
+    DESC: ClassVar[str] = "A mystical trinket that grants a passive bonus while in your inventory."
 
     def upgrade_energy_cost(self) -> int:
         return 6 + 2 * self.level
@@ -28,13 +25,14 @@ class Trinket(KindofMisc):
     def energy_val(cls) -> int:
         return 5
 
-    def actions(self, player: Optional["Player"] = None) -> List[str]:
-        base = list(super().actions(player))
-        equipped = bool(player and player.belongings.is_equipped(self.id))
-        return [Action.UNEQUIP if equipped else Action.EQUIP] + base
-
-    def default_action(self) -> Optional[str]:
-        return Action.EQUIP
+    def _info_lines(self, player: Optional["Player"] = None) -> List[str]:
+        lines: List[str] = []
+        if self.level_known and self.level != 0:
+            sign = "+" if self.level > 0 else ""
+            lines.append(f"It is currently upgraded to {sign}{self.level}.")
+        if self.cursed_known and self.cursed:
+            lines.append("It is cursed.")
+        return lines
 
 
 class RatSkull(Trinket):
@@ -335,10 +333,12 @@ def trinket_class_for_index(idx: int):
 
 def trinket_level(player, trinket_kind: str) -> int:
     """SPD trinketLevel(Class): returns buffed level of the trinket the player
-    has equipped in their misc slot, or -1 if no matching trinket is worn."""
-    misc = getattr(getattr(player, "belongings", None), "misc", None)
-    if misc is None:
+    carries in their belongings, or -1 if no matching trinket is present."""
+    belongings = getattr(player, "belongings", None)
+    if belongings is None:
         return -1
-    if getattr(misc, "kind", None) != trinket_kind:
+    item = next((i for i in belongings.all_items()
+                 if getattr(i, "kind", None) == trinket_kind), None)
+    if item is None:
         return -1
-    return max(0, misc.level) if not misc.cursed else 0
+    return max(0, item.level) if not item.cursed else 0

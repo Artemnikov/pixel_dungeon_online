@@ -4,6 +4,7 @@ import uuid
 
 from app.engine.dungeon.constants import TileType
 from app.engine.entities.base import Faction, ItemBase, Position, consume_backpack_item
+from app.engine.systems.ballistica import ballistica_trace
 from app.engine.entities.runestones import InventoryStone, Runestone
 from app.engine.entities.items.equip import Armor, KindOfWeapon
 from app.engine.entities.items.wands import Wand
@@ -32,24 +33,34 @@ def action_throw_runestone(game, player, item, tx=None, ty=None) -> None:
     if not (0 <= tx < floor.width and 0 <= ty < floor.height):
         return
 
+    lx, ly = ballistica_trace(
+        player.pos.x, player.pos.y, tx, ty,
+        floor.flags, floor.width, floor.height,
+        list(game._players_on_floor(player.floor_id)),
+        list(floor.mobs.values()),
+        player.id,
+        stop_chars=True,
+        stop_solid=True,
+    )
+
     consume_backpack_item(player, item)
 
     if kind == "stone_of_blast":
-        _blast_effect(game, player, floor, tx, ty)
+        _blast_effect(game, player, floor, lx, ly)
     elif kind == "stone_of_blink":
-        _blink_effect(game, player, floor, tx, ty)
+        _blink_effect(game, player, floor, lx, ly)
     elif kind == "stone_of_deep_sleep":
-        _deep_sleep_effect(game, player, floor, tx, ty)
+        _deep_sleep_effect(game, player, floor, lx, ly)
     elif kind == "stone_of_clairvoyance":
-        _clairvoyance_effect(game, player, floor, tx, ty)
+        _clairvoyance_effect(game, player, floor, lx, ly)
     elif kind == "stone_of_aggression":
-        _aggression_effect(game, player, floor, tx, ty)
+        _aggression_effect(game, player, floor, lx, ly)
     elif kind == "stone_of_flock":
-        _flock_effect(game, player, floor, tx, ty)
+        _flock_effect(game, player, floor, lx, ly)
     elif kind == "stone_of_shock":
-        _shock_effect(game, player, floor, tx, ty)
+        _shock_effect(game, player, floor, lx, ly)
     elif kind == "stone_of_fear":
-        _fear_effect(game, player, floor, tx, ty)
+        _fear_effect(game, player, floor, lx, ly)
 
     sound = _THROW_SOUNDS.get(kind, "READ")
     game.add_event("THROW", {"player": player.id, "item": item.id, "sound": sound},

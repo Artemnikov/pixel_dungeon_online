@@ -70,11 +70,10 @@ def is_kind_identified(game, item: ItemBase) -> bool:
 
 
 def usable_in_recipe(item: ItemBase) -> bool:
-    # SPD Recipe.usableInRecipe. Remake's Trinket is equipable (KindofMisc)
-    # unlike SPD's, so it is allowed explicitly. Upgradable missile weapons
-    # (the only SPD equipment exception) aren't modeled in the remake yet.
-    if isinstance(item, Trinket):
-        return not item.cursed
+    # SPD Recipe.usableInRecipe. Trinkets are passive ItemBase subclasses
+    # (not EquipableItem), so they fall through to the default uncursed check.
+    # Upgradable missile weapons (the only SPD equipment exception) aren't
+    # modeled in the remake yet.
     if isinstance(item, Wand):
         return item.cursed_known and not item.cursed
     if isinstance(item, EquipableItem):
@@ -250,6 +249,7 @@ class ScrollToExotic(_ToExotic):
 SEED_TO_POTION = {
     "blindweed": PotionOfInvisibility,
     "dreamfoil": PotionOfPurity,
+    "mageroyal": PotionOfPurity,
     "earthroot": PotionOfParalyticGas,
     "fadeleaf": PotionOfMindVision,
     "firebloom": PotionOfLiquidFlame,

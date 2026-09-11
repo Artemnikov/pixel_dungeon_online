@@ -58,6 +58,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -154,6 +162,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -233,6 +249,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -322,6 +346,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "potion",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -405,6 +437,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "bomb",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -501,6 +541,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -579,6 +627,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -697,6 +753,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -790,6 +854,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -5999,6 +6071,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -6082,6 +6162,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -6178,6 +6266,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "potion",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -6261,6 +6357,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "bomb",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -6357,6 +6461,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": true,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "missile",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -6448,6 +6560,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -6595,6 +6715,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -6729,6 +6857,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -6825,6 +6961,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "potion",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -6910,6 +7054,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -6989,6 +7141,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -7082,6 +7242,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -7100,10 +7268,6 @@
             }
           ],
           "default": null
-        },
-        "strength_requirement": {
-          "default": 0,
-          "type": "integer"
         }
       },
       "type": "object"
@@ -7165,6 +7329,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -7249,6 +7421,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -8201,6 +8381,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -8296,6 +8484,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -8399,6 +8595,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -8479,6 +8683,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -8497,10 +8709,6 @@
             }
           ],
           "default": null
-        },
-        "strength_requirement": {
-          "default": 0,
-          "type": "integer"
         }
       },
       "type": "object"
@@ -8562,6 +8770,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -8696,6 +8912,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -8854,6 +9078,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -8991,6 +9223,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -9071,6 +9311,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -9089,10 +9337,6 @@
             }
           ],
           "default": null
-        },
-        "strength_requirement": {
-          "default": 0,
-          "type": "integer"
         }
       },
       "type": "object"
@@ -9154,6 +9398,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -9318,6 +9570,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -9425,6 +9685,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "potion",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -9508,6 +9776,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "potion",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -9593,6 +9869,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "potion",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -9676,6 +9960,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "potion",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -9761,6 +10053,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "potion",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -9844,6 +10144,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "potion",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -9929,6 +10237,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "potion",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -10012,6 +10328,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "potion",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -10098,6 +10422,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -10178,6 +10510,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -10257,6 +10597,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -10354,6 +10702,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -10372,10 +10728,6 @@
             }
           ],
           "default": null
-        },
-        "strength_requirement": {
-          "default": 0,
-          "type": "integer"
         }
       },
       "type": "object"
@@ -10437,6 +10789,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -10518,6 +10878,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -10536,10 +10904,6 @@
             }
           ],
           "default": null
-        },
-        "strength_requirement": {
-          "default": 0,
-          "type": "integer"
         }
       },
       "type": "object"
@@ -10602,6 +10966,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -10620,10 +10992,6 @@
             }
           ],
           "default": null
-        },
-        "strength_requirement": {
-          "default": 0,
-          "type": "integer"
         }
       },
       "type": "object"
@@ -10685,6 +11053,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "bomb",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -10781,6 +11157,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "bomb",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -10875,6 +11259,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -10961,6 +11353,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "bomb",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -11057,6 +11457,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -11141,6 +11549,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "potion",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -11223,6 +11639,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -11307,6 +11731,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -11386,6 +11818,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "potion",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -11470,6 +11910,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "bomb",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -11565,6 +12013,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -11662,6 +12118,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -11758,6 +12222,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "potion",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -11840,6 +12312,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -11952,6 +12432,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -12031,6 +12519,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -12133,6 +12629,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -12262,6 +12766,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -13201,6 +13713,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -14133,6 +14653,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -14212,6 +14740,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -14315,6 +14851,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -14411,6 +14955,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -14493,6 +15045,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -14654,6 +15214,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -14734,6 +15302,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -14752,10 +15328,6 @@
             }
           ],
           "default": null
-        },
-        "strength_requirement": {
-          "default": 0,
-          "type": "integer"
         }
       },
       "type": "object"
@@ -14816,6 +15388,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": true,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "missile",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -15249,6 +15829,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -15267,10 +15855,6 @@
             }
           ],
           "default": null
-        },
-        "strength_requirement": {
-          "default": 0,
-          "type": "integer"
         }
       },
       "type": "object"
@@ -15332,6 +15916,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -15416,6 +16008,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "bomb",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -15512,6 +16112,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -15530,10 +16138,6 @@
             }
           ],
           "default": null
-        },
-        "strength_requirement": {
-          "default": 0,
-          "type": "integer"
         }
       },
       "type": "object"
@@ -15595,6 +16199,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -15680,6 +16292,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -15760,6 +16380,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -15778,10 +16406,6 @@
             }
           ],
           "default": null
-        },
-        "strength_requirement": {
-          "default": 0,
-          "type": "integer"
         }
       },
       "type": "object"
@@ -15843,6 +16467,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -16207,51 +16839,9 @@
           ],
           "default": null
         },
-        "path_queue": {
-          "default": [],
-          "items": {
-            "maxItems": 2,
-            "minItems": 2,
-            "prefixItems": [
-              {
-                "type": "integer"
-              },
-              {
-                "type": "integer"
-              }
-            ],
-            "type": "array"
-          },
-          "type": "array"
-        },
-        "path_blocked_ticks": {
-          "default": 0,
-          "type": "integer"
-        },
-        "move_intent": {
-          "anyOf": [
-            {
-              "maxItems": 2,
-              "minItems": 2,
-              "prefixItems": [
-                {
-                  "type": "integer"
-                },
-                {
-                  "type": "integer"
-                }
-              ],
-              "type": "array"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null
-        },
-        "last_auto_move_time": {
-          "default": 0.0,
-          "type": "number"
+        "pending_ascend": {
+          "default": false,
+          "type": "boolean"
         },
         "action_until": {
           "default": 0.0,
@@ -19080,6 +19670,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "potion",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -19166,6 +19764,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -20099,6 +20705,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "potion",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -20182,6 +20796,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "potion",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -20267,6 +20889,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "potion",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -20350,6 +20980,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "potion",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -20435,6 +21073,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "potion",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -20518,6 +21164,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "potion",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -20603,6 +21257,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "potion",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -20686,6 +21348,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "potion",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -20771,6 +21441,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "potion",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -20854,6 +21532,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "potion",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -20939,6 +21625,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "potion",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -21022,6 +21716,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "potion",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -21107,6 +21809,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "potion",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -21190,6 +21900,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "potion",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -21275,6 +21993,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "potion",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -21358,6 +22084,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "potion",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -21443,6 +22177,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "potion",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -21526,6 +22268,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "potion",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -21611,6 +22361,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "potion",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -21694,6 +22452,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "potion",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -21779,6 +22545,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "potion",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -21863,6 +22637,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "potion",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -21946,6 +22728,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "potion",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -22073,6 +22863,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -22091,10 +22889,6 @@
             }
           ],
           "default": null
-        },
-        "strength_requirement": {
-          "default": 0,
-          "type": "integer"
         }
       },
       "type": "object"
@@ -22156,6 +22950,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -22240,6 +23042,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "bomb",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -22336,6 +23146,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "potion",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -22418,6 +23236,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -22525,6 +23351,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -22620,6 +23454,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -22717,6 +23559,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -22812,6 +23662,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -22909,6 +23767,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -23004,6 +23870,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -23101,6 +23975,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -23196,6 +24078,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -23293,6 +24183,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -23388,6 +24286,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -23485,6 +24391,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -23581,6 +24495,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -23620,7 +24542,7 @@
       "type": "object"
     },
     "RotberrySeed": {
-      "description": "plants/Rotberry.java's Seed inner class -- the Rotberry quest's\nturn-in item, dropped by RotHeart on death (see wandmaker_quest.py /\nworld.py's handle_mob_death). Inert for quest purposes (no held-item\nside effect, unlike CorpseDust); the \"plant it to grow a new Rotberry\"\nflavor mechanic is a separate, unrelated Plant/Seed system this port\ndoesn't need to build out for the quest to work.",
+      "description": "plants/Rotberry.java's Seed inner class -- the Rotberry quest's\nturn-in item, dropped by RotHeart on death (see wandmaker_quest.py /\nworld.py's handle_mob_death).",
       "properties": {
         "kind": {
           "const": "rotberry_seed",
@@ -23636,7 +24558,7 @@
           "type": "string"
         },
         "type": {
-          "default": "misc",
+          "default": "seed",
           "type": "string"
         },
         "pos": {
@@ -23678,6 +24600,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "seed",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -23696,6 +24626,10 @@
             }
           ],
           "default": null
+        },
+        "plant_type": {
+          "default": "rotberry",
+          "type": "string"
         }
       },
       "type": "object"
@@ -23758,6 +24692,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -23776,10 +24718,6 @@
             }
           ],
           "default": null
-        },
-        "strength_requirement": {
-          "default": 0,
-          "type": "integer"
         }
       },
       "type": "object"
@@ -23841,6 +24779,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -23944,6 +24890,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -24045,6 +24999,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -24127,6 +25089,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -25060,6 +26030,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -25139,6 +26117,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -25220,6 +26206,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -25299,6 +26293,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -25380,6 +26382,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -25459,6 +26469,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -25540,6 +26558,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -25619,6 +26645,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -25700,6 +26734,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -25779,6 +26821,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -25860,6 +26910,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -25939,6 +26997,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -26020,6 +27086,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -26099,6 +27173,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -26180,6 +27262,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -26259,6 +27349,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -26340,6 +27438,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -26419,6 +27525,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -26500,6 +27614,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -26579,6 +27701,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -26660,6 +27790,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -26739,6 +27877,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -26820,6 +27966,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -26900,6 +28054,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -26934,6 +28096,7 @@
           "type": "string"
         },
         "name": {
+          "default": "Seed",
           "type": "string"
         },
         "type": {
@@ -26979,6 +28142,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "seed",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -27003,9 +28174,6 @@
           "type": "string"
         }
       },
-      "required": [
-        "name"
-      ],
       "type": "object"
     },
     "ShardOfOblivion": {
@@ -27066,6 +28234,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -27084,10 +28260,6 @@
             }
           ],
           "default": null
-        },
-        "strength_requirement": {
-          "default": 0,
-          "type": "integer"
         }
       },
       "type": "object"
@@ -27170,6 +28342,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "potion",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -27254,6 +28434,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "bomb",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -27349,6 +28537,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -27446,6 +28642,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -27529,6 +28733,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "bomb",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -27624,6 +28836,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -27774,6 +28994,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -27956,6 +29184,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -28039,6 +29275,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": true,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "missile",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -28132,6 +29376,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "runestone",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -28211,6 +29463,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "runestone",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -28292,6 +29552,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "runestone",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -28371,6 +29639,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "runestone",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -28452,6 +29728,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "runestone",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -28531,6 +29815,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "runestone",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -28612,6 +29904,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "runestone",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -28691,6 +29991,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "runestone",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -28772,6 +30080,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "runestone",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -28851,6 +30167,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "runestone",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -28932,6 +30256,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "runestone",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -29011,6 +30343,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "runestone",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -29140,6 +30480,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -29236,6 +30584,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -29316,6 +30672,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -29334,10 +30698,6 @@
             }
           ],
           "default": null
-        },
-        "strength_requirement": {
-          "default": 0,
-          "type": "integer"
         }
       },
       "type": "object"
@@ -29398,6 +30758,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": true,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "missile",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -29494,6 +30862,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": true,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "missile",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -29585,6 +30961,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -29682,6 +31066,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -29700,10 +31092,6 @@
             }
           ],
           "default": null
-        },
-        "strength_requirement": {
-          "default": 0,
-          "type": "integer"
         }
       },
       "type": "object"
@@ -29765,6 +31153,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -29852,6 +31248,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "potion",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -29935,6 +31339,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -30041,6 +31453,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -30974,6 +32394,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -30992,10 +32420,6 @@
             }
           ],
           "default": null
-        },
-        "strength_requirement": {
-          "default": 0,
-          "type": "integer"
         }
       },
       "type": "object"
@@ -31056,6 +32480,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -31194,6 +32626,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -31320,6 +32760,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -31448,6 +32896,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -31575,6 +33031,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -31694,6 +33158,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -31822,6 +33294,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -31948,6 +33428,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -32076,6 +33564,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -32202,6 +33698,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -32330,6 +33834,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -32456,6 +33968,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -32584,6 +34104,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -32710,6 +34238,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -32838,6 +34374,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -32948,6 +34492,14 @@
           "default": false,
           "type": "boolean"
         },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
+        },
         "for_sale": {
           "default": false,
           "type": "boolean"
@@ -32966,10 +34518,6 @@
             }
           ],
           "default": null
-        },
-        "strength_requirement": {
-          "default": 0,
-          "type": "integer"
         }
       },
       "type": "object"
@@ -33031,6 +34579,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "bomb",
+          "type": "string"
         },
         "for_sale": {
           "default": false,
@@ -33126,6 +34682,14 @@
         "kept_though_lost": {
           "default": false,
           "type": "boolean"
+        },
+        "is_throwable": {
+          "default": false,
+          "type": "boolean"
+        },
+        "throw_behavior": {
+          "default": "regular",
+          "type": "string"
         },
         "for_sale": {
           "default": false,

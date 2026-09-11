@@ -14,7 +14,7 @@ from app.engine.entities.items.union import Chest
 from app.engine.entities.items.bombs import Bomb
 from app.engine.entities.items.consumables import Amulet, CorpseDust, Dewdrop, EnergyCrystal, Gold, Key, LostBackpack
 from app.engine.entities.player import Player
-from app.engine.entities.buffs import add_buff, has_buff, is_frozen
+from app.engine.entities.buffs import add_buff, break_stationary_plant_buffs, has_buff, is_frozen
 from app.engine.game.constants import AUTO_MOVE_INTERVAL, MAX_FLOOR_ID, MAX_PLAYER_INPUT_QUEUE
 from app.engine.game.terrain_effects import press_cell
 from app.engine.talents.registry import registry
@@ -196,6 +196,7 @@ class MovementMixin:
 
         self._ignite_if_on_fire(entity, floor, new_x, new_y)
         self._handle_door_transition(entity, floor, floor_id, old_x, old_y)
+        break_stationary_plant_buffs(entity)
 
         # Position changed: door mutation may have changed flags and FOV.
         self._invalidate_fov_cache()
@@ -205,10 +206,17 @@ class MovementMixin:
         if result["tile_changed"]:
             self.add_event("MAP_PATCH", {"tiles": [{"x": entity.pos.x, "y": entity.pos.y, "tile": floor.grid[entity.pos.y][entity.pos.x]}]}, floor_id=floor_id)
             self.add_event("PLAY_SOUND", {"sound": "STEP_GRASS", "x": entity.pos.x, "y": entity.pos.y}, floor_id=floor_id, source_player_id=entity.id if isinstance(entity, Player) else None)
-            # HighGrass.trample()'s CellEmitter.get(pos).burst(LeafParticle.LEVEL_SPECIFIC, 4)
+        if result.get("grass_trampled"):
             self.add_event("LEAF_BURST", {"x": entity.pos.x, "y": entity.pos.y}, floor_id=floor_id)
         if result["triggered_plant"]:
-            self.add_event("PLAY_SOUND", {"sound": "PLANT_TRIGGER", "x": entity.pos.x, "y": entity.pos.y}, floor_id=floor_id, source_player_id=entity.id if isinstance(entity, Player) else None)
+            plant_type = result["triggered_plant"].get("plant_type", "sungrass")
+            plant_pos = result["triggered_plant"].get("pos", (new_x, new_y))
+            self.add_event("PLANT_TRIGGERED", {
+                "plant": plant_type,
+                "player": entity.id if isinstance(entity, Player) else None,
+                "x": plant_pos[0],
+                "y": plant_pos[1],
+            }, floor_id=floor_id)
 
         if isinstance(entity, Player):
             self._player_step_effects(entity, entity_id, floor_id)
@@ -217,11 +225,20 @@ class MovementMixin:
         self._trigger_trap_if_needed(floor, entity, floor_id)
 
         if isinstance(entity, Player):
+            if entity.pending_ascend:
+                entity.pending_ascend = False
+                self._apply_fadeleaf_ascend(entity, entity_id, floor_id)
             self._handle_stairs_tile(entity, entity_id, tile, floor, floor_id)
             res_data = {"entity": entity_id, "x": entity.pos.x, "y": entity.pos.y, "ok": True}
             if seq is not None:
                 res_data["seq"] = seq
             self.add_event("MOVE_RESULT", res_data, player_id=entity_id)
+
+    def _apply_fadeleaf_ascend(self, entity: Player, entity_id: str, floor_id: int) -> None:
+        """Warden Fadeleaf: move up one depth (SPD Fadeleaf.activate)."""
+        if entity.floor_id > 1:
+            self._move_player_to_floor(entity, entity.floor_id - 1, TileType.STAIRS_DOWN)
+            self.add_event("STAIRS_UP", {"player": entity_id}, player_id=entity_id)
 
     def _ignite_if_on_fire(self, entity, floor, x: int, y: int) -> None:
         """Fire tiles ignite entities on contact (SPD: Blob checks on movement)."""

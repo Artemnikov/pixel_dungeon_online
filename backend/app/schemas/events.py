@@ -128,6 +128,13 @@ class TrapTriggeredData(_EventData):
     damage: int
 
 
+class PlantTriggeredData(_EventData):
+    plant: str
+    x: int
+    y: int
+    player: Optional[str] = None
+
+
 class DrinkData(_EventData):
     player: str
     type: str
@@ -683,6 +690,7 @@ EVENT_MODELS = {
     "SEARCH": SearchData,
     "HEAL": HealData,
     "TRAP_TRIGGERED": TrapTriggeredData,
+    "PLANT_TRIGGERED": PlantTriggeredData,
     "DRINK": DrinkData,
     "READ": ReadData,
     "MAP_PATCH": MapPatchData,

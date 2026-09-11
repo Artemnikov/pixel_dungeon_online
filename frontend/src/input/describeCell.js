@@ -113,6 +113,14 @@ export function describeCell({ tileX, tileY, gridRef, entitiesRef, visionRef, my
         return { kind: 'trap', name: trapName, sub: null, anchor: tileAnchor, trapType: tr.trap_type };
       }
     }
+    const plants = ents.plants || [];
+    for (const pl of plants) {
+      if (pl.x === tileX && pl.y === tileY) {
+        const plantName = i18n.t(`plant.${pl.plant_type}`, { defaultValue: pl.plant_type });
+        const plantDesc = i18n.t(`plant.${pl.plant_type}_desc`, { defaultValue: '' });
+        return { kind: 'plant', name: plantName, description: plantDesc, sub: null, anchor: tileAnchor, plantType: pl.plant_type };
+      }
+    }
   }
 
   const tileId = grid[tileY][tileX];

@@ -85,10 +85,7 @@ export interface Player {
   aqua_heal_left?: number;
   locked_floor_left?: number | null;
   pending_chasm_fall?: [unknown, unknown] | null;
-  path_queue?: [unknown, unknown][];
-  path_blocked_ticks?: number;
-  move_intent?: [unknown, unknown] | null;
-  last_auto_move_time?: number;
+  pending_ascend?: boolean;
   action_until?: number;
   stationary_ticks?: number;
   is_admin?: boolean;
@@ -1878,6 +1875,8 @@ export interface Bag {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -2107,6 +2106,8 @@ export interface MeleeWeapon {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -2138,6 +2139,8 @@ export interface Dagger {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -2169,6 +2172,8 @@ export interface WornShortsword {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -2200,6 +2205,8 @@ export interface Bow {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -2230,6 +2237,8 @@ export interface SpiritBow {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -2261,6 +2270,8 @@ export interface Staff {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -2297,6 +2308,8 @@ export interface Wand {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -2324,6 +2337,8 @@ export interface MissileWeapon {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -2355,6 +2370,8 @@ export interface Armor {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -2380,6 +2397,8 @@ export interface ClothArmor {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -2401,6 +2420,8 @@ export interface LeatherArmor {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -2422,6 +2443,8 @@ export interface MailArmor {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -2443,6 +2466,8 @@ export interface ScaleArmor {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -2464,6 +2489,8 @@ export interface PlateArmor {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -2485,6 +2512,8 @@ export interface Ring {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -2506,6 +2535,8 @@ export interface RingOfAccuracy {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -2527,6 +2558,8 @@ export interface RingOfEvasion {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -2548,6 +2581,8 @@ export interface RingOfHaste {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -2569,6 +2604,8 @@ export interface RingOfFuror {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -2590,6 +2627,8 @@ export interface RingOfMight {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -2611,6 +2650,8 @@ export interface RingOfTenacity {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -2632,6 +2673,8 @@ export interface RingOfEnergy {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -2653,6 +2696,8 @@ export interface RingOfArcana {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -2674,6 +2719,8 @@ export interface RingOfSharpshooting {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -2695,6 +2742,8 @@ export interface RingOfForce {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -2716,6 +2765,8 @@ export interface RingOfElements {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -2737,6 +2788,8 @@ export interface RingOfWealth {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -2758,6 +2811,8 @@ export interface Artifact {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -2778,6 +2833,8 @@ export interface BrokenSeal {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -2798,6 +2855,8 @@ export interface CloakOfShadows {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -2819,6 +2878,8 @@ export interface DriedRose {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -2844,6 +2905,8 @@ export interface AlchemistsToolkit {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -2865,6 +2928,8 @@ export interface CapeOfThorns {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -2886,6 +2951,8 @@ export interface ChaliceOfBlood {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -2906,6 +2973,8 @@ export interface EtherealChains {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -2927,6 +2996,8 @@ export interface HolyTome {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -2948,6 +3019,8 @@ export interface HornOfPlenty {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -2969,6 +3042,8 @@ export interface LloydsBeacon {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -2993,6 +3068,8 @@ export interface MasterThievesArmband {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -3014,6 +3091,8 @@ export interface SandalsOfNature {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -3036,6 +3115,8 @@ export interface SkeletonKey {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -3057,6 +3138,8 @@ export interface TalismanOfForesight {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -3078,6 +3161,8 @@ export interface TimekeepersHourglass {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -3099,6 +3184,8 @@ export interface UnstableSpellbook {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -3128,6 +3215,8 @@ export interface DamageWand {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -3155,6 +3244,8 @@ export interface WandOfMagicMissile {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -3182,6 +3273,8 @@ export interface WandOfFireblast {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -3209,6 +3302,8 @@ export interface WandOfFrost {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -3236,6 +3331,8 @@ export interface WandOfLightning {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -3263,6 +3360,8 @@ export interface WandOfDisintegration {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -3290,6 +3389,8 @@ export interface WandOfPrismaticLight {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -3317,6 +3418,8 @@ export interface WandOfBlastWave {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -3344,6 +3447,8 @@ export interface WandOfTransfusion {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -3371,6 +3476,8 @@ export interface WandOfCorrosion {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -3398,6 +3505,8 @@ export interface WandOfCorruption {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -3425,6 +3534,8 @@ export interface WandOfRegrowth {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -3452,6 +3563,8 @@ export interface WandOfWarding {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -3479,6 +3592,8 @@ export interface WandOfLivingEarth {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -3506,6 +3621,8 @@ export interface CursedWand {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -3533,6 +3650,8 @@ export interface HealthPotion {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -3551,6 +3670,8 @@ export interface RevivingPotion {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -3569,6 +3690,8 @@ export interface FuryPotion {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -3587,6 +3710,8 @@ export interface PotionOfStrength {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -3605,6 +3730,8 @@ export interface PotionOfHaste {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -3623,6 +3750,8 @@ export interface PotionOfInvisibility {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -3641,6 +3770,8 @@ export interface PotionOfLevitation {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -3659,6 +3790,8 @@ export interface PotionOfMindVision {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -3677,6 +3810,8 @@ export interface PotionOfFrost {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -3695,6 +3830,8 @@ export interface PotionOfLiquidFlame {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -3713,6 +3850,8 @@ export interface PotionOfToxicGas {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -3731,6 +3870,8 @@ export interface PotionOfParalyticGas {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -3749,6 +3890,8 @@ export interface PotionOfPurity {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -3767,6 +3910,8 @@ export interface PotionOfExperience {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -3785,6 +3930,8 @@ export interface ElixirOfAquaticRejuvenation {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -3803,6 +3950,8 @@ export interface PotionOfCleansing {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -3821,6 +3970,8 @@ export interface PotionOfCorrosiveGas {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -3839,6 +3990,8 @@ export interface PotionOfDragonsBreath {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -3857,6 +4010,8 @@ export interface PotionOfEarthenArmor {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -3875,6 +4030,8 @@ export interface PotionOfMagicalSight {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -3893,6 +4050,8 @@ export interface PotionOfMastery {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -3911,6 +4070,8 @@ export interface PotionOfShielding {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -3929,6 +4090,8 @@ export interface PotionOfShroudingFog {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -3947,6 +4110,8 @@ export interface PotionOfSnapFreeze {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -3965,6 +4130,8 @@ export interface PotionOfStamina {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -3983,6 +4150,8 @@ export interface PotionOfStormClouds {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -4001,6 +4170,8 @@ export interface PotionOfDivineInspiration {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -4019,6 +4190,8 @@ export interface ElixirOfArcaneArmor {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -4037,6 +4210,8 @@ export interface ElixirOfDragonsBlood {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -4055,6 +4230,8 @@ export interface ElixirOfFeatherFall {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -4073,6 +4250,8 @@ export interface ElixirOfHoneyedHealing {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -4091,6 +4270,8 @@ export interface ElixirOfIcyTouch {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -4109,6 +4290,8 @@ export interface ElixirOfMight {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -4127,6 +4310,8 @@ export interface ElixirOfToxicEssence {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -4145,6 +4330,8 @@ export interface AquaBrew {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -4163,6 +4350,8 @@ export interface BlizzardBrew {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -4181,6 +4370,8 @@ export interface CausticBrew {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -4199,6 +4390,8 @@ export interface InfernalBrew {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -4217,6 +4410,8 @@ export interface ShockingBrew {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -4235,6 +4430,8 @@ export interface UnstableBrew {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -4253,6 +4450,8 @@ export interface Potion {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -4271,6 +4470,8 @@ export interface ScrollOfRage {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -4288,6 +4489,8 @@ export interface ScrollOfMetamorphosis {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -4305,6 +4508,8 @@ export interface ScrollOfUpgrade {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -4322,6 +4527,8 @@ export interface ScrollOfIdentify {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -4339,6 +4546,8 @@ export interface ScrollOfMagicMapping {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -4356,6 +4565,8 @@ export interface ScrollOfTeleportation {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -4373,6 +4584,8 @@ export interface ScrollOfRemoveCurse {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -4390,6 +4603,8 @@ export interface ScrollOfRecharging {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -4407,6 +4622,8 @@ export interface ScrollOfLullaby {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -4424,6 +4641,8 @@ export interface ScrollOfTerror {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -4441,6 +4660,8 @@ export interface ScrollOfMirrorImage {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -4458,6 +4679,8 @@ export interface ScrollOfRetribution {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -4475,6 +4698,8 @@ export interface ScrollOfTransmutation {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -4492,6 +4717,8 @@ export interface ScrollOfEnchantment {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -4509,6 +4736,8 @@ export interface ExoticScrollOfEnchantment {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -4526,6 +4755,8 @@ export interface ScrollOfAntiMagic {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -4543,6 +4774,8 @@ export interface ScrollOfChallenge {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -4560,6 +4793,8 @@ export interface ScrollOfDivination {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -4577,6 +4812,8 @@ export interface ScrollOfDread {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -4594,6 +4831,8 @@ export interface ScrollOfForesight {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -4611,6 +4850,8 @@ export interface ScrollOfMysticalEnergy {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -4628,6 +4869,8 @@ export interface ScrollOfPassage {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -4645,6 +4888,8 @@ export interface ScrollOfPrismaticImage {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -4662,6 +4907,8 @@ export interface ScrollOfPsionicBlast {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -4679,6 +4926,8 @@ export interface ScrollOfSirensSong {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -4696,6 +4945,8 @@ export interface Scroll {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -4713,6 +4964,8 @@ export interface Gold {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -4730,6 +4983,8 @@ export interface MysteryMeat {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -4748,6 +5003,8 @@ export interface FrozenCarpaccio {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -4766,6 +5023,8 @@ export interface StewedMeat {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -4784,6 +5043,8 @@ export interface MeatPie {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -4802,6 +5063,8 @@ export interface Berry {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -4820,6 +5083,8 @@ export interface SmallRation {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -4838,6 +5103,8 @@ export interface Ration {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -4856,6 +5123,8 @@ export interface Pasty {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -4874,6 +5143,8 @@ export interface ChargrilledMeat {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -4892,6 +5163,8 @@ export interface Blandfruit {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -4911,6 +5184,8 @@ export interface Food {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -4929,6 +5204,8 @@ export interface Key {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -4947,6 +5224,8 @@ export interface TenguMask {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -4964,6 +5243,8 @@ export interface KingsCrown {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -4971,7 +5252,7 @@ export interface KingsCrown {
 export interface Seed {
   kind?: "seed";
   id?: string;
-  name: string;
+  name?: string;
   type?: string;
   pos?: Position | null;
   quantity?: number;
@@ -4981,6 +5262,8 @@ export interface Seed {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -4999,6 +5282,8 @@ export interface Dewdrop {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -5016,6 +5301,8 @@ export interface Waterskin {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -5034,6 +5321,8 @@ export interface Amulet {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -5051,6 +5340,8 @@ export interface Ankh {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -5070,6 +5361,8 @@ export interface LostBackpack {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -5302,6 +5595,8 @@ export interface Stone {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -5322,6 +5617,8 @@ export interface Boomerang {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -5342,6 +5639,8 @@ export interface ThrowableDagger {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -5362,6 +5661,8 @@ export interface Throwable {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -5382,6 +5683,8 @@ export interface EnergyCrystal {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -5399,6 +5702,8 @@ export interface Bomb {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -5418,6 +5723,8 @@ export interface Firebomb {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -5437,6 +5744,8 @@ export interface FrostBomb {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -5456,6 +5765,8 @@ export interface SmokeBomb {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -5475,6 +5786,8 @@ export interface FlashBangBomb {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -5494,6 +5807,8 @@ export interface HolyBomb {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -5513,6 +5828,8 @@ export interface RegrowthBomb {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -5532,6 +5849,8 @@ export interface WoollyBomb {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -5551,6 +5870,8 @@ export interface Noisemaker {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -5570,6 +5891,8 @@ export interface ArcaneBomb {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -5589,6 +5912,8 @@ export interface ShrapnelBomb {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -5608,6 +5933,8 @@ export interface MetalShard {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -5625,6 +5952,8 @@ export interface ArcaneStylus {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -5642,6 +5971,8 @@ export interface MagicalInfusion {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -5659,6 +5990,8 @@ export interface GooBlob {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -5676,6 +6009,8 @@ export interface DwarfToken {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -5693,6 +6028,8 @@ export interface CorpseDust {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -5700,10 +6037,7 @@ export interface CorpseDust {
 /**
  * plants/Rotberry.java's Seed inner class -- the Rotberry quest's
  * turn-in item, dropped by RotHeart on death (see wandmaker_quest.py /
- * world.py's handle_mob_death). Inert for quest purposes (no held-item
- * side effect, unlike CorpseDust); the "plant it to grow a new Rotberry"
- * flavor mechanic is a separate, unrelated Plant/Seed system this port
- * doesn't need to build out for the quest to work.
+ * world.py's handle_mob_death).
  */
 export interface RotberrySeed {
   kind?: "rotberry_seed";
@@ -5718,9 +6052,12 @@ export interface RotberrySeed {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
+  plant_type?: string;
 }
 /**
  * items/quest/CeremonialCandle.java -- the Ceremonial Candle quest
@@ -5745,6 +6082,8 @@ export interface CeremonialCandle {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -5768,6 +6107,8 @@ export interface Embers {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -5785,6 +6126,8 @@ export interface Petal {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -5802,6 +6145,8 @@ export interface Chest {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -6034,6 +6379,8 @@ export interface VelvetPouch {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -6263,6 +6610,8 @@ export interface ScrollHolder {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -6492,6 +6841,8 @@ export interface MagicalHolster {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -6721,6 +7072,8 @@ export interface PotionBandolier {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -6950,10 +7303,11 @@ export interface RatSkull {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
-  strength_requirement?: number;
 }
 export interface ParchmentScrap {
   kind?: "parchment_scrap";
@@ -6968,10 +7322,11 @@ export interface ParchmentScrap {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
-  strength_requirement?: number;
 }
 export interface PetrifiedSeed {
   kind?: "petrified_seed";
@@ -6986,10 +7341,11 @@ export interface PetrifiedSeed {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
-  strength_requirement?: number;
 }
 export interface ExoticCrystals {
   kind?: "exotic_crystals";
@@ -7004,10 +7360,11 @@ export interface ExoticCrystals {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
-  strength_requirement?: number;
 }
 export interface MossyClump {
   kind?: "mossy_clump";
@@ -7022,10 +7379,11 @@ export interface MossyClump {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
-  strength_requirement?: number;
 }
 export interface DimensionalSundial {
   kind?: "dimensional_sundial";
@@ -7040,10 +7398,11 @@ export interface DimensionalSundial {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
-  strength_requirement?: number;
 }
 export interface ThirteenLeafClover {
   kind?: "thirteen_leaf_clover";
@@ -7058,10 +7417,11 @@ export interface ThirteenLeafClover {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
-  strength_requirement?: number;
 }
 export interface TrapMechanism {
   kind?: "trap_mechanism";
@@ -7076,10 +7436,11 @@ export interface TrapMechanism {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
-  strength_requirement?: number;
 }
 export interface MimicTooth {
   kind?: "mimic_tooth";
@@ -7094,10 +7455,11 @@ export interface MimicTooth {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
-  strength_requirement?: number;
 }
 export interface WondrousResin {
   kind?: "wondrous_resin";
@@ -7112,10 +7474,11 @@ export interface WondrousResin {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
-  strength_requirement?: number;
 }
 export interface EyeOfNewt {
   kind?: "eye_of_newt";
@@ -7130,10 +7493,11 @@ export interface EyeOfNewt {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
-  strength_requirement?: number;
 }
 export interface SaltCube {
   kind?: "salt_cube";
@@ -7148,10 +7512,11 @@ export interface SaltCube {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
-  strength_requirement?: number;
 }
 export interface VialOfBlood {
   kind?: "vial_of_blood";
@@ -7166,10 +7531,11 @@ export interface VialOfBlood {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
-  strength_requirement?: number;
 }
 export interface ShardOfOblivion {
   kind?: "shard_of_oblivion";
@@ -7184,10 +7550,11 @@ export interface ShardOfOblivion {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
-  strength_requirement?: number;
 }
 export interface ChaoticCenser {
   kind?: "chaotic_censer";
@@ -7202,10 +7569,11 @@ export interface ChaoticCenser {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
-  strength_requirement?: number;
 }
 export interface FerretTuft {
   kind?: "ferret_tuft";
@@ -7220,10 +7588,11 @@ export interface FerretTuft {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
-  strength_requirement?: number;
 }
 export interface CrackedSpyglass {
   kind?: "cracked_spyglass";
@@ -7238,10 +7607,11 @@ export interface CrackedSpyglass {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
-  strength_requirement?: number;
 }
 export interface TrinketCatalyst {
   kind?: "trinket_catalyst";
@@ -7256,6 +7626,8 @@ export interface TrinketCatalyst {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -7274,6 +7646,8 @@ export interface StoneOfBlast {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -7291,6 +7665,8 @@ export interface StoneOfBlink {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -7308,6 +7684,8 @@ export interface StoneOfDeepSleep {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -7325,6 +7703,8 @@ export interface StoneOfClairvoyance {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -7342,6 +7722,8 @@ export interface StoneOfAggression {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -7359,6 +7741,8 @@ export interface StoneOfFlock {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -7376,6 +7760,8 @@ export interface StoneOfShock {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -7393,6 +7779,8 @@ export interface StoneOfFear {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -7410,6 +7798,8 @@ export interface StoneOfIntuition {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -7427,6 +7817,8 @@ export interface StoneOfAugmentation {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -7444,6 +7836,8 @@ export interface StoneOfDetectMagic {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;
@@ -7461,6 +7855,8 @@ export interface StoneOfEnchantment {
   cursed_known?: boolean;
   unique?: boolean;
   kept_though_lost?: boolean;
+  is_throwable?: boolean;
+  throw_behavior?: string;
   for_sale?: boolean;
   seen?: boolean;
   dropped_at?: number | null;

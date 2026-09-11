@@ -1,8 +1,8 @@
 import { TILE_SIZE, isWaterTile } from '../../constants';
 import {
   spawnChange, spawnCurse, spawnDiscover, spawnDust, spawnEnergy,
-  spawnHeal, spawnIdentify, spawnLight, spawnNote, spawnScream,
-  spawnShadowUp, spawnTerror, spawnUp,
+  spawnHeal, spawnIdentify, spawnLeaf, spawnLight, spawnNote, spawnScream,
+  spawnShadowUp, spawnShaft, spawnTerror, spawnUp,
 } from '../../rendering/draw/particles';
 import { coordsForKind } from '../../rendering/sprites';
 import { SPELL_CHARGE, SPELL_MAP } from '../../rendering/draw/spellSprite';
@@ -11,11 +11,20 @@ import { spawnSparkMoving } from '../../rendering/draw/sparkParticle';
 import { playChainPull } from './chainsEffect';
 import { spawnToxicGas, spawnCorrosiveGas, spawnConfusionGas } from '../../rendering/draw/gasParticle';
 import { spawnFlameBurst } from '../../rendering/draw/flameParticle';
+import { spawnEarthBurst } from '../../rendering/draw/earthParticle';
 import * as movementPredictor from '../movementPredictor';
 import { spawnWaterRipple } from '../../rendering/draw/waterRipple';
 import { addGameLog } from '../../ui/gameLogHelpers';
+import i18n from '../../i18n';
 import type { GameEvent } from '../../types/contract';
 import type { GameEventContext, IGameEventHandler } from './IGameEventHandler';
+
+const PLANT_ANNOUNCEMENTS: Record<string, { text: string; color: string }> = {
+  sungrass: { text: 'Herbal Healing', color: '#2ecc71' },
+  earthroot: { text: 'Herbal Armor', color: '#e67e22' },
+  swiftthistle: { text: 'Time Bubble', color: '#f1c40f' },
+  starflower: { text: 'Blessed', color: '#f39c12' },
+};
 
 export function createPlayerEventHandlers(): IGameEventHandler[] {
   return [
@@ -224,6 +233,60 @@ export function createPlayerEventHandlers(): IGameEventHandler[] {
         }
         if (event.data.target === ctx.myPlayerId) {
           addGameLog(`You heal for ${event.data.amount}`, 'positive');
+        }
+        return true;
+      },
+    },
+    {
+      eventType: 'PLANT_TRIGGERED',
+      handle(event: Extract<GameEvent, { type: 'PLANT_TRIGGERED' }>, ctx: GameEventContext) {
+        const { plant, x, y, player } = event.data;
+        const plants = ctx.entities.getPlants();
+        const nextPlants = plants.filter(p => !(p.x === x && p.y === y));
+        if (nextPlants.length !== plants.length) {
+          ctx.entities.setPlants(nextPlants);
+        }
+
+        const cx = x * TILE_SIZE + TILE_SIZE / 2;
+        const cy = y * TILE_SIZE + TILE_SIZE / 2;
+        const plantKey = (plant || 'sungrass').toLowerCase();
+
+        if (ctx.world.isVisible(x, y)) {
+          if (ctx.effects.particlesRef) {
+            spawnLeaf(ctx.effects.particlesRef, cx, cy, 6);
+
+            if (plantKey === 'sungrass') {
+              spawnShaft(ctx.effects.particlesRef, cx, cy, 3);
+            } else if (plantKey === 'starflower') {
+              ctx.effects.spawnFlare(cx, cy, 6, 32, '#ffff00', 2000);
+            } else if (plantKey === 'earthroot') {
+              spawnEarthBurst(ctx.effects.particlesRef, cx, cy, 8);
+              ctx.effects.shakeScreen(1, 400);
+            } else if (plantKey === 'firebloom') {
+              spawnFlameBurst(ctx.effects.particlesRef, cx, cy, 5);
+            } else if (plantKey === 'blindweed') {
+              spawnLight(ctx.effects.particlesRef, cx, cy, 4);
+            } else if (plantKey === 'fadeleaf') {
+              spawnLight(ctx.effects.particlesRef, cx, cy, 3);
+            }
+          }
+        }
+
+        const isLocal = player === ctx.myPlayerId;
+        if (isLocal) {
+          if (plantKey === 'mageroyal' || plantKey === 'dreamfoil') {
+            addGameLog(i18n.t('log.refreshed', { defaultValue: 'You feel refreshed.' }), 'positive');
+          } else if (plantKey === 'fadeleaf') {
+            addGameLog(i18n.t('log.teleported', { defaultValue: 'In a blink of an eye you were teleported to another location of the level.' }), 'neutral');
+          } else {
+            const plantName = i18n.t(`plant.${plantKey}`, { defaultValue: plantKey.replace('_', ' ') });
+            addGameLog(i18n.t('log.trample_plant', { plant: plantName, defaultValue: `You trample the ${plantName}` }), 'positive');
+          }
+
+          const announcement = PLANT_ANNOUNCEMENTS[plantKey];
+          if (announcement) {
+            ctx.effects.spawnFloatingText(cx, cy - TILE_SIZE / 2, announcement.text, announcement.color);
+          }
         }
         return true;
       },

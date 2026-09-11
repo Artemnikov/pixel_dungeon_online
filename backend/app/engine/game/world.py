@@ -365,6 +365,8 @@ def _teleport_char_generic(game, floor, floor_id: int, entity) -> bool:
     tx, ty = random.choice(pool)
     entity.pos = Position(x=tx, y=ty)
     entity.remove_buff("rooted")
+    from app.engine.entities.buffs import break_stationary_plant_buffs
+    break_stationary_plant_buffs(entity)
     if getattr(entity, "ai_state", None) == "hunting":
         entity.ai_state = "wandering"
     game.add_event("TELEPORT", {
@@ -779,52 +781,69 @@ class WorldInteractionMixin:
         self._register_pending_unlock(floor, x, y, "door", player.id)
         return True
 
-    def _trigger_trap_if_needed(self, floor: FloorState, player, floor_id: int):
-        if player.has_buff("levitation"):
-            return
-        pos = (player.pos.x, player.pos.y)
+    def trigger_trap_at(self, floor: FloorState, x: int, y: int, floor_id: int):
+        pos = (x, y)
         trap = floor.traps.get(pos)
         if not trap or not trap.active:
             return
 
-        is_player = isinstance(player, Player)
-        patches: List[dict] = []
         if trap.hidden:
             trap.hidden = False
-
-        # Any trap tile -> INACTIVE_TRAP on trigger
-        tile = floor.grid[player.pos.y][player.pos.x]
-        if tile in (TileType.SECRET_TRAP, TileType.TRAP):
-            floor.grid[player.pos.y][player.pos.x] = TileType.INACTIVE_TRAP
-            patches.append({"x": player.pos.x, "y": player.pos.y, "tile": TileType.INACTIVE_TRAP})
-
         trap.active = False
 
-        handler = _TRAP_HANDLERS.get(trap.trap_type)
-        if handler is not None:
-            result = handler(self, floor, player, floor_id, is_player, patches)
-            if result is None:
-                return
-            damage, dealt = result
+        patches: List[dict] = []
+        tile = floor.grid[y][x]
+        if tile in (TileType.SECRET_TRAP, TileType.TRAP):
+            floor.grid[y][x] = TileType.INACTIVE_TRAP
+            patches.append({"x": x, "y": y, "tile": TileType.INACTIVE_TRAP})
+
+        occupant = self._entity_at(floor, floor_id, x, y, exclude_id="")
+
+        dealt = 0
+        if occupant is not None:
+            is_player = isinstance(occupant, Player)
+            handler = _TRAP_HANDLERS.get(trap.trap_type)
+            if handler is not None:
+                result = handler(self, floor, occupant, floor_id, is_player, patches)
+                if result is not None:
+                    _, dealt = result
+            else:
+                dealt = occupant.take_damage(2)
+
+            if dealt > 0:
+                self.add_event("DAMAGE", {"target": occupant.id, "amount": dealt}, floor_id=floor_id)
+                self.add_event("PLAY_SOUND", {"sound": "HIT_BODY"}, floor_id=floor_id, source_player_id=occupant.id if is_player else None)
+                if is_player:
+                    warn_sound = hurt_warning_sound(dealt, occupant.hp, occupant.get_total_max_hp())
+                    if warn_sound:
+                        self.add_event("PLAY_SOUND", {"sound": warn_sound}, player_id=occupant.id)
+            self.add_event(
+                "TRAP_TRIGGERED",
+                {"player": occupant.id, "trap": trap.trap_type, "damage": dealt, "x": x, "y": y},
+                floor_id=floor_id,
+            )
         else:
-            damage = 2
-            dealt = player.take_damage(damage)
+            dummy = type("_TrapPos", (), {
+                "pos": Position(x=x, y=y), "buffs": [], "id": "",
+                "take_damage": lambda d: 0, "has_buff": lambda b: False,
+                "add_buff": lambda *a, **kw: None,
+                "get_total_max_hp": lambda: 1, "hp": 1,
+            })()
+            handler = _TRAP_HANDLERS.get(trap.trap_type)
+            if handler is not None:
+                handler(self, floor, dummy, floor_id, False, patches)
+            self.add_event(
+                "TRAP_TRIGGERED",
+                {"player": "", "trap": trap.trap_type, "damage": 0, "x": x, "y": y},
+                floor_id=floor_id,
+            )
 
         if patches:
             self.add_event("MAP_PATCH", {"tiles": patches}, floor_id=floor_id)
             floor.rebuild_flags()
 
-        self.add_event(
-            "TRAP_TRIGGERED",
-            {"player": player.id, "trap": trap.trap_type, "damage": dealt,
-             "x": player.pos.x, "y": player.pos.y},
-            floor_id=floor_id,
-        )
-        if dealt > 0:
-            self.add_event("DAMAGE", {"target": player.id, "amount": dealt}, floor_id=floor_id)
-            self.add_event("PLAY_SOUND", {"sound": "HIT_BODY"}, floor_id=floor_id, source_player_id=player.id if is_player else None)
-            if is_player:
-                warn_sound = hurt_warning_sound(dealt, player.hp, player.get_total_max_hp())
-                if warn_sound:
-                    self.add_event("PLAY_SOUND", {"sound": warn_sound}, player_id=player.id)
+    def _trigger_trap_if_needed(self, floor: FloorState, player, floor_id: int):
+        if player.has_buff("levitation"):
+            return
+        self.trigger_trap_at(floor, player.pos.x, player.pos.y, floor_id)
 

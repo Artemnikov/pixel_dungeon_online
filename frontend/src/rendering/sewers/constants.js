@@ -127,6 +127,21 @@ export const WALL_INDEX = {
   RAISED_DOOR_CRYSTAL: atlasIndex(3, 7),
   RAISED_DOOR_SIDEWAYS: atlasIndex(4, 7),
   RAISED_BARRICADE: atlasIndex(9, 7),
+
+  RAISED_HIGH_GRASS: atlasIndex(10, 7),
+  RAISED_HIGH_GRASS_ALT: atlasIndex(13, 7),
+  RAISED_FURROWED_GRASS: atlasIndex(11, 7),
+  RAISED_FURROWED_ALT: atlasIndex(14, 7),
+
+  HIGH_GRASS_OVERHANG: atlasIndex(10, 14),
+  HIGH_GRASS_OVERHANG_ALT: atlasIndex(13, 14),
+  FURROWED_OVERHANG: atlasIndex(11, 14),
+  FURROWED_OVERHANG_ALT: atlasIndex(14, 14),
+
+  HIGH_GRASS_UNDERHANG: atlasIndex(10, 15),
+  HIGH_GRASS_UNDERHANG_ALT: atlasIndex(13, 15),
+  FURROWED_UNDERHANG: atlasIndex(11, 15),
+  FURROWED_UNDERHANG_ALT: atlasIndex(14, 15),
 };
 
 export const TERRAIN_INDEX = {
@@ -135,9 +150,12 @@ export const TERRAIN_INDEX = {
 
   EMPTY_DECO_VARIANTS: [atlasIndex(1, 0), atlasIndex(7, 0)],
 
-  GRASS_CENTER: [atlasIndex(2, 4), atlasIndex(5, 4), atlasIndex(6, 4)],
+  GRASS_BASE: [atlasIndex(2, 0), atlasIndex(8, 0)],
+  EMBERS_BASE: [atlasIndex(3, 0), atlasIndex(9, 0)],
+
+  GRASS_CENTER: [atlasIndex(2, 4), atlasIndex(5, 4)],
   HIGH_GRASS_CENTER: [atlasIndex(10, 7), atlasIndex(13, 7)],
-  FURROWED_GRASS_CENTER: [atlasIndex(11, 7), atlasIndex(12, 7)],
+  FURROWED_GRASS_CENTER: [atlasIndex(11, 7), atlasIndex(14, 7)],
   GRASS_EDGE: {
     tl: atlasIndex(1, 2),
     tr: atlasIndex(2, 2),

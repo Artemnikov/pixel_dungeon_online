@@ -587,7 +587,7 @@ def _rolled_item_to_item(ri: RolledItem, cx: int, cy: int) -> Item:
     if ri.category == "FOOD":
         return Food(id=iid, pos=pos, name="Food")
     if ri.category == "SEED":
-        return Seed(id=iid, pos=pos, name="Seed", plant_type=ri.plant_type or "sungrass")
+        return Seed(id=iid, pos=pos, plant_type=ri.plant_type or "sungrass")
     if ri.category == "STONE":
         return Stone(id=iid, pos=pos, damage=1, range=5)
     if ri.category in ("WAND",):

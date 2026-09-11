@@ -179,3 +179,29 @@ export const trapDisarmedIndex = (trapType) => {
   if (!v) return null;
   return 8 + v.shape * 16;
 };
+
+export const PLANT_SPRITE_INDEX = {
+  rotberry: 112,
+  firebloom: 113,
+  swiftthistle: 114,
+  sungrass: 115,
+  icecap: 116,
+  stormvine: 117,
+  sorrowmoss: 118,
+  mageroyal: 119,
+  dreamfoil: 119,
+  earthroot: 120,
+  starflower: 121,
+  fadeleaf: 122,
+  blindweed: 123,
+  blandfruit_bush: 124,
+  blandfruit: 124,
+  dewcatcher: 125,
+  seedpod: 126,
+};
+
+export const plantSpriteIndex = (plantType) => {
+  if (!plantType) return PLANT_SPRITE_INDEX.sungrass;
+  const key = String(plantType).toLowerCase();
+  return PLANT_SPRITE_INDEX[key] ?? PLANT_SPRITE_INDEX.sungrass;
+};

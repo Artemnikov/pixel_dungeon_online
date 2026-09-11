@@ -8,6 +8,7 @@ from app.engine.entities.base import Action, ItemBase, ItemCategory
 class Runestone(ItemBase):
     kind: Literal["runestone"] = "runestone"
     type: str = "runestone"
+    throw_behavior: str = "runestone"
     category: ClassVar[str] = ItemCategory.RUNESTONE
     stackable: ClassVar[bool] = True
     DESC: ClassVar[str] = "A small stone inscribed with arcane runes."

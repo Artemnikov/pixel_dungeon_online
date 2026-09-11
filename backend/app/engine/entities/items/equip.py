@@ -382,6 +382,8 @@ class Staff(MeleeWeapon):
 class MissileWeapon(KindOfWeapon):
     kind: Literal["missile_weapon"] = "missile_weapon"
     tier: int = 1
+    is_throwable: bool = True
+    throw_behavior: str = "missile"
     stackable: ClassVar[bool] = True
     DESC: ClassVar[str] = "A thrown weapon. Hurl it at an enemy from afar."
 

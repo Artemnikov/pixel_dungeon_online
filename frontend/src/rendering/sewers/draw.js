@@ -175,10 +175,10 @@ export const drawWaterBackground = (ctx, waterTex, clipPath, bounds, nowMs) => {
 //          z-order as SPD's DungeonWallsTilemap which is added after the mobs
 //          group in GameScene.
 
-export const drawSewerTileBase = (ctx, atlasImage, grid, x, y, tile, openDoors = new Set()) => {
+export const drawSewerTileBase = (ctx, atlasImage, grid, x, y, tile, openDoors = new Set(), depth = 1) => {
   const instructions = isWallTile(tile)
     ? getSewerWallInstructions(grid, x, y)
-    : getSewerTerrainInstructions(grid, x, y, tile, openDoors);
+    : getSewerTerrainInstructions(grid, x, y, tile, openDoors, depth);
 
   const isWater = tile === BACKEND_TILE.FLOOR_WATER.id;
   if (instructions.length === 0 && !isWater) return false;

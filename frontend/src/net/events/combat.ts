@@ -201,8 +201,25 @@ export function createCombatEventHandlers(): IGameEventHandler[] {
         const spriteCoords = thrownItem ? coordsForItem(thrownItem) : null;
         const projType = event.data.projectile || 'arrow';
         const beamType = event.data.beam_type;
+        const src = event.data.source;
+        const isLocal = src === ctx.myPlayerId;
+        const audible = isLocal || ctx.world.isVisible(event.data.x, event.data.y);
+
+        if (isLocal && event.data.next_attack_in_ms != null) {
+          noteNextAttackReady(event.data.next_attack_in_ms);
+        }
 
         if (!MAGIC_PROJECTILES.has(projType)) {
+          const isSeed = projType === 'seed'
+            || Boolean(thrownItem && (thrownItem.type === 'seed' || thrownItem.plant_type || thrownItem.kind === 'seed' || thrownItem.kind === 'rotberry_seed'));
+
+          const onComplete = isSeed ? () => {
+            const isTargetAudible = isLocal || ctx.world.isAudible(event.data.target_x, event.data.target_y, ctx.myPlayerId);
+            if (isTargetAudible) {
+              ctx.audio.play('PLANT');
+            }
+          } : undefined;
+
           ctx.effects.pushProjectile({
             x: startX,
             y: startY,
@@ -215,15 +232,8 @@ export function createCombatEventHandlers(): IGameEventHandler[] {
             progress: 0,
             rotation: 0,
             finished: false,
+            onComplete,
           });
-        }
-
-        const src = event.data.source;
-        const isLocal = src === ctx.myPlayerId;
-        const audible = isLocal || ctx.world.isVisible(event.data.x, event.data.y);
-
-        if (isLocal && event.data.next_attack_in_ms != null) {
-          noteNextAttackReady(event.data.next_attack_in_ms);
         }
 
         const srcPlayer = ctx.entities.getPlayer(src);

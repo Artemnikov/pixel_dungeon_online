@@ -208,3 +208,217 @@ test('DefaultEventDispatcher: LOCKED event plays the locked sound for doors/ches
 
   assert.equal(playedLocked, true, 'LOCKED event must invoke audio.play("LOCKED")');
 });
+
+test('DefaultEventDispatcher: PLAY_SOUND PLANT plays plant sound only when tile is in LOS / visible', () => {
+  const dispatcher = createDefaultEventDispatcher();
+
+  const gridRef = { current: [[1, 1, 1], [1, 1, 1], [1, 1, 1]] };
+  const visionRef = { current: { visible: new Set(['1,1']), discovered: new Set(['1,1', '2,2']) } };
+  const world = new WorldManager({
+    gridRef,
+    setGrid: () => {},
+    visionRef,
+  });
+
+  const entitiesRef = { current: { players: {}, mobs: {}, items: [], traps: [], plants: [] } };
+  const entities = new EntityManager({
+    entitiesRef,
+    dyingMobsRef: { current: {} },
+    myPlayerIdRef: { current: 'hero' },
+  });
+
+  const effects = new VisualEffectsManager({
+    particlesRef: { current: [] },
+    screenShakeRef: { current: null },
+    floatingTextRef: { current: [] },
+    warnedTilesRef: { current: null },
+    playerAnimRef: { current: {} },
+    mobAnimRef: { current: {} },
+  });
+
+  const ui = new GameCallbacks({});
+
+  let playedSounds = [];
+  const mockAudio = {
+    play: (sound, rate) => { playedSounds.push({ sound, rate }); },
+    playStep: () => {},
+  };
+
+  const ctx = {
+    myPlayerId: 'hero',
+    world,
+    entities,
+    effects,
+    ui,
+    audio: mockAudio,
+  };
+
+  dispatcher.dispatch({
+    type: 'PLAY_SOUND',
+    data: { sound: 'PLANT', x: 1, y: 1 },
+  }, ctx);
+
+  assert.equal(playedSounds.length, 1);
+  assert.equal(playedSounds[0].sound, 'PLANT');
+
+  dispatcher.dispatch({
+    type: 'PLAY_SOUND',
+    data: { sound: 'PLANT', x: 2, y: 2 },
+  }, ctx);
+
+  assert.equal(playedSounds.length, 1);
+});
+
+test('DefaultEventDispatcher: RANGED_ATTACK for seed plays THROW on launch and registers onComplete to play PLANT on arrival', () => {
+  const dispatcher = createDefaultEventDispatcher();
+
+  const gridRef = { current: [[1, 1, 1], [1, 1, 1], [1, 1, 1]] };
+  const visionRef = { current: { visible: new Set(['0,0', '1,1', '2,2']), discovered: new Set() } };
+  const world = new WorldManager({
+    gridRef,
+    setGrid: () => {},
+    visionRef,
+  });
+
+  const entitiesRef = { current: { players: {}, mobs: {}, items: [], traps: [], plants: [] } };
+  const entities = new EntityManager({
+    entitiesRef,
+    dyingMobsRef: { current: {} },
+    myPlayerIdRef: { current: 'hero' },
+  });
+
+  const projectilesRef = { current: [] };
+  const effects = new VisualEffectsManager({
+    particlesRef: { current: [] },
+    projectilesRef,
+    screenShakeRef: { current: null },
+    floatingTextRef: { current: [] },
+    warnedTilesRef: { current: null },
+    playerAnimRef: { current: {} },
+    mobAnimRef: { current: {} },
+  });
+
+  const ui = new GameCallbacks({});
+
+  let playedSounds = [];
+  const mockAudio = {
+    play: (sound, rate) => { playedSounds.push({ sound, rate }); },
+    playStep: () => {},
+  };
+
+  const ctx = {
+    myPlayerId: 'hero',
+    world,
+    entities,
+    effects,
+    ui,
+    audio: mockAudio,
+  };
+
+  dispatcher.dispatch({
+    type: 'RANGED_ATTACK',
+    data: {
+      source: 'hero',
+      x: 0,
+      y: 0,
+      target_x: 2,
+      target_y: 2,
+      projectile: 'seed',
+      item: { id: 's1', type: 'seed', name: 'Sungrass Seed' },
+    },
+  }, ctx);
+
+  assert.equal(playedSounds.length, 1);
+  assert.equal(playedSounds[0].sound, 'THROW');
+  assert.equal(projectilesRef.current.length, 1);
+
+  const proj = projectilesRef.current[0];
+  assert.equal(typeof proj.onComplete, 'function');
+
+  proj.onComplete();
+
+  assert.equal(playedSounds.length, 2);
+  assert.equal(playedSounds[1].sound, 'PLANT');
+});
+
+test('DefaultEventDispatcher: PLANT_TRIGGERED event removes plant, plays sound, spawns floating text announcement, and logs action', () => {
+  const dispatcher = createDefaultEventDispatcher();
+
+  const gridRef = { current: [[1, 1, 1], [1, 1, 1], [1, 1, 1]] };
+  const visionRef = { current: { visible: new Set(['1,1']), discovered: new Set(['1,1']) } };
+  const world = new WorldManager({
+    gridRef,
+    setGrid: () => {},
+    visionRef,
+  });
+
+  const entitiesRef = {
+    current: {
+      players: {},
+      mobs: {},
+      items: [],
+      traps: [],
+      plants: [{ x: 1, y: 1, plant_type: 'sungrass' }],
+    },
+  };
+  const entities = new EntityManager({
+    entitiesRef,
+    dyingMobsRef: { current: {} },
+    myPlayerIdRef: { current: 'hero' },
+  });
+
+  const floatingTextRef = { current: [] };
+  const particlesRef = { current: [] };
+  const effects = new VisualEffectsManager({
+    particlesRef,
+    screenShakeRef: { current: null },
+    floatingTextRef,
+    warnedTilesRef: { current: null },
+    playerAnimRef: { current: {} },
+    mobAnimRef: { current: {} },
+  });
+
+  const ui = new GameCallbacks({});
+
+  let playedSounds = [];
+  const mockAudio = {
+    play: (sound, rate) => { playedSounds.push({ sound, rate }); },
+    playStep: () => {},
+  };
+
+  const ctx = {
+    myPlayerId: 'hero',
+    world,
+    entities,
+    effects,
+    ui,
+    audio: mockAudio,
+  };
+
+  dispatcher.dispatch({
+    type: 'PLANT_TRIGGERED',
+    data: {
+      plant: 'sungrass',
+      x: 1,
+      y: 1,
+      player: 'hero',
+    },
+  }, ctx);
+
+  // Plant was removed from entity list
+  assert.equal(entities.getPlants().length, 0);
+
+  // SPD fidelity: plant activation is silent (no artificial PLANT_TRIGGER audio)
+  assert.equal(playedSounds.some(s => s.sound === 'PLANT_TRIGGER'), false);
+
+  // Particles spawned: 6 general wither leaf particles + 3 light shaft particles for sungrass
+  assert.equal(particlesRef.current.length, 9);
+  assert.equal(particlesRef.current.some(p => p.isShaft), true);
+
+  // Floating text announcement "Herbal Healing" spawned
+  assert.equal(floatingTextRef.current.length, 1);
+  assert.equal(floatingTextRef.current[0].text, 'Herbal Healing');
+});
+
+
+

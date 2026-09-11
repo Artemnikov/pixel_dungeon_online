@@ -96,6 +96,8 @@ def knockback_char(floor, char, dx, dy, power, damage_on_collision=True,
         cx, cy, dist, blocked = _slide(cx, cy, -dx, -dy, power)
     if (cx, cy) != (char.pos.x, char.pos.y):
         char.pos = Position(x=cx, y=cy)
+        from app.engine.entities.buffs import break_stationary_plant_buffs
+        break_stationary_plant_buffs(char)
         from app.engine.game.terrain_effects import press_cell
         press_cell(floor, (cx, cy), char)
         if add_event:

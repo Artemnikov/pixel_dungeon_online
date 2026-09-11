@@ -36,12 +36,14 @@ const shouldUseCornerType = (grid, x, y, matcher, quadrant) => {
 
 const getFloorBase = (x, y) => pickVariant(TERRAIN_INDEX.FLOOR_VARIANTS, x, y);
 
-const getTerrainQuadrants = (grid, x, y, matcher, centerVariants, edgeByQuadrant, salt) => {
+const getTerrainQuadrants = (grid, x, y, matcher, centerVariants, edgeByQuadrant, salt, depth = 1) => {
   const center = pickVariant(centerVariants, x, y, salt);
   const out = [];
+  const useSafeEdges = depth > 15;
   for (const quadrant of [QUADRANT.TL, QUADRANT.TR, QUADRANT.BL, QUADRANT.BR]) {
+    const isCorner = shouldUseCornerType(grid, x, y, matcher, quadrant);
     out.push({
-      srcIndex: shouldUseCornerType(grid, x, y, matcher, quadrant) ? center : edgeByQuadrant[quadrant],
+      srcIndex: isCorner || useSafeEdges ? center : edgeByQuadrant[quadrant],
       quadrant,
     });
   }
@@ -53,7 +55,7 @@ const _isTrapTile = (tile) =>
   tile === BACKEND_TILE.TRAP.id ||
   tile === BACKEND_TILE.INACTIVE_TRAP.id;
 
-export const getSewerTerrainInstructions = (grid, x, y, tile, openDoors = new Set()) => {
+export const getSewerTerrainInstructions = (grid, x, y, tile, openDoors = new Set(), depth = 1) => {
   if (tile === BACKEND_TILE.VOID.id) return [];
 
   if (tile === BACKEND_TILE.FLOOR.id || _isTrapTile(tile)) {
@@ -133,14 +135,16 @@ export const getSewerTerrainInstructions = (grid, x, y, tile, openDoors = new Se
         isGrassTile,
         TERRAIN_INDEX.GRASS_CENTER,
         TERRAIN_INDEX.GRASS_EDGE,
-        31
+        31,
+        depth
       )
     );
     return instructions;
   }
 
   if (tile === BACKEND_TILE.EMBERS.id) {
-    return [{ srcIndex: BACKEND_TILE.EMBERS.atlasIndex, quadrant: QUADRANT.FULL }];
+    const embersTile = (hashCell(x, y) & 1) ? TERRAIN_INDEX.EMBERS_BASE[1] : TERRAIN_INDEX.EMBERS_BASE[0];
+    return [{ srcIndex: embersTile, quadrant: QUADRANT.FULL }];
   }
 
   if (tile === BACKEND_TILE.ALCHEMY.id) {
@@ -190,9 +194,14 @@ export const getSewerTerrainInstructions = (grid, x, y, tile, openDoors = new Se
         isGrassTile,
         TERRAIN_INDEX.HIGH_GRASS_CENTER,
         TERRAIN_INDEX.GRASS_EDGE,
-        31
+        31,
+        depth
       )
     );
+    const underhang = (hashCell(x, y) & 1)
+      ? WALL_INDEX.HIGH_GRASS_UNDERHANG_ALT
+      : WALL_INDEX.HIGH_GRASS_UNDERHANG;
+    instructions.push({ srcIndex: underhang, quadrant: QUADRANT.FULL });
     return instructions;
   }
 
@@ -206,9 +215,14 @@ export const getSewerTerrainInstructions = (grid, x, y, tile, openDoors = new Se
         isGrassTile,
         TERRAIN_INDEX.FURROWED_GRASS_CENTER,
         TERRAIN_INDEX.GRASS_EDGE,
-        31
+        31,
+        depth
       )
     );
+    const underhang = (hashCell(x, y) & 1)
+      ? WALL_INDEX.FURROWED_UNDERHANG_ALT
+      : WALL_INDEX.FURROWED_UNDERHANG;
+    instructions.push({ srcIndex: underhang, quadrant: QUADRANT.FULL });
     return instructions;
   }
 

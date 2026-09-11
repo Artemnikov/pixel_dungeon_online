@@ -10,6 +10,7 @@ class Bomb(ItemBase):
     kind: Literal["bomb"] = "bomb"
     name: str = "Bomb"
     type: str = "bomb"
+    throw_behavior: str = "bomb"
     category: ClassVar[str] = ItemCategory.MISC
     stackable: ClassVar[bool] = True
     level_known: bool = True

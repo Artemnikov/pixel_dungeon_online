@@ -20,7 +20,7 @@ export default function useKeyboardControls(props) {
         myPlayerId: myId,
         myPlayer: me,
         grid: p.gridRef?.current || [],
-        entities: p.entitiesRef?.current || { players: {}, mobs: {}, items: [], traps: [] },
+        entities: p.entitiesRef?.current || { players: {}, mobs: {}, items: [], traps: [], plants: [] },
         socket: p.socketRef?.current,
         playerAnimRef: p.playerAnimRef,
         floorFadeRef: p.floorFadeRef,

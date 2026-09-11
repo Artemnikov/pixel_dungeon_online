@@ -156,7 +156,7 @@ class SpawnTickMixin:
         dust_buff = get_buff(player.buffs, "dust_ghost_spawner")
         if dust_buff is None:
             return
-        if not any(isinstance(i, CorpseDust) for i in player.inventory):
+        if not any(isinstance(i, CorpseDust) for i in player.belongings.all_items()):
             dust_buff.level = 0
             return
 

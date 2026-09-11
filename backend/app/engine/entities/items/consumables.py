@@ -146,6 +146,8 @@ class KingsCrown(ItemBase):
 class Throwable(ItemBase):
     kind: Literal["throwable"] = "throwable"
     type: str = "throwable"
+    is_throwable: bool = True
+    throw_behavior: str = "missile"
     category: ClassVar[str] = ItemCategory.STONE
     stackable: ClassVar[bool] = True
     damage: int = 1
@@ -193,13 +195,120 @@ class ThrowableDagger(Throwable):
         return 5 * self.quantity
 
 
+_PLANT_TYPE_NAMES: Dict[str, str] = {
+    "sungrass": "Sungrass Seed",
+    "earthroot": "Earthroot Seed",
+    "firebloom": "Firebloom Seed",
+    "icecap": "Icecap Seed",
+    "sorrowmoss": "Sorrowmoss Seed",
+    "swiftthistle": "Swiftthistle Seed",
+    "blindweed": "Blindweed Seed",
+    "stormvine": "Stormvine Seed",
+    "fadeleaf": "Fadeleaf Seed",
+    "mageroyal": "Mageroyal Seed",
+    "starflower": "Starflower Seed",
+    "rotberry": "Rotberry Seed",
+}
+
+_PLANT_ALIASES: Dict[str, str] = {
+    "dreamfoil": "mageroyal",
+    "starwort": "starflower",
+    "swifthistle": "swiftthistle",
+}
+
+STANDARD_SEEDS: Tuple[str, ...] = tuple(k for k in _PLANT_TYPE_NAMES if k != "rotberry")
+
+SEED_DESC_TEMPLATE: str = "Throw this seed to the place where you want to grow a plant.\n\n{}"
+
+PLANT_DESCS: Dict[str, str] = {
+    "sungrass": "Sungrass is renowned for its sap's slow but effective healing properties.",
+    "firebloom": "When something touches a firebloom, it bursts into flames.",
+    "icecap": "Upon being touched, an icecap lets out a puff of freezing pollen. The freezing effect is much stronger if the environment is wet.",
+    "sorrowmoss": "A sorrowmoss is a flower (not a moss) with razor-sharp petals, coated with a deadly venom.",
+    "swiftthistle": "When trampled, swiftthistle will briefly accelerate the flow of time around it, allowing the trampler to perform several actions instantly.",
+    "blindweed": "Upon being touched a blindweed perishes in a bright flash of light. The flash is strong enough to disorient for several seconds.",
+    "earthroot": "When a creature touches an earthroot, its roots create a kind of immobile natural armor around it.",
+    "stormvine": "Gravity affects the stormvine plant strangely, allowing its whispy blue tendrils to 'hang' on the air. Anything caught in the vine is affected by this, and becomes disoriented.",
+    "fadeleaf": "Touching a fadeleaf will teleport any creature to a random place on the current level.",
+    "mageroyal": "The mageroyal's prickly flowers contain a chemical which is known for its properties as a strong neutralizing agent. Anything that steps in this plant will be cleansed of many negative effects.",
+    "starflower": "A rare plant, starflower is said to grant holy power to whomever touches it.",
+    "rotberry": "The berries of a young rotberry shrub taste like sweet, sweet death. Over a few years, this rotberry shrub will grow into another rot heart. When trampled, a young rotberry will produce a small puff of toxic gas.",
+}
+
+WARDEN_PLANT_DESCS: Dict[str, str] = {
+    "sungrass": "_The Warden_ can receive healing from trampled sungrass even if she moves away from it.",
+    "firebloom": "When she tramples a firebloom, _the Warden_ will be briefly imbued with flame instead of being harmed.",
+    "icecap": "When she tramples an icecap, _the Warden_ will be briefly imbued with frost instead of being harmed.",
+    "sorrowmoss": "When she tramples a sorrowmoss, _the Warden_ will be briefly imbued with toxin instead of being harmed.",
+    "swiftthistle": "In addition to gaining instantaneous actions, _the Warden_ will also get a brief haste boost when trampling swiftthistle.",
+    "blindweed": "_The Warden_ will channel a blindweed's energy into a temporary shroud of invisibility, instead of being disoriented.",
+    "earthroot": "The roots of an earthroot plant will move with _the Warden_, providing her mobile barkskin armor.",
+    "stormvine": "_The Warden_ is able to control the gravitational effect of stormvine, and will briefly levitate when she tramples one.",
+    "fadeleaf": "The teleportation effect of fadeleaf is more potent for _the Warden_, teleporting her back to the end of the previous dungeon level.",
+    "mageroyal": "In addition to the neutralizing effect, _the Warden_ will become temporarily immune to all area-bound effects when stepping on mageroyal.",
+    "starflower": "In addition to being blessed, _the Warden_ will gain a significant amount of wand recharging when she tramples a starflower.",
+    "rotberry": "Normally a rotberry bush only produces a little gas when trampled, but _the Warden_ is able to harness energy from it to temporarily boost her strength!",
+}
+
+
 class Seed(ItemBase):
     kind: Literal["seed"] = "seed"
+    name: str = "Seed"
     type: str = "seed"
+    throw_behavior: str = "seed"
     category: ClassVar[str] = ItemCategory.SEED
     stackable: ClassVar[bool] = True
     plant_type: str = "sungrass"
-    DESC: ClassVar[str] = "A magical seed. Plant it to release its effect."
+    DESC: ClassVar[str] = "Throw this seed to the place where you want to grow a plant."
+
+    def description(self, player: Optional["Player"] = None) -> str:
+        pt = _PLANT_ALIASES.get(self.plant_type, self.plant_type)
+        plant_desc = PLANT_DESCS.get(pt)
+        if not plant_desc:
+            return self.DESC
+        if player is not None:
+            subclass_info = getattr(player, "subclass_info", None)
+            if subclass_info and getattr(subclass_info, "subclass", None) == "warden":
+                warden_desc = WARDEN_PLANT_DESCS.get(pt)
+                if warden_desc:
+                    plant_desc = f"{plant_desc}\n\n{warden_desc}"
+        return SEED_DESC_TEMPLATE.format(plant_desc)
+
+    @model_validator(mode="before")
+    @classmethod
+    def _normalize_seed(cls, data: Any) -> Any:
+        if isinstance(data, dict):
+            raw_pt = data.get("plant_type")
+            if not raw_pt and (raw_name := data.get("name")):
+                candidate = raw_name.lower().removesuffix(" seed").strip()
+                if candidate in _PLANT_TYPE_NAMES or candidate in _PLANT_ALIASES:
+                    raw_pt = candidate
+            if raw_pt:
+                normalized = raw_pt.lower()
+                data["plant_type"] = _PLANT_ALIASES.get(normalized, normalized)
+
+            effective_pt = data.get("plant_type") or getattr(cls, "plant_type", "sungrass")
+            if not data.get("name"):
+                default_name = getattr(cls, "name", "Seed")
+                if default_name in ("Seed", "seed", effective_pt):
+                    data["name"] = _PLANT_TYPE_NAMES.get(effective_pt, f"{effective_pt.capitalize()} Seed")
+            elif data.get("name") in ("Seed", "seed", effective_pt):
+                data["name"] = _PLANT_TYPE_NAMES.get(effective_pt, f"{effective_pt.capitalize()} Seed")
+        return data
+
+    def actions(self, player: Optional["Player"] = None) -> List[str]:
+        return [Action.PLANT, Action.THROW, Action.DROP]
+
+    def default_action(self) -> Optional[str]:
+        return Action.THROW
+
+    def is_similar(self, other: "ItemBase") -> bool:
+        return (
+            type(self) is type(other)
+            and not self.is_bag
+            and self.level == other.level
+            and getattr(self, "plant_type", "") == getattr(other, "plant_type", "")
+        )
 
     def value(self, identified: bool = False) -> int:
         if self.plant_type in ("starflower", "rotberry"):

@@ -17,6 +17,7 @@ const deathSound = new URL('../assets/sounds/death.mp3', import.meta.url).href;
 const secretSound = new URL('../assets/sounds/secret.mp3', import.meta.url).href;
 const waterStepSound = new URL('../assets/sounds/water.mp3', import.meta.url).href;
 const grassStepSound = new URL('../assets/sounds/grass.mp3', import.meta.url).href;
+const plantSound = new URL('../assets/sounds/plant.mp3', import.meta.url).href;
 const woodStepSound = new URL('../assets/sounds/sturdy.mp3', import.meta.url).href;
 const descendSound = new URL('../assets/pixel-dungeon/audio/descend.mp3', import.meta.url).href;
 const fallingSound = new URL('../assets/pixel-dungeon/audio/falling.mp3', import.meta.url).href;
@@ -51,6 +52,7 @@ const tombSound = new URL('../assets/sounds/tomb.mp3', import.meta.url).href;
 const chainsSound = new URL('../assets/sounds/chains.mp3', import.meta.url).href;
 const cursedSound = new URL('../assets/sounds/cursed.mp3', import.meta.url).href;
 import { effectiveSfxVolume, subscribe } from '../menu/menuSettings';
+import { isGrassTile } from '../constants';
 
 // Per-sound minimum replay interval, enforced manager-side so a single game
 // moment (e.g. a fire blob igniting N entities at once) can never stack plays.
@@ -84,6 +86,7 @@ class AudioManager {
         this.loadSound('STEP', stepSound);
         this.loadSound('STEP_WATER', waterStepSound);
         this.loadSound('STEP_GRASS', grassStepSound);
+        this.loadSound('PLANT', plantSound);
         this.loadSound('STEP_WOOD', woodStepSound);
         this.loadSound('HIT_ARROW', hitArrowSound);
         this.loadSound('HIT_SLASH', hitSlashSound);
@@ -256,7 +259,7 @@ class AudioManager {
         const rate = 0.9 + Math.random() * 0.2;
         let key = 'STEP';
         if (tileType === 7) key = 'STEP_WATER';
-        else if (tileType === 9) key = 'STEP_GRASS';
+        else if (isGrassTile(tileType)) key = 'STEP_GRASS';
         else if (tileType === 6) key = 'STEP_WOOD';
         if (this.loadedSounds[key]) {
             this.playSoundBuffer(this.loadedSounds[key], rate);

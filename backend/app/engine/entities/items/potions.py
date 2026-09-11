@@ -18,6 +18,7 @@ from app.engine.entities.base import *  # noqa: F401,F403
 class Potion(ItemBase):
     kind: Literal["potion"] = "potion"
     type: str = "potion"
+    throw_behavior: str = "potion"
     category: ClassVar[str] = ItemCategory.POTION
     stackable: ClassVar[bool] = True
     effect: str = ""

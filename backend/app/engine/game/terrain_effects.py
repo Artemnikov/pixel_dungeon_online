@@ -2,11 +2,12 @@
 #
 import random
 import uuid
-from typing import List, Optional, Tuple
+from typing import Dict, Iterable, List, Optional, Tuple
 
 from app.engine.dungeon.constants import TileType
 from app.engine.entities.base import Position, Entity
-from app.engine.entities.items.consumables import Berry, Dewdrop, Seed
+from app.engine.entities.buffs import break_stationary_plant_buffs
+from app.engine.entities.items.consumables import Berry, Dewdrop, FrozenCarpaccio, MysteryMeat, Seed
 from app.engine.entities.player import Player
 from app.engine.game.floor_state import FloorState
 from app.engine.game.terrain_primitives import GRASS_TILES, plant_grass, _plant_seed_at, _create_gas
@@ -14,22 +15,20 @@ from app.engine.game.terrain_primitives import GRASS_TILES, plant_grass, _plant_
 
 def _drop_seed(floor: FloorState, pos: Tuple[int, int], plant_type: Optional[str] = None):
     if plant_type is None:
+        # SPD Generator.Category.SEED excludes Rotberry: it is a unique quest
+        # seed and can never be dropped from trampling regular high grass.
         plant_type = random.choice([
             "sungrass", "earthroot", "firebloom", "icecap",
-            "sorrowmoss", "dreamfoil", "fadeleaf", "rotberry",
+            "sorrowmoss", "fadeleaf",
             "starflower", "stormvine", "blindweed", "swiftthistle",
             "mageroyal",
         ])
     if plant_type == "dreamfoil":
         plant_type = "mageroyal"
 
-    seed_name = plant_type.capitalize() + " Seed"
-    if plant_type == "mageroyal":
-        seed_name = "Mageroyal Seed"
-
     seed = Seed(
         id=str(uuid.uuid4()),
-        name=seed_name,
+        name=plant_type.capitalize() + " Seed",
         pos=Position(x=pos[0], y=pos[1]),
         plant_type=plant_type,
     )
@@ -144,9 +143,10 @@ def roll_grass_loot(floor: FloorState, trampler: Entity) -> list:
     return drops
 
 
-def press_cell(floor: FloorState, pos: Tuple[int, int], trampler: Entity) -> dict:
+def press_cell(floor: FloorState, pos: Tuple[int, int], trampler: Optional[Entity] = None, players: Optional[Iterable[Entity]] = None) -> dict:
     result = {
         "tile_changed": False,
+        "grass_trampled": False,
         "drops": [],
         "triggered_plant": None,
     }
@@ -158,6 +158,7 @@ def press_cell(floor: FloorState, pos: Tuple[int, int], trampler: Entity) -> dic
     # furrows high grass instead of flattening it, and furrowed grass survives
     # her steps. Everyone else tramples both down to short grass.
     if tile in (TileType.HIGH_GRASS, TileType.FURROWED_GRASS):
+        result["grass_trampled"] = True
         is_huntress = isinstance(trampler, Player) and trampler.class_type == "huntress"
 
         if tile == TileType.FURROWED_GRASS:
@@ -176,12 +177,10 @@ def press_cell(floor: FloorState, pos: Tuple[int, int], trampler: Entity) -> dic
 
         # Loot and the Camouflage glyph only trigger on HIGH_GRASS (SPD rolls
         # them in the non-furrowed branch, even when the huntress furrows).
-        if tile == TileType.HIGH_GRASS:
+        if tile == TileType.HIGH_GRASS and trampler is not None:
             result["drops"] = roll_grass_loot(floor, trampler)
             _trigger_camouflage(trampler)
-
-        # Rejuvenating Steps check
-        _trigger_rejuvenating_steps(floor, pos, trampler)
+            _trigger_rejuvenating_steps(floor, pos, trampler)
 
     # --- Trigger plant at this cell -----------------------------------------
     # Plant values are runtime dicts ({"pos","plant_type","triggered"}); guard
@@ -191,7 +190,16 @@ def press_cell(floor: FloorState, pos: Tuple[int, int], trampler: Entity) -> dic
         plant["triggered"] = True
         result["triggered_plant"] = plant
         plant_type = plant.get("plant_type", "sungrass")
-        _trigger_plant_effect(floor, pos, plant, trampler)
+        if trampler is not None:
+            _trigger_plant_effect(floor, pos, plant, trampler, players=players)
+        else:
+            if plant_type in ("firebloom", "icecap", "sorrowmoss", "blindweed", "stormvine", "rotberry", "blandfruit_bush", "seedpod", "dewcatcher"):
+                dummy = type("_PlantDummy", (Entity,), {
+                    "pos": Position(x=pos[0], y=pos[1]), "buffs": [], "id": "",
+                    "take_damage": lambda self, d: 0, "has_buff": lambda self, b: False,
+                    "add_buff": lambda self, *a, **kw: None, "get_total_max_hp": lambda self: 1, "hp": 1,
+                })()
+                _trigger_plant_effect(floor, pos, plant, dummy, players=players)
 
         # Uproot/wither plant
         if pos in floor.plants:
@@ -250,117 +258,175 @@ def _trigger_rejuvenating_steps(floor: FloorState, pos: Tuple[int, int], trample
         trampler.add_buff("rejuvenating_steps_cooldown", duration=cooldown)
 
 
-def _trigger_plant_effect(floor: FloorState, pos: Tuple[int, int], plant: dict, activator: Entity):
-    plant_type = plant.get("plant_type", "sungrass")
-    if plant_type == "dreamfoil":
-        plant_type = "mageroyal"
+class PlantEffect:
+    """Base strategy for plant activation effects."""
+    def activate(self, floor: FloorState, pos: Tuple[int, int], plant: dict, activator: Entity, **kwargs) -> None:
+        pass
 
-    is_warden = _is_warden(activator)
 
-    # Nature's Aid: Warden gets Barkskin on plant trigger
-    if is_warden:
-        talent_info = getattr(activator, "talent_info", None)
-        if talent_info and talent_info.talents.get("natures_aid", 0) > 0:
-            pts = talent_info.talents.get("natures_aid", 0)
-            duration = (1 + 2 * pts) * 1.0  # 3 or 5 turns
-            activator.add_buff("barkskin", duration=duration, level=2)
+class SungrassPlantEffect(PlantEffect):
+    def activate(self, floor: FloorState, pos: Tuple[int, int], plant: dict, activator: Entity, **kwargs) -> None:
+        is_warden = _is_warden(activator)
+        ht = activator.get_total_max_hp() if isinstance(activator, Player) else getattr(activator, "max_hp", getattr(activator, "HT", 20))
+        activator.add_buff(
+            "sungrass_health",
+            duration=999999.0,
+            level=ht,
+            source_id=None if is_warden else f"{pos[0]},{pos[1]}",
+        )
 
-    # If activated by mob, tag mob with hazard assist tracker
-    if not isinstance(activator, Player) and plant_type not in ("blandfruit_bush", "seedpod", "dewcatcher"):
-        activator.add_buff("hazard_assist_tracker", duration=10.0, level=1)
 
-    if plant_type == "sungrass":
-        if is_warden:
-            ht = getattr(activator, "max_hp", getattr(activator, "HT", 20))
-            if isinstance(activator, Player):
-                ht = activator.get_total_max_hp()
-                activator.hp = ht
-            else:
-                activator.hp = ht
-        else:
-            ht = getattr(activator, "max_hp", getattr(activator, "HT", 20))
-            if isinstance(activator, Player):
-                ht = activator.get_total_max_hp()
-            activator.add_buff("sungrass_health", duration=100.0, level=ht)
-
-    elif plant_type == "earthroot":
+class EarthrootPlantEffect(PlantEffect):
+    def activate(self, floor: FloorState, pos: Tuple[int, int], plant: dict, activator: Entity, **kwargs) -> None:
+        is_warden = _is_warden(activator)
         if is_warden:
             lvl = getattr(activator, "level", getattr(activator, "lvl", 1))
             activator.add_buff("barkskin", duration=5.0, level=lvl + 5)
         else:
             ht = getattr(activator, "HT", getattr(activator, "max_hp", 20))
-            activator.add_buff("earthroot_armor", duration=100.0, level=ht)
+            activator.add_buff(
+                "earthroot_armor",
+                duration=100.0,
+                level=ht,
+                source_id=f"{pos[0]},{pos[1]}",
+            )
 
-    elif plant_type == "firebloom":
-        if is_warden:
+
+class FirebloomPlantEffect(PlantEffect):
+    def activate(self, floor: FloorState, pos: Tuple[int, int], plant: dict, activator: Entity, **kwargs) -> None:
+        if _is_warden(activator):
             activator.add_buff("fire_imbue", duration=4.5)
         else:
             _explode_fire(floor, pos)
 
-    elif plant_type == "icecap":
-        if is_warden:
-            activator.add_buff("frost_imbue", duration=4.5)
-        else:
-            _freeze_area(floor, pos)
 
-    elif plant_type == "sorrowmoss":
-        if is_warden:
+class IcecapPlantEffect(PlantEffect):
+    def activate(self, floor: FloorState, pos: Tuple[int, int], plant: dict, activator: Entity, **kwargs) -> None:
+        if _is_warden(activator):
+            activator.add_buff("frost_imbue", duration=4.5)
+        _freeze_area(floor, pos, activator, players=kwargs.get("players"))
+
+
+class SorrowmossPlantEffect(PlantEffect):
+    def activate(self, floor: FloorState, pos: Tuple[int, int], plant: dict, activator: Entity, **kwargs) -> None:
+        if _is_warden(activator):
             activator.add_buff("toxic_imbue", duration=4.5)
         else:
             depth = getattr(floor, "floor_id", 1)
             duration = 5.0 + round(2.0 * depth / 3.0)
             activator.add_buff("poison", duration=duration, level=1)
 
-    elif plant_type in ("mageroyal", "dreamfoil"):
-        if is_warden:
+
+class MageroyalPlantEffect(PlantEffect):
+    def activate(self, floor: FloorState, pos: Tuple[int, int], plant: dict, activator: Entity, **kwargs) -> None:
+        if _is_warden(activator):
             activator.add_buff("blob_immunity", duration=5.0)
         _cure_debuffs(activator)
 
-    elif plant_type == "fadeleaf":
-        if is_warden and getattr(floor, "floor_id", 1) > 1:
-            # Warden returns up 1 depth if possible
-            _teleport_activator(floor, activator)
+
+class FadeleafPlantEffect(PlantEffect):
+    def activate(self, floor: FloorState, pos: Tuple[int, int], plant: dict, activator: Entity, **kwargs) -> None:
+        if _is_warden(activator) and getattr(floor, "floor_id", 1) > 1:
+            # SPD Fadeleaf warden path: the Warden returns up one depth.
+            # The actual floor transition happens in movement.py after the
+            # step resolves (player.pending_ascend flag).
+            activator.pending_ascend = True
         else:
             _teleport_activator(floor, activator)
 
-    elif plant_type == "swiftthistle":
-        if is_warden:
+
+class SwiftthistlePlantEffect(PlantEffect):
+    def activate(self, floor: FloorState, pos: Tuple[int, int], plant: dict, activator: Entity, **kwargs) -> None:
+        if _is_warden(activator):
             activator.add_buff("haste", duration=6.0, level=1)
         activator.add_buff("time_bubble", duration=6.0, level=1)
 
-    elif plant_type == "blindweed":
-        if is_warden:
+
+class BlindweedPlantEffect(PlantEffect):
+    def activate(self, floor: FloorState, pos: Tuple[int, int], plant: dict, activator: Entity, **kwargs) -> None:
+        if _is_warden(activator):
             activator.add_buff("invisibility", duration=10.0, level=1)
         else:
             activator.add_buff("blindness", duration=10.0, level=1)
             activator.add_buff("cripple", duration=10.0, level=1)
 
-    elif plant_type == "stormvine":
-        if is_warden:
+
+class StormvinePlantEffect(PlantEffect):
+    def activate(self, floor: FloorState, pos: Tuple[int, int], plant: dict, activator: Entity, **kwargs) -> None:
+        if _is_warden(activator):
             activator.add_buff("levitation", duration=10.0, level=1)
         else:
             activator.add_buff("vertigo", duration=10.0, level=1)
 
-    elif plant_type == "starflower":
+
+class StarflowerPlantEffect(PlantEffect):
+    def activate(self, floor: FloorState, pos: Tuple[int, int], plant: dict, activator: Entity, **kwargs) -> None:
         activator.add_buff("bless", duration=20.0, level=1)
-        if is_warden:
+        if _is_warden(activator):
             activator.add_buff("recharging", duration=20.0, level=1)
 
-    elif plant_type == "rotberry":
-        if is_warden:
+
+class RotberryPlantEffect(PlantEffect):
+    def activate(self, floor: FloorState, pos: Tuple[int, int], plant: dict, activator: Entity, **kwargs) -> None:
+        if _is_warden(activator):
             activator.add_buff("adrenaline_surge", duration=30.0, level=1)
         else:
             _create_gas(floor, pos, 100, "toxic_gas")
         _drop_seed(floor, pos, "rotberry")
 
-    elif plant_type == "blandfruit_bush":
+
+class BlandfruitBushPlantEffect(PlantEffect):
+    def activate(self, floor: FloorState, pos: Tuple[int, int], plant: dict, activator: Entity, **kwargs) -> None:
         _drop_blandfruit(floor, pos)
 
-    elif plant_type == "seedpod":
+
+class SeedpodPlantEffect(PlantEffect):
+    def activate(self, floor: FloorState, pos: Tuple[int, int], plant: dict, activator: Entity, **kwargs) -> None:
         _spawn_seedpod(floor, pos)
 
-    elif plant_type == "dewcatcher":
+
+class DewcatcherPlantEffect(PlantEffect):
+    def activate(self, floor: FloorState, pos: Tuple[int, int], plant: dict, activator: Entity, **kwargs) -> None:
         _spawn_dewcatcher(floor, pos)
+
+
+PLANT_REGISTRY: Dict[str, PlantEffect] = {
+    "sungrass": SungrassPlantEffect(),
+    "earthroot": EarthrootPlantEffect(),
+    "firebloom": FirebloomPlantEffect(),
+    "icecap": IcecapPlantEffect(),
+    "sorrowmoss": SorrowmossPlantEffect(),
+    "mageroyal": MageroyalPlantEffect(),
+    "dreamfoil": MageroyalPlantEffect(),
+    "fadeleaf": FadeleafPlantEffect(),
+    "swiftthistle": SwiftthistlePlantEffect(),
+    "blindweed": BlindweedPlantEffect(),
+    "stormvine": StormvinePlantEffect(),
+    "starflower": StarflowerPlantEffect(),
+    "rotberry": RotberryPlantEffect(),
+    "blandfruit_bush": BlandfruitBushPlantEffect(),
+    "seedpod": SeedpodPlantEffect(),
+    "dewcatcher": DewcatcherPlantEffect(),
+}
+
+
+def _trigger_plant_effect(floor: FloorState, pos: Tuple[int, int], plant: dict, activator: Entity, **kwargs):
+    plant_type = plant.get("plant_type", "sungrass")
+    is_warden = _is_warden(activator)
+
+    if is_warden:
+        talent_info = getattr(activator, "talent_info", None)
+        if talent_info and talent_info.talents.get("natures_aid", 0) > 0:
+            pts = talent_info.talents.get("natures_aid", 0)
+            duration = (1 + 2 * pts) * 1.0
+            activator.add_buff("barkskin", duration=duration, level=2)
+
+    if not isinstance(activator, Player) and plant_type not in ("blandfruit_bush", "seedpod", "dewcatcher"):
+        activator.add_buff("hazard_assist_tracker", duration=10.0, level=1)
+
+    effect = PLANT_REGISTRY.get(plant_type)
+    if effect is not None:
+        effect.activate(floor, pos, plant, activator, **kwargs)
 
 
 def _drop_blandfruit(floor: FloorState, pos: Tuple[int, int]):
@@ -410,11 +476,6 @@ def _spawn_dewcatcher(floor: FloorState, pos: Tuple[int, int]):
         _drop_dewdrop(floor, candidates.pop())
 
 
-def _heal_activator(entity: Entity, duration: float):
-    if isinstance(entity, Player):
-        entity.set_heal(10.0, 0.1, 1.0)
-
-
 def _explode_fire(floor: FloorState, pos: Tuple[int, int]):
     blob_id = f"firebloom_{pos[0]}_{pos[1]}"
     cells = set()
@@ -432,20 +493,77 @@ def _explode_fire(floor: FloorState, pos: Tuple[int, int]):
         floor.blob_areas[blob_id] = {"type": "fire", "cells": cells, "volume": volume}
 
 
-def _freeze_area(floor: FloorState, pos: Tuple[int, int]):
+def _freeze_area(floor: FloorState, pos: Tuple[int, int], activator: Optional[Entity] = None, players: Optional[Iterable[Entity]] = None):
+    """Icecap: SPD Freezing blob cellEffect over the plant's 3x3 non-solid area."""
+    cells: set = set()
     for dy in (-1, 0, 1):
         for dx in (-1, 0, 1):
             nx, ny = pos[0] + dx, pos[1] + dy
             if 0 <= nx < floor.width and 0 <= ny < floor.height:
+                if floor.flags and floor.flags.solid[ny][nx]:
+                    continue
+                cells.add((nx, ny))
                 tile = floor.grid[ny][nx]
-                if tile == TileType.FLOOR_GRASS or tile == TileType.HIGH_GRASS or tile == TileType.FURROWED_GRASS:
+                if tile in (TileType.FLOOR_GRASS, TileType.HIGH_GRASS, TileType.FURROWED_GRASS):
                     floor.grid[ny][nx] = TileType.FLOOR
+
+    def _freeze_duration(ex: int, ey: int) -> float:
+        if 0 <= ey < floor.height and 0 <= ex < floor.width:
+            if floor.grid[ey][ex] == TileType.FLOOR_WATER:
+                return 30.0
+        return 10.0
+
+    seen_keys: set = set()
+    targets = []
+    for m in getattr(floor, "mobs", {}).values():
+        if m.is_alive and (m.pos.x, m.pos.y) in cells:
+            key = getattr(m, "id", None) or id(m)
+            if key not in seen_keys:
+                seen_keys.add(key)
+                targets.append(m)
+    if activator is not None and getattr(activator, "is_alive", True) and (activator.pos.x, activator.pos.y) in cells:
+        key = getattr(activator, "id", None) or id(activator)
+        if key not in seen_keys:
+            seen_keys.add(key)
+            targets.append(activator)
+    if players is not None:
+        for p in players:
+            if getattr(p, "is_alive", True) and (p.pos.x, p.pos.y) in cells:
+                key = getattr(p, "id", None) or id(p)
+                if key not in seen_keys:
+                    seen_keys.add(key)
+                    targets.append(p)
+
+    for entity in targets:
+        dur = _freeze_duration(entity.pos.x, entity.pos.y)
+        entity.add_buff("frost", duration=dur, level=1)
+        if not isinstance(entity, Player):
+            entity.add_buff("hazard_assist_tracker", duration=10.0, level=1)
+
+    for bid in list(floor.blob_areas.keys()):
+        b = floor.blob_areas[bid]
+        if b.get("type") == "fire":
+            b["cells"] = set(b["cells"]) - cells
+            for c in list(b.get("volume", {})):
+                if c in cells:
+                    del b["volume"][c]
+            if not b["cells"]:
+                del floor.blob_areas[bid]
+
+    for item_id, item in list(floor.items.items()):
+        if isinstance(item, MysteryMeat) and (item.pos.x, item.pos.y) in cells:
+            floor.items[item_id] = FrozenCarpaccio(
+                id=item.id,
+                name="Frozen Carpaccio",
+                pos=Position(x=item.pos.x, y=item.pos.y),
+                quantity=getattr(item, "quantity", 1),
+            )
+
     floor.rebuild_flags()
 
 
 def _cure_debuffs(entity: Entity):
-    for debuff in ("poison", "blindness", "bleeding", "weakness", "slow", "cripple", "burning", "chill", "frost"):
-        entity.remove_buff(debuff)
+    entity.cleanse(("poison", "blindness", "bleeding", "weakness", "slow", "cripple", "burning", "chill", "frost"))
 
 
 def _teleport_activator(floor: FloorState, entity: Entity):
@@ -458,3 +576,4 @@ def _teleport_activator(floor: FloorState, entity: Entity):
         tx, ty = random.choice(candidates)
         entity.pos.x = tx
         entity.pos.y = ty
+        break_stationary_plant_buffs(entity)

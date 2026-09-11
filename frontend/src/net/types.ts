@@ -6,6 +6,7 @@ import type {
   GameEvent,
   SerializedItem,
   TrapInfo,
+  PlantInfo,
   CustomTileLayer,
   AlchemyPreviewResultEvent,
   AlchemyBrewedEvent,
@@ -14,7 +15,7 @@ import type {
   ToolkitEnergizePromptEvent,
 } from '../types/contract';
 
-export type { Player, Mob, Difficulty, GameEvent, SerializedItem, TrapInfo, CustomTileLayer };
+export type { Player, Mob, Difficulty, GameEvent, SerializedItem, TrapInfo, PlantInfo, CustomTileLayer };
 
 export interface RenderVec {
   x: number;
@@ -77,9 +78,15 @@ export interface Projectile {
   progress: number;
   rotation: number;
   finished: boolean;
+  onComplete?: () => void;
 }
 
 export interface RenderTrap extends TrapInfo {
+  renderPos?: RenderVec;
+  revealStartTime?: number | null;
+}
+
+export interface RenderPlant extends PlantInfo {
   renderPos?: RenderVec;
   revealStartTime?: number | null;
 }
@@ -89,6 +96,7 @@ export interface EntitiesState {
   mobs: Record<string, RenderMob>;
   items: SerializedItem[];
   traps: RenderTrap[];
+  plants: RenderPlant[];
 }
 
 /** The local flow a bumped entity should trigger when the player walks into it.

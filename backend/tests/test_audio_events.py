@@ -12,8 +12,9 @@ from app.engine.entities.items.equip import Bow
 from app.engine.entities.player import Mob
 
 def test_audio_events():
+    import uuid
     print("Setting up GameInstance...")
-    game = GameInstance("test_game")
+    game = GameInstance(f"test_game_{uuid.uuid4()}")
     
     # Create Player
     player = game.add_player("player-1", "Hero", CharacterClass.WARRIOR)
@@ -21,14 +22,16 @@ def test_audio_events():
     
     # Create Monster
     # Find a floor tile to spawn
+    from app.engine.dungeon.constants import TileType
     spawn_pos = None
     for y in range(game.height):
-        for x in range(game.width):
-            if game.grid[y][x] == 2: # Floor
+        for x in range(game.width - 1):
+            if game.grid[y][x] in (TileType.FLOOR, TileType.FLOOR_GRASS) and game.grid[y][x + 1] in (TileType.FLOOR, TileType.FLOOR_GRASS):
                 spawn_pos = Position(x=x, y=y)
                 break
         if spawn_pos: break
-        
+
+    assert spawn_pos is not None
     player.pos = spawn_pos
     
     # Spawn monster next to player
@@ -142,6 +145,7 @@ def test_audio_events():
     print("\n--- Testing Mimic Interaction Activation Sound ---")
     from app.engine.entities.items.union import Chest
     from app.engine.entities.mobs import Mimic
+    player.last_attack_time = 0.0
     player.action_until = 0.0
     floor = game._get_or_create_floor(player.floor_id)
     floor.mobs.clear()

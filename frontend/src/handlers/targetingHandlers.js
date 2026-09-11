@@ -6,6 +6,7 @@ export function useTargetingHandlers({ send, entitiesRef, myPlayerIdRef, visionR
   const handleToolbarDoubleClick = useCallback((item) => {
     if (!item) return;
     const isTargeted = item.type === 'wand'
+      || item.is_throwable
       || item.type === 'throwable'
       || (item.type === 'weapon' && item.range && item.range > 1)
       || item.kind === 'staff';

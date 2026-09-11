@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import uuid as _uuid
 import random as _random
-from typing import Any, Annotated, ClassVar, Literal, Optional, List, Dict, Tuple, Union
+from typing import Any, Annotated, Callable, ClassVar, Iterable, Literal, Optional, List, Dict, Tuple, Union
 
 from pydantic import BaseModel, Field, computed_field, model_validator, SerializeAsAny
 
@@ -16,7 +16,7 @@ class EntityType:
     MOB = "mob"
     BOSS = "boss"
     ITEM = "item"
-    POTION = "potion"
+
 
 class Faction:
     PLAYER = "player"
@@ -63,20 +63,58 @@ def is_immune(entity, effect: str) -> bool:
     return effect in getattr(entity, "immunities", [])
 
 
+def _detach_invis(entity: Entity) -> None:
+    entity.invisible = max(0, entity.invisible - 1)
+
+
+def _detach_bleed(entity: Entity) -> None:
+    entity.bleed_amount = 0
+    entity.bleed_turns = 0
+
+
+def _detach_ooze(entity: Entity) -> None:
+    entity.ooze_amount = 0
+    entity.ooze_cooldown = 0
+
+
+def _detach_poison(entity: Entity) -> None:
+    entity.poison_accum = 0.0
+
+
+def _detach_burning(entity: Entity) -> None:
+    entity.burning_accum = 0.0
+    entity.burning_total_seconds = 0.0
+
+
+_BUFF_ATTACH_HANDLERS: Dict[str, Callable[[Entity], None]] = {
+    "invisibility": lambda e: setattr(e, "invisible", e.invisible + 1),
+    "shadows": lambda e: setattr(e, "invisible", e.invisible + 1),
+}
+
+_BUFF_DETACH_HANDLERS: Dict[str, Callable[[Entity], None]] = {
+    "invisibility": _detach_invis,
+    "shadows": _detach_invis,
+    "bleeding": _detach_bleed,
+    "ooze": _detach_ooze,
+    "poison": _detach_poison,
+    "burning": _detach_burning,
+}
+
+
 class Entity(BaseModel):
-    id: str
-    type: str
-    name: str
-    pos: Position
-    hp: int
-    max_hp: int
+    id: str = Field(default_factory=lambda: str(_uuid.uuid4()))
+    type: str = EntityType.PLAYER
+    name: str = "Entity"
+    pos: Position = Field(default_factory=lambda: Position(x=0, y=0))
+    hp: int = 20
+    max_hp: int = 20
     attack: int = 0
     defense: int = 0
     speed: float = 1.0
     is_alive: bool = True
-    faction: str
-    last_attack_time: float = 0.0
-    attack_cooldown: float = 1.0
+    faction: str = Faction.PLAYER
+    floor_id: int = 1
+    properties: List[str] = Field(default_factory=list)
 
     # Vision range in tiles (SPD Char.viewDistance = 8). Single field that future
     # Light/Blindness/Farsight-style buffs adjust; 0 means effectively sightless.
@@ -123,6 +161,10 @@ class Entity(BaseModel):
     # Stealth / invisibility
     invisible: int = 0
 
+    # Attack timings / cooldowns
+    last_attack_time: float = 0.0
+    attack_cooldown: float = 1.0
+
     # Generic buff system
     buffs: List[Buff] = Field(default_factory=list)
 
@@ -131,17 +173,27 @@ class Entity(BaseModel):
             value = int(value)
         super().__setattr__(name, value)
 
-    def add_buff(self, buff_type: str, duration: float, level: int = 0, source_id: str = None, stack_mode: str = "replace") -> Buff:
+    def add_buff(self, buff_type: str, duration: float, level: int = 0, source_id: Optional[str] = None, stack_mode: str = "replace") -> Optional[Buff]:
+        had_buff = self.has_buff(buff_type)
         result = add_buff(self.buffs, buff_type, duration, level, source_id, stack_mode)
-        if buff_type == "invisibility" or buff_type == "shadows":
-            self.invisible += 1
+        if result is not None and not had_buff:
+            handler = _BUFF_ATTACH_HANDLERS.get(buff_type)
+            if handler is not None:
+                handler(self)
         return result
 
     def remove_buff(self, buff_type: str) -> Optional[Buff]:
         result = remove_buff(self.buffs, buff_type)
-        if result and (result.type == "invisibility" or result.type == "shadows"):
-            self.invisible = max(0, self.invisible - 1)
+        if result is not None:
+            handler = _BUFF_DETACH_HANDLERS.get(result.type)
+            if handler is not None:
+                handler(self)
         return result
+
+    def cleanse(self, debuff_types: Iterable[str]) -> None:
+        """Cleanse requested debuffs, automatically executing their detach handlers."""
+        for debuff in debuff_types:
+            self.remove_buff(debuff)
 
     def has_buff(self, buff_type: str) -> bool:
         return has_buff(self.buffs, buff_type)
@@ -300,6 +352,7 @@ CATEGORY_ORDER = [
 class Action:
     DROP = "DROP"
     THROW = "THROW"
+    PLANT = "PLANT"
     USE = "USE"
     EQUIP = "EQUIP"
     UNEQUIP = "UNEQUIP"
@@ -350,9 +403,6 @@ def _new_id() -> str:
 
 
 class ItemBase(BaseModel):
-    # `kind` is the polymorphic discriminator (overridden as a Literal in each
-    # concrete leaf). `type` is the legacy front-end category string kept for
-    # backward-compat until the SPD-style UI lands.
     kind: Literal["item"] = "item"
     id: str = ""
     name: str
@@ -366,6 +416,8 @@ class ItemBase(BaseModel):
     cursed_known: bool = False
     unique: bool = False
     kept_though_lost: bool = False
+    is_throwable: bool = False
+    throw_behavior: str = "regular"
     # Sitting on a Shopkeeper's stock pile (SPD's Heap.Type.FOR_SALE) — not
     # auto-picked-up by walking over it; bought via SHOP_BUY instead.
     for_sale: bool = False

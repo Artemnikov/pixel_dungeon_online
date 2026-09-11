@@ -50,7 +50,7 @@ export default function useGameHooks(state) {
   // --- shared refs ---
   const socketRef = useRef(null);
   const gridRef = useRef([]);
-  const entitiesRef = useRef({ players: {}, mobs: {}, items: [], traps: [] });
+  const entitiesRef = useRef({ players: {}, mobs: {}, items: [], traps: [], plants: [] });
   const myPlayerIdRef = useRef(null);
   const projectilesRef = useRef([]);
   const visionRef = useRef({ visible: new Set(), discovered: new Set() });

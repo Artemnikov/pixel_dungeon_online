@@ -6,6 +6,7 @@ import type {
   DyingMob,
   SerializedItem,
   RenderTrap,
+  RenderPlant,
 } from '../types';
 import * as movementPredictor from '../movementPredictor';
 
@@ -93,6 +94,14 @@ export class EntityManager {
 
   public setTraps(traps: RenderTrap[]): void {
     this.refs.entitiesRef.current.traps = traps;
+  }
+
+  public getPlants(): RenderPlant[] {
+    return this.refs.entitiesRef.current.plants || [];
+  }
+
+  public setPlants(plants: RenderPlant[]): void {
+    this.refs.entitiesRef.current.plants = plants;
   }
 
   public getDyingMobs(): Record<string, DyingMob> {

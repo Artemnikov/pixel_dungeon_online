@@ -58,6 +58,31 @@ test('grass center uses center tiles when surrounded by grass', () => {
   }
 });
 
+test('isolated grass on depth <= 15 uses GRASS_EDGE corner tiles', () => {
+  const grid = gridOfIds(BACKEND_TILE.FLOOR.id, 5, 5);
+  grid[2][2] = BACKEND_TILE.FLOOR_GRASS.id;
+  const instructions = getSewerTerrainInstructions(grid, 2, 2, BACKEND_TILE.FLOOR_GRASS.id, new Set(), 1);
+  const quadrants = instructions.filter((item) => item.quadrant !== QUADRANT.FULL);
+
+  assert.equal(quadrants.length, 4);
+  const edgeValues = Object.values(TERRAIN_INDEX.GRASS_EDGE);
+  for (const inst of quadrants) {
+    assert.ok(edgeValues.includes(inst.srcIndex));
+  }
+});
+
+test('isolated grass on depth > 15 (City/Halls) uses safe center tiles to avoid legacy edge slot artifacts', () => {
+  const grid = gridOfIds(BACKEND_TILE.FLOOR.id, 5, 5);
+  grid[2][2] = BACKEND_TILE.FLOOR_GRASS.id;
+  const instructions = getSewerTerrainInstructions(grid, 2, 2, BACKEND_TILE.FLOOR_GRASS.id, new Set(), 16);
+  const quadrants = instructions.filter((item) => item.quadrant !== QUADRANT.FULL);
+
+  assert.equal(quadrants.length, 4);
+  for (const inst of quadrants) {
+    assert.ok(TERRAIN_INDEX.GRASS_CENTER.includes(inst.srcIndex));
+  }
+});
+
 test('top-facing door (walls L+R, floor above) renders the regular door sprite', () => {
   const grid = gridOfIds(BACKEND_TILE.FLOOR.id);
   grid[1][0] = BACKEND_TILE.WALL.id;
@@ -102,19 +127,44 @@ test('open side door still renders RAISED_DOOR_SIDEWAYS body (open state shown v
   assert.equal(instructions[0].srcIndex, WALL_INDEX.RAISED_DOOR_SIDEWAYS);
 });
 
-test('HIGH_GRASS renders floor base + grass quadrants using HIGH_GRASS_CENTER', () => {
+test('HIGH_GRASS renders floor base, grass quadrants using HIGH_GRASS_CENTER, and underhang', () => {
   const grid = gridOfIds(BACKEND_TILE.HIGH_GRASS.id, 5, 5);
   const instructions = getSewerTerrainInstructions(grid, 2, 2, BACKEND_TILE.HIGH_GRASS.id);
 
   const full = instructions.filter((i) => i.quadrant === QUADRANT.FULL);
   const quadrants = instructions.filter((i) => i.quadrant !== QUADRANT.FULL);
 
-  assert.equal(full.length, 1, 'one floor base full-quadrant');
+  assert.equal(full.length, 2, 'floor base and raised grass underhang');
+  assert.ok(
+    full.some((i) => i.srcIndex === WALL_INDEX.HIGH_GRASS_UNDERHANG || i.srcIndex === WALL_INDEX.HIGH_GRASS_UNDERHANG_ALT),
+    'includes high grass underhang'
+  );
   assert.equal(quadrants.length, 4, 'four terrain quadrants');
   for (const q of quadrants) {
     assert.ok(
       TERRAIN_INDEX.HIGH_GRASS_CENTER.includes(q.srcIndex),
       `HIGH_GRASS surrounded by HIGH_GRASS should use HIGH_GRASS_CENTER sprite, got ${q.srcIndex}`
+    );
+  }
+});
+
+test('FURROWED_GRASS renders floor base, grass quadrants using FURROWED_GRASS_CENTER, and underhang', () => {
+  const grid = gridOfIds(BACKEND_TILE.FURROWED_GRASS.id, 5, 5);
+  const instructions = getSewerTerrainInstructions(grid, 2, 2, BACKEND_TILE.FURROWED_GRASS.id);
+
+  const full = instructions.filter((i) => i.quadrant === QUADRANT.FULL);
+  const quadrants = instructions.filter((i) => i.quadrant !== QUADRANT.FULL);
+
+  assert.equal(full.length, 2, 'floor base and furrowed grass underhang');
+  assert.ok(
+    full.some((i) => i.srcIndex === WALL_INDEX.FURROWED_UNDERHANG || i.srcIndex === WALL_INDEX.FURROWED_UNDERHANG_ALT),
+    'includes furrowed grass underhang'
+  );
+  assert.equal(quadrants.length, 4, 'four terrain quadrants');
+  for (const q of quadrants) {
+    assert.ok(
+      TERRAIN_INDEX.FURROWED_GRASS_CENTER.includes(q.srcIndex),
+      `FURROWED_GRASS surrounded by FURROWED_GRASS should use FURROWED_GRASS_CENTER sprite, got ${q.srcIndex}`
     );
   }
 });
