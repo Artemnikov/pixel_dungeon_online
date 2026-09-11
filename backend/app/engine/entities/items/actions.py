@@ -15,11 +15,14 @@ Scroll-specific handlers live in scroll_actions.py.
 import math
 import random
 import time
-from typing import Callable, Dict
+from typing import Callable, Dict, Optional
 
 from app.engine.dungeon.constants import TileType
 from app.engine.game.terrain_primitives import _create_fire_blob, _create_gas, _plant_seed_at
+from app.engine.game.terrain_effects import press_cell, _trigger_plant_effect, _freeze_area
+from app.engine.systems.ballistica import ballistica_trace
 from app.engine.entities.base import Action, Position, consume_backpack_item as _consume_item
+from app.engine.entities.player import Player
 from app.engine.entities.runestones import Runestone
 from app.engine.entities.items.consumables import Seed, Waterskin
 from app.engine.entities.wands.wandmaker_quest_items import CeremonialCandle
@@ -44,8 +47,10 @@ from app.engine.entities.artifact_actions import (
 )
 
 
-def _floor_drop(game, player, item) -> None:
-    item.pos = Position(x=player.pos.x, y=player.pos.y)
+def _floor_drop(game, player, item, x: Optional[int] = None, y: Optional[int] = None) -> None:
+    drop_x = player.pos.x if x is None else x
+    drop_y = player.pos.y if y is None else y
+    item.pos = Position(x=drop_x, y=drop_y)
     floor = game._get_or_create_floor(player.floor_id)
     floor.items[item.id] = item
 
@@ -126,6 +131,7 @@ def action_drink_waterskin(game, player, item, tx=None, ty=None) -> None:
 # plus the five debuffs Purity leaves untouched (SPD PotionOfCleansing).
 _PURITY_DEBUFFS = ("poison", "blindness", "bleeding", "weakness", "slow", "burning", "cripple")
 _FULL_DEBUFF_CLEANSE = _PURITY_DEBUFFS + ("paralysis", "terror", "drowsy", "frost", "ooze")
+_HEALING_POTION_CLEANSE = ("poison", "bleeding", "cripple", "ooze")
 
 
 def action_drink(game, player, item, tx=None, ty=None) -> None:
@@ -139,6 +145,7 @@ def action_drink(game, player, item, tx=None, ty=None) -> None:
     game.identify_kind(item, player)  # drinking reveals the potion type
     effect = getattr(item, "effect", "")
     if effect == "regen":
+        player.cleanse(_HEALING_POTION_CLEANSE)
         amount = round(0.8 * player.get_total_max_hp() + 14)
         player.set_heal(amount, 0.25, 0)
         _consume_item(player, item)
@@ -210,8 +217,7 @@ def action_drink(game, player, item, tx=None, ty=None) -> None:
         game.add_event("PLAY_SOUND", {"sound": "SHATTER"}, floor_id=player.floor_id)
         game.add_event("DRINK", {"player": player.id, "type": "frost"}, floor_id=player.floor_id)
     elif effect == "purity":
-        for debuff in _PURITY_DEBUFFS:
-            player.remove_buff(debuff)
+        player.cleanse(_PURITY_DEBUFFS)
         _consume_item(player, item)
         game.add_event("DRINK", {"player": player.id, "type": "purity"}, floor_id=player.floor_id, source_player_id=player.id)
     elif effect == "experience":
@@ -227,8 +233,7 @@ def action_drink(game, player, item, tx=None, ty=None) -> None:
         game.add_event("DRINK", {"player": player.id, "type": "strength"}, floor_id=player.floor_id, source_player_id=player.id)
     # ── Exotic Potions ──────────────────────────────────────────────────────
     elif effect == "cleansing":
-        for debuff in _FULL_DEBUFF_CLEANSE:
-            player.remove_buff(debuff)
+        player.cleanse(_FULL_DEBUFF_CLEANSE)
         floor = game._get_or_create_floor(player.floor_id)
         cx, cy = player.pos.x, player.pos.y
         to_remove = [bid for bid, b in floor.blob_areas.items()
@@ -347,8 +352,7 @@ def action_drink(game, player, item, tx=None, ty=None) -> None:
     elif effect == "honeyed_healing":
         max_hp = player.get_total_max_hp()
         player.hp = max_hp
-        for debuff in _FULL_DEBUFF_CLEANSE:
-            player.remove_buff(debuff)
+        player.cleanse(_FULL_DEBUFF_CLEANSE)
         _consume_item(player, item)
         game.add_event("HEAL", {"target": player.id, "amount": max_hp}, floor_id=player.floor_id)
         game.add_event("DRINK", {"player": player.id, "type": "honeyed_healing"}, floor_id=player.floor_id, source_player_id=player.id)
@@ -379,7 +383,7 @@ def action_imbue(game, player, item, tx=None, ty=None) -> None:
         "player": player.id,
         "staff_id": item.id,
         "candidates": [w.id for w in wands],
-    }, floor_id=player.floor_id, source_player_id=player.id)
+    }, floor_id=player.floor_id, player_id=player.id)
 
 
 def action_affix(game, player, item, tx=None, ty=None) -> None:
@@ -398,40 +402,286 @@ def action_affix(game, player, item, tx=None, ty=None) -> None:
 
 
 
-def action_plant(game, player, item, tx=None, ty=None) -> None:
-    if tx is None or ty is None:
-        return
+def _drop_item_down_chasm(game, player, item, x: int, y: int) -> None:
+    game.add_event("DROP", {
+        "player": player.id,
+        "item": item.id,
+        "item_name": item.name,
+        "item_kind": item.kind,
+        "item_type": item.type,
+    }, floor_id=player.floor_id)
+    next_floor_id = player.floor_id + 1
+    if next_floor_id <= 25:
+        next_floor = game._get_or_create_floor(next_floor_id)
+        item.pos = Position(x=x, y=y)
+        next_floor.items[item.id] = item
+
+
+def _resolve_seed_placement(game, player, seed: Seed, x: int, y: int, play_sound: bool = True) -> None:
     floor = game._get_or_create_floor(player.floor_id)
-    if not (0 <= tx < floor.width and 0 <= ty < floor.height):
+    if not (0 <= x < floor.width and 0 <= y < floor.height):
         return
-    tile = floor.grid[ty][tx]
-    valid_terrains = [
-        TileType.FLOOR_GRASS, TileType.HIGH_GRASS, TileType.FURROWED_GRASS,
-        TileType.FLOOR, TileType.EMPTY_DECO,
-    ]
-    if tile not in valid_terrains:
-        return  # can't plant here
-    floor.grid[ty][tx] = TileType.FLOOR_GRASS
-    _plant_seed_at(floor, (tx, ty), item.plant_type)
-    _consume_item(player, item)
-    game.add_event("MAP_PATCH", {"tiles": [{"x": tx, "y": ty, "tile": TileType.FLOOR_GRASS}]}, floor_id=player.floor_id)
-    # Warden bonus: surrounding cells become FURROWED_GRASS
-    subclass_info = getattr(player, "subclass_info", None)
-    if subclass_info and subclass_info.subclass == "warden":
-        for dy in (-1, 0, 1):
-            for dx in (-1, 0, 1):
-                if dx == 0 and dy == 0:
-                    continue
-                nx, ny = tx + dx, ty + dy
-                if 0 <= nx < floor.width and 0 <= ny < floor.height:
-                    if floor.grid[ny][nx] != TileType.WALL and floor.grid[ny][nx] != TileType.VOID:
-                        floor.grid[ny][nx] = TileType.FURROWED_GRASS
+
+    tile = floor.grid[y][x]
+
+    if tile == TileType.CHASM:
+        _drop_item_down_chasm(game, player, seed, x, y)
+        return
+
+    if tile == TileType.ALCHEMY:
+        _floor_drop(game, player, seed, x, y)
+        game.add_event("DROP", {"player": player.id, "item": seed.id, "item_name": seed.name, "item_kind": seed.kind, "item_type": seed.type}, floor_id=player.floor_id)
+        return
+
+    if (x, y) in floor.traps:
+        _floor_drop(game, player, seed, x, y)
+        game.add_event("DROP", {"player": player.id, "item": seed.id, "item_name": seed.name, "item_kind": seed.kind, "item_type": seed.type}, floor_id=player.floor_id)
+        game.trigger_trap_at(floor, x, y, player.floor_id)
+        return
+
+    plantable_terrains = {
+        TileType.FLOOR, TileType.FLOOR_GRASS, TileType.HIGH_GRASS,
+        TileType.FURROWED_GRASS, TileType.EMPTY_DECO, TileType.EMBERS,
+        TileType.FLOOR_WOOD, TileType.FLOOR_COBBLE, TileType.REGION_DECO,
+        TileType.REGION_DECO_ALT, TileType.FLOOR_WATER,
+        TileType.DOOR, TileType.OPEN_DOOR,
+    }
+
+    if tile in plantable_terrains:
+        floor.plants.pop((x, y), None)
+
+        if tile not in (TileType.FLOOR_WATER, TileType.FLOOR_GRASS, TileType.DOOR, TileType.OPEN_DOOR):
+            floor.grid[y][x] = TileType.FLOOR_GRASS
+            game.add_event("MAP_PATCH", {"tiles": [{"x": x, "y": y, "tile": TileType.FLOOR_GRASS}]}, floor_id=player.floor_id)
+
+        _plant_seed_at(floor, (x, y), seed.plant_type)
+        if play_sound:
+            game.add_event("PLAY_SOUND", {"sound": "PLANT", "x": x, "y": y}, floor_id=player.floor_id)
+
+        subclass_info = getattr(player, "subclass_info", None)
+        if subclass_info and subclass_info.subclass == "warden":
+            patches = []
+            for dy in (-1, 0, 1):
+                for dx in (-1, 0, 1):
+                    if dx == 0 and dy == 0:
+                        continue
+                    nx, ny = x + dx, y + dy
+                    if 0 <= nx < floor.width and 0 <= ny < floor.height:
+                        ntile = floor.grid[ny][nx]
+                        if ntile in (TileType.FLOOR, TileType.FLOOR_GRASS, TileType.EMPTY_DECO, TileType.EMBERS):
+                            floor.grid[ny][nx] = TileType.FURROWED_GRASS
+                            patches.append({"x": nx, "y": ny, "tile": TileType.FURROWED_GRASS})
+            if patches:
+                game.add_event("MAP_PATCH", {"tiles": patches}, floor_id=player.floor_id)
+
         floor.rebuild_flags()
-        patches = [{"x": tx + dx, "y": ty + dy, "tile": floor.grid[ty + dy][tx + dx]}
-                    for dx in (-1, 0, 1) for dy in (-1, 0, 1)
-                    if 0 <= tx + dx < floor.width and 0 <= ty + dy < floor.height]
-        game.add_event("MAP_PATCH", {"tiles": patches}, floor_id=player.floor_id)
-    floor.rebuild_flags()
+
+        in_lotus_range = False
+        for mob in getattr(floor, "mobs", {}).values():
+            if getattr(mob, "mob_type", "") == "lotus" and getattr(mob, "is_alive", True):
+                dist = max(abs(x - mob.pos.x), abs(y - mob.pos.y))
+                range_val = getattr(mob, "view_distance", 2)
+                if dist <= range_val:
+                    in_lotus_range = True
+                    break
+
+        if in_lotus_range:
+            target_entity = game._entity_at(floor, player.floor_id, x, y, exclude_id="")
+
+            if target_entity is not None and (x, y) in floor.plants:
+                plant_obj = floor.plants[(x, y)]
+                _trigger_plant_effect(floor, (x, y), plant_obj, target_entity)
+                floor.plants.pop((x, y), None)
+                game.add_event("PLAY_SOUND", {"sound": "PLANT_TRIGGER", "x": x, "y": y}, floor_id=player.floor_id)
+                if isinstance(target_entity, Player) and getattr(target_entity, "pending_ascend", False):
+                    target_entity.pending_ascend = False
+                    game._apply_fadeleaf_ascend(target_entity, target_entity.id, target_entity.floor_id)
+
+        return
+
+    _floor_drop(game, player, seed, x, y)
+    game.add_event("DROP", {"player": player.id, "item": seed.id, "item_name": seed.name, "item_kind": seed.kind, "item_type": seed.type}, floor_id=player.floor_id)
+
+
+def action_plant_seed(game, player, item, tx=None, ty=None) -> None:
+    single_seed = _consume_item(player, item)
+    if single_seed is None:
+        return
+    _resolve_seed_placement(game, player, single_seed, player.pos.x, player.pos.y)
+    player.action_until = time.time() + 1.0
+
+
+def _detach_item_for_throw(player, item):
+    if player.belongings.is_equipped(item.id):
+        if item.cursed and item.cursed_known:
+            return None
+        slot = player.belongings.find_equipped_slot(item.id)
+        if slot is not None:
+            cur = getattr(player.belongings, slot)
+            if hasattr(cur, "on_unequip"):
+                cur.on_unequip(player)
+            setattr(player.belongings, slot, None)
+            player.quickslot.clear_item(cur.id)
+            return cur
+    return _consume_item(player, item)
+
+
+def _proc_improvised_projectiles(game, player, target_entity, floor_id: int) -> None:
+    if target_entity is None or not getattr(target_entity, "is_alive", True):
+        return
+    if getattr(player, "faction", None) == getattr(target_entity, "faction", None):
+        return
+    talent_info = getattr(player, "talent_info", None)
+    if talent_info is None:
+        subclass_info = getattr(player, "subclass_info", None)
+        talent_info = getattr(subclass_info, "talent_info", None)
+    if talent_info is None:
+        return
+    ip = talent_info.level("improvised_projectiles") if hasattr(talent_info, "level") else talent_info.talents.get("improvised_projectiles", 0)
+    if ip > 0 and not player.has_buff("improvised_projectile_cooldown"):
+        target_entity.add_buff("blindness", duration=1.0 + ip, level=1)
+        player.add_buff("improvised_projectile_cooldown", duration=50.0, level=1)
+        game.add_event("PLAY_SOUND", {"sound": "HIT"}, floor_id=floor_id)
+
+
+def _trace_throw(game, player, floor, tx: int, ty: int) -> tuple[int, int]:
+    return ballistica_trace(
+        player.pos.x, player.pos.y, tx, ty,
+        floor.flags, floor.width, floor.height,
+        list(game._players_on_floor(player.floor_id)),
+        list(floor.mobs.values()),
+        player.id,
+        stop_chars=True,
+        stop_solid=True,
+    )
+
+
+def _action_throw_seed(game, player, item, tx: int, ty: int) -> None:
+    floor = game._get_or_create_floor(player.floor_id)
+    single_seed = _detach_item_for_throw(player, item)
+    if single_seed is None:
+        return
+
+    lx, ly = _trace_throw(game, player, floor, tx, ty)
+
+    serialized_item = game._serialize_floor_item(single_seed)
+    game.add_event("RANGED_ATTACK", {
+        "source": player.id,
+        "x": player.pos.x,
+        "y": player.pos.y,
+        "target_x": lx,
+        "target_y": ly,
+        "projectile": "seed",
+        "item": serialized_item,
+        "sound": "THROW",
+        "is_wand": False,
+        "is_bow": False,
+        "next_attack_in_ms": 1000,
+    }, floor_id=player.floor_id)
+
+    target_entity = game._entity_at(floor, player.floor_id, lx, ly, exclude_id=player.id)
+    _proc_improvised_projectiles(game, player, target_entity, player.floor_id)
+    _resolve_seed_placement(game, player, single_seed, lx, ly, play_sound=False)
+    player.last_attack_time = time.time()
+    player.action_until = time.time() + 1.0
+
+
+def _action_throw_potion(game, player, item, tx: int, ty: int) -> None:
+    floor = game._get_or_create_floor(player.floor_id)
+    single_potion = _detach_item_for_throw(player, item)
+    if single_potion is None:
+        return
+
+    lx, ly = _trace_throw(game, player, floor, tx, ty)
+
+    serialized_item = game._serialize_floor_item(single_potion)
+    game.add_event("RANGED_ATTACK", {
+        "source": player.id,
+        "x": player.pos.x,
+        "y": player.pos.y,
+        "target_x": lx,
+        "target_y": ly,
+        "projectile": "potion",
+        "item": serialized_item,
+        "sound": "THROW",
+        "is_wand": False,
+        "is_bow": False,
+        "next_attack_in_ms": 1000,
+    }, floor_id=player.floor_id)
+
+    tile = floor.grid[ly][lx] if (0 <= lx < floor.width and 0 <= ly < floor.height) else TileType.FLOOR
+    if tile == TileType.CHASM:
+        _drop_item_down_chasm(game, player, single_potion, lx, ly)
+        player.last_attack_time = time.time()
+        player.action_until = time.time() + 1.0
+        return
+
+    if tile == TileType.WELL:
+        _floor_drop(game, player, single_potion, lx, ly)
+        game.add_event("DROP", {"player": player.id, "item": single_potion.id, "item_name": single_potion.name, "item_kind": single_potion.kind, "item_type": single_potion.type}, floor_id=player.floor_id)
+        player.last_attack_time = time.time()
+        player.action_until = time.time() + 1.0
+        return
+
+    game.on_potion_drunk(player, single_potion)
+    game.identify_kind(single_potion, player)
+    game.trigger_trap_at(floor, lx, ly, player.floor_id)
+
+    handler = _SHATTER_HANDLERS.get(getattr(single_potion, "effect", ""))
+    if handler is not None:
+        handler(game, player, single_potion, lx, ly)
+    else:
+        _shatter_splash(game, player, single_potion, lx, ly)
+
+    player.last_attack_time = time.time()
+    player.action_until = time.time() + 1.0
+
+
+def _action_throw_regular_item(game, player, item, tx: int, ty: int) -> None:
+    floor = game._get_or_create_floor(player.floor_id)
+    single_item = _detach_item_for_throw(player, item)
+    if single_item is None:
+        return
+
+    lx, ly = _trace_throw(game, player, floor, tx, ty)
+
+    serialized_item = game._serialize_floor_item(single_item)
+    game.add_event("RANGED_ATTACK", {
+        "source": player.id,
+        "x": player.pos.x,
+        "y": player.pos.y,
+        "target_x": lx,
+        "target_y": ly,
+        "projectile": getattr(single_item, "kind", "item"),
+        "item": serialized_item,
+        "sound": "THROW",
+        "is_wand": False,
+        "is_bow": False,
+        "next_attack_in_ms": 1000,
+    }, floor_id=player.floor_id)
+
+    target_entity = game._entity_at(floor, player.floor_id, lx, ly, exclude_id=player.id)
+    _proc_improvised_projectiles(game, player, target_entity, player.floor_id)
+
+    tile = floor.grid[ly][lx] if (0 <= lx < floor.width and 0 <= ly < floor.height) else TileType.FLOOR
+    if tile == TileType.CHASM:
+        _drop_item_down_chasm(game, player, single_item, lx, ly)
+    else:
+        if tile == TileType.DOOR:
+            floor.grid[ly][lx] = TileType.OPEN_DOOR
+            floor.rebuild_flags()
+            game.add_event("PLAY_SOUND", {"sound": "DOOR_OPEN", "x": lx, "y": ly}, floor_id=player.floor_id)
+            game.add_event("MAP_PATCH", {"tiles": [{"x": lx, "y": ly, "tile": TileType.OPEN_DOOR}]}, floor_id=player.floor_id)
+
+        press_cell(floor, (lx, ly), target_entity)
+        game.trigger_trap_at(floor, lx, ly, player.floor_id)
+        _floor_drop(game, player, single_item, lx, ly)
+        game.add_event("DROP", {"player": player.id, "item": single_item.id, "item_name": single_item.name, "item_kind": single_item.kind, "item_type": single_item.type}, floor_id=player.floor_id)
+        if isinstance(single_item, CeremonialCandle):
+            game._check_ritual_candles(player.floor_id)
+
+    player.last_attack_time = time.time()
+    player.action_until = time.time() + 1.0
 
 
 def action_shoot(game, player, item, tx=None, ty=None) -> None:
@@ -440,36 +690,39 @@ def action_shoot(game, player, item, tx=None, ty=None) -> None:
     game.perform_ranged_attack(player.id, item.id, tx, ty)
 
 
+def _action_throw_missile(game, player, item, tx: int, ty: int) -> None:
+    game.perform_ranged_attack(player.id, item.id, tx, ty)
+
+
+def _action_throw_bomb(game, player, item, tx: int, ty: int) -> None:
+    floor = game._get_or_create_floor(player.floor_id)
+    lx, ly = _trace_throw(game, player, floor, tx, ty)
+    removed = _detach_item_for_throw(player, item)
+    if removed is None:
+        return
+    game.add_event("THROW", {"player": player.id, "item": removed.id, "sound": "THROW"},
+                   floor_id=player.floor_id)
+    game.light_bomb(player, floor, player.floor_id, removed, lx, ly)
+    player.last_attack_time = time.time()
+    player.action_until = time.time() + 1.0
+
+
+_THROW_DISPATCH: Dict[str, Callable] = {
+    "missile": _action_throw_missile,
+    "seed": _action_throw_seed,
+    "potion": _action_throw_potion,
+    "bomb": _action_throw_bomb,
+    "runestone": action_throw_runestone,
+    "regular": _action_throw_regular_item,
+}
+
+
 def action_throw(game, player, item, tx=None, ty=None) -> None:
     if tx is None or ty is None:
         return
-    # Seeds are planted, not thrown as items
-    if isinstance(item, Seed):
-        action_plant(game, player, item, tx, ty)
-        return
-    from app.engine.entities.items.bombs import Bomb as _Bomb
-    if isinstance(item, _Bomb):
-        floor = game._get_or_create_floor(player.floor_id)
-        if not (0 <= tx < floor.width and 0 <= ty < floor.height):
-            return
-        removed = _consume_item(player, item)
-        if removed is None:
-            return
-        game.add_event("THROW", {"player": player.id, "item": item.id, "sound": "THROW"},
-                       floor_id=player.floor_id)
-        game.light_bomb(player, floor, player.floor_id, removed, tx, ty)
-        return
-    # Potions that shatter on impact and create area effects
-    if isinstance(item, Potion):
-        handler = _SHATTER_HANDLERS.get(item.effect)
-        if handler is not None:
-            handler(game, player, item, tx, ty)
-            return
-    # Runestones trigger their magical effect instead of dealing physical damage
-    if isinstance(item, Runestone):
-        action_throw_runestone(game, player, item, tx, ty)
-        return
-    game.perform_ranged_attack(player.id, item.id, tx, ty)
+    behavior = "missile" if getattr(item, "is_throwable", False) else getattr(item, "throw_behavior", "regular")
+    handler = _THROW_DISPATCH.get(behavior, _action_throw_regular_item)
+    handler(game, player, item, tx, ty)
 
 
 def _shatter_liquid_flame(game, player, item, tx, ty) -> None:
@@ -477,10 +730,6 @@ def _shatter_liquid_flame(game, player, item, tx, ty) -> None:
     if not (0 <= tx < floor.width and 0 <= ty < floor.height):
         return
 
-    # Remove potion from inventory
-    _consume_item(player, item)
-
-    # Create fire blob in 3x3 area centered on impact, SPD strength 1+depth
     blob_id = f"fire_potion_{player.id}_{tx}_{ty}"
     if _create_fire_blob(floor, (tx, ty), 1 + player.floor_id, blob_id):
         game.add_event("PLAY_SOUND", {"sound": "SHATTER"}, floor_id=player.floor_id)
@@ -493,12 +742,21 @@ def _shatter_gas(game, player, item, tx, ty) -> None:
     if not (0 <= tx < floor.width and 0 <= ty < floor.height):
         return
 
-    _consume_item(player, item)
-
-    gas_type = item.effect
+    gas_type = getattr(item, "effect", "")
+    if gas_type == "levitation":
+        gas_type = "confusion_gas"
     strength = 4 + player.floor_id // 2
     _create_gas(floor, (tx, ty), strength, gas_type)
 
+    game.add_event("PLAY_SOUND", {"sound": "SHATTER"}, floor_id=player.floor_id)
+
+
+def _shatter_frost(game, player, item, tx, ty) -> None:
+    floor = game._get_or_create_floor(player.floor_id)
+    if not (0 <= tx < floor.width and 0 <= ty < floor.height):
+        return
+    _freeze_area(floor, (tx, ty))
+    _create_gas(floor, (tx, ty), 4, "frost_gas")
     game.add_event("PLAY_SOUND", {"sound": "SHATTER"}, floor_id=player.floor_id)
 
 
@@ -506,7 +764,6 @@ def _shatter_snap_freeze(game, player, item, tx, ty) -> None:
     floor = game._get_or_create_floor(player.floor_id)
     if not (0 <= tx < floor.width and 0 <= ty < floor.height):
         return
-    _consume_item(player, item)
     for mob in floor.mobs.values():
         if not mob.is_alive or mob.faction == "player":
             continue
@@ -521,7 +778,6 @@ def _shatter_aqua(game, player, item, tx, ty) -> None:
     floor = game._get_or_create_floor(player.floor_id)
     if not (0 <= tx < floor.width and 0 <= ty < floor.height):
         return
-    _consume_item(player, item)
     for mob in floor.mobs.values():
         if not mob.is_alive or mob.faction == "player":
             continue
@@ -537,7 +793,6 @@ def _shatter_caustic(game, player, item, tx, ty) -> None:
     floor = game._get_or_create_floor(player.floor_id)
     if not (0 <= tx < floor.width and 0 <= ty < floor.height):
         return
-    _consume_item(player, item)
     for mob in floor.mobs.values():
         if not mob.is_alive or mob.faction == "player":
             continue
@@ -552,7 +807,6 @@ def _shatter_unstable(game, player, item, tx, ty) -> None:
     floor = game._get_or_create_floor(player.floor_id)
     if not (0 <= tx < floor.width and 0 <= ty < floor.height):
         return
-    _consume_item(player, item)
     if chosen == "liquid_flame":
         blob_id = f"fire_unstable_{player.id}_{tx}_{ty}"
         _create_fire_blob(floor, (tx, ty), 1 + player.floor_id, blob_id)
@@ -561,18 +815,45 @@ def _shatter_unstable(game, player, item, tx, ty) -> None:
     game.add_event("PLAY_SOUND", {"sound": "SHATTER"}, floor_id=player.floor_id)
 
 
+def _shatter_purity(game, player, item, tx, ty) -> None:
+    floor = game._get_or_create_floor(player.floor_id)
+    if not (0 <= tx < floor.width and 0 <= ty < floor.height):
+        return
+    for bid in list(floor.blob_areas.keys()):
+        b = floor.blob_areas[bid]
+        cells = b.get("cells", [])
+        new_cells = [c for c in cells if max(abs(c[0] - tx), abs(c[1] - ty)) > 3]
+        if not new_cells:
+            del floor.blob_areas[bid]
+        else:
+            b["cells"] = new_cells
+    game.add_event("PLAY_SOUND", {"sound": "SHATTER"}, floor_id=player.floor_id)
+    game.add_event("DISCOVER", {"x": tx, "y": ty}, floor_id=player.floor_id)
+
+
+def _shatter_splash(game, player, item, tx, ty) -> None:
+    floor = game._get_or_create_floor(player.floor_id)
+    if not (0 <= tx < floor.width and 0 <= ty < floor.height):
+        return
+    game.add_event("PLAY_SOUND", {"sound": "SHATTER"}, floor_id=player.floor_id)
+    game.add_event("SPLASH", {"x": tx, "y": ty}, floor_id=player.floor_id)
+
+
 # Potion-effect -> shatter handler, dispatched by action_throw. Mirrors the
 # _PROC_HANDLERS pattern in weapon_enchants.py/armor_glyphs.py.
 _SHATTER_HANDLERS: Dict[str, Callable] = {
     **{effect: _shatter_liquid_flame for effect in ("liquid_flame", "infernal_brew")},
     **{effect: _shatter_gas for effect in (
         "toxic_gas", "paralytic_gas", "corrosive_gas", "shrouding_fog",
-        "storm_clouds", "blizzard_brew", "shocking_brew",
+        "storm_clouds", "blizzard_brew", "shocking_brew", "levitation",
     )},
+    "frost": _shatter_frost,
     "snap_freeze": _shatter_snap_freeze,
     "aqua_brew": _shatter_aqua,
     "caustic_brew": _shatter_caustic,
     "unstable_brew": _shatter_unstable,
+    "purity": _shatter_purity,
+    "cleansing": _shatter_purity,
 }
 
 
@@ -678,7 +959,7 @@ def action_ghost_gear(game, player, item, tx=None, ty=None) -> None:
         "ghost_max_hp": ghost.max_hp,
         "weapon": _ghost_weapon_info(item.weapon),
         "armor": _ghost_armor_info(item.armor),
-    }, floor_id=player.floor_id, source_player_id=player.id)
+    }, floor_id=player.floor_id, player_id=player.id)
 
 
 def action_eat_handler(game, player, item, tx=None, ty=None) -> None:
@@ -703,6 +984,7 @@ def action_eat_handler(game, player, item, tx=None, ty=None) -> None:
             player.strength = min(player.strength + 1, 30)
             game.add_event("MESSAGE", {"text": "You feel a surge of strength!"}, floor_id=player.floor_id, player_id=player.id)
         elif potion_type == "health":
+            player.cleanse(_HEALING_POTION_CLEANSE)
             amount = round(0.8 * player.get_total_max_hp() + 14)
             player.set_heal(amount, 0.25, 0)
         elif potion_type == "mind_vision":
@@ -714,8 +996,7 @@ def action_eat_handler(game, player, item, tx=None, ty=None) -> None:
         elif potion_type == "haste":
             player.add_buff("haste", duration=20.0)
         elif potion_type == "purity":
-            for debuff in _PURITY_DEBUFFS:
-                player.remove_buff(debuff)
+            player.cleanse(_PURITY_DEBUFFS)
         elif potion_type == "experience":
             amount = max(1, round((player.get_total_max_hp() - player.hp) * 2))
             if player.earn_exp(amount):
@@ -758,7 +1039,7 @@ def _wear_tengu_mask(game, player, item) -> None:
     player._tengu_mask_worn = True
     game.add_event("SUBCLASS_CHOICE_AVAILABLE", {
         "player": player.id, "options": options,
-    }, floor_id=player.floor_id, source_player_id=player.id)
+    }, floor_id=player.floor_id, player_id=player.id)
 
 
 def _wear_kings_crown(game, player, item) -> None:
@@ -779,7 +1060,7 @@ def _wear_kings_crown(game, player, item) -> None:
     player._kings_crown_worn = True
     game.add_event("ARMOR_ABILITY_CHOICE_AVAILABLE", {
         "player": player.id, "options": options,
-    }, floor_id=player.floor_id, source_player_id=player.id)
+    }, floor_id=player.floor_id, player_id=player.id)
 
 
 def action_inscribe(game, player, item, tx=None, ty=None) -> None:
@@ -846,6 +1127,7 @@ ITEM_ACTION_DISPATCH = {
     Action.DRINK: action_drink,
     Action.READ: action_read,
     Action.THROW: action_throw,
+    Action.PLANT: action_plant_seed,
     Action.USE: action_use_stone,
     Action.ZAP: action_zap,
     Action.SHOOT: action_shoot,

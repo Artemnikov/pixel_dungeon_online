@@ -114,7 +114,7 @@ class TalentsMixin:
             player.combo_count = 0
             player.combo_timer = 0.0
         self._recompute_talent_points(player)
-        self.add_event("SUBCLASS_CHOSEN", {"player": player.id, "subclass": subclass}, floor_id=player.floor_id, source_player_id=player.id)
+        self.add_event("SUBCLASS_CHOSEN", {"player": player.id, "subclass": subclass}, floor_id=player.floor_id)
         return True
 
     def choose_armor_ability(self, player_id: str, ability: str) -> bool:
@@ -138,7 +138,7 @@ class TalentsMixin:
             from app.engine.entities.base import consume_backpack_item
             consume_backpack_item(player, crown)
         self._recompute_talent_points(player)
-        self.add_event("ARMOR_ABILITY_CHOSEN", {"player": player.id, "ability": ability}, floor_id=player.floor_id, source_player_id=player.id)
+        self.add_event("ARMOR_ABILITY_CHOSEN", {"player": player.id, "ability": ability}, floor_id=player.floor_id)
         return True
 
     def reemit_pending_choices(self, player_id: str) -> None:
@@ -153,13 +153,13 @@ class TalentsMixin:
             if options:
                 self.add_event("SUBCLASS_CHOICE_AVAILABLE", {
                     "player": player.id, "options": options,
-                }, floor_id=player.floor_id, source_player_id=player.id)
+                }, floor_id=player.floor_id, player_id=player.id)
         if player._kings_crown_worn and not player.armor_ability:
             options = list(CLASS_ARMOR_ABILITIES.get(player.class_type, ()))
             if options:
                 self.add_event("ARMOR_ABILITY_CHOICE_AVAILABLE", {
                     "player": player.id, "options": options,
-                }, floor_id=player.floor_id, source_player_id=player.id)
+                }, floor_id=player.floor_id, player_id=player.id)
 
     def upgrade_talent(self, player_id: str, talent_name: str) -> bool:
         player = self.players.get(player_id)

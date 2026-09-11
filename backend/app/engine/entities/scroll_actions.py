@@ -135,6 +135,8 @@ def _teleport_player(game, player) -> None:
     tx, ty = random.choice(pool)
     player.pos = Position(x=tx, y=ty)
     player.remove_buff("rooted")
+    from app.engine.entities.buffs import break_stationary_plant_buffs
+    break_stationary_plant_buffs(player)
 
     # Secret door auto-discovery (SPD: check neighbor cells for secret doors
     # when teleporting into a special room)
@@ -656,7 +658,7 @@ def apply_scroll_target(game, player, scroll_item, target_item) -> None:
             "target_id": target_item.id,
             "is_weapon": opts["is_weapon"],
             "options": opts["options"],
-        }, floor_id=player.floor_id, source_player_id=player.id)
+        }, floor_id=player.floor_id, player_id=player.id)
         return
 
     apply_fn = _APPLY_SCROLL_TARGET.get(scroll_item.kind)
