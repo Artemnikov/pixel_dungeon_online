@@ -3,7 +3,7 @@ import IconTitle from './IconTitle';
 import WndOverlay from './WndOverlay';
 import { WindowLevel } from '../game/window/WindowTypes';
 
-export default function WndInfoPlant({ name, description, plantType, onClose }) {
+export default function WndInfoPlant({ name, description, onClose }) {
   const { t } = useTranslation();
 
   const card = (

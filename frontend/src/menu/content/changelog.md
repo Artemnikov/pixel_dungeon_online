@@ -1,10 +1,14 @@
 ## Summary
 
-This is a major release (v1.0.0) introducing a complete architectural overhaul of the game engine and networking layer, followed by ongoing optimizations including a new talent system, event dispatcher architecture, window manager rewrite, entity service layer, synchronizer system, animation manager, trap rendering improvements, combat events refactoring, and talent UI hooks — plus removal of hidden doors from first rooms and addition of magical sleep for newly spawned mobs.
+This release (v1.0.4) introduces the full Seeds & Plants system ported from SPD, synchronized attack cooldowns with instant combat hit effects, reliable subclass and armor ability choice dialog delivery, streamlined talent upgrade visuals, locked door/chest audio, and backend code cleanups.
 
 ## Key Changes
 
 ### Backend
+- **Seeds & Plants System** — Full port of SPD seeds and plants (Firebloom, Icecap, Earthroot, Sorrowmoss, Starflower, Fadeleaf, Rotberry, Sungrass, Blindweed, Stormvine, Dreamfoil, Blandfruit Bush). Plants grow on tiles, trigger when stepped on or hit by thrown items, apply status effects/hazards/buffs, and integrate with Wand of Regrowth and Wandmaker quests.
+- **Combat Cooldown Synchronization** — Calculates and sends exact `next_attack_in_ms` cooldowns in `ATTACK` and `RANGED_ATTACK` events for accurate client-side timing.
+- **Choice Dialog Reliability** — Fixed WebSocket delivery and reconnect re-emission of subclass and armor ability choice dialogs upon equipping Tengu's Mask and King's Crown.
+- **Entity & Code Cleanup** — Cleaned up entity hierarchies (`base.py`, `consumables.py`, `equip.py`, `union.py`), scroll predicates, and unused imports.
 - **Event-driven WebSocket architecture** — Replaced vibe-coded WS handling with a clean event-driven flow using `WebSocketConnectionManager` and `MessageDispatcher`
 - **OOP game entities** — Refactored player, items (bombs, consumables, scrolls), and base entity classes into proper OOP structures
 - **Movement system overhaul** — New movement controller with block resolution, chest handling, and tick-based movement logic
@@ -15,6 +19,10 @@ This is a major release (v1.0.0) introducing a complete architectural overhaul o
 - **AI Improvements** — Updated Eye and Tengu AI behaviors; blob overrides (Web, Key Ward, Light Wall, Eternal Fire) now correctly applied during terrain changes
 
 ### Frontend
+- **Seeds & Plants Integration** — Added `PlantsSynchronizer`, plant tile rendering with blooming animations and particle effects, `plant.mp3` audio, and plant inspection info window (`WndInfoPlant`).
+- **Immediate Combat Hit FX** — Removed artificial timeouts so hit animations, damage numbers, blood splatters, and particle bursts trigger instantly upon receiving combat events. Added attack readiness checks (`isAttackReady`, `consumeAttackCooldown`).
+- **Talent Upgrade Visuals** — Star-burst upgrade particles now managed imperatively by `VisualEffectsManager` on `TALENT_UPGRADED` event, removing component state overhead. Added `TALENT` sprite icon.
+- **Audio Improvements** — Added dedicated `locked.mp3` audio effect for locked doors and chests.
 - **New input controller system** — Replaced direct canvas controls with a command-based architecture (`KeyActionRegistry`, `DirectionalMoveCommand`, etc.)
 - **Movement prediction** — New `MovementPredictor` and `BlockerResolver` for client-side movement prediction
 - **Combat event refactoring** — Major rewrite of combat events with proper state management
@@ -28,4 +36,4 @@ This is a major release (v1.0.0) introducing a complete architectural overhaul o
 - **Trap Rendering** — Enhanced trap rendering system with new visual effects
 - **Talent UI Hooks** — New talent query hooks (`useTalentData`, `useTalentUI`, `useTalents`) replacing the old `useTalentFlow` system
 
-## Release Version: 1.0.0
+## Release Version: 1.0.4

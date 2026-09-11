@@ -1,4 +1,4 @@
-export const APP_VERSION = '1.0.2';
+export const APP_VERSION = '1.0.4';
 
 /**
  * @typedef {{ category?: { en: string; ru: string }; description: { en: string; ru: string } }} ChangeItem
@@ -6,6 +6,38 @@ export const APP_VERSION = '1.0.2';
  */
 
 const CHANGELOG = [
+  {
+    version: '1.0.4',
+    title: { en: 'Seeds & Plants, Combat Sync & Immediate Hit FX', ru: 'Семена и растения, синхронизация боя и мгновенные эффекты ударов' },
+    date: '2026-09-11',
+    type: 'minor',
+    changes: [
+      { category: { en: 'Seeds & Plants System', ru: 'Система семян и растений' }, description: {
+        en: 'Full port of SPD seeds and plants: plants now grow on dungeon tiles, can be stepped on or triggered by thrown items/seeds, and produce unique tactical hazards and buffs (Firebloom, Icecap, Earthroot, Sorrowmoss, Starflower, Fadeleaf, Rotberry, Sungrass, Blindweed, Stormvine, Dreamfoil, Blandfruit Bush). Added plant inspection dialogs, dedicated state synchronizer, blooming particles, and audio.',
+        ru: 'Полный порт семян и растений из SPD: растения теперь растут на клетках подземелья, активируются при наступлении или броске предметов/семян и вызывают уникальные тактические эффекты (Огнецвет, Ледоцвет, Землекорень, Тосноцвет, Звёздоцвет, Увядальник, Гнильягода, Солнцецвет, Слепоцвет, Вьюнок, Сноцвет, Куст бландфрута). Добавлены окна осмотра растений, отдельный синхронизатор состояния, частицы цветения и звуковые эффекты.',
+      } },
+      { category: { en: 'Combat & Cooldown Sync', ru: 'Бой и синхронизация кулдаунов' }, description: {
+        en: 'Server-synchronized attack cooldowns (`next_attack_in_ms`) for melee and ranged attacks with client-side readiness tracking, preventing desynced actions. Removed artificial animation timeouts so damage numbers, blood splatters, and hit sparks trigger immediately upon hit confirmation.',
+        ru: 'Синхронизация кулдаунов атак с сервером (`next_attack_in_ms`) для ближнего и дальнего боя с проверкой готовности на клиенте, предотвращающая рассинхрон действий. Убраны искусственные задержки анимаций, благодаря чему цифры урона, брызги крови и искры ударов отображаются мгновенно при подтверждении попадания.',
+      } },
+      { category: { en: 'Choice Dialog Delivery', ru: 'Доставка диалогов выбора' }, description: {
+        en: 'Fixed delivery of subclass (Tengu\'s Mask) and armor ability (King\'s Crown) selection dialogs over WebSockets, ensuring prompts are reliably delivered on equip and re-emitted on reconnect.',
+        ru: 'Исправлена доставка диалогов выбора подкласса (Маска Тенгу) и способности брони (Корона короля) через WebSocket — окна выбора гарантированно доставляются при экипировке и повторно отправляются при переподключении.',
+      } },
+      { category: { en: 'Talent Upgrades & UI Flow', ru: 'Прокачка талантов и интерфейс' }, description: {
+        en: 'Streamlined talent upgrade workflow: particle bursts are now handled directly by the visual effects manager upon server confirmation (`TALENT_UPGRADED`), eliminating UI state lag and legacy tier-star DOM nodes.',
+        ru: 'Оптимизирован поток прокачки талантов: вспышки частиц теперь запускаются менеджером визуальных эффектов напрямую при подтверждении от сервера (`TALENT_UPGRADED`), исключая задержки состояния UI и устаревшие элементы звёзд тиров.',
+      } },
+      { category: { en: 'Audio & Interactions', ru: 'Аудио и взаимодействия' }, description: {
+        en: 'Added dedicated sound effect for locked doors and locked chests (`locked.mp3`).',
+        ru: 'Добавлен отдельный звуковой эффект для запертых дверей и сундуков (`locked.mp3`).',
+      } },
+      { category: { en: 'Backend & Entity Cleanup', ru: 'Очистка бэкенда и сущностей' }, description: {
+        en: 'Cleaned up backend entity hierarchies, item union types, scroll predicates, and unused code paths.',
+        ru: 'Очищена иерархия сущностей бэкенда, объединения типов предметов, предикаты свитков и неиспользуемый код.',
+      } },
+    ],
+  },
   {
     version: '1.0.2',
     title: { en: 'Optimizations & Server/Frontend Cleanup', ru: 'Оптимизации и очистка сервера/фронтенда' },

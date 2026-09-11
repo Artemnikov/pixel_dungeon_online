@@ -210,8 +210,9 @@ export function createCombatEventHandlers(): IGameEventHandler[] {
         }
 
         if (!MAGIC_PROJECTILES.has(projType)) {
+          const itemAny = thrownItem as Record<string, unknown> | undefined;
           const isSeed = projType === 'seed'
-            || Boolean(thrownItem && (thrownItem.type === 'seed' || thrownItem.plant_type || thrownItem.kind === 'seed' || thrownItem.kind === 'rotberry_seed'));
+            || Boolean(itemAny && (itemAny.type === 'seed' || itemAny.plant_type || itemAny.kind === 'seed' || itemAny.kind === 'rotberry_seed'));
 
           const onComplete = isSeed ? () => {
             const isTargetAudible = isLocal || ctx.world.isAudible(event.data.target_x, event.data.target_y, ctx.myPlayerId);
