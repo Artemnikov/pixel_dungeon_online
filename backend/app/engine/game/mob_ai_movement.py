@@ -29,9 +29,9 @@ class MobAIMovementMixin:
         move_interval = 2 * AUTO_MOVE_INTERVAL / max(0.1, mob.speed)
         if mob.has_buff("slow") or mob.has_buff("chill"):
             move_interval *= 2
-        if mob.has_buff("paralysis"):
+        if mob.has_buff("paralysis") or mob.has_buff("spectator_freeze"):
             move_interval = 9999
-        if mob.has_buff("stagger"):
+        if mob.has_buff("stagger") or mob.has_buff("spectator_freeze"):
             return
         # TimekeepersHourglass: frozen mobs skip AI entirely.
         if getattr(mob, "freeze_ticks", 0) > 0:

@@ -110,3 +110,114 @@
   color: #aaa;
   border-color: #777;
 }
+
+.wnd-cleric-surface {
+  background: #1e1e24;
+  border: 2px solid #4a4a55;
+  border-radius: 10px;
+  box-shadow: 0 6px 28px rgba(0, 0, 0, 0.95);
+  font-family: 'Courier New', Courier, monospace;
+  pointer-events: auto;
+  z-index: 600;
+}
+
+.wnd-cleric-castbar {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-width: min(820px, calc(100vw - 16px));
+  padding: 6px 8px;
+}
+
+.wnd-cleric-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  color: #ffd700;
+  padding: 0 4px;
+}
+
+.wnd-cleric-header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.wnd-cleric-close-btn {
+  background: none;
+  border: none;
+  color: #888;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 0 2px;
+  line-height: 1;
+}
+
+.wnd-cleric-close-btn:hover {
+  color: #ffd700;
+}
+
+.wnd-cleric-spells {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.wnd-cleric-cast-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  background: #1a1a24;
+  border: 1px solid #3a3a44;
+  border-radius: 6px;
+  color: #eee;
+  font-family: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.wnd-cleric-cast-btn:hover {
+  background: #2a2a38;
+  border-color: #ffd700;
+}
+
+.wnd-cleric-cast-btn.on-cooldown {
+  opacity: 0.5;
+  cursor: not-allowed;
+  border-color: #2a2a30;
+}
+
+.wnd-cleric-cast-btn.on-cooldown:hover {
+  background: #1a1a24;
+  border-color: #2a2a30;
+}
+
+.wnd-cleric-cast-icon {
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.wnd-cleric-cast-key {
+  font-size: 10px;
+  color: #889;
+  background: #111118;
+  border: 1px solid #445;
+  border-radius: 3px;
+  padding: 0 3px;
+  margin-right: 1px;
+  line-height: 1.2;
+}
+
+.wnd-cleric-cast-name {
+  white-space: nowrap;
+}
+
+.wnd-cleric-cast-cd {
+  color: #fa4;
+  font-size: 11px;
+  font-weight: bold;
+  margin-left: 4px;
+}

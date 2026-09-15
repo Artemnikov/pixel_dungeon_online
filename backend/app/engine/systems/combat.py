@@ -200,7 +200,7 @@ def _dispel_stealth(attacker: "Entity") -> None:
         attacker.cloak_stealth_active = False
 
 
-def _roll_damage(attacker: "Entity", result: dict, prep: Optional[dict] = None) -> int:
+def _roll_damage(attacker: "Entity", result: dict, prep: Optional[dict] = None, defender: Optional["Entity"] = None) -> int:
     """Roll base damage, applying surprise damage floor if applicable."""
     dmg_min = attacker.get_damage_min()
     dmg_max = attacker.get_damage_max()
@@ -224,6 +224,15 @@ def _roll_damage(attacker: "Entity", result: dict, prep: Optional[dict] = None) 
         sp = getattr(attacker, "talent_info", None)
         if sp is not None and sp.level("sucker_punch") > 0:
             dmg_roll += random.randint(sp.level("sucker_punch"), 2)
+
+    if attacker.has_buff("holy_weapon"):
+        b = attacker.get_buff("holy_weapon")
+        dmg_roll += b.level if b and b.level > 0 else 2
+
+    if defender is not None and defender.has_buff("illuminated"):
+        ti = getattr(attacker, "talent_info", None)
+        if ti is not None and ti.level("searing_light") > 0:
+            dmg_roll += 3 if ti.level("searing_light") == 1 else 5
 
     # Talent flat damage bonus (rampage stacks, etc.)
     talent_bonus = getattr(attacker, "get_talent_damage_bonus", lambda: 0)()
@@ -443,8 +452,41 @@ def resolve_melee_attack(
         dmg_roll = round(dmg_roll * WEAKNESS_DAMAGE_MULTIPLIER)
     if attacker.has_buff("bless") and getattr(defender, "faction", None) == "enemy":
         dmg_roll = round(dmg_roll * BLESS_DAMAGE_MULTIPLIER)
+
     dr_roll = random.randint(defender.get_dr_min(), defender.get_dr_max())
+    if defender.has_buff("holy_ward"):
+        hw_buff = defender.get_buff("holy_ward")
+        dr_roll += hw_buff.level if hw_buff and hw_buff.level > 0 else 1
+
     raw_damage = max(0, dmg_roll - dr_roll)
+
+    if defender.has_buff("shield_of_light_tracker"):
+        sol_buff = defender.get_buff("shield_of_light_tracker")
+        source_id = getattr(sol_buff, "source_id", None)
+        if sol_buff and sol_buff.level > 0 and (source_id is None or source_id == attacker.id):
+            sol_absorb = random.randint(sol_buff.level, sol_buff.level * 2)
+            raw_damage = max(0, raw_damage - sol_absorb)
+
+    aop_level = 0
+    if defender.has_buff("aura_of_protection"):
+        aop_buff = defender.get_buff("aura_of_protection")
+        aop_level = aop_buff.level if aop_buff else 1
+    elif game is not None and hasattr(game, "_players_on_floor"):
+        for p in game._players_on_floor(getattr(defender, "floor_id", None)):
+            if getattr(p, "is_alive", False) and p.has_buff("aura_of_protection") and (p.faction == getattr(defender, "faction", None) or getattr(defender, "faction", None) == "player"):
+                if abs(p.pos.x - defender.pos.x) <= 2 and abs(p.pos.y - defender.pos.y) <= 2:
+                    aop_b = p.get_buff("aura_of_protection")
+                    aop_level = max(aop_level, aop_b.level if aop_b else 1)
+    if aop_level > 0:
+        mult = 0.90 - 0.10 * aop_level
+        raw_damage = max(0, int(raw_damage * mult))
+
+    if defender.has_buff("illuminated"):
+        defender.remove_buff("illuminated")
+        subclass = getattr(getattr(attacker, "subclass_info", None), "subclass", None)
+        if subclass == "priest":
+            explosion_dmg = getattr(attacker, "level", 1) + 5
+            raw_damage += explosion_dmg
 
     # Invisibility dispel on attack
     _dispel_stealth(attacker)

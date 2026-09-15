@@ -7,7 +7,7 @@ import {
 import { coordsForKind } from '../../rendering/sprites';
 import { SPELL_CHARGE, SPELL_MAP } from '../../rendering/draw/spellSprite';
 import { forceAlertMob } from '../../rendering/draw/mobs';
-import { spawnSparkMoving } from '../../rendering/draw/sparkParticle';
+import { spawnSparkMoving, spawnSparkStatic } from '../../rendering/draw/sparkParticle';
 import { playChainPull } from './chainsEffect';
 import { spawnToxicGas, spawnCorrosiveGas, spawnConfusionGas } from '../../rendering/draw/gasParticle';
 import { spawnFlameBurst } from '../../rendering/draw/flameParticle';
@@ -24,6 +24,11 @@ const PLANT_ANNOUNCEMENTS: Record<string, { text: string; color: string }> = {
   earthroot: { text: 'Herbal Armor', color: '#e67e22' },
   swiftthistle: { text: 'Time Bubble', color: '#f1c40f' },
   starflower: { text: 'Blessed', color: '#f39c12' },
+};
+
+/** PLAY_ANIMATION glow name -> flare color (approximates SPD Enchanting.show). */
+const GLOW_COLORS: Record<string, string> = {
+  golden: '#ffdd66',
 };
 
 export function createPlayerEventHandlers(): IGameEventHandler[] {
@@ -170,6 +175,32 @@ export function createPlayerEventHandlers(): IGameEventHandler[] {
               ctx.effects.flashScreen(350);
               break;
           }
+        }
+        return true;
+      },
+    },
+    {
+      eventType: 'PLAY_ANIMATION',
+      handle(event: Extract<GameEvent, { type: 'PLAY_ANIMATION' }>, ctx: GameEventContext) {
+        const pid = event.data.player;
+        const p = ctx.entities.getPlayer(pid);
+        const isLocal = pid === ctx.myPlayerId;
+        const animate = isLocal || (p && ctx.world.isVisible(p.pos.x, p.pos.y));
+        if (!animate) return true;
+
+        if (event.data.animation === 'operate') {
+          ctx.effects.setPlayerOperate(pid);
+        } else if (event.data.animation === 'read') {
+          ctx.effects.setPlayerRead(pid);
+        }
+
+        // Glow approximates SPD's Enchanting.show during Holy Weapon/Ward.
+        const glowColor = event.data.glow ? GLOW_COLORS[event.data.glow] : undefined;
+        if (glowColor && ctx.effects.particlesRef && p) {
+          const cx = p.pos.x * TILE_SIZE + TILE_SIZE / 2;
+          const cy = p.pos.y * TILE_SIZE + TILE_SIZE / 2;
+          ctx.effects.spawnFlare(cx, cy, 8, 44, glowColor, 900);
+          spawnSparkStatic(ctx.effects.particlesRef, cx, cy, 6);
         }
         return true;
       },
@@ -479,6 +510,44 @@ export function createPlayerEventHandlers(): IGameEventHandler[] {
           const cx = event.data.x * TILE_SIZE + TILE_SIZE / 2;
           const cy = event.data.y * TILE_SIZE + TILE_SIZE / 2;
           spawnShadowUp(ctx.effects.particlesRef, cx, cy, 10);
+        }
+        return true;
+      },
+    },
+    {
+      eventType: 'FLARE',
+      handle(event: Extract<GameEvent, { type: 'FLARE' }>, ctx: GameEventContext) {
+        const cx = event.data.x * TILE_SIZE + TILE_SIZE / 2;
+        const cy = event.data.y * TILE_SIZE + TILE_SIZE / 2;
+        ctx.effects.spawnFlare(
+          cx,
+          cy,
+          event.data.rays || 6,
+          event.data.radius || 32,
+          event.data.color || '#FFFF00',
+          event.data.duration || 800,
+        );
+        return true;
+      },
+    },
+    {
+      eventType: 'FLASH_SCREEN',
+      handle(event: Extract<GameEvent, { type: 'FLASH_SCREEN' }>, ctx: GameEventContext) {
+        ctx.effects.flashScreen(event.data.duration || 350);
+        return true;
+      },
+    },
+    {
+      eventType: 'HOLY_INTUITION',
+      handle(event: Extract<GameEvent, { type: 'HOLY_INTUITION' }>, ctx: GameEventContext) {
+        const p = ctx.entities.getPlayer(event.data.player);
+        if (p && ctx.effects.particlesRef) {
+          const cx = p.pos.x * TILE_SIZE + TILE_SIZE / 2;
+          const cy = p.pos.y * TILE_SIZE + TILE_SIZE / 2;
+          spawnIdentify(ctx.effects.particlesRef, cx, cy);
+        }
+        if (event.data.player === ctx.myPlayerId) {
+          addGameLog('Holy Intuition reveals the curses in your backpack!', 'highlight');
         }
         return true;
       },

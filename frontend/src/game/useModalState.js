@@ -76,12 +76,24 @@ export default function useModalState() {
   const [alchemyBrewed, setAlchemyBrewed] = useState(null);
   const [trinketChoice, setTrinketChoice] = useState(null);
   const [toolkitEnergize, setToolkitEnergize] = useState(null);
+  const [clericCastBarOpen, setClericCastBarOpen] = useState(false);
+  const [clericCastBarAnchor, setClericCastBarAnchor] = useState(null);
 
   const onAlchemyPreviewResult = (data) => setAlchemyPreview(data);
   const onAlchemyBrewed = (data) => setAlchemyBrewed(data);
   const onTrinketChoice = (data) => setTrinketChoice(data);
   const onToolkitEnergizePrompt = (data) => setToolkitEnergize(data);
   const onOpenAlchemy = () => setAlchemyOpen(true);
+  const openClericCastBar = (anchor = null) => {
+    if (clericCastBarOpen && anchor && clericCastBarAnchor &&
+        anchor.x === clericCastBarAnchor.x &&
+        anchor.y === clericCastBarAnchor.y) {
+      setClericCastBarOpen(false);
+      return;
+    }
+    setClericCastBarAnchor(anchor);
+    setClericCastBarOpen(true);
+  };
 
   return {
     showInventory, setShowInventory,
@@ -131,6 +143,9 @@ export default function useModalState() {
     alchemyBrewed, setAlchemyBrewed,
     trinketChoice, setTrinketChoice,
     toolkitEnergize, setToolkitEnergize,
+    clericCastBarOpen, setClericCastBarOpen,
+    clericCastBarAnchor, setClericCastBarAnchor,
+    openClericCastBar,
     onAlchemyPreviewResult,
     onAlchemyBrewed,
     onTrinketChoice,

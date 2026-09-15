@@ -13,7 +13,7 @@ from typing import List, Optional
 from app.engine.dungeon.constants import TileType
 from app.engine.entities.base import Faction, Position
 from app.engine.entities.items.union import Bag, VelvetPouch
-from app.engine.entities.items.artifacts import CloakOfShadows
+from app.engine.entities.items.artifacts import CloakOfShadows, HolyTome
 from app.engine.entities.items.consumables import Amulet, Ankh, Dewdrop, Gold, LostBackpack, Ration, Stone, ThrowableDagger, Waterskin
 from app.engine.entities.items.equip import Bow, ClothArmor, Dagger, SpiritBow, Staff, WornShortsword, make_named_melee_weapon
 from app.engine.entities.items.potions import ELIXIR_BREW_KINDS, PotionOfLiquidFlame
@@ -137,6 +137,17 @@ class PlayersMixin:
             )
             belongings.backpack.collect(spirit_bow)
             class_starting_quickslots.append((0, spirit_bow))
+
+        elif class_type == CharacterClass.CLERIC:
+            belongings.weapon = make_named_melee_weapon("Cudgel", id=str(uuid.uuid4()))
+            belongings.armor = ClothArmor(
+                id=str(uuid.uuid4()),
+            )
+            holy_tome = HolyTome(
+                id=str(uuid.uuid4()),
+            )
+            belongings.artifact = holy_tome
+            class_starting_quickslots.append((0, holy_tome))
 
         # HeroClass.initHero(): every hero starts with a ration of food, a
         # Velvet Pouch (for seeds/stones), and a Waterskin in the backpack.

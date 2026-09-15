@@ -180,6 +180,10 @@ DEFAULT_STATUS_EFFECT_REGISTRY = StatusEffectRegistry([
     BuffStatusEffectProvider("frost_imbue", "frost_imbue", "Frost Imbue", 55, duration=30.0),
     BuffStatusEffectProvider("fire_imbue", "fire_imbue", "Fire Imbue", 55, duration=30.0),
     BuffStatusEffectProvider("toxic_imbue", "toxic_imbue", "Toxic Imbue", 55, duration=30.0),
+    # SPD BuffIndicator.HOLY_WEAPON = 73, HOLY_ARMOR = 74; duration mirrors the
+    # 50-turn spell duration so the expiry fade is faithful to HolyWeapon.java.
+    BuffStatusEffectProvider("holy_weapon", "holy_weapon", "Holy Weapon", 73, duration=50.0),
+    BuffStatusEffectProvider("holy_ward", "holy_ward", "Holy Ward", 74, duration=50.0),
 ])
 
 

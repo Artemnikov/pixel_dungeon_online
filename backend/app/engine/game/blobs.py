@@ -383,6 +383,95 @@ def _evolve_gas_blob(
         events.append({"type": "BLOB_DEPLETED", "data": {"id": blob_id}})
 
 
+def _evolve_hallowed_ground_blob(floor: FloorState, blob_id: str, blob: dict, players: Dict[str, Entity], events: List[dict]) -> None:
+    cells_data = blob.get("cells", [])
+    if not cells_data:
+        if blob_id in floor.blob_areas:
+            del floor.blob_areas[blob_id]
+        events.append({"type": "BLOB_DEPLETED", "data": {"id": blob_id}})
+        return
+
+    # Check fire destroying hallowed ground
+    fire_cells = set()
+    for bid, b in floor.blob_areas.items():
+        if b.get("type") in ("fire", "tengu_fire", "sacrificial_fire"):
+            for fc in b.get("cells", []):
+                fire_cells.add((fc[0], fc[1]))
+
+    valid_cells = []
+    rebuild = False
+    cell_changed = False
+    if len(fire_cells) > 0:
+        for c in cells_data:
+            if (c[0], c[1]) not in fire_cells:
+                valid_cells.append(c)
+            else:
+                cell_changed = True
+    else:
+        valid_cells = list(cells_data)
+
+    if not valid_cells:
+        if blob_id in floor.blob_areas:
+            del floor.blob_areas[blob_id]
+        events.append({"type": "BLOB_DEPLETED", "data": {"id": blob_id}})
+        return
+
+    blob["cells"] = valid_cells
+    remaining = blob.get("remaining", 20.0)
+    remaining -= TICK_DURATION
+    if remaining <= 0:
+        if blob_id in floor.blob_areas:
+            del floor.blob_areas[blob_id]
+        events.append({"type": "BLOB_DEPLETED", "data": {"id": blob_id}})
+        return
+    blob["remaining"] = remaining
+
+    # Accumulate time to tick effects once per second (1 turn)
+    tick_accum = blob.get("tick_accum", 0.0) + TICK_DURATION
+    if tick_accum >= 1.0:
+        tick_accum -= 1.0
+        cell_set = set((c[0], c[1]) for c in valid_cells)
+
+        for c in valid_cells:
+            gx, gy = c[0], c[1]
+            if 0 <= gy < len(floor.grid) and 0 <= gx < len(floor.grid[0]):
+                if floor.grid[gy][gx] in (TileType.FLOOR, TileType.EMBERS, TileType.EMPTY_DECO):
+                    floor.grid[gy][gx] = TileType.FLOOR_GRASS
+                elif floor.grid[gy][gx] == TileType.FLOOR_GRASS:
+                    if random.random() < 0.05:
+                        floor.grid[gy][gx] = TileType.HIGH_GRASS
+                        rebuild = True
+
+        if rebuild:
+            floor.rebuild_flags()
+
+        for p in players.values():
+            if getattr(p, "floor_id", None) == floor.floor_id and getattr(p, "is_alive", False) and (p.pos.x, p.pos.y) in cell_set:
+                max_hp = getattr(p, "get_total_max_hp", lambda: getattr(p, "max_hp", 1))()
+                if p.hp < max_hp:
+                    p.hp = min(max_hp, p.hp + 1)
+                else:
+                    p.add_buff("barrier", duration=30.0, level=1, stack_mode="extend")
+
+        for m in floor.mobs.values():
+            if not getattr(m, "is_alive", False) or (m.pos.x, m.pos.y) not in cell_set:
+                continue
+            if getattr(m, "faction", "") == "player":
+                if m.hp < m.max_hp:
+                    m.hp = min(m.max_hp, m.hp + 1)
+                else:
+                    m.add_buff("barrier", duration=30.0, level=1, stack_mode="extend")
+            else:
+                if not getattr(m, "flying", False):
+                    m.add_buff("crippled", duration=1.0)
+
+    blob["tick_accum"] = tick_accum
+
+    if cell_changed:
+        cell_list = [(c[0], c[1], 1.0) for c in valid_cells]
+        events.append({"type": "BLOB_UPDATE", "data": {"id": blob_id, "type": "hallowed_ground", "cells": cell_list}})
+
+
 def tick_blob_areas(floors: Dict[int, FloorState], players: Dict[str, Entity]) -> List[dict]:
     events: List[dict] = []
 
@@ -434,7 +523,23 @@ def tick_blob_areas(floors: Dict[int, FloorState], players: Dict[str, Entity]) -
                     continue
                 blob["remaining"] = remaining
 
-            if btype == "fire":
+            elif btype in ("light_wall", "wall_of_light"):
+                remaining = blob.get("remaining", 20.0)
+                remaining -= TICK_DURATION
+                if remaining <= 0:
+                    owner_id = blob.get("owner")
+                    if owner_id and owner_id in players:
+                        setattr(players[owner_id], "_has_active_wall", False)
+                    del floor.blob_areas[blob_id]
+                    events.append({"type": "BLOB_DEPLETED", "data": {"id": blob_id}})
+                    floor.rebuild_flags()
+                    continue
+                blob["remaining"] = remaining
+
+            elif btype == "hallowed_ground":
+                _evolve_hallowed_ground_blob(floor, blob_id, blob, players, events)
+
+            elif btype == "fire":
                 _evolve_fire_blob(floor, blob_id, blob, players, events)
 
             elif btype == "electricity":

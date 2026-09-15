@@ -312,7 +312,13 @@ class Entity(BaseModel):
                 active.append(s)
         self.shields = active
 
-    def take_damage(self, amount: int):
+    def take_damage(self, amount: int, is_split_damage: bool = False):
+        if not is_split_damage and self.has_buff("life_link"):
+            owner = getattr(self, "_owner_ref", None) or getattr(self, "owner", None)
+            if owner is not None and getattr(owner, "is_alive", False):
+                split = amount // 2
+                amount = amount - split
+                owner.take_damage(split, is_split_damage=True)
         amount, _ = self.process_shields(amount)
         self.hp -= amount
         if self.hp <= 0:

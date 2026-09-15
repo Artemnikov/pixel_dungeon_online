@@ -261,46 +261,40 @@ class Talent(StrEnum):
 
     # ===================== CLERIC =====================
     # Tier 1
-    SCEPTER_MASTERY = "scepter_mastery"
-    RELIC_MASTERY = "relic_mastery"
-    HOLINESS = "holiness"
-    AFFILIATION = "affiliation"
-    # Tier 2
-    TESTED_METTLE = "tested_mettle"
-    TOME_OF_DIVINITY = "tome_of_divinity"
-    SHARED_ARMAMENTS = "shared_armaments"
-    SPIRITUAL_GRACE = "spiritual_grace"
-    # Tier 3 — class
-    DIVINE_INTERVENTION = "divine_intervention"
-    DIVINE_SHIELD = "divine_shield"
-    # Tier 3 — Priest
-    RADIANCE = "radiance"
-    # Was PRIEST_EMPOWERED_STRIKE's talent id up until this fix: an exact
-    # duplicate of Battlemage's EMPOWERED_STRIKE above ("empowered_strike"),
-    # which silently overwrote Battlemage's TALENT_DEFS/TALENT_CLASS_REQ
-    # entries (same dict, same key -- last write wins) and made Battlemage's
-    # real, already-implemented tier-3 talent unselectable. Given a distinct
-    # id here instead; still has no title/description text, consistent with
-    # its RADIANCE/SMITE siblings (cleric talent tree content is unfinished).
-    PRIEST_EMPOWERED_STRIKE = "priest_empowered_strike"
-    SMITE = "smite"
-    # Tier 3 — Paladin
+    SATIATED_SPELLS = "satiated_spells"
+    HOLY_INTUITION = "holy_intuition"
+    SEARING_LIGHT = "searing_light"
     SHIELD_OF_LIGHT = "shield_of_light"
-    HOLY_ARMOR = "holy_armor"
-    UNDYING_FAITH = "undying_faith"
+    # Tier 2
+    ENLIGHTENING_MEAL = "enlightening_meal"
+    RECALL_INSCRIPTION = "recall_inscription"
+    SUNRAY = "sunray"
+    DIVINE_SENSE = "divine_sense"
+    BLESS = "bless"
+    # Tier 3 — class
+    CLEANSE = "cleanse"
+    LIGHT_READING = "light_reading"
+    # Tier 3 — Priest
+    HOLY_LANCE = "holy_lance"
+    HALLOWED_GROUND = "hallowed_ground"
+    MNEMONIC_PRAYER = "mnemonic_prayer"
+    # Tier 3 — Paladin
+    LAY_ON_HANDS = "lay_on_hands"
+    AURA_OF_PROTECTION = "aura_of_protection"
+    WALL_OF_LIGHT = "wall_of_light"
     # Tier 4 (armor abilities)
     ASCENDED_FORM_ABILITY = "ascended_form_talent"
     TRINITY_ABILITY = "trinity_talent"
     POWER_OF_MANY_ABILITY = "power_of_many_talent"
     # Tier 4 — Ascended Form
-    EMPOWERED_ASCENSION = "empowered_ascension"
-    RADIANT_ASCENSION = "radiant_ascension"
-    HEALING_ASCENSION = "healing_ascension"
+    DIVINE_INTERVENTION = "divine_intervention"
+    JUDGEMENT = "judgement"
+    FLASH = "flash"
     # Tier 4 — Trinity
-    TRINITARIAN_TRINITY = "trinitarian_trinity"
-    HOLY_TRINITY = "holy_trinity"
-    DEEP_ROOTS_TRINITY = "deep_roots_trinity"
+    BODY_FORM = "body_form"
+    MIND_FORM = "mind_form"
+    SPIRIT_FORM = "spirit_form"
     # Tier 4 — Power of Many
-    GREATER_POWER = "greater_power"
-    PERSISTENT_ALLIES = "persistent_allies"
-    LIGHT_WARRIOR = "light_warrior"
+    BEAMING_RAY = "beaming_ray"
+    LIFE_LINK = "life_link"
+    STASIS = "stasis"

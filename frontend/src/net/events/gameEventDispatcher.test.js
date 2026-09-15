@@ -150,6 +150,79 @@ test('DefaultEventDispatcher: handles combat, world, and boss events correctly',
   assert.equal(playedRate, 1.25);
 });
 
+test('DefaultEventDispatcher: PLAY_ANIMATION animates visible players and spawns the glow', () => {
+  const dispatcher = createDefaultEventDispatcher();
+
+  const gridRef = { current: [[1, 2], [1, 2]] };
+  const visionRef = { current: { visible: new Set(['1,0', '1,1']), discovered: new Set() } };
+  const world = new WorldManager({
+    gridRef,
+    setGrid: () => {},
+    visionRef,
+  });
+
+  const entitiesRef = {
+    current: {
+      players: {
+        hero: { id: 'hero', name: 'Cleric', renderPos: { x: 1, y: 0 }, pos: { x: 1, y: 0 }, hp: 20, max_hp: 20 },
+        ally: { id: 'ally', name: 'Warrior', renderPos: { x: 2, y: 2 }, pos: { x: 2, y: 2 }, hp: 20, max_hp: 20 },
+      },
+      mobs: {},
+      items: [],
+      traps: [],
+    },
+  };
+  const entities = new EntityManager({
+    entitiesRef,
+    dyingMobsRef: { current: {} },
+    myPlayerIdRef: { current: 'hero' },
+  });
+
+  const particlesRef = { current: [] };
+  const flareEffectsRef = { current: [] };
+  const playerAnimRef = { current: {} };
+  const effects = new VisualEffectsManager({
+    particlesRef,
+    flareEffectsRef,
+    playerAnimRef,
+  });
+
+  const ctx = {
+    myPlayerId: 'hero',
+    world,
+    entities,
+    effects,
+    ui: new GameCallbacks({}),
+    audio: { play: () => {}, playStep: () => {} },
+  };
+
+  // Local, visible hero casting Holy Weapon: operate animation + golden glow + sparks
+  dispatcher.dispatch({
+    type: 'PLAY_ANIMATION',
+    data: { player: 'hero', animation: 'operate', glow: 'golden', spell: 'holy_weapon', x: 1, y: 0 },
+  }, ctx);
+
+  assert.ok(playerAnimRef.current.hero.operateUntil > 0, 'operate animation set on local hero');
+  assert.equal(flareEffectsRef.current.length, 1, 'golden flare spawned for the glow');
+  assert.ok(particlesRef.current.length >= 6, 'spark burst spawned for the glow');
+
+  // 'read' animation maps to the read sprite state
+  dispatcher.dispatch({
+    type: 'PLAY_ANIMATION',
+    data: { player: 'hero', animation: 'read' },
+  }, ctx);
+  assert.ok(playerAnimRef.current.hero.readUntil > 0, 'read animation set');
+
+  // Remote player outside LOS: no animation, no glow
+  const sparksBefore = particlesRef.current.length;
+  dispatcher.dispatch({
+    type: 'PLAY_ANIMATION',
+    data: { player: 'ally', animation: 'operate', glow: 'golden', x: 2, y: 2 },
+  }, ctx);
+  assert.equal(playerAnimRef.current.ally, undefined, 'out-of-LOS player is not animated');
+  assert.equal(particlesRef.current.length, sparksBefore, 'no glow for out-of-LOS player');
+});
+
 test('DefaultEventDispatcher: LOCKED event plays the locked sound for doors/chests', () => {
   const dispatcher = createDefaultEventDispatcher();
 
@@ -420,5 +493,113 @@ test('DefaultEventDispatcher: PLANT_TRIGGERED event removes plant, plays sound, 
   assert.equal(floatingTextRef.current[0].text, 'Herbal Healing');
 });
 
+test('Guiding Light: burst/sound/damage text defer until the light_missile lands', () => {
+  const dispatcher = createDefaultEventDispatcher();
 
+  const gridRef = { current: [[1, 2], [1, 2]] };
+  const visionRef = { current: { visible: new Set(['1,0', '1,1']), discovered: new Set() } };
+  const world = new WorldManager({ gridRef, setGrid: () => {}, visionRef });
 
+  const entitiesRef = {
+    current: {
+      players: {
+        hero: { id: 'hero', name: 'Cleric', renderPos: { x: 1, y: 0 }, pos: { x: 1, y: 0 }, hp: 20, max_hp: 20 },
+      },
+      mobs: {
+        rat: { id: 'rat', name: 'Rat', renderPos: { x: 1, y: 1 }, pos: { x: 1, y: 1 }, hp: 8, max_hp: 8 },
+      },
+      items: [],
+      traps: [],
+    },
+  };
+  const entities = new EntityManager({
+    entitiesRef,
+    dyingMobsRef: { current: {} },
+    myPlayerIdRef: { current: 'hero' },
+  });
+
+  const particlesRef = { current: [] };
+  const floatingTextRef = { current: [] };
+  const magicMissileRef = { current: [] };
+  const mobAnimRef = { current: {} };
+  const playerAnimRef = { current: {} };
+
+  const effects = new VisualEffectsManager({
+    particlesRef,
+    floatingTextRef,
+    magicMissileRef,
+    mobAnimRef,
+    playerAnimRef,
+  });
+
+  const played = [];
+  const mockAudio = {
+    play: (name, rate) => played.push({ name, rate }),
+    playStep: () => {},
+  };
+
+  const ctx = {
+    myPlayerId: 'hero',
+    world,
+    entities,
+    effects,
+    ui: new GameCallbacks({}),
+    audio: mockAudio,
+  };
+
+  // Cast: RANGED_ATTACK light_missile from hero (1,0) to rat (1,1)
+  dispatcher.dispatch({
+    type: 'RANGED_ATTACK',
+    data: {
+      source: 'hero',
+      x: 1,
+      y: 0,
+      target_x: 1,
+      target_y: 1,
+      projectile: 'light_missile',
+      sound: 'ATTACK_MAGIC',
+      is_wand: true,
+      is_bow: false,
+      crit: false,
+      grim_proc: false,
+      beam_type: null,
+    },
+  }, ctx);
+
+  const missile = magicMissileRef.current[0];
+  assert.ok(missile, 'bolt spawned');
+  assert.equal(typeof missile.onImpact, 'function');
+  assert.equal(missile.endX, 1 * 32 + 16);
+  assert.equal(missile.endY, 1 * 32 + 16);
+  // cast zap sound played immediately
+  assert.ok(played.some(p => p.name === 'ATTACK_MAGIC'));
+  const playsBeforeDamage = played.length;
+
+  // Impact: DAMAGE arrives at cast-time, but visuals must be deferred
+  dispatcher.dispatch({
+    type: 'DAMAGE',
+    data: {
+      target: 'rat',
+      amount: 5,
+      projectile: 'light_missile',
+      splash_count: 3,
+      holy: true,
+      crit: false,
+      grim_proc: false,
+    },
+  }, ctx);
+
+  // Nothing rendered yet (bolt still in flight)
+  assert.equal(missile.impactData.amount, 5);
+  assert.equal(particlesRef.current.length, 0);
+  assert.equal(floatingTextRef.current.length, 0);
+  assert.equal(played.length, playsBeforeDamage);
+
+  // ... let it fly: call onImpact on missile completion
+  missile.onImpact(missile.impactData);
+
+  assert.ok(particlesRef.current.length >= 3, 'yellow splash at impact');
+  assert.equal(particlesRef.current[0].color, '#FFFF44');
+  assert.ok(floatingTextRef.current.some(t => t.text === '-5'));
+  assert.ok(played.some(p => p.name === 'HIT_MAGIC' && p.rate >= 0.87 && p.rate <= 1.15));
+});

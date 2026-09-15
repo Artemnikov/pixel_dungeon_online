@@ -145,15 +145,15 @@ T4_ABILITY_TALENTS: Dict[str, str] = {
     Talent.REACTIVE_FEINT: ArmorAbilityType.FEINT,
     Talent.PHANTASMAL_FEINT: ArmorAbilityType.FEINT,
     # Cleric
-    Talent.EMPOWERED_ASCENSION: ArmorAbilityType.ASCENDED_FORM,
-    Talent.RADIANT_ASCENSION: ArmorAbilityType.ASCENDED_FORM,
-    Talent.HEALING_ASCENSION: ArmorAbilityType.ASCENDED_FORM,
-    Talent.TRINITARIAN_TRINITY: ArmorAbilityType.TRINITY,
-    Talent.HOLY_TRINITY: ArmorAbilityType.TRINITY,
-    Talent.DEEP_ROOTS_TRINITY: ArmorAbilityType.TRINITY,
-    Talent.GREATER_POWER: ArmorAbilityType.POWER_OF_MANY,
-    Talent.PERSISTENT_ALLIES: ArmorAbilityType.POWER_OF_MANY,
-    Talent.LIGHT_WARRIOR: ArmorAbilityType.POWER_OF_MANY,
+    Talent.DIVINE_INTERVENTION: ArmorAbilityType.ASCENDED_FORM,
+    Talent.JUDGEMENT: ArmorAbilityType.ASCENDED_FORM,
+    Talent.FLASH: ArmorAbilityType.ASCENDED_FORM,
+    Talent.BODY_FORM: ArmorAbilityType.TRINITY,
+    Talent.MIND_FORM: ArmorAbilityType.TRINITY,
+    Talent.SPIRIT_FORM: ArmorAbilityType.TRINITY,
+    Talent.BEAMING_RAY: ArmorAbilityType.POWER_OF_MANY,
+    Talent.LIFE_LINK: ArmorAbilityType.POWER_OF_MANY,
+    Talent.STASIS: ArmorAbilityType.POWER_OF_MANY,
 }
 
 # Armor abilities a class may choose from, by class_type.

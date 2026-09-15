@@ -291,6 +291,24 @@ def handle_preparation_strike(
     game.preparation_strike(player_id, message.target_x, message.target_y)
 
 
+@dispatcher.register(msg.CastClericSpell)
+def handle_cast_cleric_spell(
+    game: GameInstance, player_id: str, message: msg.CastClericSpell
+):
+    player = game.players.get(player_id)
+    if player and not player.is_downed and player.is_alive:
+        game.cast_spell(player, message.spell, message.target_x, message.target_y)
+
+
+@dispatcher.register(msg.SetClericQuickSpell)
+def handle_set_cleric_quick_spell(
+    game: GameInstance, player_id: str, message: msg.SetClericQuickSpell
+):
+    player = game.players.get(player_id)
+    if player and not player.is_downed and player.is_alive:
+        game.set_cleric_quick_spell(player, message.spell)
+
+
 @dispatcher.register(msg.MetamorphChoose)
 def handle_metamorph_choose(
     game: GameInstance, player_id: str, message: msg.MetamorphChoose

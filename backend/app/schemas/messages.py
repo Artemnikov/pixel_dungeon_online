@@ -324,6 +324,18 @@ class Resurrect(_ClientMessageBase):
     type: Literal["RESURRECT"]
 
 
+class CastClericSpell(_ClientMessageBase):
+    type: Literal["CAST_CLERIC_SPELL"]
+    spell: str
+    target_x: Optional[int] = None
+    target_y: Optional[int] = None
+
+
+class SetClericQuickSpell(_ClientMessageBase):
+    type: Literal["SET_CLERIC_QUICK_SPELL"]
+    spell: Optional[str] = None
+
+
 ClientMessage = Annotated[
     Union[
         Ping,
@@ -350,6 +362,8 @@ ClientMessage = Annotated[
         UseArmorAbility,
         TriggerBerserk,
         PreparationStrike,
+        CastClericSpell,
+        SetClericQuickSpell,
         MetamorphChoose,
         MetamorphReplace,
         AdminTeleport,

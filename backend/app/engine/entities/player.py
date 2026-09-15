@@ -476,8 +476,6 @@ class Player(Entity):
     cloak_stealth_active: bool = False
     _cloak_drain_accum: float = 0.0
     _cloak_recharge_accum: float = 0.0
-    # HolyTome: next scroll read is blessed (doubled effect).
-    holy_tome_buffed: bool = False
     # Assassin Preparation: real seconds spent invisible this stealth window.
     # Drives the surprise damage tier / KO threshold / blink range (see combat).
     prep_seconds: float = 0.0
@@ -500,19 +498,30 @@ class Player(Entity):
     last_weapon_enchant: str = ""
 
     # --- Cleric ---------------------------------------------------------------
-    # Spells cast this tick (for per-turn spell limits / Trinity tracking).
-    spells_cast_this_turn: List[str] = Field(default_factory=list)
-    # Spell cooldowns: {spell_name -> remaining_seconds}
     spell_cooldowns: Dict[str, float] = Field(default_factory=dict)
-    # Trinity: list of borrowed item kinds (max 3)
+    cleric_quick_spell: Optional[str] = None
+    guiding_light_priest_cd: float = 0.0
     current_trinity_forms: List[str] = Field(default_factory=list)
-    # Ascended Form (Cleric armor ability): active flag
     ascended_form_active: bool = False
     ascended_form_timer: float = 0.0
-    # Power of Many: ally mob id
+    ascended_form_casts: int = 0
+    flash_casts: int = 0
+    divine_intervention_used: bool = False
+    _has_active_wall: Optional[int] = None
     powered_ally_id: Optional[str] = None
-    # Paladin subclass: blessed weapon turns
-    blessed_weapon_turns: int = 0
+    last_used_inscription: Optional[Dict[str, Any]] = None
+
+    def get_holy_tome(self):
+        """Returns equipped Holy Tome, or Holy Tome from backpack if Light Reading is learned."""
+        from app.engine.entities.items.artifacts import HolyTome
+        for slot in (getattr(self.belongings, "artifact", None), getattr(self.belongings, "misc", None)):
+            if isinstance(slot, HolyTome):
+                return slot
+        if self.talent_info.has("light_reading"):
+            for it in self.belongings.backpack.items:
+                if isinstance(it, HolyTome):
+                    return it
+        return None
 
     @property
     def talent_info(self):
@@ -537,7 +546,7 @@ class Player(Entity):
     def equipped_wearable(self) -> Optional[AnyItem]:
         return self.belongings.armor
 
-    def take_damage(self, amount: int):
+    def take_damage(self, amount: int, is_split_damage: bool = False):
         if self.is_admin:
             return 0
         if self.is_downed:
@@ -550,6 +559,14 @@ class Player(Entity):
         # the reborn hero.
         if self.has_buff("spawn_protection"):
             return 0
+
+        # Life Link damage split with Light Ally
+        if not is_split_damage and self.has_buff("life_link"):
+            ally = getattr(self, "_active_powered_ally", None)
+            if ally is not None and getattr(ally, "is_alive", False):
+                split = amount // 2
+                amount = amount - split
+                ally.take_damage(split, is_split_damage=True)
 
         # Deathless Fury (warrior T3 berserker): a fatal blow while raging with
         # power>=1 triggers Berserk instead of killing (cheat death, SPD

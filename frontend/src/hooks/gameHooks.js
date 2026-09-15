@@ -265,6 +265,7 @@ export default function useGameHooks(state) {
   const { equipItem, executeItemAction, assignQuickslot, handleToolbarClick } = useItemActions({
     send, equippedItems, targetingMode: targeting.targetingMode,
     setTargetingMode: targeting.setTargetingMode, setShowInventory: modals.setShowInventory, quickslot,
+    onOpenClericCastBar: modals.openClericCastBar, belongings,
   });
 
   const { handleToolbarDoubleClick } = useTargetingHandlers({

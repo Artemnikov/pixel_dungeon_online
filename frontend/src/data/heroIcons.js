@@ -47,8 +47,34 @@ export const ACTION_INDICATOR_ICONS = {
   monk_abilities: 110,
 };
 
+export const CLERIC_SPELL_ICONS = {
+  holy_intuition: 43,
+  shield_of_light: 44,
+  recall_inscription: 45,
+  sunray: 46,
+  divine_sense: 47,
+  bless: 48,
+  cleanse: 49,
+  holy_lance: 51,
+  hallowed_ground: 52,
+  mnemonic_prayer: 53,
+  lay_on_hands: 55,
+  aura_of_protection: 56,
+  wall_of_light: 57,
+  divine_intervention: 58,
+  judgement: 59,
+  flash: 60,
+  body_form: 61,
+  mind_form: 62,
+  spirit_form: 63,
+  beaming_ray: 64,
+  life_link: 65,
+  stasis: 66,
+};
+
 export function getHeroIconIndex(type, id) {
   if (type === 'subclass') return SUBCLASS_ICONS[id] ?? 127;
   if (type === 'ability') return ABILITY_ICONS[id] ?? 127;
+  if (type === 'cleric_spell') return CLERIC_SPELL_ICONS[id] ?? 127;
   return 127;
 }

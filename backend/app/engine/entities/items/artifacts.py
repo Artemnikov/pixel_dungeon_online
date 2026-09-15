@@ -254,22 +254,59 @@ class EtherealChains(Artifact):
 class HolyTome(Artifact):
     kind: Literal["holy_tome"] = "holy_tome"
     name: str = "Holy Tome"
-    charge: int = 0
+    charge: int = 3
     charge_cap: int = 3
+    partial_charge: float = 0.0
     level_cap: ClassVar[int] = 10
     exp: int = 0
-    DESC: ClassVar[str] = "A tome of holy scripture. Each scroll read while it is equipped charges it with divine power, which amplifies the next scroll read."
+    DESC: ClassVar[str] = "This small leather-bound book contains a variety of holy spells. Reading it will cast one of those spells, spending energy from the tome in the process."
 
     def actions(self, player: Optional["Player"] = None) -> List[str]:
         base = super().actions(player)
-        if player is None or not player.belongings.is_equipped(self.id) or self.cursed:
+        if player is None or self.cursed:
             return base
-        if self.charge >= self.charge_cap:
-            return [Action.BLESS] + base
+        if player.belongings.is_equipped(self.id) or player.talent_info.has("light_reading"):
+            return [Action.CAST] + base
         return base
 
+    def default_action(self) -> Optional[str]:
+        if self.cursed:
+            return None
+        return Action.CAST
+
     def on_upgrade(self) -> None:
-        self.charge_cap = min(self.charge_cap + 1, 5)
+        self.charge_cap = min(self.level + 3, 10)
+
+    def spend_charge(self, charges_spent: float, hero_lvl: int = 1) -> None:
+        self.partial_charge -= charges_spent
+        while self.partial_charge < 0:
+            self.charge -= 1
+            self.partial_charge += 1.0
+
+        target_lvl = 1 + self.level * 2
+        if self.level >= 7:
+            target_lvl += (self.level - 6)
+        lvl_diff = hero_lvl - target_lvl
+
+        if lvl_diff >= 0:
+            self.exp += round(charges_spent * 10.0 * (1.1 ** lvl_diff))
+        else:
+            self.exp += round(charges_spent * 10.0 * (0.75 ** (-lvl_diff)))
+
+        while self.exp >= (self.level + 1) * 50 and self.level < self.level_cap:
+            self.level += 1
+            self.exp -= self.level * 50
+            self.on_upgrade()
+
+    def direct_charge(self, amount: float) -> None:
+        if self.charge < self.charge_cap:
+            self.partial_charge += amount
+            while self.partial_charge >= 1.0:
+                self.charge += 1
+                self.partial_charge -= 1.0
+            if self.charge >= self.charge_cap:
+                self.partial_charge = 0.0
+                self.charge = self.charge_cap
 
     def _info_lines(self, player: Optional["Player"] = None) -> List[str]:
         lines = super()._info_lines(player)

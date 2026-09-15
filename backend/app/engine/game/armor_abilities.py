@@ -16,6 +16,9 @@ from app.engine.systems.combat import resolve_melee_attack
 COST_SMOKE_BOMB = 50
 COST_DEATH_MARK = 25
 COST_SHADOW_CLONE = 35
+COST_ASCENDED_FORM = 40
+COST_TRINITY = 33
+COST_POWER_OF_MANY = 50
 
 
 # Heroic Energy (warrior T4, universal): reduces any armor ability's charge
@@ -231,6 +234,33 @@ class ArmorAbilitiesMixin:
 
         elif ability == ArmorAbilityType.SHADOW_CLONE:
             self._ability_shadow_clone(player, floor, floor_id, target_x, target_y)
+
+        elif ability == ArmorAbilityType.ASCENDED_FORM:
+            cost = int(COST_ASCENDED_FORM * _heroic_energy_mult(player))
+            if player.armor_charge < cost:
+                return
+            player.armor_charge -= cost
+            self.action_ascended_form(player)
+
+        elif ability == ArmorAbilityType.TRINITY:
+            cost = int(COST_TRINITY * _heroic_energy_mult(player))
+            if player.armor_charge < cost:
+                return
+            player.armor_charge -= cost
+            self.action_trinity(player, "scroll")
+
+        elif ability == ArmorAbilityType.POWER_OF_MANY:
+            tx = target_x if target_x is not None else player.pos.x
+            ty = target_y if target_y is not None else player.pos.y
+            if not (0 <= tx < floor.width and 0 <= ty < floor.height):
+                return
+            if not (floor.flags and floor.flags.passable[ty][tx]):
+                return
+            cost = int(COST_POWER_OF_MANY * _heroic_energy_mult(player))
+            if player.armor_charge < cost:
+                return
+            player.armor_charge -= cost
+            self.action_power_of_many(player, tx, ty)
 
     # --- Rogue abilities ---------------------------------------------------
     def _ability_smoke_bomb(self, player, floor, floor_id, target_x, target_y) -> None:

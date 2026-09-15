@@ -173,21 +173,19 @@ def action_cast_chains(game, player, item, tx=None, ty=None) -> None:
 
 
 # ---------------------------------------------------------------------------
-# HolyTome
+# Ankh (Bless action)
 # ---------------------------------------------------------------------------
 
 def action_bless(game, player, item, tx=None, ty=None) -> None:
-    if not isinstance(item, HolyTome):
-        return
-    if item.charge < item.charge_cap:
-        return
-    player.holy_tome_buffed = True
-    item.charge = 0
-    _artifact_gain_exp(item, 20)
-    game.add_event("TOME_BLESS", {
-        "player": player.id, "item_id": item.id,
-    }, floor_id=player.floor_id, source_player_id=player.id)
-    game.add_event("PLAY_SOUND", {"sound": "ITEM"}, floor_id=player.floor_id)
+    from app.engine.entities.items.consumables import Ankh, Waterskin
+    if isinstance(item, Ankh) and not item.blessed:
+        for w in player.belongings.all_items():
+            if isinstance(w, Waterskin) and w.is_full():
+                w.volume = 0
+                item.blessed = True
+                game.add_event("ANKH_BLESSED", {"player": player.id, "item_id": item.id}, floor_id=player.floor_id)
+                game.add_event("PLAY_SOUND", {"sound": "ITEM"}, floor_id=player.floor_id)
+                return
 
 
 # ---------------------------------------------------------------------------

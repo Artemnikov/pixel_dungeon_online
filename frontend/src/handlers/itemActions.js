@@ -2,17 +2,26 @@ import { useCallback } from 'react';
 
 const TARGETED_ACTIONS = ['THROW', 'ZAP', 'DIRECT', 'SHOOT', 'CAST', 'STEAL', 'PLANT_SEED', 'UNLOCK', 'KEY_REVEAL'];
 
-export function useItemActions({ send, equippedItems, targetingMode, setTargetingMode, setShowInventory, quickslot }) {
+export function useItemActions({ send, equippedItems, targetingMode, setTargetingMode, setShowInventory, quickslot, onOpenClericCastBar, belongings }) {
   const equipItem = useCallback((itemId) => send({ type: 'EQUIP_ITEM', item_id: itemId }), [send]);
 
   const executeItemAction = useCallback((itemId, action, tx, ty) => {
+    if (action === 'CAST') {
+      const isTome = belongings?.artifact?.id === itemId && belongings?.artifact?.kind === 'holy_tome'
+        || belongings?.misc?.id === itemId && belongings?.misc?.kind === 'holy_tome'
+        || (belongings?.backpack?.items || []).some(it => it.id === itemId && it.kind === 'holy_tome');
+      if (isTome) {
+        onOpenClericCastBar?.();
+        return;
+      }
+    }
     if (TARGETED_ACTIONS.includes(action) && tx === undefined) {
       setTargetingMode({ itemId, action });
       setShowInventory(false);
       return;
     }
     send({ type: 'EXECUTE_ITEM_ACTION', item_id: itemId, action, target_x: tx, target_y: ty });
-  }, [send, setTargetingMode, setShowInventory]);
+  }, [send, setTargetingMode, setShowInventory, belongings, onOpenClericCastBar]);
 
   const assignQuickslot = useCallback((itemId) => {
     const slots = quickslot?.slots || [];
@@ -23,6 +32,10 @@ export function useItemActions({ send, equippedItems, targetingMode, setTargetin
 
   const handleToolbarClick = useCallback((item) => {
     if (!item) return;
+    if (item.kind === 'holy_tome') {
+      onOpenClericCastBar?.();
+      return;
+    }
     if (item.type === 'potion') {
       send({ type: 'USE_ITEM', item_id: item.id });
       return;
@@ -68,7 +81,7 @@ export function useItemActions({ send, equippedItems, targetingMode, setTargetin
     } else if (item.default_action) {
       executeItemAction(item.id, item.default_action);
     }
-  }, [send, executeItemAction, equipItem, equippedItems, targetingMode, setTargetingMode]);
+  }, [send, executeItemAction, equipItem, equippedItems, targetingMode, setTargetingMode, onOpenClericCastBar]);
 
   return { equipItem, executeItemAction, assignQuickslot, handleToolbarClick };
 }

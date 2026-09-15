@@ -45,6 +45,16 @@ def action_throw_runestone(game, player, item, tx=None, ty=None) -> None:
 
     consume_backpack_item(player, item)
 
+    ti = getattr(player, "talent_info", None)
+    pts = ti.level("recall_inscription") if ti else 0
+    dur = 300.0 if pts >= 2 else 10.0
+    player.last_used_inscription = {
+        "type": "runestone",
+        "kind": kind,
+        "time": getattr(game, "total_time", 0.0),
+        "duration": dur,
+    }
+
     if kind == "stone_of_blast":
         _blast_effect(game, player, floor, lx, ly)
     elif kind == "stone_of_blink":

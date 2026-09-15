@@ -282,6 +282,23 @@ export interface PlaySoundEvent {
   data: { sound: string; rate?: number; x?: number; y?: number };
 }
 
+/** Request one hero sprite play an animation / glow (e.g. cleric spell casts
+ *  emitting SPD's hero.sprite.operate + Enchanting glow). */
+export interface PlayAnimationEvent {
+  type: 'PLAY_ANIMATION';
+  data: {
+    player: string;
+    /** Hero sprite animation state name: 'operate', 'read', ... */
+    animation: string;
+    /** Optional VFX glow over the hero cell (e.g. 'golden'). */
+    glow?: string;
+    /** Spell id that produced the animation. */
+    spell?: string;
+    x?: number;
+    y?: number;
+  };
+}
+
 export interface ShockingProcEvent {
   type: 'SHOCKING_PROC';
   data: {
@@ -1135,7 +1152,25 @@ export interface ToolkitEnergizedEvent {
   data: { player: string; toolkit_id: string; levels: number; level: number };
 }
 
+export interface FlareEvent {
+  type: 'FLARE';
+  data: { x: number; y: number; color?: string; radius?: number; rays?: number; duration?: number };
+}
+
+export interface FlashScreenEvent {
+  type: 'FLASH_SCREEN';
+  data: { color?: string; duration?: number };
+}
+
+export interface HolyIntuitionEvent {
+  type: 'HOLY_INTUITION';
+  data: { player: string; revealed?: boolean };
+}
+
 export type GameEvent =
+  | FlareEvent
+  | FlashScreenEvent
+  | HolyIntuitionEvent
   | AttackEvent
   | MissEvent
   | DamageEvent
@@ -1144,6 +1179,7 @@ export type GameEvent =
   | MoveResultEvent
   | RangedAttackEvent
   | PlaySoundEvent
+  | PlayAnimationEvent
   | SearchEvent
   | HealEvent
   | TrapTriggeredEvent

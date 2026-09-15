@@ -125,6 +125,7 @@ export interface Player {
   spell_cooldowns?: {
     [k: string]: number;
   };
+  cleric_quick_spell?: string | null;
   current_trinity_forms?: string[];
   ascended_form_active?: boolean;
   ascended_form_timer?: number;

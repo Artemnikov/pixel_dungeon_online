@@ -78,6 +78,10 @@
 .side-tag--attack { border-color: #c03838; }
 .side-tag--attack:hover { background: rgba(40, 10, 10, 0.85); }
 .side-tag--action { border-color: #8855cc; }
+.side-tag--cleric { border-color: #e0a924; }
+.side-tag--cleric:hover { background: rgba(40, 35, 15, 0.85); }
+.side-tag--cleric.on-cooldown { opacity: 0.55; cursor: not-allowed; border-color: #556677; }
+.side-tag-cd { font: 10px monospace; color: #fa4; font-weight: bold; }
 
 /* --- LootIndicator — item preview above inventory button --- */
 .loot-indicator {

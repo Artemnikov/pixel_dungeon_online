@@ -2,26 +2,20 @@
 #
 """Cleric class mechanics for GameInstance.
 
-Spell casting system, spell cooldowns, Trinity item borrowing, and armor abilities.
+Polymorphic spell casting system, Holy Tome energy management,
+Trinity item borrowing, and armor abilities.
 Called from TickMixin and ArmorAbilitiesMixin.
 """
-import random
+from typing import Optional
 
-from app.engine.entities.player import Player, CharacterClass
-
-_SPELL_COOLDOWNS: dict[str, float] = {
-    "holy_light": 20.0,
-    "holy_weapon": 30.0,
-    "divine_sense": 15.0,
-    "mend": 25.0,
-    "bless": 20.0,
-    "guiding_light": 15.0,
-    "holy_ward": 25.0,
-    "recall_inscription": 30.0,
-    "trinity_spell": 40.0,
-    "power_of_many": 50.0,
-    "ascended_form": 60.0,
-}
+from app.engine.entities.base import Position
+from app.engine.entities.player import CharacterClass, Player
+from app.engine.entities.items.artifacts import HolyTome
+from app.engine.game.cleric_spells import (
+    SPELL_REGISTRY,
+    get_available_spells,
+    get_cleric_spell,
+)
 
 
 class ClericMixin:
@@ -29,169 +23,172 @@ class ClericMixin:
     def tick_cleric(self, player: Player, dt: float) -> None:
         if player.class_type != CharacterClass.CLERIC:
             return
-        # Tick down all spell cooldowns
+
+        if hasattr(player, "guiding_light_priest_cd") and player.guiding_light_priest_cd > 0:
+            player.guiding_light_priest_cd = max(0.0, player.guiding_light_priest_cd - dt)
+
         for spell in list(player.spell_cooldowns.keys()):
             player.spell_cooldowns[spell] = max(0.0, player.spell_cooldowns[spell] - dt)
-        # Clear spells_cast_this_turn (reset each tick)
-        player.spells_cast_this_turn = []
-        # Tick down ascended form
+
         if player.ascended_form_active and player.ascended_form_timer > 0:
             player.ascended_form_timer -= dt
             if player.ascended_form_timer <= 0:
                 player.ascended_form_active = False
-                self.add_event("ASCENDED_END", {"player": player.id},
-                               floor_id=player.floor_id, source_player_id=player.id)
-        # Paladin: tick down blessed weapon
-        if player.blessed_weapon_turns > 0:
-            player.blessed_weapon_turns -= 1
+                player.ascended_form_casts = 0
+                player.flash_casts = 0
+                player.divine_intervention_used = False
+                self.add_event(
+                    "ASCENDED_END",
+                    {"player": player.id},
+                    floor_id=player.floor_id,
+                    source_player_id=player.id,
+                )
 
-    def cast_spell(self, player: Player, spell_name: str, tx: int = None, ty: int = None) -> bool:
+        if not player.has_buff("stasis") and getattr(player, "_stasis_stored_ally", None) is not None:
+            floor = self._get_or_create_floor(player.floor_id)
+            stored = player._stasis_stored_ally
+            floor.mobs[stored.id] = stored
+            stored.pos = Position(x=player.pos.x, y=player.pos.y)
+            stored.is_alive = True
+            player._stasis_stored_ally = None
+
+    def set_cleric_quick_spell(self, player: Player, spell_name: Optional[str]) -> bool:
+        """Set or toggle-clear the cleric's tome quick-cast spell (ActionIndicator tag)."""
+        if player.class_type != CharacterClass.CLERIC or player.is_downed or not player.is_alive:
+            return False
+
+        if not spell_name or spell_name == player.cleric_quick_spell:
+            player.cleric_quick_spell = None
+        else:
+            spell = get_cleric_spell(spell_name)
+            if spell is None or not spell.is_unlocked(player):
+                return False
+            player.cleric_quick_spell = spell_name
+
+        self.add_event(
+            "CLERIC_QUICK_SPELL",
+            {
+                "player": player.id,
+                "spell": player.cleric_quick_spell,
+            },
+            floor_id=player.floor_id,
+            player_id=player.id,
+        )
+        return True
+
+    def cast_spell(self, player: Player, spell_name: str, tx: Optional[int] = None, ty: Optional[int] = None) -> bool:
         """Attempt to cast a cleric spell. Returns True on success."""
-        if player.class_type != CharacterClass.CLERIC:
+        if player.class_type != CharacterClass.CLERIC or player.is_downed or not player.is_alive:
             return False
         if player.has_buff("magic_immune"):
             return False
-        cooldown = player.spell_cooldowns.get(spell_name, 0.0)
-        if cooldown > 0:
-            self.add_event("SPELL_ON_COOLDOWN", {
-                "player": player.id, "spell": spell_name, "remaining": cooldown,
-            }, floor_id=player.floor_id, player_id=player.id)
+
+        spell = get_cleric_spell(spell_name)
+        if spell is None or not spell.is_unlocked(player):
             return False
 
-        dispatched = self._dispatch_spell(player, spell_name, tx, ty)
+        tome = player.get_holy_tome()
+        if tome is None:
+            self.add_event(
+                "SPELL_FAILED",
+                {"player": player.id, "spell": spell_name, "reason": "no_holy_tome"},
+                floor_id=player.floor_id,
+                player_id=player.id,
+            )
+            return False
+
+        cost = spell.get_cost(player)
+        if tome.charge < cost:
+            self.add_event(
+                "SPELL_NO_CHARGES",
+                {"player": player.id, "spell": spell_name, "required": cost, "current": tome.charge},
+                floor_id=player.floor_id,
+                player_id=player.id,
+            )
+            return False
+
+        dispatched = spell.execute(self, player, tx, ty)
         if dispatched:
-            player.spell_cooldowns[spell_name] = _SPELL_COOLDOWNS.get(spell_name, 20.0)
-            player.spells_cast_this_turn.append(spell_name)
+            spell.on_spell_cast(self, player, tome, cost)
         return dispatched
 
-    def _dispatch_spell(self, player: Player, spell_name: str, tx, ty) -> bool:
-        floor = self._get_or_create_floor(player.floor_id)
-        if spell_name == "holy_light":
-            visible_mobs = list(self._mobs_in_fov(player, floor, player.floor_id))
-            for mob in visible_mobs:
-                if mob.faction == "player":
-                    continue
-                dmg = max(1, random.randint(4, 8) + player.level)
-                dealt = mob.take_damage(dmg)
-                mob.add_buff("blindness", duration=5.0)
-                self.add_event("DAMAGE", {"target": mob.id, "amount": dealt, "holy": True},
-                               floor_id=player.floor_id)
-            self.add_event("SPELL_CAST", {"player": player.id, "spell": spell_name},
-                           floor_id=player.floor_id, source_player_id=player.id)
-            return True
-
-        elif spell_name == "holy_weapon":
-            player.blessed_weapon_turns = 30
-            self.add_event("SPELL_CAST", {"player": player.id, "spell": spell_name},
-                           floor_id=player.floor_id, source_player_id=player.id)
-            return True
-
-        elif spell_name == "divine_sense":
-            player.add_buff("mind_vision", duration=30.0)
-            self.add_event("SPELL_CAST", {"player": player.id, "spell": spell_name},
-                           floor_id=player.floor_id, source_player_id=player.id)
-            return True
-
-        elif spell_name == "mend":
-            heal = max(1, round(player.get_total_max_hp() * 0.3))
-            player.set_heal(heal, 0.25, 0)
-            self.add_event("SPELL_CAST", {"player": player.id, "spell": spell_name},
-                           floor_id=player.floor_id, source_player_id=player.id)
-            return True
-
-        elif spell_name == "bless":
-            player.add_buff("bless", duration=20.0)
-            self.add_event("SPELL_CAST", {"player": player.id, "spell": spell_name},
-                           floor_id=player.floor_id, source_player_id=player.id)
-            return True
-
-        elif spell_name == "guiding_light":
-            player.add_buff("foresight", duration=100.0)
-            self.add_event("SPELL_CAST", {"player": player.id, "spell": spell_name},
-                           floor_id=player.floor_id, source_player_id=player.id)
-            return True
-
-        elif spell_name == "holy_ward":
-            shield = round(player.get_total_max_hp() * 0.25)
-            player.add_buff("shielded", duration=30.0, level=shield)
-            self.add_event("SPELL_CAST", {"player": player.id, "spell": spell_name},
-                           floor_id=player.floor_id, source_player_id=player.id)
-            return True
-
-        elif spell_name == "recall_inscription":
-            # Re-reads a random scroll effect from inventory (stub)
-            self.add_event("SPELL_CAST", {"player": player.id, "spell": spell_name},
-                           floor_id=player.floor_id, source_player_id=player.id)
-            self.add_event("RECALL_INSCRIPTION_STUB", {"player": player.id},
-                           floor_id=player.floor_id, player_id=player.id)
-            return True
-
-        else:
-            # Stub for unimplemented spells
-            self.add_event("SPELL_CAST", {"player": player.id, "spell": spell_name},
-                           floor_id=player.floor_id, source_player_id=player.id)
-            return True
-
-    # ── Armor Abilities ──────────────────────────────────────────────────────
-
     def action_ascended_form(self, player: Player) -> None:
-        """Ascended Form: buff all spells + shield for 30s."""
-        if player.class_type != CharacterClass.CLERIC:
+        """Ascended Form: buff all spells + shield for 10s."""
+        if player.class_type != CharacterClass.CLERIC or player.is_downed or not player.is_alive:
             return
-        shield = round(player.get_total_max_hp() * 0.4)
-        player.add_buff("shielded", duration=30.0, level=shield)
-        player.add_buff("spell_power", duration=30.0, level=2)
+        shield = 30
+        player.add_shield("ascended_form", shield, priority=2, decay=0)
+        player.add_buff("shielded", duration=10.0, level=shield)
         player.ascended_form_active = True
-        player.ascended_form_timer = 30.0
-        player.armor_charge = 0
-        self.add_event("ASCENDED_FORM", {"player": player.id},
-                       floor_id=player.floor_id, source_player_id=player.id)
+        player.ascended_form_timer = 10.0
+        player.ascended_form_casts = 0
+        player.flash_casts = 0
+        self.add_event(
+            "ASCENDED_FORM",
+            {"player": player.id},
+            floor_id=player.floor_id,
+            source_player_id=player.id,
+        )
 
     def action_trinity(self, player: Player, item_kind: str) -> None:
         """Trinity: borrow one item form (up to 3). Stub: emits event for client."""
-        if player.class_type != CharacterClass.CLERIC:
+        if player.class_type != CharacterClass.CLERIC or player.is_downed or not player.is_alive:
             return
         if len(player.current_trinity_forms) >= 3:
             player.current_trinity_forms.pop(0)
         player.current_trinity_forms.append(item_kind)
-        player.armor_charge = max(0, player.armor_charge - 33)
-        self.add_event("TRINITY_FORM", {"player": player.id, "forms": player.current_trinity_forms},
-                       floor_id=player.floor_id, source_player_id=player.id)
+        self.add_event(
+            "TRINITY_FORM",
+            {"player": player.id, "forms": player.current_trinity_forms},
+            floor_id=player.floor_id,
+            source_player_id=player.id,
+        )
 
     def action_power_of_many(self, player: Player, tx: int, ty: int) -> None:
         """Power of Many: summon a Light Ally at target cell."""
-        if player.class_type != CharacterClass.CLERIC:
+        if player.class_type != CharacterClass.CLERIC or player.is_downed or not player.is_alive:
             return
         import uuid as _uuid
         from app.engine.entities.base import Position
         from app.engine.entities.player import Mob
-        floor = self._get_or_create_floor(player.floor_id)
 
-        # Remove existing ally if any
-        if player.powered_ally_id and player.powered_ally_id in floor.mobs:
-            existing = floor.mobs[player.powered_ally_id]
-            existing.is_alive = False
-            self.add_event("DEATH", {"target": existing.id}, floor_id=player.floor_id)
-            del floor.mobs[player.powered_ally_id]
+        floor = self._get_or_create_floor(player.floor_id)
 
         if not (0 <= tx < floor.width and 0 <= ty < floor.height):
             return
         if not (floor.flags and floor.flags.passable[ty][tx]):
             return
 
+        if player.powered_ally_id and player.powered_ally_id in floor.mobs:
+            existing = floor.mobs[player.powered_ally_id]
+            existing.is_alive = False
+            self.add_event("DEATH", {"target": existing.id}, floor_id=player.floor_id)
+            del floor.mobs[player.powered_ally_id]
+
         ally_id = f"light_ally_{_uuid.uuid4().hex[:8]}"
-        ally_hp = round(player.get_total_max_hp() * 0.6)
+        ally_hp = 80 + player.level * 4
         ally = Mob(
-            id=ally_id, type="mob", mob_type="light_ally",
+            id=ally_id,
+            type="mob",
+            mob_type="light_ally",
             name="Light Ally",
             pos=Position(x=tx, y=ty),
-            hp=ally_hp, max_hp=ally_hp,
-            attack=player.attack, defense=player.defense // 2,
-            damage_min=player.damage_min, damage_max=player.damage_max,
-            faction="player", owner_id=player.id,
+            hp=ally_hp,
+            max_hp=ally_hp,
+            attack=player.attack,
+            defense=player.defense // 2,
+            damage_min=player.damage_min,
+            damage_max=player.damage_max,
+            faction="player",
+            owner_id=player.id,
         )
         floor.mobs[ally.id] = ally
+        ally._owner_ref = player
         player.powered_ally_id = ally_id
-        player.armor_charge = 0
-        self.add_event("POWER_OF_MANY", {"player": player.id, "ally_id": ally_id, "x": tx, "y": ty},
-                       floor_id=player.floor_id, source_player_id=player.id)
+        player._active_powered_ally = ally
+        self.add_event(
+            "POWER_OF_MANY",
+            {"player": player.id, "ally_id": ally_id, "x": tx, "y": ty},
+            floor_id=player.floor_id,
+            source_player_id=player.id,
+        )
