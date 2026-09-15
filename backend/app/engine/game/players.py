@@ -15,9 +15,9 @@ from app.engine.entities.base import Faction, Position
 from app.engine.entities.items.union import Bag, VelvetPouch
 from app.engine.entities.items.artifacts import CloakOfShadows, HolyTome
 from app.engine.entities.items.consumables import Amulet, Ankh, Dewdrop, Gold, LostBackpack, Ration, Stone, ThrowableDagger, Waterskin
-from app.engine.entities.items.equip import Bow, ClothArmor, Dagger, SpiritBow, Staff, WornShortsword, make_named_melee_weapon
-from app.engine.entities.items.potions import ELIXIR_BREW_KINDS, PotionOfLiquidFlame
-from app.engine.entities.items.scrolls import ScrollOfIdentify, ScrollOfUpgrade
+from app.engine.entities.items.equip import Bow, ClothArmor, Dagger, SpiritBow, Staff, WornShortsword, MissileWeapon, make_named_melee_weapon
+from app.engine.entities.items.potions import ELIXIR_BREW_KINDS, PotionOfLiquidFlame, PotionOfStrength
+from app.engine.entities.items.scrolls import ScrollOfIdentify, ScrollOfUpgrade, ScrollOfMirrorImage
 from app.engine.entities.wands import WandOfMagicMissile
 from app.engine.entities.player import Belongings, CharacterClass, Difficulty, Player
 from app.engine.entities.buffs import add_buff, remove_buff
@@ -137,6 +137,22 @@ class PlayersMixin:
             )
             belongings.backpack.collect(spirit_bow)
             class_starting_quickslots.append((0, spirit_bow))
+
+        elif class_type == CharacterClass.DUELIST:
+            belongings.weapon = make_named_melee_weapon("Rapier", id=str(uuid.uuid4()))
+            belongings.armor = ClothArmor(
+                id=str(uuid.uuid4()),
+            )
+            throwing_spikes = MissileWeapon(name="Throwing Spikes", tier=1, quantity=2, id=str(uuid.uuid4()), level_known=True, cursed_known=True)
+            belongings.backpack.collect(throwing_spikes)
+            str_pot = PotionOfStrength(id=str(uuid.uuid4()))
+            belongings.backpack.collect(str_pot)
+            starting_identified.append(str_pot)
+            mirror_scr = ScrollOfMirrorImage(id=str(uuid.uuid4()), level_known=True, cursed_known=True)
+            belongings.backpack.collect(mirror_scr)
+            starting_identified.append(mirror_scr)
+            class_starting_quickslots.append((0, belongings.weapon))
+            class_starting_quickslots.append((1, throwing_spikes))
 
         elif class_type == CharacterClass.CLERIC:
             belongings.weapon = make_named_melee_weapon("Cudgel", id=str(uuid.uuid4()))

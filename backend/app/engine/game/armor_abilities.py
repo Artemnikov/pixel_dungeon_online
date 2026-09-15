@@ -235,6 +235,19 @@ class ArmorAbilitiesMixin:
         elif ability == ArmorAbilityType.SHADOW_CLONE:
             self._ability_shadow_clone(player, floor, floor_id, target_x, target_y)
 
+        elif ability == ArmorAbilityType.CHALLENGE:
+            if target_x is None or target_y is None:
+                return
+            self.action_challenge(player, target_x, target_y)
+
+        elif ability == ArmorAbilityType.ELEMENTAL_STRIKE:
+            tx = target_x if target_x is not None else player.pos.x
+            ty = target_y if target_y is not None else player.pos.y
+            self.action_elemental_strike(player, tx, ty)
+
+        elif ability == ArmorAbilityType.FEINT:
+            self.action_feint(player, target_x, target_y)
+
         elif ability == ArmorAbilityType.ASCENDED_FORM:
             cost = int(COST_ASCENDED_FORM * _heroic_energy_mult(player))
             if player.armor_charge < cost:

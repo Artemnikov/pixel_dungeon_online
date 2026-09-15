@@ -135,6 +135,16 @@ T4_ABILITY_TALENTS: Dict[str, str] = {
     Talent.CLONED_ARMOR: ArmorAbilityType.SHADOW_CLONE,
     Talent.PERFECT_COPY: ArmorAbilityType.SHADOW_CLONE,
     # Duelist
+    Talent.CLOSE_THE_GAP: ArmorAbilityType.CHALLENGE,
+    Talent.INVIGORATING_VICTORY: ArmorAbilityType.CHALLENGE,
+    Talent.ELIMINATION_MATCH: ArmorAbilityType.CHALLENGE,
+    Talent.ELEMENTAL_REACH: ArmorAbilityType.ELEMENTAL_STRIKE,
+    Talent.STRIKING_FORCE: ArmorAbilityType.ELEMENTAL_STRIKE,
+    Talent.DIRECTED_POWER: ArmorAbilityType.ELEMENTAL_STRIKE,
+    Talent.FEIGNED_RETREAT: ArmorAbilityType.FEINT,
+    Talent.EXPOSE_WEAKNESS: ArmorAbilityType.FEINT,
+    Talent.COUNTER_ABILITY: ArmorAbilityType.FEINT,
+    # Duelist Legacy Aliases
     Talent.LASTING_CHALLENGE: ArmorAbilityType.CHALLENGE,
     Talent.HEIGHTENED_CHALLENGE: ArmorAbilityType.CHALLENGE,
     Talent.DUAL_CHALLENGE: ArmorAbilityType.CHALLENGE,

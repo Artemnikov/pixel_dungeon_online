@@ -324,6 +324,30 @@ class Resurrect(_ClientMessageBase):
     type: Literal["RESURRECT"]
 
 
+class DuelistFinisher(_ClientMessageBase):
+    type: Literal["DUELIST_FINISHER"]
+    target_x: int
+    target_y: int
+
+
+class UseWeaponAbility(_ClientMessageBase):
+    type: Literal["USE_WEAPON_ABILITY"]
+    target_x: Optional[int] = None
+    target_y: Optional[int] = None
+    use_secondary: bool = False
+
+
+class SwapWeapons(_ClientMessageBase):
+    type: Literal["SWAP_WEAPONS"]
+
+
+class UseMonkAbility(_ClientMessageBase):
+    type: Literal["USE_MONK_ABILITY"]
+    ability: str
+    target_x: Optional[int] = None
+    target_y: Optional[int] = None
+
+
 class CastClericSpell(_ClientMessageBase):
     type: Literal["CAST_CLERIC_SPELL"]
     spell: str
@@ -362,6 +386,10 @@ ClientMessage = Annotated[
         UseArmorAbility,
         TriggerBerserk,
         PreparationStrike,
+        DuelistFinisher,
+        UseWeaponAbility,
+        SwapWeapons,
+        UseMonkAbility,
         CastClericSpell,
         SetClericQuickSpell,
         MetamorphChoose,

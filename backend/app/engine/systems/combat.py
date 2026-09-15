@@ -388,9 +388,51 @@ def resolve_melee_attack(
     if not attacker.is_alive or not defender.is_alive:
         return result
 
-    # Invisible attacker: always hits (SPD Char.hit INFINITE_ACCURACY),
-    # provided the wielded weapon allows sneak attacks.
-    if guaranteed_hit:
+    # Afterimage decoy (Feint armor ability): attacker strikes decoy, triggers Feint talents
+    if getattr(defender, "type", "") == "afterimage":
+        owner_id = getattr(defender, "owner_id", None)
+        if game is not None and owner_id and hasattr(game, "players") and owner_id in game.players:
+            owner = game.players[owner_id]
+            from app.engine.entities.talent_enum import ArmorAbilityType
+            from app.engine.game.duelist_armor_abilities import DUELIST_ARMOR_ABILITY_MAP
+            feint_ability = DUELIST_ARMOR_ABILITY_MAP.get(ArmorAbilityType.FEINT)
+            if feint_ability is not None:
+                feint_ability.on_afterimage_struck(game, owner, attacker)
+        defender.take_damage(max(1, defender.hp))
+        result["hit"] = True
+        result["damage"] = 1
+        return result
+
+    # Defender infinite evasion effects: Shield Guard, Monk Focus, Liquid Agility R2
+    if defender.has_buff("focus_parry_buff"):
+        defender.remove_buff("focus_parry_buff")
+        result["missed"] = True
+        result["defense_verb"] = "parried"
+        return result
+    if defender.has_buff("guard_tracker"):
+        result["missed"] = True
+        result["defense_verb"] = "blocked"
+        return result
+    if defender.has_buff("liquid_agility_evasion") and getattr(defender.get_buff("liquid_agility_evasion"), "level", 0) >= 2:
+        defender.remove_buff("liquid_agility_evasion")
+        result["missed"] = True
+        result["defense_verb"] = "dodged"
+        return result
+
+    # Attacker guaranteed hit (infinite accuracy) checks
+    pa_buff = attacker.get_buff("precise_assault_tracker") if hasattr(attacker, "get_buff") else None
+    la_buff = attacker.get_buff("liquid_agility_accuracy") if hasattr(attacker, "get_buff") else None
+    spin_buff = attacker.get_buff("spin_tracker") if hasattr(attacker, "get_buff") else None
+    charged_shot_buff = attacker.get_buff("charged_shot") if hasattr(attacker, "get_buff") else None
+
+    if (
+        guaranteed_hit
+        or defender.has_buff("illuminated")
+        or (pa_buff is not None and pa_buff.level >= 3)
+        or (la_buff is not None and la_buff.level >= 2)
+        or spin_buff is not None
+        or charged_shot_buff is not None
+    ):
         result["hit"] = True
     elif getattr(attacker, "invisible", 0) > 0 and _can_surprise_attack(attacker):
         result["surprise"] = True
@@ -407,9 +449,23 @@ def resolve_melee_attack(
             atk_acc = int(atk_acc * HEX_ACCURACY_MULTIPLIER)
         if attacker.has_buff("daze"):
             atk_acc = int(atk_acc * DAZE_ACCURACY_MULTIPLIER)
+        if attacker.has_buff("sword_dance"):
+            atk_acc = int(atk_acc * 1.5)
+        if pa_buff is not None:
+            mult = 5.0 if pa_buff.level == 2 else 2.0
+            atk_acc = int(atk_acc * mult)
+        if la_buff is not None and la_buff.level == 1:
+            atk_acc = int(atk_acc * 3.0)
+
         def_ev = defender.get_effective_defense_skill()
         if defender.has_buff("hex"):
             def_ev = int(def_ev * HEX_DEFENSE_MULTIPLIER)
+        if defender.has_buff("defensive_stance"):
+            def_ev = int(def_ev * 3.0)
+        la_ev = defender.get_buff("liquid_agility_evasion") if hasattr(defender, "get_buff") else None
+        if la_ev is not None and la_ev.level == 1:
+            def_ev = int(def_ev * 3.0)
+
         if hasattr(attacker, "belongings"):
             from app.engine.entities.rings import accuracy_multiplier
             atk_acc = int(atk_acc * accuracy_multiplier(attacker))
@@ -422,6 +478,19 @@ def resolve_melee_attack(
             result["defense_verb"] = defender.defense_verb
             return result
         result["hit"] = True
+
+    # Consume single-use accuracy trackers
+    if hasattr(attacker, "remove_buff"):
+        if pa_buff is not None:
+            attacker.remove_buff("precise_assault_tracker")
+        if la_buff is not None:
+            attacker.remove_buff("liquid_agility_accuracy")
+        if charged_shot_buff is not None:
+            attacker.remove_buff("charged_shot")
+
+    # Attacking breaks Guard
+    if hasattr(attacker, "remove_buff") and attacker.has_buff("guard_tracker"):
+        attacker.remove_buff("guard_tracker")
 
     result["rolled"] = True
     result["crit"] = result["surprise"]
@@ -436,7 +505,62 @@ def resolve_melee_attack(
         _dispel_stealth(attacker)
         return result
 
-    dmg_roll = _roll_damage(attacker, result, prep)
+    # Champion Combined Lethality: Execute non-boss enemies below threshold
+    subclass_info = getattr(attacker, "subclass_info", None)
+    if subclass_info is not None and getattr(subclass_info, "subclass", None) == "champion":
+        ti = getattr(attacker, "talent_info", None)
+        cl_level = ti.level("combined_lethality") if ti else 0
+        if cl_level > 0 and getattr(attacker, "last_weapon_ability_weapon_name", None):
+            weapon = getattr(getattr(attacker, "belongings", None), "weapon", None)
+            w_name = getattr(weapon, "name", "")
+            if attacker.last_weapon_ability_weapon_name != w_name and not getattr(defender, "is_boss", False):
+                turns_diff = (getattr(game, "turns", 0) - getattr(attacker, "last_weapon_ability_turn", 0)) if game else 0
+                if 0 <= turns_diff <= 5:
+                    threshold = 0.40 * (cl_level / 3.0) * defender.max_hp
+                    if defender.hp <= threshold:
+                        hp_before = defender.hp
+                        defender.take_damage(max(1, defender.hp))
+                        result["damage"] = hp_before
+                        result["ko"] = True
+                        _dispel_stealth(attacker)
+                        return result
+
+    # Duelist Strengthening Meal: +3 damage per hit
+    if hasattr(attacker, "get_buff") and attacker.has_buff("strengthening_meal_tracker"):
+        sm_buff = attacker.get_buff("strengthening_meal_tracker")
+        if sm_buff and sm_buff.level > 0:
+            dmg_bonus += 3
+            sm_buff.level -= 1
+            if sm_buff.level <= 0:
+                attacker.remove_buff("strengthening_meal_tracker")
+
+    # Duelist Patient Strike: bonus damage on melee attack after waiting
+    if getattr(attacker, "patient_strike_ready", False):
+        pos = getattr(attacker, "pos", None)
+        ps_tile = getattr(attacker, "patient_strike_tile", None)
+        if pos is not None and ps_tile is not None and (pos.x, pos.y) == ps_tile:
+            ti = getattr(attacker, "talent_info", None)
+            ps_level = ti.level("patient_strike") if ti else 0
+            if ps_level > 0:
+                dmg_bonus += random.randint(1, 2) if ps_level == 1 else 2
+        attacker.patient_strike_ready = False
+
+    # Duelist Spin Tracker (Flail)
+    if hasattr(attacker, "get_buff") and attacker.has_buff("spin_tracker"):
+        spin_buff = attacker.get_buff("spin_tracker")
+        if spin_buff and spin_buff.level > 0:
+            weapon = getattr(getattr(attacker, "belongings", None), "weapon", None)
+            w_lvl = getattr(weapon, "level", 0) if weapon else 0
+            dmg_bonus += spin_buff.level * (8 + 2 * w_lvl)
+            attacker.remove_buff("spin_tracker")
+
+    # Duelist Deadly Followup: +10%/+20%/+30% damage on targets hit by missiles
+    if hasattr(defender, "get_buff") and defender.has_buff("deadly_followup_tracker"):
+        df_buff = defender.get_buff("deadly_followup_tracker")
+        if df_buff and df_buff.level > 0:
+            dmg_multi *= (1.0 + 0.10 * df_buff.level)
+
+    dmg_roll = _roll_damage(attacker, result, prep, defender=defender)
     # ThirteenLeafClover trinket: alters damage roll toward extremes
     if hasattr(attacker, "belongings"):
         from app.engine.entities.trinkets import ThirteenLeafClover as _TLC
@@ -778,5 +902,11 @@ def resolve_ranged_attack(
     # Sucker Punch (rogue T1): a surprise attack staggers the target.
     if result.get("surprise"):
         _apply_sucker_punch_stagger(attacker, defender)
+
+    # Deadly Followup (Duelist T3): Thrown weapon hit boosts melee attack against target
+    ti = getattr(attacker, "talent_info", None)
+    df_level = ti.level("deadly_followup") if ti else 0
+    if df_level > 0 and actual_damage > 0 and hasattr(defender, "add_buff"):
+        defender.add_buff("deadly_followup_tracker", duration=5.0, level=df_level)
 
     return result

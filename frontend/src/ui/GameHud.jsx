@@ -6,6 +6,7 @@ import AbilityButton from './AbilityButton';
 import BerserkButton from './BerserkButton';
 import PrepStrikeButton from './PrepStrikeButton';
 import ComboDisplay from './ComboDisplay';
+import DuelistFinisherButton from './DuelistFinisherButton';
 
 function GameHud({
   interfaceSize, isDesktop, canvasWidth,
@@ -16,6 +17,7 @@ function GameHud({
   onSearch, onInventory, onQuickBag, onSwap,
   onSlotClick, onSlotDoubleClick, onSlotLongPress, onSlotContextMenu,
   onUseAbility, onTriggerBerserk, onPrepStrike, onUseComboMove,
+  onDuelistFinisher,
   onOpenItem, onContextMenu, onDefaultAction,
   onCloseInventory,
   onLayout,
@@ -62,6 +64,12 @@ function GameHud({
         subclass={myStats.subclass}
         comboCount={myStats.comboCount || 0}
         onUseComboMove={onUseComboMove}
+      />
+      <DuelistFinisherButton
+        classType={myStats.classType}
+        weaponCharge={myStats.weaponCharge || 0}
+        finisherReady={!!myStats.finisherReady}
+        onDuelistFinisher={onDuelistFinisher}
       />
       {showInventory && (isDesktop ? (
         <InventoryPane

@@ -89,11 +89,12 @@ class Belongings(BaseModel):
     artifact: Optional[AnyItem] = None
     misc: Optional[AnyItem] = None
     ring: Optional[AnyItem] = None
+    secondary_weapon: Optional[AnyItem] = None
 
-    _EQUIP_SLOT_NAMES = ("weapon", "armor", "artifact", "misc", "ring")
+    _EQUIP_SLOT_NAMES = ("weapon", "armor", "artifact", "misc", "ring", "secondary_weapon")
 
     def equipped_slots(self) -> List[Optional["ItemBase"]]:
-        return [self.weapon, self.armor, self.artifact, self.misc, self.ring]
+        return [self.weapon, self.armor, self.artifact, self.misc, self.ring, self.secondary_weapon]
 
     def is_equipped(self, item_id: str) -> bool:
         return any(s is not None and s.id == item_id for s in self.equipped_slots())
@@ -486,16 +487,78 @@ class Player(Entity):
     freerun_seconds: float = 0.0
 
     # --- Duelist --------------------------------------------------------------
-    # Weapon charge (0-100): builds per melee hit, used by Champion/Monk finishers.
-    weapon_charge: int = 0
+    # Weapon charge: fractional/integer capacity scaling with level and subclass.
+    weapon_charge: float = 0.0
     _weapon_charge_accum: float = 0.0
-    # Finisher eligibility: True once combo_count >= threshold for Duelist.
+    # Finisher eligibility: True once weapon_charge >= 1 for Duelist.
     finisher_ready: bool = False
     # Duel mode: set while Challenge armor ability 1v1 is active.
     duel_mode_active: bool = False
     duel_mode_target_id: Optional[str] = None
+    duel_mode_taken_damage: int = 0
+    duel_mode_turns_left: float = 0.0
+    last_duel_ended_turn: int = -100
     # Elemental strike last weapon kind (for enchant cone bonus).
     last_weapon_enchant: str = ""
+    # Monk Energy (0-20)
+    monk_energy: float = 0.0
+    # Stances and trackers
+    brawler_stance: bool = False
+    brawler_stance_turns: int = 0
+    last_weapon_ability_id: Optional[str] = None
+    last_weapon_ability_weapon_name: Optional[str] = None
+    last_monk_ability_id: Optional[str] = None
+    last_weapon_ability_turn: int = 0
+    last_monk_ability_turn: int = 0
+    swift_equip_charges: int = 0
+    swift_equip_cooldown: float = 0.0
+    patient_strike_tile: Optional[Tuple[int, int]] = None
+    patient_strike_ready: bool = False
+    feint_afterimage_pos: Optional[Tuple[int, int]] = None
+    feint_cooldown_refund_ready: bool = False
+
+    def get_max_weapon_charges(self) -> int:
+        """SPD-faithful max weapon charges calculation."""
+        subclass = getattr(self.subclass_info, "subclass", None)
+        if subclass == "champion":
+            return min(10, 4 + (self.level - 1) // 3)
+        return min(8, 2 + (self.level - 1) // 3)
+
+    def get_max_monk_energy(self) -> int:
+        """SPD-faithful max monk energy calculation."""
+        return max(10, 5 + self.level // 2)
+
+    def is_monk_empowered(self) -> bool:
+        vigor = self.talent_info.level(Talent.MONASTIC_VIGOR)
+        threshold_pct = 1.00 - 0.10 * vigor
+        max_e = max(1, self.get_max_monk_energy())
+        return (self.monk_energy / max_e) >= threshold_pct
+
+    def gain_weapon_charge(self, amount: float) -> None:
+        """Add weapon charge up to max capacity."""
+        max_c = float(self.get_max_weapon_charges())
+        self.weapon_charge = min(max_c, self.weapon_charge + amount)
+        self.finisher_ready = self.weapon_charge >= 1.0
+
+    def spend_weapon_charge(self, amount: float) -> bool:
+        """Deduct weapon charge if available. Returns True if spent."""
+        if self.weapon_charge >= amount:
+            self.weapon_charge = max(0.0, self.weapon_charge - amount)
+            self.finisher_ready = self.weapon_charge >= 1.0
+            return True
+        return False
+
+    def gain_monk_energy(self, amount: float) -> None:
+        """Add monk energy up to max capacity."""
+        max_e = float(self.get_max_monk_energy())
+        self.monk_energy = min(max_e, self.monk_energy + amount)
+
+    def spend_monk_energy(self, amount: float) -> bool:
+        """Deduct monk energy if available. Returns True if spent."""
+        if self.monk_energy >= amount:
+            self.monk_energy = max(0.0, self.monk_energy - amount)
+            return True
+        return False
 
     # --- Cleric ---------------------------------------------------------------
     spell_cooldowns: Dict[str, float] = Field(default_factory=dict)
@@ -623,6 +686,10 @@ class Player(Entity):
         if pa > 0 and broken:
             add_buff(self.buffs, "provoked_anger_tracker", duration=5.0, level=1)
 
+        # Duel mode damage tracking for Invigorating Victory
+        if getattr(self, "duel_mode_active", False):
+            self.duel_mode_taken_damage += amount
+
         self.hp -= amount
         if self.hp <= 0:
             self.hp = 0
@@ -635,10 +702,35 @@ class Player(Entity):
         bonus = w.damage if isinstance(w, KindOfWeapon) else 0
         return self.attack + bonus
 
+    def get_effective_weapon_level(self, weapon: Optional[KindOfWeapon]) -> int:
+        if weapon is None:
+            return 0
+        lvl = getattr(weapon, "level", 0)
+        subclass = getattr(self.subclass_info, "subclass", None)
+        if subclass != "champion":
+            return lvl
+        tu = self.talent_info.level(Talent.TWIN_UPGRADES)
+        if tu <= 0:
+            return lvl
+        other = self.belongings.secondary_weapon if weapon is self.belongings.weapon else self.belongings.weapon
+        if other is None:
+            return lvl
+        other_lvl = getattr(other, "level", 0)
+        if other_lvl <= lvl:
+            return lvl
+        w_tier = getattr(weapon, "tier", 1)
+        o_tier = getattr(other, "tier", 1)
+        tier_deficit = o_tier - w_tier
+        required_deficit = 3 - tu
+        if tier_deficit >= required_deficit:
+            return other_lvl
+        return lvl
+
     def get_damage_min(self) -> int:
         w = self.belongings.weapon
         if isinstance(w, MeleeWeapon):
-            return w.dmg_min(w.level)
+            lvl = self.get_effective_weapon_level(w)
+            return w.dmg_min(lvl)
         elif isinstance(w, KindOfWeapon):
             return w.damage
         from app.engine.entities.rings.ring_mechanics import using_force, force_damage_range
@@ -649,7 +741,8 @@ class Player(Entity):
     def get_damage_max(self) -> int:
         w = self.belongings.weapon
         if isinstance(w, MeleeWeapon):
-            return w.dmg_max(w.level)
+            lvl = self.get_effective_weapon_level(w)
+            return w.dmg_max(lvl)
         elif isinstance(w, KindOfWeapon):
             return w.damage
         from app.engine.entities.rings.ring_mechanics import using_force, force_damage_range
@@ -831,6 +924,9 @@ class Player(Entity):
         slot = self.belongings.slot_name_for(item)
         if slot is None:
             return False
+        if slot == "weapon" and getattr(self.subclass_info, "subclass", None) == "champion":
+            if self.belongings.weapon is not None and self.belongings.secondary_weapon is None:
+                slot = "secondary_weapon"
         self.belongings.backpack.detach_all(item_id)
         prev = getattr(self.belongings, slot)
         if prev is not None:
@@ -839,6 +935,9 @@ class Player(Entity):
         setattr(self.belongings, slot, item)
         item.on_equip(self)
         item.cursed_known = True
+        # Adventurer's Intuition (Duelist T1): rank 2 auto-identifies weapon on equip
+        if isinstance(item, KindOfWeapon) and self.talent_info.level(Talent.ADVENTURERS_INTUITION) >= 2:
+            item.level_known = True
         return True
 
     def count_worn_unidentified(self) -> int:

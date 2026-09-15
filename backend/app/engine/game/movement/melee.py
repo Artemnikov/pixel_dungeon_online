@@ -14,7 +14,7 @@ from app.engine.entities.buffs import get_buff, remove_buff
 from app.engine.entities.items.consumables import Gold
 from app.engine.entities.items.potions import RevivingPotion
 from app.engine.entities.mobs import DM300, Goo, Shopkeeper
-from app.engine.entities.player import Mob as MobEntity, Player, hurt_warning_sound
+from app.engine.entities.player import CharacterClass, Mob as MobEntity, Player, hurt_warning_sound
 from app.engine.entities.quest_bosses import Ghost
 from app.engine.entities.rings import furor_multiplier
 from app.engine.game.ai_goo import _goo_add_locked_floor_time
@@ -183,8 +183,9 @@ class MeleeCombatMixin:
 
             self._maybe_trigger_dm300_supercharge(target_entity, floor, floor_id, entity.pos)
 
-            # Warrior subclass: combo / berserk events after successful damage
             if isinstance(entity, Player) and dmg > 0:
+                if entity.class_type == CharacterClass.DUELIST:
+                    self.on_duelist_hit(entity)
                 if entity.subclass_info.subclass == "gladiator":
                     self.add_event("COMBO_UPDATE", {"player": entity.id, "count": entity.combo_count}, floor_id=floor_id, source_player_id=entity.id)
                     if entity.combo_count in (2, 4, 6, 8, 10):
@@ -207,6 +208,8 @@ class MeleeCombatMixin:
             self.process_death_mark_kill(attacker, target_entity, floor, floor_id)
         if attacker_is_player:
             self.on_kill(attacker, target_entity, floor.mobs, floor_id)
+            if hasattr(self, "on_duelist_kill"):
+                self.on_duelist_kill(attacker, target_entity)
             # Lethal Momentum (warrior T2): a killing blow that procced the
             # free follow-up doesn't consume the attack's cooldown, allowing
             # an immediate re-attack.

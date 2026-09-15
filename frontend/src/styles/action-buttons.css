@@ -198,3 +198,62 @@
   border-radius: 3px;
   padding: 1px 4px;
 }
+
+.duelist-btn-container {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  z-index: 300;
+  padding: 4px;
+  transform: translateX(-50%);
+}
+.duelist-btn {
+  background: #2a2010;
+  border: 2px solid #653;
+  border-radius: 6px;
+  color: #ccc;
+  cursor: pointer;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 11px;
+  padding: 4px 12px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  line-height: 1;
+}
+.duelist-btn:disabled {
+  opacity: 0.7;
+  cursor: default;
+}
+.duelist-btn:not(:disabled):hover {
+  border-color: #f90;
+  background: #3a2810;
+}
+.duelist-btn-ready {
+  border-color: #fc0;
+  color: #fff;
+  box-shadow: 0 0 10px rgba(255, 204, 0, 0.6);
+  animation: duelist-pulse 0.8s ease-in-out infinite alternate;
+}
+@keyframes duelist-pulse {
+  from { box-shadow: 0 0 6px rgba(255, 204, 0, 0.4); }
+  to { box-shadow: 0 0 14px rgba(255, 204, 0, 0.8); }
+}
+.duelist-btn-label {
+  white-space: nowrap;
+  font-weight: bold;
+}
+.duelist-btn-bar {
+  width: 60px;
+  height: 4px;
+  background: #1a1a22;
+  border-radius: 2px;
+  overflow: hidden;
+}
+.duelist-btn-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #f90, #fc0);
+  border-radius: 2px;
+  transition: width 0.15s;
+}
