@@ -8,7 +8,13 @@ const SNOW_PARTICLE_DURATION = 1000;
 const MARK_PARTICLE_DURATION = 700;
 const HEART_PARTICLE_DURATION = 900;
 
-const CONTINUOUS_EFFECTS = new Set(['burning', 'frozen', 'chilled', 'shielded', 'bleeding', 'levitation', 'stagger']);
+const CONTINUOUS_EFFECTS = new Set(['burning', 'frozen', 'chilled', 'shielded', 'bleeding', 'levitation', 'stagger', 'illuminated']);
+
+const TORCH_HALO_RADIUS = TILE_SIZE * 1.25;
+const TORCH_HALO_BRIGHTNESS = 0.2;
+const TORCH_HALO_RISE_MS = 500;
+const TORCH_HALO_PUTOUT_MS = 1000;
+const TORCH_HALO_KEEP_ALIVE_MS = 800;
 
 let lastNow = null;
 
@@ -19,14 +25,30 @@ export function spawnStateParticles(stateEffectsRef, cx, cy, type, color = '') {
       // Buff refresh (STATE_EFFECT fires every tick): only bump the timestamp,
       // keep accumulated particles alive.
       existing.startTime = performance.now();
+      if (type === 'illuminated') {
+        // The TorchHalo animates once and persists for the buff's lifetime:
+        // slide the keep-alive window, and restart the rise if the buff was
+        // briefly gone and got re-applied mid-putOut.
+        existing.keepAliveUntil = performance.now() + TORCH_HALO_KEEP_ALIVE_MS;
+        if (existing.putOutStart != null) {
+          existing.putOutStart = null;
+          existing.riseStart = performance.now();
+        }
+      }
       return;
     }
     if (type === 'burning') playIgniteSound();
   }
+  const now = performance.now();
   stateEffectsRef.current.push({
     cx, cy, type, color,
-    startTime: performance.now(),
+    startTime: now,
     particles: [],
+    ...(type === 'illuminated' ? {
+      riseStart: now,
+      keepAliveUntil: now + TORCH_HALO_KEEP_ALIVE_MS,
+      putOutStart: null,
+    } : {}),
   });
 }
 
@@ -54,7 +76,7 @@ export function advanceAndDrawStateEffects(ctx, { stateEffectsRef }) {
         drawChilled(ctx, e, elapsed, dt);
         break;
       case 'illuminated':
-        drawIlluminated(ctx, e, elapsed, dt);
+        drawIlluminated(ctx, e, now);
         break;
       case 'marked':
         drawMarked(ctx, e, elapsed, dt);
@@ -81,7 +103,16 @@ export function advanceAndDrawStateEffects(ctx, { stateEffectsRef }) {
         entries.splice(i, 1);
     }
 
-    if (CONTINUOUS_EFFECTS.has(e.type)) {
+    if (e.type === 'illuminated') {
+      // Start the 1s putOut fade once the server stops refreshing the buff
+      // (keep-alive grace), then drop the entry when the fade completes.
+      if (now > e.keepAliveUntil && e.putOutStart == null) {
+        e.putOutStart = now;
+      }
+      if (e.putOutStart != null && now - e.putOutStart > TORCH_HALO_PUTOUT_MS) {
+        entries.splice(i, 1);
+      }
+    } else if (CONTINUOUS_EFFECTS.has(e.type)) {
       if (elapsed > 2000) {
         entries.splice(i, 1);
       }
@@ -179,36 +210,36 @@ function drawChilled(ctx, e, elapsed, dt) {
   drawParticles(ctx, e, '#aaddff');
 }
 
-function drawIlluminated(ctx, e, elapsed, dt) {
+function drawIlluminated(ctx, e, now) {
   const cx = e.cx;
   const cy = e.cy;
 
-  if (Math.random() < 0.4) {
-    const life = 0.3 + Math.random() * 0.3;
-    const angle = Math.random() * Math.PI * 2;
-    const speed = 8 + Math.random() * 16;
-    e.particles.push({
-      x: cx + (Math.random() - 0.5) * 16,
-      y: cy + (Math.random() - 0.5) * 8,
-      vx: Math.cos(angle) * speed,
-      vy: Math.sin(angle) * speed - 12,
-      life, maxLife: life,
-      size: 2,
-      alpha: 1,
-    });
+  let phase;
+  let am;
+  let radius;
+  if (e.putOutStart != null) {
+    phase = -1 + (now - e.putOutStart) / TORCH_HALO_PUTOUT_MS;
+    if (phase >= 0) return; // entry is removed by the caller
+    radius = (2 + phase) * TORCH_HALO_RADIUS;
+    am = -phase * TORCH_HALO_BRIGHTNESS;
+  } else {
+    phase = Math.min(1, (now - e.riseStart) / TORCH_HALO_RISE_MS);
+    radius = phase * TORCH_HALO_RADIUS;
+    am = phase * TORCH_HALO_BRIGHTNESS;
   }
-  updateParticles(e, dt, false);
 
-  const glow = 0.12 + 0.06 * Math.sin(elapsed * 0.004);
   ctx.save();
-  ctx.globalAlpha = glow;
-  ctx.fillStyle = '#ffff88';
+  setLightMode(ctx);
+  const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, Math.max(1, radius));
+  grad.addColorStop(0, `rgba(255,221,204,${am.toFixed(3)})`);
+  grad.addColorStop(0.45, `rgba(255,221,204,${(am * 0.55).toFixed(3)})`);
+  grad.addColorStop(1, 'rgba(255,221,204,0)');
+  ctx.fillStyle = grad;
+  ctx.globalAlpha = 1;
   ctx.beginPath();
-  ctx.arc(cx, cy + TILE_SIZE / 4, TILE_SIZE * 0.6, 0, Math.PI * 2);
+  ctx.arc(cx, cy, Math.max(1, radius), 0, Math.PI * 2);
   ctx.fill();
   ctx.restore();
-
-  drawParticles(ctx, e, '#ffffaa');
 }
 
 function drawMarked(ctx, e, elapsed, dt) {

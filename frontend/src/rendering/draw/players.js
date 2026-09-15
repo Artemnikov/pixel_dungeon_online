@@ -23,7 +23,14 @@ export function drawPlayers(ctx, { entitiesRef, visionRef, assetImages, playerAn
     // Map class -> sheet key directly. assetImages[key] is null until that sheet
     // loads, and the `if (playerSprite)` guard below skips drawing until then, so
     // a known class never flashes as the warrior fallback during load.
-    const CLASS_KEYS = { warrior: 'warrior', mage: 'mage', rogue: 'rogue', huntress: 'huntress' };
+    const CLASS_KEYS = {
+      warrior: 'warrior',
+      mage: 'mage',
+      rogue: 'rogue',
+      huntress: 'huntress',
+      duelist: 'duelist',
+      cleric: 'cleric',
+    };
     const playerSprite = assetImages[CLASS_KEYS[player.class_type] || 'warrior'];
 
     if (playerSprite) {

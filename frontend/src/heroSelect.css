@@ -195,6 +195,12 @@
   color: #e6e6e6;
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.95);
 }
+/* Reserve room for the tallest class descriptions (Cleric/Duelist wrap to 6
+   lines even in the narrowest landscape column) so switching classes never
+   reflows the centered column. */
+.hero-select.landscape .hero-desc {
+  min-height: 9em;
+}
 
 /* ---- remake options (difficulty + name) ---- */
 .hero-options {

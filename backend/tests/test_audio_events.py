@@ -147,6 +147,7 @@ def test_audio_events():
     from app.engine.entities.mobs import Mimic
     player.last_attack_time = 0.0
     player.action_until = 0.0
+    player.movement._cooldown_until = 0.0
     floor = game._get_or_create_floor(player.floor_id)
     floor.mobs.clear()
     game.mobs.clear()
@@ -156,8 +157,9 @@ def test_audio_events():
     floor.items[fake_chest.id] = fake_chest
     mimic_mob = Mimic(id="mimic-mob-1", pos=mimic_pos, faction=Faction.DUNGEON, disguised=True, fake_chest_id=fake_chest.id)
     floor.mobs[mimic_mob.id] = mimic_mob
+    game.mobs[mimic_mob.id] = mimic_mob
 
-    game.move_entity(player.id, 1, 0)
+    game._try_open_chest(player, floor, player.floor_id, fake_chest)
     events = game.flush_events()
     sound_events = [e for e in events if e['type'] == 'PLAY_SOUND']
     mimic_sound_present = any(e['data']['sound'] == 'MIMIC' for e in sound_events)

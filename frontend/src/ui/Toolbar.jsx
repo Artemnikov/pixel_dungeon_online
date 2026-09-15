@@ -527,7 +527,14 @@ export default function Toolbar({
         AudioManager.play('CLICK');
         const itemIdx = i;
         const item = items[itemIdx];
-        if (onSlotClick) onSlotClick(item, itemIdx);
+        const a = areas.quickslots[i];
+        const slotRect = a ? {
+          x: Math.round(rect.left + a.x * div),
+          y: Math.round(rect.top + a.y * div),
+          w: Math.round(a.w * div),
+          h: Math.round(a.h * div),
+        } : null;
+        if (onSlotClick) onSlotClick(item, itemIdx, slotRect);
         return;
       }
     }

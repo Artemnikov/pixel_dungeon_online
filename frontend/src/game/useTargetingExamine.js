@@ -3,7 +3,14 @@ import { describeCell } from '../input/describeCell';
 import { playLocalPlayerSearch } from '../rendering/draw/searchEffects';
 import { isAttackReady, consumeAttackCooldown } from '../net/events/combat';
 
-const TARGETED_ABILITIES = ['heroic_leap', 'smoke_bomb', 'death_mark'];
+const TARGETED_ABILITIES = [
+  'heroic_leap',
+  'smoke_bomb',
+  'death_mark',
+  'challenge',
+  'elemental_strike',
+  'power_of_many',
+];
 
 export default function useTargetingExamine({
   entitiesRef, visionRef, myPlayerIdRef, gridRef,
@@ -38,6 +45,16 @@ export default function useTargetingExamine({
     }
     if (tm && typeof tm === 'object' && tm.prepStrike) {
       send({ type: 'PREPARATION_STRIKE', target_x: tileX, target_y: tileY });
+      setTargetingMode(false);
+      return;
+    }
+    if (tm && typeof tm === 'object' && tm.duelistFinisher) {
+      send({ type: 'DUELIST_FINISHER', target_x: tileX, target_y: tileY });
+      setTargetingMode(false);
+      return;
+    }
+    if (tm && typeof tm === 'object' && tm.clericSpell) {
+      send({ type: 'CAST_CLERIC_SPELL', spell: tm.clericSpell, target_x: tileX, target_y: tileY });
       setTargetingMode(false);
       return;
     }
@@ -133,6 +150,9 @@ export default function useTargetingExamine({
   };
 
   const sendPrepStrike = () => setTargetingMode({ prepStrike: true });
+  const sendDuelistFinisher = () => setTargetingMode({ duelistFinisher: true });
+  const sendCastSpell = (spell) => send({ type: 'CAST_CLERIC_SPELL', spell });
+  const sendSetClericQuickSpell = (spell) => send({ type: 'SET_CLERIC_QUICK_SPELL', spell });
 
   return {
     targetingMode, setTargetingMode,
@@ -149,5 +169,8 @@ export default function useTargetingExamine({
     sendUseAbility,
     sendUseComboMove,
     sendPrepStrike,
+    sendDuelistFinisher,
+    sendCastSpell,
+    sendSetClericQuickSpell,
   };
 }

@@ -188,6 +188,78 @@ const MAGIC_PROJECTILES = new Set([
   'lightning', 'beam',
 ]);
 
+interface LightMissileImpact {
+  tgt: string;
+  amount: number;
+  isCrit: boolean;
+  isGrim: boolean;
+  isAudible: boolean;
+  splashCount: number;
+  tc: { x: number; y: number };
+}
+
+function applyDamagePresentation(
+  ctx: GameEventContext,
+  tgt: string,
+  amount: number,
+  isCrit: boolean,
+  isGrim: boolean,
+  tc: { x: number; y: number },
+  isMagic = false,
+): void {
+  if (isMagic) {
+    const flashDuration = isCrit ? FLASH_DURATION * 2 : FLASH_DURATION;
+    const flashUntil = performance.now() + flashDuration;
+    if (ctx.entities.getMob(tgt)) {
+      if (ctx.effects.mobAnimRef) {
+        if (!ctx.effects.mobAnimRef.current[tgt]) ctx.effects.mobAnimRef.current[tgt] = {};
+        ctx.effects.mobAnimRef.current[tgt].flashUntil = flashUntil;
+      }
+    } else if (ctx.entities.getPlayer(tgt)) {
+      if (ctx.effects.playerAnimRef) {
+        if (!ctx.effects.playerAnimRef.current[tgt]) ctx.effects.playerAnimRef.current[tgt] = {};
+        ctx.effects.playerAnimRef.current[tgt].flashUntil = flashUntil;
+      }
+    }
+  }
+  if (amount > 0) {
+    const color = isCrit ? '#ffcc00' : '#ff6666';
+    const text = isCrit ? `${amount} CRIT!` : `-${amount}`;
+    ctx.effects.spawnFloatingText(tc.x, tc.y - TILE_SIZE / 2, text, color, TEXT_ICON.PHYS_DMG);
+  } else if (isCrit) {
+    ctx.effects.spawnFloatingText(tc.x, tc.y - TILE_SIZE / 2, 'CRIT!', '#ffcc00');
+  }
+  const particlesRef = ctx.effects.particlesRef;
+  if (isGrim && particlesRef) spawnGrimShadow(particlesRef, tc.x, tc.y, 8);
+}
+
+function renderLightMissileImpact(ctx: GameEventContext, impact: LightMissileImpact | null): void {
+  if (!impact) return;
+  const particlesRef = ctx.effects.particlesRef;
+  if (particlesRef) {
+    spawnWhiteSplash(particlesRef, impact.tc.x, impact.tc.y, impact.splashCount, '#FFFF44');
+  }
+  if (impact.isAudible) {
+    ctx.audio.play('HIT_MAGIC', 0.87 + Math.random() * 0.28);
+  }
+  applyDamagePresentation(ctx, impact.tgt, impact.amount, impact.isCrit, impact.isGrim, impact.tc, true);
+}
+
+function spawnMagicProjectileVisual(
+  ctx: GameEventContext,
+  startX: number,
+  startY: number,
+  targetX: number,
+  targetY: number,
+  projType: string,
+): void {
+  const missile = ctx.effects.spawnMagicMissile(startX, startY, targetX, targetY, projType);
+  if (projType === 'light_missile' && missile) {
+    missile.impactData = null;
+    missile.onImpact = (impact) => renderLightMissileImpact(ctx, (impact as LightMissileImpact) || null);
+  }
+}
+
 export function createCombatEventHandlers(): IGameEventHandler[] {
   return [
     {
@@ -255,10 +327,10 @@ export function createCombatEventHandlers(): IGameEventHandler[] {
           ctx.effects.spawnBeam(startX, startY, targetX, targetY, beamType, event.data.target_hp_ratio);
         } else if (event.data.is_wand) {
           if (audible) ctx.audio.play(event.data.sound ?? 'ATTACK_MAGIC');
-          if (MAGIC_PROJECTILES.has(projType)) ctx.effects.spawnMagicMissile(startX, startY, targetX, targetY, projType);
+          if (MAGIC_PROJECTILES.has(projType)) spawnMagicProjectileVisual(ctx, startX, startY, targetX, targetY, projType);
         } else if (MAGIC_PROJECTILES.has(projType)) {
           if (audible) ctx.audio.play(event.data.sound ?? 'ATTACK_MAGIC');
-          ctx.effects.spawnMagicMissile(startX, startY, targetX, targetY, projType);
+          spawnMagicProjectileVisual(ctx, startX, startY, targetX, targetY, projType);
         } else if (event.data.is_bow) {
           if (audible) ctx.audio.play('ATTACK_BOW');
         } else if (thrownItem) {
@@ -411,6 +483,26 @@ export function createCombatEventHandlers(): IGameEventHandler[] {
         const projectile = event.data.projectile;
         const isMagic = projectile && MAGIC_PROJECTILES.has(projectile);
 
+        if (projectile === 'light_missile') {
+          const missile = (ctx.effects.magicMissileRef?.current ?? []).find(
+            (m) => !!m && !m.impactData && Math.hypot(m.endX - tc.x, m.endY - tc.y) <= TILE_SIZE,
+          );
+          if (missile) {
+            const isAudible = tgt === ctx.myPlayerId
+              || ctx.world.isVisible(Math.round(tgtEntity.renderPos.x), Math.round(tgtEntity.renderPos.y));
+            missile.impactData = {
+              tgt,
+              amount,
+              isCrit: !!isCrit,
+              isGrim: !!isGrim,
+              isAudible,
+              splashCount: event.data.splash_count ?? 3,
+              tc,
+            };
+            return true;
+          }
+        }
+
         const particlesRef = ctx.effects.particlesRef;
         if (isMagic && particlesRef) {
           const count = event.data.splash_count ?? 3;
@@ -478,28 +570,7 @@ export function createCombatEventHandlers(): IGameEventHandler[] {
             }
           }
         }
-        if (isMagic) {
-          const flashDuration = isCrit ? FLASH_DURATION * 2 : FLASH_DURATION;
-          const flashUntil = performance.now() + flashDuration;
-          if (ctx.entities.getMob(tgt)) {
-            if (ctx.effects.mobAnimRef) {
-              if (!ctx.effects.mobAnimRef.current[tgt]) ctx.effects.mobAnimRef.current[tgt] = {};
-              ctx.effects.mobAnimRef.current[tgt].flashUntil = flashUntil;
-            }
-          } else if (ctx.entities.getPlayer(tgt)) {
-            if (ctx.effects.playerAnimRef) {
-              if (!ctx.effects.playerAnimRef.current[tgt]) ctx.effects.playerAnimRef.current[tgt] = {};
-              ctx.effects.playerAnimRef.current[tgt].flashUntil = flashUntil;
-            }
-          }
-        }
-        if (amount > 0) {
-          const color = isCrit ? '#ffcc00' : '#ff6666';
-          const text = isCrit ? `${amount} CRIT!` : `-${amount}`;
-          ctx.effects.spawnFloatingText(tc.x, tc.y - TILE_SIZE / 2, text, color, TEXT_ICON.PHYS_DMG);
-        }
-        if (isGrim && particlesRef) spawnGrimShadow(particlesRef, tc.x, tc.y, 8);
-        if (isCrit) ctx.effects.spawnFloatingText(tc.x, tc.y - TILE_SIZE / 2, 'CRIT!', '#ffcc00');
+        applyDamagePresentation(ctx, tgt, amount, !!isCrit, !!isGrim, tc, Boolean(isMagic));
         return true;
       },
     },

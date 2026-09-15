@@ -81,6 +81,24 @@ export interface Projectile {
   onComplete?: () => void;
 }
 
+export interface MagicMissileState {
+  startX: number;
+  startY: number;
+  endX: number;
+  endY: number;
+  color?: string | null;
+  size?: number;
+  duration: number;
+  trailCount?: number;
+  arcHeight?: number;
+  driftY?: number;
+  colorEnd?: string;
+  rainbow?: boolean;
+  startTime: number;
+  impactData?: unknown;
+  onImpact?: ((impactData?: unknown) => void) | null;
+}
+
 export interface RenderTrap extends TrapInfo {
   renderPos?: RenderVec;
   revealStartTime?: number | null;
@@ -171,6 +189,12 @@ export interface MyStats {
   invisible?: number;
   prepSeconds?: number;
   comboCount?: number;
+  weaponCharge?: number;
+  finisherReady?: boolean;
+  spellCooldowns?: Record<string, number>;
+  clericQuickSpell?: string | null;
+  ascendedFormActive?: boolean;
+  poweredAllyId?: string | null;
   talentLevels?: Record<string, number>;
   talentPoints?: Record<string, number>;
   bonusTalentPoints?: Record<string, number>;
@@ -216,7 +240,7 @@ export interface HookProps {
   shieldHaloRef?: Ref<unknown[]>;
   stateEffectsRef?: Ref<unknown[]>;
   screenShakeRef?: Ref<{ intensity: number; until: number } | null>;
-  magicMissileRef?: Ref<unknown[]>;
+  magicMissileRef?: Ref<MagicMissileState[]>;
   beamRef?: Ref<unknown[]>;
   blobAreasRef?: Ref<Record<string, { type: string; cells: Map<string, number> }>>;
   wasDownedRef: Ref<boolean | undefined>;

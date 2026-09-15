@@ -45,8 +45,8 @@ def test_faction_combat_restrictions():
         id=mob_id,
         name="Rat",
         pos=Position(x=3, y=1),
-        hp=10,
-        max_hp=10,
+        hp=50,
+        max_hp=50,
         attack=2,
         defense=0,
         attack_skill=100,
@@ -65,7 +65,7 @@ def test_faction_combat_restrictions():
     game.move_entity(p1_id, 1, 0)
     
     # Different factions, mob SHOULD take damage
-    assert mob.hp < 10, "Player should be able to attack mob"
+    assert mob.hp < 50, "Player should be able to attack mob"
     
     # Mob attacks player
     initial_p1_hp = p1.hp

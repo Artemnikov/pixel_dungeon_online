@@ -29,6 +29,12 @@ const MAX_ARMOR_TIER = 6;
 const BUFF_SIZE = 7;
 const BUFF_COLS = 18;
 const MAX_BUFFS = 14; // matches SPD's BuffIndicator.maxBuffs default
+// Desktop (large) mode renders buff icons at 4/3x (the 2x bump shrunk by 1.5):
+// drawn at 7px * 4/3 * SCALE(3) = 28px, a clean 4x pixel-upscale of the tile.
+// At that size the pane fits 12 icons on a single row without overflowing the
+// right edge; the row also floats a bit higher above the HP bar.
+const MAX_BUFFS_LARGE = 12;
+const BUFF_GAP_LARGE = 6; // unscaled px between the buff row and the HP bar (was 2)
 
 const FLASH_RATE = Math.PI * 1.5;
 const WARNING_COLORS = ['#660000', '#cc0000', '#660000'];
@@ -49,6 +55,21 @@ function lerpColor(t, colors) {
   return `rgb(${r},${g},${bl})`;
 }
 
+// Buff icon rectangle in scaled canvas px. Shared by the draw loop and the
+// click hit-test so the two can't drift apart. In large (desktop) mode the
+// pane is bottom-anchored (see .desktop-mode .top-left-hud in hud.css), so a
+// row drawn at the canvas's own y=0 would float disconnected in open space
+// well above the HP bar; anchoring it just above the HP bar keeps it reading
+// as part of the pane (with BUFF_GAP_LARGE of breathing room).
+function buffRect(i, { SCALE, isLarge, buffPitch, buffSize }) {
+  return {
+    bx: (31 + i * buffPitch) * SCALE,
+    by: isLarge ? 19 * SCALE - buffSize * SCALE - BUFF_GAP_LARGE : 8 * SCALE,
+    bw: buffSize * SCALE,
+    bh: buffSize * SCALE,
+  };
+}
+
 export default function StatusPane({ myStats, depth, exitPos, isAdmin, onSearch, hasTalentPoints, onOpenHeroInfo, onTeleport, isBusy, onBuffClick, interfaceSize, assetImages }) {
   const isLarge = interfaceSize > 0;
   const SCALE = isLarge ? 3 : 2;
@@ -58,6 +79,11 @@ export default function StatusPane({ myStats, depth, exitPos, isAdmin, onSearch,
   const hpShield = isLarge ? HP_SHIELD_LARGE : HP_SHIELD_SMALL;
   const expFill = isLarge ? EXP_FILL_LARGE : EXP_FILL_SMALL;
   const BG = isLarge ? BG_LARGE : BG_SMALL;
+  // Desktop (large) mode renders buff icons at 4/3x, capped to a single row
+  // (see MAX_BUFFS_LARGE at the top of the file).
+  const buffSize = isLarge ? (BUFF_SIZE * 4) / 3 : BUFF_SIZE;
+  const buffPitch = buffSize + 1;
+  const maxBuffs = isLarge ? MAX_BUFFS_LARGE : MAX_BUFFS;
   // Zoom-compensation: keep the pane a consistent on-screen size across browser
   // zoom / display scale, mirroring Toolbar's quickslots. baseDpr is captured once
   // at mount; rawDPR tracks the live display scale, re-read every render.
@@ -89,6 +115,8 @@ export default function StatusPane({ myStats, depth, exitPos, isAdmin, onSearch,
     if (assetImages?.mage) imgs.mage = assetImages.mage;
     if (assetImages?.rogue) imgs.rogue = assetImages.rogue;
     if (assetImages?.huntress) imgs.huntress = assetImages.huntress;
+    if (assetImages?.duelist) imgs.duelist = assetImages.duelist;
+    if (assetImages?.cleric) imgs.cleric = assetImages.cleric;
   }, [assetImages]);
 
   useEffect(() => {
@@ -242,20 +270,11 @@ export default function StatusPane({ myStats, depth, exitPos, isAdmin, onSearch,
 
         const buffsSheet = imgs.buffs;
         if (buffsSheet?.complete && buffsSheet?.naturalWidth > 0) {
-          effects.slice(0, MAX_BUFFS).forEach((eff, i) => {
+          effects.slice(0, maxBuffs).forEach((eff, i) => {
             const idx = eff.icon ?? 0;
             const col = idx % BUFF_COLS;
             const row = Math.floor(idx / BUFF_COLS);
-            const bx = (31 + i * (BUFF_SIZE + 1)) * SCALE;
-            // Large (desktop) mode: the whole pane is bottom-anchored (see
-            // .desktop-mode .top-left-hud in hud.css), so a buff row drawn at
-            // the canvas's own y=0 floats disconnected in open space well
-            // above the HP bar instead of hugging the pane like it does when
-            // the pane sits at the screen's top edge. Anchor it just above
-            // the HP bar instead so it visually reads as part of the pane.
-            const by = isLarge ? 19 * SCALE - BUFF_SIZE * SCALE - 2 : 8 * SCALE;
-            const bw = BUFF_SIZE * SCALE;
-            const bh = BUFF_SIZE * SCALE;
+            const { bx, by, bw, bh } = buffRect(i, { SCALE, isLarge, buffPitch, buffSize });
             ctx.globalAlpha = 0.85;
             ctx.drawImage(buffsSheet,
               col * BUFF_SIZE, row * BUFF_SIZE, BUFF_SIZE, BUFF_SIZE,
@@ -360,7 +379,7 @@ export default function StatusPane({ myStats, depth, exitPos, isAdmin, onSearch,
 
     raf = requestAnimationFrame(draw);
     return () => cancelAnimationFrame(raf);
-  }, [t, isBusy, SCALE, isLarge, PANE_W, PANE_H, hpFill, hpShield, expFill, BG, cappedDPR]);
+  }, [t, isBusy, SCALE, isLarge, PANE_W, PANE_H, hpFill, hpShield, expFill, BG, cappedDPR, buffPitch, buffSize, maxBuffs]);
 
   const floorNumbers = [];
   for (let i = 1; i <= 26; i++) floorNumbers.push(i);
@@ -422,14 +441,10 @@ export default function StatusPane({ myStats, depth, exitPos, isAdmin, onSearch,
             onOpenHeroInfo?.();
             return;
           }
-          // Buff icon hit test — must mirror the `by` computed in the draw loop above.
+          // Buff icon hit test — mirrors the draw loop via the shared buffRect().
           const effects = statsRef.current?.effects || [];
-          const buffsYOffset = isLarge ? 19 * SCALE - BUFF_SIZE * SCALE - 2 : 8 * SCALE;
-          for (let i = 0; i < Math.min(effects.length, MAX_BUFFS); i++) {
-            const bx = (31 + i * (BUFF_SIZE + 1)) * SCALE;
-            const by = buffsYOffset;
-            const bw = BUFF_SIZE * SCALE;
-            const bh = BUFF_SIZE * SCALE;
+          for (let i = 0; i < Math.min(effects.length, maxBuffs); i++) {
+            const { bx, by, bw, bh } = buffRect(i, { SCALE, isLarge, buffPitch, buffSize });
             if (x >= bx && x < bx + bw && y >= by && y < by + bh) {
               AudioManager.play('CLICK');
               onBuffClick?.(effects[i]);

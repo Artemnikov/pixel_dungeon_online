@@ -1,4 +1,4 @@
-import type { Ref, AnimState, Projectile } from '../types';
+import type { Ref, AnimState, Projectile, MagicMissileState } from '../types';
 import {
   PLAYER_ATTACK_DURATION,
   PLAYER_OPERATE_DURATION,
@@ -50,7 +50,7 @@ export interface VisualEffectsRefs {
   shieldHaloRef?: Ref<unknown[]>;
   stateEffectsRef?: Ref<unknown[]>;
   screenShakeRef?: Ref<{ intensity: number; until: number } | null>;
-  magicMissileRef?: Ref<unknown[]>;
+  magicMissileRef?: Ref<MagicMissileState[]>;
   beamRef?: Ref<unknown[]>;
   surpriseRef?: Ref<unknown[]>;
   flyingItemsRef?: Ref<unknown[]>;
@@ -79,7 +79,7 @@ export class VisualEffectsManager {
     return this.refs.beamRef;
   }
 
-  public get magicMissileRef(): Ref<unknown[]> | undefined {
+  public get magicMissileRef(): Ref<MagicMissileState[]> | undefined {
     return this.refs.magicMissileRef;
   }
 
@@ -184,10 +184,11 @@ export class VisualEffectsManager {
     targetX: number,
     targetY: number,
     projType: string,
-  ): void {
+  ): MagicMissileState | undefined {
     if (this.refs.magicMissileRef) {
-      spawnMagicMissile(this.refs.magicMissileRef, startX, startY, targetX, targetY, projType);
+      return spawnMagicMissile(this.refs.magicMissileRef, startX, startY, targetX, targetY, projType);
     }
+    return undefined;
   }
 
   public spawnFlyingItem(

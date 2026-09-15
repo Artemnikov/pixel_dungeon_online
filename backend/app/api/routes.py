@@ -158,7 +158,14 @@ async def get_talents(class_type: str):
     )
     from app.engine.entities.player import CharacterClass
 
-    valid = {CharacterClass.WARRIOR, CharacterClass.MAGE, CharacterClass.ROGUE, CharacterClass.HUNTRESS}
+    valid = {
+        CharacterClass.WARRIOR,
+        CharacterClass.MAGE,
+        CharacterClass.ROGUE,
+        CharacterClass.HUNTRESS,
+        CharacterClass.DUELIST,
+        CharacterClass.CLERIC,
+    }
     if class_type not in valid:
         return {"error": f"Unknown class: {class_type}"}, 404
 

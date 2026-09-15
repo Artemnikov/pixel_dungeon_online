@@ -324,9 +324,8 @@ export function spawnTerror(particlesRef, cx, cy, count = 10) {
   }
 }
 
-// White splash burst — SPD MagicMissile impact (ch.sprite.burst(0xFFFFFFFF, n)).
-// White particles spraying upward in a 180° fan with gravity, matching Splash.at().
-export function spawnWhiteSplash(particlesRef, cx, cy, count = 3) {
+// White splash burst (upward fan with gravity, optional color tint).
+export function spawnWhiteSplash(particlesRef, cx, cy, count = 3, color = '#ffffff') {
   for (let i = 0; i < count; i++) {
     const angle = -Math.PI / 2 + (Math.random() - 0.5) * Math.PI;
     const speed = 40 + Math.random() * 40;
@@ -338,7 +337,7 @@ export function spawnWhiteSplash(particlesRef, cx, cy, count = 3) {
       life,
       maxLife: life,
       size: 3,
-      color: '#ffffff',
+      color,
       gravity: true,
       additive: true,
     });

@@ -85,6 +85,14 @@
       "huntress": {
         "name": "Huntress",
         "desc": "The Huntress is a master of thrown weapons and has a magical bow with infinite arrows. She also travels through tall grass without trampling it."
+      },
+      "duelist": {
+        "name": "Duelist",
+        "desc": "The Duelist is a master of melee combat techniques who builds weapon charge as she strikes. When fully charged, she unleashes devastating weapon-specific finisher moves."
+      },
+      "cleric": {
+        "name": "Cleric",
+        "desc": "The Cleric commands holy power to cast powerful blessings, shields, and offensive light. Armed with a cudgel and holy tome, he supports himself and allies in battle."
       }
     },
     "easy": "EASY",
@@ -777,7 +785,36 @@
       "wild_momentum": "Nature's Power = speed",
       "eagle_eye": "Hawk reveals map",
       "go_for_the_eyes": "Hawk blinds enemies",
-      "swift_spirit": "Hawk attacks faster"
+      "swift_spirit": "Hawk attacks faster",
+      "satiated_spells": "Eating food gives barrier on next spell",
+      "holy_intuition": "Identify cursed items in backpack",
+      "searing_light": "Attacks on illuminated foes deal bonus damage",
+      "shield_of_light": "Ward against targeted enemy",
+      "enlightening_meal": "Food restores Holy Tome charges",
+      "recall_inscription": "Recast last used scroll or stone",
+      "sunray": "Holy beam damages & blinds foes",
+      "divine_sense": "Mind Vision in wide radius",
+      "bless": "Bless and shield/heal self or ally",
+      "cleanse": "Clear debuffs & gain barrier/immunity",
+      "light_reading": "Cast from unequipped Tome in backpack",
+      "holy_lance": "Pierce enemies for holy damage",
+      "hallowed_ground": "Consecrated field heals & cripples",
+      "mnemonic_prayer": "Extend buffs on allies or debuffs on foes",
+      "lay_on_hands": "Touch heal ally or barrier self",
+      "aura_of_protection": "Damage resistance & shared armor glyph",
+      "wall_of_light": "Summon impassable barrier of light",
+      "ascended_form_talent": "Ascend to radiant form with reach & shields",
+      "trinity_talent": "Borrow powers of identified items",
+      "power_of_many_talent": "Summon and empower a Light Ally",
+      "divine_intervention": "Massive team shield during Ascension",
+      "judgement": "Smite all visible enemies",
+      "flash": "Short-range instant teleport",
+      "body_form": "Imbue weapon enchantment or armor glyph",
+      "mind_form": "Zap high level wand blast or thrown weapon",
+      "spirit_form": "Borrow ring or artifact power",
+      "beaming_ray": "Teleport Light Ally through walls",
+      "life_link": "Share damage & duplicate spells with Light Ally",
+      "stasis": "Store Light Ally safely inside hero"
     }
   },
   "subclass": {
@@ -820,6 +857,22 @@
     "warden": {
       "short": "Huntress who draws power from nature",
       "full": "A huntress who draws power from nature and the dungeon's flora. Herbology, barkskin, and nature magic. Grass and dew provide healing, shielding, and armor."
+    },
+    "champion": {
+      "short": "A master duelist wielding heavy precision strikes",
+      "full": "A master duelist wielding precision strikes and stuns. The Champion excels at 1v1 engagements, stunning foes with powerful finishers and maintaining weapon mastery."
+    },
+    "monk": {
+      "short": "An ascetic martial artist using fast multi-hit combos",
+      "full": "An ascetic martial artist using fast multi-hit combos and unencumbered agility. The Monk channels spiritual energy into rapid strikes, defense, and heightened mobility."
+    },
+    "priest": {
+      "short": "A holy spellcaster wielding divine wrath and smites",
+      "full": "A holy spellcaster wielding divine wrath and radiant power. The Priest smites enemies with sacred light, burns undead and demons, and empowers weapon strikes with holy energy."
+    },
+    "paladin": {
+      "short": "A stalwart crusader with holy armor and shields",
+      "full": "A stalwart crusader clad in protective light and divine shielding. The Paladin withstands heavy attacks, heals allies, and protects the party with undying faith."
     }
   },
   "ability": {
@@ -874,6 +927,30 @@
     "spirit_hawk": {
       "name": "Spirit Hawk",
       "desc": "Summon a spirit hawk to scout"
+    },
+    "challenge": {
+      "name": "Challenge",
+      "desc": "Force a 1v1 duel against a target enemy"
+    },
+    "elemental_strike": {
+      "name": "Elemental Strike",
+      "desc": "Unleash weapon enchantment in a sweeping area"
+    },
+    "feint": {
+      "name": "Feint",
+      "desc": "Create an afterimage decoy and dodge all attacks"
+    },
+    "ascended_form": {
+      "name": "Ascended Form",
+      "desc": "Ascend into a holy avatar, boosting all spells and gaining shields"
+    },
+    "trinity": {
+      "name": "Trinity",
+      "desc": "Borrow powers from holy relics in combat"
+    },
+    "power_of_many": {
+      "name": "Power of Many",
+      "desc": "Summon a radiant Light Ally to fight by your side"
     }
   },
   "combat": {
@@ -890,7 +967,43 @@
     "parry": "Parry",
     "crush": "Crush",
     "fury": "Fury",
-    "chargePct": "{{label}} ({{pct}}% charge)"
+    "chargePct": "{{label}} ({{pct}}% charge)",
+    "duelistFinisher": "FINISHER",
+    "duelistCharge": "CHARGE",
+    "duelistFinisherReady": "Finisher Ready! Click target to strike",
+    "duelistChargePct": "Weapon Charge: {{pct}}%",
+    "castSpell": "Cast {{spell}}",
+    "spellCooldown": "{{spell}} ({{secs}}s cooldown)"
+  },
+  "spells": {
+    "holy_light": {
+      "name": "Holy Light",
+      "desc": "Blasts visible enemies with holy light, dealing damage and inflicting blindness."
+    },
+    "holy_weapon": {
+      "name": "Holy Weapon",
+      "desc": "Imbues your melee weapon with radiant light for extra holy damage."
+    },
+    "divine_sense": {
+      "name": "Divine Sense",
+      "desc": "Reveals the locations of all creatures on the floor with mind vision."
+    },
+    "mend": {
+      "name": "Mend",
+      "desc": "Restores 30% of your maximum health over several turns."
+    },
+    "bless": {
+      "name": "Bless",
+      "desc": "Bestows divine favor, increasing attack accuracy and defense."
+    },
+    "guiding_light": {
+      "name": "Guiding Light",
+      "desc": "The Cleric fires a bolt of magical energy which strikes a target, dealing 2-8 damage and illuminating them. The next non-encumbered physical attack made against an illuminated enemy is guaranteed to hit them."
+    },
+    "holy_ward": {
+      "name": "Holy Ward",
+      "desc": "Envelops you in a holy barrier absorbing up to 25% max HP in damage."
+    }
   },
   "shop": {
     "title": "Shop",

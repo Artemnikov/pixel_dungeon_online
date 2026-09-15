@@ -12,16 +12,20 @@ import warriorSplash from './assets/pixel-dungeon/splashes/warrior.jpg';
 import mageSplash from './assets/pixel-dungeon/splashes/mage.jpg';
 import rogueSplash from './assets/pixel-dungeon/splashes/rogue.jpg';
 import huntressSplash from './assets/pixel-dungeon/splashes/huntress.jpg';
+import duelistSplash from './assets/pixel-dungeon/splashes/duelist.jpg';
+import clericSplash from './assets/pixel-dungeon/splashes/cleric.jpg';
 
 import warriorSheet from './assets/pixel-dungeon/sprites/warrior.png';
 import mageSheet from './assets/pixel-dungeon/sprites/mage.png';
 import rogueSheet from './assets/pixel-dungeon/sprites/rogue.png';
 import huntressSheet from './assets/pixel-dungeon/sprites/huntress.png';
+import duelistSheet from './assets/pixel-dungeon/sprites/duelist.png';
+import clericSheet from './assets/pixel-dungeon/sprites/cleric.png';
 
 const HERO_FRAME = { x: 0, y: 90, w: 12, h: 15 };
 const SHEET_W = 256, SHEET_H = 128;
 
-const HERO_IDS = ['warrior', 'mage', 'rogue', 'huntress'];
+const HERO_IDS = ['warrior', 'mage', 'rogue', 'huntress', 'duelist', 'cleric'];
 const PICKER_SCALE = 6;
 
 function HeroBust({ sheet, scale = 3, selected }) {
@@ -66,6 +70,8 @@ const CharacterSelection = ({ onSelect, showDifficulty = true }) => {
     { id: 'mage', sheet: mageSheet, splash: mageSplash },
     { id: 'rogue', sheet: rogueSheet, splash: rogueSplash },
     { id: 'huntress', sheet: huntressSheet, splash: huntressSplash },
+    { id: 'duelist', sheet: duelistSheet, splash: duelistSplash },
+    { id: 'cleric', sheet: clericSheet, splash: clericSplash },
   ];
   const hero = HEROES.find(h => h.id === heroId);
 
@@ -125,7 +131,7 @@ const CharacterSelection = ({ onSelect, showDifficulty = true }) => {
   return (
     <div className={`hero-select ${landscape ? 'landscape' : 'portrait'} ${heroId ? 'picked' : ''}`}>
       <canvas ref={parallaxRef} className="hero-parallax" />
-      {hero && <img key={hero.id} className="hero-splash" src={hero.splash} alt="" />}
+      {hero?.splash && <img key={hero.id} className="hero-splash" src={hero.splash} alt="" />}
       <div className="hero-vignette-left" />
       <div className="hero-vignette-right" />
 

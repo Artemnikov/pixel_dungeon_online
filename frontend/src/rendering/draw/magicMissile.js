@@ -23,7 +23,7 @@ export const MISSILE_TYPES = {
   elmo:          { color: '#22EE66', size: 5, life: 600, trailCount: 5, arcHeight: 1.0, driftY: -1.2 },
   poison:        { color: '#8844AA', size: 3, life: 600, trailCount: 3, arcHeight: 1.5, colorEnd: '#44AA44' },
   toxic_gas:     { color: '#44BB44', size: 5, life: 800, trailCount: 5, arcHeight: 1.5, colorEnd: '#88FF44', driftY: -0.5 },
-  light_missile: { color: '#FFFF40', size: 4, life: 400, trailCount: 4, arcHeight: 1.5 },
+  light_missile: { color: '#FFFF40', size: 4, life: 400, trailCount: 4, arcHeight: 0 },
 };
 
 const RAINBOW_COLORS = ['#FF0000', '#FF8800', '#FFFF00', '#00FF00', '#0088FF', '#8800FF'];
@@ -57,7 +57,12 @@ export function advanceAndDrawMagicMissiles(ctx, magicMissileRef) {
     if (!m) { finished.push(i); continue; }
 
     const elapsed = now - m.startTime;
-    if (elapsed > m.duration) { finished.push(i); continue; }
+    if (elapsed > m.duration) {
+      if (typeof m.onImpact === 'function') m.onImpact(m.impactData);
+      m.onImpact = null;
+      finished.push(i);
+      continue;
+    }
 
     const t = elapsed / m.duration;
     const arc = Math.sin(t * Math.PI) * TILE_SIZE * m.arcHeight;
@@ -138,4 +143,5 @@ export function spawnMagicMissile(missileRef, startX, startY, endX, endY, typeNa
     startTime: performance.now(),
   };
   missileRef.current.push(m);
+  return m;
 }

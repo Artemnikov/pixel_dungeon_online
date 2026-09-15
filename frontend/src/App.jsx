@@ -16,6 +16,7 @@ import KeyDisplay from './ui/KeyDisplay';
 import SideTags from './ui/SideTags';
 import AttackIndicator from './ui/AttackIndicator';
 import ActionIndicator from './ui/ActionIndicator';
+import ClericQuickSpellTag from './ui/ClericQuickSpellTag';
 import ResumeIndicator from './ui/ResumeIndicator';
 import DangerIndicator from './ui/DangerIndicator';
 import LootIndicator from './ui/LootIndicator';
@@ -223,7 +224,8 @@ function App() {
 
   const {
     examineMode, inspectInfo, handleExamineOrReveal,
-    sendUseAbility, sendPrepStrike, sendUseComboMove, toolbarItems,
+    sendUseAbility, sendPrepStrike, sendUseComboMove,
+    sendDuelistFinisher, sendCastSpell, sendSetClericQuickSpell, toolbarItems,
   } = rendering;
 
   // --- screen flow ---
@@ -282,6 +284,11 @@ function App() {
               const weapon = myStats?.belongings?.weapon;
               if (weapon) executeItemAction(weapon.id, action);
             }}
+          />
+          <ClericQuickSpellTag
+            myStats={myStats}
+            onCastSpell={sendCastSpell}
+            setTargetingMode={targeting.setTargetingMode}
           />
           <ResumeIndicator
             myStats={myStats}
@@ -379,8 +386,10 @@ function App() {
           onInventory={() => modals.setShowInventory(v => !v)}
           onQuickBag={modals.handleQuickBag}
           onSwap={modals.handleSwap}
-          onSlotClick={(item, idx) => {
-            if (!item || item.is_placeholder || item.default_action == null) {
+          onSlotClick={(item, idx, rect) => {
+            if (item && item.kind === 'holy_tome') {
+              modals.openClericCastBar(rect);
+            } else if (!item || item.is_placeholder || item.default_action == null) {
               modals.openQuickslotPicker(idx);
             } else {
               handleToolbarClick(item);
@@ -393,6 +402,7 @@ function App() {
           onTriggerBerserk={() => send({ type: 'TRIGGER_BERSERK' })}
           onPrepStrike={sendPrepStrike}
           onUseComboMove={sendUseComboMove}
+          onDuelistFinisher={sendDuelistFinisher}
           onOpenItem={modals.setUseItemTarget}
           onContextMenu={(item, x, y) => modals.setCtxMenu({ item, x, y })}
           onDefaultAction={(item) => executeItemAction(item.id, item.default_action)}
@@ -418,7 +428,7 @@ function App() {
           gold={gold}
           energy={energy}
           strength={myStats.strength}
-          isDesktop={gameDesktop}
+          myStats={myStats}
           depth={depth}
           guidePages={myStats.guidePages || []}
           executeItemAction={executeItemAction}
@@ -427,6 +437,9 @@ function App() {
           sendStoneTarget={sendStoneTarget}
           send={send}
           handleToolbarClick={handleToolbarClick}
+          onCastSpell={sendCastSpell}
+          setTargetingMode={targeting.setTargetingMode}
+          onSetQuickSpell={sendSetClericQuickSpell}
         />
 
         <TalentLayer
