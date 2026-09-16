@@ -453,6 +453,47 @@ def test_cleric_armor_abilities_dispatch():
     assert p.powered_ally_id in floor.mobs
 
 
+def test_cleric_armor_ability_invalid_target_spends_no_charge():
+    """An out-of-bounds or non-passable Power of Many target must never cost
+    charge (regression: validation now precedes the spend)."""
+    g = GameInstance("t")
+    p = _cleric(g)
+    p._kings_crown_worn = True
+    floor = g._get_or_create_floor(p.floor_id)
+
+    # Out-of-bounds target
+    p.armor_charge = 100
+    g.use_armor_ability(p.id, ArmorAbilityType.POWER_OF_MANY, 999, 999)
+    assert p.armor_charge == 100
+    assert p.powered_ally_id is None
+
+    # Non-passable (solid wall) target
+    wall = None
+    for y in range(floor.height):
+        for x in range(floor.width):
+            if floor.flags and floor.flags.solid[y][x]:
+                wall = (x, y)
+                break
+        if wall:
+            break
+    assert wall is not None
+    p.armor_charge = 100
+    g.use_armor_ability(p.id, ArmorAbilityType.POWER_OF_MANY, wall[0], wall[1])
+    assert p.armor_charge == 100
+    assert p.powered_ally_id is None
+
+
+def test_cleric_armor_ability_non_cleric_is_rejected():
+    """Non-Cleric classes must not be able to trigger Cleric armor abilities
+    (class guard lives on the ability strategy, before any charge is spent)."""
+    g = GameInstance("t")
+    p = g.add_player("warrior", "Warrior", CharacterClass.WARRIOR)
+    p.armor_charge = 100
+    g.use_armor_ability(p.id, ArmorAbilityType.ASCENDED_FORM)
+    assert p.armor_charge == 100
+    assert getattr(p, "ascended_form_active", False) is False
+
+
 @pytest.fixture
 def anyio_backend():
     return "asyncio"

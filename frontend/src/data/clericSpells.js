@@ -17,15 +17,15 @@ export const CLERIC_SPELLS = [
   { id: 'lay_on_hands', label: 'Lay on Hands', tier: 3, cost: 1, icon: '🤲', targeting: 'ally_or_self', talent: 'lay_on_hands', desc: 'Grants barrier to yourself or restores health to an ally.' },
   { id: 'aura_of_protection', label: 'Aura of Protection', tier: 3, cost: 2, icon: '🛡️', targeting: 'none', talent: 'aura_of_protection', desc: 'Emits a protective aura reducing damage taken by allies within 2 tiles.' },
   { id: 'wall_of_light', label: 'Wall of Light', tier: 3, cost: 3, icon: '🧱', targeting: 'cell', talent: 'wall_of_light', desc: 'Raises a solid barrier of light for 20 turns, knocking back and stunning enemies.' },
-  { id: 'divine_intervention', label: 'Divine Intervention', tier: 4, cost: 5, icon: '👑', targeting: 'none', talent: 'divine_intervention', desc: 'Grants a massive shield (150-300) and extends Ascended Form.' },
-  { id: 'judgement', label: 'Judgement', tier: 4, cost: 3, icon: '⚡', targeting: 'none', talent: 'judgement', desc: 'Smites all visible enemies, dealing damage amplified by spells cast during Ascension.' },
-  { id: 'flash', label: 'Flash', tier: 4, cost: 2, icon: '⚡', targeting: 'cell', talent: 'flash', desc: 'Teleports up to 3-6 tiles away instantly.' },
+  { id: 'divine_intervention', label: 'Divine Intervention', tier: 4, cost: 5, icon: '👑', targeting: 'none', talent: 'divine_intervention', unlock: { ascendedForm: true }, desc: 'Grants a massive shield (150-300) and extends Ascended Form.' },
+  { id: 'judgement', label: 'Judgement', tier: 4, cost: 3, icon: '⚡', targeting: 'none', talent: 'judgement', unlock: { ascendedForm: true }, desc: 'Smites all visible enemies, dealing damage amplified by spells cast during Ascension.' },
+  { id: 'flash', label: 'Flash', tier: 4, cost: 2, icon: '⚡', targeting: 'cell', talent: 'flash', unlock: { ascendedForm: true }, desc: 'Teleports up to 3-6 tiles away instantly.' },
   { id: 'body_form', label: 'Body Form', tier: 4, cost: 2, icon: '⚔️', targeting: 'none', talent: 'body_form', desc: 'Imbues weapon enchantment or armor glyph for 20-40 turns.' },
   { id: 'mind_form', label: 'Mind Form', tier: 4, cost: 3, icon: '🔮', targeting: 'mob', talent: 'mind_form', desc: 'Casts a high level wand blast or thrown missile.' },
   { id: 'spirit_form', label: 'Spirit Form', tier: 4, cost: 4, icon: '💍', targeting: 'none', talent: 'spirit_form', desc: 'Borrows the power of an identified ring or artifact for 20 turns.' },
-  { id: 'beaming_ray', label: 'Beaming Ray', tier: 4, cost: 1, icon: '🌠', targeting: 'cell', talent: 'beaming_ray', desc: 'Teleports your Light Ally up to 4-16 tiles and boosts their damage.' },
-  { id: 'life_link', label: 'Life Link', tier: 4, cost: 2, icon: '🔗', targeting: 'none', talent: 'life_link', desc: 'Links HP with your Light Ally for 10-20 turns and duplicates spells.' },
-  { id: 'stasis', label: 'Stasis', tier: 4, cost: 2, icon: '⏳', targeting: 'none', talent: 'stasis', desc: 'Stores your Light Ally inside you in stasis for up to 60-150 turns.' },
+  { id: 'beaming_ray', label: 'Beaming Ray', tier: 4, cost: 1, icon: '🌠', targeting: 'cell', talent: 'beaming_ray', unlock: { poweredAlly: true }, desc: 'Teleports your Light Ally up to 4-16 tiles and boosts their damage.' },
+  { id: 'life_link', label: 'Life Link', tier: 4, cost: 2, icon: '🔗', targeting: 'none', talent: 'life_link', unlock: { poweredAlly: true }, desc: 'Links HP with your Light Ally for 10-20 turns and duplicates spells.' },
+  { id: 'stasis', label: 'Stasis', tier: 4, cost: 2, icon: '⏳', targeting: 'none', talent: 'stasis', unlock: { poweredAlly: true }, desc: 'Stores your Light Ally inside you in stasis for up to 60-150 turns.' },
 ];
 
 export function getClericSpell(spellId) {
@@ -39,13 +39,12 @@ export function isSpellUnlocked(spell, { talentLevels = {}, subclass = null, asc
   if (spell.subclass && spell.subclass !== subclass) {
     return false;
   }
-  if (spell.tier === 4) {
-    if (['divine_intervention', 'judgement', 'flash'].includes(spell.id) && !ascendedFormActive) {
-      return false;
-    }
-    if (['beaming_ray', 'life_link', 'stasis'].includes(spell.id) && !poweredAllyId) {
-      return false;
-    }
+  const unlock = spell.unlock || {};
+  if (unlock.ascendedForm && !ascendedFormActive) {
+    return false;
+  }
+  if (unlock.poweredAlly && !poweredAllyId) {
+    return false;
   }
   return true;
 }

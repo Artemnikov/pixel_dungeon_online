@@ -10,15 +10,13 @@ from app.engine.entities.base import Faction, Position, chebyshev_distance
 from app.engine.entities.player import Mob, Player
 from app.engine.entities.buffs import add_buff
 from app.engine.entities.subclasses import ArmorAbilityType, COST_ARMOR_ABILITY, COST_ENDURE, Subclass, Talent
+from app.engine.game.cleric_armor_abilities import CLERIC_ARMOR_ABILITY_MAP
 from app.engine.systems.combat import resolve_melee_attack
 
 # Rogue armor ability charge costs (SPD baseChargeUse).
 COST_SMOKE_BOMB = 50
 COST_DEATH_MARK = 25
 COST_SHADOW_CLONE = 35
-COST_ASCENDED_FORM = 40
-COST_TRINITY = 33
-COST_POWER_OF_MANY = 50
 
 
 # Heroic Energy (warrior T4, universal): reduces any armor ability's charge
@@ -60,6 +58,14 @@ class ArmorAbilitiesMixin:
 
         floor_id = player.floor_id
         floor = self._get_or_create_floor(floor_id)
+
+        # Cleric armor abilities dispatch through their own polymorphic map
+        # (see cleric_armor_abilities.py); costs, bounds, and charge deduction
+        # live on the ability classes.
+        cleric_ability = CLERIC_ARMOR_ABILITY_MAP.get(ability)
+        if cleric_ability is not None:
+            cleric_ability.use(self, player, target_x, target_y)
+            return
 
         if ability == ArmorAbilityType.HEROIC_LEAP:
             ti = player.subclass_info.talent_info
@@ -247,33 +253,6 @@ class ArmorAbilitiesMixin:
 
         elif ability == ArmorAbilityType.FEINT:
             self.action_feint(player, target_x, target_y)
-
-        elif ability == ArmorAbilityType.ASCENDED_FORM:
-            cost = int(COST_ASCENDED_FORM * _heroic_energy_mult(player))
-            if player.armor_charge < cost:
-                return
-            player.armor_charge -= cost
-            self.action_ascended_form(player)
-
-        elif ability == ArmorAbilityType.TRINITY:
-            cost = int(COST_TRINITY * _heroic_energy_mult(player))
-            if player.armor_charge < cost:
-                return
-            player.armor_charge -= cost
-            self.action_trinity(player, "scroll")
-
-        elif ability == ArmorAbilityType.POWER_OF_MANY:
-            tx = target_x if target_x is not None else player.pos.x
-            ty = target_y if target_y is not None else player.pos.y
-            if not (0 <= tx < floor.width and 0 <= ty < floor.height):
-                return
-            if not (floor.flags and floor.flags.passable[ty][tx]):
-                return
-            cost = int(COST_POWER_OF_MANY * _heroic_energy_mult(player))
-            if player.armor_charge < cost:
-                return
-            player.armor_charge -= cost
-            self.action_power_of_many(player, tx, ty)
 
     # --- Rogue abilities ---------------------------------------------------
     def _ability_smoke_bomb(self, player, floor, floor_id, target_x, target_y) -> None:

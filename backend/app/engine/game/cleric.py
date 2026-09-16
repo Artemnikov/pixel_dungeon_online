@@ -11,11 +11,7 @@ from typing import Optional
 from app.engine.entities.base import Position
 from app.engine.entities.player import CharacterClass, Player
 from app.engine.entities.items.artifacts import HolyTome
-from app.engine.game.cleric_spells import (
-    SPELL_REGISTRY,
-    get_available_spells,
-    get_cleric_spell,
-)
+from app.engine.game.cleric_spells import get_cleric_spell
 
 
 class ClericMixin:
@@ -111,84 +107,3 @@ class ClericMixin:
         if dispatched:
             spell.on_spell_cast(self, player, tome, cost)
         return dispatched
-
-    def action_ascended_form(self, player: Player) -> None:
-        """Ascended Form: buff all spells + shield for 10s."""
-        if player.class_type != CharacterClass.CLERIC or player.is_downed or not player.is_alive:
-            return
-        shield = 30
-        player.add_shield("ascended_form", shield, priority=2, decay=0)
-        player.add_buff("shielded", duration=10.0, level=shield)
-        player.ascended_form_active = True
-        player.ascended_form_timer = 10.0
-        player.ascended_form_casts = 0
-        player.flash_casts = 0
-        self.add_event(
-            "ASCENDED_FORM",
-            {"player": player.id},
-            floor_id=player.floor_id,
-            source_player_id=player.id,
-        )
-
-    def action_trinity(self, player: Player, item_kind: str) -> None:
-        """Trinity: borrow one item form (up to 3). Stub: emits event for client."""
-        if player.class_type != CharacterClass.CLERIC or player.is_downed or not player.is_alive:
-            return
-        if len(player.current_trinity_forms) >= 3:
-            player.current_trinity_forms.pop(0)
-        player.current_trinity_forms.append(item_kind)
-        self.add_event(
-            "TRINITY_FORM",
-            {"player": player.id, "forms": player.current_trinity_forms},
-            floor_id=player.floor_id,
-            source_player_id=player.id,
-        )
-
-    def action_power_of_many(self, player: Player, tx: int, ty: int) -> None:
-        """Power of Many: summon a Light Ally at target cell."""
-        if player.class_type != CharacterClass.CLERIC or player.is_downed or not player.is_alive:
-            return
-        import uuid as _uuid
-        from app.engine.entities.base import Position
-        from app.engine.entities.player import Mob
-
-        floor = self._get_or_create_floor(player.floor_id)
-
-        if not (0 <= tx < floor.width and 0 <= ty < floor.height):
-            return
-        if not (floor.flags and floor.flags.passable[ty][tx]):
-            return
-
-        if player.powered_ally_id and player.powered_ally_id in floor.mobs:
-            existing = floor.mobs[player.powered_ally_id]
-            existing.is_alive = False
-            self.add_event("DEATH", {"target": existing.id}, floor_id=player.floor_id)
-            del floor.mobs[player.powered_ally_id]
-
-        ally_id = f"light_ally_{_uuid.uuid4().hex[:8]}"
-        ally_hp = 80 + player.level * 4
-        ally = Mob(
-            id=ally_id,
-            type="mob",
-            mob_type="light_ally",
-            name="Light Ally",
-            pos=Position(x=tx, y=ty),
-            hp=ally_hp,
-            max_hp=ally_hp,
-            attack=player.attack,
-            defense=player.defense // 2,
-            damage_min=player.damage_min,
-            damage_max=player.damage_max,
-            faction="player",
-            owner_id=player.id,
-        )
-        floor.mobs[ally.id] = ally
-        ally._owner_ref = player
-        player.powered_ally_id = ally_id
-        player._active_powered_ally = ally
-        self.add_event(
-            "POWER_OF_MANY",
-            {"player": player.id, "ally_id": ally_id, "x": tx, "y": ty},
-            floor_id=player.floor_id,
-            source_player_id=player.id,
-        )

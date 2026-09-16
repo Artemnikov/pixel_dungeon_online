@@ -191,6 +191,20 @@ class Mob(Entity):
     type: str = EntityType.MOB
     faction: str = Faction.DUNGEON
     mob_type: Optional[str] = None
+
+    # Demon/undead keywords used to flag unholy mobs (Cleric holy spells deal
+    # max damage against them). Matched against mob_type and name (each mob
+    # class sets `name`; generic `Mob(...)` holders may set either).
+    UNHOLY_KEYWORDS: ClassVar[frozenset] = frozenset({
+        "skeleton", "wraith", "succubus", "demon", "eye", "scorpio",
+        "ghoul", "zombie", "necromancer", "vampire", "ghost",
+    })
+
+    @property
+    def is_unholy(self) -> bool:
+        mob_kind = (self.mob_type or "").lower()
+        mob_name = (self.name or "").lower()
+        return any(k in mob_kind or k in mob_name for k in self.UNHOLY_KEYWORDS)
     ai_state: str = "idle"
     target_id: Optional[str] = None
     difficulty: str = Difficulty.NORMAL

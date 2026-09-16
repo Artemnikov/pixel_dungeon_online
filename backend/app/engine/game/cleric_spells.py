@@ -8,49 +8,105 @@ import random
 from typing import Any, Dict, List, Optional, Tuple
 
 from app.engine.dungeon.constants import TileType
-from app.engine.entities.base import Faction, Position
+from app.engine.entities.base import Position
 from app.engine.entities.buffs import add_buff
 from app.engine.entities.items.artifacts import HolyTome
 from app.engine.entities.player import CharacterClass, Mob, Player
-from app.engine.entities.subclasses import Subclass
+from app.engine.game.cleric_subclass import get_cleric_subclass_strategy
+from app.engine.game.cleric_targets import (
+    HARMFUL_DEBUFFS,
+    duplicate_to_life_linked_ally,
+    resolve_spell_target,
+)
 from app.engine.game.terrain_effects import press_cell
 from app.engine.systems.ballistica import ballistica_trace
 
-HARMFUL_DEBUFFS = {
-    "poison", "bleeding", "crippled", "burning", "slowed", "paralysis",
-    "blindness", "corrosion", "ooze", "weakness", "vulnerable", "hex",
-    "daze", "charm", "terror", "amok", "frost", "frozen", "chill", "chilled",
+
+# ===========================================================================
+# Recall Inscription cost table / dispatch (data-driven, no if/elif ladder)
+# ===========================================================================
+
+_RUNESTONE_PREMIUM_COST: Dict[str, float] = {
+    "stone_of_augmentation": 4.0,
+    "stone_of_enchantment": 4.0,
 }
-
-UNHOLY_MOB_KEYWORDS = {
-    "skeleton", "wraith", "succubus", "demon", "eye", "scorpio",
-    "ghoul", "zombie", "necromancer", "vampire", "ghost",
+_SCROLL_COST_OVERRIDES: Dict[str, float] = {
+    "scroll_of_metamorphosis": 8.0,
+    "scroll_of_enchantment": 8.0,
+    "scroll_of_transmutation": 6.0,
 }
+_SCROLL_EXOTIC_PREFIXES: Tuple[str, ...] = ("scroll_of_psionic", "scroll_of_siren")
 
 
-def _get_subclass(player: Player) -> Optional[str]:
-    if hasattr(player, "subclass_info") and player.subclass_info is not None:
-        return player.subclass_info.subclass
-    return getattr(player, "subclass", None)
+def _inscription_recall_cost(inscr: Optional[Dict[str, Any]]) -> float:
+    if not inscr:
+        return 3.0
+    itype = inscr.get("type", "scroll")
+    ikind = inscr.get("kind", "")
+    if itype == "runestone":
+        return _RUNESTONE_PREMIUM_COST.get(ikind, 2.0)
+    if itype == "scroll":
+        if ikind in _SCROLL_COST_OVERRIDES:
+            return _SCROLL_COST_OVERRIDES[ikind]
+        if "exotic" in ikind or ikind.startswith(_SCROLL_EXOTIC_PREFIXES):
+            return 4.0
+    return 3.0
 
 
-def _is_unholy_mob(mob: Mob) -> bool:
-    mob_kind = getattr(mob, "mob_type", "").lower()
-    mob_name = getattr(mob, "name", "").lower()
-    return any(k in mob_kind or k in mob_name for k in UNHOLY_MOB_KEYWORDS)
+def _recall_scroll(game: Any, player: Player, inscr: Dict[str, Any], ikind: str, tx: Optional[int], ty: Optional[int]) -> None:
+    from app.engine.entities.items.scrolls import (
+        ScrollOfIdentify, ScrollOfMagicMapping, ScrollOfRecharging,
+        ScrollOfRemoveCurse, ScrollOfTeleportation, ScrollOfTerror,
+        ScrollOfLullaby, ScrollOfRage, ScrollOfRetribution,
+        ScrollOfTransmutation, ScrollOfMirrorImage,
+    )
+    from app.engine.entities.scroll_actions import action_read
+    scroll_map = {
+        "scroll_of_identify": ScrollOfIdentify,
+        "scroll_of_magic_mapping": ScrollOfMagicMapping,
+        "scroll_of_recharging": ScrollOfRecharging,
+        "scroll_of_remove_curse": ScrollOfRemoveCurse,
+        "scroll_of_teleportation": ScrollOfTeleportation,
+        "scroll_of_terror": ScrollOfTerror,
+        "scroll_of_lullaby": ScrollOfLullaby,
+        "scroll_of_rage": ScrollOfRage,
+        "scroll_of_retribution": ScrollOfRetribution,
+        "scroll_of_transmutation": ScrollOfTransmutation,
+        "scroll_of_mirror_image": ScrollOfMirrorImage,
+    }
+    cls = scroll_map.get(ikind, ScrollOfRecharging)
+    dummy_scroll = cls(id=f"recalled_{ikind}")
+    action_read(game, player, dummy_scroll)
 
 
-def _resolve_target_char(game: Any, player: Player, floor: Any, tx: Optional[int], ty: Optional[int]) -> Optional[Any]:
-    if tx is None or ty is None:
-        return None
-    if hasattr(game, "_players_on_floor"):
-        for other_p in game._players_on_floor(player.floor_id):
-            if other_p.pos.x == tx and other_p.pos.y == ty and getattr(other_p, "is_alive", False):
-                return other_p
-    for m in floor.mobs.values():
-        if m.is_alive and m.pos.x == tx and m.pos.y == ty:
-            return m
-    return None
+def _recall_runestone(game: Any, player: Player, inscr: Dict[str, Any], ikind: str, tx: Optional[int], ty: Optional[int]) -> None:
+    from app.engine.entities.runestone_actions import action_throw_runestone
+    from app.engine.entities.runestones import (
+        Runestone, StoneOfAggression, StoneOfBlast, StoneOfBlink,
+        StoneOfClairvoyance, StoneOfDeepSleep, StoneOfFear, StoneOfFlock,
+        StoneOfShock,
+    )
+    recall_classes = {
+        "stone_of_blast": StoneOfBlast,
+        "stone_of_blink": StoneOfBlink,
+        "stone_of_deep_sleep": StoneOfDeepSleep,
+        "stone_of_clairvoyance": StoneOfClairvoyance,
+        "stone_of_aggression": StoneOfAggression,
+        "stone_of_flock": StoneOfFlock,
+        "stone_of_shock": StoneOfShock,
+        "stone_of_fear": StoneOfFear,
+    }
+    cls = recall_classes.get(ikind, Runestone)
+    dummy_stone = cls(id=f"recalled_{ikind}")
+    target_x = tx if tx is not None else player.pos.x
+    target_y = ty if ty is not None else player.pos.y
+    action_throw_runestone(game, player, dummy_stone, target_x, target_y)
+
+
+_RECALL_HANDLERS: Dict[str, Any] = {
+    "scroll": _recall_scroll,
+    "runestone": _recall_runestone,
+}
 
 
 def _resolve_target_mob(game: Any, player: Player, floor: Any, tx: Optional[int] = None, ty: Optional[int] = None) -> Optional[Mob]:
@@ -64,15 +120,6 @@ def _resolve_target_mob(game: Any, player: Player, floor: Any, tx: Optional[int]
         visible_mobs.sort(key=lambda m: (m.pos.x - player.pos.x) ** 2 + (m.pos.y - player.pos.y) ** 2)
         return visible_mobs[0]
     return None
-
-
-def _duplicate_to_life_linked_ally(game: Any, player: Player, callback: Any) -> None:
-    """Duplicate single-target beneficial spell to life-linked Light Ally."""
-    if player.has_buff("life_link") and getattr(player, "powered_ally_id", None):
-        floor = game._get_or_create_floor(player.floor_id)
-        ally = floor.mobs.get(player.powered_ally_id)
-        if ally is not None and getattr(ally, "is_alive", False):
-            callback(ally)
 
 
 class ClericSpell(ABC):
@@ -137,7 +184,7 @@ class ClericSpell(ABC):
             player.add_shield("barrier", shield_amount, priority=1, decay=0)
             player.add_buff("barrier", duration=30.0, level=shield_amount)
             player.remove_buff("satiated_spells_tracker")
-            _duplicate_to_life_linked_ally(
+            duplicate_to_life_linked_ally(
                 game, player, lambda ally: (
                     ally.add_shield("barrier", shield_amount, priority=1, decay=0),
                     ally.add_buff("barrier", duration=30.0, level=shield_amount),
@@ -147,7 +194,7 @@ class ClericSpell(ABC):
         tome.spend_charge(cost, hero_lvl=player.level)
 
         # Paladin engine: casting other spells extends active Holy Weapon and Holy Ward
-        if _get_subclass(player) == Subclass.PALADIN and cost > 0:
+        if get_cleric_subclass_strategy(player).extends_auras_on_cast(player) and cost > 0:
             ext_turns = 10.0 * cost
             if self.id != "holy_weapon" and player.has_buff("holy_weapon"):
                 b = player.get_buff("holy_weapon")
@@ -193,7 +240,7 @@ class GuidingLightSpell(ClericSpell):
     desc = "Fires a holy bolt dealing 2-8 magic damage and illuminating the target."
 
     def get_cost(self, player: Player) -> float:
-        if _get_subclass(player) == Subclass.PRIEST and getattr(player, "guiding_light_priest_cd", 0.0) <= 0:
+        if get_cleric_subclass_strategy(player).guiding_light_is_free(player):
             return 0.0
         return self.base_cost
 
@@ -217,8 +264,8 @@ class GuidingLightSpell(ClericSpell):
             return False
 
         cost = self.get_cost(player)
-        if _get_subclass(player) == Subclass.PRIEST and cost == 0.0:
-            player.guiding_light_priest_cd = 50.0
+        if cost == 0.0:
+            get_cleric_subclass_strategy(player).mark_guiding_light_used(player)
 
         game.add_event(
             "RANGED_ATTACK",
@@ -285,7 +332,7 @@ class HolyWeaponSpell(ClericSpell):
     cast_glow = "golden"
 
     def execute(self, game: Any, player: Player, tx: Optional[int] = None, ty: Optional[int] = None) -> bool:
-        bonus = 6 if _get_subclass(player) == Subclass.PALADIN else 2
+        bonus = get_cleric_subclass_strategy(player).holy_weapon_bonus()
         player.add_buff("holy_weapon", duration=50.0, level=bonus)
         return True
 
@@ -303,7 +350,7 @@ class HolyWardSpell(ClericSpell):
     cast_glow = "golden"
 
     def execute(self, game: Any, player: Player, tx: Optional[int] = None, ty: Optional[int] = None) -> bool:
-        bonus = 3 if _get_subclass(player) == Subclass.PALADIN else 1
+        bonus = get_cleric_subclass_strategy(player).holy_ward_bonus()
         player.add_buff("holy_ward", duration=50.0, level=bonus)
         return True
 
@@ -385,22 +432,7 @@ class RecallInscriptionSpell(ClericSpell):
         return player.talent_info.has("recall_inscription")
 
     def get_cost(self, player: Player) -> float:
-        inscr = getattr(player, "last_used_inscription", None)
-        if not inscr:
-            return 3.0
-        itype = inscr.get("type", "scroll")
-        ikind = inscr.get("kind", "")
-        if itype == "runestone":
-            return 4.0 if ikind in ("stone_of_augmentation", "stone_of_enchantment") else 2.0
-        elif itype == "scroll":
-            if ikind in ("scroll_of_metamorphosis", "scroll_of_enchantment"):
-                return 8.0
-            if ikind in ("scroll_of_transmutation",):
-                return 6.0
-            if "exotic" in ikind or ikind.startswith("scroll_of_psionic") or ikind.startswith("scroll_of_siren"):
-                return 4.0
-            return 3.0
-        return 3.0
+        return _inscription_recall_cost(getattr(player, "last_used_inscription", None))
 
     def execute(self, game: Any, player: Player, tx: Optional[int] = None, ty: Optional[int] = None) -> bool:
         inscr = getattr(player, "last_used_inscription", None)
@@ -411,40 +443,9 @@ class RecallInscriptionSpell(ClericSpell):
             player.last_used_inscription = None
             return False
 
-        itype = inscr.get("type", "scroll")
-        ikind = inscr.get("kind", "")
-
-        if itype == "scroll":
-            from app.engine.entities.items.scrolls import (
-                ScrollOfIdentify, ScrollOfMagicMapping, ScrollOfRecharging,
-                ScrollOfRemoveCurse, ScrollOfTeleportation, ScrollOfTerror,
-                ScrollOfLullaby, ScrollOfRage, ScrollOfRetribution,
-                ScrollOfTransmutation, ScrollOfMirrorImage,
-            )
-            from app.engine.entities.scroll_actions import action_read
-            scroll_map = {
-                "scroll_of_identify": ScrollOfIdentify,
-                "scroll_of_magic_mapping": ScrollOfMagicMapping,
-                "scroll_of_recharging": ScrollOfRecharging,
-                "scroll_of_remove_curse": ScrollOfRemoveCurse,
-                "scroll_of_teleportation": ScrollOfTeleportation,
-                "scroll_of_terror": ScrollOfTerror,
-                "scroll_of_lullaby": ScrollOfLullaby,
-                "scroll_of_rage": ScrollOfRage,
-                "scroll_of_retribution": ScrollOfRetribution,
-                "scroll_of_transmutation": ScrollOfTransmutation,
-                "scroll_of_mirror_image": ScrollOfMirrorImage,
-            }
-            cls = scroll_map.get(ikind, ScrollOfRecharging)
-            dummy_scroll = cls(id=f"recalled_{ikind}")
-            action_read(game, player, dummy_scroll)
-        elif itype == "runestone":
-            from app.engine.entities.runestone_actions import action_throw_runestone
-            from app.engine.entities.runestones import Runestone
-            dummy_stone = Runestone(id=f"recalled_{ikind}", kind=ikind)
-            target_x = tx if tx is not None else player.pos.x
-            target_y = ty if ty is not None else player.pos.y
-            action_throw_runestone(game, player, dummy_stone, target_x, target_y)
+        handler = _RECALL_HANDLERS.get(inscr.get("type", "scroll"))
+        if handler is not None:
+            handler(game, player, inscr, inscr.get("kind", ""), tx, ty)
 
         player.last_used_inscription = None
         game.add_event("RECALL_INSCRIPTION", {"player": player.id}, floor_id=player.floor_id)
@@ -475,7 +476,7 @@ class SunraySpell(ClericSpell):
         min_dmg, max_dmg = (6, 12) if pts >= 2 else (4, 8)
         dur = 6.0 if pts >= 2 else 4.0
 
-        is_unholy = _is_unholy_mob(target_mob)
+        is_unholy = target_mob.is_unholy
         dmg = max_dmg if is_unholy else random.randint(min_dmg, max_dmg)
         dealt = target_mob.take_damage(dmg)
 
@@ -514,8 +515,7 @@ class SunraySpell(ClericSpell):
                 target_mob.add_buff("sunray_recently_blinded_tracker", duration=dur)
                 target_mob.add_buff("sunray_used_tracker", duration=999999.0)
 
-            if _get_subclass(player) == Subclass.PRIEST:
-                target_mob.add_buff("illuminated", duration=50.0)
+            get_cleric_subclass_strategy(player).illuminate(game, player, target_mob)
         else:
             game._handle_kill_event(player, target_mob, floor)
 
@@ -558,46 +558,9 @@ class BlessSpell(ClericSpell):
 
     def execute(self, game: Any, player: Player, tx: Optional[int] = None, ty: Optional[int] = None) -> bool:
         pts = player.talent_info.level("bless")
-        is_self = (tx is None and ty is None) or (tx == player.pos.x and ty == player.pos.y)
         floor = game._get_or_create_floor(player.floor_id)
-
-        target_char = _resolve_target_char(game, player, floor, tx, ty) if not is_self else None
-
-        if is_self or target_char is None or target_char.id == player.id:
-            dur = 2.0 + 4.0 * pts
-            shield = 5 + 5 * pts
-            player.add_buff("bless", duration=dur)
-            player.add_shield("barrier", shield, priority=1, decay=0)
-            player.add_buff("barrier", duration=30.0, level=shield)
-            _duplicate_to_life_linked_ally(
-                game, player, lambda ally: (
-                    ally.add_buff("bless", duration=dur),
-                    ally.add_shield("barrier", shield, priority=1, decay=0),
-                    ally.add_buff("barrier", duration=30.0, level=shield),
-                )
-            )
-        elif target_char.faction == player.faction or getattr(target_char, "faction", None) == "player":
-            dur = 5.0 + 5.0 * pts
-            heal_pool = 5 + 5 * pts
-            target_char.add_buff("bless", duration=dur)
-            max_hp = getattr(target_char, "get_total_max_hp", lambda: getattr(target_char, "max_hp", 1))()
-            missing = max(0, max_hp - target_char.hp)
-            if missing < heal_pool:
-                target_char.hp = max_hp
-                excess = heal_pool - missing
-                target_char.add_shield("barrier", excess, priority=1, decay=0)
-                target_char.add_buff("barrier", duration=30.0, level=excess)
-            else:
-                target_char.hp += heal_pool
-            # Life link duplicate back to player
-            if player.has_buff("life_link") and getattr(player, "powered_ally_id", None) == target_char.id:
-                player.add_buff("bless", duration=dur)
-                player.add_shield("barrier", heal_pool, priority=1, decay=0)
-                player.add_buff("barrier", duration=30.0, level=heal_pool)
-        else:
-            if _get_subclass(player) == Subclass.PRIEST:
-                target_char.add_buff("illuminated", duration=50.0)
-
+        target = resolve_spell_target(game, player, floor, tx, ty)
+        target.apply_bless(game, player, pts)
         game.add_event("FLARE", {"x": player.pos.x, "y": player.pos.y, "color": "#FFFF00", "radius": 32, "rays": 6}, floor_id=player.floor_id)
         return True
 
@@ -650,7 +613,7 @@ class CleanseSpell(ClericSpell):
                 if dur_immune > 0:
                     mob.add_buff("debuff_immune", duration=dur_immune)
 
-        _duplicate_to_life_linked_ally(
+        duplicate_to_life_linked_ally(
             game, player, lambda ally: (
                 [ally.remove_buff(d) for d in HARMFUL_DEBUFFS],
                 ally.add_shield("barrier", shield, priority=1, decay=0),
@@ -678,7 +641,7 @@ class RadianceSpell(ClericSpell):
     cast_sound = "BLAST"
 
     def is_unlocked(self, player: Player) -> bool:
-        return _get_subclass(player) == Subclass.PRIEST
+        return get_cleric_subclass_strategy(player).unlocks(self.id)
 
     def execute(self, game: Any, player: Player, tx: Optional[int] = None, ty: Optional[int] = None) -> bool:
         floor = game._get_or_create_floor(player.floor_id)
@@ -728,7 +691,7 @@ class HolyLanceSpell(ClericSpell):
         pts = player.talent_info.level("holy_lance")
         dmg_table = {1: (30, 55), 2: (45, 83), 3: (60, 110)}
         min_d, max_d = dmg_table.get(pts, (30, 55))
-        is_unholy = _is_unholy_mob(target_mob)
+        is_unholy = target_mob.is_unholy
         dmg = max_d if is_unholy else random.randint(min_d, max_d)
         dealt = target_mob.take_damage(dmg)
 
@@ -847,25 +810,8 @@ class MnemonicPrayerSpell(ClericSpell):
         pts = player.talent_info.level("mnemonic_prayer")
         ext = 2.0 + float(pts)
 
-        target_char = _resolve_target_char(game, player, floor, tx, ty)
-
-        if target_char is not None and getattr(target_char, "faction", None) != player.faction and getattr(target_char, "faction", None) != "player":
-            for buff in target_char.buffs:
-                if getattr(buff, "type", "") in HARMFUL_DEBUFFS and not getattr(buff, "mnemonic_extended", False):
-                    buff.remaining += ext
-                    setattr(buff, "mnemonic_extended", True)
-            if _get_subclass(player) == Subclass.PRIEST:
-                target_char.add_buff("illuminated", duration=50.0)
-            game.add_event("PLAY_SOUND", {"sound": "DEBUFF", "x": target_char.pos.x, "y": target_char.pos.y}, floor_id=player.floor_id)
-        else:
-            target_entity = target_char if target_char else player
-            for buff in target_entity.buffs:
-                btype = getattr(buff, "type", "")
-                if btype not in HARMFUL_DEBUFFS and not getattr(buff, "mnemonic_extended", False):
-                    if btype not in ("ascend_form", "body_form", "spirit_form", "power_of_many", "stasis", "empowered_strike"):
-                        buff.remaining += ext
-                        setattr(buff, "mnemonic_extended", True)
-            game.add_event("PLAY_SOUND", {"sound": "CHARGEUP", "x": target_entity.pos.x, "y": target_entity.pos.y}, floor_id=player.floor_id)
+        target = resolve_spell_target(game, player, floor, tx, ty)
+        target.apply_mnemonic_prayer(game, player, ext)
 
         return True
 
@@ -886,7 +832,7 @@ class SmiteSpell(ClericSpell):
     cast_animation = "attack"
 
     def is_unlocked(self, player: Player) -> bool:
-        return _get_subclass(player) == Subclass.PALADIN
+        return get_cleric_subclass_strategy(player).unlocks(self.id)
 
     def execute(self, game: Any, player: Player, tx: Optional[int] = None, ty: Optional[int] = None) -> bool:
         floor = game._get_or_create_floor(player.floor_id)
@@ -899,7 +845,7 @@ class SmiteSpell(ClericSpell):
 
         min_bonus = 5 + player.level // 2
         max_bonus = 10 + player.level
-        is_unholy = _is_unholy_mob(target_mob)
+        is_unholy = target_mob.is_unholy
         bonus = max_bonus if is_unholy else random.randint(min_bonus, max_bonus)
         dmg = player.damage_max + bonus
         dealt = target_mob.take_damage(dmg)
@@ -929,36 +875,10 @@ class LayOnHandsSpell(ClericSpell):
         pts = player.talent_info.level("lay_on_hands")
         base = 10 + 5 * pts
         max_cap = 3 * base
-        is_self = (tx is None and ty is None) or (tx == player.pos.x and ty == player.pos.y)
 
         floor = game._get_or_create_floor(player.floor_id)
-        target_char = _resolve_target_char(game, player, floor, tx, ty) if not is_self else None
-
-        if is_self or target_char is None or target_char.id == player.id:
-            cur_shield = player.get_total_shield()
-            to_add = max(0, min(base, max_cap - cur_shield))
-            if to_add > 0:
-                player.add_shield("barrier", to_add, priority=1, decay=0)
-                player.add_buff("barrier", duration=30.0, level=to_add, stack_mode="extend")
-            _duplicate_to_life_linked_ally(
-                game, player, lambda ally: (
-                    ally.add_shield("barrier", to_add, priority=1, decay=0),
-                    ally.add_buff("barrier", duration=30.0, level=to_add, stack_mode="extend"),
-                )
-            )
-        elif target_char.faction == player.faction or getattr(target_char, "faction", None) == "player":
-            max_hp = getattr(target_char, "get_total_max_hp", lambda: getattr(target_char, "max_hp", 1))()
-            missing = max(0, max_hp - target_char.hp)
-            if missing < base:
-                target_char.hp = max_hp
-                cur_shield = getattr(target_char, "get_total_shield", lambda: getattr(target_char, "shield", 0))()
-                excess = base - missing
-                to_add = max(0, min(excess, max_cap - cur_shield))
-                if to_add > 0:
-                    target_char.add_shield("barrier", to_add, priority=1, decay=0)
-                    target_char.add_buff("barrier", duration=30.0, level=to_add, stack_mode="extend")
-            else:
-                target_char.hp += base
+        target = resolve_spell_target(game, player, floor, tx, ty)
+        target.apply_lay_on_hands(game, player, base, max_cap)
 
         return True
 
@@ -1094,7 +1014,7 @@ class DivineInterventionSpell(ClericSpell):
                 mob.add_shield("divine_shield", shield, priority=2, decay=0)
                 mob.add_buff("shielded", duration=30.0, level=shield)
 
-        _duplicate_to_life_linked_ally(
+        duplicate_to_life_linked_ally(
             game, player, lambda ally: (
                 ally.add_shield("divine_shield", shield, priority=2, decay=0),
                 ally.add_buff("shielded", duration=30.0, level=shield),
@@ -1135,8 +1055,8 @@ class JudgementSpell(ClericSpell):
             game.add_event("DAMAGE", {"target": mob.id, "amount": dealt, "holy": True}, floor_id=player.floor_id)
             if not mob.is_alive:
                 game._handle_kill_event(player, mob, floor)
-            elif _get_subclass(player) == Subclass.PRIEST:
-                mob.add_buff("illuminated", duration=50.0)
+            else:
+                get_cleric_subclass_strategy(player).illuminate(game, player, mob)
 
         player.ascended_form_casts = 0
         game.add_event("FLASH_SCREEN", {"color": "0x80FFFFFF", "duration": 350}, floor_id=player.floor_id)
