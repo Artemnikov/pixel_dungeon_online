@@ -603,3 +603,100 @@ test('Guiding Light: burst/sound/damage text defer until the light_missile lands
   assert.ok(floatingTextRef.current.some(t => t.text === '-5'));
   assert.ok(played.some(p => p.name === 'HIT_MAGIC' && p.rate >= 0.87 && p.rate <= 1.15));
 });
+
+test('DefaultEventDispatcher: SUBCLASS_CHOSEN plays MASTERY sound, operates player, and spawns spiral star particles', () => {
+  const dispatcher = createDefaultEventDispatcher();
+
+  const gridRef = { current: [[1, 2], [1, 2]] };
+  const visionRef = { current: { visible: new Set(['1,0']), discovered: new Set() } };
+  const world = new WorldManager({
+    gridRef,
+    setGrid: () => {},
+    visionRef,
+  });
+
+  const entitiesRef = {
+    current: {
+      players: {
+        hero: { id: 'hero', name: 'Warrior', renderPos: { x: 1, y: 0 }, pos: { x: 1, y: 0 }, hp: 20, max_hp: 20 },
+        remoteVisible: { id: 'remoteVisible', name: 'Rogue', renderPos: { x: 1, y: 0 }, pos: { x: 1, y: 0 }, hp: 20, max_hp: 20 },
+        remoteHidden: { id: 'remoteHidden', name: 'Mage', renderPos: { x: 0, y: 1 }, pos: { x: 0, y: 1 }, hp: 20, max_hp: 20 },
+      },
+      mobs: {},
+      items: [],
+      traps: [],
+    },
+  };
+  const entities = new EntityManager({
+    entitiesRef,
+    dyingMobsRef: { current: {} },
+    myPlayerIdRef: { current: 'hero' },
+  });
+
+  const particlesRef = { current: [] };
+  const playerAnimRef = { current: {} };
+
+  const effects = new VisualEffectsManager({
+    particlesRef,
+    playerAnimRef,
+  });
+
+  const soundsPlayed = [];
+  const mockAudio = {
+    play: (name, rate) => { soundsPlayed.push({ name, rate }); },
+    playStep: () => {},
+  };
+
+  const ctx = {
+    myPlayerId: 'hero',
+    world,
+    entities,
+    effects,
+    ui: new GameCallbacks({}),
+    audio: mockAudio,
+  };
+
+  // 1. Dispatch SUBCLASS_CHOSEN for local player 'hero'
+  dispatcher.dispatch({
+    type: 'SUBCLASS_CHOSEN',
+    data: { player: 'hero', subclass: 'berserker' },
+  }, ctx);
+
+  assert.ok(soundsPlayed.some(s => s.name === 'MASTERY'), 'MASTERY sound played for local player');
+  assert.ok(playerAnimRef.current.hero?.operateUntil > performance.now(), 'Player operate animation started');
+  assert.equal(particlesRef.current.length, 20, 'Spawns 20 star particles');
+
+  // Verify spiral particle physics
+  const p0 = particlesRef.current[0];
+  assert.equal(p0.speckFrame, 1, 'Uses STAR speck frame 1');
+  assert.equal(p0.quadraticFade, true, 'Uses quadratic fade');
+  assert.equal(p0.life, 1.0, 'Lifespan is 1.0s');
+  assert.equal(p0.delay, 0, 'First particle has 0 delay');
+  assert.equal(p0.accX, -p0.vx, 'Opposing X deceleration');
+  assert.equal(p0.accY, -p0.vy, 'Opposing Y deceleration');
+  assert.equal(p0.angularSpeed, 2 * Math.PI, 'Rotates 360 deg/s');
+
+  const p19 = particlesRef.current[19];
+  assert.ok(Math.abs(p19.delay - 0.95) < 1e-4, 'Last particle has 0.95s delay');
+
+  // 2. Dispatch for hidden remote player
+  soundsPlayed.length = 0;
+  particlesRef.current = [];
+  dispatcher.dispatch({
+    type: 'SUBCLASS_CHOSEN',
+    data: { player: 'remoteHidden', subclass: 'warlock' },
+  }, ctx);
+
+  assert.equal(soundsPlayed.length, 0, 'No sound for hidden remote player');
+  assert.equal(particlesRef.current.length, 0, 'No particles for hidden remote player');
+
+  // 3. Dispatch for visible remote player
+  dispatcher.dispatch({
+    type: 'SUBCLASS_CHOSEN',
+    data: { player: 'remoteVisible', subclass: 'assassin' },
+  }, ctx);
+
+  assert.ok(soundsPlayed.some(s => s.name === 'MASTERY'), 'MASTERY sound played for visible remote player');
+  assert.equal(particlesRef.current.length, 20, 'Particles spawned for visible remote player');
+  assert.ok(playerAnimRef.current.remoteVisible?.operateUntil > performance.now(), 'Operate animation set for visible remote player');
+});

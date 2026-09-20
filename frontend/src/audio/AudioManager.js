@@ -51,6 +51,7 @@ const sheepSound = new URL('../assets/sounds/sheep.mp3', import.meta.url).href;
 const tombSound = new URL('../assets/sounds/tomb.mp3', import.meta.url).href;
 const chainsSound = new URL('../assets/sounds/chains.mp3', import.meta.url).href;
 const cursedSound = new URL('../assets/sounds/cursed.mp3', import.meta.url).href;
+const masterySound = new URL('../assets/sounds/mastery.mp3', import.meta.url).href;
 import { effectiveSfxVolume, subscribe } from '../menu/menuSettings';
 import { isGrassTile } from '../constants';
 
@@ -132,6 +133,7 @@ class AudioManager {
         this.loadSound('TOMB', tombSound);
         this.loadSound('CHAINS', chainsSound);
         this.loadSound('CURSED', cursedSound);
+        this.loadSound('MASTERY', masterySound);
 
         const doorUrl = new URL('../assets/sounds/door_open.mp3', import.meta.url).href;
         if (doorUrl) this.loadSound('DOOR_OPEN', doorUrl);
@@ -240,6 +242,12 @@ class AudioManager {
                 this.playTone(500, 'sine', 0.2, 0.15);
                 this.playTone(700, 'sine', 0.2, 0.15, 0.1);
                 this.playTone(900, 'sine', 0.3, 0.1, 0.2);
+                break;
+            case 'MASTERY':
+                this.playTone(440, 'triangle', 0.25, 0.25);
+                this.playTone(554.37, 'triangle', 0.25, 0.25, 0.08);
+                this.playTone(659.25, 'triangle', 0.3, 0.3, 0.16);
+                this.playTone(880, 'triangle', 0.4, 0.35, 0.24);
                 break;
             case 'MIMIC':
                 this.playTone(280 * rate, 'sawtooth', 0.14 / Math.max(0.1, rate), 0.35);

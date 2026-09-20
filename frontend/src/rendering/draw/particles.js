@@ -1,4 +1,5 @@
 import { setLightMode } from './blending';
+import { TILE_SCALE } from '../../constants';
 
 const GRAVITY = 320;        // px/s^2
 const SPREAD = Math.PI / 2; // total cone width (matches bloodBurstA)
@@ -6,6 +7,7 @@ const MIN_SPEED = 24;       // px/s
 const MAX_SPEED = 96;       // px/s
 const MIN_LIFE = 0.35;      // s
 const MAX_LIFE = 0.6;       // s
+const SPECK_SIZE = 8;
 
 let lastNow = null;
 
@@ -524,13 +526,47 @@ export function spawnShaft(particlesRef, cx, cy, count = 3) {
   }
 }
 
-export function advanceAndDrawParticles(ctx, { particlesRef }) {
+// Tengu's Mask wearing particle effect (Speck.MASK in SPD)
+export function spawnMaskSpecks(particlesRef, cx, cy) {
+  const count = 20;
+  const interval = 0.05;
+  const speed = 50 * TILE_SCALE;
+  for (let i = 0; i < count; i++) {
+    const angleRad = (i * Math.PI) / 5;
+    const vx = Math.cos(angleRad) * speed;
+    const vy = Math.sin(angleRad) * speed;
+    const life = 1.0;
+    particlesRef.current.push({
+      x: cx + (Math.random() - 0.5) * (4 * TILE_SCALE),
+      y: cy - 4 * TILE_SCALE + (Math.random() - 0.5) * (4 * TILE_SCALE),
+      vx,
+      vy,
+      accX: -vx,
+      accY: -vy,
+      delay: i * interval,
+      life,
+      maxLife: life,
+      angle: angleRad,
+      angularSpeed: 2 * Math.PI,
+      gravity: false,
+      speckFrame: 1,
+      scale: TILE_SCALE,
+      quadraticFade: true,
+      shrink: false,
+    });
+  }
+}
+
+export function advanceAndDrawParticles(ctx, { particlesRef, assetImages }) {
   const now = performance.now();
   if (lastNow == null) lastNow = now;
   const dt = Math.min((now - lastNow) / 1000, 0.05);
   lastNow = now;
 
-  const particles = particlesRef.current;
+  const particles = particlesRef?.current;
+  if (!particles || particles.length === 0) return;
+  const specksImg = assetImages?.specks;
+
   for (let i = particles.length - 1; i >= 0; i--) {
     const p = particles[i];
     if (p.delay && p.delay > 0) {
@@ -542,6 +578,9 @@ export function advanceAndDrawParticles(ctx, { particlesRef }) {
       particles.splice(i, 1);
       continue;
     }
+    if (p.accX !== undefined) {
+      p.vx += p.accX * dt;
+    }
     if (p.accY !== undefined) {
       p.vy += p.accY * dt;
     } else if (p.gravity !== false) {
@@ -549,14 +588,20 @@ export function advanceAndDrawParticles(ctx, { particlesRef }) {
     }
     p.x += p.vx * dt;
     p.y += p.vy * dt;
+    if (p.angularSpeed !== undefined) {
+      p.angle = (p.angle || 0) + p.angularSpeed * dt;
+    }
     if (p.jitter) {
       p.x += (Math.random() - 0.5) * p.jitter;
       p.y += (Math.random() - 0.5) * p.jitter;
     }
 
     const t = p.life / p.maxLife;
+    const elapsed = 1 - t;
     let alpha = t;
-    if (p.isShaft) {
+    if (p.quadraticFade) {
+      alpha = 1 - elapsed * elapsed;
+    } else if (p.isShaft) {
       alpha = t < 0.5 ? t : 1 - t;
     } else if (p.fadeIn) {
       alpha = t > 0.8 ? (1 - t) * 5 : 1;
@@ -565,7 +610,7 @@ export function advanceAndDrawParticles(ctx, { particlesRef }) {
       const tri = t < 0.5 ? t : 1 - t;
       alpha = Math.sqrt(tri * 0.5);
     }
-    if (p.shrink !== false && !p.growWithAge) {
+    if (p.shrink !== false && !p.growWithAge && p.speckFrame === undefined) {
       if (p._startSize === undefined) p._startSize = p.size;
       p.size = Math.max(1, p._startSize * t);
     }
@@ -589,13 +634,24 @@ export function advanceAndDrawParticles(ctx, { particlesRef }) {
     ctx.save();
     if (p.additive) setLightMode(ctx);
     ctx.globalAlpha = Math.max(0, Math.min(1, alpha));
-    ctx.fillStyle = p.color;
-    if (p.isShaft) {
+    if (p.speckFrame !== undefined && specksImg) {
+      const scale = p.scale || 1;
+      const destSize = SPECK_SIZE * scale;
+      ctx.translate(Math.round(p.x), Math.round(p.y));
+      if (p.angle) ctx.rotate(p.angle);
+      ctx.drawImage(
+        specksImg,
+        p.speckFrame * SPECK_SIZE, 0, SPECK_SIZE, SPECK_SIZE,
+        -destSize / 2, -destSize / 2, destSize, destSize
+      );
+    } else if (p.isShaft) {
+      ctx.fillStyle = p.color;
       const width = Math.max(1, (1 - t) * 4);
       const height = 16 + (1 - t) * 16;
       ctx.fillRect(Math.round(p.x - width / 2), Math.round(p.y - height / 2), Math.round(width), Math.round(height));
     } else {
-      ctx.fillRect(Math.round(p.x), Math.round(p.y), p.size, p.size);
+      ctx.fillStyle = p.color || '#ffffff';
+      ctx.fillRect(Math.round(p.x), Math.round(p.y), p.size || 2, p.size || 2);
     }
     ctx.restore();
   }

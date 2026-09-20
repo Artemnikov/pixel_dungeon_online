@@ -1,4 +1,7 @@
 import { addGameLog, dispatchToast } from '../../ui/gameLogHelpers';
+import { TILE_SIZE } from '../../constants';
+import { spawnMaskSpecks } from '../../rendering/draw/particles';
+import i18n from '../../i18n';
 import type { GameEvent } from '../../types/contract';
 import type { GameEventContext, IGameEventHandler } from './IGameEventHandler';
 
@@ -25,6 +28,31 @@ export function createProgressionEventHandlers(): IGameEventHandler[] {
       handle(event: Extract<GameEvent, { type: 'SUBCLASS_CHOICE_AVAILABLE' }>, ctx: GameEventContext) {
         if (event.data.player === ctx.myPlayerId) {
           ctx.ui.subclassChoiceAvailable({ options: event.data.options });
+        }
+        return true;
+      },
+    },
+    {
+      eventType: 'SUBCLASS_CHOSEN',
+      handle(event: Extract<GameEvent, { type: 'SUBCLASS_CHOSEN' }>, ctx: GameEventContext) {
+        const pid = event.data.player;
+        const isLocal = pid === ctx.myPlayerId;
+        const p = ctx.entities.getPlayer(pid);
+        const pos = p?.renderPos || p?.pos;
+        const visible = isLocal || (pos && ctx.world.isVisible(Math.round(pos.x), Math.round(pos.y)));
+        if (visible) {
+          ctx.audio.play('MASTERY');
+        }
+        if (p && pos) {
+          ctx.effects.setPlayerOperate(pid);
+          if (visible && ctx.effects.particlesRef) {
+            const cx = pos.x * TILE_SIZE + TILE_SIZE / 2;
+            const cy = pos.y * TILE_SIZE + TILE_SIZE / 2;
+            spawnMaskSpecks(ctx.effects.particlesRef, cx, cy);
+          }
+        }
+        if (isLocal) {
+          addGameLog(i18n.t('item.tengus_mask_used', { defaultValue: 'You put on the Mask of the Tengu and feel a surge of power!' }), 'positive');
         }
         return true;
       },
