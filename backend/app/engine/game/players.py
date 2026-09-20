@@ -8,7 +8,7 @@ death sequence (scatter the backpack, drop a grave).
 
 import random
 import uuid
-from typing import List, Optional
+from typing import Callable, Dict, List, Optional
 
 from app.engine.dungeon.constants import TileType
 from app.engine.entities.base import Faction, Position
@@ -40,6 +40,21 @@ HARMFUL_BUFFS = frozenset({
     "death_mark", "bleeding", "rooted", "sheep_timer", "slow",
     "stagger",
 })
+
+
+def _init_warrior(player: Player) -> None:
+    player.seal_affixed = True
+
+
+def _init_duelist(player: Player) -> None:
+    player.weapon_charge = float(player.get_max_weapon_charges())
+    player.finisher_ready = True
+
+
+_CLASS_POST_INIT: Dict[str, Callable[[Player], None]] = {
+    CharacterClass.WARRIOR: _init_warrior,
+    CharacterClass.DUELIST: _init_duelist,
+}
 
 
 class PlayersMixin:
@@ -220,12 +235,9 @@ class PlayersMixin:
         waterskin_slot = 2 if class_type == CharacterClass.ROGUE else 1
         player.quickslot.set_slot(waterskin_slot, waterskin)
 
-        # HeroClass.initWarrior(): the BrokenSeal is affixed to the cloth
-        # armor at spawn. The shield activates on HP dropping to <=50%
-        # (Char.java:937-946 / WarriorShield.activate) and is invisible
-        # (0 shielding, 0 cooldown) until then.
-        if class_type == CharacterClass.WARRIOR:
-            player.seal_affixed = True
+        class_init = _CLASS_POST_INIT.get(class_type)
+        if class_init is not None:
+            class_init(player)
 
         self.players[player_id] = player
         self.depth = 1
@@ -391,6 +403,24 @@ class PlayersMixin:
         xp_needed = player.max_exp() - player.experience
         if player.earn_exp(xp_needed):
             self.on_talent_level_up(player)
+
+    def admin_set_hp(self, player_id: str, hp: int | None = None, hp_pct: float | None = None):
+        """Admin-only: set player's current health directly or by percentage (0.01 - 1.0 or 1 - 100)."""
+        player = self.players.get(player_id)
+        if not player or not player.is_admin:
+            return
+        if hp_pct is None and hp is None:
+            return
+        total_max_hp = player.get_total_max_hp()
+        if hp_pct is not None:
+            pct = hp_pct / 100.0 if hp_pct > 1.0 else float(hp_pct)
+            pct = max(0.01, min(1.0, pct))
+            player.hp = max(1, min(total_max_hp, round(total_max_hp * pct)))
+        elif hp is not None:
+            player.hp = max(1, min(total_max_hp, int(hp)))
+        player.is_alive = True
+        player.is_downed = False
+        player.death_processed = False
 
     def _random_fall_landing_cell(self, floor: FloorState, fall_into_pit: bool = False) -> Position:
         """SPD RegularLevel.fallCell(fallIntoPit): a passable, unoccupied cell on

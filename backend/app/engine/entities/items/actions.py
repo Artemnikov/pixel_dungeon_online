@@ -56,7 +56,23 @@ def _floor_drop(game, player, item, x: Optional[int] = None, y: Optional[int] = 
 
 
 def action_equip(game, player, item, tx=None, ty=None) -> None:
-    player.equip_item(item.id)
+    if not player.equip_item(item.id):
+        return
+    from app.engine.entities.items.equip import KindOfWeapon
+    is_weapon = isinstance(item, KindOfWeapon)
+    swift_used = False
+    if is_weapon and hasattr(player, "consume_swift_equip_charge"):
+        swift_used = player.consume_swift_equip_charge()
+        if swift_used and hasattr(game, "add_event"):
+            game.add_event(
+                "SWIFT_EQUIP",
+                {"player": player.id, "item": item.id, "charges_left": player.swift_equip_charges},
+                floor_id=player.floor_id,
+                source_player_id=player.id,
+            )
+
+    if not swift_used and is_weapon:
+        player.action_until = max(player.action_until, time.time() + 1.0)
     if item.cursed and item.cursed_known:
         game.add_event("EQUIP_CURSED", {
             "player_id": player.id,

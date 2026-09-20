@@ -172,6 +172,12 @@
     "comparedToEquipped": "Compared to equipped",
     "tier": "Tier {{tier}}",
     "charges": "Charges",
+    "weaponSkill": "Weapon Skill",
+    "weaponSkillCostCharges": "{{count}} charge",
+    "weaponSkillCostCharges_other": "{{count}} charges",
+    "weaponSkillCostFree": "0 charges (Free)",
+    "weaponSkillUsage": "{{count}} use",
+    "weaponSkillUsage_other": "{{count}} uses",
     "level": "Level {{level}}",
     "buffs": "Buffs",
     "inventory": "Inventory",
@@ -1112,6 +1118,25 @@
         "body": "Spells are contained in crystals and provide a variety of effects, usually with multiple uses."
       }
     }
+  },
+  "skills": {
+    "cleave": { "name": "Cleave", "desc": "Strike an adjacent enemy with infinite accuracy. If it dies, the next Cleave is free." },
+    "lunge": { "name": "Lunge", "desc": "Lunge at an enemy within 2 tiles with infinite accuracy and bonus damage." },
+    "sneak": { "name": "Sneak", "desc": "Teleport to a visible tile and turn invisible for several turns." },
+    "spike": { "name": "Spike", "desc": "Strike an enemy at reach 2 with bonus damage and knockback." },
+    "defensive_stance": { "name": "Defensive Stance", "desc": "Enter a defensive stance granting 3x evasion for several turns." },
+    "sword_dance": { "name": "Sword Dance", "desc": "Perform a blade dance granting +50% accuracy and +60% attack speed." },
+    "harvest": { "name": "Harvest", "desc": "Inflict severe armor-ignoring bleed damage on target enemy." },
+    "lash": { "name": "Whirling Strike", "desc": "Simultaneously strike all visible enemies within reach." },
+    "spin": { "name": "Spin", "desc": "Wind up momentum to unleash massive bonus damage on your next attack." },
+    "combo_strike": { "name": "Combo Strike", "desc": "Strike with infinite accuracy, scaling with recent combo hits." },
+    "heavy_blow": { "name": "Heavy Blow", "desc": "Guaranteed hit with infinite accuracy; inflicts Dazed on surprise attack." },
+    "retribution": { "name": "Execute", "desc": "Devastating strike when below 50% HP with infinite accuracy; free turn on kill." },
+    "guard": { "name": "Guard", "desc": "Enter a guarding stance to block the next incoming attack completely." },
+    "charged_shot": { "name": "Charged Shot", "desc": "Empower your next dart shot with infinite accuracy and a blast wave." },
+    "runic_slash": { "name": "Runic Slash", "desc": "Strike with infinite accuracy and greatly amplified enchantment power." },
+    "pierce": { "name": "Heavy Strike", "desc": "Strike with bonus damage vs inorganic enemies and inflict Vulnerable." },
+    "brawler_stance": { "name": "Brawler's Stance", "desc": "Toggle unarmed combat stance while maintaining weapon enchantments." }
   },
   "admin": {
     "giveItem": "Give Item",

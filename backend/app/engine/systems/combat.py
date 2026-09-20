@@ -6,6 +6,7 @@ from app.engine.systems.rogue_prep import (
     prep_tier, prep_damage_bonus, prep_damage_rolls, prep_ko_threshold,
 )
 from app.engine.entities.talent_enum import Subclass
+from app.engine.talents.registry import MODIFIERS
 
 if TYPE_CHECKING:
     from app.engine.entities.base import Entity, Position
@@ -638,7 +639,8 @@ def resolve_melee_attack(
 
     # Armor hit-to-ID (SPD Armor.proc usesLeftToID)
     if armor is not None and hasattr(defender, "subclass_info") and not armor.level_known and raw_damage > 0:
-        uses = min(armor.available_uses_to_id, 1.0)
+        base_use = MODIFIERS.apply("armor_id_speed", defender, 1.0)
+        uses = min(armor.available_uses_to_id, float(base_use))
         armor.available_uses_to_id -= uses
         armor.uses_left_to_id -= uses
         if armor.uses_left_to_id <= 0:
@@ -712,7 +714,8 @@ def resolve_melee_attack(
 
     # Weapon hit-to-ID (SPD Weapon.proc usesLeftToID)
     if weapon is not None and hasattr(attacker, "subclass_info") and not weapon.level_known and actual_damage > 0:
-        uses = min(weapon.available_uses_to_id, 1.0)
+        base_use = MODIFIERS.apply("weapon_id_speed", attacker, 1.0)
+        uses = min(weapon.available_uses_to_id, float(base_use))
         weapon.available_uses_to_id -= uses
         weapon.uses_left_to_id -= uses
         if weapon.uses_left_to_id <= 0:

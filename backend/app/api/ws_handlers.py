@@ -390,6 +390,13 @@ def handle_admin_give_item(
     )
 
 
+@dispatcher.register(msg.AdminSetHp)
+def handle_admin_set_hp(
+    game: GameInstance, player_id: str, message: msg.AdminSetHp
+):
+    game.admin_set_hp(player_id, hp=message.hp, hp_pct=message.hp_pct)
+
+
 @dispatcher.register(msg.NpcInteract)
 def handle_npc_interact(
     game: GameInstance, player_id: str, message: msg.NpcInteract

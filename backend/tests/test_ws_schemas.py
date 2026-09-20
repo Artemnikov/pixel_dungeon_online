@@ -31,6 +31,8 @@ from app.schemas import messages as msg
     ({"type": "CHANGE_DIFFICULTY", "difficulty": "hard"}, msg.ChangeDifficulty),
     ({"type": "SEARCH"}, msg.Search),
     ({"type": "WAIT"}, msg.Wait),
+    ({"type": "ADMIN_SET_HP", "hp_pct": 0.5}, msg.AdminSetHp),
+    ({"type": "ADMIN_SET_HP", "hp": 10}, msg.AdminSetHp),
 ])
 def test_valid_client_messages_parse(payload, expected_type):
     parsed = CLIENT_MESSAGE_ADAPTER.validate_python(payload)

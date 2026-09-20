@@ -203,3 +203,93 @@ def test_admin_catalog_seeds():
         assert isinstance(item, Seed)
         assert item.plant_type is not None
 
+
+def test_admin_set_hp_pct():
+    game = GameInstance("test-admin-set-hp-pct")
+    pid = str(uuid.uuid4())
+    p = game.add_player(pid, "Admin", is_admin=True)
+    p.hp = 20
+    p.max_hp = 20
+
+    # 50% as 0.5
+    game.admin_set_hp(pid, hp_pct=0.5)
+    assert p.hp == 10
+
+    # 25% as 25 (percentage 1-100)
+    game.admin_set_hp(pid, hp_pct=25)
+    assert p.hp == 5
+
+    # 1% -> at least 1 HP
+    game.admin_set_hp(pid, hp_pct=0.01)
+    assert p.hp == 1
+
+    # 100% -> 20 HP
+    game.admin_set_hp(pid, hp_pct=1.0)
+    assert p.hp == 20
+
+
+def test_admin_set_hp_direct_value():
+    game = GameInstance("test-admin-set-hp-val")
+    pid = str(uuid.uuid4())
+    p = game.add_player(pid, "Admin", is_admin=True)
+    p.hp = 20
+    p.max_hp = 20
+
+    game.admin_set_hp(pid, hp=7)
+    assert p.hp == 7
+
+    # Clamped to max_hp
+    game.admin_set_hp(pid, hp=50)
+    assert p.hp == 20
+
+    # Clamped to minimum 1
+    game.admin_set_hp(pid, hp=0)
+    assert p.hp == 1
+
+
+def test_admin_set_hp_non_admin_noop():
+    game = GameInstance("test-admin-set-hp-na")
+    pid = str(uuid.uuid4())
+    p = game.add_player(pid, "Normal", is_admin=False)
+    p.hp = 20
+    p.max_hp = 20
+
+    game.admin_set_hp(pid, hp_pct=0.5)
+    assert p.hp == 20
+
+    game.admin_set_hp(pid, hp=5)
+    assert p.hp == 20
+
+
+def test_admin_set_hp_with_ring_of_might():
+    from app.engine.entities.rings import RingOfMight
+    game = GameInstance("test-admin-set-hp-might")
+    pid = str(uuid.uuid4())
+    p = game.add_player(pid, "Admin", is_admin=True)
+    p.hp = 20
+    p.max_hp = 20
+
+    ring = RingOfMight(level=3)
+    p.belongings.ring = ring
+    # get_total_max_hp() should now be higher than 20
+    total_max = p.get_total_max_hp()
+    assert total_max > 20
+
+    game.admin_set_hp(pid, hp_pct=0.5)
+    assert p.hp == round(total_max * 0.5)
+
+
+def test_admin_set_hp_resets_is_downed():
+    game = GameInstance("test-admin-set-hp-downed")
+    pid = str(uuid.uuid4())
+    p = game.add_player(pid, "Admin", is_admin=True)
+    p.is_downed = True
+    p.is_alive = False
+    p.death_processed = True
+
+    game.admin_set_hp(pid, hp_pct=0.5)
+    assert p.is_downed is False
+    assert p.is_alive is True
+    assert p.death_processed is False
+
+

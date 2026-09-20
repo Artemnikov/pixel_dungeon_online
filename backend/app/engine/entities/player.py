@@ -503,7 +503,6 @@ class Player(Entity):
     # --- Duelist --------------------------------------------------------------
     # Weapon charge: fractional/integer capacity scaling with level and subclass.
     weapon_charge: float = 0.0
-    _weapon_charge_accum: float = 0.0
     # Finisher eligibility: True once weapon_charge >= 1 for Duelist.
     finisher_ready: bool = False
     # Duel mode: set while Challenge armor ability 1v1 is active.
@@ -544,9 +543,23 @@ class Player(Entity):
 
     def is_monk_empowered(self) -> bool:
         vigor = self.talent_info.level(Talent.MONASTIC_VIGOR)
-        threshold_pct = 1.00 - 0.10 * vigor
+        threshold_pct = max(0.40, 1.00 - 0.20 * vigor)
         max_e = max(1, self.get_max_monk_energy())
         return (self.monk_energy / max_e) >= threshold_pct
+
+    def can_swift_equip(self) -> bool:
+        """Whether Duelist Swift Equip can be used for instant 0-delay weapon equip."""
+        se_level = self.talent_info.level(Talent.SWIFT_EQUIP)
+        return se_level > 0 and self.swift_equip_charges > 0
+
+    def consume_swift_equip_charge(self) -> bool:
+        """Consume a Swift Equip charge and trigger/maintain 20-turn cooldown."""
+        if not self.can_swift_equip():
+            return False
+        self.swift_equip_charges -= 1
+        if self.swift_equip_cooldown <= 0.0:
+            self.swift_equip_cooldown = 20.0
+        return True
 
     def gain_weapon_charge(self, amount: float) -> None:
         """Add weapon charge up to max capacity."""

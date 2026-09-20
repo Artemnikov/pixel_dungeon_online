@@ -144,16 +144,6 @@ T4_ABILITY_TALENTS: Dict[str, str] = {
     Talent.FEIGNED_RETREAT: ArmorAbilityType.FEINT,
     Talent.EXPOSE_WEAKNESS: ArmorAbilityType.FEINT,
     Talent.COUNTER_ABILITY: ArmorAbilityType.FEINT,
-    # Duelist Legacy Aliases
-    Talent.LASTING_CHALLENGE: ArmorAbilityType.CHALLENGE,
-    Talent.HEIGHTENED_CHALLENGE: ArmorAbilityType.CHALLENGE,
-    Talent.DUAL_CHALLENGE: ArmorAbilityType.CHALLENGE,
-    Talent.SEARING_STRIKE: ArmorAbilityType.ELEMENTAL_STRIKE,
-    Talent.CHILLING_STRIKE: ArmorAbilityType.ELEMENTAL_STRIKE,
-    Talent.CHARGED_STRIKE: ArmorAbilityType.ELEMENTAL_STRIKE,
-    Talent.SHADOW_FEINT: ArmorAbilityType.FEINT,
-    Talent.REACTIVE_FEINT: ArmorAbilityType.FEINT,
-    Talent.PHANTASMAL_FEINT: ArmorAbilityType.FEINT,
     # Cleric
     Talent.DIVINE_INTERVENTION: ArmorAbilityType.ASCENDED_FORM,
     Talent.JUDGEMENT: ArmorAbilityType.ASCENDED_FORM,

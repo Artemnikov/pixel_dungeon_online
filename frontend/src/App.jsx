@@ -326,6 +326,7 @@ function App() {
           hasTalentPoints={Object.values(talent.talentPoints || {}).some(p => p > 0)}
           onOpenHeroInfo={() => talent.openHero(0)}
           onTeleport={(floor) => send({ type: 'ADMIN_TELEPORT', target_floor: floor })}
+          onAdminSetHp={(hpPct) => send({ type: 'ADMIN_SET_HP', hp_pct: hpPct })}
           isBusy={isBusy}
           onBuffClick={(buff) => setInspectBuff(buff)}
           assetImages={assetImages}

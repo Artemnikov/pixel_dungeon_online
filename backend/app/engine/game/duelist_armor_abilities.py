@@ -278,6 +278,10 @@ class ElementalStrikeArmorAbility(DuelistArmorAbility):
 
     base_cost = 25
 
+    def get_range(self, player: Player) -> int:
+        er_level = player.talent_info.level(Talent.ELEMENTAL_REACH)
+        return 4 + er_level
+
     def can_use(
         self, game: GameInstance, player: Player, tx: Optional[int], ty: Optional[int]
     ) -> Tuple[bool, Optional[str]]:
@@ -304,11 +308,10 @@ class ElementalStrikeArmorAbility(DuelistArmorAbility):
         enchant = getattr(weapon, "enchantment", None) or player.last_weapon_enchant or ""
 
         # Talents
-        er_level = player.talent_info.level(Talent.ELEMENTAL_REACH)
         sf_level = player.talent_info.level(Talent.STRIKING_FORCE)
         dp_level = player.talent_info.level(Talent.DIRECTED_POWER)
 
-        max_range = 4 + er_level  # 5, 6, 7, 8
+        max_range = self.get_range(player)  # 5, 6, 7, 8
         power_mult = 1.0 + 0.30 * sf_level  # +30% per rank
 
         target_tile_x = tx if tx is not None else player.pos.x

@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import AudioManager from '../audio/AudioManager';
 import { slotTooltipText } from './slotTooltip';
+import { ItemStatusService } from './itemStatusFormatter';
 import { coordsForItem, getItemGlyphCoords } from '../rendering/sprites';
 import { itemRects, iconRects } from '../rendering/spriteRects';
 import { centeredItemCrop } from '../rendering/itemCrop';
@@ -37,6 +38,7 @@ export default function Toolbar({
   targetingMode = false,
   swappedQuickslots = false,
   assetImages,
+  myStats,
   onSearch,
   onInventory,
   onQuickBag,
@@ -58,6 +60,14 @@ export default function Toolbar({
   const zoomRef = useRef(1);
   const baseDprRef = useRef(window.devicePixelRatio || 1);
   const [tooltip, setTooltip] = useState(null); // { text, x } | null
+
+  const itemStatusContext = useMemo(() => ({
+    classType: myStats?.classType,
+    weaponCharge: myStats?.weaponCharge,
+    maxWeaponCharges: myStats?.maxWeaponCharges,
+    effects: myStats?.effects,
+    subclass: myStats?.subclass,
+  }), [myStats?.classType, myStats?.weaponCharge, myStats?.maxWeaponCharges, myStats?.effects, myStats?.subclass]);
 
   useEffect(() => {
     const { toolbar, items, icons } = assetImages || {};
@@ -240,24 +250,12 @@ export default function Toolbar({
         }
 
         let countText = null;
-        // Charge readouts, mirroring InventoryPane: wands/staff show
-        // "cur/max", artifacts follow Artifact.status() (SPD) — "%" when the
-        // cap is 100, "cur/max" when capped, bare "cur" otherwise.
-        let refText = countText;
+        let refText = null;
         if (!item.is_placeholder) {
-          if (item.kind === 'waterskin') { countText = `${item.volume}/20`; refText = '20/20'; }
-          else if (item.quantity > 1) countText = String(item.quantity);
-          else if (item.max_charges > 0 && (item.kind === 'wand' || item.kind === 'staff' || item.kind?.startsWith('wand_'))) {
-            countText = `${item.charges}/${item.max_charges}`;
-            refText = `${item.max_charges}/${item.max_charges}`;
-          } else if (item.type === 'artifact' && item.charge_cap === 100) {
-            countText = `${item.charge}%`;
-            refText = '100%';
-          } else if (item.type === 'artifact' && item.charge_cap > 0) {
-            countText = `${item.charge}/${item.charge_cap}`;
-            refText = `${item.charge_cap}/${item.charge_cap}`;
-          } else if (item.type === 'artifact' && item.charge !== 0) {
-            countText = `${item.charge}`;
+          const status = ItemStatusService.getItemStatus(item, itemStatusContext);
+          if (status) {
+            countText = status.text;
+            refText = status.refText || countText;
           }
         }
         if (countText) {
@@ -454,7 +452,7 @@ export default function Toolbar({
         }
       }
     }
-  }, [mode, interfaceSize, S, isMobile, flipToolbar, quickSwapper, swappedQuickslots, canvasWidth, items, equippedItems, targetingMode, onLayout]);
+  }, [mode, interfaceSize, S, isMobile, flipToolbar, quickSwapper, swappedQuickslots, canvasWidth, items, equippedItems, targetingMode, onLayout, itemStatusContext]);
 
   const handlePointerDown = (e) => {
     if (e.pointerType !== 'touch') return;
@@ -594,7 +592,7 @@ export default function Toolbar({
 
     for (let i = 0; i < areas.quickslots.length; i++) {
       if (hit(areas.quickslots[i])) {
-        const text = slotTooltipText(items[i], i);
+        const text = slotTooltipText(items[i], i, itemStatusContext);
         setTooltip(text ? { text, x: e.clientX - rect.left } : null);
         return;
       }

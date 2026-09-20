@@ -8,7 +8,8 @@ that costs weapon charges to execute.
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Dict, Optional, Tuple, TYPE_CHECKING
+import random
+from typing import Any, Dict, Optional, Tuple, TYPE_CHECKING
 
 from app.engine.dungeon.constants import TileType
 from app.engine.entities.base import Faction, chebyshev_distance, find_mob_at
@@ -56,6 +57,63 @@ class WeaponSkill(ABC):
         """Hook fired when the duelist lands a melee hit while wielding this
         weapon. Base: no-op; subclasses track per-skill state (e.g. combo
         hits for weapons using Combo Strike)."""
+
+    def _emit_attack_events(
+        self,
+        game: GameInstance,
+        player: Player,
+        target: Any,
+        res: dict,
+        weapon: KindOfWeapon,
+        hit_sound: Optional[str] = None,
+        hit_sound_pitch: Optional[float] = None,
+        extra_sound: str = "HIT_STRONG",
+    ) -> None:
+        floor_id = player.floor_id
+        if res.get("missed"):
+            game.add_event("MISS", {"source": player.id, "target": target.id, "defense_verb": res.get("defense_verb", "dodged")}, floor_id=floor_id)
+            game.add_event(
+                "ATTACK",
+                {
+                    "source": player.id,
+                    "target": target.id,
+                    "damage": 0,
+                    "surprise": False,
+                },
+                floor_id=floor_id,
+            )
+            return
+
+        dmg = res.get("damage", 0)
+        game.add_event(
+            "ATTACK",
+            {
+                "source": player.id,
+                "target": target.id,
+                "damage": dmg,
+                "surprise": res.get("surprise", False),
+                "crit": True,
+                "grim_proc": res.get("grim_proc", False),
+            },
+            floor_id=floor_id,
+        )
+        pitch_jitter = random.uniform(0.87, 1.15)
+        sound = hit_sound or getattr(weapon, "hit_sound", None) or "HIT_SLASH"
+        pitch = hit_sound_pitch if hit_sound_pitch is not None else getattr(weapon, "hit_sound_pitch", 1.0)
+        rate = pitch_jitter * (pitch or 1.0)
+        game.add_event(
+            "PLAY_SOUND",
+            {"sound": sound, "rate": rate},
+            floor_id=floor_id,
+            source_player_id=player.id,
+        )
+        if extra_sound:
+            game.add_event(
+                "PLAY_SOUND",
+                {"sound": extra_sound, "rate": pitch_jitter},
+                floor_id=floor_id,
+                source_player_id=player.id,
+            )
 
     def _apply_aggressive_barrier(self, game: GameInstance, player: Player) -> None:
         """Grants shielding if player has Aggressive Barrier and HP <= 50%."""
@@ -107,12 +165,34 @@ class WeaponSkill(ABC):
                 refund = ca_level * 0.375
                 player.gain_weapon_charge(refund)
 
+    def _apply_combined_energy_check(self, game: GameInstance, player: Player) -> None:
+        """Monk Combined Energy: Using weapon ability within 5t of qualifying Monk ability refunds 1 Monk energy."""
+        subclass = getattr(player.subclass_info, "subclass", None)
+        if subclass == Subclass.MONK:
+            ce_level = player.talent_info.level(Talent.COMBINED_ENERGY)
+            if ce_level > 0 and player.last_monk_ability_id:
+                from app.engine.game.duelist_monk import get_monk_ability
+                ability = get_monk_ability(player.last_monk_ability_id)
+                threshold = 5 - ce_level
+                if ability is not None and ability.base_cost >= threshold:
+                    turns_since_monk = getattr(game, "turns", 0) - player.last_monk_ability_turn
+                    if 0 <= turns_since_monk <= 5:
+                        player.gain_monk_energy(1.0)
+                        player.last_monk_ability_id = None
+                        player.last_monk_ability_turn = -100
+                        game.add_event(
+                            "COMBINED_ENERGY",
+                            {"player": player.id, "refund": 1.0},
+                            floor_id=player.floor_id,
+                        )
+
     def _post_execute(self, game: GameInstance, player: Player, weapon: KindOfWeapon) -> None:
         """Shared post-execution triggers for weapon abilities."""
         self._apply_aggressive_barrier(game, player)
         self._apply_precise_assault_tracker(game, player)
         self._apply_varied_charge_check(game, player, weapon)
         self._apply_counter_ability_refund(game, player)
+        self._apply_combined_energy_check(game, player)
 
 
 class LungeSkill(WeaponSkill):
@@ -165,6 +245,7 @@ class LungeSkill(WeaponSkill):
         step_y = player.pos.y + (1 if dy > 0 else (-1 if dy < 0 else 0))
 
         # Leap to landing tile
+        game.add_event("PLAY_SOUND", {"sound": "MISS", "rate": 1.0}, floor_id=player.floor_id, source_player_id=player.id)
         player.pos.x = step_x
         player.pos.y = step_y
         game.add_event("MOVE", {"entity": player.id, "x": step_x, "y": step_y}, floor_id=player.floor_id)
@@ -186,6 +267,7 @@ class LungeSkill(WeaponSkill):
             game=game,
         )
 
+        self._emit_attack_events(game, player, target, res, weapon, hit_sound_pitch=1.3)
         self._post_execute(game, player, weapon)
 
         if not target.is_alive:
@@ -238,7 +320,8 @@ class SneakSkill(WeaponSkill):
         lvl = weapon.buffed_lvl() if hasattr(weapon, "buffed_lvl") else weapon.level
         duration = 2.0 + lvl
         add_buff(player.buffs, "invisibility", duration=duration)
-        game.add_event("PLAY_SOUND", {"sound": "MELD"}, floor_id=player.floor_id, source_player_id=player.id)
+        game.add_event("PLAY_SOUND", {"sound": "PUFF", "rate": 1.0}, floor_id=player.floor_id, source_player_id=player.id)
+        game.add_event("PLAY_ANIMATION", {"player": player.id, "animation": "operate"}, floor_id=player.floor_id)
 
         self._post_execute(game, player, weapon)
         return True
@@ -301,6 +384,7 @@ class CleaveSkill(WeaponSkill):
             game=game,
         )
 
+        self._emit_attack_events(game, player, target, res, weapon)
         self._post_execute(game, player, weapon)
 
         if not target.is_alive:
@@ -361,6 +445,8 @@ class SpikeSkill(WeaponSkill):
             game=game,
         )
 
+        self._emit_attack_events(game, player, target, res, weapon, hit_sound="HIT_STAB")
+
         if target.is_alive:
             # Knock back 1 tile along trajectory
             dx = target.pos.x - player.pos.x
@@ -403,6 +489,7 @@ class DefensiveStanceSkill(WeaponSkill):
         duration = 4.0 + lvl
         add_buff(player.buffs, "defensive_stance", duration=duration, level=1)
         game.add_event("DEFENSIVE_STANCE", {"player": player.id, "duration": duration}, floor_id=player.floor_id)
+        game.add_event("PLAY_ANIMATION", {"player": player.id, "animation": "operate"}, floor_id=player.floor_id)
 
         self._post_execute(game, player, weapon)
         return True
@@ -430,6 +517,7 @@ class SwordDanceSkill(WeaponSkill):
         duration = 4.0 + lvl
         add_buff(player.buffs, "sword_dance", duration=duration, level=1)
         game.add_event("SWORD_DANCE", {"player": player.id, "duration": duration}, floor_id=player.floor_id)
+        game.add_event("PLAY_ANIMATION", {"player": player.id, "animation": "operate"}, floor_id=player.floor_id)
 
         self._post_execute(game, player, weapon)
         return True
@@ -475,7 +563,7 @@ class HarvestSkill(WeaponSkill):
         add_buff(target.buffs, "bleeding", duration=10.0, level=total_bleed, stack_mode="extend")
         game.add_event("BLEED", {"target": target.id, "amount": total_bleed}, floor_id=player.floor_id)
 
-        resolve_melee_attack(
+        res = resolve_melee_attack(
             attacker=player,
             defender=target,
             floor_mobs=floor.mobs,
@@ -487,6 +575,7 @@ class HarvestSkill(WeaponSkill):
             game=game,
         )
 
+        self._emit_attack_events(game, player, target, res, weapon, hit_sound="HIT_SLASH")
         self._post_execute(game, player, weapon)
         if not target.is_alive:
             self._apply_lethal_haste_on_kill(game, player)
@@ -518,8 +607,10 @@ class LashSkill(WeaponSkill):
             if m.is_alive and m.faction != Faction.PLAYER
             and chebyshev_distance(player.pos.x, player.pos.y, m.pos.x, m.pos.y) <= 3
         ]
+        game.add_event("PLAY_SOUND", {"sound": "MISS", "rate": 1.2}, floor_id=player.floor_id, source_player_id=player.id)
+        game.add_event("PLAY_ANIMATION", {"player": player.id, "animation": "operate"}, floor_id=player.floor_id)
         for mob in targets:
-            resolve_melee_attack(
+            res = resolve_melee_attack(
                 attacker=player,
                 defender=mob,
                 floor_mobs=floor.mobs,
@@ -530,6 +621,7 @@ class LashSkill(WeaponSkill):
                 add_event=lambda t, d: game.add_event(t, d, floor_id=player.floor_id),
                 game=game,
             )
+            self._emit_attack_events(game, player, mob, res, weapon, hit_sound="HIT_SLASH", extra_sound="")
             if not mob.is_alive:
                 self._apply_lethal_haste_on_kill(game, player)
                 game._finish_kill(player, mob, floor, player.floor_id)
@@ -570,6 +662,8 @@ class SpinSkill(WeaponSkill):
         new_level = min(3, cur_level + 1)
         add_buff(player.buffs, "spin_tracker", duration=5.0, level=new_level)
         game.add_event("SPIN_UPDATE", {"player": player.id, "stacks": new_level}, floor_id=player.floor_id)
+        game.add_event("PLAY_SOUND", {"sound": "CHAINS", "rate": 0.9 + 0.1 * new_level}, floor_id=player.floor_id, source_player_id=player.id)
+        game.add_event("PLAY_ANIMATION", {"player": player.id, "animation": "operate"}, floor_id=player.floor_id)
 
         self._post_execute(game, player, weapon)
         return True
@@ -637,6 +731,7 @@ class ComboStrikeSkill(WeaponSkill):
             game=game,
         )
 
+        self._emit_attack_events(game, player, target, res, weapon, hit_sound="HIT_BODY")
         self._post_execute(game, player, weapon)
 
         if not target.is_alive:
@@ -695,6 +790,8 @@ class HeavyBlowSkill(WeaponSkill):
             add_event=lambda t, d: game.add_event(t, d, floor_id=player.floor_id),
             game=game,
         )
+
+        self._emit_attack_events(game, player, target, res, weapon, hit_sound="HIT_CRUSH")
 
         if target.is_alive:
             add_buff(target.buffs, "daze", duration=5.0, level=1)
@@ -759,6 +856,7 @@ class RetributionSkill(WeaponSkill):
             game=game,
         )
 
+        self._emit_attack_events(game, player, target, res, weapon, hit_sound="HIT_SLASH")
         self._post_execute(game, player, weapon)
 
         if not target.is_alive:
@@ -789,6 +887,7 @@ class GuardSkill(WeaponSkill):
         duration = lvl + _skill_params(weapon).get("duration", 5.0)
         add_buff(player.buffs, "guard_tracker", duration=duration, level=1)
         game.add_event("GUARD_ACTIVE", {"player": player.id, "duration": duration}, floor_id=player.floor_id)
+        game.add_event("PLAY_ANIMATION", {"player": player.id, "animation": "operate"}, floor_id=player.floor_id)
 
         self._post_execute(game, player, weapon)
         return True
@@ -814,6 +913,8 @@ class ChargedShotSkill(WeaponSkill):
     ) -> bool:
         add_buff(player.buffs, "charged_shot", duration=10.0, level=1)
         game.add_event("CHARGED_SHOT_READY", {"player": player.id}, floor_id=player.floor_id)
+        game.add_event("PLAY_SOUND", {"sound": "CHARGEUP", "rate": 1.0}, floor_id=player.floor_id, source_player_id=player.id)
+        game.add_event("PLAY_ANIMATION", {"player": player.id, "animation": "operate"}, floor_id=player.floor_id)
 
         self._post_execute(game, player, weapon)
         return True
@@ -870,6 +971,7 @@ class RunicSlashSkill(WeaponSkill):
 
         remove_buff(player.buffs, "runic_slash_power")
 
+        self._emit_attack_events(game, player, target, res, weapon, hit_sound="HIT_SLASH")
         self._post_execute(game, player, weapon)
 
         if not target.is_alive:
@@ -931,6 +1033,8 @@ class PierceSkill(WeaponSkill):
             game=game,
         )
 
+        self._emit_attack_events(game, player, target, res, weapon, hit_sound="HIT_STAB")
+
         if target.is_alive:
             add_buff(target.buffs, "vulnerable", duration=3.0, level=1)
 
@@ -970,6 +1074,7 @@ class BrawlerStanceSkill(WeaponSkill):
             {"player": player.id, "active": player.brawler_stance},
             floor_id=player.floor_id,
         )
+        game.add_event("PLAY_ANIMATION", {"player": player.id, "animation": "operate"}, floor_id=player.floor_id)
         return True
 
 

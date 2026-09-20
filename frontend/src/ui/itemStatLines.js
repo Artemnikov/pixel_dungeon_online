@@ -1,3 +1,5 @@
+import { WeaponSkillRegistry } from '../data/weaponSkills';
+
 export function statLines(item, t) {
   const lines = [];
   const wTypes = ['weapon', 'melee_weapon', 'staff', 'missile_weapon'];
@@ -6,6 +8,16 @@ export function statLines(item, t) {
     if (item.damage != null) lines.push(`${t('ui.damageStat')}: ${item.damage}`);
     if (item.strength_requirement != null)
       lines.push(t('ui.strengthReq', { str: item.strength_requirement }));
+    if (WeaponSkillRegistry.isMeleeWeapon(item)) {
+      const skill = WeaponSkillRegistry.getSkillForWeapon(item);
+      if (skill) {
+        const cost = skill.getChargeCost(item);
+        const costText = cost === 0
+          ? t('ui.weaponSkillCostFree', { defaultValue: '0 charges (Free)' })
+          : t('ui.weaponSkillCostCharges', { defaultValue: `${cost} charge${cost !== 1 ? 's' : ''}`, count: cost });
+        lines.push(`${t('ui.weaponSkill', { defaultValue: 'Weapon Skill' })}: ${t(`skills.${skill.id}.name`, { defaultValue: skill.name })} (${costText})`);
+      }
+    }
   }
   if (item.type === 'wearable' || item.kind === 'armor') {
     if (item.tier != null) lines.push(t('ui.tier', { tier: item.tier }));

@@ -23,3 +23,13 @@ def speedy_stealth_speed_modifier(player, base: float, level: int) -> float:
     if level >= 3 and getattr(player, "invisible", 0) > 0:
         return base * SPEEDY_STEALTH_SPEED_MULT
     return base
+
+
+@MODIFIERS.register("weapon_id_speed", Talent.ADVENTURERS_INTUITION)
+def adventurers_intuition_weapon_id_modifier(player, base: float, level: int) -> float:
+    return base * (1.0 + 1.5 * level)
+
+
+@MODIFIERS.register("armor_id_speed", Talent.ADVENTURERS_INTUITION)
+def adventurers_intuition_armor_id_modifier(player, base: float, level: int) -> float:
+    return base * (1.0 + 0.75 * level)

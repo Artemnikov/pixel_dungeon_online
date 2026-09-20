@@ -149,11 +149,9 @@ class DuelistMixin:
                 bonus_rate = 1.0 / (20.0 - 5.0 * wr_level)
                 base_rate += bonus_rate
 
-            player._weapon_charge_accum = getattr(player, "_weapon_charge_accum", 0.0) + base_rate * dt
-            if player._weapon_charge_accum >= 1.0:
-                gained = int(player._weapon_charge_accum)
-                player._weapon_charge_accum -= gained
-                player.gain_weapon_charge(float(gained))
+            old_charge = player.weapon_charge
+            player.gain_weapon_charge(base_rate * dt)
+            if int(player.weapon_charge) != int(old_charge) or (old_charge < max_charges <= player.weapon_charge):
                 self.add_event(
                     "WEAPON_CHARGE",
                     {
@@ -165,6 +163,16 @@ class DuelistMixin:
                     floor_id=player.floor_id,
                     source_player_id=player.id,
                 )
+
+        # Swift Equip cooldown ticking
+        se_level = player.talent_info.level(Talent.SWIFT_EQUIP)
+        if se_level > 0:
+            if player.swift_equip_cooldown > 0:
+                player.swift_equip_cooldown = max(0.0, player.swift_equip_cooldown - dt)
+                if player.swift_equip_cooldown <= 0.0:
+                    player.swift_equip_charges = se_level
+            elif player.swift_equip_charges < se_level:
+                player.swift_equip_charges = se_level
 
         # Duel Mode tick (Challenge armor ability)
         if player.duel_mode_active:
@@ -254,24 +262,29 @@ class DuelistMixin:
                 )
             return False
 
-        success = skill.execute(self, player, weapon, target_x, target_y)
-        if success:
-            if cost > 0:
-                player.spend_weapon_charge(cost)
-            self.add_event(
-                "WEAPON_ABILITY_USED",
-                {
-                    "player": player.id,
-                    "ability": skill.id,
-                    "weapon": getattr(weapon, "name", ""),
-                    "charge_left": player.weapon_charge,
-                },
-                floor_id=player.floor_id,
-                source_player_id=player.id,
-            )
-        return success
+        if cost > 0:
+            player.spend_weapon_charge(cost)
 
-    def action_duelist_finisher(self, player: Player, tx: int, ty: int) -> None:
+        success = skill.execute(self, player, weapon, target_x, target_y)
+        if not success:
+            if cost > 0:
+                player.gain_weapon_charge(cost)
+            return False
+
+        self.add_event(
+            "WEAPON_ABILITY_USED",
+            {
+                "player": player.id,
+                "ability": skill.id,
+                "weapon": getattr(weapon, "name", ""),
+                "charge_left": player.weapon_charge,
+            },
+            floor_id=player.floor_id,
+            source_player_id=player.id,
+        )
+        return True
+
+    def action_duelist_finisher(self, player: Player, tx: Optional[int] = None, ty: Optional[int] = None) -> None:
         """Legacy adapter routing DUELIST_FINISHER messages to equipped weapon skill."""
         self.use_weapon_ability(player.id, target_x=tx, target_y=ty, use_secondary=False)
 

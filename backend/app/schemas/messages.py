@@ -183,6 +183,12 @@ class AdminGiveItem(_ClientMessageBase):
     enchant: Optional[str] = None
 
 
+class AdminSetHp(_ClientMessageBase):
+    type: Literal["ADMIN_SET_HP"]
+    hp: Optional[int] = None
+    hp_pct: Optional[float] = None
+
+
 class NpcInteract(_ClientMessageBase):
     type: Literal["NPC_INTERACT"]
     npc_id: str
@@ -326,8 +332,8 @@ class Resurrect(_ClientMessageBase):
 
 class DuelistFinisher(_ClientMessageBase):
     type: Literal["DUELIST_FINISHER"]
-    target_x: int
-    target_y: int
+    target_x: Optional[int] = None
+    target_y: Optional[int] = None
 
 
 class UseWeaponAbility(_ClientMessageBase):
@@ -397,6 +403,7 @@ ClientMessage = Annotated[
         AdminTeleport,
         AdminLevelUp,
         AdminGiveItem,
+        AdminSetHp,
         NpcInteract,
         ShopBuy,
         ShopSell,

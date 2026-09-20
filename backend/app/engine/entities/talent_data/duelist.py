@@ -1,3 +1,6 @@
+# Copyright (C) 2026 ArtemNikov
+#
+"""Duelist talent definitions, requirements, titles, and descriptions."""
 from typing import Dict, Optional
 
 from app.engine.entities.talent_enum import Subclass, Talent
@@ -51,32 +54,6 @@ DUELIST_TALENT_DEFS: Dict[str, tuple[int, int, Optional[str]]] = {
     Talent.FEIGNED_RETREAT: (4, 4, None),
     Talent.EXPOSE_WEAKNESS: (4, 4, None),
     Talent.COUNTER_ABILITY: (4, 4, None),
-
-    # -------------------------------------------------------------
-    # Legacy aliases for backward compatibility
-    # -------------------------------------------------------------
-    Talent.AGGRESSIVE_APPROACH: (2, 1, None),
-    Talent.LIGHTWEIGHT_COMBAT: (2, 1, None),
-    Talent.DUELIST_LETHAL_MOMENTUM: (2, 1, None),
-    Talent.STICK_AND_MOVE: (2, 1, None),
-    Talent.DUAL_STRIKE: (2, 2, None),
-    Talent.CIRCLE_OF_SLAUGHTER: (2, 2, None),
-    Talent.FINISHER: (2, 2, None),
-    Talent.FEROCITY: (2, 2, None),
-    Talent.CHARGED_ATTACK: (3, 3, None),
-    Talent.CHAMPION_POWER: (3, 3, Subclass.CHAMPION),
-    Talent.CHAMPION_ENDURANCE: (3, 3, Subclass.CHAMPION),
-    Talent.CHAMPION_REACH: (3, 3, Subclass.CHAMPION),
-    Talent.MONKS_SPIRIT: (3, 3, Subclass.MONK),
-    Talent.LASTING_CHALLENGE: (4, 4, None),
-    Talent.HEIGHTENED_CHALLENGE: (4, 4, None),
-    Talent.DUAL_CHALLENGE: (4, 4, None),
-    Talent.SEARING_STRIKE: (4, 4, None),
-    Talent.CHILLING_STRIKE: (4, 4, None),
-    Talent.CHARGED_STRIKE: (4, 4, None),
-    Talent.SHADOW_FEINT: (4, 4, None),
-    Talent.REACTIVE_FEINT: (4, 4, None),
-    Talent.PHANTASMAL_FEINT: (4, 4, None),
 }
 
 DUELIST_TALENT_CLASS_REQ: Dict[str, str] = {
@@ -116,30 +93,6 @@ DUELIST_TALENT_CLASS_REQ: Dict[str, str] = {
     Talent.FEIGNED_RETREAT: "duelist",
     Talent.EXPOSE_WEAKNESS: "duelist",
     Talent.COUNTER_ABILITY: "duelist",
-
-    # Legacy aliases
-    Talent.AGGRESSIVE_APPROACH: "duelist",
-    Talent.LIGHTWEIGHT_COMBAT: "duelist",
-    Talent.DUELIST_LETHAL_MOMENTUM: "duelist",
-    Talent.STICK_AND_MOVE: "duelist",
-    Talent.DUAL_STRIKE: "duelist",
-    Talent.CIRCLE_OF_SLAUGHTER: "duelist",
-    Talent.FINISHER: "duelist",
-    Talent.FEROCITY: "duelist",
-    Talent.CHARGED_ATTACK: "duelist",
-    Talent.CHAMPION_POWER: "duelist",
-    Talent.CHAMPION_ENDURANCE: "duelist",
-    Talent.CHAMPION_REACH: "duelist",
-    Talent.MONKS_SPIRIT: "duelist",
-    Talent.LASTING_CHALLENGE: "duelist",
-    Talent.HEIGHTENED_CHALLENGE: "duelist",
-    Talent.DUAL_CHALLENGE: "duelist",
-    Talent.SEARING_STRIKE: "duelist",
-    Talent.CHILLING_STRIKE: "duelist",
-    Talent.CHARGED_STRIKE: "duelist",
-    Talent.SHADOW_FEINT: "duelist",
-    Talent.REACTIVE_FEINT: "duelist",
-    Talent.PHANTASMAL_FEINT: "duelist",
 }
 
 DUELIST_TALENT_TITLES: Dict[str, str] = {
@@ -179,30 +132,6 @@ DUELIST_TALENT_TITLES: Dict[str, str] = {
     Talent.FEIGNED_RETREAT: "Feigned Retreat",
     Talent.EXPOSE_WEAKNESS: "Expose Weakness",
     Talent.COUNTER_ABILITY: "Counter Ability",
-
-    # Legacy aliases
-    Talent.AGGRESSIVE_APPROACH: "Strengthening Meal",
-    Talent.LIGHTWEIGHT_COMBAT: "Adventurer's Intuition",
-    Talent.DUELIST_LETHAL_MOMENTUM: "Patient Strike",
-    Talent.STICK_AND_MOVE: "Aggressive Barrier",
-    Talent.DUAL_STRIKE: "Focused Meal",
-    Talent.CIRCLE_OF_SLAUGHTER: "Liquid Agility",
-    Talent.FINISHER: "Weapon Recharging",
-    Talent.FEROCITY: "Lethal Haste",
-    Talent.CHARGED_ATTACK: "Precise Assault",
-    Talent.CHAMPION_POWER: "Varied Charge",
-    Talent.CHAMPION_ENDURANCE: "Twin Upgrades",
-    Talent.CHAMPION_REACH: "Combined Lethality",
-    Talent.MONKS_SPIRIT: "Combined Energy",
-    Talent.LASTING_CHALLENGE: "Close the Gap",
-    Talent.HEIGHTENED_CHALLENGE: "Invigorating Victory",
-    Talent.DUAL_CHALLENGE: "Elimination Match",
-    Talent.SEARING_STRIKE: "Elemental Reach",
-    Talent.CHILLING_STRIKE: "Striking Force",
-    Talent.CHARGED_STRIKE: "Directed Power",
-    Talent.SHADOW_FEINT: "Feigned Retreat",
-    Talent.REACTIVE_FEINT: "Expose Weakness",
-    Talent.PHANTASMAL_FEINT: "Counter Ability",
 }
 
 DUELIST_TALENT_DESCRIPTIONS: Dict[str, str] = {
@@ -242,55 +171,30 @@ DUELIST_TALENT_DESCRIPTIONS: Dict[str, str] = {
     Talent.FEIGNED_RETREAT: "Hero gains Haste when an enemy attacks the afterimage.",
     Talent.EXPOSE_WEAKNESS: "Enemies that strike the afterimage become Vulnerable and Weakened.",
     Talent.COUNTER_ABILITY: "Using a weapon ability shortly after the afterimage is struck restores weapon charge.",
-
-    # Legacy aliases
-    Talent.AGGRESSIVE_APPROACH: "Eating food grants bonus damage on your next few melee attacks.",
-    Talent.LIGHTWEIGHT_COMBAT: "Identifies weapons and armor faster in combat. At max rank, instantly identifies weapons upon equipping.",
-    Talent.DUELIST_LETHAL_MOMENTUM: "Waiting in place grants bonus damage on your next melee attack.",
-    Talent.STICK_AND_MOVE: "Using a weapon ability when below 50% HP grants a protective barrier.",
-    Talent.DUAL_STRIKE: "Eating food takes only 1 turn and instantly restores weapon charge.",
-    Talent.CIRCLE_OF_SLAUGHTER: "Using potions grants massive evasion and accuracy on your next action.",
-    Talent.FINISHER: "Gains weapon charge over time while under Wand or Artifact Recharging buffs.",
-    Talent.FEROCITY: "Killing an enemy with a weapon ability grants greater haste for several turns.",
-    Talent.CHARGED_ATTACK: "After using a weapon ability, your next melee attack within 5 turns gains significantly higher accuracy.",
-    Talent.CHAMPION_POWER: "Using two different weapon abilities sequentially restores weapon charge.",
-    Talent.CHAMPION_ENDURANCE: "Lower-level equipped weapon shares the upgrade level of your higher-level weapon based on tier difference.",
-    Talent.CHAMPION_REACH: "Attacking with a weapon after using another weapon's ability executes low-health enemies.",
-    Talent.MONKS_SPIRIT: "Using a weapon ability and a high-cost Monk ability sequentially restores 1 energy.",
-    Talent.LASTING_CHALLENGE: "Hero leaps towards the target upon initiating Challenge.",
-    Talent.HEIGHTENED_CHALLENGE: "Defeating the challenged foe heals the hero and restores health based on damage taken during the duel.",
-    Talent.DUAL_CHALLENGE: "Challenging another foe shortly after a duel ends reduces armor charge cost.",
-    Talent.SEARING_STRIKE: "Increases the cone range and angle of Elemental Strike.",
-    Talent.CHILLING_STRIKE: "Increases the power and duration of Elemental Strike effects.",
-    Talent.CHARGED_STRIKE: "Primary melee strike gains bonus enchantment power for each enemy caught in the cone.",
-    Talent.SHADOW_FEINT: "Hero gains Haste when an enemy attacks the afterimage.",
-    Talent.REACTIVE_FEINT: "Enemies that strike the afterimage become Vulnerable and Weakened.",
-    Talent.PHANTASMAL_FEINT: "Using a weapon ability shortly after the afterimage is struck restores weapon charge.",
 }
 
-# Legacy alias mapping dict for migration / resolution
+# Legacy alias mapping dict for backward-compatibility migrations
 DUELIST_LEGACY_TALENT_MAP: Dict[str, str] = {
-    Talent.AGGRESSIVE_APPROACH: Talent.STRENGTHENING_MEAL,
-    Talent.LIGHTWEIGHT_COMBAT: Talent.ADVENTURERS_INTUITION,
-    Talent.DUELIST_LETHAL_MOMENTUM: Talent.PATIENT_STRIKE,
-    Talent.STICK_AND_MOVE: Talent.AGGRESSIVE_BARRIER,
-    Talent.DUAL_STRIKE: Talent.FOCUSED_MEAL,
-    Talent.CIRCLE_OF_SLAUGHTER: Talent.LIQUID_AGILITY,
-    Talent.FINISHER: Talent.WEAPON_RECHARGING,
-    Talent.FEROCITY: Talent.LETHAL_HASTE,
-    Talent.CHARGED_ATTACK: Talent.PRECISE_ASSAULT,
-    Talent.CHAMPION_POWER: Talent.VARIED_CHARGE,
-    Talent.CHAMPION_ENDURANCE: Talent.TWIN_UPGRADES,
-    Talent.CHAMPION_REACH: Talent.COMBINED_LETHALITY,
-    Talent.MONKS_SPIRIT: Talent.COMBINED_ENERGY,
-    Talent.LASTING_CHALLENGE: Talent.CLOSE_THE_GAP,
-    Talent.HEIGHTENED_CHALLENGE: Talent.INVIGORATING_VICTORY,
-    Talent.DUAL_CHALLENGE: Talent.ELIMINATION_MATCH,
-    Talent.SEARING_STRIKE: Talent.ELEMENTAL_REACH,
-    Talent.CHILLING_STRIKE: Talent.STRIKING_FORCE,
-    Talent.CHARGED_STRIKE: Talent.DIRECTED_POWER,
-    Talent.SHADOW_FEINT: Talent.FEIGNED_RETREAT,
-    Talent.REACTIVE_FEINT: Talent.EXPOSE_WEAKNESS,
-    Talent.PHANTASMAL_FEINT: Talent.COUNTER_ABILITY,
+    "aggressive_approach": Talent.STRENGTHENING_MEAL,
+    "lightweight_combat": Talent.ADVENTURERS_INTUITION,
+    "duelist_lethal_momentum": Talent.PATIENT_STRIKE,
+    "stick_and_move": Talent.AGGRESSIVE_BARRIER,
+    "dual_strike": Talent.FOCUSED_MEAL,
+    "circle_of_slaughter": Talent.LIQUID_AGILITY,
+    "finisher": Talent.WEAPON_RECHARGING,
+    "ferocity": Talent.LETHAL_HASTE,
+    "charged_attack": Talent.PRECISE_ASSAULT,
+    "champion_power": Talent.VARIED_CHARGE,
+    "champion_endurance": Talent.TWIN_UPGRADES,
+    "champion_reach": Talent.COMBINED_LETHALITY,
+    "monks_spirit": Talent.COMBINED_ENERGY,
+    "lasting_challenge": Talent.CLOSE_THE_GAP,
+    "heightened_challenge": Talent.INVIGORATING_VICTORY,
+    "dual_challenge": Talent.ELIMINATION_MATCH,
+    "searing_strike": Talent.ELEMENTAL_REACH,
+    "chilling_strike": Talent.STRIKING_FORCE,
+    "charged_strike": Talent.DIRECTED_POWER,
+    "shadow_feint": Talent.FEIGNED_RETREAT,
+    "reactive_feint": Talent.EXPOSE_WEAKNESS,
+    "phantasmal_feint": Talent.COUNTER_ABILITY,
 }
-

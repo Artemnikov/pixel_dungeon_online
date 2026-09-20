@@ -35,6 +35,7 @@ function GameHud({
         targetingMode={targetingMode}
         swappedQuickslots={swappedQuickslots}
         assetImages={assetImages}
+        myStats={myStats}
         onSearch={onSearch}
         onInventory={onInventory}
         onQuickBag={onQuickBag}
@@ -68,7 +69,11 @@ function GameHud({
       <DuelistFinisherButton
         classType={myStats.classType}
         weaponCharge={myStats.weaponCharge || 0}
+        maxWeaponCharges={myStats.maxWeaponCharges}
         finisherReady={!!myStats.finisherReady}
+        equippedWeapon={belongings?.weapon || equippedItems?.weapon}
+        effects={myStats.effects}
+        subclass={myStats.subclass}
         onDuelistFinisher={onDuelistFinisher}
       />
       {showInventory && (isDesktop ? (
@@ -77,6 +82,7 @@ function GameHud({
           gold={gold}
           energy={energy}
           strength={strength}
+          myStats={myStats}
           onOpenItem={onOpenItem}
           onContextMenu={onContextMenu}
           onDefaultAction={onDefaultAction}
@@ -87,6 +93,7 @@ function GameHud({
           gold={gold}
           energy={energy}
           strength={strength}
+          myStats={myStats}
           onOpenItem={onOpenItem}
           onContextMenu={onContextMenu}
           onDefaultAction={onDefaultAction}

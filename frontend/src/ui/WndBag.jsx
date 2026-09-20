@@ -4,7 +4,7 @@ import WndOverlay from './WndOverlay';
 import { WindowLevel } from '../game/window/WindowTypes';
 
 export default function WndBag({
-  belongings, gold, energy, strength, onOpenItem, onContextMenu,
+  belongings, gold, energy, strength, myStats, onOpenItem, onContextMenu,
   onDefaultAction, onClose, selectMode, onSelectItem, itemFilter,
   title, extraFooter, onInspectItem,
 }) {
@@ -30,6 +30,7 @@ export default function WndBag({
           gold={gold}
           energy={energy}
           strength={strength}
+          myStats={myStats}
           prompt={title}
           onOpenItem={onOpenItem}
           onContextMenu={onContextMenu}

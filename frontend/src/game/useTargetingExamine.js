@@ -2,6 +2,7 @@ import { useCallback, useState, useRef, useEffect } from 'react';
 import { describeCell } from '../input/describeCell';
 import { playLocalPlayerSearch } from '../rendering/draw/searchEffects';
 import { isAttackReady, consumeAttackCooldown } from '../net/events/combat';
+import { WeaponSkillRegistry } from '../data/weaponSkills';
 
 const TARGETED_ABILITIES = [
   'heroic_leap',
@@ -49,7 +50,11 @@ export default function useTargetingExamine({
       return;
     }
     if (tm && typeof tm === 'object' && tm.duelistFinisher) {
-      send({ type: 'DUELIST_FINISHER', target_x: tileX, target_y: tileY });
+      if (tm.useSecondary) {
+        send({ type: 'USE_WEAPON_ABILITY', target_x: tileX, target_y: tileY, use_secondary: true });
+      } else {
+        send({ type: 'DUELIST_FINISHER', target_x: tileX, target_y: tileY });
+      }
       setTargetingMode(false);
       return;
     }
@@ -150,7 +155,20 @@ export default function useTargetingExamine({
   };
 
   const sendPrepStrike = () => setTargetingMode({ prepStrike: true });
-  const sendDuelistFinisher = () => setTargetingMode({ duelistFinisher: true });
+  const sendDuelistFinisher = () => {
+    const weapon = equippedItems?.weapon;
+    const skill = WeaponSkillRegistry.getSkillForWeapon(weapon);
+    if (skill && !skill.requiresTarget) {
+      send({ type: 'DUELIST_FINISHER' });
+      setTargetingMode(false);
+      return;
+    }
+    if (targetingModeRef.current && typeof targetingModeRef.current === 'object' && targetingModeRef.current.duelistFinisher) {
+      setTargetingMode(false);
+      return;
+    }
+    setTargetingMode({ duelistFinisher: true, itemId: weapon?.id });
+  };
   const sendCastSpell = (spell) => send({ type: 'CAST_CLERIC_SPELL', spell });
   const sendSetClericQuickSpell = (spell) => send({ type: 'SET_CLERIC_QUICK_SPELL', spell });
 

@@ -115,6 +115,8 @@ class MonkAbility(ABC):
                 turns_since_weapon = getattr(game, "turns", 0) - player.last_weapon_ability_turn
                 if 0 <= turns_since_weapon <= 5 and player.last_weapon_ability_id:
                     player.gain_monk_energy(1.0)
+                    player.last_weapon_ability_id = None
+                    player.last_weapon_ability_turn = -100
                     game.add_event(
                         "COMBINED_ENERGY",
                         {"player": player.id, "refund": 1.0},

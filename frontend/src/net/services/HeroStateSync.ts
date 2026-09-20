@@ -1,6 +1,7 @@
 import type { Dispatch, SetStateAction } from 'react';
 import type { Player, Mob, Difficulty } from '../../types/contract';
 import type { MyStats } from '../types';
+import { calculateMaxCharges } from '../../data/weaponSkills';
 
 export interface HeroStateSetters {
   setMyStats: Dispatch<SetStateAction<MyStats>>;
@@ -77,6 +78,7 @@ export class HeroStateSync {
       prepSeconds: sp.prep_seconds || 0,
       comboCount: sp.combo_count || 0,
       weaponCharge: sp.weapon_charge || 0,
+      maxWeaponCharges: (sp as { max_weapon_charges?: number }).max_weapon_charges ?? calculateMaxCharges(sp.level || 1, sp.subclass_info?.subclass),
       finisherReady: sp.finisher_ready || false,
       spellCooldowns: sp.spell_cooldowns || {},
       clericQuickSpell: sp.cleric_quick_spell || null,

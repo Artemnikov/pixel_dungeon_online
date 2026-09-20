@@ -1,8 +1,9 @@
 import { useCallback } from 'react';
+import { WeaponSkillRegistry } from '../data/weaponSkills';
 
 const TARGETED_ACTIONS = ['THROW', 'ZAP', 'DIRECT', 'SHOOT', 'CAST', 'STEAL', 'PLANT_SEED', 'UNLOCK', 'KEY_REVEAL'];
 
-export function useItemActions({ send, equippedItems, targetingMode, setTargetingMode, setShowInventory, quickslot, onOpenClericCastBar, belongings }) {
+export function useItemActions({ send, equippedItems, targetingMode, setTargetingMode, setShowInventory, quickslot, onOpenClericCastBar, belongings, myStats }) {
   const equipItem = useCallback((itemId) => send({ type: 'EQUIP_ITEM', item_id: itemId }), [send]);
 
   const executeItemAction = useCallback((itemId, action, tx, ty) => {
@@ -49,11 +50,44 @@ export function useItemActions({ send, equippedItems, targetingMode, setTargetin
         }
         return;
       }
+
+      if (myStats?.classType === 'duelist') {
+        const isPrimary = equippedItems?.weapon && equippedItems.weapon.id === item.id;
+        const isSecondary = belongings?.secondary_weapon && belongings.secondary_weapon.id === item.id;
+        if (!isPrimary && !isSecondary) {
+          equipItem(item.id);
+          return;
+        }
+        const skill = WeaponSkillRegistry.getSkillForWeapon(item);
+        if (skill) {
+          if (targetingMode && typeof targetingMode === 'object' && targetingMode.duelistFinisher && targetingMode.itemId === item.id) {
+            setTargetingMode(false);
+            return;
+          }
+          const context = {
+            classType: myStats.classType,
+            weaponCharge: myStats.weaponCharge ?? 0,
+            effects: myStats.effects,
+            subclass: myStats.subclass,
+          };
+          if (skill.isReady(myStats.weaponCharge ?? 0, item, context)) {
+            if (skill.requiresTarget) {
+              setTargetingMode({ duelistFinisher: true, itemId: item.id, useSecondary: isSecondary });
+            } else if (isSecondary) {
+              send({ type: 'USE_WEAPON_ABILITY', use_secondary: true });
+            } else {
+              send({ type: 'DUELIST_FINISHER' });
+            }
+          }
+          return;
+        }
+      }
+
       if (item.default_action && TARGETED_ACTIONS.includes(item.default_action)) {
         executeItemAction(item.id, item.default_action);
         return;
       }
-      const isEquipped = equippedItems.weapon && equippedItems.weapon.id === item.id;
+      const isEquipped = equippedItems?.weapon && equippedItems.weapon.id === item.id;
       if (!isEquipped) {
         equipItem(item.id);
         if (item.range && item.range > 1) {
@@ -81,7 +115,7 @@ export function useItemActions({ send, equippedItems, targetingMode, setTargetin
     } else if (item.default_action) {
       executeItemAction(item.id, item.default_action);
     }
-  }, [send, executeItemAction, equipItem, equippedItems, targetingMode, setTargetingMode, onOpenClericCastBar]);
+  }, [send, executeItemAction, equipItem, equippedItems, belongings, myStats, targetingMode, setTargetingMode, onOpenClericCastBar]);
 
   return { equipItem, executeItemAction, assignQuickslot, handleToolbarClick };
 }

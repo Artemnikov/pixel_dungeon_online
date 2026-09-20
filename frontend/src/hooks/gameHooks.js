@@ -266,10 +266,13 @@ export default function useGameHooks(state) {
     send, equippedItems, targetingMode: targeting.targetingMode,
     setTargetingMode: targeting.setTargetingMode, setShowInventory: modals.setShowInventory, quickslot,
     onOpenClericCastBar: modals.openClericCastBar, belongings,
+    myStats,
   });
 
   const { handleToolbarDoubleClick } = useTargetingHandlers({
     send, entitiesRef, myPlayerIdRef, visionRef, selectedEnemyIdRef,
+    myStats, equippedItems, belongings,
+    setTargetingMode: targeting.setTargetingMode,
   });
 
   const { resetForRestart, handleLeaveGame } = useGameLifecycle({

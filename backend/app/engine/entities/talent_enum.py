@@ -226,11 +226,6 @@ class Talent(StrEnum):
     ADVENTURERS_INTUITION = "adventurers_intuition"
     PATIENT_STRIKE = "patient_strike"
     AGGRESSIVE_BARRIER = "aggressive_barrier"
-    # Legacy Tier 1 aliases
-    AGGRESSIVE_APPROACH = "aggressive_approach"
-    LIGHTWEIGHT_COMBAT = "lightweight_combat"
-    DUELIST_LETHAL_MOMENTUM = "duelist_lethal_momentum"
-    STICK_AND_MOVE = "stick_and_move"
 
     # Tier 2
     FOCUSED_MEAL = "focused_meal"
@@ -238,30 +233,20 @@ class Talent(StrEnum):
     WEAPON_RECHARGING = "weapon_recharging"
     LETHAL_HASTE = "lethal_haste"
     SWIFT_EQUIP = "swift_equip"
-    # Legacy Tier 2 aliases
-    DUAL_STRIKE = "dual_strike"
-    CIRCLE_OF_SLAUGHTER = "circle_of_slaughter"
-    FINISHER = "finisher"
-    FEROCITY = "ferocity"
 
     # Tier 3 — class
     PRECISE_ASSAULT = "precise_assault"
     DEADLY_FOLLOWUP = "deadly_followup"
-    CHARGED_ATTACK = "charged_attack"  # legacy alias
 
     # Tier 3 — Champion
     VARIED_CHARGE = "varied_charge"
     TWIN_UPGRADES = "twin_upgrades"
     COMBINED_LETHALITY = "combined_lethality"
-    CHAMPION_POWER = "champion_power"  # legacy alias
-    CHAMPION_ENDURANCE = "champion_endurance"  # legacy alias
-    CHAMPION_REACH = "champion_reach"  # legacy alias
 
     # Tier 3 — Monk
     UNENCUMBERED_SPIRIT = "unencumbered_spirit"
     MONASTIC_VIGOR = "monastic_vigor"
     COMBINED_ENERGY = "combined_energy"
-    MONKS_SPIRIT = "monks_spirit"  # legacy alias
 
     # Tier 4 (armor abilities)
     CHALLENGE_ABILITY = "challenge_talent"
@@ -272,25 +257,16 @@ class Talent(StrEnum):
     CLOSE_THE_GAP = "close_the_gap"
     INVIGORATING_VICTORY = "invigorating_victory"
     ELIMINATION_MATCH = "elimination_match"
-    LASTING_CHALLENGE = "lasting_challenge"  # legacy alias
-    HEIGHTENED_CHALLENGE = "heightened_challenge"  # legacy alias
-    DUAL_CHALLENGE = "dual_challenge"  # legacy alias
 
     # Tier 4 — Elemental Strike
     ELEMENTAL_REACH = "elemental_reach"
     STRIKING_FORCE = "striking_force"
     DIRECTED_POWER = "directed_power"
-    SEARING_STRIKE = "searing_strike"  # legacy alias
-    CHILLING_STRIKE = "chilling_strike"  # legacy alias
-    CHARGED_STRIKE = "charged_strike"  # legacy alias
 
     # Tier 4 — Feint
     FEIGNED_RETREAT = "feigned_retreat"
     EXPOSE_WEAKNESS = "expose_weakness"
     COUNTER_ABILITY = "counter_ability"
-    SHADOW_FEINT = "shadow_feint"  # legacy alias
-    REACTIVE_FEINT = "reactive_feint"  # legacy alias
-    PHANTASMAL_FEINT = "phantasmal_feint"  # legacy alias
 
     # ===================== CLERIC =====================
     # Tier 1

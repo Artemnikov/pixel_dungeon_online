@@ -190,6 +190,7 @@ export interface MyStats {
   prepSeconds?: number;
   comboCount?: number;
   weaponCharge?: number;
+  maxWeaponCharges?: number;
   finisherReady?: boolean;
   spellCooldowns?: Record<string, number>;
   clericQuickSpell?: string | null;

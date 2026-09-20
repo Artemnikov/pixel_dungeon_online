@@ -236,6 +236,7 @@ class SerializationMixin:
         d["attack_target"] = attack_target
         d["step_duration_ms"] = p.get_step_duration_ms(enemies_nearby=enemies_nearby)
         d["last_processed_seq"] = p.last_processed_seq
+        d["max_weapon_charges"] = p.get_max_weapon_charges()
         return d
 
     def _serialize_player_stub(self, p) -> dict:

@@ -211,6 +211,13 @@ class TalentsMixin:
 
         self._recompute_talent_points(player)
 
+        registry.dispatch(
+            "on_upgrade",
+            player,
+            self,
+            payload={"talent": talent_name, "level": current + 1},
+        )
+
         self.add_event("TALENT_UPGRADED", {"player": player.id, "talent": talent_name, "level": current + 1}, player_id=player.id)
         return True
 

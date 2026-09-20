@@ -129,7 +129,7 @@ export const TALENT_ICONS = {
   go_for_the_eyes: 120,      // GO_FOR_THE_EYES
   swift_spirit: 121,         // SWIFT_SPIRIT
 
-  // ===== DUELIST (mapped but unused by current 4-class support) =====
+  // ===== DUELIST =====
   strengthening_meal: 128,
   adventurers_intuition: 129,
   patient_strike: 130,
@@ -140,13 +140,16 @@ export const TALENT_ICONS = {
   lethal_haste: 135,
   swift_equip: 136,
   precise_assault: 137,
-  // deadly_followup: 138, // Duelist (unused - key conflicts with Warrior T4)
+  deadly_followup: 138,
   varied_charge: 139,
   twin_upgrades: 140,
   combined_lethality: 141,
   unencumbered_spirit: 142,
   monastic_vigor: 143,
   combined_energy: 144,
+  challenge_talent: 145,
+  elemental_strike_talent: 148,
+  feint_talent: 151,
   close_the_gap: 145,
   invigorating_victory: 146,
   elimination_match: 147,

@@ -70,7 +70,19 @@ function buffRect(i, { SCALE, isLarge, buffPitch, buffSize }) {
   };
 }
 
-export default function StatusPane({ myStats, depth, exitPos, isAdmin, onSearch, hasTalentPoints, onOpenHeroInfo, onTeleport, isBusy, onBuffClick, interfaceSize, assetImages }) {
+function getHpBarRatio(x, y, { SCALE, isLarge, hpFill }) {
+  const hx = (isLarge ? 30 : 33) * SCALE;
+  const hy = (isLarge ? 19 : 2) * SCALE;
+  const hw = hpFill.w * SCALE;
+  const hh = hpFill.h * SCALE;
+  const padY = isLarge ? 2 * SCALE : 3 * SCALE;
+  if (x >= hx && x <= hx + hw && y >= hy - padY && y <= hy + hh + padY) {
+    return Math.max(0.01, Math.min(1.0, (x - hx) / hw));
+  }
+  return null;
+}
+
+export default function StatusPane({ myStats, depth, exitPos, isAdmin, onSearch, hasTalentPoints, onOpenHeroInfo, onTeleport, onAdminSetHp, isBusy, onBuffClick, interfaceSize, assetImages }) {
   const isLarge = interfaceSize > 0;
   const SCALE = isLarge ? 3 : 2;
   const PANE_W = isLarge ? PANE_W_LARGE : PANE_W_SMALL;
@@ -430,6 +442,43 @@ export default function StatusPane({ myStats, depth, exitPos, isAdmin, onSearch,
         height={PANE_H * SCALE * cappedDPR}
         style={{ width: PANE_W * SCALE * zoomScale, height: PANE_H * SCALE * zoomScale }}
         className="status-pane-canvas"
+        onMouseMove={(e) => {
+          const x = e.nativeEvent.offsetX / zoomScale;
+          const y = e.nativeEvent.offsetY / zoomScale;
+          const ax = 9 * SCALE, ay = 8 * SCALE;
+          const aw = FRAME_W * SCALE, ah = FRAME_H * SCALE;
+          if (x >= ax && x < ax + aw && y >= ay && y < ay + ah) {
+            e.currentTarget.style.cursor = 'pointer';
+            e.currentTarget.title = '';
+            return;
+          }
+          const effects = statsRef.current?.effects || [];
+          for (let i = 0; i < Math.min(effects.length, maxBuffs); i++) {
+            const { bx, by, bw, bh } = buffRect(i, { SCALE, isLarge, buffPitch, buffSize });
+            if (x >= bx && x < bx + bw && y >= by && y < by + bh) {
+              e.currentTarget.style.cursor = 'pointer';
+              e.currentTarget.title = '';
+              return;
+            }
+          }
+          if (isAdmin) {
+            const ratio = getHpBarRatio(x, y, { SCALE, isLarge, hpFill });
+            if (ratio !== null) {
+              const pct = Math.round(ratio * 100);
+              const maxHp = statsRef.current?.maxHp || 20;
+              const targetHp = Math.max(1, Math.round(maxHp * ratio));
+              e.currentTarget.style.cursor = 'pointer';
+              e.currentTarget.title = `Set HP: ${pct}% (${targetHp}/${maxHp})`;
+              return;
+            }
+          }
+          e.currentTarget.style.cursor = 'default';
+          e.currentTarget.title = '';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.cursor = 'default';
+          e.currentTarget.title = '';
+        }}
         onClick={(e) => {
           // offsets are in zoom-scaled CSS px; divide back to unscaled pane units.
           const x = e.nativeEvent.offsetX / zoomScale;
@@ -448,6 +497,14 @@ export default function StatusPane({ myStats, depth, exitPos, isAdmin, onSearch,
             if (x >= bx && x < bx + bw && y >= by && y < by + bh) {
               AudioManager.play('CLICK');
               onBuffClick?.(effects[i]);
+              return;
+            }
+          }
+          if (isAdmin) {
+            const ratio = getHpBarRatio(x, y, { SCALE, isLarge, hpFill });
+            if (ratio !== null) {
+              AudioManager.play('CLICK');
+              onAdminSetHp?.(ratio);
               return;
             }
           }

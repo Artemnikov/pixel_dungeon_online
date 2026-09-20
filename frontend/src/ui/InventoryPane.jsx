@@ -1,10 +1,12 @@
 import { useRef, useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import AudioManager from '../audio/AudioManager';
 import ItemIcon from './ItemIcon';
 import ItemGlyph from './ItemGlyph';
 import { HOLDER_SPRITES } from '../rendering/sprites';
 import useEntityName from './useEntityName';
 import { levelDisplayText, levelColorClass } from './itemLevelColor';
+import { ItemStatusService } from './itemStatusFormatter';
 
 // SPD-style persistent inventory pane (port of InventoryPane.java). Shows the
 // five equip slots + an inline gold/energy readout, bag tabs for nested bags,
@@ -51,17 +53,8 @@ function strBadge(item, strength) {
   return { text: `:${req}`, cls: strength != null && strength < req ? 'str-bad' : 'str-ok' };
 }
 
-// Artifact charge readout (SPD Artifact.status()): % when the cap is 100,
-// "cur/max" otherwise; nothing when there's no cap and no charge.
-function artifactStatus(item) {
-  if (item.type !== 'artifact') return null;
-  if (item.charge_cap === 100) return `${item.charge}%`;
-  if (item.charge_cap > 0) return `${item.charge}/${item.charge_cap}`;
-  if (item.charge !== 0) return `${item.charge}`;
-  return null;
-}
-
-function ItemSlot({ item, holderKey, equipped, strength, empty, onOpen, onContext, onDefaultAction, selectMode, onSelectItem, itemFilter, onInspect }) {
+function ItemSlot({ item, holderKey, equipped, strength, empty, onOpen, onContext, onDefaultAction, selectMode, onSelectItem, itemFilter, onInspect, itemStatusContext }) {
+  const { t } = useTranslation();
   const timerRef = useRef(null);
   const longFiredRef = useRef(false);
   const idStateRef = useRef(null);
@@ -92,7 +85,7 @@ function ItemSlot({ item, holderKey, equipped, strength, empty, onOpen, onContex
   }
 
   const badge = strBadge(item, strength);
-  const artifactCharge = artifactStatus(item);
+  const itemStatus = ItemStatusService.getItemStatus(item, itemStatusContext);
 
   const openContext = (clientX, clientY) => onContext(item, clientX, clientY);
 
@@ -108,10 +101,17 @@ function ItemSlot({ item, holderKey, equipped, strength, empty, onOpen, onContex
     onOpen(item);
   };
 
+  const localizedSkill = itemStatus?.skillId
+    ? t(`skills.${itemStatus.skillId}.name`, { defaultValue: itemStatus.skillName || itemStatus.skillId })
+    : itemStatus?.skillName;
+  const slotTitle = localizedSkill
+    ? `${itemName} [${localizedSkill}: ${itemStatus.text}]`
+    : itemName;
+
   return (
     <button
       className={`inv-slot filled ${equipped ? 'equipped' : ''} ${tintClass(item)} ${selectMode && !selectable ? 'inv-slot-unselectable' : ''} ${justIdentified ? 'just-identified' : ''}`}
-      title={itemName}
+      title={slotTitle}
       onClick={handleClick}
       onAuxClick={selectMode
         ? (e) => { if (e.button === 1 && onInspect) { e.preventDefault(); onInspect(item); } }
@@ -135,13 +135,7 @@ function ItemSlot({ item, holderKey, equipped, strength, empty, onOpen, onContex
     >
       <ItemIcon item={item} size={32} />
       <ItemGlyph item={item} />
-      {item.kind === 'waterskin'
-        ? <span className="inv-qty">{item.volume}/20</span>
-        : item.quantity > 1 && <span className="inv-qty">{item.quantity}</span>}
-      {item.max_charges > 0 && (item.kind === 'wand' || item.kind === 'staff' || item.kind?.startsWith('wand_')) && (
-        <span className="inv-qty">{item.charges}/{item.max_charges}</span>
-      )}
-      {artifactCharge && <span className="inv-qty">{artifactCharge}</span>}
+      {itemStatus && <span className="inv-qty">{itemStatus.text}</span>}
       {badge && <span className={`inv-str ${badge.cls}`}>{badge.text}</span>}
       {levelDisplayText(item) && (
         <span className={`inv-level ${levelColorClass(item)}`}>{levelDisplayText(item)}</span>
@@ -151,7 +145,7 @@ function ItemSlot({ item, holderKey, equipped, strength, empty, onOpen, onContex
   );
 }
 
-export default function InventoryPane({ belongings, gold, energy, strength, onOpenItem, onContextMenu, onDefaultAction, selectMode, onSelectItem, itemFilter, onInspect, prompt }) {
+export default function InventoryPane({ belongings, gold, energy, strength, myStats, onOpenItem, onContextMenu, onDefaultAction, selectMode, onSelectItem, itemFilter, onInspect, prompt }) {
   // Zoom-compensation: hold a consistent on-screen size across browser zoom /
   // display scale, mirroring Toolbar's quickslots + StatusPane. This pane is DOM
   // (not canvas), so the analog of their zoomScale is a counter-scaling transform.
@@ -200,6 +194,14 @@ export default function InventoryPane({ belongings, gold, energy, strength, onOp
 
   const equippedIds = new Set(EQUIP_SLOTS.map(s => belongings && belongings[s.key]).filter(Boolean).map(i => i.id));
 
+  const itemStatusContext = {
+    classType: myStats?.classType,
+    weaponCharge: myStats?.weaponCharge,
+    maxWeaponCharges: myStats?.maxWeaponCharges,
+    effects: myStats?.effects,
+    subclass: myStats?.subclass,
+  };
+
   return (
     <div className="inv-pane" style={{ transform: `scale(${zoomScale})`, transformOrigin: 'bottom right' }}>
       <div className="inv-equip-row">
@@ -217,6 +219,7 @@ export default function InventoryPane({ belongings, gold, energy, strength, onOp
             onSelectItem={onSelectItem}
             itemFilter={itemFilter}
             onInspect={onInspect}
+            itemStatusContext={itemStatusContext}
           />
         ))}
         <div className="inv-equip-right">
@@ -260,6 +263,7 @@ export default function InventoryPane({ belongings, gold, energy, strength, onOp
             onSelectItem={onSelectItem}
             itemFilter={itemFilter}
             onInspect={onInspect}
+            itemStatusContext={itemStatusContext}
           />
         ))}
         {Array.from({ length: emptyCount }).map((_, i) => (

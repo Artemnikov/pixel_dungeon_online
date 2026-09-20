@@ -78,6 +78,8 @@ def test_duelist_starting_kit_and_identification():
     assert "Scroll of Mirror Image" in names
 
     assert p.quickslot.slots[0].item_id == p.belongings.weapon.id
+    assert p.weapon_charge == 2.0
+    assert p.finisher_ready is True
 
 
 def test_duelist_max_charges_formula():
