@@ -7,6 +7,7 @@ from collections import deque
 from typing import TYPE_CHECKING, Callable, Dict, Optional, Tuple
 
 from app.engine.dungeon.constants import TileType
+from app.engine.entities.talent_enum import Subclass
 from app.engine.game.terrain_primitives import plant_grass
 
 if TYPE_CHECKING:
@@ -140,7 +141,7 @@ def roll_extra_curse_effect(attacker: "Entity") -> Optional[str]:
 
 def enraged_catalyst_bonus(attacker: "Entity") -> float:
     info = getattr(attacker, "subclass_info", None)
-    if info is None or info.subclass != "berserker" or not getattr(attacker, "berserk_active", False):
+    if info is None or info.subclass != Subclass.BERSERKER or not getattr(attacker, "berserk_active", False):
         return 0.0
     ec = info.talent_info.level("enraged_catalyst")
     if ec <= 0:

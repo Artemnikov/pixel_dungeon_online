@@ -32,6 +32,17 @@ def chebyshev_distance(ax: int, ay: int, bx: int, by: int) -> int:
     return max(abs(ax - bx), abs(ay - by))
 
 
+def find_mob_at(floor: Any, x: Any, y: Any) -> Optional[Any]:
+    """Return the first living mob occupying tile (x, y), or None.
+    Works on any floor object whose ``mobs`` is a dict of {id: mob}."""
+    if x is None or y is None:
+        return None
+    return next(
+        (m for m in floor.mobs.values() if m.is_alive and m.pos.x == x and m.pos.y == y),
+        None,
+    )
+
+
 def normal_int_range(lo: int, hi: int) -> int:
     """SPD Random.NormalIntRange: mean-biased average of two uniforms."""
     return round((_random.randint(lo, hi) + _random.randint(lo, hi)) / 2)

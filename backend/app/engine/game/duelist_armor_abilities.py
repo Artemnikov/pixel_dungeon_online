@@ -6,40 +6,116 @@ Covers Challenge, Elemental Strike, and Feint armor abilities and their T4 talen
 """
 from __future__ import annotations
 
-import math
 import random
 import uuid
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Tuple, TYPE_CHECKING
 
 from app.engine.dungeon.constants import TileType
-from app.engine.entities.base import Faction, Position, chebyshev_distance
-from app.engine.entities.buffs import add_buff, get_buff, has_buff, remove_buff
-from app.engine.entities.player import Mob
+from app.engine.entities.base import Faction, Position, chebyshev_distance, find_mob_at
+from app.engine.entities.buffs import add_buff, remove_buff
+from app.engine.entities.player import CharacterClass, Mob
+from app.engine.entities.subclasses import heroic_energy_mult
 from app.engine.entities.talent_enum import ArmorAbilityType, Talent
+from app.engine.game.armor_ability_base import armor_class_guard
 from app.engine.systems.combat import resolve_melee_attack
 
 if TYPE_CHECKING:
     from app.engine.entities.player import Player
     from app.engine.manager import GameInstance
 
-_HEROIC_ENERGY_MULT = [1.0, 0.88, 0.77, 0.68, 0.60]
+
+# ---------------------------------------------------------------------------
+# Elemental Strike area effects: each enchant family applies its signature
+# crowd-control / sustain effect to every affected mob in the cone; enchants
+# without an area effect fall back to flat damage. Dispatched polymorphically
+# via effect key -- no inline enchant name matching.
+# ---------------------------------------------------------------------------
 
 
-def _heroic_energy_mult(player: Player) -> float:
-    pts = player.talent_info.level(Talent.HEROIC_ENERGY)
-    return _HEROIC_ENERGY_MULT[min(pts, 4)]
+def _elemental_area_burning(game: GameInstance, floor: Any, player: Player, mob: Any, power_mult: float) -> None:
+    add_buff(mob.buffs, "burning", duration=8.0 * power_mult, level=1, stack_mode="extend")
+
+
+def _elemental_area_frost(game: GameInstance, floor: Any, player: Player, mob: Any, power_mult: float) -> None:
+    add_buff(mob.buffs, "frost", duration=8.0 * power_mult, level=1)
+
+
+def _elemental_area_shock(game: GameInstance, floor: Any, player: Player, mob: Any, power_mult: float) -> None:
+    add_buff(mob.buffs, "paralysis", duration=1.0 * power_mult, level=1, stack_mode="extend")
+
+
+def _elemental_area_bloom(game: GameInstance, floor: Any, player: Player, mob: Any, power_mult: float) -> None:
+    add_buff(mob.buffs, "rooted", duration=6.0 * power_mult, level=1)
+
+
+def _elemental_area_block(game: GameInstance, floor: Any, player: Player, mob: Any, power_mult: float) -> None:
+    shield_amt = round(6 * power_mult)
+    player.add_shield("elemental_blocking", shield_amt, priority=1, decay=600)
+
+
+def _elemental_area_vamp(game: GameInstance, floor: Any, player: Player, mob: Any, power_mult: float) -> None:
+    heal_amt = round(2.5 * power_mult)
+    player.hp = min(player.get_total_max_hp(), player.hp + heal_amt)
+
+
+def _elemental_area_elast(game: GameInstance, floor: Any, player: Player, mob: Any, power_mult: float) -> None:
+    # Push the mob back 1 tile away from the duelist.
+    dx = mob.pos.x - player.pos.x
+    dy = mob.pos.y - player.pos.y
+    nx = mob.pos.x + (1 if dx > 0 else (-1 if dx < 0 else 0))
+    ny = mob.pos.y + (1 if dy > 0 else (-1 if dy < 0 else 0))
+    if 0 <= nx < floor.width and 0 <= ny < floor.height and floor.grid[ny][nx] != TileType.WALL:
+        mob.pos.x, mob.pos.y = nx, ny
+
+
+def _elemental_area_generic(game: GameInstance, floor: Any, player: Player, mob: Any, power_mult: float) -> None:
+    dmg = max(1, round(random.randint(6, 12) * power_mult))
+    mob.take_damage(dmg)
+
+
+ELEMENTAL_AREA_EFFECTS: Dict[str, Any] = {
+    "burning": _elemental_area_burning,
+    "frost": _elemental_area_frost,
+    "shock": _elemental_area_shock,
+    "bloom": _elemental_area_bloom,
+    "block": _elemental_area_block,
+    "vamp": _elemental_area_vamp,
+    "elast": _elemental_area_elast,
+}
+
+# Canonical enchant ids -> area-effect key (fallback: generic flat damage).
+ELEMENTAL_ENCHANT_ALIASES: Dict[str, str] = {
+    "blazing": "burning",
+    "fire": "burning",
+    "chilling": "frost",
+    "frost": "frost",
+    "shocking": "shock",
+    "blooming": "bloom",
+    "blocking": "block",
+    "vampiric": "vamp",
+    "elastic": "elast",
+}
+
+
+def get_elemental_area_effect(enchant: str) -> Any:
+    """Resolve the area-effect handler for an enchant id, defaulting to damage."""
+    key = ELEMENTAL_ENCHANT_ALIASES.get(enchant, enchant)
+    return ELEMENTAL_AREA_EFFECTS.get(key, _elemental_area_generic)
 
 
 class DuelistArmorAbility(ABC):
-    """Abstract Strategy interface for Duelist Class Armor abilities."""
+    """Abstract Strategy interface for Duelist Class armor abilities."""
 
-    id: str = "base_armor_ability"
-    name: str = "Base Armor Ability"
     base_cost: int = 35
 
+    def _usable_player(self, player: Player) -> Optional[str]:
+        """Return an error message if the player may not use Duelist armor
+        abilities, or ``None`` when permitted."""
+        return armor_class_guard(player, CharacterClass.DUELIST)
+
     def get_cost(self, player: Player, game: Optional[GameInstance] = None) -> int:
-        cost = self.base_cost * _heroic_energy_mult(player)
+        cost = self.base_cost * heroic_energy_mult(player)
         return max(1, int(cost))
 
     @abstractmethod
@@ -54,12 +130,13 @@ class DuelistArmorAbility(ABC):
     ) -> bool:
         ...
 
+    def duel_tick(self, game: GameInstance, player: Player, dt: float) -> None:
+        """Called every tick while the player is in Duel Mode (Challenge). Default: no-op."""
+
 
 class ChallengeArmorAbility(DuelistArmorAbility):
     """35% Charge: Forces 1v1 duel for 10 turns, freezing all spectator enemies."""
 
-    id = ArmorAbilityType.CHALLENGE
-    name = "Challenge"
     base_cost = 35
 
     def get_cost(self, player: Player, game: Optional[GameInstance] = None) -> int:
@@ -71,12 +148,15 @@ class ChallengeArmorAbility(DuelistArmorAbility):
             if 0 <= turns_since_duel <= 3:
                 # 0.84 ** em_level
                 cost *= (0.84 ** em_level)
-        cost *= _heroic_energy_mult(player)
+        cost *= heroic_energy_mult(player)
         return max(1, int(cost))
 
     def can_use(
         self, game: GameInstance, player: Player, tx: Optional[int], ty: Optional[int]
     ) -> Tuple[bool, Optional[str]]:
+        err = self._usable_player(player)
+        if err is not None:
+            return False, err
         cost = self.get_cost(player, game)
         if player.armor_charge < cost:
             return False, f"Not enough armor charge (needs {cost}%)"
@@ -86,7 +166,7 @@ class ChallengeArmorAbility(DuelistArmorAbility):
         if dist > 5:
             return False, "Target must be within 5 tiles"
         floor = game._get_or_create_floor(player.floor_id)
-        target = next((m for m in floor.mobs.values() if m.is_alive and m.pos.x == tx and m.pos.y == ty), None)
+        target = find_mob_at(floor, tx, ty)
         if target is None or target.faction == Faction.PLAYER:
             return False, "No valid enemy target"
         return True, None
@@ -94,10 +174,12 @@ class ChallengeArmorAbility(DuelistArmorAbility):
     def use(
         self, game: GameInstance, player: Player, tx: Optional[int], ty: Optional[int]
     ) -> bool:
+        if self._usable_player(player) is not None:
+            return False
         if tx is None or ty is None:
             return False
         floor = game._get_or_create_floor(player.floor_id)
-        target = next((m for m in floor.mobs.values() if m.is_alive and m.pos.x == tx and m.pos.y == ty), None)
+        target = find_mob_at(floor, tx, ty)
         if target is None:
             return False
 
@@ -143,6 +225,20 @@ class ChallengeArmorAbility(DuelistArmorAbility):
         )
         return True
 
+    def duel_tick(self, game: GameInstance, player: Player, dt: float) -> None:
+        """Advance the active duel: tick the countdown and end it when the
+        target dies, the countdown expires, or the duelist strays too far.
+
+        Callers (``tick_duelist``) already gate on ``player.duel_mode_active``.
+        """
+        player.duel_mode_turns_left = max(0.0, player.duel_mode_turns_left - dt)
+        floor = game._get_or_create_floor(player.floor_id)
+        target = floor.mobs.get(player.duel_mode_target_id) if player.duel_mode_target_id else None
+        if target is None or not target.is_alive:
+            self.end_duel(game, player, target_killed=True)
+        elif player.duel_mode_turns_left <= 0 or chebyshev_distance(player.pos.x, player.pos.y, target.pos.x, target.pos.y) > 6:
+            self.end_duel(game, player, target_killed=False)
+
     def end_duel(self, game: GameInstance, player: Player, target_killed: bool = False) -> None:
         """Called when a duel ends (target dies or moves too far)."""
         player.duel_mode_active = False
@@ -180,13 +276,14 @@ class ChallengeArmorAbility(DuelistArmorAbility):
 class ElementalStrikeArmorAbility(DuelistArmorAbility):
     """25% Charge: Melee strike + 65° cone releasing weapon enchantment in area."""
 
-    id = ArmorAbilityType.ELEMENTAL_STRIKE
-    name = "Elemental Strike"
     base_cost = 25
 
     def can_use(
         self, game: GameInstance, player: Player, tx: Optional[int], ty: Optional[int]
     ) -> Tuple[bool, Optional[str]]:
+        err = self._usable_player(player)
+        if err is not None:
+            return False, err
         cost = self.get_cost(player, game)
         if player.armor_charge < cost:
             return False, f"Not enough armor charge (needs {cost}%)"
@@ -195,6 +292,8 @@ class ElementalStrikeArmorAbility(DuelistArmorAbility):
     def use(
         self, game: GameInstance, player: Player, tx: Optional[int], ty: Optional[int]
     ) -> bool:
+        if self._usable_player(player) is not None:
+            return False
         cost = self.get_cost(player, game)
         if player.armor_charge < cost:
             return False
@@ -251,37 +350,11 @@ class ElementalStrikeArmorAbility(DuelistArmorAbility):
                 game._finish_kill(player, direct_target, floor, player.floor_id)
 
         # Apply elemental effects in area
+        area_effect = get_elemental_area_effect(enchant)
         for mob in affected_mobs:
             if not mob.is_alive or mob is direct_target:
                 continue
-            if not enchant:
-                dmg = max(1, round(random.randint(6, 12) * power_mult))
-                mob.take_damage(dmg)
-            elif "blaz" in enchant or "fire" in enchant:
-                add_buff(mob.buffs, "burning", duration=8.0 * power_mult, level=1, stack_mode="extend")
-            elif "chill" in enchant or "frost" in enchant:
-                add_buff(mob.buffs, "frost", duration=8.0 * power_mult, level=1)
-            elif "shock" in enchant:
-                add_buff(mob.buffs, "paralysis", duration=1.0 * power_mult, level=1, stack_mode="extend")
-            elif "bloom" in enchant:
-                add_buff(mob.buffs, "rooted", duration=6.0 * power_mult, level=1)
-            elif "block" in enchant:
-                shield_amt = round(6 * power_mult)
-                player.add_shield("elemental_blocking", shield_amt, priority=1, decay=600)
-            elif "vamp" in enchant:
-                heal_amt = round(2.5 * power_mult)
-                player.hp = min(player.get_total_max_hp(), player.hp + heal_amt)
-            elif "elast" in enchant:
-                # Push back
-                dx = mob.pos.x - player.pos.x
-                dy = mob.pos.y - player.pos.y
-                nx = mob.pos.x + (1 if dx > 0 else (-1 if dx < 0 else 0))
-                ny = mob.pos.y + (1 if dy > 0 else (-1 if dy < 0 else 0))
-                if 0 <= nx < floor.width and 0 <= ny < floor.height and floor.grid[ny][nx] != TileType.WALL:
-                    mob.pos.x, mob.pos.y = nx, ny
-            else:
-                dmg = max(1, round(random.randint(6, 12) * power_mult))
-                mob.take_damage(dmg)
+            area_effect(game, floor, player, mob, power_mult)
 
             if not mob.is_alive:
                 game._finish_kill(player, mob, floor, player.floor_id)
@@ -298,13 +371,14 @@ class ElementalStrikeArmorAbility(DuelistArmorAbility):
 class FeintArmorAbility(DuelistArmorAbility):
     """50% Charge: Leaps to adjacent cell, leaving an AfterImage decoy."""
 
-    id = ArmorAbilityType.FEINT
-    name = "Feint"
     base_cost = 50
 
     def can_use(
         self, game: GameInstance, player: Player, tx: Optional[int], ty: Optional[int]
     ) -> Tuple[bool, Optional[str]]:
+        err = self._usable_player(player)
+        if err is not None:
+            return False, err
         cost = self.get_cost(player, game)
         if player.armor_charge < cost:
             return False, f"Not enough armor charge (needs {cost}%)"
@@ -326,6 +400,8 @@ class FeintArmorAbility(DuelistArmorAbility):
     def use(
         self, game: GameInstance, player: Player, tx: Optional[int], ty: Optional[int]
     ) -> bool:
+        if self._usable_player(player) is not None:
+            return False
         cost = self.get_cost(player, game)
         if player.armor_charge < cost:
             return False

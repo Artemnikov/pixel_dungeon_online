@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 from pydantic import BaseModel, Field, computed_field, model_validator, SerializeAsAny
 
 from app.engine.entities.buffs import Buff, add_buff, remove_buff, has_buff, get_buff
-from app.engine.entities.subclasses import SubclassInfo, TalentInfo, Talent
+from app.engine.entities.subclasses import SubclassInfo, TalentInfo, Talent, Subclass
 from app.engine.entities.weapons.weapon_defs import WEAPON_DEFS
 from app.engine.talents.registry import MODIFIERS
 
@@ -534,7 +534,7 @@ class Player(Entity):
     def get_max_weapon_charges(self) -> int:
         """SPD-faithful max weapon charges calculation."""
         subclass = getattr(self.subclass_info, "subclass", None)
-        if subclass == "champion":
+        if subclass == Subclass.CHAMPION:
             return min(10, 4 + (self.level - 1) // 3)
         return min(8, 2 + (self.level - 1) // 3)
 
@@ -650,7 +650,7 @@ class Player(Entity):
         # Berserk.berserking()).
         if (
             self.hp - amount <= 0
-            and self.subclass_info.subclass == "berserker"
+            and self.subclass_info.subclass == Subclass.BERSERKER
             and self.berserk_power >= 1.0
             and not self.berserk_active
         ):
@@ -721,7 +721,7 @@ class Player(Entity):
             return 0
         lvl = getattr(weapon, "level", 0)
         subclass = getattr(self.subclass_info, "subclass", None)
-        if subclass != "champion":
+        if subclass != Subclass.CHAMPION:
             return lvl
         tu = self.talent_info.level(Talent.TWIN_UPGRADES)
         if tu <= 0:
@@ -938,7 +938,7 @@ class Player(Entity):
         slot = self.belongings.slot_name_for(item)
         if slot is None:
             return False
-        if slot == "weapon" and getattr(self.subclass_info, "subclass", None) == "champion":
+        if slot == "weapon" and getattr(self.subclass_info, "subclass", None) == Subclass.CHAMPION:
             if self.belongings.weapon is not None and self.belongings.secondary_weapon is None:
                 slot = "secondary_weapon"
         self.belongings.backpack.detach_all(item_id)
@@ -985,11 +985,11 @@ class Player(Entity):
         return 0.0
 
     def attack_proc(self, target) -> None:
-        if self.subclass_info.subclass == "berserker" and self.berserk_cooldown <= 0:
+        if self.subclass_info.subclass == Subclass.BERSERKER and self.berserk_cooldown <= 0:
             endless_level = self.subclass_info.talent_info.level("endless_rage")
             max_power = 1.0 + 0.1667 * endless_level
             self.berserk_power = min(max_power, self.berserk_power + 0.05)
-        if self.subclass_info.subclass == "gladiator":
+        if self.subclass_info.subclass == Subclass.GLADIATOR:
             self.combo_count += 1
             self.combo_timer = max(self.combo_timer, 5.0)
 

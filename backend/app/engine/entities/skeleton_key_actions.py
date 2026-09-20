@@ -11,7 +11,7 @@ import random
 import time
 
 from app.engine.dungeon.constants import TileType
-from app.engine.entities.base import Action, Position
+from app.engine.entities.base import Action, find_mob_at, Position
 from app.engine.entities.items.artifacts import SkeletonKey
 from app.engine.entities.items.union import Chest
 from app.engine.entities.wands.base import knockback_char
@@ -39,9 +39,9 @@ def _msg(game, player, text: str) -> None:
 
 
 def _char_at(floor, x: int, y: int, game):
-    for m in floor.mobs.values():
-        if m.is_alive and m.pos.x == x and m.pos.y == y:
-            return m
+    mob = find_mob_at(floor, x, y)
+    if mob is not None:
+        return mob
     for p in game.players.values():
         if p.is_alive and p.floor_id == floor.floor_id and p.pos.x == x and p.pos.y == y:
             return p
@@ -189,9 +189,8 @@ def _find_door_push_cell(floor, player, tx: int, ty: int):
 
 
 def _char_blocking(floor, x: int, y: int) -> bool:
-    for m in floor.mobs.values():
-        if m.is_alive and m.pos.x == x and m.pos.y == y:
-            return True
+    if find_mob_at(floor, x, y) is not None:
+        return True
     for p in floor.players.values() if hasattr(floor, "players") else []:
         if getattr(p, "is_alive", True) and p.pos.x == x and p.pos.y == y:
             return True

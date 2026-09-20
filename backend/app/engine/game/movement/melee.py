@@ -17,6 +17,7 @@ from app.engine.entities.mobs import DM300, Goo, Shopkeeper
 from app.engine.entities.player import CharacterClass, Mob as MobEntity, Player, hurt_warning_sound
 from app.engine.entities.quest_bosses import Ghost
 from app.engine.entities.rings import furor_multiplier
+from app.engine.entities.talent_enum import Subclass
 from app.engine.game.ai_goo import _goo_add_locked_floor_time
 from app.engine.game.ai_pylon import _activate_pylon
 from app.engine.systems.combat import resolve_melee_attack
@@ -186,12 +187,12 @@ class MeleeCombatMixin:
             if isinstance(entity, Player) and dmg > 0:
                 if entity.class_type == CharacterClass.DUELIST:
                     self.on_duelist_hit(entity)
-                if entity.subclass_info.subclass == "gladiator":
+                if entity.subclass_info.subclass == Subclass.GLADIATOR:
                     self.add_event("COMBO_UPDATE", {"player": entity.id, "count": entity.combo_count}, floor_id=floor_id, source_player_id=entity.id)
                     if entity.combo_count in (2, 4, 6, 8, 10):
                         moves = {2: "clobber", 4: "slam", 6: "parry", 8: "crush", 10: "fury"}
                         self.add_event("COMBO_MOVE_UNLOCKED", {"player": entity.id, "move": moves[entity.combo_count]}, floor_id=floor_id, source_player_id=entity.id)
-                if entity.subclass_info.subclass == "berserker":
+                if entity.subclass_info.subclass == Subclass.BERSERKER:
                     self.add_event("RAGE_CHANGED", {"player": entity.id, "power": entity.berserk_power}, floor_id=floor_id, source_player_id=entity.id)
 
             if not target_entity.is_alive:

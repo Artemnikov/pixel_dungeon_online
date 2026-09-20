@@ -5,6 +5,7 @@ from typing import Callable, Dict, Optional, TYPE_CHECKING
 from app.engine.systems.rogue_prep import (
     prep_tier, prep_damage_bonus, prep_damage_rolls, prep_ko_threshold,
 )
+from app.engine.entities.talent_enum import Subclass
 
 if TYPE_CHECKING:
     from app.engine.entities.base import Entity, Position
@@ -507,7 +508,7 @@ def resolve_melee_attack(
 
     # Champion Combined Lethality: Execute non-boss enemies below threshold
     subclass_info = getattr(attacker, "subclass_info", None)
-    if subclass_info is not None and getattr(subclass_info, "subclass", None) == "champion":
+    if subclass_info is not None and getattr(subclass_info, "subclass", None) == Subclass.CHAMPION:
         ti = getattr(attacker, "talent_info", None)
         cl_level = ti.level("combined_lethality") if ti else 0
         if cl_level > 0 and getattr(attacker, "last_weapon_ability_weapon_name", None):

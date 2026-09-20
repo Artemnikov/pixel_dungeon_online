@@ -10,13 +10,10 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional, TYPE_CHECKING
 
-from app.engine.entities.base import chebyshev_distance
-from app.engine.entities.buffs import add_buff, get_buff, has_buff
+from app.engine.entities.buffs import has_buff
 from app.engine.entities.player import CharacterClass, Player
-from app.engine.entities.talent_enum import ArmorAbilityType, Talent
+from app.engine.entities.talent_enum import ArmorAbilityType, Subclass, Talent
 from app.engine.game.duelist_armor_abilities import (
-    DUELIST_ARMOR_ABILITY_MAP,
-    ChallengeArmorAbility,
     get_duelist_armor_ability,
 )
 from app.engine.game.duelist_monk import (
@@ -118,8 +115,8 @@ class MonkStrategy(DuelistSubclassStrategy):
 _SUBCLASS_STRATEGIES: Dict[Optional[str], DuelistSubclassStrategy] = {
     None: BaseDuelistStrategy(),
     "base": BaseDuelistStrategy(),
-    "champion": ChampionStrategy(),
-    "monk": MonkStrategy(),
+    Subclass.CHAMPION: ChampionStrategy(),
+    Subclass.MONK: MonkStrategy(),
 }
 
 
@@ -171,17 +168,9 @@ class DuelistMixin:
 
         # Duel Mode tick (Challenge armor ability)
         if player.duel_mode_active:
-            player.duel_mode_turns_left = max(0.0, player.duel_mode_turns_left - dt)
-            floor = self._get_or_create_floor(player.floor_id)
-            target = floor.mobs.get(player.duel_mode_target_id) if player.duel_mode_target_id else None
-            if target is None or not target.is_alive:
-                challenge_ability = DUELIST_ARMOR_ABILITY_MAP.get(ArmorAbilityType.CHALLENGE)
-                if isinstance(challenge_ability, ChallengeArmorAbility):
-                    challenge_ability.end_duel(self, player, target_killed=True)
-            elif player.duel_mode_turns_left <= 0 or chebyshev_distance(player.pos.x, player.pos.y, target.pos.x, target.pos.y) > 6:
-                challenge_ability = DUELIST_ARMOR_ABILITY_MAP.get(ArmorAbilityType.CHALLENGE)
-                if isinstance(challenge_ability, ChallengeArmorAbility):
-                    challenge_ability.end_duel(self, player, target_killed=False)
+            challenge_ability = get_duelist_armor_ability(ArmorAbilityType.CHALLENGE)
+            if challenge_ability is not None:
+                challenge_ability.duel_tick(self, player, dt)
 
     def on_duelist_hit(self, player: Player) -> None:
         """Called from combat when Duelist lands a melee hit."""
@@ -189,12 +178,12 @@ class DuelistMixin:
             return
         subclass_strat = get_duelist_subclass_strategy(player.subclass_info.subclass)
         subclass_strat.on_combat_hit(self, player, None)
-        # Combo hit accumulation for Combo Strike skill (Gloves/Sai/Gauntlet)
+        # Per-weapon hit state (e.g. combo accumulation for Combo Strike) is
+        # owned by the equipped weapon's strategy.
         weapon = getattr(getattr(player, "belongings", None), "weapon", None)
-        if weapon is not None and getattr(weapon, "name", "") in ("Gloves", "Sai", "Gauntlet"):
-            combo_buff = get_buff(player.buffs, "combo_hits_tracker")
-            cur = combo_buff.level if combo_buff else 0
-            add_buff(player.buffs, "combo_hits_tracker", duration=5.0, level=cur + 1)
+        skill = get_weapon_skill_for_weapon(weapon)
+        if skill is not None:
+            skill.on_melee_hit(self, player)
 
     def on_duelist_kill(self, player: Player, target: Any) -> None:
         """Called from combat on kill."""
@@ -233,6 +222,15 @@ class DuelistMixin:
 
         skill = get_weapon_skill_for_weapon(weapon)
         if skill is None:
+            return False
+
+        if skill.requires_target() and (target_x is None or target_y is None):
+            self.add_event(
+                "ACTION_FAILED",
+                {"player": player.id, "reason": "Target required"},
+                floor_id=player.floor_id,
+                player_id=player.id,
+            )
             return False
 
         cost = skill.charge_cost(player, weapon)
@@ -315,11 +313,20 @@ class DuelistMixin:
         player = self.players.get(player_id)
         if not player or player.is_downed or not player.is_alive:
             return False
-        if player.subclass_info.subclass != "monk":
+        if player.subclass_info.subclass != Subclass.MONK:
             return False
 
         ability = get_monk_ability(ability_id)
         if ability is None:
+            return False
+
+        if ability.requires_target() and (target_x is None or target_y is None):
+            self.add_event(
+                "ACTION_FAILED",
+                {"player": player.id, "reason": "Target required"},
+                floor_id=player.floor_id,
+                player_id=player.id,
+            )
             return False
 
         cost = ability.energy_cost(player)
@@ -344,21 +351,3 @@ class DuelistMixin:
             return False
 
         return ability.execute(self, player, target_x, target_y)
-
-    def action_challenge(self, player: Player, tx: int, ty: int) -> None:
-        """Challenge armor ability."""
-        ability = get_duelist_armor_ability(ArmorAbilityType.CHALLENGE)
-        if ability is not None:
-            ability.use(self, player, tx, ty)
-
-    def action_elemental_strike(self, player: Player, tx: int, ty: int) -> None:
-        """Elemental Strike armor ability."""
-        ability = get_duelist_armor_ability(ArmorAbilityType.ELEMENTAL_STRIKE)
-        if ability is not None:
-            ability.use(self, player, tx, ty)
-
-    def action_feint(self, player: Player, tx: Optional[int] = None, ty: Optional[int] = None) -> None:
-        """Feint armor ability."""
-        ability = get_duelist_armor_ability(ArmorAbilityType.FEINT)
-        if ability is not None:
-            ability.use(self, player, tx, ty)

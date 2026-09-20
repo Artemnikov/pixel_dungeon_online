@@ -10,7 +10,7 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional, Tuple, TYPE_CHECKING
 
 from app.engine.dungeon.constants import TileType
-from app.engine.entities.base import Faction, Position, chebyshev_distance
+from app.engine.entities.base import Faction, chebyshev_distance, find_mob_at
 from app.engine.entities.buffs import add_buff
 from app.engine.entities.talent_enum import Talent
 
@@ -19,20 +19,49 @@ if TYPE_CHECKING:
     from app.engine.manager import GameInstance
 
 
+# Monk energy granted per kill, keyed by mob category. Standard mobs grant
+# 1 energy; small fry grant 0.5; minibosses 3; bosses 5 (SPD-faithful).
+_MONK_KILL_ENERGY: Dict[str, float] = {
+    "boss": 5.0,
+    "miniboss": 3.0,
+    "small": 0.5,
+    "standard": 1.0,
+}
+
+_SMALL_FRY_KEYWORDS: Tuple[str, ...] = ("ghoul", "ripper", "larva", "wraith", "swarm")
+
+
+def _monk_kill_energy_category(mob: Any) -> str:
+    """Classify a slain mob for monk kill-energy purposes."""
+    properties = getattr(mob, "properties", [])
+    if getattr(mob, "is_boss", False) or "boss" in properties:
+        return "boss"
+    if "miniboss" in properties:
+        return "miniboss"
+    mob_name = getattr(mob, "name", "").lower()
+    if any(k in mob_name for k in _SMALL_FRY_KEYWORDS):
+        return "small"
+    return "standard"
+
+
+# Unencumbered Spirit tier bonus table: (max equip tier, min talent rank) -> bonus.
+_UNENCUMBERED_TIER_BONUS: Tuple[Tuple[int, int, float], ...] = (
+    (1, 3, 1.00),
+    (2, 2, 0.75),
+    (3, 1, 0.50),
+)
+
+
+def _unencumbered_tier_bonus(tier: int, rank: int) -> float:
+    for max_tier, min_rank, bonus in _UNENCUMBERED_TIER_BONUS:
+        if tier <= max_tier and rank >= min_rank:
+            return bonus
+    return 0.0
+
+
 def calculate_monk_kill_energy(player: Player, mob: Any) -> float:
     """Calculate Monk energy gained upon killing a mob, factoring in Unencumbered Spirit."""
-    mob_name = getattr(mob, "name", "").lower()
-    is_boss = getattr(mob, "is_boss", False) or "boss" in getattr(mob, "properties", [])
-    is_miniboss = "miniboss" in getattr(mob, "properties", [])
-
-    if is_boss:
-        base_energy = 5.0
-    elif is_miniboss:
-        base_energy = 3.0
-    elif any(k in mob_name for k in ("ghoul", "ripper", "larva", "wraith", "swarm")):
-        base_energy = 0.5
-    else:
-        base_energy = 1.0
+    base_energy = _MONK_KILL_ENERGY[_monk_kill_energy_category(mob)]
 
     # Equipment tier multipliers from Unencumbered Spirit
     ti = player.talent_info
@@ -40,22 +69,13 @@ def calculate_monk_kill_energy(player: Player, mob: Any) -> float:
     if rank == 0:
         return base_energy
 
-    def _tier_bonus(tier: int) -> float:
-        if tier <= 1 and rank >= 3:
-            return 1.00
-        if tier <= 2 and rank >= 2:
-            return 0.75
-        if tier <= 3 and rank >= 1:
-            return 0.50
-        return 0.0
-
     armor = getattr(getattr(player, "belongings", None), "armor", None)
     weapon = getattr(getattr(player, "belongings", None), "weapon", None)
 
     armor_tier = getattr(armor, "tier", 1) if armor is not None else 1
     weapon_tier = getattr(weapon, "tier", 1) if weapon is not None else 1
 
-    multiplier = 1.0 + _tier_bonus(armor_tier) + _tier_bonus(weapon_tier)
+    multiplier = 1.0 + _unencumbered_tier_bonus(armor_tier, rank) + _unencumbered_tier_bonus(weapon_tier, rank)
     return base_energy * multiplier
 
 
@@ -125,7 +145,7 @@ class FlurryOfBlowsAbility(MonkAbility):
         if chebyshev_distance(player.pos.x, player.pos.y, tx, ty) > 1:
             return False, "Target must be adjacent"
         floor = game._get_or_create_floor(player.floor_id)
-        target = next((m for m in floor.mobs.values() if m.is_alive and m.pos.x == tx and m.pos.y == ty), None)
+        target = find_mob_at(floor, tx, ty)
         if target is None or target.faction == Faction.PLAYER:
             return False, "No valid enemy target"
         return True, None
@@ -136,7 +156,7 @@ class FlurryOfBlowsAbility(MonkAbility):
         if tx is None or ty is None:
             return False
         floor = game._get_or_create_floor(player.floor_id)
-        target = next((m for m in floor.mobs.values() if m.is_alive and m.pos.x == tx and m.pos.y == ty), None)
+        target = find_mob_at(floor, tx, ty)
         if target is None:
             return False
 
@@ -291,7 +311,7 @@ class DragonKickAbility(MonkAbility):
         if chebyshev_distance(player.pos.x, player.pos.y, tx, ty) > 1:
             return False, "Target must be adjacent"
         floor = game._get_or_create_floor(player.floor_id)
-        target = next((m for m in floor.mobs.values() if m.is_alive and m.pos.x == tx and m.pos.y == ty), None)
+        target = find_mob_at(floor, tx, ty)
         if target is None or target.faction == Faction.PLAYER:
             return False, "No valid enemy target"
         return True, None
@@ -317,7 +337,7 @@ class DragonKickAbility(MonkAbility):
                 and chebyshev_distance(player.pos.x, player.pos.y, m.pos.x, m.pos.y) <= 1
             ]
         else:
-            primary = next((m for m in floor.mobs.values() if m.is_alive and m.pos.x == tx and m.pos.y == ty), None)
+            primary = find_mob_at(floor, tx, ty)
             if primary:
                 targets = [primary]
 

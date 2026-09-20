@@ -2,94 +2,37 @@
 #
 """Polymorphic Cleric Armor Abilities Strategy Hierarchy.
 
-Covers Ascended Form, Trinity, and Power of Many armor abilities. Mirrors the
-DuelistArmorAbility pattern (see duelist_armor_abilities.py): charge cost and
-the effect itself live on the ability class, and the class-wide if/elif
-dispatch in ArmorAbilitiesMixin.use_armor_ability only needs a map lookup.
+Covers Ascended Form, Trinity, and Power of Many armor abilities. Charge
+costs and the effects themselves live on the ability classes; the class-wide
+if/elif dispatch in ArmorAbilitiesMixin.use_armor_ability only needs a map
+lookup.
 """
 from __future__ import annotations
 
 import uuid as _uuid
-from abc import ABC, abstractmethod
-from typing import Any, Dict, Optional, Tuple
+from typing import Any, ClassVar, Dict, Optional, Tuple
 
 from app.engine.entities.base import Faction, Position
 from app.engine.entities.player import CharacterClass, Mob, Player
-from app.engine.entities.talent_enum import ArmorAbilityType, Talent
+from app.engine.entities.talent_enum import ArmorAbilityType
+from app.engine.game.armor_ability_base import ArmorAbilityBase
 
 # Cleric armor ability charge costs (SPD baseChargeUse).
 COST_ASCENDED_FORM = 40
 COST_TRINITY = 33
 COST_POWER_OF_MANY = 50
 
-# Heroic Energy (universal T4): reduces any armor ability's charge cost.
-# [0,1,2,3,4] points -> multiplier.
-_HEROIC_ENERGY_MULT = [1.0, 0.88, 0.77, 0.68, 0.60]
 
-
-def _heroic_energy_mult(player: Player) -> float:
-    pts = player.subclass_info.talent_info.level(Talent.HEROIC_ENERGY)
-    return _HEROIC_ENERGY_MULT[min(pts, 4)]
-
-
-class ClericArmorAbility(ABC):
+class ClericArmorAbility(ArmorAbilityBase):
     """Abstract Strategy interface for Cleric class armor abilities."""
 
-    id: str = "base_cleric_armor_ability"
-    name: str = "Base Cleric Armor Ability"
-    base_cost: int = 40
-
-    def get_cost(self, player: Player) -> int:
-        return max(1, int(self.base_cost * _heroic_energy_mult(player)))
-
-    def can_use(
-        self, game: Any, player: Player, tx: Optional[int], ty: Optional[int]
-    ) -> Tuple[bool, Optional[str]]:
-        if player.class_type != CharacterClass.CLERIC or player.is_downed or not player.is_alive:
-            return False, "Only a living Cleric may use this ability"
-        cost = self.get_cost(player)
-        if player.armor_charge < cost:
-            return False, f"Not enough armor charge (needs {cost}%)"
-        return True, None
-
-    def _spend(self, player: Player) -> bool:
-        cost = self.get_cost(player)
-        if player.armor_charge < cost:
-            return False
-        player.armor_charge -= cost
-        return True
-
-    def use(
-        self, game: Any, player: Player, tx: Optional[int], ty: Optional[int]
-    ) -> bool:
-        """Validate the preconditions, deduct charge, then perform the effect.
-
-        Preconditions (target bounds/passability, class, charge) are checked
-        before any charge is spent — an invalid target must never cost armor
-        charge.
-        """
-        ok, _err = self.can_use(game, player, tx, ty)
-        if not ok:
-            return False
-        if not self._spend(player):
-            return False
-        self.perform(game, player, tx, ty)
-        return True
-
-    @abstractmethod
-    def perform(
-        self, game: Any, player: Player, tx: Optional[int], ty: Optional[int]
-    ) -> None:
-        """Apply the ability's effect without spending charge."""
-        ...
+    base_cost: int = COST_ASCENDED_FORM
+    required_class: ClassVar[str] = CharacterClass.CLERIC
+    heroic_scaled: bool = True
 
 
 class AscendedFormArmorAbility(ClericArmorAbility):
     """40% Charge: buff all spells + shield for 10s."""
-
-    id = ArmorAbilityType.ASCENDED_FORM
-    name = "Ascended Form"
-    base_cost = COST_ASCENDED_FORM
 
     def perform(
         self, game: Any, player: Player, tx: Optional[int], ty: Optional[int]
@@ -112,8 +55,6 @@ class AscendedFormArmorAbility(ClericArmorAbility):
 class TrinityArmorAbility(ClericArmorAbility):
     """33% Charge: borrow one item form (up to 3)."""
 
-    id = ArmorAbilityType.TRINITY
-    name = "Trinity"
     base_cost = COST_TRINITY
 
     def borrow(self, game: Any, player: Player, item_kind: str) -> None:
@@ -137,16 +78,13 @@ class TrinityArmorAbility(ClericArmorAbility):
 class PowerOfManyArmorAbility(ClericArmorAbility):
     """50% Charge: summon a Light Ally at the target cell."""
 
-    id = ArmorAbilityType.POWER_OF_MANY
-    name = "Power of Many"
     base_cost = COST_POWER_OF_MANY
 
     def can_use(
         self, game: Any, player: Player, tx: Optional[int], ty: Optional[int]
     ) -> Tuple[bool, Optional[str]]:
-        ok, err = super().can_use(game, player, tx, ty)
-        if not ok:
-            return ok, err
+        # Validate the target first so an invalid cell never shadows the
+        # charge/class preconditions (checked via the base template).
         floor = game._get_or_create_floor(player.floor_id)
         cell_x = tx if tx is not None else player.pos.x
         cell_y = ty if ty is not None else player.pos.y
@@ -154,7 +92,7 @@ class PowerOfManyArmorAbility(ClericArmorAbility):
             return False, "Target cell out of bounds"
         if not (floor.flags and floor.flags.passable[cell_y][cell_x]):
             return False, "Target cell is not passable"
-        return True, None
+        return super().can_use(game, player, tx, ty)
 
     def perform(
         self, game: Any, player: Player, tx: Optional[int], ty: Optional[int]

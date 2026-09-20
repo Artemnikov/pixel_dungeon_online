@@ -12,6 +12,7 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Any, Callable, Optional
 
+from app.engine.entities.base import find_mob_at
 from app.engine.entities.player import Player
 
 from app.engine.game.cleric_subclass import get_cleric_subclass_strategy
@@ -47,10 +48,7 @@ def _resolve_char_at(game: Any, player: Player, floor: Any, tx: Optional[int], t
         for other_p in game._players_on_floor(player.floor_id):
             if other_p.pos.x == tx and other_p.pos.y == ty and getattr(other_p, "is_alive", False):
                 return other_p
-    for m in floor.mobs.values():
-        if m.is_alive and m.pos.x == tx and m.pos.y == ty:
-            return m
-    return None
+    return find_mob_at(floor, tx, ty)
 
 
 def _extend_friendly_buffs(entity: Any, ext: float) -> None:

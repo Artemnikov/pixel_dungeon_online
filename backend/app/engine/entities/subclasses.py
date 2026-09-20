@@ -1,4 +1,4 @@
-from typing import Dict, Optional, Set
+from typing import Any, Dict, Optional, Set
 
 from pydantic import BaseModel, Field
 
@@ -202,6 +202,16 @@ COMBO_MOVES: Dict[str, dict] = {
 
 COST_ARMOR_ABILITY = 35  # Leap/Shockwave charge cost
 COST_ENDURE = 50  # Endure charge cost (slightly higher)
+
+# Heroic Energy (universal T4): reduces any armor ability's charge cost.
+# [0,1,2,3,4] points -> multiplier.
+HEROIC_ENERGY_MULT = (1.0, 0.88, 0.77, 0.68, 0.60)
+
+
+def heroic_energy_mult(player: Any) -> float:
+    """Universal armor-ability charge discount from the Heroic Energy talent."""
+    pts = player.talent_info.level(Talent.HEROIC_ENERGY)
+    return HEROIC_ENERGY_MULT[min(pts, 4)]
 
 # Human-readable titles and descriptions served via /api/talents/{class}
 TALENT_TITLES: Dict[str, str] = {

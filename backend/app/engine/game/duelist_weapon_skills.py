@@ -7,14 +7,13 @@ that costs weapon charges to execute.
 """
 from __future__ import annotations
 
-import random
 from abc import ABC, abstractmethod
-from typing import Any, Dict, Optional, Tuple, TYPE_CHECKING
+from typing import Dict, Optional, Tuple, TYPE_CHECKING
 
 from app.engine.dungeon.constants import TileType
-from app.engine.entities.base import Faction, chebyshev_distance
+from app.engine.entities.base import Faction, chebyshev_distance, find_mob_at
 from app.engine.entities.buffs import add_buff, get_buff, has_buff, remove_buff
-from app.engine.entities.talent_enum import Talent
+from app.engine.entities.talent_enum import Subclass, Talent
 from app.engine.systems.combat import resolve_melee_attack
 
 if TYPE_CHECKING:
@@ -53,6 +52,11 @@ class WeaponSkill(ABC):
         """Executes the skill."""
         ...
 
+    def on_melee_hit(self, game: GameInstance, player: Player) -> None:
+        """Hook fired when the duelist lands a melee hit while wielding this
+        weapon. Base: no-op; subclasses track per-skill state (e.g. combo
+        hits for weapons using Combo Strike)."""
+
     def _apply_aggressive_barrier(self, game: GameInstance, player: Player) -> None:
         """Grants shielding if player has Aggressive Barrier and HP <= 50%."""
         if player.hp <= player.get_total_max_hp() * 0.5:
@@ -84,7 +88,7 @@ class WeaponSkill(ABC):
         """Champion Varied Charge: using 2 different weapon abilities sequentially restores charge."""
         subclass = getattr(player.subclass_info, "subclass", None)
         w_name = getattr(weapon, "name", "")
-        if subclass == "champion":
+        if subclass == Subclass.CHAMPION:
             vc_level = player.talent_info.level(Talent.VARIED_CHARGE)
             if vc_level > 0 and player.last_weapon_ability_weapon_name and player.last_weapon_ability_weapon_name != w_name:
                 # Regains +0.17 | +0.33 | +0.50 weapon charge
@@ -130,7 +134,7 @@ class LungeSkill(WeaponSkill):
         if dist != 2:
             return False, "Target must be exactly 2 tiles away"
         floor = game._get_or_create_floor(player.floor_id)
-        target = next((m for m in floor.mobs.values() if m.is_alive and m.pos.x == tx and m.pos.y == ty), None)
+        target = find_mob_at(floor, tx, ty)
         if target is None or target.faction == Faction.PLAYER:
             return False, "No valid enemy target"
         # Find intermediate landing cell
@@ -152,7 +156,7 @@ class LungeSkill(WeaponSkill):
         if tx is None or ty is None:
             return False
         floor = game._get_or_create_floor(player.floor_id)
-        target = next((m for m in floor.mobs.values() if m.is_alive and m.pos.x == tx and m.pos.y == ty), None)
+        target = find_mob_at(floor, tx, ty)
         if target is None:
             return False
         dx = tx - player.pos.x
@@ -166,7 +170,8 @@ class LungeSkill(WeaponSkill):
         game.add_event("MOVE", {"entity": player.id, "x": step_x, "y": step_y}, floor_id=player.floor_id)
 
         lvl = weapon.buffed_lvl() if hasattr(weapon, "buffed_lvl") else weapon.level
-        bonus = 8 + round(2.0 * lvl) if getattr(weapon, "name", "") == "Katana" else 5 + round(1.5 * lvl)
+        params = _skill_params(weapon)
+        bonus = params.get("bonus", 5) + round(params.get("per_lvl", 1.5) * lvl)
 
         res = resolve_melee_attack(
             attacker=player,
@@ -200,12 +205,7 @@ class SneakSkill(WeaponSkill):
         return True
 
     def _get_max_range(self, weapon: KindOfWeapon) -> int:
-        name = getattr(weapon, "name", "")
-        if name == "Dagger":
-            return 5
-        if name == "Dirk":
-            return 4
-        return 3  # Assassin's Blade
+        return _skill_params(weapon).get("range", 3)  # Assassin's Blade default
 
     def can_execute(
         self, game: GameInstance, player: Player, weapon: KindOfWeapon, tx: Optional[int], ty: Optional[int]
@@ -268,7 +268,7 @@ class CleaveSkill(WeaponSkill):
         if dist > 1:
             return False, "Enemy must be adjacent"
         floor = game._get_or_create_floor(player.floor_id)
-        target = next((m for m in floor.mobs.values() if m.is_alive and m.pos.x == tx and m.pos.y == ty), None)
+        target = find_mob_at(floor, tx, ty)
         if target is None or target.faction == Faction.PLAYER:
             return False, "No valid enemy target"
         return True, None
@@ -279,13 +279,12 @@ class CleaveSkill(WeaponSkill):
         if tx is None or ty is None:
             return False
         floor = game._get_or_create_floor(player.floor_id)
-        target = next((m for m in floor.mobs.values() if m.is_alive and m.pos.x == tx and m.pos.y == ty), None)
+        target = find_mob_at(floor, tx, ty)
         if target is None:
             return False
 
-        name = getattr(weapon, "name", "")
         lvl = weapon.buffed_lvl() if hasattr(weapon, "buffed_lvl") else weapon.level
-        bonus = (7 + lvl) if "Great" in name else ((6 + lvl) if "Long" in name else ((5 + lvl) if "Sword" == name else ((4 + lvl) if "Shortsword" == name else 3 + lvl)))
+        bonus = lvl + _skill_params(weapon).get("bonus", 3)
 
         remove_buff(player.buffs, "cleave_tracker")
 
@@ -330,7 +329,7 @@ class SpikeSkill(WeaponSkill):
         if dist != 2:
             return False, "Target must be at reach distance (2 tiles)"
         floor = game._get_or_create_floor(player.floor_id)
-        target = next((m for m in floor.mobs.values() if m.is_alive and m.pos.x == tx and m.pos.y == ty), None)
+        target = find_mob_at(floor, tx, ty)
         if target is None or target.faction == Faction.PLAYER:
             return False, "No valid enemy target"
         return True, None
@@ -341,12 +340,13 @@ class SpikeSkill(WeaponSkill):
         if tx is None or ty is None:
             return False
         floor = game._get_or_create_floor(player.floor_id)
-        target = next((m for m in floor.mobs.values() if m.is_alive and m.pos.x == tx and m.pos.y == ty), None)
+        target = find_mob_at(floor, tx, ty)
         if target is None:
             return False
 
         lvl = weapon.buffed_lvl() if hasattr(weapon, "buffed_lvl") else weapon.level
-        bonus = 12 + round(2.5 * lvl) if getattr(weapon, "name", "") == "Glaive" else 9 + round(2.0 * lvl)
+        params = _skill_params(weapon)
+        bonus = params.get("bonus", 9) + round(params.get("per_lvl", 2.0) * lvl)
 
         res = resolve_melee_attack(
             attacker=player,
@@ -454,7 +454,7 @@ class HarvestSkill(WeaponSkill):
         if dist > 1:
             return False, "Enemy must be adjacent"
         floor = game._get_or_create_floor(player.floor_id)
-        target = next((m for m in floor.mobs.values() if m.is_alive and m.pos.x == tx and m.pos.y == ty), None)
+        target = find_mob_at(floor, tx, ty)
         if target is None or target.faction == Faction.PLAYER:
             return False, "No valid enemy target"
         return True, None
@@ -465,12 +465,13 @@ class HarvestSkill(WeaponSkill):
         if tx is None or ty is None:
             return False
         floor = game._get_or_create_floor(player.floor_id)
-        target = next((m for m in floor.mobs.values() if m.is_alive and m.pos.x == tx and m.pos.y == ty), None)
+        target = find_mob_at(floor, tx, ty)
         if target is None:
             return False
 
         lvl = weapon.buffed_lvl() if hasattr(weapon, "buffed_lvl") else weapon.level
-        total_bleed = round(30 + 4.5 * lvl) if "War" in getattr(weapon, "name", "") else round(15 + 2.5 * lvl)
+        params = _skill_params(weapon)
+        total_bleed = round(params.get("total", 15) + params.get("per_lvl", 2.5) * lvl)
         add_buff(target.buffs, "bleeding", duration=10.0, level=total_bleed, stack_mode="extend")
         game.add_event("BLEED", {"target": target.id, "amount": total_bleed}, floor_id=player.floor_id)
 
@@ -584,6 +585,13 @@ class ComboStrikeSkill(WeaponSkill):
     def requires_target(self) -> bool:
         return True
 
+    def on_melee_hit(self, game: GameInstance, player: Player) -> None:
+        """Accumulate combo hits on every landed melee hit; consumed by the
+        Combo Strike skill itself."""
+        combo_buff = get_buff(player.buffs, "combo_hits_tracker")
+        cur = combo_buff.level if combo_buff else 0
+        add_buff(player.buffs, "combo_hits_tracker", duration=5.0, level=cur + 1)
+
     def can_execute(
         self, game: GameInstance, player: Player, weapon: KindOfWeapon, tx: Optional[int], ty: Optional[int]
     ) -> Tuple[bool, Optional[str]]:
@@ -593,7 +601,7 @@ class ComboStrikeSkill(WeaponSkill):
         if dist > 1:
             return False, "Enemy must be adjacent"
         floor = game._get_or_create_floor(player.floor_id)
-        target = next((m for m in floor.mobs.values() if m.is_alive and m.pos.x == tx and m.pos.y == ty), None)
+        target = find_mob_at(floor, tx, ty)
         if target is None or target.faction == Faction.PLAYER:
             return False, "No valid enemy target"
         return True, None
@@ -604,7 +612,7 @@ class ComboStrikeSkill(WeaponSkill):
         if tx is None or ty is None:
             return False
         floor = game._get_or_create_floor(player.floor_id)
-        target = next((m for m in floor.mobs.values() if m.is_alive and m.pos.x == tx and m.pos.y == ty), None)
+        target = find_mob_at(floor, tx, ty)
         if target is None:
             return False
 
@@ -613,8 +621,7 @@ class ComboStrikeSkill(WeaponSkill):
         remove_buff(player.buffs, "combo_hits_tracker")
 
         lvl = weapon.buffed_lvl() if hasattr(weapon, "buffed_lvl") else weapon.level
-        name = getattr(weapon, "name", "")
-        per_hit = 5 + lvl if "Gauntlet" in name else (4 + lvl if "Sai" in name else 3 + lvl)
+        per_hit = lvl + _skill_params(weapon).get("per_hit", 3)
         bonus = per_hit * combo_count
 
         res = resolve_melee_attack(
@@ -657,7 +664,7 @@ class HeavyBlowSkill(WeaponSkill):
         if dist > 1:
             return False, "Enemy must be adjacent"
         floor = game._get_or_create_floor(player.floor_id)
-        target = next((m for m in floor.mobs.values() if m.is_alive and m.pos.x == tx and m.pos.y == ty), None)
+        target = find_mob_at(floor, tx, ty)
         if target is None or target.faction == Faction.PLAYER:
             return False, "No valid enemy target"
         return True, None
@@ -668,13 +675,12 @@ class HeavyBlowSkill(WeaponSkill):
         if tx is None or ty is None:
             return False
         floor = game._get_or_create_floor(player.floor_id)
-        target = next((m for m in floor.mobs.values() if m.is_alive and m.pos.x == tx and m.pos.y == ty), None)
+        target = find_mob_at(floor, tx, ty)
         if target is None:
             return False
 
         lvl = weapon.buffed_lvl() if hasattr(weapon, "buffed_lvl") else weapon.level
-        name = getattr(weapon, "name", "")
-        base_bonus = 6 if "Hammer" in name else (5 if ("Mace" in name or "Battle" in name) else (4 if "Hand" in name else 3))
+        base_bonus = _skill_params(weapon).get("base", 3)
         bonus = base_bonus + round(1.5 * lvl)
 
         res = resolve_melee_attack(
@@ -722,7 +728,7 @@ class RetributionSkill(WeaponSkill):
         if dist > 1:
             return False, "Enemy must be adjacent"
         floor = game._get_or_create_floor(player.floor_id)
-        target = next((m for m in floor.mobs.values() if m.is_alive and m.pos.x == tx and m.pos.y == ty), None)
+        target = find_mob_at(floor, tx, ty)
         if target is None or target.faction == Faction.PLAYER:
             return False, "No valid enemy target"
         return True, None
@@ -733,7 +739,7 @@ class RetributionSkill(WeaponSkill):
         if tx is None or ty is None:
             return False
         floor = game._get_or_create_floor(player.floor_id)
-        target = next((m for m in floor.mobs.values() if m.is_alive and m.pos.x == tx and m.pos.y == ty), None)
+        target = find_mob_at(floor, tx, ty)
         if target is None:
             return False
 
@@ -780,7 +786,7 @@ class GuardSkill(WeaponSkill):
         self, game: GameInstance, player: Player, weapon: KindOfWeapon, tx: Optional[int], ty: Optional[int]
     ) -> bool:
         lvl = weapon.buffed_lvl() if hasattr(weapon, "buffed_lvl") else weapon.level
-        duration = 3.0 + lvl if "Great" in getattr(weapon, "name", "") else 5.0 + lvl
+        duration = lvl + _skill_params(weapon).get("duration", 5.0)
         add_buff(player.buffs, "guard_tracker", duration=duration, level=1)
         game.add_event("GUARD_ACTIVE", {"player": player.id, "duration": duration}, floor_id=player.floor_id)
 
@@ -832,7 +838,7 @@ class RunicSlashSkill(WeaponSkill):
         if dist > 1:
             return False, "Enemy must be adjacent"
         floor = game._get_or_create_floor(player.floor_id)
-        target = next((m for m in floor.mobs.values() if m.is_alive and m.pos.x == tx and m.pos.y == ty), None)
+        target = find_mob_at(floor, tx, ty)
         if target is None or target.faction == Faction.PLAYER:
             return False, "No valid enemy target"
         return True, None
@@ -843,7 +849,7 @@ class RunicSlashSkill(WeaponSkill):
         if tx is None or ty is None:
             return False
         floor = game._get_or_create_floor(player.floor_id)
-        target = next((m for m in floor.mobs.values() if m.is_alive and m.pos.x == tx and m.pos.y == ty), None)
+        target = find_mob_at(floor, tx, ty)
         if target is None:
             return False
 
@@ -891,7 +897,7 @@ class PierceSkill(WeaponSkill):
         if dist > 1:
             return False, "Enemy must be adjacent"
         floor = game._get_or_create_floor(player.floor_id)
-        target = next((m for m in floor.mobs.values() if m.is_alive and m.pos.x == tx and m.pos.y == ty), None)
+        target = find_mob_at(floor, tx, ty)
         if target is None or target.faction == Faction.PLAYER:
             return False, "No valid enemy target"
         return True, None
@@ -902,7 +908,7 @@ class PierceSkill(WeaponSkill):
         if tx is None or ty is None:
             return False
         floor = game._get_or_create_floor(player.floor_id)
-        target = next((m for m in floor.mobs.values() if m.is_alive and m.pos.x == tx and m.pos.y == ty), None)
+        target = find_mob_at(floor, tx, ty)
         if target is None:
             return False
 
@@ -967,6 +973,55 @@ class BrawlerStanceSkill(WeaponSkill):
         return True
 
 
+# ---------------------------------------------------------------------------
+# Per-weapon skill parameters. Each skill family reads only its own tuning
+# keys (bonus/per_lvl, range, base, per_hit, total, duration) from this table
+# instead of string-matching weapon names. Missing entries fall back to the
+# family's per-skill defaults, which mirror the original bonus tables.
+# ---------------------------------------------------------------------------
+WEAPON_SKILL_PARAMS: Dict[str, dict] = {
+    # Lunge (Rapier / Katana)
+    "Katana": {"bonus": 8, "per_lvl": 2.0},
+    "Rapier": {"bonus": 5, "per_lvl": 1.5},
+    # Sneak (Dagger / Dirk / Assassin's Blade) -- range per weapon
+    "Dagger": {"range": 5},
+    "Dirk": {"range": 4},
+    "Assassin's Blade": {"range": 3},
+    # Cleave (sword family) -- bonus damage
+    "Greatsword": {"bonus": 7},
+    "Longsword": {"bonus": 6},
+    "Sword": {"bonus": 5},
+    "Shortsword": {"bonus": 4},
+    "Worn Shortsword": {"bonus": 3},
+    # Spike (Spear / Glaive) -- bonus damage
+    "Glaive": {"bonus": 12, "per_lvl": 2.5},
+    "Spear": {"bonus": 9, "per_lvl": 2.0},
+    # Harvest (Sickle / War Scythe) -- total bleed
+    "War Scythe": {"total": 30, "per_lvl": 4.5},
+    "Sickle": {"total": 15, "per_lvl": 2.5},
+    # Combo Strike (Gloves / Sai / Gauntlet) -- damage per combo hit
+    "Gauntlet": {"per_hit": 5},
+    "Sai": {"per_hit": 4},
+    "Gloves": {"per_hit": 3},
+    # Heavy Blow (maces / axes) -- base bonus
+    "War Hammer": {"base": 6},
+    "Mace": {"base": 5},
+    "Battle Axe": {"base": 5},
+    "Hand Axe": {"base": 4},
+    "Cudgel": {"base": 3},
+    # Guard (Round Shield / Greatshield) -- stance duration
+    "Greatshield": {"duration": 3.0},
+    "Round Shield": {"duration": 5.0},
+}
+
+
+def _skill_params(weapon: Optional[KindOfWeapon]) -> dict:
+    """Per-weapon skill tuning for the equipped weapon (empty for none)."""
+    if weapon is None:
+        return {}
+    return WEAPON_SKILL_PARAMS.get(getattr(weapon, "name", ""), {})
+
+
 # Registry mapping weapon names / IDs to WeaponSkill strategies
 SKILL_LUNGE = LungeSkill()
 SKILL_SNEAK = SneakSkill()
@@ -985,6 +1040,10 @@ SKILL_CHARGED_SHOT = ChargedShotSkill()
 SKILL_RUNIC_SLASH = RunicSlashSkill()
 SKILL_PIERCE = PierceSkill()
 SKILL_BRAWLER_STANCE = BrawlerStanceSkill()
+
+# Fallback strategy for weapons not yet mapped to a unique skill (mirrors
+# SPD's default-like behavior); explicit so unlisted weapons stay usable.
+DEFAULT_SKILL: WeaponSkill = SKILL_CLEAVE
 
 WEAPON_SKILL_MAP: Dict[str, WeaponSkill] = {
     # T1
@@ -1034,4 +1093,4 @@ def get_weapon_skill_for_weapon(weapon: Optional[KindOfWeapon]) -> Optional[Weap
     if weapon is None:
         return None
     name = getattr(weapon, "name", "")
-    return WEAPON_SKILL_MAP.get(name, SKILL_CLEAVE)
+    return WEAPON_SKILL_MAP.get(name, DEFAULT_SKILL)
