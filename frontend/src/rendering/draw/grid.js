@@ -1,8 +1,8 @@
-import { BACKEND_TILE, hashCell, isGrassTile, isWallTile, TILE_SIZE } from '../../constants';
+import { BACKEND_TILE, hashCell, isGrassTile, isWallStitcheable, isWallTile, TILE_SIZE } from '../../constants';
 import { drawSpriteTile, fallbackTileMap } from '../sprites';
 import { drawSewerTileBase, drawSewerTileCap } from '../sewers/draw';
 import { tilesForDepth } from '../regions';
-import { VIS_DISCOVERED, VIS_UNSEEN, wallEdgeDarkness } from './wallFog';
+import { tileAt, VIS_DISCOVERED, VIS_UNSEEN, wallEdgeDarkness } from './wallFog';
 
 const dimCell = (ctx, x, y) => {
   ctx.fillStyle = 'rgba(0, 0, 0, 0.6)';
@@ -26,22 +26,42 @@ const dimWallCell = (ctx, grid, vision, x, y) => {
   dimHalf(ctx, x, y, 'right', right);
 };
 
-// Reused offscreen canvas: one pixel per tile, alpha = fog darkness.
-// Drawing it scaled up with bilinear smoothing softens LOS edges in all
-// directions (including diagonals), mirroring SPD's FogOfWar texture.
+// Reused offscreen canvas for the fog overlay. Each map cell is rasterized at
+// FOG_SCALE x FOG_SCALE texels (the same 2-per-tile layout as SPD's
+// FogOfWar.PIX_PER_TILE). Drawing it scaled up with bilinear smoothing softens
+// LOS edges in all directions (including diagonals), mirroring SPD's texture —
+// while the extra vertical resolution keeps the alpha of a dark cell from
+// bleeding a full half-tile into its visible neighbours.
+const FOG_SCALE = 2;
 const fogCanvas = document.createElement('canvas');
 const fogCtx = fogCanvas.getContext('2d');
 
-const drawFogOverlay = (ctx, fogAlpha, cols, rows) => {
-  if (fogCanvas.width !== cols || fogCanvas.height !== rows) {
-    fogCanvas.width = cols;
-    fogCanvas.height = rows;
+const setCellFog = (fogAlpha, cols, x, y, alpha) => {
+  for (let dy = 0; dy < FOG_SCALE; dy++) {
+    for (let dx = 0; dx < FOG_SCALE; dx++) {
+      fogAlpha[
+        ((y * FOG_SCALE + dy) * (cols * FOG_SCALE) + x * FOG_SCALE + dx) * 4 + 3
+      ] = alpha;
+    }
   }
-  fogCtx.putImageData(new ImageData(fogAlpha, cols, rows), 0, 0);
+};
+
+const drawFogOverlay = (ctx, fogAlpha, cols, rows) => {
+  const texW = cols * FOG_SCALE;
+  const texH = rows * FOG_SCALE;
+  if (fogCanvas.width !== texW || fogCanvas.height !== texH) {
+    fogCanvas.width = texW;
+    fogCanvas.height = texH;
+  }
+  fogCtx.putImageData(new ImageData(fogAlpha, texW, texH), 0, 0);
 
   ctx.save();
   ctx.imageSmoothingEnabled = true;
-  ctx.drawImage(fogCanvas, 0, 0, cols, rows, 0, 0, cols * TILE_SIZE, rows * TILE_SIZE);
+  ctx.drawImage(
+    fogCanvas,
+    0, 0, texW, texH,
+    0, 0, cols * TILE_SIZE, rows * TILE_SIZE
+  );
   ctx.restore();
 };
 
@@ -52,8 +72,13 @@ export function drawGrid(ctx, { grid, depth, assetImages, visionRef, openDoorsRe
 
   const rows = grid.length;
   const cols = rows > 0 ? grid[0].length : 0;
-  const fogAlpha = new Uint8ClampedArray(cols * rows * 4);
+  const fogAlpha = new Uint8ClampedArray(cols * rows * FOG_SCALE * FOG_SCALE * 4);
   const wallCells = [];
+  // Camera-facing wall tiles whose own cell and the floor below are both fully
+  // visible. Bilinear upscaling would otherwise smear the dark fog of the
+  // unseen cells behind them down onto the wall's face; we clip those tiles
+  // out of the fog draw entirely so the wall stays fully clear (SPD parity).
+  const clearFogWalls = [];
 
   for (let y = 0; y < grid.length; y++) {
     for (let x = 0; x < grid[y].length; x++) {
@@ -71,7 +96,7 @@ export function drawGrid(ctx, { grid, depth, assetImages, visionRef, openDoorsRe
       if (!isDiscovered) {
         ctx.fillStyle = 'black';
         ctx.fillRect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
-        fogAlpha[(y * cols + x) * 4 + 3] = 255;
+        setCellFog(fogAlpha, cols, x, y, 255);
         continue;
       }
 
@@ -136,12 +161,37 @@ export function drawGrid(ctx, { grid, depth, assetImages, visionRef, openDoorsRe
         }
       }
 
-      fogAlpha[(y * cols + x) * 4 + 3] = isVisible ? 0 : 153;
-      if (isWallTile(tile)) wallCells.push([x, y]);
+      setCellFog(fogAlpha, cols, x, y, isVisible ? 0 : 153);
+      if (isWallTile(tile)) {
+        wallCells.push([x, y]);
+        if (isVisible && !isWallStitcheable(tileAt(grid, x, y + 1))) {
+          if (y + 1 < grid.length && visionRef.current.visible.has(`${x},${y + 1}`)) {
+            clearFogWalls.push([x, y]);
+          }
+        }
+      }
     }
   }
 
-  if (cols > 0 && rows > 0) drawFogOverlay(ctx, fogAlpha, cols, rows);
+  if (cols > 0 && rows > 0) {
+    if (clearFogWalls.length > 0) {
+      // Carve the fully-visible camera-facing walls out of the fog overlay so
+      // bilinear bleeding from unseen cells behind them never darkens them.
+      const fogClip = new Path2D();
+      // Slight inflation keeps the outer rect from sharing an edge with a
+      // wall hole carved at the very edge of the map (safe with evenodd).
+      fogClip.rect(-0.5, -0.5, cols * TILE_SIZE + 1, rows * TILE_SIZE + 1);
+      for (const [x, y] of clearFogWalls) {
+        fogClip.rect(x * TILE_SIZE, y * TILE_SIZE, TILE_SIZE, TILE_SIZE);
+      }
+      ctx.save();
+      ctx.clip(fogClip, 'evenodd');
+      drawFogOverlay(ctx, fogAlpha, cols, rows);
+      ctx.restore();
+    } else {
+      drawFogOverlay(ctx, fogAlpha, cols, rows);
+    }
+  }
 
   // Crisp corner-split darkness for walls, drawn on top of the soft overlay.
   for (const [x, y] of wallCells) {
