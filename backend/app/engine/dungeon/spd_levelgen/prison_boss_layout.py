@@ -40,6 +40,56 @@ ARENA = Rect(3, 1, 18, 16)
 END_START = Point(START_HALLWAY.left + 2, START_HALLWAY.top + 2)
 LEVEL_EXIT = Point(END_START.x + 11, END_START.y + 6)
 
+# Prison exit visual (port of PrisonBossLevel.ExitVisual / ExitVisualWalls):
+# decorative stairs + archway drawn over the post-Tengu exit from
+# custom_tiles/prison_exit.png (256px wide = 16 tiles per atlas row).
+ATLAS_TILE_W = 16
+
+EXIT_VISUAL_X = 11
+EXIT_VISUAL_Y = 10
+
+# Port of ExitVisual.render -- 14x11 mask over the stairs (mapSimpleImage(0, 0)).
+EXIT_VISUAL_RENDER = [
+    [0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0],
+    [1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0],
+    [1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+    [1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+    [1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+    [1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0],
+    [1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0],
+    [1, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 0],
+    [0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 0],
+    [0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+]
+
+# Port of ExitVisualWalls.render -- 14x22 mask over the archway above the
+# stairs (mapSimpleImage(0, 10)).
+EXIT_VISUAL_WALLS_RENDER = [
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
+    [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1],
+    [0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1],
+    [1, 0, 0, 0, 0, 0, 1, 1, 0, 1, 1, 1, 1, 1],
+    [0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1, 1],
+    [0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 1, 0, 0, 1],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1],
+    [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1],
+]
+
 _W = terrain.WALL
 _D = terrain.WALL_DECO
 _e = terrain.EMPTY
@@ -146,9 +196,45 @@ def build_arena_grid(level: GenLevel) -> None:
     Painter.fill_ellipse(level, ARENA, 1, terrain.EMPTY)
 
 
+def _map_simple_image(tx_x: int, tx_y: int, mask) -> list:
+    """Port of CustomTilemap.mapSimpleImage(): resolves each cell of a render
+    mask to an atlas tile index, with 0-valued cells turned into -1 (nothing
+    drawn). The atlas is laid out at ATLAS_TILE_W tiles per row."""
+    tiles = []
+    for row_i, row in enumerate(mask):
+        tiles.append([
+            -1 if v == 0 else tx_x + col + (tx_y + row_i) * ATLAS_TILE_W
+            for col, v in enumerate(row)
+        ])
+    return tiles
+
+
+def add_exit_visual(level: GenLevel) -> None:
+    """Port of the ExitVisual / ExitVisualWalls custom tilemaps added in
+    PrisonBossLevel.setMapEnd(): decorative stairs (custom_tiles) and archway
+    (custom_walls) over the post-Tengu exit, drawn from prison_exit.png."""
+    level.custom_tiles.append({
+        "texture": "prison_exit",
+        "x": EXIT_VISUAL_X,
+        "y": EXIT_VISUAL_Y,
+        "w": len(EXIT_VISUAL_RENDER[0]),
+        "h": len(EXIT_VISUAL_RENDER),
+        "tiles": _map_simple_image(0, 0, EXIT_VISUAL_RENDER),
+    })
+    level.custom_walls.append({
+        "texture": "prison_exit",
+        "x": EXIT_VISUAL_X,
+        "y": EXIT_VISUAL_Y,
+        "w": len(EXIT_VISUAL_WALLS_RENDER[0]),
+        "h": len(EXIT_VISUAL_WALLS_RENDER),
+        "tiles": _map_simple_image(0, 10, EXIT_VISUAL_WALLS_RENDER),
+    })
+
+
 def apply_end_patch(level: GenLevel, rng: SPDRandom) -> None:
     """Port of setMapEnd(): rebuild the start layout, unlock the tengu door,
-    then stamp the chasm/exit endMap over the south half of the floor."""
+    stamp the chasm/exit endMap over the south half of the floor, then add
+    the exit stairs visual."""
     Painter.fill(level, 0, 0, SIZE, SIZE, terrain.WALL)
     _paint_start(level, rng)
 
@@ -162,6 +248,7 @@ def apply_end_patch(level: GenLevel, rng: SPDRandom) -> None:
         cell += level.width()
 
     add_cages_to_cells(rng, level)
+    add_exit_visual(level)
 
 
 def add_cages_to_cells(rng: SPDRandom, level: GenLevel) -> None:

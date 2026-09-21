@@ -314,6 +314,8 @@ class PrisonBossMixin:
         level = layout._new_level(PRISON_BOSS_FLOOR)
         layout.apply_end_patch(level, rng)
         floor.grid = _grid_from_level(level)
+        floor.custom_tiles = list(level.custom_tiles)
+        floor.custom_walls = list(level.custom_walls)
         floor.exit_pos = (layout.LEVEL_EXIT.x, layout.LEVEL_EXIT.y)
         floor.rebuild_flags()
         floor.map_version += 1
