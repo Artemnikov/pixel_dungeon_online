@@ -425,7 +425,9 @@ export function createPlayerEventHandlers(): IGameEventHandler[] {
               ? (playerEnt.active_effects || []).some((e) => e.key === 'levitation')
               : !!mobEnt?.flying;
             if (!flying) {
-              spawnWaterRipple(tileX * TILE_SIZE + TILE_SIZE / 2, tileY * TILE_SIZE + TILE_SIZE / 2);
+              spawnWaterRipple(tileX * TILE_SIZE + TILE_SIZE / 2, tileY * TILE_SIZE + TILE_SIZE / 2, {
+                fovCell: `${tileX},${tileY}`,
+              });
             }
           }
         }

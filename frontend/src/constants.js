@@ -127,7 +127,15 @@ export const isSidewaysDoor = (grid, x, y, getTile) =>
 
 export const isWaterTile = (tile) => tile === BACKEND_TILE.FLOOR_WATER.id;
 
-export const isWaterStitcheable = (tile) => !isWaterTile(tile) && !isWallTile(tile);
+// Pits never take water-stitch bits: CHASM (and the remake's unpainted/OOB
+// VOID proxy) is excluded, so water meeting a hole renders as plain water
+// instead of a fake shoreline edge floating over the pit. Matches SPD's
+// DungeonTileSheet.waterStitcheable() behaviour for the chasm case.
+export const isWaterStitcheable = (tile) =>
+  !isWaterTile(tile) &&
+  !isWallTile(tile) &&
+  tile !== BACKEND_TILE.CHASM.id &&
+  tile !== BACKEND_TILE.VOID.id;
 export const isGrassTile = (tile) =>
   tile === BACKEND_TILE.FLOOR_GRASS.id ||
   tile === BACKEND_TILE.HIGH_GRASS.id ||

@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { TILE_SIZE, MOVE_DURATION, CAMERA_LERP, FADE_DURATION } from '../constants';
 import { DEST_TILE_SIZE } from './sewers/constants';
-import { buildWaterClipPath, drawWaterBackground, getWaterTextureForDepth } from './sewers/draw';
+import { buildWaterClipPaths, drawWaterBackground, getWaterTextureForDepth } from './sewers/draw';
 import { drawGrid, drawGridCaps } from './draw/grid';
 import { drawCustomTiles, drawCustomWalls } from './draw/customTiles';
 import { drawTorches } from './draw/torches';
@@ -27,9 +27,10 @@ import { advanceAndDrawSurprises } from './draw/surprise';
 import { advanceAndDrawScreenShake } from './draw/screenShake';
 import { advanceAndDrawBeams } from './draw/beam';
 import { advanceAndDrawBlobAreas, advanceAndDrawBlobParticles } from './draw/blobArea';
-import { advanceAndDrawSinkDrips } from './draw/sinkDrip';
+import { advanceSinkDrips } from './draw/sinkDrip';
 import { advanceAndDrawWaterRipples } from './draw/waterRipple';
 import { advanceHallsSteam } from './draw/hallsSteam';
+import { advanceWaterFlow } from './draw/waterFlow';
 import { advanceAndDrawFadingTraps } from './draw/fadingTraps';
 import { advanceAndDrawAlchemyBubbles } from './draw/alchemyBubbles';
 import { drawBombItem } from './draw/bombOverlay';
@@ -94,7 +95,6 @@ export default function useGameRenderer({
     const ctx = canvas.getContext('2d');
     let animationFrameId;
 
-    const waterClipPath = buildWaterClipPath(grid);
     const waterTex = getWaterTextureForDepth(depth, assetImages.waterFrames);
     const gridBounds = {
       x: 0,
@@ -213,16 +213,21 @@ export default function useGameRenderer({
       ctx.translate(-cameraLerpRef.current.x, -cameraLerpRef.current.y);
       advanceAndDrawScreenShake(ctx, { shakeRef: screenShakeRef });
 
-      drawWaterBackground(ctx, waterTex, waterClipPath, gridBounds, performance.now());
+      // The animated water scroll stays limited to cells in direct LOS. Water
+      // beyond LOS is drawn as flat, calm dark water — no flowing texture, no
+      // scroll — so no water animation is ever visible out of sight.
+      const waterPaths = buildWaterClipPaths(grid, visionRef.current);
+      drawWaterBackground(ctx, waterTex, waterPaths.visible, waterPaths.hidden, gridBounds, performance.now());
       drawGrid(ctx, { grid, depth, assetImages, visionRef, openDoorsRef });
       drawCustomTiles(ctx, { customTiles: customTilesRef.current, assetImages, visionRef });
       drawTraps(ctx, { entitiesRef, visionRef, assetImages, grid });
       drawPlants(ctx, { entitiesRef, visionRef, assetImages, grid });
       advanceAndDrawBlobAreas(ctx, { blobAreasRef, visionRef });
       advanceAndDrawBlobParticles(ctx, { blobAreasRef, visionRef, particlesRef });
-      advanceAndDrawSinkDrips(ctx, { grid, depth, visionRef, particlesRef });
-      advanceAndDrawWaterRipples(ctx, { assetImages });
+      advanceSinkDrips({ grid, depth, visionRef, particlesRef });
+      advanceAndDrawWaterRipples(ctx, { assetImages, visionRef });
       advanceHallsSteam({ grid, depth, visionRef, particlesRef });
+      advanceWaterFlow({ grid, visionRef, particlesRef });
       if (warnedTilesRef) drawWarnedTiles(ctx, { ref: warnedTilesRef });
       drawItems(ctx, { entitiesRef, visionRef, assetImages });
       drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef, dyingMobsRef, shieldFxRef: shieldHaloRef });
@@ -237,7 +242,7 @@ export default function useGameRenderer({
       drawTargetedCell(ctx, { hoveredCellRef, assetImages });
       drawLastTargetCrosshair(ctx, { targetingModeRef, selectedEnemyIdRef, entitiesRef, visionRef, assetImages });
       advanceAndDrawCheckedCells(ctx, { ref: searchEffectsRef });
-      advanceAndDrawParticles(ctx, { particlesRef, assetImages });
+      advanceAndDrawParticles(ctx, { particlesRef, assetImages, visionRef });
       advanceAndDrawFlares(ctx, { flareRef: flareEffectsRef });
       advanceAndDrawSpellSprites(ctx, { spellSpriteRef: spellSpriteEffectsRef, assetImages });
       advanceAndDrawFloatingText(ctx, { floatingTextRef });

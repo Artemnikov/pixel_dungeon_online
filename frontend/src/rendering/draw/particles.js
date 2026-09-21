@@ -557,7 +557,7 @@ export function spawnMaskSpecks(particlesRef, cx, cy) {
   }
 }
 
-export function advanceAndDrawParticles(ctx, { particlesRef, assetImages }) {
+export function advanceAndDrawParticles(ctx, { particlesRef, assetImages, visionRef }) {
   const now = performance.now();
   if (lastNow == null) lastNow = now;
   const dt = Math.min((now - lastNow) / 1000, 0.05);
@@ -566,6 +566,7 @@ export function advanceAndDrawParticles(ctx, { particlesRef, assetImages }) {
   const particles = particlesRef?.current;
   if (!particles || particles.length === 0) return;
   const specksImg = assetImages?.specks;
+  const visible = visionRef?.current?.visible;
 
   for (let i = particles.length - 1; i >= 0; i--) {
     const p = particles[i];
@@ -606,9 +607,14 @@ export function advanceAndDrawParticles(ctx, { particlesRef, assetImages }) {
     } else if (p.fadeIn) {
       alpha = t > 0.8 ? (1 - t) * 5 : 1;
     }
+    const tri = t < 0.5 ? t : 1 - t;
     if (p.triangleAlpha) {
-      const tri = t < 0.5 ? t : 1 - t;
       alpha = Math.sqrt(tri * 0.5);
+    }
+    if (p.triangleAlphaScale !== undefined) {
+      // Triangle in/out alpha peaked at the midpoint, scaled — matches
+      // FlowParticle.java's alpha = (p < 0.5f ? p : 1 - p) * 0.6f.
+      alpha = tri * p.triangleAlphaScale;
     }
     if (p.shrink !== false && !p.growWithAge && p.speckFrame === undefined) {
       if (p._startSize === undefined) p._startSize = p.size;
@@ -617,6 +623,11 @@ export function advanceAndDrawParticles(ctx, { particlesRef, assetImages }) {
     if (p.growWithAge) {
       if (p._startSize === undefined) p._startSize = p.size;
       p.size = Math.max(1, p._startSize * (1 + t));
+    }
+    if (p.sizeOnAge !== undefined) {
+      // Size swells linearly from 0 up to sizeOnAge as the particle ages —
+      // matches FlowParticle.java's size((1 - p) * 4f), where p = left/lifespan.
+      p.size = (1 - t) * p.sizeOnAge;
     }
     if (p.colorEnd) {
       const r1 = parseInt(p.color.slice(1,3), 16);
@@ -630,6 +641,13 @@ export function advanceAndDrawParticles(ctx, { particlesRef, assetImages }) {
       const b = Math.round(b1 + (b2 - b1) * t);
       p.color = `#${r.toString(16).padStart(2,'0')}${g.toString(16).padStart(2,'0')}${b.toString(16).padStart(2,'0')}`;
     }
+
+    // Ambient particles tagged with fovCell (water flow, drain drips) keep
+    // advancing but are only drawn while their tile is in FOV — the remake
+    // convention of never rendering brighter than the environment, mirroring
+    // the original emitters' `visible = heroFOV[pos]`. They resume mid-life
+    // if the tile re-enters FOV before they expire.
+    if (p.fovCell && visible && !visible.has(p.fovCell)) continue;
 
     ctx.save();
     if (p.additive) setLightMode(ctx);
@@ -651,7 +669,16 @@ export function advanceAndDrawParticles(ctx, { particlesRef, assetImages }) {
       ctx.fillRect(Math.round(p.x - width / 2), Math.round(p.y - height / 2), Math.round(width), Math.round(height));
     } else {
       ctx.fillStyle = p.color || '#ffffff';
-      ctx.fillRect(Math.round(p.x), Math.round(p.y), p.size || 2, p.size || 2);
+      const ps = p.size ?? 2;
+      if (p.centered) {
+        // Centered pixel-square (PseudoPixel origin 0.5,0.5) with optional
+        // rotation — used by FlowParticle's spinning specks.
+        ctx.translate(Math.round(p.x), Math.round(p.y));
+        if (p.angle) ctx.rotate(p.angle);
+        ctx.fillRect(-ps / 2, -ps / 2, ps, ps);
+      } else {
+        ctx.fillRect(Math.round(p.x), Math.round(p.y), ps, ps);
+      }
     }
     ctx.restore();
   }
