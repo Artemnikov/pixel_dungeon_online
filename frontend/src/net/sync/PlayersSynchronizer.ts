@@ -97,6 +97,7 @@ export class PlayersSynchronizer implements IStateSynchronizer {
         existing.class_type = p.class_type;
         existing.level = p.level;
         existing.strength = p.strength;
+        existing.faction = p.faction;
         existing.step_duration_ms =
           (isLocalPlayer ? (data.self_player as { step_duration_ms?: number })?.step_duration_ms : undefined)
           ?? (p as { step_duration_ms?: number }).step_duration_ms;

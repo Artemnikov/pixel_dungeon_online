@@ -32,6 +32,17 @@ def chebyshev_distance(ax: int, ay: int, bx: int, by: int) -> int:
     return max(abs(ax - bx), abs(ay - by))
 
 
+def find_mob_at(floor: Any, x: Any, y: Any) -> Optional[Any]:
+    """Return the first living mob occupying tile (x, y), or None.
+    Works on any floor object whose ``mobs`` is a dict of {id: mob}."""
+    if x is None or y is None:
+        return None
+    return next(
+        (m for m in floor.mobs.values() if m.is_alive and m.pos.x == x and m.pos.y == y),
+        None,
+    )
+
+
 def normal_int_range(lo: int, hi: int) -> int:
     """SPD Random.NormalIntRange: mean-biased average of two uniforms."""
     return round((_random.randint(lo, hi) + _random.randint(lo, hi)) / 2)
@@ -312,7 +323,13 @@ class Entity(BaseModel):
                 active.append(s)
         self.shields = active
 
-    def take_damage(self, amount: int):
+    def take_damage(self, amount: int, is_split_damage: bool = False):
+        if not is_split_damage and self.has_buff("life_link"):
+            owner = getattr(self, "_owner_ref", None) or getattr(self, "owner", None)
+            if owner is not None and getattr(owner, "is_alive", False):
+                split = amount // 2
+                amount = amount - split
+                owner.take_damage(split, is_split_damage=True)
         amount, _ = self.process_shields(amount)
         self.hp -= amount
         if self.hp <= 0:

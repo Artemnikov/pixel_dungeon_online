@@ -16,6 +16,7 @@ import KeyDisplay from './ui/KeyDisplay';
 import SideTags from './ui/SideTags';
 import AttackIndicator from './ui/AttackIndicator';
 import ActionIndicator from './ui/ActionIndicator';
+import ClericQuickSpellTag from './ui/ClericQuickSpellTag';
 import ResumeIndicator from './ui/ResumeIndicator';
 import DangerIndicator from './ui/DangerIndicator';
 import LootIndicator from './ui/LootIndicator';
@@ -46,6 +47,8 @@ function App() {
   const [playerName, setPlayerName] = useState(RESUME?.name || '');
   const [difficulty, setDifficulty] = useState(RESUME?.difficulty || 'normal');
   const [challenges, setChallenges] = useState(RESUME?.challenges || '');
+  const [faction, setFaction] = useState(RESUME?.faction || 'player');
+  const [allowDungeon, setAllowDungeon] = useState(true);
   const [gameId, setGameId] = useState(RESUME?.gameId || 'public');
   const [roomPassword, setRoomPassword] = useState('');
   const [roomJoinError, setRoomJoinError] = useState('');
@@ -96,6 +99,7 @@ function App() {
     keys: [],
     guidePages: [],
     respawnsUsed: 0,
+    faction: 'player',
   });
   const [bossInfo, setBossInfo] = useState(null);
   const [bossFightActive, setBossFightActive] = useState(false);
@@ -128,7 +132,7 @@ function App() {
     canvasRef, inspectPopupRef, inspectSubRef,
     gameState, setGameState, selectedClass, setSelectedClass,
     playerName, setPlayerName, difficulty, setDifficulty,
-    challenges, setChallenges, gameId, setGameId,
+    challenges, setChallenges, faction, setFaction, gameId, setGameId,
     roomPassword, setRoomPassword, sessionId, setSessionId,
     setConnectionStatus, showTutorial, setShowTutorial,
     grid, setGrid, myPlayerId, setMyPlayerId,
@@ -223,7 +227,8 @@ function App() {
 
   const {
     examineMode, inspectInfo, handleExamineOrReveal,
-    sendUseAbility, sendPrepStrike, sendUseComboMove, toolbarItems,
+    sendUseAbility, sendPrepStrike, sendUseComboMove,
+    sendDuelistFinisher, sendCastSpell, sendSetClericQuickSpell, toolbarItems,
   } = rendering;
 
   // --- screen flow ---
@@ -238,6 +243,8 @@ function App() {
         setSelectedClass={setSelectedClass} setDifficulty={setDifficulty}
         setChallenges={setChallenges} setPlayerName={setPlayerName}
         setSessionId={setSessionId}
+        faction={faction} setFaction={setFaction}
+        allowDungeon={allowDungeon} setAllowDungeon={setAllowDungeon}
       />
     );
   }
@@ -283,6 +290,11 @@ function App() {
               if (weapon) executeItemAction(weapon.id, action);
             }}
           />
+          <ClericQuickSpellTag
+            myStats={myStats}
+            onCastSpell={sendCastSpell}
+            setTargetingMode={targeting.setTargetingMode}
+          />
           <ResumeIndicator
             myStats={myStats}
             onResume={() => send({ type: 'RESUME' })}
@@ -294,10 +306,15 @@ function App() {
             onCycleEnemy={() => {
               const visible = visionRef.current.visible;
               if (!visible) return;
-              const hostile = Object.values(entitiesRef.current.mobs).filter(m =>
-                m.faction === 'enemy' && m.renderPos && visible.has(`${Math.round(m.renderPos.x)},${Math.round(m.renderPos.y)}`)
+              const myId = myPlayerIdRef.current;
+              const myFaction = myStats?.faction || entitiesRef.current.players?.[myId]?.faction || 'player';
+              const hostileMobs = Object.values(entitiesRef.current.mobs).filter(m =>
+                m.is_alive !== false && (m.faction || 'dungeon') !== myFaction && m.renderPos && visible.has(`${Math.round(m.renderPos.x)},${Math.round(m.renderPos.y)}`)
               );
-              cycleEnemyCamera(hostile);
+              const hostilePlayers = Object.values(entitiesRef.current.players).filter(p =>
+                p.id !== myId && p.is_alive !== false && !p.is_downed && (p.faction || 'player') !== myFaction && p.renderPos && visible.has(`${Math.round(p.renderPos.x)},${Math.round(p.renderPos.y)}`)
+              );
+              cycleEnemyCamera([...hostileMobs, ...hostilePlayers]);
             }}
           />
         </SideTags>
@@ -319,6 +336,7 @@ function App() {
           hasTalentPoints={Object.values(talent.talentPoints || {}).some(p => p > 0)}
           onOpenHeroInfo={() => talent.openHero(0)}
           onTeleport={(floor) => send({ type: 'ADMIN_TELEPORT', target_floor: floor })}
+          onAdminSetHp={(hpPct) => send({ type: 'ADMIN_SET_HP', hp_pct: hpPct })}
           isBusy={isBusy}
           onBuffClick={(buff) => setInspectBuff(buff)}
           assetImages={assetImages}
@@ -379,8 +397,10 @@ function App() {
           onInventory={() => modals.setShowInventory(v => !v)}
           onQuickBag={modals.handleQuickBag}
           onSwap={modals.handleSwap}
-          onSlotClick={(item, idx) => {
-            if (!item || item.is_placeholder || item.default_action == null) {
+          onSlotClick={(item, idx, rect) => {
+            if (item && item.kind === 'holy_tome') {
+              modals.openClericCastBar(rect);
+            } else if (!item || item.is_placeholder || item.default_action == null) {
               modals.openQuickslotPicker(idx);
             } else {
               handleToolbarClick(item);
@@ -393,6 +413,7 @@ function App() {
           onTriggerBerserk={() => send({ type: 'TRIGGER_BERSERK' })}
           onPrepStrike={sendPrepStrike}
           onUseComboMove={sendUseComboMove}
+          onDuelistFinisher={sendDuelistFinisher}
           onOpenItem={modals.setUseItemTarget}
           onContextMenu={(item, x, y) => modals.setCtxMenu({ item, x, y })}
           onDefaultAction={(item) => executeItemAction(item.id, item.default_action)}
@@ -418,7 +439,7 @@ function App() {
           gold={gold}
           energy={energy}
           strength={myStats.strength}
-          isDesktop={gameDesktop}
+          myStats={myStats}
           depth={depth}
           guidePages={myStats.guidePages || []}
           executeItemAction={executeItemAction}
@@ -427,6 +448,9 @@ function App() {
           sendStoneTarget={sendStoneTarget}
           send={send}
           handleToolbarClick={handleToolbarClick}
+          onCastSpell={sendCastSpell}
+          setTargetingMode={targeting.setTargetingMode}
+          onSetQuickSpell={sendSetClericQuickSpell}
         />
 
         <TalentLayer

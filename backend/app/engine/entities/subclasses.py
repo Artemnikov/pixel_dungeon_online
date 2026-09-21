@@ -1,4 +1,4 @@
-from typing import Dict, Optional, Set
+from typing import Any, Dict, Optional, Set
 
 from pydantic import BaseModel, Field
 
@@ -135,25 +135,25 @@ T4_ABILITY_TALENTS: Dict[str, str] = {
     Talent.CLONED_ARMOR: ArmorAbilityType.SHADOW_CLONE,
     Talent.PERFECT_COPY: ArmorAbilityType.SHADOW_CLONE,
     # Duelist
-    Talent.LASTING_CHALLENGE: ArmorAbilityType.CHALLENGE,
-    Talent.HEIGHTENED_CHALLENGE: ArmorAbilityType.CHALLENGE,
-    Talent.DUAL_CHALLENGE: ArmorAbilityType.CHALLENGE,
-    Talent.SEARING_STRIKE: ArmorAbilityType.ELEMENTAL_STRIKE,
-    Talent.CHILLING_STRIKE: ArmorAbilityType.ELEMENTAL_STRIKE,
-    Talent.CHARGED_STRIKE: ArmorAbilityType.ELEMENTAL_STRIKE,
-    Talent.SHADOW_FEINT: ArmorAbilityType.FEINT,
-    Talent.REACTIVE_FEINT: ArmorAbilityType.FEINT,
-    Talent.PHANTASMAL_FEINT: ArmorAbilityType.FEINT,
+    Talent.CLOSE_THE_GAP: ArmorAbilityType.CHALLENGE,
+    Talent.INVIGORATING_VICTORY: ArmorAbilityType.CHALLENGE,
+    Talent.ELIMINATION_MATCH: ArmorAbilityType.CHALLENGE,
+    Talent.ELEMENTAL_REACH: ArmorAbilityType.ELEMENTAL_STRIKE,
+    Talent.STRIKING_FORCE: ArmorAbilityType.ELEMENTAL_STRIKE,
+    Talent.DIRECTED_POWER: ArmorAbilityType.ELEMENTAL_STRIKE,
+    Talent.FEIGNED_RETREAT: ArmorAbilityType.FEINT,
+    Talent.EXPOSE_WEAKNESS: ArmorAbilityType.FEINT,
+    Talent.COUNTER_ABILITY: ArmorAbilityType.FEINT,
     # Cleric
-    Talent.EMPOWERED_ASCENSION: ArmorAbilityType.ASCENDED_FORM,
-    Talent.RADIANT_ASCENSION: ArmorAbilityType.ASCENDED_FORM,
-    Talent.HEALING_ASCENSION: ArmorAbilityType.ASCENDED_FORM,
-    Talent.TRINITARIAN_TRINITY: ArmorAbilityType.TRINITY,
-    Talent.HOLY_TRINITY: ArmorAbilityType.TRINITY,
-    Talent.DEEP_ROOTS_TRINITY: ArmorAbilityType.TRINITY,
-    Talent.GREATER_POWER: ArmorAbilityType.POWER_OF_MANY,
-    Talent.PERSISTENT_ALLIES: ArmorAbilityType.POWER_OF_MANY,
-    Talent.LIGHT_WARRIOR: ArmorAbilityType.POWER_OF_MANY,
+    Talent.DIVINE_INTERVENTION: ArmorAbilityType.ASCENDED_FORM,
+    Talent.JUDGEMENT: ArmorAbilityType.ASCENDED_FORM,
+    Talent.FLASH: ArmorAbilityType.ASCENDED_FORM,
+    Talent.BODY_FORM: ArmorAbilityType.TRINITY,
+    Talent.MIND_FORM: ArmorAbilityType.TRINITY,
+    Talent.SPIRIT_FORM: ArmorAbilityType.TRINITY,
+    Talent.BEAMING_RAY: ArmorAbilityType.POWER_OF_MANY,
+    Talent.LIFE_LINK: ArmorAbilityType.POWER_OF_MANY,
+    Talent.STASIS: ArmorAbilityType.POWER_OF_MANY,
 }
 
 # Armor abilities a class may choose from, by class_type.
@@ -162,6 +162,14 @@ CLASS_ARMOR_ABILITIES: Dict[str, tuple[str, ...]] = {
     "rogue": (ArmorAbilityType.SMOKE_BOMB, ArmorAbilityType.DEATH_MARK, ArmorAbilityType.SHADOW_CLONE),
     "duelist": (ArmorAbilityType.CHALLENGE, ArmorAbilityType.ELEMENTAL_STRIKE, ArmorAbilityType.FEINT),
     "cleric": (ArmorAbilityType.ASCENDED_FORM, ArmorAbilityType.TRINITY, ArmorAbilityType.POWER_OF_MANY),
+}
+
+CLASS_TALENT_BASE: Dict[str, str] = {
+    "gnoll": "warrior",
+    "skeleton": "warrior",
+    "thief": "rogue",
+    "rat": "rogue",
+    "necromancer": "mage",
 }
 
 
@@ -192,6 +200,16 @@ COMBO_MOVES: Dict[str, dict] = {
 
 COST_ARMOR_ABILITY = 35  # Leap/Shockwave charge cost
 COST_ENDURE = 50  # Endure charge cost (slightly higher)
+
+# Heroic Energy (universal T4): reduces any armor ability's charge cost.
+# [0,1,2,3,4] points -> multiplier.
+HEROIC_ENERGY_MULT = (1.0, 0.88, 0.77, 0.68, 0.60)
+
+
+def heroic_energy_mult(player: Any) -> float:
+    """Universal armor-ability charge discount from the Heroic Energy talent."""
+    pts = player.talent_info.level(Talent.HEROIC_ENERGY)
+    return HEROIC_ENERGY_MULT[min(pts, 4)]
 
 # Human-readable titles and descriptions served via /api/talents/{class}
 TALENT_TITLES: Dict[str, str] = {

@@ -21,6 +21,7 @@ import WndStoneAugment from './WndStoneAugment';
 import WndChooseEnchant from './WndChooseEnchant';
 import AlchemyOverlay from './AlchemyOverlay';
 import WndTrinketChoice from './WndTrinketChoice';
+import WndClericCastBar from './WndClericCastBar';
 
 const SCROLL_PICKER_KEYS = {
   scroll_of_upgrade: 'modal.upgrade',
@@ -32,9 +33,9 @@ const SCROLL_PICKER_KEYS = {
 function GameModals({
   modals, itemsById, toolbarItems,
   belongings, gold, energy, strength,
-  depth, guidePages,
+  depth, guidePages, myStats,
   executeItemAction, assignQuickslot, sendSelectScrollTarget, sendStoneTarget,
-  send,
+  send, onCastSpell, setTargetingMode, onSetQuickSpell,
 }) {
   const { t } = useTranslation();
   const [ghostEquipSlot, setGhostEquipSlot] = useState(null);
@@ -64,6 +65,8 @@ function GameModals({
     alchemyBrewed, setAlchemyBrewed,
     trinketChoice, setTrinketChoice,
     toolkitEnergize, setToolkitEnergize,
+    clericCastBarOpen, setClericCastBarOpen,
+    clericCastBarAnchor,
   } = modals;
 
   return (
@@ -419,6 +422,19 @@ function GameModals({
             <WndInfoItem item={itemsById[inspectItem.id] || inspectItem} belongings={belongings} />
           </div>
         </WndOverlay>
+      )}
+
+      {clericCastBarOpen && (
+        <WndClericCastBar
+          spellCooldowns={myStats?.spellCooldowns || {}}
+          anchor={clericCastBarAnchor}
+          onCastSpell={onCastSpell}
+          onClose={() => setClericCastBarOpen(false)}
+          myStats={myStats}
+          belongings={belongings}
+          setTargetingMode={setTargetingMode}
+          onSetQuickSpell={onSetQuickSpell}
+        />
       )}
 
       {journalOpen && (

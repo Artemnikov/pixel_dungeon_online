@@ -101,9 +101,16 @@
 
 .hero-picker {
   display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+}
+.hero-picker-row {
+  display: flex;
+  flex-direction: row;
   justify-content: center;
   flex-wrap: wrap;
-  gap: 18px;
+  gap: 14px;
 }
 .hero-picker-btn {
   display: flex;
@@ -126,9 +133,29 @@
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
 }
 .hero-select.portrait .hero-picker {
-  display: grid;
-  grid-template-columns: repeat(2, auto);
-  gap: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 52vh;
+  overflow-y: auto;
+}
+.hero-select.portrait .hero-picker-row {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.hero-select.portrait .hero-picker-btn {
+  padding: 6px 8px;
+  gap: 4px;
+}
+.hero-select.portrait .hero-picker-btn .hero-bust {
+  transform: scale(0.65);
+  margin: -6px 0;
+}
+.hero-select.portrait .hero-picker-name {
+  font-size: 11px;
 }
 
 
@@ -142,30 +169,54 @@
 /* ---- class busts ---- */
 .hero-busts {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 8px;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
   transition: transform 0.35s ease;
+}
+.hero-busts-row {
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  gap: 6px;
+  width: 100%;
 }
 .hero-busts.named .hero-bust-btn {
   flex: 1 1 0;
   min-width: 0;
   flex-direction: column;
-  gap: 8px;
+  gap: 4px;
+  padding: 4px 6px;
+}
+.hero-busts.named .hero-picker-name {
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 .hero-select.landscape .hero-busts.away {
   position: fixed;
   top: 50%;
   left: 68%;
   width: max-content;
+  max-width: 90vw;
   transform: translate(-50%, -50%);
   z-index: 3;
+}
+.hero-select.landscape .hero-busts.away .hero-bust-btn {
+  flex: 0 0 auto;
+  padding: 6px 10px;
+}
+.hero-select.landscape .hero-busts.away .hero-picker-name {
+  font-size: 13px;
 }
 .hero-bust-btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 6px 10px;
+  padding: 6px 8px;
   background: linear-gradient(#4a4a52, #313139);
   border: 2px solid #1c1c22;
   border-radius: 6px;
@@ -194,6 +245,12 @@
   line-height: 1.5;
   color: #e6e6e6;
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.95);
+}
+/* Reserve room for the tallest class descriptions (Cleric/Duelist wrap to 6
+   lines even in the narrowest landscape column) so switching classes never
+   reflows the centered column. */
+.hero-select.landscape .hero-desc {
+  min-height: 9em;
 }
 
 /* ---- remake options (difficulty + name) ---- */

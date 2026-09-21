@@ -179,6 +179,7 @@ export default function useGameHooks(state) {
   const { sendSelectScrollTarget, sendStoneTarget, effects } = useGameSocket({
     enabled: gameState === 'PLAYING',
     gameId, roomPassword, sessionId, selectedClass, difficulty, challenges, playerName,
+    faction: state.faction,
     setConnectionStatus,
     onRoomRejected: (reason) => {
       setRoomJoinError(reason || 'Could not join room');
@@ -265,10 +266,14 @@ export default function useGameHooks(state) {
   const { equipItem, executeItemAction, assignQuickslot, handleToolbarClick } = useItemActions({
     send, equippedItems, targetingMode: targeting.targetingMode,
     setTargetingMode: targeting.setTargetingMode, setShowInventory: modals.setShowInventory, quickslot,
+    onOpenClericCastBar: modals.openClericCastBar, belongings,
+    myStats,
   });
 
   const { handleToolbarDoubleClick } = useTargetingHandlers({
     send, entitiesRef, myPlayerIdRef, visionRef, selectedEnemyIdRef,
+    myStats, equippedItems, belongings,
+    setTargetingMode: targeting.setTargetingMode,
   });
 
   const { resetForRestart, handleLeaveGame } = useGameLifecycle({

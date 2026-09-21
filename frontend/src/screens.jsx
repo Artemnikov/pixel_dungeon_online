@@ -10,6 +10,7 @@ export default function Screens({
   roomJoinError, setRoomJoinError, setGameId, setRoomPassword,
   setGameState, gameId, setSelectedClass, setDifficulty,
   setChallenges, setPlayerName, setSessionId,
+  faction, setFaction, allowDungeon, setAllowDungeon,
 }) {
   const { t } = useTranslation();
 
@@ -34,10 +35,11 @@ export default function Screens({
         <div className={isDesktop ? 'desktop-mode' : ''}
              style={isDesktop ? { '--cursor-mouse': mouseCursorVal } : {}}>
           <RoomSelection
-            onJoin={(roomId, password) => {
+            onJoin={(roomId, password, allowDung) => {
               setRoomJoinError('');
               setGameId(roomId);
               setRoomPassword(password || '');
+              if (setAllowDungeon) setAllowDungeon(allowDung !== false);
               setGameState('SELECT');
             }}
             onBack={() => setGameState('WELCOME')}
@@ -56,18 +58,24 @@ export default function Screens({
         <meta name="description" content={t('app.descSelect')} />
         <div className={isDesktop ? 'desktop-mode' : ''}
              style={isDesktop ? { '--cursor-mouse': mouseCursorVal } : {}}>
-          <CharacterSelection showDifficulty={gameId !== 'public'} onSelect={(c, d, n, strongerBosses) => {
-            const runChallenges = strongerBosses ? 'stronger_bosses' : '';
-            setSelectedClass(c);
-            setDifficulty(d);
-            setChallenges(runChallenges);
-            setPlayerName(n);
-            const newSession = crypto.randomUUID();
-            sessionStorage.setItem(RESUME_SESSION_KEY, newSession);
-            sessionStorage.setItem(RESUME_RUN_KEY, JSON.stringify({ class: c, difficulty: d, name: n, challenges: runChallenges, gameId }));
-            if (n) localStorage.setItem('opd_last_name', n);
-            setSessionId(newSession);
-            setGameState('PLAYING');
+          <CharacterSelection
+            showDifficulty={gameId !== 'public'}
+            allowDungeon={allowDungeon !== false}
+            initialFaction={faction || 'player'}
+            onSelect={(c, d, n, strongerBosses, f) => {
+              const runChallenges = strongerBosses ? 'stronger_bosses' : '';
+              const chosenFaction = f || 'player';
+              setSelectedClass(c);
+              setDifficulty(d);
+              setChallenges(runChallenges);
+              setPlayerName(n);
+              if (setFaction) setFaction(chosenFaction);
+              const newSession = crypto.randomUUID();
+              sessionStorage.setItem(RESUME_SESSION_KEY, newSession);
+              sessionStorage.setItem(RESUME_RUN_KEY, JSON.stringify({ class: c, difficulty: d, name: n, challenges: runChallenges, gameId, faction: chosenFaction }));
+              if (n) localStorage.setItem('opd_last_name', n);
+              setSessionId(newSession);
+              setGameState('PLAYING');
           }} />
         </div>
       </>

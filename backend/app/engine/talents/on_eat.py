@@ -66,3 +66,37 @@ def handle_energizing_meal(ctx: EffectContext, level: int) -> None:
 def handle_invigorating_meal(ctx: EffectContext, level: int) -> None:
     duration = INVIGORATING_MEAL_BASE_DURATION + INVIGORATING_MEAL_DURATION_PER_LEVEL * level
     add_buff(ctx.player.buffs, "haste", duration=duration, level=1)
+
+
+@registry.on("on_eat", Talent.SATIATED_SPELLS)
+def handle_satiated_spells(ctx: EffectContext, level: int) -> None:
+    add_buff(ctx.player.buffs, "satiated_spells_tracker", duration=999999.0, level=level)
+
+
+@registry.on("on_eat", Talent.ENLIGHTENING_MEAL)
+def handle_enlightening_meal(ctx: EffectContext, level: int) -> None:
+    tome = ctx.player.get_holy_tome()
+    if tome is not None:
+        tome.direct_charge((1.0 + level) / 3.0)
+
+
+@registry.on("on_eat", Talent.STRENGTHENING_MEAL)
+def handle_strengthening_meal(ctx: EffectContext, level: int) -> None:
+    # Bonus damage on next 2 | 3 melee hits
+    hits = 1 + level
+    add_buff(ctx.player.buffs, "strengthening_meal_tracker", duration=999999.0, level=hits)
+
+
+@registry.on("on_eat", Talent.FOCUSED_MEAL)
+def handle_focused_meal(ctx: EffectContext, level: int) -> None:
+    # Grants +0.67 | +1.0 weapon charge
+    charge_amt = 0.67 if level == 1 else 1.0
+    ctx.player.gain_weapon_charge(charge_amt)
+    if hasattr(ctx.game, "add_event"):
+        ctx.game.add_event(
+            "WEAPON_CHARGE",
+            {"player": ctx.player.id, "charge": ctx.player.weapon_charge},
+            floor_id=ctx.player.floor_id,
+            source_player_id=ctx.player.id,
+        )
+

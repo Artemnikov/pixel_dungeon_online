@@ -522,14 +522,14 @@ def test_combo_move_rejected_below_threshold():
 # --- Armor abilities -----------------------------------------------------------
 
 def test_heroic_energy_reduces_charge_cost():
-    from app.engine.game.armor_abilities import _heroic_energy_mult
+    from app.engine.entities.subclasses import heroic_energy_mult
     g = GameInstance("t")
     p = _warrior(g)
     _level_up(g, p, 6)
     _grant_mask(p)
     g.choose_subclass(p.id, Subclass.GLADIATOR)
     p.subclass_info.talent_info.talents[Talent.HEROIC_ENERGY] = 4
-    assert _heroic_energy_mult(p) == 0.60
+    assert heroic_energy_mult(p) == 0.60
 
 
 def test_endure_banks_and_reduces_incoming_damage():

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import AudioManager from '../audio/AudioManager';
 import { MAX_DPR } from '../constants';
+import { getCharacterDescriptor, getAvatarCropRect } from '../rendering/characterDescriptors';
 
 const PANE_W_LARGE = 160;
 const PANE_H_LARGE = 39;
@@ -18,17 +19,15 @@ const HP_FILL_SMALL   = { x: 0, y: 40, w: 50, h: 4 };
 const HP_SHIELD_SMALL = { x: 0, y: 44, w: 50, h: 4 };
 const EXP_FILL_SMALL  = { x: 0, y: 48, w: 17, h: 4 };
 
-const FRAME_W = 12;
-const FRAME_H = 15;
-
-// The HUD portrait is the hero avatar (walking sheet col 1), cropped to the row
-// matching the equipped armor tier so it reflects the gear actually worn —
-// mirrors SPD HeroSprite.avatar(), which shifts the frame by tiers().get(tier).
-const MAX_ARMOR_TIER = 6;
-
 const BUFF_SIZE = 7;
 const BUFF_COLS = 18;
 const MAX_BUFFS = 14; // matches SPD's BuffIndicator.maxBuffs default
+// Desktop (large) mode renders buff icons at 4/3x (the 2x bump shrunk by 1.5):
+// drawn at 7px * 4/3 * SCALE(3) = 28px, a clean 4x pixel-upscale of the tile.
+// At that size the pane fits 12 icons on a single row without overflowing the
+// right edge; the row also floats a bit higher above the HP bar.
+const MAX_BUFFS_LARGE = 12;
+const BUFF_GAP_LARGE = 6; // unscaled px between the buff row and the HP bar (was 2)
 
 const FLASH_RATE = Math.PI * 1.5;
 const WARNING_COLORS = ['#660000', '#cc0000', '#660000'];
@@ -49,7 +48,34 @@ function lerpColor(t, colors) {
   return `rgb(${r},${g},${bl})`;
 }
 
-export default function StatusPane({ myStats, depth, exitPos, isAdmin, onSearch, hasTalentPoints, onOpenHeroInfo, onTeleport, isBusy, onBuffClick, interfaceSize, assetImages }) {
+// Buff icon rectangle in scaled canvas px. Shared by the draw loop and the
+// click hit-test so the two can't drift apart. In large (desktop) mode the
+// pane is bottom-anchored (see .desktop-mode .top-left-hud in hud.css), so a
+// row drawn at the canvas's own y=0 would float disconnected in open space
+// well above the HP bar; anchoring it just above the HP bar keeps it reading
+// as part of the pane (with BUFF_GAP_LARGE of breathing room).
+function buffRect(i, { SCALE, isLarge, buffPitch, buffSize }) {
+  return {
+    bx: (31 + i * buffPitch) * SCALE,
+    by: isLarge ? 19 * SCALE - buffSize * SCALE - BUFF_GAP_LARGE : 8 * SCALE,
+    bw: buffSize * SCALE,
+    bh: buffSize * SCALE,
+  };
+}
+
+function getHpBarRatio(x, y, { SCALE, isLarge, hpFill }) {
+  const hx = (isLarge ? 30 : 33) * SCALE;
+  const hy = (isLarge ? 19 : 2) * SCALE;
+  const hw = hpFill.w * SCALE;
+  const hh = hpFill.h * SCALE;
+  const padY = isLarge ? 2 * SCALE : 3 * SCALE;
+  if (x >= hx && x <= hx + hw && y >= hy - padY && y <= hy + hh + padY) {
+    return Math.max(0.01, Math.min(1.0, (x - hx) / hw));
+  }
+  return null;
+}
+
+export default function StatusPane({ myStats, depth, exitPos, isAdmin, onSearch, hasTalentPoints, onOpenHeroInfo, onTeleport, onAdminSetHp, isBusy, onBuffClick, interfaceSize, assetImages }) {
   const isLarge = interfaceSize > 0;
   const SCALE = isLarge ? 3 : 2;
   const PANE_W = isLarge ? PANE_W_LARGE : PANE_W_SMALL;
@@ -58,6 +84,11 @@ export default function StatusPane({ myStats, depth, exitPos, isAdmin, onSearch,
   const hpShield = isLarge ? HP_SHIELD_LARGE : HP_SHIELD_SMALL;
   const expFill = isLarge ? EXP_FILL_LARGE : EXP_FILL_SMALL;
   const BG = isLarge ? BG_LARGE : BG_SMALL;
+  // Desktop (large) mode renders buff icons at 4/3x, capped to a single row
+  // (see MAX_BUFFS_LARGE at the top of the file).
+  const buffSize = isLarge ? (BUFF_SIZE * 4) / 3 : BUFF_SIZE;
+  const buffPitch = buffSize + 1;
+  const maxBuffs = isLarge ? MAX_BUFFS_LARGE : MAX_BUFFS;
   // Zoom-compensation: keep the pane a consistent on-screen size across browser
   // zoom / display scale, mirroring Toolbar's quickslots. baseDpr is captured once
   // at mount; rawDPR tracks the live display scale, re-read every render.
@@ -82,21 +113,17 @@ export default function StatusPane({ myStats, depth, exitPos, isAdmin, onSearch,
   useEffect(() => { exitPosRef.current = exitPos; }, [exitPos]);
 
   useEffect(() => {
-    const imgs = imagesRef.current;
-    if (assetImages?.statusPane) imgs.status = assetImages.statusPane;
-    if (assetImages?.buffs) imgs.buffs = assetImages.buffs;
-    if (assetImages?.warrior) imgs.warrior = assetImages.warrior;
-    if (assetImages?.mage) imgs.mage = assetImages.mage;
-    if (assetImages?.rogue) imgs.rogue = assetImages.rogue;
-    if (assetImages?.huntress) imgs.huntress = assetImages.huntress;
+    if (!assetImages) return;
+    imagesRef.current = {
+      ...assetImages,
+      status: assetImages.statusPane || assetImages.status,
+    };
   }, [assetImages]);
 
   useEffect(() => {
     let raf;
     let last = performance.now();
     const avatarCanvas = document.createElement('canvas');
-    avatarCanvas.width = FRAME_W;
-    avatarCanvas.height = FRAME_H;
 
     const draw = (now) => {
       let ctx;
@@ -121,11 +148,12 @@ export default function StatusPane({ myStats, depth, exitPos, isAdmin, onSearch,
         const expPct = Math.min(1, exp / maxExp);
         const level = s.level ?? 1;
         const effects = s.effects ?? [];
-        const sheet = imgs[s.classType] || imgs.warrior;
+        const charDesc = getCharacterDescriptor(s.classType);
+        const sheet = imgs[charDesc.assetKey] || imgs.warrior;
 
         if (level > prevLevelRef.current) {
-          const cx = (9 + FRAME_W / 2) * SCALE;
-          const cy = (8 + FRAME_H / 2) * SCALE;
+          const cx = 15 * SCALE;
+          const cy = 15.5 * SCALE;
           for (let i = 0; i < 12; i++) {
             const ang = (Math.PI * 2 * i) / 12 + Math.random() * 0.4;
             const spd = (20 + Math.random() * 30) * SCALE;
@@ -159,37 +187,46 @@ export default function StatusPane({ myStats, depth, exitPos, isAdmin, onSearch,
         }
 
         ctx.fillStyle = '#161616';
-        ctx.fillRect(9 * SCALE, 8 * SCALE, FRAME_W * SCALE, FRAME_H * SCALE);
+        ctx.fillRect(8 * SCALE, 7 * SCALE, 16 * SCALE, 17 * SCALE);
 
         if (sheet?.complete && sheet?.naturalWidth > 0) {
+          const crop = getAvatarCropRect(s.classType, s.armorTier);
+          if (avatarCanvas.width !== crop.sw || avatarCanvas.height !== crop.sh) {
+            avatarCanvas.width = crop.sw;
+            avatarCanvas.height = crop.sh;
+          }
           const ac = avatarCanvas.getContext('2d');
           ac.imageSmoothingEnabled = false;
-          ac.clearRect(0, 0, FRAME_W, FRAME_H);
-          const armorRow = Math.max(0, Math.min(s.armorTier || 0, MAX_ARMOR_TIER)) * FRAME_H;
-          ac.drawImage(sheet, FRAME_W, armorRow, FRAME_W, FRAME_H, 0, 0, FRAME_W, FRAME_H);
+          ac.clearRect(0, 0, crop.sw, crop.sh);
+          ac.drawImage(sheet, crop.sx, crop.sy, crop.sw, crop.sh, 0, 0, crop.sw, crop.sh);
 
           if (s.isDowned) {
             ac.globalCompositeOperation = 'source-atop';
             ac.fillStyle = 'rgba(0,0,0,0.5)';
-            ac.fillRect(0, 0, FRAME_W, FRAME_H);
+            ac.fillRect(0, 0, crop.sw, crop.sh);
             ac.globalCompositeOperation = 'source-over';
           } else if (rawHpPct < 0.334) {
             warningRef.current = (warningRef.current + dt * 5 * (0.4 - hpPct)) % 1;
             ac.globalCompositeOperation = 'source-atop';
             ac.fillStyle = lerpColor(warningRef.current, WARNING_COLORS);
             ac.globalAlpha = 0.5;
-            ac.fillRect(0, 0, FRAME_W, FRAME_H);
+            ac.fillRect(0, 0, crop.sw, crop.sh);
             ac.globalAlpha = 1;
             ac.globalCompositeOperation = 'source-over';
           } else if (hasPtsRef.current && talentBlinkRef.current > 0) {
             ac.globalCompositeOperation = 'source-atop';
             ac.fillStyle = '#ffff00';
             ac.globalAlpha = Math.abs(Math.cos(talentBlinkRef.current * FLASH_RATE)) * 0.5;
-            ac.fillRect(0, 0, FRAME_W, FRAME_H);
+            ac.fillRect(0, 0, crop.sw, crop.sh);
             ac.globalAlpha = 1;
             ac.globalCompositeOperation = 'source-over';
           }
-          ctx.drawImage(avatarCanvas, 9 * SCALE, 8 * SCALE, FRAME_W * SCALE, FRAME_H * SCALE);
+
+          const destX = (9 - Math.round((crop.sw - 12) / 2)) * SCALE;
+          const destY = (8 - Math.round((crop.sh - 15) / 2)) * SCALE;
+          const destW = crop.sw * SCALE;
+          const destH = crop.sh * SCALE;
+          ctx.drawImage(avatarCanvas, destX, destY, destW, destH);
         }
 
         // --- Compass needle pointing toward floor exit ---
@@ -197,8 +234,8 @@ export default function StatusPane({ myStats, depth, exitPos, isAdmin, onSearch,
         const heroPos = statsRef.current?.pos;
         if (ep && heroPos) {
           const angle = Math.atan2(ep[1] - heroPos.y, ep[0] - heroPos.x);
-          const cx = (9 + FRAME_W / 2) * SCALE;
-          const cy = (8 + FRAME_H / 2) * SCALE;
+          const cx = 15 * SCALE;
+          const cy = 15.5 * SCALE;
           ctx.save();
           ctx.translate(cx, cy);
           ctx.rotate(angle);
@@ -219,8 +256,8 @@ export default function StatusPane({ myStats, depth, exitPos, isAdmin, onSearch,
 
         // --- BusyIndicator (rotating dots around center when busy) ---
         if (isBusy) {
-          const busyX = isLarge ? (9 + FRAME_W / 2) * SCALE : 6 * SCALE;
-          const busyY = isLarge ? (8 + FRAME_H / 2) * SCALE : 35 * SCALE;
+          const busyX = isLarge ? 15 * SCALE : 6 * SCALE;
+          const busyY = isLarge ? 15.5 * SCALE : 35 * SCALE;
           const angle = nowSec * 3;
           ctx.save();
           ctx.translate(busyX, busyY);
@@ -242,20 +279,11 @@ export default function StatusPane({ myStats, depth, exitPos, isAdmin, onSearch,
 
         const buffsSheet = imgs.buffs;
         if (buffsSheet?.complete && buffsSheet?.naturalWidth > 0) {
-          effects.slice(0, MAX_BUFFS).forEach((eff, i) => {
+          effects.slice(0, maxBuffs).forEach((eff, i) => {
             const idx = eff.icon ?? 0;
             const col = idx % BUFF_COLS;
             const row = Math.floor(idx / BUFF_COLS);
-            const bx = (31 + i * (BUFF_SIZE + 1)) * SCALE;
-            // Large (desktop) mode: the whole pane is bottom-anchored (see
-            // .desktop-mode .top-left-hud in hud.css), so a buff row drawn at
-            // the canvas's own y=0 floats disconnected in open space well
-            // above the HP bar instead of hugging the pane like it does when
-            // the pane sits at the screen's top edge. Anchor it just above
-            // the HP bar instead so it visually reads as part of the pane.
-            const by = isLarge ? 19 * SCALE - BUFF_SIZE * SCALE - 2 : 8 * SCALE;
-            const bw = BUFF_SIZE * SCALE;
-            const bh = BUFF_SIZE * SCALE;
+            const { bx, by, bw, bh } = buffRect(i, { SCALE, isLarge, buffPitch, buffSize });
             ctx.globalAlpha = 0.85;
             ctx.drawImage(buffsSheet,
               col * BUFF_SIZE, row * BUFF_SIZE, BUFF_SIZE, BUFF_SIZE,
@@ -360,7 +388,7 @@ export default function StatusPane({ myStats, depth, exitPos, isAdmin, onSearch,
 
     raf = requestAnimationFrame(draw);
     return () => cancelAnimationFrame(raf);
-  }, [t, isBusy, SCALE, isLarge, PANE_W, PANE_H, hpFill, hpShield, expFill, BG, cappedDPR]);
+  }, [t, isBusy, SCALE, isLarge, PANE_W, PANE_H, hpFill, hpShield, expFill, BG, cappedDPR, buffPitch, buffSize, maxBuffs]);
 
   const floorNumbers = [];
   for (let i = 1; i <= 26; i++) floorNumbers.push(i);
@@ -411,28 +439,69 @@ export default function StatusPane({ myStats, depth, exitPos, isAdmin, onSearch,
         height={PANE_H * SCALE * cappedDPR}
         style={{ width: PANE_W * SCALE * zoomScale, height: PANE_H * SCALE * zoomScale }}
         className="status-pane-canvas"
+        onMouseMove={(e) => {
+          const x = e.nativeEvent.offsetX / zoomScale;
+          const y = e.nativeEvent.offsetY / zoomScale;
+          const ax = 7 * SCALE, ay = 7 * SCALE;
+          const aw = 18 * SCALE, ah = 18 * SCALE;
+          if (x >= ax && x < ax + aw && y >= ay && y < ay + ah) {
+            e.currentTarget.style.cursor = 'pointer';
+            e.currentTarget.title = '';
+            return;
+          }
+          const effects = statsRef.current?.effects || [];
+          for (let i = 0; i < Math.min(effects.length, maxBuffs); i++) {
+            const { bx, by, bw, bh } = buffRect(i, { SCALE, isLarge, buffPitch, buffSize });
+            if (x >= bx && x < bx + bw && y >= by && y < by + bh) {
+              e.currentTarget.style.cursor = 'pointer';
+              e.currentTarget.title = '';
+              return;
+            }
+          }
+          if (isAdmin) {
+            const ratio = getHpBarRatio(x, y, { SCALE, isLarge, hpFill });
+            if (ratio !== null) {
+              const pct = Math.round(ratio * 100);
+              const maxHp = statsRef.current?.maxHp || 20;
+              const targetHp = Math.max(1, Math.round(maxHp * ratio));
+              e.currentTarget.style.cursor = 'pointer';
+              e.currentTarget.title = `Set HP: ${pct}% (${targetHp}/${maxHp})`;
+              return;
+            }
+          }
+          e.currentTarget.style.cursor = 'default';
+          e.currentTarget.title = '';
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.cursor = 'default';
+          e.currentTarget.title = '';
+        }}
         onClick={(e) => {
           // offsets are in zoom-scaled CSS px; divide back to unscaled pane units.
           const x = e.nativeEvent.offsetX / zoomScale;
           const y = e.nativeEvent.offsetY / zoomScale;
-          const ax = 9 * SCALE, ay = 8 * SCALE;
-          const aw = FRAME_W * SCALE, ah = FRAME_H * SCALE;
+          const ax = 7 * SCALE, ay = 7 * SCALE;
+          const aw = 18 * SCALE, ah = 18 * SCALE;
           if (x >= ax && x < ax + aw && y >= ay && y < ay + ah) {
             AudioManager.play('CLICK');
             onOpenHeroInfo?.();
             return;
           }
-          // Buff icon hit test — must mirror the `by` computed in the draw loop above.
+          // Buff icon hit test — mirrors the draw loop via the shared buffRect().
           const effects = statsRef.current?.effects || [];
-          const buffsYOffset = isLarge ? 19 * SCALE - BUFF_SIZE * SCALE - 2 : 8 * SCALE;
-          for (let i = 0; i < Math.min(effects.length, MAX_BUFFS); i++) {
-            const bx = (31 + i * (BUFF_SIZE + 1)) * SCALE;
-            const by = buffsYOffset;
-            const bw = BUFF_SIZE * SCALE;
-            const bh = BUFF_SIZE * SCALE;
+          for (let i = 0; i < Math.min(effects.length, maxBuffs); i++) {
+            const { bx, by, bw, bh } = buffRect(i, { SCALE, isLarge, buffPitch, buffSize });
             if (x >= bx && x < bx + bw && y >= by && y < by + bh) {
               AudioManager.play('CLICK');
               onBuffClick?.(effects[i]);
+              return;
+            }
+          }
+          if (isAdmin) {
+            const ratio = getHpBarRatio(x, y, { SCALE, isLarge, hpFill });
+            if (ratio !== null) {
+              AudioManager.play('CLICK');
+              onAdminSetHp?.(ratio);
               return;
             }
           }

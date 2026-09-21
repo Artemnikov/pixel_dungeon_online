@@ -11,25 +11,16 @@ export class WindowManager {
 
   public register(entry: WindowEntry): void {
     const existing = this.windows.get(entry.id);
-    const order = existing?.order ?? ++this.seq;
-    const level = entry.level ?? existing?.level ?? WindowLevel.BASE;
-
-    this.windows.set(entry.id, {
-      ...existing,
-      ...entry,
-      level,
-      order,
-    });
+    entry.order = entry.order ?? existing?.order ?? ++this.seq;
+    entry.level = entry.level ?? existing?.level ?? WindowLevel.BASE;
+    this.windows.set(entry.id, entry);
     this.notify();
   }
 
   public update(id: string, partial: Partial<WindowEntry>): void {
     const existing = this.windows.get(id);
     if (!existing) return;
-    this.windows.set(id, {
-      ...existing,
-      ...partial,
-    });
+    Object.defineProperties(existing, Object.getOwnPropertyDescriptors(partial));
     this.notify();
   }
 
@@ -79,6 +70,46 @@ export class WindowManager {
 
     if (this.fallbackHandler) {
       return this.fallbackHandler();
+    }
+
+    return false;
+  }
+
+  public handleKeyDown(code: string, e?: KeyboardEvent, context?: unknown): boolean {
+    const top = this.getTopWindow();
+    if (!top) return false;
+
+    if (/^Digit[1-9]$/.test(code) && top.digitActions && top.digitActions.length > 0) {
+      const digit = parseInt(code.replace('Digit', ''), 10);
+      const actionIndex = digit - 1;
+      if (actionIndex >= 0 && actionIndex < top.digitActions.length) {
+        const action = top.digitActions[actionIndex];
+        if (typeof action === 'function') {
+          action(e);
+          return true;
+        }
+      }
+    }
+
+    if (typeof top.onKeyDown === 'function') {
+      const handled = top.onKeyDown(code, e, context);
+      if (handled === true) return true;
+    }
+
+    if (code === 'Escape') {
+      return this.handleEscape();
+    }
+
+    return top.modal ?? true;
+  }
+
+  public handleKeyUp(code: string, e?: KeyboardEvent, context?: unknown): boolean {
+    const top = this.getTopWindow();
+    if (!top) return false;
+
+    if (typeof top.onKeyUp === 'function') {
+      const handled = top.onKeyUp(code, e, context);
+      if (handled === true) return true;
     }
 
     return false;

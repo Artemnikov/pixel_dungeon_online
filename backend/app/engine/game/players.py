@@ -8,16 +8,16 @@ death sequence (scatter the backpack, drop a grave).
 
 import random
 import uuid
-from typing import List, Optional
+from typing import Callable, Dict, List, Optional
 
 from app.engine.dungeon.constants import TileType
 from app.engine.entities.base import Faction, Position
 from app.engine.entities.items.union import Bag, VelvetPouch
-from app.engine.entities.items.artifacts import CloakOfShadows
+from app.engine.entities.items.artifacts import CloakOfShadows, HolyTome
 from app.engine.entities.items.consumables import Amulet, Ankh, Dewdrop, Gold, LostBackpack, Ration, Stone, ThrowableDagger, Waterskin
-from app.engine.entities.items.equip import Bow, ClothArmor, Dagger, SpiritBow, Staff, WornShortsword, make_named_melee_weapon
-from app.engine.entities.items.potions import ELIXIR_BREW_KINDS, PotionOfLiquidFlame
-from app.engine.entities.items.scrolls import ScrollOfIdentify, ScrollOfUpgrade
+from app.engine.entities.items.equip import Bow, ClothArmor, Dagger, SpiritBow, Staff, WornShortsword, MissileWeapon, make_named_melee_weapon
+from app.engine.entities.items.potions import ELIXIR_BREW_KINDS, PotionOfLiquidFlame, PotionOfStrength
+from app.engine.entities.items.scrolls import ScrollOfIdentify, ScrollOfUpgrade, ScrollOfMirrorImage
 from app.engine.entities.wands import WandOfMagicMissile
 from app.engine.entities.player import Belongings, CharacterClass, Difficulty, Player
 from app.engine.entities.buffs import add_buff, remove_buff
@@ -42,8 +42,23 @@ HARMFUL_BUFFS = frozenset({
 })
 
 
+def _init_warrior(player: Player) -> None:
+    player.seal_affixed = True
+
+
+def _init_duelist(player: Player) -> None:
+    player.weapon_charge = float(player.get_max_weapon_charges())
+    player.finisher_ready = True
+
+
+_CLASS_POST_INIT: Dict[str, Callable[[Player], None]] = {
+    CharacterClass.WARRIOR: _init_warrior,
+    CharacterClass.DUELIST: _init_duelist,
+}
+
+
 class PlayersMixin:
-    def add_player(self, player_id: str, name: str, class_type: str = CharacterClass.WARRIOR, is_admin: bool = False) -> Player:
+    def add_player(self, player_id: str, name: str, class_type: str = CharacterClass.WARRIOR, is_admin: bool = False, faction: str = Faction.PLAYER) -> Player:
         floor = self._get_or_create_floor(1)
         spawn_pos = self._get_stairs_pos(TileType.STAIRS_UP, floor_id=floor.floor_id)
 
@@ -138,6 +153,77 @@ class PlayersMixin:
             belongings.backpack.collect(spirit_bow)
             class_starting_quickslots.append((0, spirit_bow))
 
+        elif class_type == CharacterClass.DUELIST:
+            belongings.weapon = make_named_melee_weapon("Rapier", id=str(uuid.uuid4()))
+            belongings.armor = ClothArmor(
+                id=str(uuid.uuid4()),
+            )
+            throwing_spikes = MissileWeapon(name="Throwing Spikes", tier=1, quantity=2, id=str(uuid.uuid4()), level_known=True, cursed_known=True)
+            belongings.backpack.collect(throwing_spikes)
+            str_pot = PotionOfStrength(id=str(uuid.uuid4()))
+            belongings.backpack.collect(str_pot)
+            starting_identified.append(str_pot)
+            mirror_scr = ScrollOfMirrorImage(id=str(uuid.uuid4()), level_known=True, cursed_known=True)
+            belongings.backpack.collect(mirror_scr)
+            starting_identified.append(mirror_scr)
+            class_starting_quickslots.append((0, belongings.weapon))
+            class_starting_quickslots.append((1, throwing_spikes))
+
+        elif class_type == CharacterClass.CLERIC:
+            belongings.weapon = make_named_melee_weapon("Cudgel", id=str(uuid.uuid4()))
+            belongings.armor = ClothArmor(
+                id=str(uuid.uuid4()),
+            )
+            holy_tome = HolyTome(
+                id=str(uuid.uuid4()),
+            )
+            belongings.artifact = holy_tome
+            class_starting_quickslots.append((0, holy_tome))
+
+        elif class_type == CharacterClass.GNOLL:
+            belongings.weapon = make_named_melee_weapon("Spear", id=str(uuid.uuid4()))
+            belongings.armor = ClothArmor(id=str(uuid.uuid4()))
+            class_starting_quickslots.append((0, belongings.weapon))
+
+        elif class_type == CharacterClass.SKELETON:
+            belongings.weapon = make_named_melee_weapon("Shortsword", id=str(uuid.uuid4()))
+            belongings.armor = ClothArmor(id=str(uuid.uuid4()))
+            stones = Stone(id=str(uuid.uuid4()), quantity=3, level_known=True, cursed_known=True)
+            belongings.backpack.collect(stones)
+            class_starting_quickslots.append((0, stones))
+
+        elif class_type == CharacterClass.THIEF:
+            belongings.weapon = Dagger(id=str(uuid.uuid4()))
+            belongings.armor = ClothArmor(id=str(uuid.uuid4()))
+            knives = ThrowableDagger(id=str(uuid.uuid4()), name="Throwing Knife", quantity=5)
+            belongings.backpack.collect(knives)
+            class_starting_quickslots.append((0, knives))
+
+        elif class_type == CharacterClass.RAT:
+            belongings.weapon = make_named_melee_weapon("Gloves", id=str(uuid.uuid4()))
+            belongings.armor = ClothArmor(id=str(uuid.uuid4()))
+            class_starting_quickslots.append((0, belongings.weapon))
+
+        elif class_type == CharacterClass.NECROMANCER:
+            wand = WandOfMagicMissile(
+                id=str(uuid.uuid4()),
+                charges=4,
+                max_charges=4,
+                level_known=True,
+                cursed_known=True,
+            )
+            belongings.weapon = Staff(
+                id=str(uuid.uuid4()),
+                imbued_wand=wand,
+                level_known=True,
+                cursed_known=True,
+            )
+            belongings.weapon.update_wand(False)
+            class_starting_quickslots.append((0, belongings.weapon))
+            plf = PotionOfLiquidFlame(id=str(uuid.uuid4()), level_known=True, cursed_known=True)
+            belongings.backpack.collect(plf)
+            starting_identified.append(plf)
+
         # HeroClass.initHero(): every hero starts with a ration of food, a
         # Velvet Pouch (for seeds/stones), and a Waterskin in the backpack.
         belongings.backpack.collect(Ration(
@@ -166,6 +252,7 @@ class PlayersMixin:
                 slot.level_known = True
                 slot.cursed_known = True
 
+        props = ["UNDEAD"] if class_type == CharacterClass.SKELETON else []
         player = Player(
             id=player_id,
             name=name,
@@ -174,11 +261,12 @@ class PlayersMixin:
             max_hp=20,
             attack=3,
             defense=1,
-            faction=Faction.PLAYER,
+            faction=faction,
             class_type=class_type,
             belongings=belongings,
             floor_id=1,
             is_admin=is_admin,
+            properties=props,
         )
 
         # SPD HeroClass.initHero()'s auto-identified starting consumables — record
@@ -193,12 +281,9 @@ class PlayersMixin:
         waterskin_slot = 2 if class_type == CharacterClass.ROGUE else 1
         player.quickslot.set_slot(waterskin_slot, waterskin)
 
-        # HeroClass.initWarrior(): the BrokenSeal is affixed to the cloth
-        # armor at spawn. The shield activates on HP dropping to <=50%
-        # (Char.java:937-946 / WarriorShield.activate) and is invisible
-        # (0 shielding, 0 cooldown) until then.
-        if class_type == CharacterClass.WARRIOR:
-            player.seal_affixed = True
+        class_init = _CLASS_POST_INIT.get(class_type)
+        if class_init is not None:
+            class_init(player)
 
         self.players[player_id] = player
         self.depth = 1
@@ -364,6 +449,24 @@ class PlayersMixin:
         xp_needed = player.max_exp() - player.experience
         if player.earn_exp(xp_needed):
             self.on_talent_level_up(player)
+
+    def admin_set_hp(self, player_id: str, hp: int | None = None, hp_pct: float | None = None):
+        """Admin-only: set player's current health directly or by percentage (0.01 - 1.0 or 1 - 100)."""
+        player = self.players.get(player_id)
+        if not player or not player.is_admin:
+            return
+        if hp_pct is None and hp is None:
+            return
+        total_max_hp = player.get_total_max_hp()
+        if hp_pct is not None:
+            pct = hp_pct / 100.0 if hp_pct > 1.0 else float(hp_pct)
+            pct = max(0.01, min(1.0, pct))
+            player.hp = max(1, min(total_max_hp, round(total_max_hp * pct)))
+        elif hp is not None:
+            player.hp = max(1, min(total_max_hp, int(hp)))
+        player.is_alive = True
+        player.is_downed = False
+        player.death_processed = False
 
     def _random_fall_landing_cell(self, floor: FloorState, fall_into_pit: bool = False) -> Position:
         """SPD RegularLevel.fallCell(fallIntoPit): a passable, unoccupied cell on

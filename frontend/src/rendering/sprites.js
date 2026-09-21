@@ -93,6 +93,7 @@ export const ITEM_SPRITES = {
   "Rogue's Cloak":    [7, 11],  // ARMOR_ROGUE (ARMOR+7)
 
   "Dried Rose":       [4, 16],  // ARTIFACT_ROSE1
+  "Holy Tome":        [7, 16],  // ARTIFACT_TOME (ARTIFACTS+23 = idx 263 = col 7, row 16)
   "Petal":            [6, 1],   // PETAL (UNCOLLECTIBLE+4)
 
   // Wands / rings / artifacts (section bases, generic first entry)

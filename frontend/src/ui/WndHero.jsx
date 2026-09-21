@@ -11,7 +11,7 @@ import buffsImg from '../assets/pixel-dungeon/interfaces/buffs.png';
 const BUFF_SIZE = 7;
 const BUFF_COLS = 18;
 
-const CLASS_ICON_INDEX = { warrior: 0, mage: 1, rogue: 2, huntress: 3 };
+const CLASS_ICON_INDEX = { warrior: 0, mage: 1, rogue: 2, huntress: 3, duelist: 4, cleric: 5 };
 
 // SPD WndHero.java port: tabbed hero window with Stats / Talents / Buffs tabs.
 // The Talents tab embeds the full TalentPane (with upgrade controls). Opened
@@ -42,8 +42,10 @@ function BuffRow({ buff, onClick }) {
 function StatsTab({ myStats, depth, gold }) {
   const { t } = useTranslation();
   const classIcon = CLASS_ICON_INDEX[myStats?.classType] ?? 0;
-  const className = t(`class.${myStats?.classType || 'warrior'}`, {
-    defaultValue: myStats?.classType || 'Warrior',
+  const className = t(`hero.classes.${myStats?.classType}.name`, {
+    defaultValue: t(`class.${myStats?.classType || 'warrior'}`, {
+      defaultValue: myStats?.classType || 'Warrior',
+    }),
   });
   const levelVal = myStats?.level ?? 1;
   const hpVal = myStats?.hp ?? 0;
@@ -68,7 +70,7 @@ function StatsTab({ myStats, depth, gold }) {
 
   return (
     <div className="wnd-hero-tab">
-      <IconTitle icon={<HeroIcon index={classIcon} size={16} />} title={title} />
+      <IconTitle icon={<HeroIcon index={classIcon} classType={myStats?.classType} size={16} />} title={title} />
       <div className="wnd-hero-stats">
         {rows.map((r, i) => (
           <div key={i} className="wnd-hero-stat-row">

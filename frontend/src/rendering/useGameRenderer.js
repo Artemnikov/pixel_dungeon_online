@@ -237,7 +237,7 @@ export default function useGameRenderer({
       drawTargetedCell(ctx, { hoveredCellRef, assetImages });
       drawLastTargetCrosshair(ctx, { targetingModeRef, selectedEnemyIdRef, entitiesRef, visionRef, assetImages });
       advanceAndDrawCheckedCells(ctx, { ref: searchEffectsRef });
-      advanceAndDrawParticles(ctx, { particlesRef });
+      advanceAndDrawParticles(ctx, { particlesRef, assetImages });
       advanceAndDrawFlares(ctx, { flareRef: flareEffectsRef });
       advanceAndDrawSpellSprites(ctx, { spellSpriteRef: spellSpriteEffectsRef, assetImages });
       advanceAndDrawFloatingText(ctx, { floatingTextRef });

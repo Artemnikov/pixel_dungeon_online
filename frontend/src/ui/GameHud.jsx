@@ -6,6 +6,7 @@ import AbilityButton from './AbilityButton';
 import BerserkButton from './BerserkButton';
 import PrepStrikeButton from './PrepStrikeButton';
 import ComboDisplay from './ComboDisplay';
+import DuelistFinisherButton from './DuelistFinisherButton';
 
 function GameHud({
   interfaceSize, isDesktop, canvasWidth,
@@ -16,6 +17,7 @@ function GameHud({
   onSearch, onInventory, onQuickBag, onSwap,
   onSlotClick, onSlotDoubleClick, onSlotLongPress, onSlotContextMenu,
   onUseAbility, onTriggerBerserk, onPrepStrike, onUseComboMove,
+  onDuelistFinisher,
   onOpenItem, onContextMenu, onDefaultAction,
   onCloseInventory,
   onLayout,
@@ -33,6 +35,7 @@ function GameHud({
         targetingMode={targetingMode}
         swappedQuickslots={swappedQuickslots}
         assetImages={assetImages}
+        myStats={myStats}
         onSearch={onSearch}
         onInventory={onInventory}
         onQuickBag={onQuickBag}
@@ -63,12 +66,23 @@ function GameHud({
         comboCount={myStats.comboCount || 0}
         onUseComboMove={onUseComboMove}
       />
+      <DuelistFinisherButton
+        classType={myStats.classType}
+        weaponCharge={myStats.weaponCharge || 0}
+        maxWeaponCharges={myStats.maxWeaponCharges}
+        finisherReady={!!myStats.finisherReady}
+        equippedWeapon={belongings?.weapon || equippedItems?.weapon}
+        effects={myStats.effects}
+        subclass={myStats.subclass}
+        onDuelistFinisher={onDuelistFinisher}
+      />
       {showInventory && (isDesktop ? (
         <InventoryPane
           belongings={belongings}
           gold={gold}
           energy={energy}
           strength={strength}
+          myStats={myStats}
           onOpenItem={onOpenItem}
           onContextMenu={onContextMenu}
           onDefaultAction={onDefaultAction}
@@ -79,6 +93,7 @@ function GameHud({
           gold={gold}
           energy={energy}
           strength={strength}
+          myStats={myStats}
           onOpenItem={onOpenItem}
           onContextMenu={onContextMenu}
           onDefaultAction={onDefaultAction}

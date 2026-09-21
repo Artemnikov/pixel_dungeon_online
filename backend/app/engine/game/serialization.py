@@ -221,21 +221,26 @@ class SerializationMixin:
         hunger = d.get("hunger", 0.0)
         d["hunger_pct"] = round(min(1.0, hunger / 450.0), 3)
 
-        # Find an adjacent hostile mob (attack target for auto-attack UI)
         attack_target = None
         enemies_nearby = False
         try:
             floor = self._get_or_create_floor(p.floor_id)
             enemies_nearby = self._has_enemies_nearby(floor, p, radius=3)
             for mob in floor.mobs.values():
-                if mob.is_alive and mob.faction == "dungeon" and abs(mob.pos.x - p.pos.x) + abs(mob.pos.y - p.pos.y) <= 1:
+                if mob.is_alive and mob.faction != p.faction and abs(mob.pos.x - p.pos.x) + abs(mob.pos.y - p.pos.y) <= 1:
                     attack_target = {"id": mob.id, "name": mob.name, "kind": mob.type}
                     break
+            if attack_target is None:
+                for other_p in self._players_on_floor(p.floor_id):
+                    if other_p.id != p.id and other_p.is_alive and not other_p.is_downed and other_p.faction != p.faction and abs(other_p.pos.x - p.pos.x) + abs(other_p.pos.y - p.pos.y) <= 1:
+                        attack_target = {"id": other_p.id, "name": other_p.name, "kind": "player"}
+                        break
         except Exception:
             pass
         d["attack_target"] = attack_target
         d["step_duration_ms"] = p.get_step_duration_ms(enemies_nearby=enemies_nearby)
         d["last_processed_seq"] = p.last_processed_seq
+        d["max_weapon_charges"] = p.get_max_weapon_charges()
         return d
 
     def _serialize_player_stub(self, p) -> dict:

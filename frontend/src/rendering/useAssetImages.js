@@ -16,6 +16,8 @@ import warriorSprite from '../assets/pixel-dungeon/sprites/warrior.png';
 import mageSprite from '../assets/pixel-dungeon/sprites/mage.png';
 import rogueSprite from '../assets/pixel-dungeon/sprites/rogue.png';
 import huntressSprite from '../assets/pixel-dungeon/sprites/huntress.png';
+import duelistSprite from '../assets/pixel-dungeon/sprites/duelist.png';
+import clericSprite from '../assets/pixel-dungeon/sprites/cleric.png';
 import itemsSprite from '../assets/pixel-dungeon/sprites/items.png';
 import ratSprite from '../assets/pixel-dungeon/sprites/rat.png';
 import crabSprite from '../assets/pixel-dungeon/sprites/crab.png';
@@ -91,6 +93,8 @@ export default function useAssetImages() {
     mage: null,
     rogue: null,
     huntress: null,
+    duelist: null,
+    cleric: null,
     items: null,
     rat: null,
     ghost: null,
@@ -206,6 +210,8 @@ export default function useAssetImages() {
     loadImage(mageSprite, 'mage');
     loadImage(rogueSprite, 'rogue');
     loadImage(huntressSprite, 'huntress');
+    loadImage(duelistSprite, 'duelist');
+    loadImage(clericSprite, 'cleric');
     loadImage(itemsSprite, 'items');
     loadImage(ratSprite, 'rat');
     loadImage(ghostSprite, 'ghost');

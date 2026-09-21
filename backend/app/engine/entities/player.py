@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 from pydantic import BaseModel, Field, computed_field, model_validator, SerializeAsAny
 
 from app.engine.entities.buffs import Buff, add_buff, remove_buff, has_buff, get_buff
-from app.engine.entities.subclasses import SubclassInfo, TalentInfo, Talent
+from app.engine.entities.subclasses import SubclassInfo, TalentInfo, Talent, Subclass
 from app.engine.entities.weapons.weapon_defs import WEAPON_DEFS
 from app.engine.talents.registry import MODIFIERS
 
@@ -89,11 +89,12 @@ class Belongings(BaseModel):
     artifact: Optional[AnyItem] = None
     misc: Optional[AnyItem] = None
     ring: Optional[AnyItem] = None
+    secondary_weapon: Optional[AnyItem] = None
 
-    _EQUIP_SLOT_NAMES = ("weapon", "armor", "artifact", "misc", "ring")
+    _EQUIP_SLOT_NAMES = ("weapon", "armor", "artifact", "misc", "ring", "secondary_weapon")
 
     def equipped_slots(self) -> List[Optional["ItemBase"]]:
-        return [self.weapon, self.armor, self.artifact, self.misc, self.ring]
+        return [self.weapon, self.armor, self.artifact, self.misc, self.ring, self.secondary_weapon]
 
     def is_equipped(self, item_id: str) -> bool:
         return any(s is not None and s.id == item_id for s in self.equipped_slots())
@@ -161,6 +162,11 @@ class CharacterClass:
     HUNTRESS = "huntress"
     DUELIST = "duelist"
     CLERIC = "cleric"
+    GNOLL = "gnoll"
+    SKELETON = "skeleton"
+    THIEF = "thief"
+    RAT = "rat"
+    NECROMANCER = "necromancer"
 
 
 class Effect(BaseModel):
@@ -190,6 +196,20 @@ class Mob(Entity):
     type: str = EntityType.MOB
     faction: str = Faction.DUNGEON
     mob_type: Optional[str] = None
+
+    # Demon/undead keywords used to flag unholy mobs (Cleric holy spells deal
+    # max damage against them). Matched against mob_type and name (each mob
+    # class sets `name`; generic `Mob(...)` holders may set either).
+    UNHOLY_KEYWORDS: ClassVar[frozenset] = frozenset({
+        "skeleton", "wraith", "succubus", "demon", "eye", "scorpio",
+        "ghoul", "zombie", "necromancer", "vampire", "ghost",
+    })
+
+    @property
+    def is_unholy(self) -> bool:
+        mob_kind = (self.mob_type or "").lower()
+        mob_name = (self.name or "").lower()
+        return any(k in mob_kind or k in mob_name for k in self.UNHOLY_KEYWORDS)
     ai_state: str = "idle"
     target_id: Optional[str] = None
     difficulty: str = Difficulty.NORMAL
@@ -476,8 +496,6 @@ class Player(Entity):
     cloak_stealth_active: bool = False
     _cloak_drain_accum: float = 0.0
     _cloak_recharge_accum: float = 0.0
-    # HolyTome: next scroll read is blessed (doubled effect).
-    holy_tome_buffed: bool = False
     # Assassin Preparation: real seconds spent invisible this stealth window.
     # Drives the surprise damage tier / KO threshold / blink range (see combat).
     prep_seconds: float = 0.0
@@ -488,31 +506,117 @@ class Player(Entity):
     freerun_seconds: float = 0.0
 
     # --- Duelist --------------------------------------------------------------
-    # Weapon charge (0-100): builds per melee hit, used by Champion/Monk finishers.
-    weapon_charge: int = 0
-    _weapon_charge_accum: float = 0.0
-    # Finisher eligibility: True once combo_count >= threshold for Duelist.
+    # Weapon charge: fractional/integer capacity scaling with level and subclass.
+    weapon_charge: float = 0.0
+    # Finisher eligibility: True once weapon_charge >= 1 for Duelist.
     finisher_ready: bool = False
     # Duel mode: set while Challenge armor ability 1v1 is active.
     duel_mode_active: bool = False
     duel_mode_target_id: Optional[str] = None
+    duel_mode_taken_damage: int = 0
+    duel_mode_turns_left: float = 0.0
+    last_duel_ended_turn: int = -100
     # Elemental strike last weapon kind (for enchant cone bonus).
     last_weapon_enchant: str = ""
+    # Monk Energy (0-20)
+    monk_energy: float = 0.0
+    # Stances and trackers
+    brawler_stance: bool = False
+    brawler_stance_turns: int = 0
+    last_weapon_ability_id: Optional[str] = None
+    last_weapon_ability_weapon_name: Optional[str] = None
+    last_monk_ability_id: Optional[str] = None
+    last_weapon_ability_turn: int = 0
+    last_monk_ability_turn: int = 0
+    swift_equip_charges: int = 0
+    swift_equip_cooldown: float = 0.0
+    patient_strike_tile: Optional[Tuple[int, int]] = None
+    patient_strike_ready: bool = False
+    feint_afterimage_pos: Optional[Tuple[int, int]] = None
+    feint_cooldown_refund_ready: bool = False
+
+    def get_max_weapon_charges(self) -> int:
+        """SPD-faithful max weapon charges calculation."""
+        subclass = getattr(self.subclass_info, "subclass", None)
+        if subclass == Subclass.CHAMPION:
+            return min(10, 4 + (self.level - 1) // 3)
+        return min(8, 2 + (self.level - 1) // 3)
+
+    def get_max_monk_energy(self) -> int:
+        """SPD-faithful max monk energy calculation."""
+        return max(10, 5 + self.level // 2)
+
+    def is_monk_empowered(self) -> bool:
+        vigor = self.talent_info.level(Talent.MONASTIC_VIGOR)
+        threshold_pct = max(0.40, 1.00 - 0.20 * vigor)
+        max_e = max(1, self.get_max_monk_energy())
+        return (self.monk_energy / max_e) >= threshold_pct
+
+    def can_swift_equip(self) -> bool:
+        """Whether Duelist Swift Equip can be used for instant 0-delay weapon equip."""
+        se_level = self.talent_info.level(Talent.SWIFT_EQUIP)
+        return se_level > 0 and self.swift_equip_charges > 0
+
+    def consume_swift_equip_charge(self) -> bool:
+        """Consume a Swift Equip charge and trigger/maintain 20-turn cooldown."""
+        if not self.can_swift_equip():
+            return False
+        self.swift_equip_charges -= 1
+        if self.swift_equip_cooldown <= 0.0:
+            self.swift_equip_cooldown = 20.0
+        return True
+
+    def gain_weapon_charge(self, amount: float) -> None:
+        """Add weapon charge up to max capacity."""
+        max_c = float(self.get_max_weapon_charges())
+        self.weapon_charge = min(max_c, self.weapon_charge + amount)
+        self.finisher_ready = self.weapon_charge >= 1.0
+
+    def spend_weapon_charge(self, amount: float) -> bool:
+        """Deduct weapon charge if available. Returns True if spent."""
+        if self.weapon_charge >= amount:
+            self.weapon_charge = max(0.0, self.weapon_charge - amount)
+            self.finisher_ready = self.weapon_charge >= 1.0
+            return True
+        return False
+
+    def gain_monk_energy(self, amount: float) -> None:
+        """Add monk energy up to max capacity."""
+        max_e = float(self.get_max_monk_energy())
+        self.monk_energy = min(max_e, self.monk_energy + amount)
+
+    def spend_monk_energy(self, amount: float) -> bool:
+        """Deduct monk energy if available. Returns True if spent."""
+        if self.monk_energy >= amount:
+            self.monk_energy = max(0.0, self.monk_energy - amount)
+            return True
+        return False
 
     # --- Cleric ---------------------------------------------------------------
-    # Spells cast this tick (for per-turn spell limits / Trinity tracking).
-    spells_cast_this_turn: List[str] = Field(default_factory=list)
-    # Spell cooldowns: {spell_name -> remaining_seconds}
     spell_cooldowns: Dict[str, float] = Field(default_factory=dict)
-    # Trinity: list of borrowed item kinds (max 3)
+    cleric_quick_spell: Optional[str] = None
+    guiding_light_priest_cd: float = 0.0
     current_trinity_forms: List[str] = Field(default_factory=list)
-    # Ascended Form (Cleric armor ability): active flag
     ascended_form_active: bool = False
     ascended_form_timer: float = 0.0
-    # Power of Many: ally mob id
+    ascended_form_casts: int = 0
+    flash_casts: int = 0
+    divine_intervention_used: bool = False
+    _has_active_wall: Optional[int] = None
     powered_ally_id: Optional[str] = None
-    # Paladin subclass: blessed weapon turns
-    blessed_weapon_turns: int = 0
+    last_used_inscription: Optional[Dict[str, Any]] = None
+
+    def get_holy_tome(self):
+        """Returns equipped Holy Tome, or Holy Tome from backpack if Light Reading is learned."""
+        from app.engine.entities.items.artifacts import HolyTome
+        for slot in (getattr(self.belongings, "artifact", None), getattr(self.belongings, "misc", None)):
+            if isinstance(slot, HolyTome):
+                return slot
+        if self.talent_info.has("light_reading"):
+            for it in self.belongings.backpack.items:
+                if isinstance(it, HolyTome):
+                    return it
+        return None
 
     @property
     def talent_info(self):
@@ -537,7 +641,7 @@ class Player(Entity):
     def equipped_wearable(self) -> Optional[AnyItem]:
         return self.belongings.armor
 
-    def take_damage(self, amount: int):
+    def take_damage(self, amount: int, is_split_damage: bool = False):
         if self.is_admin:
             return 0
         if self.is_downed:
@@ -551,12 +655,20 @@ class Player(Entity):
         if self.has_buff("spawn_protection"):
             return 0
 
+        # Life Link damage split with Light Ally
+        if not is_split_damage and self.has_buff("life_link"):
+            ally = getattr(self, "_active_powered_ally", None)
+            if ally is not None and getattr(ally, "is_alive", False):
+                split = amount // 2
+                amount = amount - split
+                ally.take_damage(split, is_split_damage=True)
+
         # Deathless Fury (warrior T3 berserker): a fatal blow while raging with
         # power>=1 triggers Berserk instead of killing (cheat death, SPD
         # Berserk.berserking()).
         if (
             self.hp - amount <= 0
-            and self.subclass_info.subclass == "berserker"
+            and self.subclass_info.subclass == Subclass.BERSERKER
             and self.berserk_power >= 1.0
             and not self.berserk_active
         ):
@@ -606,6 +718,10 @@ class Player(Entity):
         if pa > 0 and broken:
             add_buff(self.buffs, "provoked_anger_tracker", duration=5.0, level=1)
 
+        # Duel mode damage tracking for Invigorating Victory
+        if getattr(self, "duel_mode_active", False):
+            self.duel_mode_taken_damage += amount
+
         self.hp -= amount
         if self.hp <= 0:
             self.hp = 0
@@ -618,10 +734,35 @@ class Player(Entity):
         bonus = w.damage if isinstance(w, KindOfWeapon) else 0
         return self.attack + bonus
 
+    def get_effective_weapon_level(self, weapon: Optional[KindOfWeapon]) -> int:
+        if weapon is None:
+            return 0
+        lvl = getattr(weapon, "level", 0)
+        subclass = getattr(self.subclass_info, "subclass", None)
+        if subclass != Subclass.CHAMPION:
+            return lvl
+        tu = self.talent_info.level(Talent.TWIN_UPGRADES)
+        if tu <= 0:
+            return lvl
+        other = self.belongings.secondary_weapon if weapon is self.belongings.weapon else self.belongings.weapon
+        if other is None:
+            return lvl
+        other_lvl = getattr(other, "level", 0)
+        if other_lvl <= lvl:
+            return lvl
+        w_tier = getattr(weapon, "tier", 1)
+        o_tier = getattr(other, "tier", 1)
+        tier_deficit = o_tier - w_tier
+        required_deficit = 3 - tu
+        if tier_deficit >= required_deficit:
+            return other_lvl
+        return lvl
+
     def get_damage_min(self) -> int:
         w = self.belongings.weapon
         if isinstance(w, MeleeWeapon):
-            return w.dmg_min(w.level)
+            lvl = self.get_effective_weapon_level(w)
+            return w.dmg_min(lvl)
         elif isinstance(w, KindOfWeapon):
             return w.damage
         from app.engine.entities.rings.ring_mechanics import using_force, force_damage_range
@@ -632,7 +773,8 @@ class Player(Entity):
     def get_damage_max(self) -> int:
         w = self.belongings.weapon
         if isinstance(w, MeleeWeapon):
-            return w.dmg_max(w.level)
+            lvl = self.get_effective_weapon_level(w)
+            return w.dmg_max(lvl)
         elif isinstance(w, KindOfWeapon):
             return w.damage
         from app.engine.entities.rings.ring_mechanics import using_force, force_damage_range
@@ -814,6 +956,9 @@ class Player(Entity):
         slot = self.belongings.slot_name_for(item)
         if slot is None:
             return False
+        if slot == "weapon" and getattr(self.subclass_info, "subclass", None) == Subclass.CHAMPION:
+            if self.belongings.weapon is not None and self.belongings.secondary_weapon is None:
+                slot = "secondary_weapon"
         self.belongings.backpack.detach_all(item_id)
         prev = getattr(self.belongings, slot)
         if prev is not None:
@@ -822,6 +967,9 @@ class Player(Entity):
         setattr(self.belongings, slot, item)
         item.on_equip(self)
         item.cursed_known = True
+        # Adventurer's Intuition (Duelist T1): rank 2 auto-identifies weapon on equip
+        if isinstance(item, KindOfWeapon) and self.talent_info.level(Talent.ADVENTURERS_INTUITION) >= 2:
+            item.level_known = True
         return True
 
     def count_worn_unidentified(self) -> int:
@@ -855,11 +1003,11 @@ class Player(Entity):
         return 0.0
 
     def attack_proc(self, target) -> None:
-        if self.subclass_info.subclass == "berserker" and self.berserk_cooldown <= 0:
+        if self.subclass_info.subclass == Subclass.BERSERKER and self.berserk_cooldown <= 0:
             endless_level = self.subclass_info.talent_info.level("endless_rage")
             max_power = 1.0 + 0.1667 * endless_level
             self.berserk_power = min(max_power, self.berserk_power + 0.05)
-        if self.subclass_info.subclass == "gladiator":
+        if self.subclass_info.subclass == Subclass.GLADIATOR:
             self.combo_count += 1
             self.combo_timer = max(self.combo_timer, 5.0)
 

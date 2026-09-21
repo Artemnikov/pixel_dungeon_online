@@ -5,7 +5,14 @@ import HeroIcon from './HeroIcon';
 import WndOverlay from './WndOverlay';
 import { WindowLevel, WindowBackdrop } from '../game/window/WindowTypes';
 
-const SUBCLASS_IDS = ['berserker', 'gladiator', 'assassin', 'freerunner', 'battlemage', 'warlock', 'sniper', 'warden'];
+const SUBCLASS_IDS = [
+  'berserker', 'gladiator',
+  'assassin', 'freerunner',
+  'battlemage', 'warlock',
+  'sniper', 'warden',
+  'champion', 'monk',
+  'priest', 'paladin',
+];
 
 function displayName(id) {
   return id.charAt(0).toUpperCase() + id.slice(1);

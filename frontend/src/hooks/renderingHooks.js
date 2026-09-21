@@ -41,6 +41,7 @@ export default function useRenderingHooks({
     examineMode, inspectInfo,
     handleExamineOrReveal,
     sendUseAbility, sendUseComboMove, sendPrepStrike,
+    sendDuelistFinisher, sendCastSpell, sendSetClericQuickSpell,
   } = targeting;
 
   // Drive the inspect popup every frame
@@ -106,6 +107,7 @@ export default function useRenderingHooks({
     examineMode, inspectInfo,
     handleExamineOrReveal,
     sendUseAbility, sendUseComboMove, sendPrepStrike,
+    sendDuelistFinisher, sendCastSpell, sendSetClericQuickSpell,
     toolbarItems,
   };
 }

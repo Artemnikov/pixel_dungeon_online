@@ -67,16 +67,20 @@ export class KeyboardMovementController {
     const tag = (e.target as HTMLElement)?.tagName;
     const isInput = tag === 'INPUT' || tag === 'TEXTAREA' || (e.target as HTMLElement)?.isContentEditable;
 
-    if (e.code === 'Escape') {
-      if (isInput) {
+    if (isInput) {
+      if (e.code === 'Escape') {
         (e.target as HTMLElement)?.blur();
       }
-      this.registry.dispatch(e.code, context, true, e);
       return;
     }
 
-    if (isInput) return;
-    if (windowManager.hasActiveWindows()) return;
+    if (windowManager.hasActiveWindows()) {
+      const consumed = windowManager.handleKeyDown(e.code, e, context);
+      if (consumed) {
+        return;
+      }
+    }
+
     if (isFloorFadeActive(context.floorFadeRef)) return;
 
     this.pressedKeys.add(e.code);
@@ -86,6 +90,12 @@ export class KeyboardMovementController {
   private handleKeyUp(e: KeyboardEvent): void {
     this.pressedKeys.delete(e.code);
     const context = this.getContext();
+
+    if (windowManager.hasActiveWindows()) {
+      const consumed = windowManager.handleKeyUp(e.code, e, context);
+      if (consumed) return;
+    }
+
     this.registry.dispatch(e.code, context, false, e);
   }
 

@@ -1,6 +1,7 @@
 import type { Dispatch, SetStateAction } from 'react';
 import type { Player, Mob, Difficulty } from '../../types/contract';
 import type { MyStats } from '../types';
+import { calculateMaxCharges } from '../../data/weaponSkills';
 
 export interface HeroStateSetters {
   setMyStats: Dispatch<SetStateAction<MyStats>>;
@@ -76,6 +77,13 @@ export class HeroStateSync {
       invisible: sp.invisible || 0,
       prepSeconds: sp.prep_seconds || 0,
       comboCount: sp.combo_count || 0,
+      weaponCharge: sp.weapon_charge || 0,
+      maxWeaponCharges: (sp as { max_weapon_charges?: number }).max_weapon_charges ?? calculateMaxCharges(sp.level || 1, sp.subclass_info?.subclass),
+      finisherReady: sp.finisher_ready || false,
+      spellCooldowns: sp.spell_cooldowns || {},
+      clericQuickSpell: sp.cleric_quick_spell || null,
+      ascendedFormActive: sp.ascended_form_active || false,
+      poweredAllyId: sp.powered_ally_id || null,
       pos: sp.pos ? { x: sp.pos.x, y: sp.pos.y } : null,
       talentLevels: sp.subclass_info?.talent_info?.talents || {},
       talentPoints: sp.subclass_info?.talent_points || {},
@@ -83,6 +91,7 @@ export class HeroStateSync {
       keys: sp.keys || [],
       guidePages: sp.guide_pages || [],
       respawnsUsed: sp.respawns_used ?? 0,
+      faction: sp.faction || 'player',
     });
   }
 
@@ -97,6 +106,7 @@ export class HeroStateSync {
       isRegen: (p.heal_left || 0) > 0,
       shield: (p.shields || []).reduce((sum: number, s: { amount?: number }) => sum + (s.amount || 0), 0),
       pos: p.pos ? { x: p.pos.x, y: p.pos.y } : prev.pos,
+      faction: p.faction || prev.faction || 'player',
     }));
   }
 

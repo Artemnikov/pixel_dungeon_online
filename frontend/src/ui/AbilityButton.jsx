@@ -7,6 +7,12 @@ const ABILITY_COSTS = {
   smoke_bomb: 50,
   death_mark: 25,
   shadow_clone: 35,
+  challenge: 35,
+  elemental_strike: 35,
+  feint: 30,
+  ascended_form: 40,
+  trinity: 33,
+  power_of_many: 50,
 };
 
 export default function AbilityButton({

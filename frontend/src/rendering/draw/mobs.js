@@ -249,6 +249,8 @@ export function drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef,
       if (ownerPlayer?.class_type === 'mage' && assetImages.mage) cloneSprite = assetImages.mage;
       else if (ownerPlayer?.class_type === 'rogue' && assetImages.rogue) cloneSprite = assetImages.rogue;
       else if (ownerPlayer?.class_type === 'huntress' && assetImages.huntress) cloneSprite = assetImages.huntress;
+      else if (ownerPlayer?.class_type === 'duelist' && assetImages.duelist) cloneSprite = assetImages.duelist;
+      else if (ownerPlayer?.class_type === 'cleric' && assetImages.cleric) cloneSprite = assetImages.cleric;
 
       if (cloneSprite) {
         const cx = mob.renderPos.x * TILE_SIZE;

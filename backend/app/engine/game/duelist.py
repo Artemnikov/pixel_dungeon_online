@@ -2,165 +2,365 @@
 #
 """Duelist class mechanics for GameInstance.
 
-Weapon charge system, finisher detection, duel mode, and armor abilities.
-Called from TickMixin and ArmorAbilitiesMixin.
+Weapon charge system, weapon abilities dispatch, Champion dual-wielding,
+Monk energy system & abilities, and Duelist armor abilities.
 """
-import random
+from __future__ import annotations
 
-from app.engine.entities.player import Player, CharacterClass
+from abc import ABC, abstractmethod
+from typing import Any, Dict, Optional, TYPE_CHECKING
 
-_CHARGE_PER_HIT = 10
-_CHARGE_MAX = 100
-_CHARGE_DECAY_PER_S = 2.0
+from app.engine.entities.buffs import has_buff
+from app.engine.entities.player import CharacterClass, Player
+from app.engine.entities.talent_enum import ArmorAbilityType, Subclass, Talent
+from app.engine.game.duelist_armor_abilities import (
+    get_duelist_armor_ability,
+)
+from app.engine.game.duelist_monk import (
+    calculate_monk_kill_energy,
+    get_monk_ability,
+)
+from app.engine.game.duelist_weapon_skills import (
+    get_weapon_skill_for_weapon,
+)
+
+if TYPE_CHECKING:
+    from app.engine.entities.items.equip import KindOfWeapon
+    from app.engine.manager import GameInstance
+
+
+class DuelistSubclassStrategy(ABC):
+    """Abstract Strategy for subclass-specific Duelist resource rules."""
+
+    @abstractmethod
+    def get_max_charges(self, player: Player) -> int:
+        ...
+
+    @abstractmethod
+    def get_regen_speed_multiplier(self, player: Player) -> float:
+        ...
+
+    @abstractmethod
+    def on_combat_hit(self, game: GameInstance, player: Player, target: Any) -> None:
+        ...
+
+    @abstractmethod
+    def on_combat_kill(self, game: GameInstance, player: Player, target: Any) -> None:
+        ...
+
+
+class BaseDuelistStrategy(DuelistSubclassStrategy):
+    """Base Duelist resource calculations."""
+
+    def get_max_charges(self, player: Player) -> int:
+        return min(8, 2 + (player.level - 1) // 3)
+
+    def get_regen_speed_multiplier(self, player: Player) -> float:
+        return 0.5 if player.brawler_stance else 1.0
+
+    def on_combat_hit(self, game: GameInstance, player: Player, target: Any) -> None:
+        pass
+
+    def on_combat_kill(self, game: GameInstance, player: Player, target: Any) -> None:
+        pass
+
+
+class ChampionStrategy(DuelistSubclassStrategy):
+    """Champion Subclass: 1.5x charge regen, higher max charges (cap 10)."""
+
+    def get_max_charges(self, player: Player) -> int:
+        return min(10, 4 + (player.level - 1) // 3)
+
+    def get_regen_speed_multiplier(self, player: Player) -> float:
+        mult = 1.5
+        if player.brawler_stance:
+            mult *= 0.5
+        return mult
+
+    def on_combat_hit(self, game: GameInstance, player: Player, target: Any) -> None:
+        pass
+
+    def on_combat_kill(self, game: GameInstance, player: Player, target: Any) -> None:
+        pass
+
+
+class MonkStrategy(DuelistSubclassStrategy):
+    """Monk Subclass: Generates Monk Energy on kills."""
+
+    def get_max_charges(self, player: Player) -> int:
+        return min(8, 2 + (player.level - 1) // 3)
+
+    def get_regen_speed_multiplier(self, player: Player) -> float:
+        return 0.5 if player.brawler_stance else 1.0
+
+    def on_combat_hit(self, game: GameInstance, player: Player, target: Any) -> None:
+        pass
+
+    def on_combat_kill(self, game: GameInstance, player: Player, target: Any) -> None:
+        energy_gain = calculate_monk_kill_energy(player, target)
+        player.gain_monk_energy(energy_gain)
+        game.add_event(
+            "MONK_ENERGY",
+            {
+                "player": player.id,
+                "energy": player.monk_energy,
+                "max_energy": player.get_max_monk_energy(),
+                "empowered": player.is_monk_empowered(),
+            },
+            floor_id=player.floor_id,
+            source_player_id=player.id,
+        )
+
+
+_SUBCLASS_STRATEGIES: Dict[Optional[str], DuelistSubclassStrategy] = {
+    None: BaseDuelistStrategy(),
+    "base": BaseDuelistStrategy(),
+    Subclass.CHAMPION: ChampionStrategy(),
+    Subclass.MONK: MonkStrategy(),
+}
+
+
+def get_duelist_subclass_strategy(subclass: Optional[str]) -> DuelistSubclassStrategy:
+    return _SUBCLASS_STRATEGIES.get(subclass, _SUBCLASS_STRATEGIES[None])
 
 
 class DuelistMixin:
+    """GameInstance mixin for all Duelist capabilities."""
 
     def tick_duelist(self, player: Player, dt: float) -> None:
+        """Called every game tick (~20Hz) from player_tick."""
         if player.class_type != CharacterClass.DUELIST:
             return
-        # Weapon charge decay (SPD: charge decays when not attacking)
-        if player.weapon_charge > 0:
-            player._weapon_charge_accum = getattr(player, "_weapon_charge_accum", 0.0) + dt
-            decay = int(player._weapon_charge_accum * _CHARGE_DECAY_PER_S)
-            if decay > 0:
-                player.weapon_charge = max(0, player.weapon_charge - decay)
-                player._weapon_charge_accum -= decay / _CHARGE_DECAY_PER_S
-        # Tick down duel mode
+
+        subclass_strat = get_duelist_subclass_strategy(player.subclass_info.subclass)
+        max_charges = subclass_strat.get_max_charges(player)
+
+        # Regenerate weapon charge when deficit exists
+        if player.weapon_charge < max_charges:
+            deficit = max_charges - player.weapon_charge
+            # SPD formula: 60 - 1.5 * deficit seconds/turns per charge
+            turns_per_charge = max(30.0, 60.0 - 1.5 * deficit)
+            base_rate = (1.0 / turns_per_charge) * subclass_strat.get_regen_speed_multiplier(player)
+
+            # Weapon Recharging talent bonus
+            wr_level = player.talent_info.level(Talent.WEAPON_RECHARGING)
+            if wr_level > 0 and (has_buff(player.buffs, "recharging") or has_buff(player.buffs, "artifact_recharge")):
+                # +1 charge every 20 - 5*points turns (15t at R1, 10t at R2)
+                bonus_rate = 1.0 / (20.0 - 5.0 * wr_level)
+                base_rate += bonus_rate
+
+            old_charge = player.weapon_charge
+            player.gain_weapon_charge(base_rate * dt)
+            if int(player.weapon_charge) != int(old_charge) or (old_charge < max_charges <= player.weapon_charge):
+                self.add_event(
+                    "WEAPON_CHARGE",
+                    {
+                        "player": player.id,
+                        "charge": player.weapon_charge,
+                        "max_charge": max_charges,
+                        "finisher_ready": player.finisher_ready,
+                    },
+                    floor_id=player.floor_id,
+                    source_player_id=player.id,
+                )
+
+        # Swift Equip cooldown ticking
+        se_level = player.talent_info.level(Talent.SWIFT_EQUIP)
+        if se_level > 0:
+            if player.swift_equip_cooldown > 0:
+                player.swift_equip_cooldown = max(0.0, player.swift_equip_cooldown - dt)
+                if player.swift_equip_cooldown <= 0.0:
+                    player.swift_equip_charges = se_level
+            elif player.swift_equip_charges < se_level:
+                player.swift_equip_charges = se_level
+
+        # Duel Mode tick (Challenge armor ability)
         if player.duel_mode_active:
-            if player.duel_mode_target_id:
-                floor = self._get_or_create_floor(player.floor_id)
-                target = floor.mobs.get(player.duel_mode_target_id)
-                if target is None or not target.is_alive:
-                    player.duel_mode_active = False
-                    player.duel_mode_target_id = None
-                    self.add_event("DUEL_END", {"player": player.id, "reason": "target_dead"},
-                                   floor_id=player.floor_id, source_player_id=player.id)
-        # Tick down ascended cleric state (shared field used by both classes)
-        if player.ascended_form_active and player.ascended_form_timer > 0:
-            player.ascended_form_timer -= dt
-            if player.ascended_form_timer <= 0:
-                player.ascended_form_active = False
-                self.add_event("ASCENDED_END", {"player": player.id},
-                               floor_id=player.floor_id, source_player_id=player.id)
+            challenge_ability = get_duelist_armor_ability(ArmorAbilityType.CHALLENGE)
+            if challenge_ability is not None:
+                challenge_ability.duel_tick(self, player, dt)
 
     def on_duelist_hit(self, player: Player) -> None:
-        """Call from combat when Duelist lands a melee hit."""
+        """Called from combat when Duelist lands a melee hit."""
         if player.class_type != CharacterClass.DUELIST:
             return
-        player.weapon_charge = min(_CHARGE_MAX, player.weapon_charge + _CHARGE_PER_HIT)
-        player._weapon_charge_accum = 0.0
-        subclass = player.subclass_info.subclass
-        if subclass == "champion":
-            threshold = 50
-        elif subclass == "monk":
-            threshold = 40
-        else:
-            threshold = 60
-        player.finisher_ready = player.weapon_charge >= threshold
-        self.add_event("WEAPON_CHARGE", {
-            "player": player.id, "charge": player.weapon_charge,
-            "finisher_ready": player.finisher_ready,
-        }, floor_id=player.floor_id, source_player_id=player.id)
+        subclass_strat = get_duelist_subclass_strategy(player.subclass_info.subclass)
+        subclass_strat.on_combat_hit(self, player, None)
+        # Per-weapon hit state (e.g. combo accumulation for Combo Strike) is
+        # owned by the equipped weapon's strategy.
+        weapon = getattr(getattr(player, "belongings", None), "weapon", None)
+        skill = get_weapon_skill_for_weapon(weapon)
+        if skill is not None:
+            skill.on_melee_hit(self, player)
 
-    def action_duelist_finisher(self, player: Player, tx: int, ty: int) -> None:
-        """Use finisher ability (consumes weapon charge)."""
+    def on_duelist_kill(self, player: Player, target: Any) -> None:
+        """Called from combat on kill."""
         if player.class_type != CharacterClass.DUELIST:
             return
-        if not player.finisher_ready:
-            return
-        floor = self._get_or_create_floor(player.floor_id)
-        target = next((m for m in floor.mobs.values()
-                       if m.is_alive and m.pos.x == tx and m.pos.y == ty), None)
-        if target is None:
-            return
-        subclass = player.subclass_info.subclass
-        charge = player.weapon_charge
-        player.weapon_charge = 0
-        player.finisher_ready = False
+        subclass_strat = get_duelist_subclass_strategy(player.subclass_info.subclass)
+        subclass_strat.on_combat_kill(self, player, target)
 
-        if subclass == "champion":
-            # Champion: heavy strike + brief stun
-            dmg = max(1, round(charge * 0.3 + player.damage_min))
-            dealt = target.take_damage(dmg)
-            target.add_buff("paralysis", duration=2.0, level=1, stack_mode="extend")
-            self.add_event("DAMAGE", {"target": target.id, "amount": dealt, "finisher": "champion"},
-                           floor_id=player.floor_id)
-        elif subclass == "monk":
-            # Monk: fast multi-hit (3 hits at reduced damage)
-            total = 0
-            for _ in range(3):
-                dmg = max(1, round(charge * 0.1 + player.damage_min))
-                dealt = target.take_damage(dmg)
-                total += dealt
-            self.add_event("DAMAGE", {"target": target.id, "amount": total, "finisher": "monk"},
-                           floor_id=player.floor_id)
-        else:
-            dmg = max(1, round(charge * 0.2 + player.damage_min))
-            dealt = target.take_damage(dmg)
-            self.add_event("DAMAGE", {"target": target.id, "amount": dealt, "finisher": "basic"},
-                           floor_id=player.floor_id)
+    def use_weapon_ability(
+        self,
+        player_id: str,
+        target_x: Optional[int] = None,
+        target_y: Optional[int] = None,
+        use_secondary: bool = False,
+    ) -> bool:
+        """Execute weapon skill for primary or secondary equipped melee weapon."""
+        player = self.players.get(player_id)
+        if not player or player.is_downed or not player.is_alive:
+            return False
 
-        self.add_event("FINISHER_USED", {"player": player.id, "subclass": subclass},
-                       floor_id=player.floor_id, source_player_id=player.id)
-        if not target.is_alive:
-            self._handle_kill_event(player, target, floor)
+        b = player.belongings
+        weapon = b.secondary_weapon if (use_secondary and b.secondary_weapon) else b.weapon
+        if weapon is None:
+            return False
 
-    def action_challenge(self, player: Player, tx: int, ty: int) -> None:
-        """Challenge armor ability: force 1v1, teleport other mobs away."""
-        if player.class_type != CharacterClass.DUELIST:
-            return
-        floor = self._get_or_create_floor(player.floor_id)
-        target = next((m for m in floor.mobs.values()
-                       if m.is_alive and m.pos.x == tx and m.pos.y == ty), None)
-        if target is None:
-            return
-        from app.engine.entities.base import Position
-        pool = [(x, y) for y in range(floor.height) for x in range(floor.width)
-                if floor.flags and floor.flags.passable[y][x]
-                and (abs(x-player.pos.x) > 6 or abs(y-player.pos.y) > 6)]
-        for mob in floor.mobs.values():
-            if not mob.is_alive or mob.faction == "player" or mob.id == target.id:
-                continue
-            if pool:
-                nx, ny = random.choice(pool)
-                mob.pos = Position(x=nx, y=ny)
-        player.duel_mode_active = True
-        player.duel_mode_target_id = target.id
-        player.armor_charge = 0
-        self.add_event("CHALLENGE", {"player": player.id, "target": target.id},
-                       floor_id=player.floor_id, source_player_id=player.id)
+        # STR requirement check
+        str_req = getattr(weapon, "strength_requirement", 10)
+        if player.strength < str_req:
+            self.add_event(
+                "ACTION_FAILED",
+                {"player": player.id, "reason": "insufficient_strength"},
+                floor_id=player.floor_id,
+                player_id=player.id,
+            )
+            return False
 
-    def action_elemental_strike(self, player: Player, tx: int, ty: int) -> None:
-        """Elemental Strike armor ability: AOE cone of weapon enchant."""
-        if player.class_type != CharacterClass.DUELIST:
-            return
-        floor = self._get_or_create_floor(player.floor_id)
-        enchant = player.last_weapon_enchant or "blazing"
-        affected = []
-        for mob in floor.mobs.values():
-            if not mob.is_alive or mob.faction == "player":
-                continue
-            if abs(mob.pos.x - tx) <= 2 and abs(mob.pos.y - ty) <= 2:
-                dmg = max(1, random.randint(player.damage_min, player.damage_max))
-                mob.take_damage(dmg)
-                if "blaz" in enchant or "fire" in enchant:
-                    mob.add_buff("burning", duration=8.0, level=1, stack_mode="extend")
-                elif "chill" in enchant or "frost" in enchant:
-                    mob.add_buff("frost", duration=8.0, level=1)
-                elif "shock" in enchant or "light" in enchant:
-                    mob.add_buff("paralysis", duration=1.0, level=1, stack_mode="extend")
-                affected.append(mob.id)
-        player.armor_charge = 0
-        self.add_event("ELEMENTAL_STRIKE", {"player": player.id, "enchant": enchant, "hit": affected},
-                       floor_id=player.floor_id, source_player_id=player.id)
+        skill = get_weapon_skill_for_weapon(weapon)
+        if skill is None:
+            return False
 
-    def action_feint(self, player: Player) -> None:
-        """Feint armor ability: create after-image decoy, briefly dodge."""
-        if player.class_type != CharacterClass.DUELIST:
-            return
-        player.add_buff("invisibility", duration=2.0)
-        player.add_buff("evasion_boost", duration=3.0, level=50)
-        player.armor_charge = 0
-        self.add_event("FEINT", {"player": player.id}, floor_id=player.floor_id,
-                       source_player_id=player.id)
+        if skill.requires_target() and (target_x is None or target_y is None):
+            self.add_event(
+                "ACTION_FAILED",
+                {"player": player.id, "reason": "Target required"},
+                floor_id=player.floor_id,
+                player_id=player.id,
+            )
+            return False
+
+        cost = skill.charge_cost(player, weapon)
+        if player.weapon_charge < cost:
+            self.add_event(
+                "ACTION_FAILED",
+                {"player": player.id, "reason": "insufficient_weapon_charge", "cost": cost},
+                floor_id=player.floor_id,
+                player_id=player.id,
+            )
+            return False
+
+        ok, err = skill.can_execute(self, player, weapon, target_x, target_y)
+        if not ok:
+            if err:
+                self.add_event(
+                    "ACTION_FAILED",
+                    {"player": player.id, "reason": err},
+                    floor_id=player.floor_id,
+                    player_id=player.id,
+                )
+            return False
+
+        if cost > 0:
+            player.spend_weapon_charge(cost)
+
+        success = skill.execute(self, player, weapon, target_x, target_y)
+        if not success:
+            if cost > 0:
+                player.gain_weapon_charge(cost)
+            return False
+
+        self.add_event(
+            "WEAPON_ABILITY_USED",
+            {
+                "player": player.id,
+                "ability": skill.id,
+                "weapon": getattr(weapon, "name", ""),
+                "charge_left": player.weapon_charge,
+            },
+            floor_id=player.floor_id,
+            source_player_id=player.id,
+        )
+        return True
+
+    def action_duelist_finisher(self, player: Player, tx: Optional[int] = None, ty: Optional[int] = None) -> None:
+        """Legacy adapter routing DUELIST_FINISHER messages to equipped weapon skill."""
+        self.use_weapon_ability(player.id, target_x=tx, target_y=ty, use_secondary=False)
+
+    def swap_weapons(self, player_id: str) -> bool:
+        """Champion: Instantaneous 0-delay weapon swap between primary and secondary."""
+        player = self.players.get(player_id)
+        if not player or player.is_downed or not player.is_alive:
+            return False
+        b = player.belongings
+        if b.secondary_weapon is None:
+            return False
+
+        primary = b.weapon
+        secondary = b.secondary_weapon
+
+        b.weapon = secondary
+        b.secondary_weapon = primary
+
+        self.add_event(
+            "SWAP_WEAPONS",
+            {
+                "player": player.id,
+                "primary": getattr(secondary, "name", ""),
+                "secondary": getattr(primary, "name", "") if primary else None,
+            },
+            floor_id=player.floor_id,
+            source_player_id=player.id,
+        )
+        return True
+
+    def use_monk_ability(
+        self,
+        player_id: str,
+        ability_id: str,
+        target_x: Optional[int] = None,
+        target_y: Optional[int] = None,
+    ) -> bool:
+        """Execute a Monk energy command (Flurry, Focus, Dash, Dragon Kick, Meditate)."""
+        player = self.players.get(player_id)
+        if not player or player.is_downed or not player.is_alive:
+            return False
+        if player.subclass_info.subclass != Subclass.MONK:
+            return False
+
+        ability = get_monk_ability(ability_id)
+        if ability is None:
+            return False
+
+        if ability.requires_target() and (target_x is None or target_y is None):
+            self.add_event(
+                "ACTION_FAILED",
+                {"player": player.id, "reason": "Target required"},
+                floor_id=player.floor_id,
+                player_id=player.id,
+            )
+            return False
+
+        cost = ability.energy_cost(player)
+        if player.monk_energy < cost:
+            self.add_event(
+                "ACTION_FAILED",
+                {"player": player.id, "reason": "insufficient_monk_energy", "cost": cost},
+                floor_id=player.floor_id,
+                player_id=player.id,
+            )
+            return False
+
+        ok, err = ability.can_use(self, player, target_x, target_y)
+        if not ok:
+            if err:
+                self.add_event(
+                    "ACTION_FAILED",
+                    {"player": player.id, "reason": err},
+                    floor_id=player.floor_id,
+                    player_id=player.id,
+                )
+            return False
+
+        return ability.execute(self, player, target_x, target_y)

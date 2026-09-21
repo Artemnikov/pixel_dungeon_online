@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import WndOverlay from './WndOverlay';
 import { WindowLevel } from '../game/window/WindowTypes';
 
@@ -9,8 +10,15 @@ export default function WndOptions({
   onSelect,
   onClose,
 }) {
+  const digitActions = useMemo(() => {
+    return (options || []).map((_, i) => () => {
+      onSelect?.(i);
+      onClose?.();
+    });
+  }, [options, onSelect, onClose]);
+
   return (
-    <WndOverlay id="wnd-options" level={WindowLevel.DIALOG} onClose={onClose}>
+    <WndOverlay id="wnd-options" level={WindowLevel.DIALOG} onClose={onClose} digitActions={digitActions}>
       <div className="wnd-options" onClick={(e) => e.stopPropagation()}>
         {icon && <div className="wnd-options-icon">{icon}</div>}
         {title && <div className="wnd-options-title">{title}</div>}

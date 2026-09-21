@@ -92,7 +92,8 @@ def flags_of(tile: int) -> int:
 # the terrain-based Pass 1 and before the border-hardening Pass 2.
 _BLOB_FLAG_OVERRIDES: Dict[str, int] = {
     "web":          SOLID | FLAMABLE,
-    "light_wall":   SOLID,
+    "light_wall":   SOLID | LOS_BLOCKING,
+    "wall_of_light": SOLID | LOS_BLOCKING,
     "key_wall":     SOLID | LOS_BLOCKING,
     "eternal_fire": 0,  # passable=False is achieved by removing PASSABLE
 }
@@ -200,8 +201,8 @@ def build_flag_maps(
                     maps.flamable[by][bx]     = maps.flamable[by][bx] or bool(override & FLAMABLE)
                     maps.solid[by][bx]        = maps.solid[by][bx] or bool(override & SOLID)
                     maps.avoid[by][bx]        = maps.avoid[by][bx] or bool(override & AVOID)
-                # Special: eternal_fire explicitly clears passable
-                if blob_type == "eternal_fire":
+                # Special: eternal_fire, light_wall, wall_of_light explicitly clear passable
+                if blob_type in ("eternal_fire", "light_wall", "wall_of_light"):
                     maps.passable[by][bx] = False
 
     # Pass 2: force the map border to be impassable/solid/LOS-blocking so

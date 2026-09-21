@@ -1,6 +1,7 @@
 import type {
   RenderPlayer,
   RenderMob,
+  RenderTrap,
   EntitiesState,
   SerializedItem,
   BlockingEntity,
@@ -35,36 +36,29 @@ const BUMP_BLOCKER_KINDS = new Set([
 
 const MERCHANT_NAMES = new Set(['Shopkeeper']);
 
-export class BlockerResolver {
-  private tileBlocker(tile: number | undefined): BlockingEntity | null {
+export interface EvaluationContext {
+  actorId: string;
+  actorFaction: string;
+}
+
+export interface IEntityBlockerEvaluator<T> {
+  evaluate(target: T, context: EvaluationContext): BlockingEntity | null;
+}
+
+export class TileBlockerEvaluator implements IEntityBlockerEvaluator<number | undefined> {
+  public evaluate(tile: number | undefined): BlockingEntity | null {
     return getTileDescriptor(tile).onInteract(tile);
   }
+}
 
-  private evaluateMob(mob: RenderMob, playerId: string): BlockingEntity | null {
-    if (mob.is_alive === false) return null;
-
-    if (
-      (mob.type === 'ghost_hero' || mob.type === 'mirror_image') &&
-      mob.faction === 'player' &&
-      mob.owner_id === playerId
-    ) return null;
-
-    if (mob.type === 'ghost_hero' || mob.type === 'mirror_image') {
-      return { kind: 'ally', id: mob.id, name: mob.name, action: 'face-only' };
-    }
-
-    if (mob.type === 'npc' && mob.name && MERCHANT_NAMES.has(mob.name)) {
-      return { kind: 'merchant', id: mob.id, name: mob.name, action: 'npc-interact' };
-    }
-
-    if (mob.type === 'npc') {
-      return { kind: 'quest-npc', id: mob.id, name: mob.name, action: 'npc-interact' };
-    }
-
-    return { kind: 'mob', id: mob.id, name: mob.name, action: 'melee-attack' };
+export class TrapBlockerEvaluator implements IEntityBlockerEvaluator<RenderTrap> {
+  public evaluate(trap: RenderTrap): BlockingEntity | null {
+    return { kind: 'trap', trapType: trap.trap_type, action: 'none' };
   }
+}
 
-  private evaluateItem(
+export class ItemBlockerEvaluator implements IEntityBlockerEvaluator<SerializedItem & { type?: string; chest_type?: string; opened?: boolean }> {
+  public evaluate(
     item: SerializedItem & { type?: string; chest_type?: string; opened?: boolean },
   ): BlockingEntity {
     if (item.type === 'chest') {
@@ -78,13 +72,163 @@ export class BlockerResolver {
     }
     return { kind: 'item', id: item.id, action: 'none' };
   }
+}
 
-  private evaluatePlayer(
-    player: RenderPlayer,
-    myPlayerId: string,
-  ): BlockingEntity | null {
-    if (player.id === myPlayerId || player.is_downed) return null;
-    return { kind: 'player', id: player.id, action: 'face-only' };
+export class PlayerBlockerEvaluator implements IEntityBlockerEvaluator<RenderPlayer> {
+  public evaluate(player: RenderPlayer, context: EvaluationContext): BlockingEntity | null {
+    if (player.id === context.actorId || player.is_downed || player.is_alive === false) {
+      return null;
+    }
+
+    const targetFaction = player.faction || 'player';
+    const isHostile = targetFaction !== context.actorFaction;
+
+    return {
+      kind: 'player',
+      id: player.id,
+      action: isHostile ? 'melee-attack' : 'face-only',
+    };
+  }
+}
+
+function resolveFactionMobBlocker(
+  mob: RenderMob,
+  defaultFaction: string,
+  context: EvaluationContext,
+): BlockingEntity {
+  const mobFaction = mob.faction || defaultFaction;
+  const isFriendly = mobFaction === context.actorFaction;
+  return isFriendly
+    ? { kind: 'ally', id: mob.id, name: mob.name, action: 'face-only' }
+    : { kind: 'mob', id: mob.id, name: mob.name, action: 'melee-attack' };
+}
+
+export interface IMobTypeHandler {
+  canHandle(mob: RenderMob, context: EvaluationContext): boolean;
+  handle(mob: RenderMob, context: EvaluationContext): BlockingEntity | null;
+}
+
+export class OwnedCloneMobHandler implements IMobTypeHandler {
+  public canHandle(mob: RenderMob, context: EvaluationContext): boolean {
+    return (
+      (mob.type === 'ghost_hero' || mob.type === 'mirror_image') &&
+      mob.owner_id === context.actorId
+    );
+  }
+
+  public handle(_mob: RenderMob, _context: EvaluationContext): BlockingEntity | null {
+    return null;
+  }
+}
+
+export class SummonAllyMobHandler implements IMobTypeHandler {
+  public canHandle(mob: RenderMob): boolean {
+    return mob.type === 'ghost_hero' || mob.type === 'mirror_image';
+  }
+
+  public handle(mob: RenderMob, context: EvaluationContext): BlockingEntity | null {
+    return resolveFactionMobBlocker(mob, 'player', context);
+  }
+}
+
+export class MerchantNpcMobHandler implements IMobTypeHandler {
+  private merchantNames: Set<string>;
+
+  constructor(merchantNames: Set<string> = MERCHANT_NAMES) {
+    this.merchantNames = merchantNames;
+  }
+
+  public canHandle(mob: RenderMob): boolean {
+    return mob.type === 'npc' && Boolean(mob.name && this.merchantNames.has(mob.name));
+  }
+
+  public handle(mob: RenderMob): BlockingEntity | null {
+    return { kind: 'merchant', id: mob.id, name: mob.name, action: 'npc-interact' };
+  }
+}
+
+export class QuestNpcMobHandler implements IMobTypeHandler {
+  public canHandle(mob: RenderMob): boolean {
+    return mob.type === 'npc';
+  }
+
+  public handle(mob: RenderMob): BlockingEntity | null {
+    return { kind: 'quest-npc', id: mob.id, name: mob.name, action: 'npc-interact' };
+  }
+}
+
+export class DungeonFactionMobHandler implements IMobTypeHandler {
+  public canHandle(mob: RenderMob, context: EvaluationContext): boolean {
+    const mobFaction = mob.faction || 'dungeon';
+    return context.actorFaction === 'dungeon' && mobFaction === 'dungeon';
+  }
+
+  public handle(mob: RenderMob): BlockingEntity | null {
+    const isImmovable =
+      mob.properties?.includes('IMMOVABLE') ||
+      mob.type === 'spawner' ||
+      mob.type === 'sentry';
+    if (isImmovable) {
+      return { kind: 'ally', id: mob.id, name: mob.name, action: 'face-only' };
+    }
+    return null;
+  }
+}
+
+export class DefaultCombatMobHandler implements IMobTypeHandler {
+  public canHandle(_mob: RenderMob): boolean {
+    return true;
+  }
+
+  public handle(mob: RenderMob, context: EvaluationContext): BlockingEntity | null {
+    return resolveFactionMobBlocker(mob, 'dungeon', context);
+  }
+}
+
+export class MobBlockerEvaluator implements IEntityBlockerEvaluator<RenderMob> {
+  private handlers: IMobTypeHandler[];
+
+  constructor(handlers?: IMobTypeHandler[]) {
+    this.handlers = handlers ?? [
+      new OwnedCloneMobHandler(),
+      new SummonAllyMobHandler(),
+      new MerchantNpcMobHandler(),
+      new QuestNpcMobHandler(),
+      new DungeonFactionMobHandler(),
+      new DefaultCombatMobHandler(),
+    ];
+  }
+
+  public evaluate(mob: RenderMob, context: EvaluationContext): BlockingEntity | null {
+    if (mob.is_alive === false) return null;
+    for (const handler of this.handlers) {
+      if (handler.canHandle(mob, context)) {
+        return handler.handle(mob, context);
+      }
+    }
+    return null;
+  }
+}
+
+export class BlockerResolver {
+  private tileEvaluator: TileBlockerEvaluator;
+  private trapEvaluator: TrapBlockerEvaluator;
+  private itemEvaluator: ItemBlockerEvaluator;
+  private playerEvaluator: PlayerBlockerEvaluator;
+  private mobEvaluator: MobBlockerEvaluator;
+
+  constructor(
+    tileEvaluator: TileBlockerEvaluator = new TileBlockerEvaluator(),
+    trapEvaluator: TrapBlockerEvaluator = new TrapBlockerEvaluator(),
+    itemEvaluator: ItemBlockerEvaluator = new ItemBlockerEvaluator(),
+    playerEvaluator: PlayerBlockerEvaluator = new PlayerBlockerEvaluator(),
+    mobEvaluator: MobBlockerEvaluator = new MobBlockerEvaluator(),
+  ) {
+    this.tileEvaluator = tileEvaluator;
+    this.trapEvaluator = trapEvaluator;
+    this.itemEvaluator = itemEvaluator;
+    this.playerEvaluator = playerEvaluator;
+    this.mobEvaluator = mobEvaluator;
   }
 
   public primaryBlocker(blockers: BlockingEntity[]): BlockingEntity | null {
@@ -122,19 +266,26 @@ export class BlockerResolver {
     entities: EntitiesState,
   ): MoveResult | null {
     const blockers: BlockingEntity[] = [];
+    const context: EvaluationContext = {
+      actorId: playerId,
+      actorFaction: player.faction || 'player',
+    };
+
     const row = grid[newY];
     const tile = row?.[newX];
-
-    const tileB = this.tileBlocker(tile);
+    const tileB = this.tileEvaluator.evaluate(tile);
     if (tileB) blockers.push(tileB);
 
     const trap = entities.traps?.find(t => t.x === newX && t.y === newY);
-    if (trap) blockers.push({ kind: 'trap', trapType: trap.trap_type, action: 'none' });
+    if (trap) {
+      const trapB = this.trapEvaluator.evaluate(trap);
+      if (trapB) blockers.push(trapB);
+    }
 
     for (const it of entities.items || []) {
       const p = it.pos;
       if (p && Math.round(p.x) === newX && Math.round(p.y) === newY) {
-        blockers.push(this.evaluateItem(it));
+        blockers.push(this.itemEvaluator.evaluate(it));
       }
     }
 
@@ -142,7 +293,7 @@ export class BlockerResolver {
       const mx = m.targetPos?.x ?? m.pos.x;
       const my = m.targetPos?.y ?? m.pos.y;
       if (Math.round(mx) === newX && Math.round(my) === newY) {
-        const b = this.evaluateMob(m, playerId);
+        const b = this.mobEvaluator.evaluate(m, context);
         if (b) blockers.push(b);
       }
     }
@@ -151,7 +302,7 @@ export class BlockerResolver {
       const px = p.targetPos?.x ?? p.pos.x;
       const py = p.targetPos?.y ?? p.pos.y;
       if (Math.round(px) === newX && Math.round(py) === newY) {
-        const b = this.evaluatePlayer(p, playerId);
+        const b = this.playerEvaluator.evaluate(p, context);
         if (b) blockers.push(b);
       }
     }

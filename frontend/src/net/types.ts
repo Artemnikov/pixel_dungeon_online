@@ -81,6 +81,24 @@ export interface Projectile {
   onComplete?: () => void;
 }
 
+export interface MagicMissileState {
+  startX: number;
+  startY: number;
+  endX: number;
+  endY: number;
+  color?: string | null;
+  size?: number;
+  duration: number;
+  trailCount?: number;
+  arcHeight?: number;
+  driftY?: number;
+  colorEnd?: string;
+  rainbow?: boolean;
+  startTime: number;
+  impactData?: unknown;
+  onImpact?: ((impactData?: unknown) => void) | null;
+}
+
 export interface RenderTrap extends TrapInfo {
   renderPos?: RenderVec;
   revealStartTime?: number | null;
@@ -131,7 +149,7 @@ export type BlockingEntity =
   | { kind: 'mob'; id: string; name?: string; action: 'melee-attack' }
   | { kind: 'merchant'; id: string; name?: string; action: 'npc-interact' }
   | { kind: 'quest-npc'; id: string; name?: string; action: 'npc-interact' }
-  | { kind: 'player'; id: string; action: 'face-only' }
+  | { kind: 'player'; id: string; action: 'face-only' | 'melee-attack' }
   | { kind: 'ally'; id: string; name?: string; action: 'face-only' }
   | { kind: 'trap'; trapType?: string; action: 'none' };
 
@@ -171,6 +189,13 @@ export interface MyStats {
   invisible?: number;
   prepSeconds?: number;
   comboCount?: number;
+  weaponCharge?: number;
+  maxWeaponCharges?: number;
+  finisherReady?: boolean;
+  spellCooldowns?: Record<string, number>;
+  clericQuickSpell?: string | null;
+  ascendedFormActive?: boolean;
+  poweredAllyId?: string | null;
   talentLevels?: Record<string, number>;
   talentPoints?: Record<string, number>;
   bonusTalentPoints?: Record<string, number>;
@@ -178,6 +203,7 @@ export interface MyStats {
   keys?: Player['keys'];
   guidePages?: string[];
   respawnsUsed?: number;
+  faction?: string;
 }
 
 export interface HookProps {
@@ -189,6 +215,7 @@ export interface HookProps {
   difficulty: string;
   challenges?: string;
   playerName: string;
+  faction?: string;
   setConnectionStatus?: (status: string) => void;
   onRoomRejected?: (reason: string) => void;
   socketRef: Ref<WebSocket | null>;
@@ -216,7 +243,7 @@ export interface HookProps {
   shieldHaloRef?: Ref<unknown[]>;
   stateEffectsRef?: Ref<unknown[]>;
   screenShakeRef?: Ref<{ intensity: number; until: number } | null>;
-  magicMissileRef?: Ref<unknown[]>;
+  magicMissileRef?: Ref<MagicMissileState[]>;
   beamRef?: Ref<unknown[]>;
   blobAreasRef?: Ref<Record<string, { type: string; cells: Map<string, number> }>>;
   wasDownedRef: Ref<boolean | undefined>;

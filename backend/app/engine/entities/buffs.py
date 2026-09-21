@@ -14,6 +14,7 @@ class Buff(BaseModel):
     source_id: Optional[str] = None
     interval: float = 1.0
     stack_mode: str = "replace"  # "replace" | "extend" | "stack"
+    mnemonic_extended: bool = False
 
 
 class BuffDefinition(BaseModel):

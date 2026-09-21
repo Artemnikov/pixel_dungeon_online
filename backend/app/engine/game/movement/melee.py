@@ -9,14 +9,15 @@ melee attack roll) plus shared post-kill handling.
 import random
 import time
 
-from app.engine.entities.base import Position
+from app.engine.entities.base import Faction, Position
 from app.engine.entities.buffs import get_buff, remove_buff
 from app.engine.entities.items.consumables import Gold
 from app.engine.entities.items.potions import RevivingPotion
 from app.engine.entities.mobs import DM300, Goo, Shopkeeper
-from app.engine.entities.player import Mob as MobEntity, Player, hurt_warning_sound
+from app.engine.entities.player import CharacterClass, Mob as MobEntity, Player, hurt_warning_sound
 from app.engine.entities.quest_bosses import Ghost
 from app.engine.entities.rings import furor_multiplier
+from app.engine.entities.talent_enum import Subclass
 from app.engine.game.ai_goo import _goo_add_locked_floor_time
 from app.engine.game.ai_pylon import _activate_pylon
 from app.engine.systems.combat import resolve_melee_attack
@@ -24,10 +25,10 @@ from app.engine.systems.loot import roll_drops
 
 
 class MeleeCombatMixin:
-    def _resolve_bump(self, entity, target_entity, floor, floor_id: int) -> None:
+    def _resolve_bump(self, entity, target_entity, floor, floor_id: int) -> bool:
         """Handle stepping into an occupied cell: sheep/NPC bump, ally revive,
         or melee combat (invoked from move_entity when the destination tile
-        is occupied)."""
+        is occupied). Returns True if a position swap occurred, False otherwise."""
         # Sheep interaction: player bump → baa message, 1s action cost, sound
         if isinstance(entity, Player) and getattr(target_entity, "name", "") == "Sheep":
             entity.action_until = time.time() + 1.0
@@ -39,35 +40,30 @@ class MeleeCombatMixin:
             sheep_buff = get_buff(target_entity.buffs, "sheep_timer")
             if sheep_buff and sheep_buff.remaining >= 20:
                 sheep_buff.remaining = 0
-            return
+            return False
 
-        # Push past an owned ally (Mirror Image / Ghost Hero) instead of
-        # being blocked -- without this, reading Mirror Image in a tight
-        # corridor could trap the hero behind their own clones for good,
-        # since same-faction bumps don't attack and nothing else moves them.
+        if isinstance(entity, Player) and (isinstance(target_entity, (Shopkeeper, Ghost)) or getattr(target_entity, "type", "") == "npc"):
+            self.npc_interact(entity.id, target_entity.id)
+            return False
+
         if (
             isinstance(entity, Player)
             and isinstance(target_entity, MobEntity)
             and entity.faction == target_entity.faction
-            and getattr(target_entity, "owner_id", None) == entity.id
+            and (entity.faction == Faction.DUNGEON or getattr(target_entity, "owner_id", None) == entity.id)
         ):
+            if "IMMOVABLE" in getattr(target_entity, "properties", []):
+                return False
             entity.pos, target_entity.pos = target_entity.pos, entity.pos
             self.add_event("MOVE", {"entity": entity.id, "x": entity.pos.x, "y": entity.pos.y}, floor_id=floor_id)
-            return
-
-        if isinstance(entity, Player) and isinstance(target_entity, Shopkeeper):
-            self.npc_interact(entity.id, target_entity.id)
-            return
-
-        if isinstance(entity, Player) and isinstance(target_entity, Ghost):
-            self.npc_interact(entity.id, target_entity.id)
-            return
+            self.add_event("MOVE", {"entity": target_entity.id, "x": target_entity.pos.x, "y": target_entity.pos.y}, floor_id=floor_id)
+            return True
 
         # Mirrors SPD's enemyInFOV check (Mob.java:252): a mob cannot
         # perceive an invisible player, so it treats the tile as blocked
         # rather than attacking.
         if isinstance(entity, MobEntity) and isinstance(target_entity, Player) and target_entity.invisible > 0:
-            return
+            return False
 
         if (
             isinstance(entity, Player)
@@ -84,11 +80,11 @@ class MeleeCombatMixin:
                 target_entity.is_downed = False
                 target_entity.hp = target_entity.get_total_max_hp() // 2
                 self.add_event("REVIVE", {"target": target_entity.id, "source": entity.id}, floor_id=floor_id)
-                return
+                return False
 
         if entity.faction != target_entity.faction:
             if isinstance(entity, Player) and entity.is_downed:
-                return
+                return False
 
             current_time = time.time()
             cooldown = entity.attack_cooldown
@@ -98,7 +94,7 @@ class MeleeCombatMixin:
                 cooldown /= furor_multiplier(entity)
 
             if current_time - entity.last_attack_time < cooldown:
-                return
+                return False
 
             entity.last_attack_time = current_time
 
@@ -131,7 +127,7 @@ class MeleeCombatMixin:
                     "surprise": False,
                     "next_attack_in_ms": next_attack_in_ms,
                 }, floor_id=floor_id)
-                return
+                return False
             dmg = result["damage"]
             self.add_event("ATTACK", {
                 "source": entity.id,
@@ -183,18 +179,20 @@ class MeleeCombatMixin:
 
             self._maybe_trigger_dm300_supercharge(target_entity, floor, floor_id, entity.pos)
 
-            # Warrior subclass: combo / berserk events after successful damage
             if isinstance(entity, Player) and dmg > 0:
-                if entity.subclass_info.subclass == "gladiator":
+                if entity.class_type == CharacterClass.DUELIST:
+                    self.on_duelist_hit(entity)
+                if entity.subclass_info.subclass == Subclass.GLADIATOR:
                     self.add_event("COMBO_UPDATE", {"player": entity.id, "count": entity.combo_count}, floor_id=floor_id, source_player_id=entity.id)
                     if entity.combo_count in (2, 4, 6, 8, 10):
                         moves = {2: "clobber", 4: "slam", 6: "parry", 8: "crush", 10: "fury"}
                         self.add_event("COMBO_MOVE_UNLOCKED", {"player": entity.id, "move": moves[entity.combo_count]}, floor_id=floor_id, source_player_id=entity.id)
-                if entity.subclass_info.subclass == "berserker":
+                if entity.subclass_info.subclass == Subclass.BERSERKER:
                     self.add_event("RAGE_CHANGED", {"player": entity.id, "power": entity.berserk_power}, floor_id=floor_id, source_player_id=entity.id)
 
             if not target_entity.is_alive:
                 self._finish_kill(entity, target_entity, floor, floor_id)
+        return False
 
     def _finish_kill(self, attacker, target_entity, floor, floor_id: int) -> None:
         """Shared post-death handling for a combat kill (melee bump or
@@ -207,6 +205,8 @@ class MeleeCombatMixin:
             self.process_death_mark_kill(attacker, target_entity, floor, floor_id)
         if attacker_is_player:
             self.on_kill(attacker, target_entity, floor.mobs, floor_id)
+            if hasattr(self, "on_duelist_kill"):
+                self.on_duelist_kill(attacker, target_entity)
             # Lethal Momentum (warrior T2): a killing blow that procced the
             # free follow-up doesn't consume the attack's cooldown, allowing
             # an immediate re-attack.
@@ -232,6 +232,10 @@ class MeleeCombatMixin:
                 floor.items[item.id] = item
             if any(isinstance(d, Gold) for d in drops):
                 self.add_event("GOLD_DROP", {"x": target_entity.pos.x, "y": target_entity.pos.y}, floor_id=floor_id)
+        elif attacker_is_player and isinstance(target_entity, Player):
+            attacker.kills_count += 1
+            attacker.earn_exp(max(10, getattr(target_entity, "level", 1) * 10))
+            self.add_event("MESSAGE", {"text": f"{attacker.name} defeated {target_entity.name}!"}, floor_id=floor_id)
 
     def _maybe_trigger_dm300_supercharge(self, target: "MobEntity", floor, floor_id: int, near_pos: Position):
         """Trigger DM300 pylon activation if target is DM300 with pending activation."""

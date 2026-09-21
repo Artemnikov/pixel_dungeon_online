@@ -3,6 +3,10 @@ from unittest.mock import AsyncMock, MagicMock
 from fastapi import WebSocket
 from app.api.connection_manager import ConnectionManager
 
+@pytest.fixture
+def anyio_backend():
+    return "asyncio"
+
 @pytest.mark.anyio
 async def test_stale_websocket_cleanup_on_reconnect():
     mgr = ConnectionManager()

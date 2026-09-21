@@ -199,9 +199,13 @@ class PlayerRegenMixin:
 
         floor = self._get_or_create_floor(player.floor_id)
         fighting = any(
-            m.is_alive and m.faction != Faction.PLAYER
+            m.is_alive and m.faction != player.faction
             and abs(m.pos.x - player.pos.x) + abs(m.pos.y - player.pos.y) <= REST_ENEMY_RADIUS
             for m in floor.mobs.values()
+        ) or any(
+            p.id != player.id and p.is_alive and not p.is_downed and p.faction != player.faction
+            and abs(p.pos.x - player.pos.x) + abs(p.pos.y - player.pos.y) <= REST_ENEMY_RADIUS
+            for p in self._players_on_floor(player.floor_id)
         )
         stationary = player.stationary_ticks >= REST_STILL_TICKS
         nourished = player.has_buff("nourished")

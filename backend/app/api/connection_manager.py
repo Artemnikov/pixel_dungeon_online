@@ -78,12 +78,14 @@ class RoomMeta:
     active_connections/sessions."""
 
     def __init__(self, room_id: str, name: str, is_public: bool = False,
-                 password: Optional[str] = None, max_players: Optional[int] = None):
+                 password: Optional[str] = None, max_players: Optional[int] = None,
+                 allow_dungeon_faction: bool = True):
         self.room_id = room_id
         self.name = name
         self.is_public = is_public
         self.max_players = max_players
         self.created_at = time.monotonic()
+        self.allow_dungeon_faction = allow_dungeon_faction
         if password:
             self.password_salt: Optional[str] = secrets.token_hex(8)
             self.password_hash: Optional[str] = _hash_password(password, self.password_salt)
@@ -143,7 +145,7 @@ class ConnectionManager:
             n += 1
         return room_id, name
 
-    def check_room_join(self, game_id: str, session_id: str, room_password: str) -> Optional[str]:
+    def check_room_join(self, game_id: str, session_id: str, room_password: str, faction: str = "player") -> Optional[str]:
         """Returns a rejection reason, or None if the join should proceed.
         Unregistered game_ids (not created via POST /api/rooms) are never
         gated, keeping ad-hoc/legacy game_ids working unchanged."""
@@ -158,6 +160,8 @@ class ConnectionManager:
 
         if not room.check_password(room_password):
             return "wrong password"
+        if not room.is_public and not getattr(room, "allow_dungeon_faction", True) and faction == "dungeon":
+            return "dungeon faction disabled"
         if room.max_players is not None:
             if len(self.active_connections.get(game_id, {})) >= room.max_players:
                 return "room full"

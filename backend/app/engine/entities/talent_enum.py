@@ -222,85 +222,88 @@ class Talent(StrEnum):
 
     # ===================== DUELIST =====================
     # Tier 1
-    AGGRESSIVE_APPROACH = "aggressive_approach"
-    LIGHTWEIGHT_COMBAT = "lightweight_combat"
-    DUELIST_LETHAL_MOMENTUM = "duelist_lethal_momentum"
-    STICK_AND_MOVE = "stick_and_move"
+    STRENGTHENING_MEAL = "strengthening_meal"
+    ADVENTURERS_INTUITION = "adventurers_intuition"
+    PATIENT_STRIKE = "patient_strike"
+    AGGRESSIVE_BARRIER = "aggressive_barrier"
+
     # Tier 2
-    DUAL_STRIKE = "dual_strike"
-    CIRCLE_OF_SLAUGHTER = "circle_of_slaughter"
-    FINISHER = "finisher"
-    FEROCITY = "ferocity"
-    # Tier 3 — class
-    CHARGED_ATTACK = "charged_attack"
+    FOCUSED_MEAL = "focused_meal"
+    LIQUID_AGILITY = "liquid_agility"
+    WEAPON_RECHARGING = "weapon_recharging"
+    LETHAL_HASTE = "lethal_haste"
     SWIFT_EQUIP = "swift_equip"
+
+    # Tier 3 — class
+    PRECISE_ASSAULT = "precise_assault"
+    DEADLY_FOLLOWUP = "deadly_followup"
+
     # Tier 3 — Champion
-    CHAMPION_POWER = "champion_power"
-    CHAMPION_ENDURANCE = "champion_endurance"
-    CHAMPION_REACH = "champion_reach"
+    VARIED_CHARGE = "varied_charge"
+    TWIN_UPGRADES = "twin_upgrades"
+    COMBINED_LETHALITY = "combined_lethality"
+
     # Tier 3 — Monk
-    MONASTIC_VIGOR = "monastic_vigor"
-    MONKS_SPIRIT = "monks_spirit"
     UNENCUMBERED_SPIRIT = "unencumbered_spirit"
+    MONASTIC_VIGOR = "monastic_vigor"
+    COMBINED_ENERGY = "combined_energy"
+
     # Tier 4 (armor abilities)
     CHALLENGE_ABILITY = "challenge_talent"
     ELEMENTAL_STRIKE_ABILITY = "elemental_strike_talent"
     FEINT_ABILITY = "feint_talent"
+
     # Tier 4 — Challenge
-    LASTING_CHALLENGE = "lasting_challenge"
-    HEIGHTENED_CHALLENGE = "heightened_challenge"
-    DUAL_CHALLENGE = "dual_challenge"
+    CLOSE_THE_GAP = "close_the_gap"
+    INVIGORATING_VICTORY = "invigorating_victory"
+    ELIMINATION_MATCH = "elimination_match"
+
     # Tier 4 — Elemental Strike
-    SEARING_STRIKE = "searing_strike"
-    CHILLING_STRIKE = "chilling_strike"
-    CHARGED_STRIKE = "charged_strike"
+    ELEMENTAL_REACH = "elemental_reach"
+    STRIKING_FORCE = "striking_force"
+    DIRECTED_POWER = "directed_power"
+
     # Tier 4 — Feint
-    SHADOW_FEINT = "shadow_feint"
-    REACTIVE_FEINT = "reactive_feint"
-    PHANTASMAL_FEINT = "phantasmal_feint"
+    FEIGNED_RETREAT = "feigned_retreat"
+    EXPOSE_WEAKNESS = "expose_weakness"
+    COUNTER_ABILITY = "counter_ability"
 
     # ===================== CLERIC =====================
     # Tier 1
-    SCEPTER_MASTERY = "scepter_mastery"
-    RELIC_MASTERY = "relic_mastery"
-    HOLINESS = "holiness"
-    AFFILIATION = "affiliation"
-    # Tier 2
-    TESTED_METTLE = "tested_mettle"
-    TOME_OF_DIVINITY = "tome_of_divinity"
-    SHARED_ARMAMENTS = "shared_armaments"
-    SPIRITUAL_GRACE = "spiritual_grace"
-    # Tier 3 — class
-    DIVINE_INTERVENTION = "divine_intervention"
-    DIVINE_SHIELD = "divine_shield"
-    # Tier 3 — Priest
-    RADIANCE = "radiance"
-    # Was PRIEST_EMPOWERED_STRIKE's talent id up until this fix: an exact
-    # duplicate of Battlemage's EMPOWERED_STRIKE above ("empowered_strike"),
-    # which silently overwrote Battlemage's TALENT_DEFS/TALENT_CLASS_REQ
-    # entries (same dict, same key -- last write wins) and made Battlemage's
-    # real, already-implemented tier-3 talent unselectable. Given a distinct
-    # id here instead; still has no title/description text, consistent with
-    # its RADIANCE/SMITE siblings (cleric talent tree content is unfinished).
-    PRIEST_EMPOWERED_STRIKE = "priest_empowered_strike"
-    SMITE = "smite"
-    # Tier 3 — Paladin
+    SATIATED_SPELLS = "satiated_spells"
+    HOLY_INTUITION = "holy_intuition"
+    SEARING_LIGHT = "searing_light"
     SHIELD_OF_LIGHT = "shield_of_light"
-    HOLY_ARMOR = "holy_armor"
-    UNDYING_FAITH = "undying_faith"
+    # Tier 2
+    ENLIGHTENING_MEAL = "enlightening_meal"
+    RECALL_INSCRIPTION = "recall_inscription"
+    SUNRAY = "sunray"
+    DIVINE_SENSE = "divine_sense"
+    BLESS = "bless"
+    # Tier 3 — class
+    CLEANSE = "cleanse"
+    LIGHT_READING = "light_reading"
+    # Tier 3 — Priest
+    HOLY_LANCE = "holy_lance"
+    HALLOWED_GROUND = "hallowed_ground"
+    MNEMONIC_PRAYER = "mnemonic_prayer"
+    # Tier 3 — Paladin
+    LAY_ON_HANDS = "lay_on_hands"
+    AURA_OF_PROTECTION = "aura_of_protection"
+    WALL_OF_LIGHT = "wall_of_light"
     # Tier 4 (armor abilities)
     ASCENDED_FORM_ABILITY = "ascended_form_talent"
     TRINITY_ABILITY = "trinity_talent"
     POWER_OF_MANY_ABILITY = "power_of_many_talent"
     # Tier 4 — Ascended Form
-    EMPOWERED_ASCENSION = "empowered_ascension"
-    RADIANT_ASCENSION = "radiant_ascension"
-    HEALING_ASCENSION = "healing_ascension"
+    DIVINE_INTERVENTION = "divine_intervention"
+    JUDGEMENT = "judgement"
+    FLASH = "flash"
     # Tier 4 — Trinity
-    TRINITARIAN_TRINITY = "trinitarian_trinity"
-    HOLY_TRINITY = "holy_trinity"
-    DEEP_ROOTS_TRINITY = "deep_roots_trinity"
+    BODY_FORM = "body_form"
+    MIND_FORM = "mind_form"
+    SPIRIT_FORM = "spirit_form"
     # Tier 4 — Power of Many
-    GREATER_POWER = "greater_power"
-    PERSISTENT_ALLIES = "persistent_allies"
-    LIGHT_WARRIOR = "light_warrior"
+    BEAMING_RAY = "beaming_ray"
+    LIFE_LINK = "life_link"
+    STASIS = "stasis"

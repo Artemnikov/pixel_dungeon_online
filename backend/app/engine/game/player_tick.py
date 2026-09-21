@@ -11,6 +11,7 @@ from typing import Optional
 from app.engine.entities.base import Faction, chebyshev_distance
 from app.engine.entities.buffs import get_buff
 from app.engine.entities.player import CharacterClass, Player
+from app.engine.entities.talent_enum import Talent
 from app.engine.game.constants import PATH_BLOCKED_GIVE_UP_TICKS, TICKS_PER_TURN
 
 
@@ -115,8 +116,13 @@ class PlayerTickMixin:
 
         if moved:
             player.stationary_ticks = 0
+            if getattr(player, "patient_strike_tile", None) != (player.pos.x, player.pos.y):
+                player.patient_strike_ready = False
         else:
             player.stationary_ticks += 1
+            if player.class_type == CharacterClass.DUELIST and player.talent_info.level(Talent.PATIENT_STRIKE) > 0:
+                player.patient_strike_tile = (player.pos.x, player.pos.y)
+                player.patient_strike_ready = True
 
         # Hold Fast (warrior T3): while stationary, slows combo/shield
         # decay and the Broken Seal cooldown (0% decay at +3).
@@ -140,7 +146,7 @@ class PlayerTickMixin:
                 floor = self._get_or_create_floor(player.floor_id)
                 nearby_mobs = [
                     m for m in floor.mobs.values()
-                    if m.is_alive and m.faction != Faction.PLAYER
+                    if m.is_alive and m.faction != player.faction
                     and chebyshev_distance(m.pos.x, m.pos.y, player.pos.x, player.pos.y) <= 4
                 ]
                 if nearby_mobs:
@@ -190,7 +196,7 @@ class PlayerTickMixin:
         if seal_shield is not None:
             floor = self._get_or_create_floor(player.floor_id)
             nearby = any(
-                m.is_alive and m.faction != Faction.PLAYER
+                m.is_alive and m.faction != player.faction
                 and chebyshev_distance(m.pos.x, m.pos.y, player.pos.x, player.pos.y) <= player.get_view_distance()
                 for m in floor.mobs.values()
             )

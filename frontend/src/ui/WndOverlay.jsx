@@ -9,6 +9,10 @@ function WndOverlay({
   onClose,
   closeOnEscape = true,
   closeOnBackdrop = true,
+  modal = true,
+  digitActions,
+  onKeyDown,
+  onKeyUp,
   className = '',
   style,
   children,
@@ -20,6 +24,10 @@ function WndOverlay({
     closeOnEscape,
     closeOnBackdrop,
     backdrop,
+    modal,
+    digitActions,
+    onKeyDown,
+    onKeyUp,
     enabled: true,
   });
 

@@ -183,6 +183,12 @@ class AdminGiveItem(_ClientMessageBase):
     enchant: Optional[str] = None
 
 
+class AdminSetHp(_ClientMessageBase):
+    type: Literal["ADMIN_SET_HP"]
+    hp: Optional[int] = None
+    hp_pct: Optional[float] = None
+
+
 class NpcInteract(_ClientMessageBase):
     type: Literal["NPC_INTERACT"]
     npc_id: str
@@ -324,6 +330,42 @@ class Resurrect(_ClientMessageBase):
     type: Literal["RESURRECT"]
 
 
+class DuelistFinisher(_ClientMessageBase):
+    type: Literal["DUELIST_FINISHER"]
+    target_x: Optional[int] = None
+    target_y: Optional[int] = None
+
+
+class UseWeaponAbility(_ClientMessageBase):
+    type: Literal["USE_WEAPON_ABILITY"]
+    target_x: Optional[int] = None
+    target_y: Optional[int] = None
+    use_secondary: bool = False
+
+
+class SwapWeapons(_ClientMessageBase):
+    type: Literal["SWAP_WEAPONS"]
+
+
+class UseMonkAbility(_ClientMessageBase):
+    type: Literal["USE_MONK_ABILITY"]
+    ability: str
+    target_x: Optional[int] = None
+    target_y: Optional[int] = None
+
+
+class CastClericSpell(_ClientMessageBase):
+    type: Literal["CAST_CLERIC_SPELL"]
+    spell: str
+    target_x: Optional[int] = None
+    target_y: Optional[int] = None
+
+
+class SetClericQuickSpell(_ClientMessageBase):
+    type: Literal["SET_CLERIC_QUICK_SPELL"]
+    spell: Optional[str] = None
+
+
 ClientMessage = Annotated[
     Union[
         Ping,
@@ -350,11 +392,18 @@ ClientMessage = Annotated[
         UseArmorAbility,
         TriggerBerserk,
         PreparationStrike,
+        DuelistFinisher,
+        UseWeaponAbility,
+        SwapWeapons,
+        UseMonkAbility,
+        CastClericSpell,
+        SetClericQuickSpell,
         MetamorphChoose,
         MetamorphReplace,
         AdminTeleport,
         AdminLevelUp,
         AdminGiveItem,
+        AdminSetHp,
         NpcInteract,
         ShopBuy,
         ShopSell,

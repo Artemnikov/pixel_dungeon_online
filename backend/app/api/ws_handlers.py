@@ -291,6 +291,64 @@ def handle_preparation_strike(
     game.preparation_strike(player_id, message.target_x, message.target_y)
 
 
+@dispatcher.register(msg.DuelistFinisher)
+def handle_duelist_finisher(
+    game: GameInstance, player_id: str, message: msg.DuelistFinisher
+):
+    player = game.players.get(player_id)
+    if player and not player.is_downed and player.is_alive:
+        game.action_duelist_finisher(player, message.target_x, message.target_y)
+
+
+@dispatcher.register(msg.UseWeaponAbility)
+def handle_use_weapon_ability(
+    game: GameInstance, player_id: str, message: msg.UseWeaponAbility
+):
+    game.use_weapon_ability(
+        player_id,
+        target_x=message.target_x,
+        target_y=message.target_y,
+        use_secondary=message.use_secondary,
+    )
+
+
+@dispatcher.register(msg.SwapWeapons)
+def handle_swap_weapons(
+    game: GameInstance, player_id: str, message: msg.SwapWeapons
+):
+    game.swap_weapons(player_id)
+
+
+@dispatcher.register(msg.UseMonkAbility)
+def handle_use_monk_ability(
+    game: GameInstance, player_id: str, message: msg.UseMonkAbility
+):
+    game.use_monk_ability(
+        player_id,
+        ability_id=message.ability,
+        target_x=message.target_x,
+        target_y=message.target_y,
+    )
+
+
+@dispatcher.register(msg.CastClericSpell)
+def handle_cast_cleric_spell(
+    game: GameInstance, player_id: str, message: msg.CastClericSpell
+):
+    player = game.players.get(player_id)
+    if player and not player.is_downed and player.is_alive:
+        game.cast_spell(player, message.spell, message.target_x, message.target_y)
+
+
+@dispatcher.register(msg.SetClericQuickSpell)
+def handle_set_cleric_quick_spell(
+    game: GameInstance, player_id: str, message: msg.SetClericQuickSpell
+):
+    player = game.players.get(player_id)
+    if player and not player.is_downed and player.is_alive:
+        game.set_cleric_quick_spell(player, message.spell)
+
+
 @dispatcher.register(msg.MetamorphChoose)
 def handle_metamorph_choose(
     game: GameInstance, player_id: str, message: msg.MetamorphChoose
@@ -330,6 +388,13 @@ def handle_admin_give_item(
         cursed=message.cursed,
         enchant=message.enchant,
     )
+
+
+@dispatcher.register(msg.AdminSetHp)
+def handle_admin_set_hp(
+    game: GameInstance, player_id: str, message: msg.AdminSetHp
+):
+    game.admin_set_hp(player_id, hp=message.hp, hp_pct=message.hp_pct)
 
 
 @dispatcher.register(msg.NpcInteract)

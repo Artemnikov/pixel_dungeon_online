@@ -172,6 +172,16 @@ def action_read(game, player, item, tx=None, ty=None) -> None:
 
     # SPD onScrollUsed: every successful scroll read procs talent effects.
     _maybe_proc_inscribed_power(game, player)
+    if effect != "scroll_of_upgrade":
+        ti = getattr(player, "talent_info", None)
+        pts = ti.level("recall_inscription") if ti else 0
+        dur = 300.0 if pts >= 2 else 10.0
+        player.last_used_inscription = {
+            "type": "scroll",
+            "kind": effect,
+            "time": getattr(game, "total_time", 0.0),
+            "duration": dur,
+        }
 
     if effect in PREDICATE:
         candidates = [it.id for it in player_inventory_items(player) if it.id != item.id and PREDICATE[effect](it, game)]
@@ -319,7 +329,7 @@ def action_read(game, player, item, tx=None, ty=None) -> None:
         floor = game._get_or_create_floor(player.floor_id)
         beckoned_ids = []
         for mob in floor.mobs.values():
-            if mob.is_alive and mob.faction != "player":
+            if mob.is_alive and mob.faction != player.faction:
                 mob.ai_state = "hunting"
                 mob.target_id = player.id
                 beckoned_ids.append(mob.id)

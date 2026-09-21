@@ -129,7 +129,7 @@ export const TALENT_ICONS = {
   go_for_the_eyes: 120,      // GO_FOR_THE_EYES
   swift_spirit: 121,         // SWIFT_SPIRIT
 
-  // ===== DUELIST (mapped but unused by current 4-class support) =====
+  // ===== DUELIST =====
   strengthening_meal: 128,
   adventurers_intuition: 129,
   patient_strike: 130,
@@ -140,13 +140,16 @@ export const TALENT_ICONS = {
   lethal_haste: 135,
   swift_equip: 136,
   precise_assault: 137,
-  // deadly_followup: 138, // Duelist (unused - key conflicts with Warrior T4)
+  deadly_followup: 138,
   varied_charge: 139,
   twin_upgrades: 140,
   combined_lethality: 141,
   unencumbered_spirit: 142,
   monastic_vigor: 143,
   combined_energy: 144,
+  challenge_talent: 145,
+  elemental_strike_talent: 148,
+  feint_talent: 151,
   close_the_gap: 145,
   invigorating_victory: 146,
   elimination_match: 147,
@@ -156,8 +159,51 @@ export const TALENT_ICONS = {
   feigned_retreat: 151,
   expose_weakness: 152,
   counter_ability: 153,
+
+  // ===== CLERIC =====
+  satiated_spells: 160,
+  holy_intuition: 161,
+  searing_light: 162,
+  shield_of_light: 163,
+  enlightening_meal: 164,
+  recall_inscription: 165,
+  sunray: 166,
+  divine_sense: 167,
+  bless: 168,
+  cleanse: 169,
+  light_reading: 170,
+  holy_lance: 171,
+  hallowed_ground: 172,
+  mnemonic_prayer: 173,
+  lay_on_hands: 174,
+  aura_of_protection: 175,
+  wall_of_light: 176,
+  ascended_form_talent: 177,
+  trinity_talent: 180,
+  power_of_many_talent: 183,
+  divine_intervention: 177,
+  judgement: 178,
+  flash: 179,
+  body_form: 180,
+  mind_form: 181,
+  spirit_form: 182,
+  beaming_ray: 183,
+  life_link: 184,
+  stasis: 185,
 };
 
-export function getTalentIconIndex(talentId) {
+const HEROIC_ENERGY_ICONS = {
+  warrior: 26,
+  mage: 58,
+  rogue: 90,
+  huntress: 122,
+  duelist: 154,
+  cleric: 186,
+};
+
+export function getTalentIconIndex(talentId, classType) {
+  if (talentId === 'heroic_energy' && classType && HEROIC_ENERGY_ICONS[classType]) {
+    return HEROIC_ENERGY_ICONS[classType];
+  }
   return TALENT_ICONS[talentId] ?? 0;
 }

@@ -145,6 +145,15 @@ class ReadData(_EventData):
     item: str
 
 
+class PlayAnimationData(_EventData):
+    player: str
+    animation: str
+    glow: Optional[str] = None
+    spell: Optional[str] = None
+    x: Optional[int] = None
+    y: Optional[int] = None
+
+
 class _Tile(_EventData):
     x: int
     y: int
@@ -693,6 +702,7 @@ EVENT_MODELS = {
     "PLANT_TRIGGERED": PlantTriggeredData,
     "DRINK": DrinkData,
     "READ": ReadData,
+    "PLAY_ANIMATION": PlayAnimationData,
     "MAP_PATCH": MapPatchData,
     "ITEMS_DESTROYED": ItemsDestroyedData,
     "PICKUP": PickupData,

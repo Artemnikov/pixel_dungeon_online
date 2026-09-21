@@ -23,10 +23,14 @@ _SPELLBOOK_RECHARGE = 90.0  # ~90s per charge (UnstableSpellbook; SPD ~80-120 tu
 class ArtifactsMixin:
 
     def tick_artifacts(self, player: Player, dt: float) -> None:
+        if player.talent_info.has("light_reading"):
+            for it in player.belongings.backpack.items:
+                if isinstance(it, HolyTome):
+                    self._tick_holy_tome(player, it, dt)
+                    break
+
         artifact = player.belongings.artifact
-        if artifact is None:
-            return
-        if not player.belongings.is_equipped(artifact.id):
+        if artifact is None or not player.belongings.is_equipped(artifact.id):
             return
         if artifact.cursed:
             return
@@ -153,19 +157,30 @@ class ArtifactsMixin:
             item.charge = min(item.charge + 1, item.charge_cap)
 
     # -----------------------------------------------------------------------
-    # HolyTome — charges when player reads scrolls (see on_scroll_read hook)
+    # HolyTome — turn-based passive holy energy regeneration
     # -----------------------------------------------------------------------
     def _tick_holy_tome(self, player: Player, item: HolyTome, dt: float) -> None:
-        pass  # charges via on_holy_tome_scroll_read, not by time
+        if item.charge >= item.charge_cap or item.cursed or player.has_buff("magic_immune"):
+            item.partial_charge = 0.0
+            return
 
-    def on_holy_tome_scroll_read(self, player: Player) -> None:
-        """Call from scroll_actions after a scroll is read while tome is equipped."""
-        artifact = player.belongings.artifact
-        if artifact is None or getattr(artifact, "kind", "") != "holy_tome":
-            return
-        if not player.belongings.is_equipped(artifact.id):
-            return
-        artifact.charge = min(artifact.charge + 1, artifact.charge_cap)
+        missing = float(item.charge_cap - item.charge)
+        if item.level > 7:
+            missing += 5.0 * (item.level - 7) / 3.0
+        turns_to_charge = max(1.0, 45.0 - missing)
+        charge_to_gain = dt / turns_to_charge
+        if not player.belongings.is_equipped(item.id):
+            lr_pts = player.talent_info.level("light_reading")
+            charge_to_gain *= 0.75 * (lr_pts / 3.0)
+
+        item.partial_charge += charge_to_gain
+        while item.partial_charge >= 1.0:
+            item.charge += 1
+            item.partial_charge -= 1.0
+            if item.charge >= item.charge_cap:
+                item.partial_charge = 0.0
+                item.charge = item.charge_cap
+                break
 
     # -----------------------------------------------------------------------
     # HornOfPlenty — passive food charge generation

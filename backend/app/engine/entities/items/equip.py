@@ -151,6 +151,8 @@ def make_named_melee_weapon(name: str, level: int = 0, **kwargs) -> MeleeWeapon:
         return WornShortsword(level=level, **kwargs)
     if name == "Dagger":
         return Dagger(level=level, **kwargs)
+    if name == "Pickaxe":
+        return MeleeWeapon(name="Pickaxe", tier=2, level=level, strength_requirement=12, range=1, acc_factor=1.0, hit_sound="HIT_STAB", **kwargs)
     defn = WEAPON_DEFS[name]
     return MeleeWeapon(
         name=name, tier=defn.tier, level=level,
