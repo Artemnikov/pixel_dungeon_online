@@ -50,6 +50,7 @@ export class MobsSynchronizer implements IStateSynchronizer {
         }
         existing.hp = m.hp;
         existing.ai_state = m.ai_state;
+        existing.faction = m.faction;
         applyInvisFade(existing, m.invisible || 0);
       }
     });

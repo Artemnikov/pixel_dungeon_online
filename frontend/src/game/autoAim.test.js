@@ -50,3 +50,11 @@ test('autoaim skips locked target if it has player faction', () => {
   const mobs = { ghost: friendly };
   assert.equal(pickAutoAimTarget('ghost', mobs, vis('5,5'), { x: 5, y: 6 }, 5), null);
 });
+
+test('autoaim with dungeon faction targets player faction and skips dungeon faction mobs', () => {
+  const dungeonMob = mob('rat', 5, 5, 10, 'dungeon');
+  const heroSummon = mob('mirror_image', 6, 6, 3, 'player');
+  const mobs = { rat: dungeonMob, mirror_image: heroSummon };
+  const t = pickAutoAimTarget(null, mobs, vis('5,5', '6,6'), { x: 5, y: 6 }, 5, 'dungeon');
+  assert.equal(t.id, 'mirror_image');
+});

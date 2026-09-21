@@ -41,10 +41,17 @@ class MovementMixin:
         player.movement.stop(last_seq)
 
     def _has_enemies_nearby(self, floor, player, radius: int = 3) -> bool:
-        return any(
-            m.is_alive and m.faction == "dungeon"
+        has_mob = any(
+            m.is_alive and m.faction != player.faction
             for m in floor.mobs.values()
             if abs(m.pos.x - player.pos.x) + abs(m.pos.y - player.pos.y) <= radius
+        )
+        if has_mob:
+            return True
+        return any(
+            p.id != player.id and p.is_alive and not p.is_downed and p.faction != player.faction
+            for p in self._players_on_floor(player.floor_id)
+            if abs(p.pos.x - player.pos.x) + abs(p.pos.y - player.pos.y) <= radius
         )
 
     def set_move_intent(self, entity_id: str, dx: int, dy: int):
@@ -68,17 +75,21 @@ class MovementMixin:
         player.movement.set_intent(dx, dy, AUTO_MOVE_INTERVAL)
 
     def attack_mob(self, player_id: str, target_id: str) -> None:
-        """Click-to-attack (ATTACK): step the player toward a specific mob
+        """Click-to-attack (ATTACK): step the player toward a specific hostile
         by one tile; a step onto/into an occupied enemy cell resolves as a
         melee attack in move_entity."""
         player = self.players.get(player_id)
         if not player:
             return
         floor = self._get_or_create_floor(player.floor_id)
-        mob = floor.mobs.get(target_id)
-        if mob and mob.is_alive:
-            dx = mob.pos.x - player.pos.x
-            dy = mob.pos.y - player.pos.y
+        target = floor.mobs.get(target_id)
+        if target is None and target_id in self.players:
+            p = self.players[target_id]
+            if p.floor_id == player.floor_id and p.is_alive and not p.is_downed and p.faction != player.faction:
+                target = p
+        if target and target.is_alive:
+            dx = target.pos.x - player.pos.x
+            dy = target.pos.y - player.pos.y
             # Melee only reaches chebyshev-adjacent targets. Without this a
             # crafted ATTACK would feed the full delta to move_entity, which
             # only validates the final cell -- letting the player teleport
@@ -137,7 +148,15 @@ class MovementMixin:
 
         target_entity = self._entity_at(floor, floor_id, new_x, new_y, entity_id, active_players_only=True)
         if target_entity:
-            self._resolve_bump(entity, target_entity, floor, floor_id)
+            swapped = self._resolve_bump(entity, target_entity, floor, floor_id)
+            if swapped:
+                old_x, old_y = target_entity.pos.x, target_entity.pos.y
+                self._ignite_if_on_fire(target_entity, floor, old_x, old_y)
+                self._process_cell_press(floor, target_entity, floor_id)
+                self._trigger_trap_if_needed(floor, target_entity, floor_id)
+                self._apply_post_step(entity, entity_id, floor, floor_id, old_x, old_y, seq, emit_move=False)
+                return
+
             if isinstance(entity, Player):
                 res_data = {"entity": entity_id, "x": entity.pos.x, "y": entity.pos.y, "ok": False}
                 if seq is not None:
@@ -193,33 +212,22 @@ class MovementMixin:
 
         old_x, old_y = entity.pos.x, entity.pos.y
         entity.move(dx, dy)
+        self._apply_post_step(entity, entity_id, floor, floor_id, old_x, old_y, seq, emit_move=True)
 
+    def _apply_post_step(self, entity, entity_id: str, floor, floor_id: int, old_x: int, old_y: int, seq: Optional[int], emit_move: bool = True) -> None:
+        new_x, new_y = entity.pos.x, entity.pos.y
         self._ignite_if_on_fire(entity, floor, new_x, new_y)
         self._handle_door_transition(entity, floor, floor_id, old_x, old_y)
         break_stationary_plant_buffs(entity)
-
-        # Position changed: door mutation may have changed flags and FOV.
         self._invalidate_fov_cache()
-
-        # Terrain interaction (trample grass, trigger plants, etc.)
-        result = press_cell(floor, (entity.pos.x, entity.pos.y), entity)
-        if result["tile_changed"]:
-            self.add_event("MAP_PATCH", {"tiles": [{"x": entity.pos.x, "y": entity.pos.y, "tile": floor.grid[entity.pos.y][entity.pos.x]}]}, floor_id=floor_id)
-            self.add_event("PLAY_SOUND", {"sound": "STEP_GRASS", "x": entity.pos.x, "y": entity.pos.y}, floor_id=floor_id, source_player_id=entity.id if isinstance(entity, Player) else None)
-        if result.get("grass_trampled"):
-            self.add_event("LEAF_BURST", {"x": entity.pos.x, "y": entity.pos.y}, floor_id=floor_id)
-        if result["triggered_plant"]:
-            plant_type = result["triggered_plant"].get("plant_type", "sungrass")
-            plant_pos = result["triggered_plant"].get("pos", (new_x, new_y))
-            self.add_event("PLANT_TRIGGERED", {
-                "plant": plant_type,
-                "player": entity.id if isinstance(entity, Player) else None,
-                "x": plant_pos[0],
-                "y": plant_pos[1],
-            }, floor_id=floor_id)
+        self._process_cell_press(floor, entity, floor_id)
 
         if isinstance(entity, Player):
-            self._player_step_effects(entity, entity_id, floor_id)
+            if emit_move:
+                self._player_step_effects(entity, entity_id, floor_id)
+            else:
+                self.gain_momentum(entity)
+                registry.dispatch("on_step", entity, self, payload={"floor_id": floor_id})
             self._auto_pickup_on_step(entity, floor)
 
         self._trigger_trap_if_needed(floor, entity, floor_id)
@@ -228,11 +236,30 @@ class MovementMixin:
             if entity.pending_ascend:
                 entity.pending_ascend = False
                 self._apply_fadeleaf_ascend(entity, entity_id, floor_id)
+            tile = floor.grid[new_y][new_x]
             self._handle_stairs_tile(entity, entity_id, tile, floor, floor_id)
             res_data = {"entity": entity_id, "x": entity.pos.x, "y": entity.pos.y, "ok": True}
             if seq is not None:
                 res_data["seq"] = seq
             self.add_event("MOVE_RESULT", res_data, player_id=entity_id)
+
+    def _process_cell_press(self, floor, entity, floor_id: int) -> dict:
+        result = press_cell(floor, (entity.pos.x, entity.pos.y), entity)
+        if result["tile_changed"]:
+            self.add_event("MAP_PATCH", {"tiles": [{"x": entity.pos.x, "y": entity.pos.y, "tile": floor.grid[entity.pos.y][entity.pos.x]}]}, floor_id=floor_id)
+            self.add_event("PLAY_SOUND", {"sound": "STEP_GRASS", "x": entity.pos.x, "y": entity.pos.y}, floor_id=floor_id, source_player_id=entity.id if isinstance(entity, Player) else None)
+        if result.get("grass_trampled"):
+            self.add_event("LEAF_BURST", {"x": entity.pos.x, "y": entity.pos.y}, floor_id=floor_id)
+        if result["triggered_plant"]:
+            plant_type = result["triggered_plant"].get("plant_type", "sungrass")
+            plant_pos = result["triggered_plant"].get("pos", (entity.pos.x, entity.pos.y))
+            self.add_event("PLANT_TRIGGERED", {
+                "plant": plant_type,
+                "player": entity.id if isinstance(entity, Player) else None,
+                "x": plant_pos[0],
+                "y": plant_pos[1],
+            }, floor_id=floor_id)
+        return result
 
     def _apply_fadeleaf_ascend(self, entity: Player, entity_id: str, floor_id: int) -> None:
         """Warden Fadeleaf: move up one depth (SPD Fadeleaf.activate)."""

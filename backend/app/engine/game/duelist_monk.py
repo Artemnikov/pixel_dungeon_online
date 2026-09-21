@@ -10,9 +10,10 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, Optional, Tuple, TYPE_CHECKING
 
 from app.engine.dungeon.constants import TileType
-from app.engine.entities.base import Faction, chebyshev_distance, find_mob_at
+from app.engine.entities.base import chebyshev_distance
 from app.engine.entities.buffs import add_buff
 from app.engine.entities.talent_enum import Talent
+from app.engine.game.armor_ability_base import resolve_target_entity as _find_target
 
 if TYPE_CHECKING:
     from app.engine.entities.player import Player
@@ -147,8 +148,8 @@ class FlurryOfBlowsAbility(MonkAbility):
         if chebyshev_distance(player.pos.x, player.pos.y, tx, ty) > 1:
             return False, "Target must be adjacent"
         floor = game._get_or_create_floor(player.floor_id)
-        target = find_mob_at(floor, tx, ty)
-        if target is None or target.faction == Faction.PLAYER:
+        target = _find_target(game, player, floor, tx, ty)
+        if target is None or target.faction == player.faction:
             return False, "No valid enemy target"
         return True, None
 
@@ -158,7 +159,7 @@ class FlurryOfBlowsAbility(MonkAbility):
         if tx is None or ty is None:
             return False
         floor = game._get_or_create_floor(player.floor_id)
-        target = find_mob_at(floor, tx, ty)
+        target = _find_target(game, player, floor, tx, ty)
         if target is None:
             return False
 
@@ -313,8 +314,8 @@ class DragonKickAbility(MonkAbility):
         if chebyshev_distance(player.pos.x, player.pos.y, tx, ty) > 1:
             return False, "Target must be adjacent"
         floor = game._get_or_create_floor(player.floor_id)
-        target = find_mob_at(floor, tx, ty)
-        if target is None or target.faction == Faction.PLAYER:
+        target = _find_target(game, player, floor, tx, ty)
+        if target is None or target.faction == player.faction:
             return False, "No valid enemy target"
         return True, None
 
@@ -331,15 +332,21 @@ class DragonKickAbility(MonkAbility):
         mult = 9.0 if empowered else 6.0
         dmg = max(1, round(mult * max(1, str_val - 8)))
 
-        targets = []
+        targets: list[Any] = []
         if empowered:
             targets = [
                 m for m in floor.mobs.values()
-                if m.is_alive and m.faction != Faction.PLAYER
+                if m.is_alive and m.faction != player.faction
                 and chebyshev_distance(player.pos.x, player.pos.y, m.pos.x, m.pos.y) <= 1
             ]
+            if hasattr(game, "_players_on_floor"):
+                targets.extend([
+                    p for p in game._players_on_floor(player.floor_id)
+                    if p.id != player.id and p.is_alive and not p.is_downed and not p.is_afk and p.faction != player.faction
+                    and chebyshev_distance(player.pos.x, player.pos.y, p.pos.x, p.pos.y) <= 1
+                ])
         else:
-            primary = find_mob_at(floor, tx, ty)
+            primary = _find_target(game, player, floor, tx, ty)
             if primary:
                 targets = [primary]
 

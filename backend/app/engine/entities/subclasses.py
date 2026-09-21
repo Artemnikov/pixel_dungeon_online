@@ -164,6 +164,14 @@ CLASS_ARMOR_ABILITIES: Dict[str, tuple[str, ...]] = {
     "cleric": (ArmorAbilityType.ASCENDED_FORM, ArmorAbilityType.TRINITY, ArmorAbilityType.POWER_OF_MANY),
 }
 
+CLASS_TALENT_BASE: Dict[str, str] = {
+    "gnoll": "warrior",
+    "skeleton": "warrior",
+    "thief": "rogue",
+    "rat": "rogue",
+    "necromancer": "mage",
+}
+
 
 # Level thresholds where talent tiers unlock
 TIER_UNLOCK_LEVELS: Dict[int, int] = {

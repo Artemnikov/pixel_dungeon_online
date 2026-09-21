@@ -45,7 +45,7 @@ class MobAIDispatchMixin:
         if isinstance(mob, CrystalMimic) and mob.disguised:
             return
 
-        if mob.faction == Faction.PLAYER:
+        if mob.faction == Faction.PLAYER or getattr(mob, "owner_id", None) is not None:
             if isinstance(mob, GhostHeroMob):
                 owner = self.players.get(mob.owner_id)
                 self._refresh_ghost_hero_stats(mob, owner, floor, floor_id)
@@ -56,7 +56,7 @@ class MobAIDispatchMixin:
                 _refresh_mirror_image_stats(self, mob, owner, floor, floor_id)
                 if not mob.is_alive:
                     return
-            if mob.type not in ("ninja_log", "npc"):
+            if mob.type not in ("ninja_log", "npc", "afterimage"):
                 self._update_shadow_ally(mob, floor, floor_id)
             return
 
@@ -185,7 +185,11 @@ class MobAIDispatchMixin:
             return
 
         enemies = [m for m in floor.mobs.values()
-                   if m.is_alive and m.faction != Faction.PLAYER]
+                   if m.is_alive and m.faction != ally.faction]
+        enemies.extend(
+            p for p in self._players_on_floor(floor_id)
+            if p.is_alive and not p.is_downed and p.faction != ally.faction and p.invisible == 0
+        )
 
         # If GhostHeroMob has a direct position, prioritize it
         if isinstance(ally, GhostHeroMob) and ally.direct_x is not None:

@@ -13,6 +13,7 @@ const POLL_MS = 5000;
 const REASON_KEYS = {
   'wrong password': 'rooms.reasonWrongPassword',
   'room full': 'rooms.reasonRoomFull',
+  'dungeon faction disabled': 'rooms.reasonDungeonDisabled',
 };
 
 export default function RoomSelection({ onJoin, onBack, joinError, onDismissError }) {
@@ -23,6 +24,7 @@ export default function RoomSelection({ onJoin, onBack, joinError, onDismissErro
   const [passwordInput, setPasswordInput] = useState('');
   const [createName, setCreateName] = useState('');
   const [createPassword, setCreatePassword] = useState('');
+  const [createAllowDungeon, setCreateAllowDungeon] = useState(true);
   const [creating, setCreating] = useState(false);
 
   const fetchRooms = useCallback(async () => {
@@ -46,7 +48,7 @@ export default function RoomSelection({ onJoin, onBack, joinError, onDismissErro
 
   const joinPublic = () => {
     onDismissError?.();
-    onJoin('public', '');
+    onJoin('public', '', true);
   };
 
   const joinGroup = (room) => {
@@ -56,12 +58,13 @@ export default function RoomSelection({ onJoin, onBack, joinError, onDismissErro
       setPasswordInput('');
       return;
     }
-    onJoin(room.room_id, '');
+    onJoin(room.room_id, '', room.allow_dungeon !== false);
   };
 
   const confirmPassword = () => {
     if (!passwordPrompt) return;
-    onJoin(passwordPrompt, passwordInput);
+    const room = rooms.groups.find(r => r.room_id === passwordPrompt);
+    onJoin(passwordPrompt, passwordInput, room?.allow_dungeon !== false);
   };
 
   const createGroup = async () => {
@@ -72,12 +75,12 @@ export default function RoomSelection({ onJoin, onBack, joinError, onDismissErro
       const res = await fetch(`${getApiBaseUrl()}/api/rooms`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, password: createPassword || null }),
+        body: JSON.stringify({ name, password: createPassword || null, allow_dungeon: createAllowDungeon }),
       });
       const data = await res.json();
       if (data.room_id) {
         onDismissError?.();
-        onJoin(data.room_id, createPassword);
+        onJoin(data.room_id, createPassword, createAllowDungeon);
       }
     } catch {
       // swallow -- user can retry
@@ -166,6 +169,14 @@ export default function RoomSelection({ onJoin, onBack, joinError, onDismissErro
             value={createPassword}
             onChange={(e) => setCreatePassword(e.target.value)}
           />
+          <label className="hero-challenge-toggle" style={{ margin: '8px 0', color: '#ccc', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+            <input
+              type="checkbox"
+              checked={createAllowDungeon}
+              onChange={(e) => { AudioManager.play('CLICK'); setCreateAllowDungeon(e.target.checked); }}
+            />
+            {t('rooms.allowDungeon')}
+          </label>
           <MenuButton
             accent
             className="opd-rooms-create-btn"

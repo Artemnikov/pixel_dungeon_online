@@ -179,6 +179,7 @@ export default function useGameHooks(state) {
   const { sendSelectScrollTarget, sendStoneTarget, effects } = useGameSocket({
     enabled: gameState === 'PLAYING',
     gameId, roomPassword, sessionId, selectedClass, difficulty, challenges, playerName,
+    faction: state.faction,
     setConnectionStatus,
     onRoomRejected: (reason) => {
       setRoomJoinError(reason || 'Could not join room');

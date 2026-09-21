@@ -10,16 +10,17 @@ from collections import deque
 from typing import List, Optional, Tuple
 
 from app.engine.dungeon.constants import TileType
-from app.engine.entities.base import Position, chebyshev_distance
+from app.engine.entities.base import Faction, Position, chebyshev_distance
 from app.engine.mechanics import shadowcaster
 
 from app.engine.game.floor_state import FloorState
 
 
 class VisionMixin:
-    def _find_nearest_player(self, pos: Position, floor_id: int):
+    def _find_nearest_player(self, pos: Position, floor_id: int, faction: Optional[str] = Faction.DUNGEON):
         candidates = [p for p in self._players_on_floor(floor_id)
-                      if p.is_alive and not p.is_downed and not p.has_buff("time_stasis")]
+                      if p.is_alive and not p.is_downed and not p.has_buff("time_stasis")
+                      and (faction is None or p.faction != faction)]
         if not candidates:
             return None
 
@@ -30,6 +31,29 @@ class VisionMixin:
             if distance < min_dist:
                 min_dist = distance
                 nearest = player
+        return nearest
+
+    def _find_nearest_hostile(self, pos: Position, floor_id: int, faction: str = Faction.DUNGEON, exclude_id: Optional[str] = None):
+        """Nearest alive enemy entity (Player or Mob of opposing faction) on `floor_id`."""
+        candidates: List = [
+            p for p in self._players_on_floor(floor_id)
+            if (exclude_id is None or p.id != exclude_id) and p.is_alive and not p.is_downed
+            and not p.has_buff("time_stasis") and p.faction != faction
+        ]
+        floor = self.floors.get(floor_id)
+        if floor is not None:
+            candidates.extend(
+                m for m in floor.mobs.values()
+                if (exclude_id is None or m.id != exclude_id) and m.is_alive and m.faction != faction
+            )
+
+        nearest = None
+        min_dist = float("inf")
+        for entity in candidates:
+            distance = self._get_distance(pos, entity.pos)
+            if distance < min_dist:
+                min_dist = distance
+                nearest = entity
         return nearest
 
     def _find_nearest_entity(self, pos: Position, floor_id: int, exclude_id: str):

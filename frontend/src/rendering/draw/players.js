@@ -1,14 +1,6 @@
 import { TILE_SIZE, ENTITY_LIFT } from '../../constants';
 import { defaultPlayerRenderPipeline } from '../animation/PlayerRenderPipeline';
-
-const CLASS_KEYS = {
-  warrior: 'warrior',
-  mage: 'mage',
-  rogue: 'rogue',
-  huntress: 'huntress',
-  duelist: 'duelist',
-  cleric: 'cleric',
-};
+import { getCharacterDescriptor } from '../characterDescriptors';
 
 export function drawPlayers(ctx, { entitiesRef, visionRef, assetImages, playerAnimRef, myPlayerId, shieldFxRef }) {
   const players = entitiesRef?.current?.players;
@@ -27,7 +19,8 @@ export function drawPlayers(ctx, { entitiesRef, visionRef, assetImages, playerAn
     const y = player.renderPos.y * TILE_SIZE - ENTITY_LIFT;
     const deathElapsed = now - (player.deathStart || now);
     const anim = (playerAnimRef && playerAnimRef.current[player.id]) || {};
-    const playerSprite = assetImages[CLASS_KEYS[player.class_type] || 'warrior'] || null;
+    const charDesc = getCharacterDescriptor(player.class_type);
+    const playerSprite = (assetImages && assetImages[charDesc.assetKey]) || assetImages?.warrior || null;
 
     defaultPlayerRenderPipeline.render(ctx, {
       player,

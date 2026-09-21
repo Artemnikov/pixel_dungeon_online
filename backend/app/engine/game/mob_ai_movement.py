@@ -59,7 +59,7 @@ class MobAIMovementMixin:
             if mob.has_buff("amok"):
                 target_player = self._find_nearest_entity(mob.pos, floor_id, exclude_id=mob.id)
             else:
-                target_player = self._find_nearest_player(mob.pos, floor_id)
+                target_player = self._find_nearest_hostile(mob.pos, floor_id, faction=mob.faction, exclude_id=mob.id)
         if mob.ai_state == "fleeing":
             if can_move and target_player:
                 dx = mob.pos.x - target_player.pos.x

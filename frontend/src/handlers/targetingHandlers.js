@@ -43,15 +43,26 @@ export function useTargetingHandlers({
             const myPlayer = entitiesRef.current.players[myPlayerIdRef.current];
             if (!myPlayer) return;
 
+            const myFaction = myPlayer.faction || 'player';
+            const enemyPlayers = Object.fromEntries(
+              Object.entries(entitiesRef.current.players || {})
+                .filter(
+                  ([id, p]) => id !== myPlayer.id && p.is_alive !== false && !p.is_downed && (p.faction || 'player') !== myFaction
+                )
+                .map(([id, p]) => [id, { ...p, faction: p.faction || 'player' }])
+            );
+            const candidateTargets = { ...entitiesRef.current.mobs, ...enemyPlayers };
+
             const isReach2Skill = skill.id === 'lunge' || skill.id === 'spike';
             const queryRange = isReach2Skill ? 2.85 : Math.max(1.5, (item.range || 1) * 1.45);
             if (skill.id !== 'sneak') {
               const pick = pickAutoAimTarget(
                 selectedEnemyIdRef.current,
-                entitiesRef.current.mobs,
+                candidateTargets,
                 visionRef.current.visible,
                 { x: myPlayer.renderPos.x, y: myPlayer.renderPos.y },
                 queryRange,
+                myFaction,
               );
               if (pick) {
                 const px = Math.round(myPlayer.renderPos.x);
@@ -87,14 +98,25 @@ export function useTargetingHandlers({
     const myPlayer = entitiesRef.current.players[myPlayerIdRef.current];
     if (!myPlayer) return;
 
+    const myFaction = myPlayer.faction || 'player';
+    const enemyPlayers = Object.fromEntries(
+      Object.entries(entitiesRef.current.players || {})
+        .filter(
+          ([id, p]) => id !== myPlayer.id && p.is_alive !== false && !p.is_downed && (p.faction || 'player') !== myFaction
+        )
+        .map(([id, p]) => [id, { ...p, faction: p.faction || 'player' }])
+    );
+    const candidateTargets = { ...entitiesRef.current.mobs, ...enemyPlayers };
+
     // SPD QuickSlotButton.autoAim: prefer the remembered/locked target, else
     // the nearest visible mob in range.
     const pick = pickAutoAimTarget(
       selectedEnemyIdRef.current,
-      entitiesRef.current.mobs,
+      candidateTargets,
       visionRef.current.visible,
       { x: myPlayer.renderPos.x, y: myPlayer.renderPos.y },
       item.range,
+      myFaction,
     );
     if (pick) {
       consumeAttackCooldown((item.attack_cooldown ?? 1.0) * 1000);

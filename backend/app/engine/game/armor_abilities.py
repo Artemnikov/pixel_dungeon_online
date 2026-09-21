@@ -39,7 +39,7 @@ class ArmorAbilitiesMixin:
             floor = self._get_or_create_floor(player.floor_id)
             nearby = sum(
                 1 for mob in floor.mobs.values()
-                if mob.is_alive and mob.faction != Faction.PLAYER
+                if mob.is_alive and mob.faction != player.faction
                 and chebyshev_distance(mob.pos.x, mob.pos.y, player.pos.x, player.pos.y) <= 2
             )
             banked *= 1 + nearby * 0.05 * eto

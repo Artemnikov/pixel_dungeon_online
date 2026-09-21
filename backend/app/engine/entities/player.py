@@ -162,6 +162,11 @@ class CharacterClass:
     HUNTRESS = "huntress"
     DUELIST = "duelist"
     CLERIC = "cleric"
+    GNOLL = "gnoll"
+    SKELETON = "skeleton"
+    THIEF = "thief"
+    RAT = "rat"
+    NECROMANCER = "necromancer"
 
 
 class Effect(BaseModel):

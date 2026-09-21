@@ -328,7 +328,7 @@ def action_drink(game, player, item, tx=None, ty=None) -> None:
         cx, cy = player.pos.x, player.pos.y
         floor = game._get_or_create_floor(player.floor_id)
         for mob in floor.mobs.values():
-            if not mob.is_alive or mob.faction == "player":
+            if not mob.is_alive or mob.faction == player.faction:
                 continue
             if abs(mob.pos.x - cx) <= 3 and abs(mob.pos.y - cy) <= 3:
                 mob.add_buff("frost", duration=10.0, level=1)
@@ -781,7 +781,7 @@ def _shatter_snap_freeze(game, player, item, tx, ty) -> None:
     if not (0 <= tx < floor.width and 0 <= ty < floor.height):
         return
     for mob in floor.mobs.values():
-        if not mob.is_alive or mob.faction == "player":
+        if not mob.is_alive or mob.faction == player.faction:
             continue
         if abs(mob.pos.x - tx) <= 3 and abs(mob.pos.y - ty) <= 3:
             mob.add_buff("frost", duration=10.0, level=1)
@@ -795,7 +795,7 @@ def _shatter_aqua(game, player, item, tx, ty) -> None:
     if not (0 <= tx < floor.width and 0 <= ty < floor.height):
         return
     for mob in floor.mobs.values():
-        if not mob.is_alive or mob.faction == "player":
+        if not mob.is_alive or mob.faction == player.faction:
             continue
         if abs(mob.pos.x - tx) <= 2 and abs(mob.pos.y - ty) <= 2:
             dmg = max(1, round(mob.max_hp * 0.25))
@@ -810,7 +810,7 @@ def _shatter_caustic(game, player, item, tx, ty) -> None:
     if not (0 <= tx < floor.width and 0 <= ty < floor.height):
         return
     for mob in floor.mobs.values():
-        if not mob.is_alive or mob.faction == "player":
+        if not mob.is_alive or mob.faction == player.faction:
             continue
         if abs(mob.pos.x - tx) <= 3 and abs(mob.pos.y - ty) <= 3:
             mob.add_buff("ooze", duration=10.0, level=1, stack_mode="extend")

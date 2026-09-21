@@ -1,4 +1,5 @@
 import asyncio, logging, time, uuid, os, sys
+from typing import Optional
 
 from pathlib import Path
 from dotenv import load_dotenv
@@ -33,13 +34,13 @@ app.include_router(router)
 
 
 @app.websocket("/ws/game/{game_id}")
-async def game_websocket(websocket: WebSocket, game_id: str, class_type: str = "warrior", difficulty: str = "normal", name: str = None, admin_secret: str = "", session: str = None, seed: str = "", challenges: str = "", room_password: str = ""):
+async def game_websocket(websocket: WebSocket, game_id: str, class_type: str = "warrior", difficulty: str = "normal", name: Optional[str] = None, admin_secret: str = "", session: Optional[str] = None, seed: str = "", challenges: str = "", room_password: str = "", faction: str = "player"):
     session_id = session or str(uuid.uuid4())
 
-    rejection = manager.check_room_join(game_id, session_id, room_password)
+    rejection = manager.check_room_join(game_id, session_id, room_password, faction=faction)
     if rejection is not None:
         await websocket.accept()
-        close_code = 4001 if rejection == "wrong password" else 4002
+        close_code = 4001 if rejection == "wrong password" else (4003 if rejection == "dungeon faction disabled" else 4002)
         await websocket.close(code=close_code, reason=rejection)
         return
 
@@ -53,8 +54,11 @@ async def game_websocket(websocket: WebSocket, game_id: str, class_type: str = "
 
         is_admin = bool(admin_secret and admin_secret == os.environ.get("ADMIN_SECRET", "admin"))
         player_name = "admin" if is_admin else (name.strip()[:20] if name and name.strip() else f"Player_{player_id[:4]}")
-        game.add_player(player_id, player_name, class_type, is_admin=is_admin)
-        game.add_event("MESSAGE", {"text": f"{player_name} joined the game."})
+        game.add_player(player_id, player_name, class_type, is_admin=is_admin, faction=faction)
+        if faction == "dungeon":
+            game.add_event("MESSAGE", {"text": f"{player_name} joined the Dungeon faction."})
+        else:
+            game.add_event("MESSAGE", {"text": f"{player_name} joined the game."})
     await manager.send_player_init(game_id, websocket, player_id, is_new=is_new)
 
     try:

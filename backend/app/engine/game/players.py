@@ -58,7 +58,7 @@ _CLASS_POST_INIT: Dict[str, Callable[[Player], None]] = {
 
 
 class PlayersMixin:
-    def add_player(self, player_id: str, name: str, class_type: str = CharacterClass.WARRIOR, is_admin: bool = False) -> Player:
+    def add_player(self, player_id: str, name: str, class_type: str = CharacterClass.WARRIOR, is_admin: bool = False, faction: str = Faction.PLAYER) -> Player:
         floor = self._get_or_create_floor(1)
         spawn_pos = self._get_stairs_pos(TileType.STAIRS_UP, floor_id=floor.floor_id)
 
@@ -180,6 +180,50 @@ class PlayersMixin:
             belongings.artifact = holy_tome
             class_starting_quickslots.append((0, holy_tome))
 
+        elif class_type == CharacterClass.GNOLL:
+            belongings.weapon = make_named_melee_weapon("Spear", id=str(uuid.uuid4()))
+            belongings.armor = ClothArmor(id=str(uuid.uuid4()))
+            class_starting_quickslots.append((0, belongings.weapon))
+
+        elif class_type == CharacterClass.SKELETON:
+            belongings.weapon = make_named_melee_weapon("Shortsword", id=str(uuid.uuid4()))
+            belongings.armor = ClothArmor(id=str(uuid.uuid4()))
+            stones = Stone(id=str(uuid.uuid4()), quantity=3, level_known=True, cursed_known=True)
+            belongings.backpack.collect(stones)
+            class_starting_quickslots.append((0, stones))
+
+        elif class_type == CharacterClass.THIEF:
+            belongings.weapon = Dagger(id=str(uuid.uuid4()))
+            belongings.armor = ClothArmor(id=str(uuid.uuid4()))
+            knives = ThrowableDagger(id=str(uuid.uuid4()), name="Throwing Knife", quantity=5)
+            belongings.backpack.collect(knives)
+            class_starting_quickslots.append((0, knives))
+
+        elif class_type == CharacterClass.RAT:
+            belongings.weapon = make_named_melee_weapon("Gloves", id=str(uuid.uuid4()))
+            belongings.armor = ClothArmor(id=str(uuid.uuid4()))
+            class_starting_quickslots.append((0, belongings.weapon))
+
+        elif class_type == CharacterClass.NECROMANCER:
+            wand = WandOfMagicMissile(
+                id=str(uuid.uuid4()),
+                charges=4,
+                max_charges=4,
+                level_known=True,
+                cursed_known=True,
+            )
+            belongings.weapon = Staff(
+                id=str(uuid.uuid4()),
+                imbued_wand=wand,
+                level_known=True,
+                cursed_known=True,
+            )
+            belongings.weapon.update_wand(False)
+            class_starting_quickslots.append((0, belongings.weapon))
+            plf = PotionOfLiquidFlame(id=str(uuid.uuid4()), level_known=True, cursed_known=True)
+            belongings.backpack.collect(plf)
+            starting_identified.append(plf)
+
         # HeroClass.initHero(): every hero starts with a ration of food, a
         # Velvet Pouch (for seeds/stones), and a Waterskin in the backpack.
         belongings.backpack.collect(Ration(
@@ -208,6 +252,7 @@ class PlayersMixin:
                 slot.level_known = True
                 slot.cursed_known = True
 
+        props = ["UNDEAD"] if class_type == CharacterClass.SKELETON else []
         player = Player(
             id=player_id,
             name=name,
@@ -216,11 +261,12 @@ class PlayersMixin:
             max_hp=20,
             attack=3,
             defense=1,
-            faction=Faction.PLAYER,
+            faction=faction,
             class_type=class_type,
             belongings=belongings,
             floor_id=1,
             is_admin=is_admin,
+            properties=props,
         )
 
         # SPD HeroClass.initHero()'s auto-identified starting consumables — record

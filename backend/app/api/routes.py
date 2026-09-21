@@ -154,7 +154,7 @@ async def get_talents(class_type: str):
         TALENT_DEFS, TALENT_TITLES, TALENT_DESCRIPTIONS,
         TALENT_CLASS_REQ, ABILITY_TALENTS, TIER_UNLOCK_LEVELS,
         TIER_MAX_POINTS, CLASS_SUBCLASSES,
-        T4_ABILITY_TALENTS, CLASS_ARMOR_ABILITIES, Talent,
+        T4_ABILITY_TALENTS, CLASS_ARMOR_ABILITIES, CLASS_TALENT_BASE, Talent,
     )
     from app.engine.entities.player import CharacterClass
 
@@ -165,20 +165,22 @@ async def get_talents(class_type: str):
         CharacterClass.HUNTRESS,
         CharacterClass.DUELIST,
         CharacterClass.CLERIC,
+        *CLASS_TALENT_BASE.keys(),
     }
     if class_type not in valid:
         return {"error": f"Unknown class: {class_type}"}, 404
 
+    base_class = CLASS_TALENT_BASE.get(class_type, class_type)
     # Talents belong to a class if they're in TALENT_CLASS_REQ for that class,
     # OR their subclass_req is one of the class's subclass options.
-    own_subclasses = set(CLASS_SUBCLASSES.get(class_type, ()))
+    own_subclasses = set(CLASS_SUBCLASSES.get(base_class, ()))
 
     def _belongs_to_class(tid: str, sreq: Optional[str]) -> bool:
         # HEROIC_ENERGY is a shared T4 universal talent, available to any class
         # once T4 is unlocked (see TALENT_CLASS_REQ comment).
         if tid == Talent.HEROIC_ENERGY:
             return True
-        if TALENT_CLASS_REQ.get(tid) == class_type:
+        if TALENT_CLASS_REQ.get(tid) == base_class:
             return True
         if sreq is not None and sreq in own_subclasses:
             return True
@@ -232,7 +234,7 @@ async def get_talents(class_type: str):
     if has_t4_mapping:
         # Append the class's universal T4 talent(s) (e.g. Heroic Energy) to
         # every armor ability's talent list, per SPD's ArmorAbility.talents().
-        for ability in CLASS_ARMOR_ABILITIES.get(class_type, ()):
+        for ability in CLASS_ARMOR_ABILITIES.get(base_class, ()):
             for tid in universal_t4:
                 ability_to_talents.setdefault(ability, []).append(tid)
     else:
@@ -240,7 +242,7 @@ async def get_talents(class_type: str):
             for ability_tid, ability in ABILITY_TALENTS.items():
                 _, _, asr = TALENT_DEFS.get(ability_tid, (0, 0, None))
                 a_req = TALENT_CLASS_REQ.get(ability_tid)
-                if a_req == class_type or (asr and asr in own_subclasses):
+                if a_req == base_class or (asr and asr in own_subclasses):
                     ability_to_talents.setdefault(ability, []).append(tid)
                     break
 
@@ -253,7 +255,7 @@ async def get_talents(class_type: str):
     return {
         "class": class_type,
         "subclasses": list(own_subclasses),
-        "armor_abilities": list(CLASS_ARMOR_ABILITIES.get(class_type, ())),
+        "armor_abilities": list(CLASS_ARMOR_ABILITIES.get(base_class, ())),
         "tiers": {k: tiers[k] for k in sorted(tiers.keys(), key=int)},
         "ability_selectors": ability_selectors,
         "ability_tier4": ability_to_talents,
@@ -273,6 +275,7 @@ async def list_rooms():
             "player_count": _count(room.room_id),
             "max_players": room.max_players,
             "has_password": room.has_password,
+            "allow_dungeon": getattr(room, "allow_dungeon_faction", True),
         }
         for room in manager.rooms.values()
         if not room.is_public
@@ -280,7 +283,7 @@ async def list_rooms():
     total_players = public_count + sum(g["player_count"] for g in groups)
     return {
         "total_players": total_players,
-        "public": {"room_id": PUBLIC_ROOM_ID, "player_count": public_count},
+        "public": {"room_id": PUBLIC_ROOM_ID, "player_count": public_count, "allow_dungeon": True},
         "groups": groups,
     }
 
@@ -288,6 +291,7 @@ async def list_rooms():
 class CreateRoomRequest(BaseModel):
     name: str
     password: Optional[str] = None
+    allow_dungeon: bool = True
 
 
 @router.post("/api/rooms")
@@ -300,8 +304,9 @@ async def create_room(body: CreateRoomRequest):
         room_id, resolved_name, is_public=False,
         password=(body.password or None),
         max_players=PRIVATE_ROOM_MAX_PLAYERS,
+        allow_dungeon_faction=body.allow_dungeon,
     )
-    return {"room_id": room_id, "name": resolved_name}
+    return {"room_id": room_id, "name": resolved_name, "allow_dungeon": body.allow_dungeon}
 
 
 @router.post("/dev/xp/{game_id}/{player_id}/{amount}")

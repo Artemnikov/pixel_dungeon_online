@@ -12,9 +12,10 @@ import random
 from typing import Any, Dict, Optional, Tuple, TYPE_CHECKING
 
 from app.engine.dungeon.constants import TileType
-from app.engine.entities.base import Faction, chebyshev_distance, find_mob_at
+from app.engine.entities.base import chebyshev_distance
 from app.engine.entities.buffs import add_buff, get_buff, has_buff, remove_buff
 from app.engine.entities.talent_enum import Subclass, Talent
+from app.engine.game.armor_ability_base import resolve_target_entity as _find_target
 from app.engine.systems.combat import resolve_melee_attack
 
 if TYPE_CHECKING:
@@ -214,8 +215,8 @@ class LungeSkill(WeaponSkill):
         if dist != 2:
             return False, "Target must be exactly 2 tiles away"
         floor = game._get_or_create_floor(player.floor_id)
-        target = find_mob_at(floor, tx, ty)
-        if target is None or target.faction == Faction.PLAYER:
+        target = _find_target(game, player, floor, tx, ty)
+        if target is None or getattr(target, "faction", None) == player.faction:
             return False, "No valid enemy target"
         # Find intermediate landing cell
         dx = tx - player.pos.x
@@ -228,6 +229,11 @@ class LungeSkill(WeaponSkill):
             return False, "Landing tile blocked"
         if any(m.is_alive and m.pos.x == step_x and m.pos.y == step_y for m in floor.mobs.values()):
             return False, "Landing tile occupied"
+        if hasattr(game, "_players_on_floor") and any(
+            p.is_alive and not p.is_downed and p.pos.x == step_x and p.pos.y == step_y
+            for p in game._players_on_floor(player.floor_id)
+        ):
+            return False, "Landing tile occupied"
         return True, None
 
     def execute(
@@ -236,7 +242,7 @@ class LungeSkill(WeaponSkill):
         if tx is None or ty is None:
             return False
         floor = game._get_or_create_floor(player.floor_id)
-        target = find_mob_at(floor, tx, ty)
+        target = _find_target(game, player, floor, tx, ty)
         if target is None:
             return False
         dx = tx - player.pos.x
@@ -351,8 +357,8 @@ class CleaveSkill(WeaponSkill):
         if dist > 1:
             return False, "Enemy must be adjacent"
         floor = game._get_or_create_floor(player.floor_id)
-        target = find_mob_at(floor, tx, ty)
-        if target is None or target.faction == Faction.PLAYER:
+        target = _find_target(game, player, floor, tx, ty)
+        if target is None or getattr(target, "faction", None) == player.faction:
             return False, "No valid enemy target"
         return True, None
 
@@ -362,7 +368,7 @@ class CleaveSkill(WeaponSkill):
         if tx is None or ty is None:
             return False
         floor = game._get_or_create_floor(player.floor_id)
-        target = find_mob_at(floor, tx, ty)
+        target = _find_target(game, player, floor, tx, ty)
         if target is None:
             return False
 
@@ -413,8 +419,8 @@ class SpikeSkill(WeaponSkill):
         if dist != 2:
             return False, "Target must be at reach distance (2 tiles)"
         floor = game._get_or_create_floor(player.floor_id)
-        target = find_mob_at(floor, tx, ty)
-        if target is None or target.faction == Faction.PLAYER:
+        target = _find_target(game, player, floor, tx, ty)
+        if target is None or getattr(target, "faction", None) == player.faction:
             return False, "No valid enemy target"
         return True, None
 
@@ -424,7 +430,7 @@ class SpikeSkill(WeaponSkill):
         if tx is None or ty is None:
             return False
         floor = game._get_or_create_floor(player.floor_id)
-        target = find_mob_at(floor, tx, ty)
+        target = _find_target(game, player, floor, tx, ty)
         if target is None:
             return False
 
@@ -542,8 +548,8 @@ class HarvestSkill(WeaponSkill):
         if dist > 1:
             return False, "Enemy must be adjacent"
         floor = game._get_or_create_floor(player.floor_id)
-        target = find_mob_at(floor, tx, ty)
-        if target is None or target.faction == Faction.PLAYER:
+        target = _find_target(game, player, floor, tx, ty)
+        if target is None or getattr(target, "faction", None) == player.faction:
             return False, "No valid enemy target"
         return True, None
 
@@ -553,7 +559,7 @@ class HarvestSkill(WeaponSkill):
         if tx is None or ty is None:
             return False
         floor = game._get_or_create_floor(player.floor_id)
-        target = find_mob_at(floor, tx, ty)
+        target = _find_target(game, player, floor, tx, ty)
         if target is None:
             return False
 
@@ -602,11 +608,17 @@ class LashSkill(WeaponSkill):
         self, game: GameInstance, player: Player, weapon: KindOfWeapon, tx: Optional[int], ty: Optional[int]
     ) -> bool:
         floor = game._get_or_create_floor(player.floor_id)
-        targets = [
+        targets: list[Any] = [
             m for m in floor.mobs.values()
-            if m.is_alive and m.faction != Faction.PLAYER
+            if m.is_alive and m.faction != player.faction
             and chebyshev_distance(player.pos.x, player.pos.y, m.pos.x, m.pos.y) <= 3
         ]
+        if hasattr(game, "_players_on_floor"):
+            targets.extend([
+                p for p in game._players_on_floor(player.floor_id)
+                if p.id != player.id and p.is_alive and not p.is_downed and not p.is_afk and p.faction != player.faction
+                and chebyshev_distance(player.pos.x, player.pos.y, p.pos.x, p.pos.y) <= 3
+            ])
         game.add_event("PLAY_SOUND", {"sound": "MISS", "rate": 1.2}, floor_id=player.floor_id, source_player_id=player.id)
         game.add_event("PLAY_ANIMATION", {"player": player.id, "animation": "operate"}, floor_id=player.floor_id)
         for mob in targets:
@@ -695,8 +707,8 @@ class ComboStrikeSkill(WeaponSkill):
         if dist > 1:
             return False, "Enemy must be adjacent"
         floor = game._get_or_create_floor(player.floor_id)
-        target = find_mob_at(floor, tx, ty)
-        if target is None or target.faction == Faction.PLAYER:
+        target = _find_target(game, player, floor, tx, ty)
+        if target is None or getattr(target, "faction", None) == player.faction:
             return False, "No valid enemy target"
         return True, None
 
@@ -706,7 +718,7 @@ class ComboStrikeSkill(WeaponSkill):
         if tx is None or ty is None:
             return False
         floor = game._get_or_create_floor(player.floor_id)
-        target = find_mob_at(floor, tx, ty)
+        target = _find_target(game, player, floor, tx, ty)
         if target is None:
             return False
 
@@ -759,8 +771,8 @@ class HeavyBlowSkill(WeaponSkill):
         if dist > 1:
             return False, "Enemy must be adjacent"
         floor = game._get_or_create_floor(player.floor_id)
-        target = find_mob_at(floor, tx, ty)
-        if target is None or target.faction == Faction.PLAYER:
+        target = _find_target(game, player, floor, tx, ty)
+        if target is None or getattr(target, "faction", None) == player.faction:
             return False, "No valid enemy target"
         return True, None
 
@@ -770,7 +782,7 @@ class HeavyBlowSkill(WeaponSkill):
         if tx is None or ty is None:
             return False
         floor = game._get_or_create_floor(player.floor_id)
-        target = find_mob_at(floor, tx, ty)
+        target = _find_target(game, player, floor, tx, ty)
         if target is None:
             return False
 
@@ -825,8 +837,8 @@ class RetributionSkill(WeaponSkill):
         if dist > 1:
             return False, "Enemy must be adjacent"
         floor = game._get_or_create_floor(player.floor_id)
-        target = find_mob_at(floor, tx, ty)
-        if target is None or target.faction == Faction.PLAYER:
+        target = _find_target(game, player, floor, tx, ty)
+        if target is None or getattr(target, "faction", None) == player.faction:
             return False, "No valid enemy target"
         return True, None
 
@@ -836,7 +848,7 @@ class RetributionSkill(WeaponSkill):
         if tx is None or ty is None:
             return False
         floor = game._get_or_create_floor(player.floor_id)
-        target = find_mob_at(floor, tx, ty)
+        target = _find_target(game, player, floor, tx, ty)
         if target is None:
             return False
 
@@ -939,8 +951,8 @@ class RunicSlashSkill(WeaponSkill):
         if dist > 1:
             return False, "Enemy must be adjacent"
         floor = game._get_or_create_floor(player.floor_id)
-        target = find_mob_at(floor, tx, ty)
-        if target is None or target.faction == Faction.PLAYER:
+        target = _find_target(game, player, floor, tx, ty)
+        if target is None or getattr(target, "faction", None) == player.faction:
             return False, "No valid enemy target"
         return True, None
 
@@ -950,7 +962,7 @@ class RunicSlashSkill(WeaponSkill):
         if tx is None or ty is None:
             return False
         floor = game._get_or_create_floor(player.floor_id)
-        target = find_mob_at(floor, tx, ty)
+        target = _find_target(game, player, floor, tx, ty)
         if target is None:
             return False
 
@@ -999,8 +1011,8 @@ class PierceSkill(WeaponSkill):
         if dist > 1:
             return False, "Enemy must be adjacent"
         floor = game._get_or_create_floor(player.floor_id)
-        target = find_mob_at(floor, tx, ty)
-        if target is None or target.faction == Faction.PLAYER:
+        target = _find_target(game, player, floor, tx, ty)
+        if target is None or getattr(target, "faction", None) == player.faction:
             return False, "No valid enemy target"
         return True, None
 
@@ -1010,7 +1022,7 @@ class PierceSkill(WeaponSkill):
         if tx is None or ty is None:
             return False
         floor = game._get_or_create_floor(player.floor_id)
-        target = find_mob_at(floor, tx, ty)
+        target = _find_target(game, player, floor, tx, ty)
         if target is None:
             return False
 

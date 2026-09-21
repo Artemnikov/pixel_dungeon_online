@@ -93,8 +93,31 @@
       "cleric": {
         "name": "Cleric",
         "desc": "The Cleric commands holy power to cast powerful blessings, shields, and offensive light. Armed with a cudgel and holy tome, he supports himself and allies in battle."
+      },
+      "gnoll": {
+        "name": "Gnoll Scout",
+        "desc": "A swift dungeon scout equipped with a deadly spear, moving nimbly through the depths and hunting adventurers."
+      },
+      "skeleton": {
+        "name": "Skeleton",
+        "desc": "An undead warrior with solid bone armor and blade, resistant to standard dungeon hazards."
+      },
+      "thief": {
+        "name": "Thief",
+        "desc": "A nimble rogue of the dungeon, armed with daggers and throwing knives to ambush unwary adventurers."
+      },
+      "rat": {
+        "name": "Marsupial Rat",
+        "desc": "A quick and vicious denizen of the sewers, striking with lightning bite attacks and dodging blows."
+      },
+      "necromancer": {
+        "name": "Necromancer",
+        "desc": "A dark spellcaster who commands occult missiles and dark flames to repel intruders."
       }
     },
+    "faction": "Faction",
+    "factionHeroes": "Heroes",
+    "factionDungeon": "Dungeon",
     "easy": "EASY",
     "normal": "MEDIUM",
     "hard": "NORMAL"
@@ -117,7 +140,9 @@
     "back": "Back",
     "rejected": "Couldn't join: {{reason}}",
     "reasonWrongPassword": "wrong password",
-    "reasonRoomFull": "room is full"
+    "reasonRoomFull": "room is full",
+    "reasonDungeonDisabled": "dungeon faction is disabled in this room",
+    "allowDungeon": "Allow Dungeon Faction (PvP)"
   },
   "app": {
     "titleWelcome": "Online Pixel Dungeon — multiplayer roguelike",

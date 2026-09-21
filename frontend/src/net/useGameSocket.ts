@@ -22,9 +22,7 @@ const WATCHDOG_TIMEOUT_MS = 30000;
 const RECONNECT_BASE_MS = 500;
 const RECONNECT_MAX_MS = 10000;
 
-// Room-join rejection close codes (backend/app/main.py's game_websocket):
-// 4001 wrong password, 4002 room full. Never worth retrying.
-const ROOM_REJECT_CODES = new Set([4001, 4002]);
+const ROOM_REJECT_CODES = new Set([4001, 4002, 4003]);
 
 // Stairs/chasm events that should fade-and-snap the camera on floor change.
 // CHASM_FALL is the fall transition (SPD Chasm.heroFall -> InterlevelScene.Mode.FALL).
@@ -39,6 +37,7 @@ export default function useGameSocket({
   difficulty,
   challenges,
   playerName,
+  faction,
   setConnectionStatus,
   onRoomRejected,
   socketRef,
@@ -288,7 +287,8 @@ export default function useGameSocket({
       const adminParam = adminSecret ? `&admin_secret=${encodeURIComponent(adminSecret)}` : '';
       const challengesParam = challenges ? `&challenges=${encodeURIComponent(challenges)}` : '';
       const roomPasswordParam = roomPassword ? `&room_password=${encodeURIComponent(roomPassword)}` : '';
-      const ws = new WebSocket(`${wsBaseUrl}/ws/game/${gameId}?class_type=${selectedClass}&difficulty=${difficulty}${challengesParam}${nameParam}${adminParam}${sessionParam}${roomPasswordParam}`);
+      const factionParam = faction ? `&faction=${encodeURIComponent(faction)}` : '';
+      const ws = new WebSocket(`${wsBaseUrl}/ws/game/${gameId}?class_type=${selectedClass}&difficulty=${difficulty}${challengesParam}${nameParam}${adminParam}${sessionParam}${roomPasswordParam}${factionParam}`);
       socketRef.current = ws;
 
       ws.onopen = () => {

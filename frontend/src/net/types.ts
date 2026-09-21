@@ -149,7 +149,7 @@ export type BlockingEntity =
   | { kind: 'mob'; id: string; name?: string; action: 'melee-attack' }
   | { kind: 'merchant'; id: string; name?: string; action: 'npc-interact' }
   | { kind: 'quest-npc'; id: string; name?: string; action: 'npc-interact' }
-  | { kind: 'player'; id: string; action: 'face-only' }
+  | { kind: 'player'; id: string; action: 'face-only' | 'melee-attack' }
   | { kind: 'ally'; id: string; name?: string; action: 'face-only' }
   | { kind: 'trap'; trapType?: string; action: 'none' };
 
@@ -203,6 +203,7 @@ export interface MyStats {
   keys?: Player['keys'];
   guidePages?: string[];
   respawnsUsed?: number;
+  faction?: string;
 }
 
 export interface HookProps {
@@ -214,6 +215,7 @@ export interface HookProps {
   difficulty: string;
   challenges?: string;
   playerName: string;
+  faction?: string;
   setConnectionStatus?: (status: string) => void;
   onRoomRejected?: (reason: string) => void;
   socketRef: Ref<WebSocket | null>;

@@ -177,9 +177,16 @@ class ShockwaveArmorAbility(WarriorArmorAbility):
             dir_x, dir_y = 0, 1
         dir_angle = math.atan2(dir_y, dir_x)
 
+        targets: list[Any] = [m for m in floor.mobs.values() if m.is_alive and m.faction != player.faction]
+        if hasattr(game, "_players_on_floor"):
+            targets.extend([
+                p for p in game._players_on_floor(player.floor_id)
+                if p.id != player.id and p.is_alive and not p.is_downed and not p.is_afk and p.faction != player.faction
+            ])
+
         hit_any = False
-        for mob in list(floor.mobs.values()):
-            if not mob.is_alive or mob.faction == Faction.PLAYER:
+        for mob in targets:
+            if not mob.is_alive or mob.faction == player.faction:
                 continue
             mx, my = mob.pos.x - player.pos.x, mob.pos.y - player.pos.y
             dist = chebyshev_distance(player.pos.x, player.pos.y, mob.pos.x, mob.pos.y)

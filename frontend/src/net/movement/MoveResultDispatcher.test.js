@@ -185,3 +185,64 @@ test('MoveResultDispatcher: Door bump executes UnlockDoorBumpStrategy and sends 
   assert.equal(sentMessages.length, 1);
   assert.deepEqual(sentMessages[0], { type: 'MOVE_STEP', seq: 10, dx: 1, dy: 0 });
 });
+
+test('MoveResultDispatcher: Enemy player bump executes MeleeAttackBumpStrategy and sends MOVE_STEP', () => {
+  const sentMessages = [];
+  const mockSocket = {
+    readyState: 1,
+    send: (msg) => sentMessages.push(JSON.parse(msg)),
+  };
+
+  const animState = {};
+  const player = createMockPlayer();
+  const ctx = {
+    myPlayer: player,
+    playerAnimRef: { current: animState },
+    onMeleeAttack: () => { animState.p1 = { attackUntil: Date.now() + 250 }; },
+    socket: mockSocket,
+    dx: 0,
+    dy: -1,
+  };
+
+  const enemyPlayerBumpRes = {
+    kind: 'bumped',
+    x: 10,
+    y: 9,
+    seq: 11,
+    blockers: [{ kind: 'player', id: 'p2', action: 'melee-attack' }],
+  };
+
+  defaultMoveResultDispatcher.dispatch(enemyPlayerBumpRes, ctx);
+
+  assert.ok(animState.p1?.attackUntil > 0);
+  assert.equal(sentMessages.length, 1);
+  assert.deepEqual(sentMessages[0], { type: 'MOVE_STEP', seq: 11, dx: 0, dy: -1 });
+});
+
+test('MoveResultDispatcher: Same-faction player bump with face-only does not send MOVE_STEP', () => {
+  const sentMessages = [];
+  const mockSocket = {
+    readyState: 1,
+    send: (msg) => sentMessages.push(JSON.parse(msg)),
+  };
+
+  const player = createMockPlayer();
+  const ctx = {
+    myPlayer: player,
+    socket: mockSocket,
+    dx: 0,
+    dy: 1,
+  };
+
+  const allyPlayerBumpRes = {
+    kind: 'bumped',
+    x: 10,
+    y: 11,
+    seq: 12,
+    blockers: [{ kind: 'player', id: 'p2', action: 'face-only' }],
+  };
+
+  defaultMoveResultDispatcher.dispatch(allyPlayerBumpRes, ctx);
+
+  assert.equal(sentMessages.length, 0);
+});

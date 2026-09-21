@@ -91,6 +91,7 @@ export class HeroStateSync {
       keys: sp.keys || [],
       guidePages: sp.guide_pages || [],
       respawnsUsed: sp.respawns_used ?? 0,
+      faction: sp.faction || 'player',
     });
   }
 
@@ -105,6 +106,7 @@ export class HeroStateSync {
       isRegen: (p.heal_left || 0) > 0,
       shield: (p.shields || []).reduce((sum: number, s: { amount?: number }) => sum + (s.amount || 0), 0),
       pos: p.pos ? { x: p.pos.x, y: p.pos.y } : prev.pos,
+      faction: p.faction || prev.faction || 'player',
     }));
   }
 

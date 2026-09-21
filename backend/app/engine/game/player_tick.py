@@ -146,7 +146,7 @@ class PlayerTickMixin:
                 floor = self._get_or_create_floor(player.floor_id)
                 nearby_mobs = [
                     m for m in floor.mobs.values()
-                    if m.is_alive and m.faction != Faction.PLAYER
+                    if m.is_alive and m.faction != player.faction
                     and chebyshev_distance(m.pos.x, m.pos.y, player.pos.x, player.pos.y) <= 4
                 ]
                 if nearby_mobs:
@@ -196,7 +196,7 @@ class PlayerTickMixin:
         if seal_shield is not None:
             floor = self._get_or_create_floor(player.floor_id)
             nearby = any(
-                m.is_alive and m.faction != Faction.PLAYER
+                m.is_alive and m.faction != player.faction
                 and chebyshev_distance(m.pos.x, m.pos.y, player.pos.x, player.pos.y) <= player.get_view_distance()
                 for m in floor.mobs.values()
             )

@@ -8,10 +8,19 @@ function DangerIndicator({ visionRef, entitiesRef, myPlayerIdRef, onCycleEnemy }
     const tick = () => {
       const v = visionRef?.current?.visible;
       if (v) {
+        const myId = myPlayerIdRef?.current;
+        const myPlayer = myId ? entitiesRef?.current?.players?.[myId] : null;
+        const myFaction = myPlayer?.faction || 'player';
         const mobs = entitiesRef?.current?.mobs || {};
+        const players = entitiesRef?.current?.players || {};
         let c = 0;
         for (const m of Object.values(mobs)) {
-          if (m.faction === 'enemy' && m.renderPos && v.has(`${Math.round(m.renderPos.x)},${Math.round(m.renderPos.y)}`)) {
+          if (m.is_alive !== false && (m.faction || 'dungeon') !== myFaction && m.renderPos && v.has(`${Math.round(m.renderPos.x)},${Math.round(m.renderPos.y)}`)) {
+            c++;
+          }
+        }
+        for (const p of Object.values(players)) {
+          if (p.id !== myId && p.is_alive !== false && !p.is_downed && (p.faction || 'player') !== myFaction && p.renderPos && v.has(`${Math.round(p.renderPos.x)},${Math.round(p.renderPos.y)}`)) {
             c++;
           }
         }

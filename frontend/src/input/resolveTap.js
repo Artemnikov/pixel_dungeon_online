@@ -1,7 +1,7 @@
 import { getTileDescriptor } from '../constants.js';
 import { bfsPath } from '../pathfinding/bfs';
 
-export function resolveTapAction({ tileX, tileY, playerTile, mobs, grid, playerFaction }) {
+export function resolveTapAction({ tileX, tileY, playerTile, mobs, players, grid, playerFaction }) {
   if (!playerTile) {
     return { type: 'PATH_STEPS', steps: [] };
   }
@@ -48,11 +48,20 @@ export function resolveTapAction({ tileX, tileY, playerTile, mobs, grid, playerF
     const width = grid[0].length;
 
     let hostileMobs;
-    if (mobs && playerFaction) {
+    if (playerFaction) {
       hostileMobs = new Set();
-      for (const m of Object.values(mobs)) {
-        if (m.is_alive && m.faction !== playerFaction) {
-          hostileMobs.add(`${Math.round(m.pos.x)},${Math.round(m.pos.y)}`);
+      if (mobs) {
+        for (const m of Object.values(mobs)) {
+          if (m.is_alive !== false && (m.faction || 'dungeon') !== playerFaction) {
+            hostileMobs.add(`${Math.round(m.pos.x)},${Math.round(m.pos.y)}`);
+          }
+        }
+      }
+      if (players) {
+        for (const p of Object.values(players)) {
+          if (p.is_alive !== false && !p.is_downed && (p.faction || 'player') !== playerFaction) {
+            hostileMobs.add(`${Math.round(p.pos.x)},${Math.round(p.pos.y)}`);
+          }
         }
       }
     }

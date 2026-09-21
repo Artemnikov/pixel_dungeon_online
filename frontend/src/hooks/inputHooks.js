@@ -103,7 +103,7 @@ export default function useInputHooks({
     if (socketRef.current?.readyState === WebSocket.OPEN) {
       const myPlayer = entitiesRef.current.players[myPlayerIdRef.current];
       const playerTile = myPlayer ? (myPlayer.targetPos || myPlayer.renderPos) : null;
-      const action = resolveTapAction({ tileX, tileY, playerTile, mobs: entitiesRef.current.mobs, grid: gridRef.current, playerFaction: myPlayer?.faction });
+      const action = resolveTapAction({ tileX, tileY, playerTile, mobs: entitiesRef.current.mobs, players: entitiesRef.current.players, grid: gridRef.current, playerFaction: myPlayer?.faction });
       if (action.type === 'OPEN_ALCHEMY') {
         onOpenAlchemyRef.current();
         return;

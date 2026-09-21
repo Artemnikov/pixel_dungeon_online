@@ -12,12 +12,12 @@ from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Tuple, TYPE_CHECKING
 
 from app.engine.dungeon.constants import TileType
-from app.engine.entities.base import Faction, Position, chebyshev_distance, find_mob_at
+from app.engine.entities.base import Position, chebyshev_distance
 from app.engine.entities.buffs import add_buff, remove_buff
 from app.engine.entities.player import CharacterClass, Mob
 from app.engine.entities.subclasses import heroic_energy_mult
 from app.engine.entities.talent_enum import ArmorAbilityType, Talent
-from app.engine.game.armor_ability_base import armor_class_guard
+from app.engine.game.armor_ability_base import armor_class_guard, resolve_target_entity as _find_target
 from app.engine.systems.combat import resolve_melee_attack
 
 if TYPE_CHECKING:
@@ -166,8 +166,8 @@ class ChallengeArmorAbility(DuelistArmorAbility):
         if dist > 5:
             return False, "Target must be within 5 tiles"
         floor = game._get_or_create_floor(player.floor_id)
-        target = find_mob_at(floor, tx, ty)
-        if target is None or target.faction == Faction.PLAYER:
+        target = _find_target(game, player, floor, tx, ty)
+        if target is None or target.faction == player.faction:
             return False, "No valid enemy target"
         return True, None
 
@@ -179,7 +179,7 @@ class ChallengeArmorAbility(DuelistArmorAbility):
         if tx is None or ty is None:
             return False
         floor = game._get_or_create_floor(player.floor_id)
-        target = find_mob_at(floor, tx, ty)
+        target = _find_target(game, player, floor, tx, ty)
         if target is None:
             return False
 
@@ -214,7 +214,7 @@ class ChallengeArmorAbility(DuelistArmorAbility):
 
         # Freeze spectator mobs
         for mob in floor.mobs.values():
-            if mob.is_alive and mob.faction != Faction.PLAYER and mob.id != target.id:
+            if mob.is_alive and mob.faction != player.faction and mob.id != target.id:
                 add_buff(mob.buffs, "spectator_freeze", duration=10.0, level=1)
 
         game.add_event(
@@ -233,7 +233,9 @@ class ChallengeArmorAbility(DuelistArmorAbility):
         """
         player.duel_mode_turns_left = max(0.0, player.duel_mode_turns_left - dt)
         floor = game._get_or_create_floor(player.floor_id)
-        target = floor.mobs.get(player.duel_mode_target_id) if player.duel_mode_target_id else None
+        target = (floor.mobs.get(player.duel_mode_target_id) if player.duel_mode_target_id else None) or (
+            game.players.get(player.duel_mode_target_id) if hasattr(game, "players") and player.duel_mode_target_id else None
+        )
         if target is None or not target.is_alive:
             self.end_duel(game, player, target_killed=True)
         elif player.duel_mode_turns_left <= 0 or chebyshev_distance(player.pos.x, player.pos.y, target.pos.x, target.pos.y) > 6:
@@ -318,21 +320,28 @@ class ElementalStrikeArmorAbility(DuelistArmorAbility):
         target_tile_y = ty if ty is not None else player.pos.y
 
         # Direct melee target if adjacent
-        direct_target = next((
-            m for m in floor.mobs.values()
-            if m.is_alive and m.pos.x == target_tile_x and m.pos.y == target_tile_y
-            and chebyshev_distance(player.pos.x, player.pos.y, target_tile_x, target_tile_y) <= 1
-            and m.faction != Faction.PLAYER
-        ), None)
+        direct_target = None
+        if chebyshev_distance(player.pos.x, player.pos.y, target_tile_x, target_tile_y) <= 1:
+            candidate = _find_target(game, player, floor, target_tile_x, target_tile_y)
+            if candidate is not None and getattr(candidate, "faction", None) != player.faction:
+                direct_target = candidate
 
         # Collect enemies in cone / area
         affected_mobs: List[Any] = []
         for mob in floor.mobs.values():
-            if not mob.is_alive or mob.faction == Faction.PLAYER:
+            if not mob.is_alive or mob.faction == player.faction:
                 continue
             dist = chebyshev_distance(player.pos.x, player.pos.y, mob.pos.x, mob.pos.y)
             if 1 <= dist <= max_range:
                 affected_mobs.append(mob)
+
+        if hasattr(game, "_players_on_floor"):
+            for other_p in game._players_on_floor(player.floor_id):
+                if other_p.id == player.id or not other_p.is_alive or other_p.is_downed or other_p.is_afk or other_p.faction == player.faction:
+                    continue
+                dist = chebyshev_distance(player.pos.x, player.pos.y, other_p.pos.x, other_p.pos.y)
+                if 1 <= dist <= max_range and other_p not in affected_mobs:
+                    affected_mobs.append(other_p)
 
         # Directed Power: boosts direct strike enchantment power
         if direct_target:
@@ -446,7 +455,7 @@ class FeintArmorAbility(DuelistArmorAbility):
             hp=1, max_hp=1,
             attack=0, defense=0, defense_skill=0, dr_min=0, dr_max=0,
             properties=["INORGANIC", "DECOY"],
-            faction=Faction.PLAYER,
+            faction=player.faction,
         )
         afterimage.owner_id = player.id
         floor.mobs[afterimage.id] = afterimage
@@ -456,7 +465,7 @@ class FeintArmorAbility(DuelistArmorAbility):
 
         # Aggro nearby enemies to afterimage
         for mob in floor.mobs.values():
-            if mob.is_alive and mob.faction != Faction.PLAYER:
+            if mob.is_alive and mob.faction != player.faction:
                 if chebyshev_distance(old_x, old_y, mob.pos.x, mob.pos.y) <= 3:
                     if hasattr(mob, "aggro_target_id"):
                         mob.aggro_target_id = afterimage.id

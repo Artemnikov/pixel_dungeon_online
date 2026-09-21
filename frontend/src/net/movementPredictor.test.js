@@ -242,8 +242,6 @@ test('predictMove: bumping a quest NPC returns an npc-interact quest-npc bump', 
   assert.equal(player.facing, 'UP');
 });
 
-// --- owned ally walk-through -------------------------------------------------
-
 test('predictMove: owned ally (Ghost/Mirror) is walked through, not bumped', () => {
   movementPredictor.clear();
   const player = createMockPlayer(10, 10);
@@ -261,13 +259,70 @@ test('predictMove: owned ally (Ghost/Mirror) is walked through, not bumped', () 
   assert.deepEqual(player.targetPos, { x: 10, y: 9 });
 });
 
-test('predictMove: another player is bumped as face-only', () => {
+test('predictMove: dungeon faction player swaps with regular dungeon mob (walks through)', () => {
   movementPredictor.clear();
   const player = createMockPlayer(10, 10);
+  player.faction = 'dungeon';
+
+  const entities = {
+    players: {},
+    mobs: {
+      m1: mobAt(10, 9, { name: 'Rat', faction: 'dungeon' }),
+    },
+    items: [],
+  };
+
+  const res = movementPredictor.predictMove(player, 0, -1, 'p1', mockGrid, entities);
+  assert.equal(res.kind, 'moved');
+  assert.deepEqual(player.targetPos, { x: 10, y: 9 });
+});
+
+test('predictMove: dungeon faction player is blocked by immovable dungeon mob as face-only', () => {
+  movementPredictor.clear();
+  const player = createMockPlayer(10, 10);
+  player.faction = 'dungeon';
+
+  const entities = {
+    players: {},
+    mobs: {
+      m1: mobAt(10, 9, { name: 'Sentry', faction: 'dungeon', properties: ['IMMOVABLE'] }),
+    },
+    items: [],
+  };
+
+  const res = movementPredictor.predictMove(player, 0, -1, 'p1', mockGrid, entities);
+  assert.equal(res.kind, 'bumped');
+  assert.deepEqual(res.blockers[0], { kind: 'ally', id: 'm1', name: 'Sentry', action: 'face-only' });
+  assert.equal(player.facing, 'UP');
+});
+
+test('predictMove: dungeon faction player bumps hero player with melee-attack', () => {
+  movementPredictor.clear();
+  const player = createMockPlayer(10, 10);
+  player.faction = 'dungeon';
 
   const entities = {
     players: {
-      p2: { id: 'p2', name: 'Other', pos: { x: 10, y: 9 }, renderPos: { x: 10, y: 9 }, is_downed: false },
+      p2: { id: 'p2', name: 'Hero', pos: { x: 10, y: 9 }, renderPos: { x: 10, y: 9 }, is_downed: false, faction: 'player' },
+    },
+    mobs: {},
+    items: [],
+  };
+
+  const res = movementPredictor.predictMove(player, 0, -1, 'p1', mockGrid, entities);
+  assert.equal(res.kind, 'bumped');
+  assert.deepEqual(res.blockers[0], { kind: 'player', id: 'p2', action: 'melee-attack' });
+  assert.equal(player.facing, 'UP');
+});
+
+test('predictMove: another player of the same faction is bumped as face-only', () => {
+  movementPredictor.clear();
+  const player = createMockPlayer(10, 10);
+  player.faction = 'player';
+
+  const entities = {
+    players: {
+      p2: { id: 'p2', name: 'Other', pos: { x: 10, y: 9 }, renderPos: { x: 10, y: 9 }, is_downed: false, faction: 'player' },
     },
     mobs: {},
     items: [],
@@ -277,6 +332,71 @@ test('predictMove: another player is bumped as face-only', () => {
 
   assert.equal(res.kind, 'bumped');
   assert.deepEqual(res.blockers[0], { kind: 'player', id: 'p2', action: 'face-only' });
+  assert.equal(player.facing, 'UP');
+});
+
+test('predictMove: player of a different faction is bumped with melee-attack and faces the target', () => {
+  movementPredictor.clear();
+  const player = createMockPlayer(10, 10);
+  player.faction = 'player';
+
+  const entities = {
+    players: {
+      p2: { id: 'p2', name: 'DungeonPlayer', pos: { x: 10, y: 9 }, renderPos: { x: 10, y: 9 }, is_downed: false, faction: 'dungeon' },
+    },
+    mobs: {},
+    items: [],
+  };
+
+  const res = movementPredictor.predictMove(player, 0, -1, 'p1', mockGrid, entities);
+
+  assert.equal(res.kind, 'bumped');
+  assert.equal(res.x, 10);
+  assert.equal(res.y, 9);
+  assert.deepEqual(res.blockers, [{ kind: 'player', id: 'p2', action: 'melee-attack' }]);
+  assert.equal(player.targetPos, null);
+  assert.equal(player.animStartTime, null);
+  assert.equal(player.facing, 'UP');
+});
+
+test('paceStep: fires melee-attack bump when moving into player of a different faction', () => {
+  movementPredictor.clear();
+  const player = createMockPlayer(10, 10);
+  player.faction = 'player';
+
+  const entities = {
+    players: {
+      p2: { id: 'p2', name: 'DungeonPlayer', pos: { x: 10, y: 9 }, renderPos: { x: 10, y: 9 }, is_downed: false, faction: 'dungeon' },
+    },
+    mobs: {},
+    items: [],
+  };
+
+  const res = movementPredictor.paceStep(player, 0, -1, 'p1', mockGrid, entities);
+
+  assert.equal(res.kind, 'bumped');
+  assert.equal(res.blockers[0].action, 'melee-attack');
+  assert.equal(player.facing, 'UP');
+  assert.equal(movementPredictor.isPending(), false);
+});
+
+test('predictMove: enemy summon/clone of a different faction is bumped with melee-attack', () => {
+  movementPredictor.clear();
+  const player = createMockPlayer(10, 10);
+  player.faction = 'dungeon';
+
+  const entities = {
+    players: {},
+    mobs: {
+      m1: mobAt(10, 9, { type: 'ghost_hero', faction: 'player', owner_id: 'p2' }),
+    },
+    items: [],
+  };
+
+  const res = movementPredictor.predictMove(player, 0, -1, 'p1', mockGrid, entities);
+
+  assert.equal(res.kind, 'bumped');
+  assert.deepEqual(res.blockers[0], { kind: 'mob', id: 'm1', name: 'Rat', action: 'melee-attack' });
   assert.equal(player.facing, 'UP');
 });
 

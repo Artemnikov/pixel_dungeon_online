@@ -8,6 +8,7 @@ import {
 import { drawWhiteSilhouette } from '../draw/flash';
 import { drawShieldFx } from '../draw/shieldHalo';
 import { defaultHeroAnimationPipeline } from './HeroAnimationPipeline';
+import { getCharacterDescriptor } from '../characterDescriptors';
 
 export interface PlayerRenderContext {
   player: RenderPlayer;
@@ -35,13 +36,14 @@ export function drawPlayerSprite(
   if (!playerSprite) return;
 
   const isFlashing = Boolean(anim?.flashUntil && now < anim.flashUntil);
-  const sx = frameIndex * 12;
-  const sWidth = 12;
+  const charDesc = getCharacterDescriptor(player.class_type);
+  const sWidth = charDesc.frameWidth;
+  const SRC_FRAME_H = charDesc.frameHeight;
+  const sx = frameIndex * sWidth;
   const dWidth = sWidth * TILE_SCALE;
   const xOffset = (TILE_SIZE - dWidth) / 2;
-  const SRC_FRAME_H = 15;
   const armorTier = (player.equipped_wearable as { tier?: number } | undefined)?.tier ?? 0;
-  const sy = Math.max(0, Math.min(armorTier, 6)) * SRC_FRAME_H;
+  const sy = charDesc.isHero ? Math.max(0, Math.min(armorTier, 6)) * SRC_FRAME_H : charDesc.defaultFrame.y;
 
   ctx2d.save();
   ctx2d.globalAlpha = alpha;
@@ -99,10 +101,12 @@ export function drawPlayerNamePlate(
   x: number,
   y: number,
 ): void {
-  ctx2d.fillStyle = 'white';
-  ctx2d.font = '10px Arial';
+  const isDungeon = player.faction === 'dungeon';
+  ctx2d.fillStyle = isDungeon ? '#ff6666' : 'white';
+  ctx2d.font = isDungeon ? 'bold 10px Arial' : '10px Arial';
   ctx2d.textAlign = 'center';
-  ctx2d.fillText(player.name, x + TILE_SIZE / 2, y - 15);
+  const displayName = isDungeon ? `[Dungeon] ${player.name}` : player.name;
+  ctx2d.fillText(displayName, x + TILE_SIZE / 2, y - 15);
 
   if (player.is_afk) {
     ctx2d.font = 'bold 10px Arial';

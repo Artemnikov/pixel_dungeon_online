@@ -329,7 +329,7 @@ def action_read(game, player, item, tx=None, ty=None) -> None:
         floor = game._get_or_create_floor(player.floor_id)
         beckoned_ids = []
         for mob in floor.mobs.values():
-            if mob.is_alive and mob.faction != "player":
+            if mob.is_alive and mob.faction != player.faction:
                 mob.ai_state = "hunting"
                 mob.target_id = player.id
                 beckoned_ids.append(mob.id)

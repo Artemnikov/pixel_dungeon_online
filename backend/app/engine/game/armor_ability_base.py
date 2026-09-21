@@ -14,8 +14,17 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import Any, ClassVar, Optional, Tuple
 
+from app.engine.entities.base import find_mob_at
 from app.engine.entities.player import Player
-from app.engine.entities.subclasses import heroic_energy_mult
+from app.engine.entities.subclasses import heroic_energy_mult, CLASS_TALENT_BASE
+
+
+def resolve_target_entity(game: Any, player: Player, floor: Any, tx: int, ty: int) -> Optional[Any]:
+    if hasattr(game, "_entity_at"):
+        target = game._entity_at(floor, player.floor_id, tx, ty, exclude_id=player.id, active_players_only=True)
+        if target is not None:
+            return target
+    return find_mob_at(floor, tx, ty)
 
 
 def armor_class_guard(player: Player, required_class: str) -> Optional[str]:
@@ -24,7 +33,8 @@ def armor_class_guard(player: Player, required_class: str) -> Optional[str]:
     Precondition shared by every class armor ability: the hero must be that
     class, alive, and not downed.
     """
-    if player.class_type != required_class or player.is_downed or not player.is_alive:
+    base_class = CLASS_TALENT_BASE.get(player.class_type, player.class_type)
+    if base_class != required_class or player.is_downed or not player.is_alive:
         return f"Only a living {required_class.capitalize()} may use this ability"
     return None
 

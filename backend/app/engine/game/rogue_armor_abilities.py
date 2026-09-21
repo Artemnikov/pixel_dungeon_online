@@ -12,11 +12,11 @@ import uuid
 from typing import Any, ClassVar, Dict, Optional, Tuple
 
 from app.engine.dungeon.constants import TileType
-from app.engine.entities.base import Faction, Position, chebyshev_distance, find_mob_at
+from app.engine.entities.base import Position, chebyshev_distance
 from app.engine.entities.buffs import add_buff
 from app.engine.entities.player import CharacterClass, Mob, Player
 from app.engine.entities.talent_enum import ArmorAbilityType, Talent
-from app.engine.game.armor_ability_base import ArmorAbilityBase
+from app.engine.game.armor_ability_base import ArmorAbilityBase, resolve_target_entity as _find_target
 
 # Rogue armor ability charge costs (SPD baseChargeUse).
 COST_SMOKE_BOMB = 50
@@ -93,7 +93,7 @@ class SmokeBombArmorAbility(RogueArmorAbility):
                 defense_skill=0,
                 dr_min=body_replacement, dr_max=3 * body_replacement,
                 properties=["INORGANIC"],
-                faction=Faction.PLAYER,
+                faction=player.faction,
             )
             log.owner_id = player.id
             floor.mobs[log.id] = log
@@ -108,7 +108,7 @@ class SmokeBombArmorAbility(RogueArmorAbility):
 
         if not shadow_step:
             for mob in list(floor.mobs.values()):
-                if not mob.is_alive or mob.faction == Faction.PLAYER:
+                if not mob.is_alive or mob.faction == player.faction:
                     continue
                 if chebyshev_distance(mob.pos.x, mob.pos.y, tx, ty) <= 1:
                     add_buff(mob.buffs, "blinded", duration=5.0, level=1)
@@ -138,9 +138,11 @@ class DeathMarkArmorAbility(RogueArmorAbility):
     ) -> bool:
         if self._class_guard(player) is not None:
             return False
+        if tx is None or ty is None:
+            return False
         floor = game._get_or_create_floor(player.floor_id)
-        target = find_mob_at(floor, tx, ty)
-        if target is None or target.faction == Faction.PLAYER:
+        target = _find_target(game, player, floor, tx, ty)
+        if target is None or target.faction == player.faction:
             return False
         if not game._is_in_los(player.pos, target.pos, floor_id=player.floor_id):
             return False
@@ -236,7 +238,7 @@ class ShadowCloneArmorAbility(RogueArmorAbility):
             damage_min=damage_min, damage_max=damage_max,
             dr_min=dr_min, dr_max=dr_max,
             attack_cooldown=1.0,
-            faction=Faction.PLAYER,
+            faction=player.faction,
         )
         clone.owner_id = player.id
         floor.mobs[clone.id] = clone

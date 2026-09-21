@@ -47,6 +47,8 @@ function App() {
   const [playerName, setPlayerName] = useState(RESUME?.name || '');
   const [difficulty, setDifficulty] = useState(RESUME?.difficulty || 'normal');
   const [challenges, setChallenges] = useState(RESUME?.challenges || '');
+  const [faction, setFaction] = useState(RESUME?.faction || 'player');
+  const [allowDungeon, setAllowDungeon] = useState(true);
   const [gameId, setGameId] = useState(RESUME?.gameId || 'public');
   const [roomPassword, setRoomPassword] = useState('');
   const [roomJoinError, setRoomJoinError] = useState('');
@@ -97,6 +99,7 @@ function App() {
     keys: [],
     guidePages: [],
     respawnsUsed: 0,
+    faction: 'player',
   });
   const [bossInfo, setBossInfo] = useState(null);
   const [bossFightActive, setBossFightActive] = useState(false);
@@ -129,7 +132,7 @@ function App() {
     canvasRef, inspectPopupRef, inspectSubRef,
     gameState, setGameState, selectedClass, setSelectedClass,
     playerName, setPlayerName, difficulty, setDifficulty,
-    challenges, setChallenges, gameId, setGameId,
+    challenges, setChallenges, faction, setFaction, gameId, setGameId,
     roomPassword, setRoomPassword, sessionId, setSessionId,
     setConnectionStatus, showTutorial, setShowTutorial,
     grid, setGrid, myPlayerId, setMyPlayerId,
@@ -240,6 +243,8 @@ function App() {
         setSelectedClass={setSelectedClass} setDifficulty={setDifficulty}
         setChallenges={setChallenges} setPlayerName={setPlayerName}
         setSessionId={setSessionId}
+        faction={faction} setFaction={setFaction}
+        allowDungeon={allowDungeon} setAllowDungeon={setAllowDungeon}
       />
     );
   }
@@ -301,10 +306,15 @@ function App() {
             onCycleEnemy={() => {
               const visible = visionRef.current.visible;
               if (!visible) return;
-              const hostile = Object.values(entitiesRef.current.mobs).filter(m =>
-                m.faction === 'enemy' && m.renderPos && visible.has(`${Math.round(m.renderPos.x)},${Math.round(m.renderPos.y)}`)
+              const myId = myPlayerIdRef.current;
+              const myFaction = myStats?.faction || entitiesRef.current.players?.[myId]?.faction || 'player';
+              const hostileMobs = Object.values(entitiesRef.current.mobs).filter(m =>
+                m.is_alive !== false && (m.faction || 'dungeon') !== myFaction && m.renderPos && visible.has(`${Math.round(m.renderPos.x)},${Math.round(m.renderPos.y)}`)
               );
-              cycleEnemyCamera(hostile);
+              const hostilePlayers = Object.values(entitiesRef.current.players).filter(p =>
+                p.id !== myId && p.is_alive !== false && !p.is_downed && (p.faction || 'player') !== myFaction && p.renderPos && visible.has(`${Math.round(p.renderPos.x)},${Math.round(p.renderPos.y)}`)
+              );
+              cycleEnemyCamera([...hostileMobs, ...hostilePlayers]);
             }}
           />
         </SideTags>

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import AudioManager from '../audio/AudioManager';
 import { MAX_DPR } from '../constants';
+import { getCharacterDescriptor, getAvatarCropRect } from '../rendering/characterDescriptors';
 
 const PANE_W_LARGE = 160;
 const PANE_H_LARGE = 39;
@@ -17,14 +18,6 @@ const EXP_FILL_LARGE  = { x: 0, y: 121, w: 128, h: 7 };
 const HP_FILL_SMALL   = { x: 0, y: 40, w: 50, h: 4 };
 const HP_SHIELD_SMALL = { x: 0, y: 44, w: 50, h: 4 };
 const EXP_FILL_SMALL  = { x: 0, y: 48, w: 17, h: 4 };
-
-const FRAME_W = 12;
-const FRAME_H = 15;
-
-// The HUD portrait is the hero avatar (walking sheet col 1), cropped to the row
-// matching the equipped armor tier so it reflects the gear actually worn —
-// mirrors SPD HeroSprite.avatar(), which shifts the frame by tiers().get(tier).
-const MAX_ARMOR_TIER = 6;
 
 const BUFF_SIZE = 7;
 const BUFF_COLS = 18;
@@ -120,23 +113,17 @@ export default function StatusPane({ myStats, depth, exitPos, isAdmin, onSearch,
   useEffect(() => { exitPosRef.current = exitPos; }, [exitPos]);
 
   useEffect(() => {
-    const imgs = imagesRef.current;
-    if (assetImages?.statusPane) imgs.status = assetImages.statusPane;
-    if (assetImages?.buffs) imgs.buffs = assetImages.buffs;
-    if (assetImages?.warrior) imgs.warrior = assetImages.warrior;
-    if (assetImages?.mage) imgs.mage = assetImages.mage;
-    if (assetImages?.rogue) imgs.rogue = assetImages.rogue;
-    if (assetImages?.huntress) imgs.huntress = assetImages.huntress;
-    if (assetImages?.duelist) imgs.duelist = assetImages.duelist;
-    if (assetImages?.cleric) imgs.cleric = assetImages.cleric;
+    if (!assetImages) return;
+    imagesRef.current = {
+      ...assetImages,
+      status: assetImages.statusPane || assetImages.status,
+    };
   }, [assetImages]);
 
   useEffect(() => {
     let raf;
     let last = performance.now();
     const avatarCanvas = document.createElement('canvas');
-    avatarCanvas.width = FRAME_W;
-    avatarCanvas.height = FRAME_H;
 
     const draw = (now) => {
       let ctx;
@@ -161,11 +148,12 @@ export default function StatusPane({ myStats, depth, exitPos, isAdmin, onSearch,
         const expPct = Math.min(1, exp / maxExp);
         const level = s.level ?? 1;
         const effects = s.effects ?? [];
-        const sheet = imgs[s.classType] || imgs.warrior;
+        const charDesc = getCharacterDescriptor(s.classType);
+        const sheet = imgs[charDesc.assetKey] || imgs.warrior;
 
         if (level > prevLevelRef.current) {
-          const cx = (9 + FRAME_W / 2) * SCALE;
-          const cy = (8 + FRAME_H / 2) * SCALE;
+          const cx = 15 * SCALE;
+          const cy = 15.5 * SCALE;
           for (let i = 0; i < 12; i++) {
             const ang = (Math.PI * 2 * i) / 12 + Math.random() * 0.4;
             const spd = (20 + Math.random() * 30) * SCALE;
@@ -199,37 +187,46 @@ export default function StatusPane({ myStats, depth, exitPos, isAdmin, onSearch,
         }
 
         ctx.fillStyle = '#161616';
-        ctx.fillRect(9 * SCALE, 8 * SCALE, FRAME_W * SCALE, FRAME_H * SCALE);
+        ctx.fillRect(8 * SCALE, 7 * SCALE, 16 * SCALE, 17 * SCALE);
 
         if (sheet?.complete && sheet?.naturalWidth > 0) {
+          const crop = getAvatarCropRect(s.classType, s.armorTier);
+          if (avatarCanvas.width !== crop.sw || avatarCanvas.height !== crop.sh) {
+            avatarCanvas.width = crop.sw;
+            avatarCanvas.height = crop.sh;
+          }
           const ac = avatarCanvas.getContext('2d');
           ac.imageSmoothingEnabled = false;
-          ac.clearRect(0, 0, FRAME_W, FRAME_H);
-          const armorRow = Math.max(0, Math.min(s.armorTier || 0, MAX_ARMOR_TIER)) * FRAME_H;
-          ac.drawImage(sheet, FRAME_W, armorRow, FRAME_W, FRAME_H, 0, 0, FRAME_W, FRAME_H);
+          ac.clearRect(0, 0, crop.sw, crop.sh);
+          ac.drawImage(sheet, crop.sx, crop.sy, crop.sw, crop.sh, 0, 0, crop.sw, crop.sh);
 
           if (s.isDowned) {
             ac.globalCompositeOperation = 'source-atop';
             ac.fillStyle = 'rgba(0,0,0,0.5)';
-            ac.fillRect(0, 0, FRAME_W, FRAME_H);
+            ac.fillRect(0, 0, crop.sw, crop.sh);
             ac.globalCompositeOperation = 'source-over';
           } else if (rawHpPct < 0.334) {
             warningRef.current = (warningRef.current + dt * 5 * (0.4 - hpPct)) % 1;
             ac.globalCompositeOperation = 'source-atop';
             ac.fillStyle = lerpColor(warningRef.current, WARNING_COLORS);
             ac.globalAlpha = 0.5;
-            ac.fillRect(0, 0, FRAME_W, FRAME_H);
+            ac.fillRect(0, 0, crop.sw, crop.sh);
             ac.globalAlpha = 1;
             ac.globalCompositeOperation = 'source-over';
           } else if (hasPtsRef.current && talentBlinkRef.current > 0) {
             ac.globalCompositeOperation = 'source-atop';
             ac.fillStyle = '#ffff00';
             ac.globalAlpha = Math.abs(Math.cos(talentBlinkRef.current * FLASH_RATE)) * 0.5;
-            ac.fillRect(0, 0, FRAME_W, FRAME_H);
+            ac.fillRect(0, 0, crop.sw, crop.sh);
             ac.globalAlpha = 1;
             ac.globalCompositeOperation = 'source-over';
           }
-          ctx.drawImage(avatarCanvas, 9 * SCALE, 8 * SCALE, FRAME_W * SCALE, FRAME_H * SCALE);
+
+          const destX = (9 - Math.round((crop.sw - 12) / 2)) * SCALE;
+          const destY = (8 - Math.round((crop.sh - 15) / 2)) * SCALE;
+          const destW = crop.sw * SCALE;
+          const destH = crop.sh * SCALE;
+          ctx.drawImage(avatarCanvas, destX, destY, destW, destH);
         }
 
         // --- Compass needle pointing toward floor exit ---
@@ -237,8 +234,8 @@ export default function StatusPane({ myStats, depth, exitPos, isAdmin, onSearch,
         const heroPos = statsRef.current?.pos;
         if (ep && heroPos) {
           const angle = Math.atan2(ep[1] - heroPos.y, ep[0] - heroPos.x);
-          const cx = (9 + FRAME_W / 2) * SCALE;
-          const cy = (8 + FRAME_H / 2) * SCALE;
+          const cx = 15 * SCALE;
+          const cy = 15.5 * SCALE;
           ctx.save();
           ctx.translate(cx, cy);
           ctx.rotate(angle);
@@ -259,8 +256,8 @@ export default function StatusPane({ myStats, depth, exitPos, isAdmin, onSearch,
 
         // --- BusyIndicator (rotating dots around center when busy) ---
         if (isBusy) {
-          const busyX = isLarge ? (9 + FRAME_W / 2) * SCALE : 6 * SCALE;
-          const busyY = isLarge ? (8 + FRAME_H / 2) * SCALE : 35 * SCALE;
+          const busyX = isLarge ? 15 * SCALE : 6 * SCALE;
+          const busyY = isLarge ? 15.5 * SCALE : 35 * SCALE;
           const angle = nowSec * 3;
           ctx.save();
           ctx.translate(busyX, busyY);
@@ -445,8 +442,8 @@ export default function StatusPane({ myStats, depth, exitPos, isAdmin, onSearch,
         onMouseMove={(e) => {
           const x = e.nativeEvent.offsetX / zoomScale;
           const y = e.nativeEvent.offsetY / zoomScale;
-          const ax = 9 * SCALE, ay = 8 * SCALE;
-          const aw = FRAME_W * SCALE, ah = FRAME_H * SCALE;
+          const ax = 7 * SCALE, ay = 7 * SCALE;
+          const aw = 18 * SCALE, ah = 18 * SCALE;
           if (x >= ax && x < ax + aw && y >= ay && y < ay + ah) {
             e.currentTarget.style.cursor = 'pointer';
             e.currentTarget.title = '';
@@ -483,8 +480,8 @@ export default function StatusPane({ myStats, depth, exitPos, isAdmin, onSearch,
           // offsets are in zoom-scaled CSS px; divide back to unscaled pane units.
           const x = e.nativeEvent.offsetX / zoomScale;
           const y = e.nativeEvent.offsetY / zoomScale;
-          const ax = 9 * SCALE, ay = 8 * SCALE;
-          const aw = FRAME_W * SCALE, ah = FRAME_H * SCALE;
+          const ax = 7 * SCALE, ay = 7 * SCALE;
+          const aw = 18 * SCALE, ah = 18 * SCALE;
           if (x >= ax && x < ax + aw && y >= ay && y < ay + ah) {
             AudioManager.play('CLICK');
             onOpenHeroInfo?.();

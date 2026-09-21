@@ -13,6 +13,7 @@ from app.engine.entities.subclasses import (
     T4_ABILITY_TALENTS,
     CLASS_SUBCLASSES,
     CLASS_ARMOR_ABILITIES,
+    CLASS_TALENT_BASE,
     COMBO_MOVES,
 )
 from app.engine.game.constants import NOURISHED_DURATION_PER_ENERGY
@@ -96,7 +97,8 @@ class TalentsMixin:
             return False  # SPD: only Tengu's Mask grants the subclass choice
         if player.subclass_info.subclass is not None:
             return False
-        if subclass not in CLASS_SUBCLASSES.get(player.class_type, ()):
+        base_class = CLASS_TALENT_BASE.get(player.class_type, player.class_type)
+        if subclass not in CLASS_SUBCLASSES.get(base_class, ()):
             return False
         player.subclass_info.subclass = subclass
         player._tengu_mask_worn = False
@@ -125,7 +127,8 @@ class TalentsMixin:
             return False  # SPD: only Kings Crown grants the armor ability choice
         if player.armor_ability:
             return False
-        if ability not in CLASS_ARMOR_ABILITIES.get(player.class_type, ()):
+        base_class = CLASS_TALENT_BASE.get(player.class_type, player.class_type)
+        if ability not in CLASS_ARMOR_ABILITIES.get(base_class, ()):
             return False
         player.armor_ability = ability
         player._kings_crown_worn = False
@@ -148,14 +151,15 @@ class TalentsMixin:
         player = self.players.get(player_id)
         if not player or not player.is_alive:
             return
+        base_class = CLASS_TALENT_BASE.get(player.class_type, player.class_type)
         if player._tengu_mask_worn and player.subclass_info.subclass is None:
-            options = list(CLASS_SUBCLASSES.get(player.class_type, ()))
+            options = list(CLASS_SUBCLASSES.get(base_class, ()))
             if options:
                 self.add_event("SUBCLASS_CHOICE_AVAILABLE", {
                     "player": player.id, "options": options,
                 }, floor_id=player.floor_id, player_id=player.id)
         if player._kings_crown_worn and not player.armor_ability:
-            options = list(CLASS_ARMOR_ABILITIES.get(player.class_type, ()))
+            options = list(CLASS_ARMOR_ABILITIES.get(base_class, ()))
             if options:
                 self.add_event("ARMOR_ABILITY_CHOICE_AVAILABLE", {
                     "player": player.id, "options": options,
@@ -175,7 +179,8 @@ class TalentsMixin:
 
         # Class check (talents not in the map are class-agnostic)
         class_req = TALENT_CLASS_REQ.get(talent_name)
-        if class_req is not None and player.class_type != class_req:
+        base_class = CLASS_TALENT_BASE.get(player.class_type, player.class_type)
+        if class_req is not None and base_class != class_req:
             return False
 
         # Subclass / tier-3 gate check
@@ -301,11 +306,9 @@ class TalentsMixin:
 
         target = None
         if target_x is not None and target_y is not None:
-            target = next((
-                m for m in floor.mobs.values()
-                if m.is_alive and m.faction != Faction.PLAYER
-                and m.pos.x == target_x and m.pos.y == target_y
-            ), None)
+            target = self._entity_at(floor, floor_id, target_x, target_y, exclude_id=player.id, active_players_only=True)
+            if target is not None and getattr(target, "faction", None) == player.faction:
+                target = None
 
         is_in_los = lambda a, b: self._is_in_los(a, b, floor_id=floor_id)
 
@@ -357,7 +360,7 @@ class TalentsMixin:
                 self._combo_leap_to_target(player, target, floor)
             self._combo_strike(player, target, floor, floor_id, move, dmg_multi=0.25 * count, is_in_los=is_in_los)
             for mob in list(floor.mobs.values()):
-                if not mob.is_alive or mob.faction == Faction.PLAYER or mob.id == target.id:
+                if not mob.is_alive or mob.faction == player.faction or mob.id == target.id:
                     continue
                 if chebyshev_distance(mob.pos.x, mob.pos.y, target.pos.x, target.pos.y) > 3:
                     continue
@@ -497,7 +500,7 @@ class TalentsMixin:
         _, tier, _ = def_
         owned = set(player.subclass_info.talent_info.talents.keys())
         meta_replaced = set(player.subclass_info.metamorphed_talents.values())
-        player_class = player.class_type
+        player_class = CLASS_TALENT_BASE.get(player.class_type, player.class_type)
 
         def _belongs_to_class(tid):
             c = TALENT_CLASS_REQ.get(tid)
