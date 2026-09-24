@@ -115,21 +115,6 @@
   background: #2a2a3e;
 }
 
-.search-btn {
-  width: fit-content;
-  padding: 4px 8px;
-  border: 1px solid #5b6f56;
-  background: #203321;
-  color: #cde6c2;
-  border-radius: 4px;
-  font-size: 11px;
-  cursor: pointer;
-}
-
-.search-btn:hover {
-  background: #2b452d;
-}
-
 /* --- Low-health emergency heal prompt --- */
 .emergency-heal-prompt {
   position: fixed;

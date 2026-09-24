@@ -75,7 +75,7 @@ function getHpBarRatio(x, y, { SCALE, isLarge, hpFill }) {
   return null;
 }
 
-export default function StatusPane({ myStats, depth, exitPos, isAdmin, onSearch, hasTalentPoints, onOpenHeroInfo, onTeleport, onAdminSetHp, isBusy, onBuffClick, interfaceSize, assetImages }) {
+export default function StatusPane({ myStats, depth, exitPos, isAdmin, hasTalentPoints, onOpenHeroInfo, onTeleport, onAdminSetHp, isBusy, onBuffClick, interfaceSize, assetImages }) {
   const isLarge = interfaceSize > 0;
   const SCALE = isLarge ? 3 : 2;
   const PANE_W = isLarge ? PANE_W_LARGE : PANE_W_SMALL;
@@ -425,13 +425,6 @@ export default function StatusPane({ myStats, depth, exitPos, isAdmin, onSearch,
             ))}
           </div>
         )}
-        <button
-          type="button"
-          className="search-btn"
-          onClick={(e) => { e.stopPropagation(); AudioManager.play('CLICK'); onSearch(); }}
-        >
-          {t('ui.search')}
-        </button>
       </div>
       <canvas
         ref={canvasRef}

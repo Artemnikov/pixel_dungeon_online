@@ -157,7 +157,6 @@
   },
   "ui": {
     "floor": "floor: {{depth}}",
-    "search": "Search (E)",
     "lowHpDrink": "LOW HEALTH — press SPACE or click to drink a health potion",
     "lowHpWaterskin": "LOW HEALTH — press SPACE or click to drink from the waterskin ({{volume}}/{{max}} dew)",
     "lv": "lv. {{level}}",

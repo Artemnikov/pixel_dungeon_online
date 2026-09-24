@@ -332,7 +332,6 @@ function App() {
           depth={depth}
           exitPos={exitPos}
           isAdmin={myStats.isAdmin}
-          onSearch={handleExamineOrReveal}
           hasTalentPoints={Object.values(talent.talentPoints || {}).some(p => p > 0)}
           onOpenHeroInfo={() => talent.openHero(0)}
           onTeleport={(floor) => send({ type: 'ADMIN_TELEPORT', target_floor: floor })}
