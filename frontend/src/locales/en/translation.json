@@ -159,6 +159,8 @@
     "floor": "floor: {{depth}}",
     "lowHpDrink": "LOW HEALTH — press SPACE or click to drink a health potion",
     "lowHpWaterskin": "LOW HEALTH — press SPACE or click to drink from the waterskin ({{volume}}/{{max}} dew)",
+    "selectTarget": "Select target",
+    "selectTargetQuickbar": "Select target or double click for closest enemy",
     "lv": "lv. {{level}}",
     "str": "STR",
     "loading": "Loading Dungeon…",
