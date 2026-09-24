@@ -44,13 +44,6 @@
 .desktop-mode .top-left-hud {
   top: auto;
   bottom: 0;
-  flex-direction: column-reverse;
-}
-
-.desktop-mode .status-pane-footer {
-  position: fixed;
-  top: 0;
-  left: 0;
 }
 
 .status-pane-canvas {
@@ -97,6 +90,14 @@
   scrollbar-width: thin;
   scrollbar-color: #5b6f56 #1a1a2e;
 }
+
+/* Desktop: the footer sits above the bottom-anchored status bar, so the
+   picker opens upward instead of extending off-screen past the viewport. */
+.desktop-mode .floor-picker {
+  top: auto;
+  bottom: 100%;
+}
+
 .floor-picker__item {
   padding: 3px 10px;
   color: #b8b8b8;
