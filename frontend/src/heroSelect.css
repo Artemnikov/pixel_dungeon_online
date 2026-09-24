@@ -118,6 +118,7 @@
   align-items: center;
   gap: 8px;
   padding: 10px 14px 12px;
+  width: 128px;
   background: linear-gradient(#4a4a52, #313139);
   border: 2px solid #1c1c22;
   border-radius: 8px;
@@ -128,9 +129,13 @@
 .hero-picker-btn:hover { filter: brightness(1.2); border-color: #ffe070; }
 .hero-picker-btn:active { transform: translateY(1px); }
 .hero-picker-name {
+  max-width: 100%;
   font-size: 14px;
   color: #ffe070;
   text-shadow: 0 1px 4px rgba(0, 0, 0, 0.9);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .hero-select.portrait .hero-picker {
   display: flex;
@@ -149,6 +154,7 @@
 .hero-select.portrait .hero-picker-btn {
   padding: 6px 8px;
   gap: 4px;
+  width: 84px;
 }
 .hero-select.portrait .hero-picker-btn .hero-bust {
   transform: scale(0.65);
@@ -207,6 +213,7 @@
 }
 .hero-select.landscape .hero-busts.away .hero-bust-btn {
   flex: 0 0 auto;
+  width: 72px;
   padding: 6px 10px;
 }
 .hero-select.landscape .hero-busts.away .hero-picker-name {
