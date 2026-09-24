@@ -118,7 +118,7 @@
   align-items: center;
   gap: 8px;
   padding: 10px 14px 12px;
-  width: 128px;
+  width: 96px;
   background: linear-gradient(#4a4a52, #313139);
   border: 2px solid #1c1c22;
   border-radius: 8px;
@@ -154,7 +154,6 @@
 .hero-select.portrait .hero-picker-btn {
   padding: 6px 8px;
   gap: 4px;
-  width: 84px;
 }
 .hero-select.portrait .hero-picker-btn .hero-bust {
   transform: scale(0.65);
@@ -197,19 +196,19 @@
 }
 .hero-busts.named .hero-picker-name {
   font-size: 11px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 100%;
 }
 .hero-select.landscape .hero-busts.away {
   position: fixed;
   top: 50%;
-  left: 68%;
+  left: auto;
+  right: 16px;
   width: max-content;
   max-width: 90vw;
-  transform: translate(-50%, -50%);
+  transform: translate(0, -50%);
   z-index: 3;
+}
+.hero-select.landscape .hero-busts.away .hero-busts-row {
+  flex-wrap: wrap;
 }
 .hero-select.landscape .hero-busts.away .hero-bust-btn {
   flex: 0 0 auto;
