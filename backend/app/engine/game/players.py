@@ -325,9 +325,10 @@ class PlayersMixin:
     # SPD Adventurer's Guide page IDs (Document.ADVENTURERS_GUIDE page keys).
     # Pages are granted progressively on first floor visits, matching SPD's
     # EntranceRoom.placeEarlyGuidePages and regular-level page drops.
+    # "Chat" is a multiplayer-only extra page granted right at floor 1.
     _GUIDE_PAGE_DEPTHS = {
         1: ["Intro", "Examining", "Surprise_Attacks", "Identifying",
-            "Food", "Alchemy", "Dieing"],
+            "Food", "Alchemy", "Dieing", "Chat"],
         2: ["Searching"],
         3: ["Strength", "Upgrades"],
         4: ["Looting", "Levelling", "Positioning", "Magic"],

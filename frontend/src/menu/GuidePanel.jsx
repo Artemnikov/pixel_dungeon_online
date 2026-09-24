@@ -5,6 +5,7 @@ const GUIDE_PAGES = [
   'Intro', 'Examining', 'Surprise_Attacks', 'Identifying',
   'Food', 'Alchemy', 'Dieing', 'Searching', 'Strength',
   'Upgrades', 'Looting', 'Levelling', 'Positioning', 'Magic',
+  'Chat',
 ];
 
 export default function GuidePanel({ onClose }) {

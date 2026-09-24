@@ -94,18 +94,20 @@ SPAWN_TRINKET_CATALYST = frozenset({"TrinketCatalyst"})
 # Descriptors for items createItems queues/drops directly (not via the
 # preamble's findPrizeItem matching) -- GoldenKey on a LOCKED_CHEST roll,
 # GuidePage("Intro") on the fresh-game guide-page roll (missingPages is always
-# the fixed 13-name list with "Intro" first, since no pages are ever found).
+# the fixed 15-name list with "Intro" first, since no pages are ever found).
 SPAWN_GOLDEN_KEY = frozenset({"GoldenKey"})
 SPAWN_GUIDE_PAGE_INTRO = frozenset({"GuidePage", "DocumentPage"})
 
 # Adventurer's Guide page IDs in Document.ADVENTURERS_GUIDE.pageNames() order
 # (journal/Document.java static init) -- shared by the guide-page floor-item
 # drop gate below (RegularLevel.java missingPages) and by ItemsMixin's
-# floor-pickup/first-visit-grant resolvers.
+# floor-pickup/first-visit-grant resolvers. "Chat" is a multiplayer-only extra
+# page (not in SPD's guide) appended after the canonical SPD pages.
 GUIDE_PAGE_ORDER = (
     "Intro", "Examining", "Surprise_Attacks", "Identifying",
     "Food", "Alchemy", "Dieing", "Searching", "Strength",
     "Upgrades", "Looting", "Levelling", "Positioning", "Magic",
+    "Chat",
 )
 
 

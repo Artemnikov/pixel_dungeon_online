@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 const MAX_LINES = 6;
 const MAX_HISTORY = 80;
@@ -58,12 +59,28 @@ const CHANNELS = [
 const channelById = (id) => CHANNELS.find(c => c.id === id) || CHANNELS[0];
 
 export default function GameLog({ send }) {
+  const { t } = useTranslation();
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [channel, setChannel] = useState('direct');
   const [open, setOpen] = useState(false);
   const inputRef = useRef(null);
   const listRef = useRef(null);
+
+  const openChat = () => {
+    setOpen(true);
+    // Defer focus until the input row is rendered.
+    requestAnimationFrame(() => inputRef.current?.focus());
+  };
+
+  const toggleChat = () => {
+    if (open) {
+      setOpen(false);
+      inputRef.current?.blur();
+    } else {
+      openChat();
+    }
+  };
 
   useEffect(() => {
     const append = (msg) => {
@@ -90,11 +107,9 @@ export default function GameLog({ send }) {
     const onKeyDown = (e) => {
       if (e.code !== 'Enter') return;
       const tag = e.target?.tagName;
-      if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+      if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'BUTTON') return;
       e.preventDefault();
-      setOpen(true);
-      // Defer focus until the input row is rendered.
-      requestAnimationFrame(() => inputRef.current?.focus());
+      openChat();
     };
 
     window.addEventListener('game-log', onLog);
@@ -200,6 +215,25 @@ export default function GameLog({ send }) {
           onClick={sendChat}
         >
           Send
+        </button>
+      </div>
+
+      <div className="game-log__footer">
+        {!open && (
+          <>
+            <span className="game-log__hint game-log__hint--desktop">{t('ui.chatHintDesktop')}</span>
+            <span className="game-log__hint game-log__hint--mobile">{t('ui.chatHintMobile')}</span>
+          </>
+        )}
+        <button
+          type="button"
+          className="game-log__toggle"
+          title={open ? t('ui.close') : t('ui.openChat')}
+          aria-label={open ? t('ui.close') : t('ui.openChat')}
+          onClick={toggleChat}
+          onMouseDown={preventBlur}
+        >
+          {open ? '\u2715' : '\u{1F4AC}'}
         </button>
       </div>
     </div>
