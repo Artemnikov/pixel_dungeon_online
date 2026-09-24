@@ -1,13 +1,11 @@
-import { useEffect, useLayoutEffect, useRef } from 'react';
-import { useTranslation } from 'react-i18next';
-import AudioManager from '../audio/AudioManager';
-import { actionLabel, orderedActions } from './itemActions';
-import useEntityName from './useEntityName';
+import { useLayoutEffect, useRef } from 'react';
+import ItemActionButtons from './ItemActionButtons';
+import useDismissOnOutsidePointer from './useDismissOnOutsidePointer';
 import useRegisterWindow from '../game/window/useRegisterWindow';
 import { WindowLevel } from '../game/window/WindowTypes';
+import useEntityName from './useEntityName';
 
 export default function RightClickMenu({ item, x, y, onAction, onAssignQuickslot, onClose }) {
-  const { t } = useTranslation();
   const ref = useRef(null);
 
   useRegisterWindow({
@@ -26,26 +24,12 @@ export default function RightClickMenu({ item, x, y, onAction, onAssignQuickslot
     el.style.top = `${ny}px`;
   }, [x, y]);
 
-  useEffect(() => {
-    const close = () => onClose();
-    const id = setTimeout(() => {
-      window.addEventListener('pointerdown', close);
-    }, 0);
-    return () => {
-      clearTimeout(id);
-      window.removeEventListener('pointerdown', close);
-    };
-  }, [onClose]);
+  // Dismiss on outside pointerdown; the menu swallows its own pointerdown so
+  // clicking an action button doesn't pre-close it.
+  useDismissOnOutsidePointer(onClose);
 
   const itemName = useEntityName(item);
   if (!item) return null;
-
-  const def = item.default_action;
-  const run = (action) => {
-    AudioManager.play('CLICK');
-    onClose();
-    onAction(item.id, action);
-  };
 
   return (
     <div
@@ -55,19 +39,12 @@ export default function RightClickMenu({ item, x, y, onAction, onAssignQuickslot
       onPointerDown={(e) => e.stopPropagation()}
     >
       <div className="rc-menu-title">{itemName}</div>
-      {orderedActions(item).map(action => (
-        <button key={action} className={action === def ? 'default' : ''} onClick={() => run(action)}>
-          {actionLabel(action, t)}
-        </button>
-      ))}
-      {def && (
-        <button
-          className="qs-assign"
-          onClick={() => { AudioManager.play('CLICK'); onAssignQuickslot(item.id); onClose(); }}
-        >
-          {t('ui.quickslot')}
-        </button>
-      )}
+      <ItemActionButtons
+        item={item}
+        onAction={onAction}
+        onAssignQuickslot={onAssignQuickslot}
+        onClose={onClose}
+      />
     </div>
   );
 }

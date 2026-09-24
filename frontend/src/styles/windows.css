@@ -87,6 +87,28 @@
 .wnd-item-actions button.default, .rc-menu button.default { color: #f1c40f; }
 .wnd-item-actions .qs-assign, .rc-menu .qs-assign { background: #2c4a6e; }
 
+/* --- Non-blocking item dialog (WndUseItem) — bottom-center --- */
+.wnd-use-item-popup {
+  position: fixed;
+  left: 50%;
+  bottom: max(96px, calc(env(safe-area-inset-bottom) + 90px));
+  transform: translateX(-50%);
+  z-index: 900;
+}
+.wnd-use-item-popup .wnd-item {
+  width: 250px;
+  max-width: 92vw;
+  padding: 10px 12px;
+  border-width: 3px;
+  border-radius: 8px;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.85);
+}
+.wnd-use-item-popup .wnd-item-desc {
+  margin: 8px 0;
+  max-height: 96px;
+  overflow-y: auto;
+}
+
 /* --- WndSadGhost reward item buttons (side-by-side sprites) --- */
 .wnd-ghost-items { display: flex; justify-content: center; gap: 8px; margin-top: 6px; }
 .ghost-item-btn {
