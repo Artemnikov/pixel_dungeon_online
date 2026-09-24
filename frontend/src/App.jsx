@@ -22,6 +22,7 @@ import DangerIndicator from './ui/DangerIndicator';
 import LootIndicator from './ui/LootIndicator';
 import StatusPane from './ui/StatusPane';
 import EmergencyHealPrompt from './ui/EmergencyHealPrompt';
+import TargetingPrompt from './ui/TargetingPrompt';
 import GameHud from './ui/GameHud';
 import GameModals from './ui/GameModals';
 import TalentLayer from './ui/TalentLayer';
@@ -332,7 +333,6 @@ function App() {
           depth={depth}
           exitPos={exitPos}
           isAdmin={myStats.isAdmin}
-          onSearch={handleExamineOrReveal}
           hasTalentPoints={Object.values(talent.talentPoints || {}).some(p => p > 0)}
           onOpenHeroInfo={() => talent.openHero(0)}
           onTeleport={(floor) => send({ type: 'ADMIN_TELEPORT', target_floor: floor })}
@@ -348,6 +348,12 @@ function App() {
             onDrink={() => drinkEmergencyHeal(emergencyHealItem)}
           />
         )}
+
+        <TargetingPrompt
+          targetingMode={targeting.targetingMode}
+          itemsById={itemsById}
+          onCancel={targeting.setTargetingMode}
+        />
 
         <div className="canvas-wrapper" ref={wrapperRef}>
           <canvas

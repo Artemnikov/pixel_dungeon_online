@@ -108,7 +108,12 @@ export const getSewerTerrainInstructions = (grid, x, y, tile, openDoors = new Se
     if (isWaterStitcheable(getTile(grid, x + 1, y))) mask |= 2;  // right
     if (isWaterStitcheable(getTile(grid, x, y + 1))) mask |= 4;  // bottom
     if (isWaterStitcheable(getTile(grid, x - 1, y))) mask |= 8;  // left
-    if (mask === 0) return [];
+    // No stitcheable neighbour (interior water, or water whose only non-water
+    // neighbour is a CHASM/VOID pit, which SPD never stitches) -> draw the
+    // plain water tile (SPD's WATER+0). In these atlases that base sprite is
+    // transparent, so the animated water background shows through underneath,
+    // keeping the surface uniform like SPD's inland water.
+    if (mask === 0) return [{ srcIndex: TERRAIN_INDEX.WATER_STITCH_BASE, quadrant: QUADRANT.FULL }];
     return [{ srcIndex: TERRAIN_INDEX.WATER_STITCH_BASE + mask, quadrant: QUADRANT.FULL }];
   }
 

@@ -157,9 +157,10 @@
   },
   "ui": {
     "floor": "floor: {{depth}}",
-    "search": "Search (E)",
     "lowHpDrink": "LOW HEALTH — press SPACE or click to drink a health potion",
     "lowHpWaterskin": "LOW HEALTH — press SPACE or click to drink from the waterskin ({{volume}}/{{max}} dew)",
+    "selectTarget": "Select target",
+    "selectTargetQuickbar": "Select target or double click for closest enemy",
     "lv": "lv. {{level}}",
     "str": "STR",
     "loading": "Loading Dungeon…",
@@ -170,6 +171,9 @@
     "talentPoints_one": "{{count}} talent point",
     "talentPoints_other": "{{count}} talent points",
     "tapToView": "Tap to view",
+    "openChat": "Open chat",
+    "chatHintDesktop": "Press Enter to chat",
+    "chatHintMobile": "Tap \uD83D\uDCAC to open chat",
     "points": "Points: {{current}}/{{max}}",
     "upgrade": "Upgrade",
     "maxed": "MAXED",
@@ -1228,6 +1232,10 @@
       "Magic": {
         "title": "Magical Attacks",
         "body": "Magical attacks cut right through armor and are difficult to dodge. This means that damage from wands is very reliable, but also makes magical enemies very dangerous!\n\nMagical attacks always have a drawback though. Wands have limited charges and magical enemies usually won't be able to use their magic in close range.\n\nWhen facing enemies that use magic it is important to learn how to prevent them from using it on you."
+      },
+      "Chat": {
+        "title": "Chatting",
+        "body": "You are not alone down here — other adventurers roam the dungeon with you, and talking to them can be both helpful and entertaining.\n\nPress Enter to open the chat bar, type your message, and press Enter again to send it. On touch devices, tap the chat button next to the message log instead.\n\nThere are two channels: Direct chat reaches only players in your line of sight, while Global chat is shared across every floor of the dungeon. Press Tab or tap the channel buttons to switch between them."
       }
     }
   },

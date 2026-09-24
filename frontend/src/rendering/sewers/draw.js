@@ -132,7 +132,7 @@ export const getWaterTextureForDepth = (depth, waterFrames) => {
   return waterFrames[region] ?? waterFrames[0];
 };
 
-export const buildWaterClipPath = (grid) => {
+export const buildWaterClipPath = (grid, visibleSet) => {
   if (!grid || grid.length === 0) return null;
   const path = new Path2D();
   let hasAny = false;
@@ -141,6 +141,7 @@ export const buildWaterClipPath = (grid) => {
     if (!row) continue;
     for (let x = 0; x < row.length; x++) {
       if (row[x] !== BACKEND_TILE.FLOOR_WATER.id) continue;
+      if (visibleSet && !visibleSet.has(`${x},${y}`)) continue;
       path.rect(x * DEST_TILE_SIZE, y * DEST_TILE_SIZE, DEST_TILE_SIZE, DEST_TILE_SIZE);
       hasAny = true;
     }
@@ -148,19 +149,70 @@ export const buildWaterClipPath = (grid) => {
   return hasAny ? path : null;
 };
 
-export const drawWaterBackground = (ctx, waterTex, clipPath, bounds, nowMs) => {
-  if (!waterTex || !clipPath || !bounds) return;
-  const pattern = ctx.createPattern(waterTex, 'repeat');
-  if (!pattern) return;
+// Splits every water cell into one of two clip paths:
+//   visible — water the player currently sees (animated scroll drawn here),
+//   hidden  — discovered water beyond LOS (drawn flat & dark so no flowing
+//             texture is ever visible there). Unexplored cells are skipped:
+//             drawGrid already blacks them out.
+export const buildWaterClipPaths = (grid, vision) => {
+  if (!grid || grid.length === 0) return { visible: null, hidden: null };
+  const visitedPath = new Path2D();
+  const hiddenPath = new Path2D();
+  let hasVisible = false;
+  let hasHidden = false;
+  const discovered = vision?.discovered;
+  const visibleSet = vision?.visible;
+  for (let y = 0; y < grid.length; y++) {
+    const row = grid[y];
+    if (!row) continue;
+    for (let x = 0; x < row.length; x++) {
+      if (row[x] !== BACKEND_TILE.FLOOR_WATER.id) continue;
+      const key = `${x},${y}`;
+      if (discovered && !discovered.has(key)) continue;
+      const inView = visibleSet ? visibleSet.has(key) : false;
+      const path = inView ? visitedPath : hiddenPath;
+      path.rect(x * DEST_TILE_SIZE, y * DEST_TILE_SIZE, DEST_TILE_SIZE, DEST_TILE_SIZE);
+      if (inView) hasVisible = true;
+      else hasHidden = true;
+    }
+  }
+  return {
+    visible: hasVisible ? visitedPath : null,
+    hidden: hasHidden ? hiddenPath : null,
+  };
+};
 
+// Fill colour for water beyond LOS: the same flat base blue as grid.js's
+// tile-7 fallback, pre-darkened look comes from the fog overlay afterwards so
+// explored-out-of-FOV water reads as calm, dark water (SPD parity) with no
+// flowing surface texture.
+const CALM_WATER_COLOR = '#2f5f7a';
+
+export const drawWaterBackground = (ctx, waterTex, visibleClipPath, hiddenClipPath, bounds, nowMs) => {
+  if (!waterTex || !bounds) return;
+
+  // 1) Calm pass: flat, dark water over discovered-but-out-of-FOV cells. No
+  //    texture, no scroll — nothing that reads as flowing beyond sight.
+  if (hiddenClipPath) {
+    ctx.save();
+    ctx.clip(hiddenClipPath);
+    ctx.fillStyle = CALM_WATER_COLOR;
+    ctx.fillRect(bounds.x, bounds.y, bounds.w, bounds.h);
+    ctx.restore();
+  }
+
+  // 2) Animated scroll pass drawn only over currently-visible water cells, so
+  //    the flowing animation is never visible beyond line of sight.
+  if (!visibleClipPath) return;
   const scale = DEST_TILE_SIZE / waterTex.width;
   const scrollPx = -(nowMs / 1000) * WATER_SCROLL_PX_PER_SEC;
+  const pattern = ctx.createPattern(waterTex, 'repeat');
+  if (!pattern) return;
   pattern.setTransform(
     new DOMMatrix().scaleSelf(scale).translateSelf(0, scrollPx / scale)
   );
-
   ctx.save();
-  ctx.clip(clipPath);
+  ctx.clip(visibleClipPath);
   ctx.fillStyle = pattern;
   ctx.fillRect(bounds.x, bounds.y, bounds.w, bounds.h);
   ctx.restore();

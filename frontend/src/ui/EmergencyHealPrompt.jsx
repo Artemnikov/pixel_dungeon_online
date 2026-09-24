@@ -10,13 +10,13 @@ function EmergencyHealPrompt({ item, onDrink }) {
   return (
     <button
       type="button"
-      className="emergency-heal-prompt"
+      className="emergency-heal-prompt prompt-pill"
       onClick={(e) => { e.stopPropagation(); onDrink(); }}
       title={label}
     >
       <span className="emergency-heal-prompt__icon">+</span>
       <span className="emergency-heal-prompt__label">{label}</span>
-      <span className="emergency-heal-prompt__hint">[SPACE]</span>
+      <span className="prompt-pill__hint">[SPACE]</span>
     </button>
   );
 }

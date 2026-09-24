@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import { getSewerTerrainInstructions } from './terrainMapper.js';
-import { BACKEND_TILE, isGrassTile, isWallTile } from '../../constants.js';
+import { BACKEND_TILE, isGrassTile, isWallTile, isWaterStitcheable } from '../../constants.js';
 import { QUADRANT, TERRAIN_INDEX, WALL_INDEX, CHASM_INDEX } from './constants.js';
 
 const gridOfIds = (tileId, width = 3, height = 3) =>
@@ -39,12 +39,52 @@ test('water surrounded by floor renders the fully-stitched shore tile', () => {
   assert.equal(instructions[0].srcIndex, TERRAIN_INDEX.WATER_STITCH_BASE + 15);
 });
 
-test('water surrounded by water renders no overlay (mask 0)', () => {
+test('water surrounded by water renders the plain water tile (mask 0)', () => {
   const grid = gridOfIds(BACKEND_TILE.FLOOR_WATER.id, 5, 5);
 
   const instructions = getSewerTerrainInstructions(grid, 2, 2, BACKEND_TILE.FLOOR_WATER.id);
 
-  assert.equal(instructions.length, 0);
+  assert.equal(instructions.length, 1);
+  assert.equal(instructions[0].quadrant, QUADRANT.FULL);
+  assert.equal(instructions[0].srcIndex, TERRAIN_INDEX.WATER_STITCH_BASE);
+});
+
+test('water directly above CHASM renders plain water, not a shoreline edge', () => {
+  // SPD's waterStitcheable() excludes CHASM: the tile over a pit must not
+  // gain the bottom stitch bit (mask stays 0 when the other sides are water).
+  const grid = gridOfIds(BACKEND_TILE.FLOOR_WATER.id, 5, 5);
+  grid[3][2] = BACKEND_TILE.CHASM.id;
+
+  const instructions = getSewerTerrainInstructions(grid, 2, 2, BACKEND_TILE.FLOOR_WATER.id);
+
+  assert.equal(instructions.length, 1);
+  assert.equal(instructions[0].srcIndex, TERRAIN_INDEX.WATER_STITCH_BASE);
+});
+
+test('water with CHASM on one side drops that side stitch bit', () => {
+  const grid = gridOfIds(BACKEND_TILE.FLOOR.id, 5, 5);
+  grid[2][2] = BACKEND_TILE.FLOOR_WATER.id;
+  // FLOOR above/below/left keeps mask bits 1|4|8; CHASM on the right must
+  // not contribute the +2 (right) bit -> WATER_STITCH_BASE + 13.
+  grid[2][3] = BACKEND_TILE.CHASM.id;
+
+  const instructions = getSewerTerrainInstructions(grid, 2, 2, BACKEND_TILE.FLOOR_WATER.id);
+
+  assert.equal(instructions.length, 1);
+  assert.equal(instructions[0].srcIndex, TERRAIN_INDEX.WATER_STITCH_BASE + 13);
+});
+
+test('water on the last grid row renders plain water (real out-of-bounds path)', () => {
+  // getTile() returns VOID for out-of-bounds neighbours, so water on the map
+  // edge must also skip the fake shoreline edge, matching SPD's wall-bordered
+  // map. Cell (1,2) of a 3x3 grid has only water neighbours in-bounds; the
+  // cell below it is genuinely out of bounds.
+  const grid = gridOfIds(BACKEND_TILE.FLOOR_WATER.id, 3, 3);
+
+  const instructions = getSewerTerrainInstructions(grid, 1, 2, BACKEND_TILE.FLOOR_WATER.id);
+
+  assert.equal(instructions.length, 1);
+  assert.equal(instructions[0].srcIndex, TERRAIN_INDEX.WATER_STITCH_BASE);
 });
 
 test('grass center uses center tiles when surrounded by grass', () => {
@@ -200,6 +240,15 @@ test('isGrassTile accepts both regular and high grass', () => {
   assert.equal(isGrassTile(BACKEND_TILE.FLOOR_GRASS.id), true);
   assert.equal(isGrassTile(BACKEND_TILE.HIGH_GRASS.id), true);
   assert.equal(isGrassTile(BACKEND_TILE.FLOOR.id), false);
+});
+
+test('isWaterStitcheable never blends water into pits or walls', () => {
+  assert.equal(isWaterStitcheable(BACKEND_TILE.CHASM.id), false);
+  assert.equal(isWaterStitcheable(BACKEND_TILE.VOID.id), false);
+  assert.equal(isWaterStitcheable(BACKEND_TILE.WALL.id), false);
+  assert.equal(isWaterStitcheable(BACKEND_TILE.FLOOR_WATER.id), false);
+  assert.equal(isWaterStitcheable(BACKEND_TILE.FLOOR.id), true);
+  assert.equal(isWaterStitcheable(BACKEND_TILE.FLOOR_GRASS.id), true);
 });
 
 test('CHASM stitches to the base void tile when nothing recognizable is above it', () => {

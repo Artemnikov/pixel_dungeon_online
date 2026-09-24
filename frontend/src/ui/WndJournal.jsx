@@ -12,6 +12,7 @@ const GUIDE_PAGE_IDS = [
   'Intro', 'Examining', 'Surprise_Attacks', 'Identifying',
   'Food', 'Alchemy', 'Dieing', 'Searching', 'Strength',
   'Upgrades', 'Looting', 'Levelling', 'Positioning', 'Magic',
+  'Chat',
 ];
 
 function GuideTab({ guidePages = [] }) {

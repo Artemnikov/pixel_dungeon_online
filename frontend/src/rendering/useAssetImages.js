@@ -7,6 +7,7 @@ import cavesTiles from '../assets/pixel-dungeon/environment/tiles_caves.png';
 import cityTiles from '../assets/pixel-dungeon/environment/tiles_city.png';
 import hallsTiles from '../assets/pixel-dungeon/environment/tiles_halls.png';
 import sewerBossTiles from '../assets/pixel-dungeon/environment/custom_tiles/sewer_boss.png';
+import prisonExitTiles from '../assets/pixel-dungeon/environment/custom_tiles/prison_exit.png';
 import water0 from '../assets/pixel-dungeon/environment/water0.png';
 import water1 from '../assets/pixel-dungeon/environment/water1.png';
 import water2 from '../assets/pixel-dungeon/environment/water2.png';
@@ -87,7 +88,7 @@ export default function useAssetImages() {
       halls: null,
     },
     terrainFeatures: null,
-    customTiles: { sewer_boss: null },
+    customTiles: { sewer_boss: null, prison_exit: null },
     waterFrames: [null, null, null, null, null],
     warrior: null,
     mage: null,
@@ -189,18 +190,23 @@ export default function useAssetImages() {
       });
     };
 
+    const loadCustomTile = (src, key) => {
+      loadImage(src, null, (img) => {
+        setAssetImages(prev => ({
+          ...prev,
+          customTiles: { ...prev.customTiles, [key]: img },
+        }));
+      });
+    };
+
     loadRegionTiles(sewerTiles, 'sewers');
     loadRegionTiles(prisonTiles, 'prison');
     loadRegionTiles(cavesTiles, 'caves');
     loadRegionTiles(cityTiles, 'city');
     loadRegionTiles(hallsTiles, 'halls');
     loadImage(terrainFeatures, 'terrainFeatures');
-    loadImage(sewerBossTiles, null, (img) => {
-      setAssetImages(prev => ({
-        ...prev,
-        customTiles: { ...prev.customTiles, sewer_boss: img },
-      }));
-    });
+    loadCustomTile(sewerBossTiles, 'sewer_boss');
+    loadCustomTile(prisonExitTiles, 'prison_exit');
     loadWaterFrame(water0, 0);
     loadWaterFrame(water1, 1);
     loadWaterFrame(water2, 2);

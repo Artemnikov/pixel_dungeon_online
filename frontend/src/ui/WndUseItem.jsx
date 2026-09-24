@@ -1,35 +1,50 @@
 import { useTranslation } from 'react-i18next';
 import AudioManager from '../audio/AudioManager';
 import ItemIcon from './ItemIcon';
-import WndOverlay from './WndOverlay';
+import ItemActionButtons from './ItemActionButtons';
+import useDismissOnOutsidePointer from './useDismissOnOutsidePointer';
+import useRegisterWindow from '../game/window/useRegisterWindow';
 import { WindowLevel } from '../game/window/WindowTypes';
-import { actionLabel, orderedActions, titleColor } from './itemActions';
+import { titleColor } from './itemActions';
 import { statLines } from './itemStatLines';
 import { comparisonLines } from './itemComparison';
 import useEntityName from './useEntityName';
 
+// Left-click item dialog: a compact, non-blocking panel anchored at
+// bottom-center. Registered with modal:false and rendered as a bare fixed
+// element (no full-screen overlay), so player movement and world clicks keep
+// working underneath it; Escape or an outside click dismisses it.
 export default function WndUseItem({ item, onAction, onAssignQuickslot, onClose, onOpenJournal, belongings }) {
   const { t } = useTranslation();
+
+  useRegisterWindow({
+    id: 'wnd-use-item',
+    level: WindowLevel.FLOATING,
+    onClose,
+    closeOnEscape: true,
+    modal: false,
+  });
+
+  // Dismiss on outside pointerdown. The panel swallows its own pointerdown
+  // so clicking an action button doesn't pre-close it.
+  useDismissOnOutsidePointer(onClose);
 
   const itemName = useEntityName(item);
   if (!item) return null;
 
-  const def = item.default_action;
-  const actions = orderedActions(item);
   const level = item.level_known && item.level ? `${item.level > 0 ? '+' : ''}${item.level}` : null;
   const stats = statLines(item, t);
 
   const compare = findComparison(item, belongings, t);
 
-  const run = (action) => {
-    AudioManager.play('CLICK');
-    onClose();
-    onAction(item.id, action);
-  };
-
   return (
-    <WndOverlay id="wnd-use-item" level={WindowLevel.SECONDARY} onClose={onClose}>
-      <div className="wnd-item" onClick={(e) => e.stopPropagation()}>
+    <div
+      className="wnd-use-item-popup"
+      role="dialog"
+      aria-label={itemName}
+      onPointerDown={(e) => e.stopPropagation()}
+    >
+      <div className="wnd-item">
         <div className="wnd-item-title">
           <ItemIcon item={item} size={32} />
           <span style={{ color: titleColor(item) }}>
@@ -71,26 +86,15 @@ export default function WndUseItem({ item, onAction, onAssignQuickslot, onClose,
         )}
 
         <div className="wnd-item-actions">
-          {actions.map(action => (
-            <button
-              key={action}
-              className={action === def ? 'default' : ''}
-              onClick={() => run(action)}
-            >
-              {actionLabel(action, t)}
-            </button>
-          ))}
-          {def && (
-            <button
-              className="qs-assign"
-              onClick={() => { AudioManager.play('CLICK'); onAssignQuickslot(item.id); onClose(); }}
-            >
-              {t('ui.quickslot')}
-            </button>
-          )}
+          <ItemActionButtons
+            item={item}
+            onAction={onAction}
+            onAssignQuickslot={onAssignQuickslot}
+            onClose={onClose}
+          />
         </div>
       </div>
-    </WndOverlay>
+    </div>
   );
 }
 

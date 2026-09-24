@@ -1,8 +1,8 @@
 import { useCallback, useState, useRef, useEffect } from 'react';
 import { describeCell } from '../input/describeCell';
 import { playLocalPlayerSearch } from '../rendering/draw/searchEffects';
-import { isAttackReady, consumeAttackCooldown } from '../net/events/combat';
 import { WeaponSkillRegistry } from '../data/weaponSkills';
+import { defaultTargetingTapDispatcher } from './targeting/TargetingTapDispatcher';
 
 const TARGETED_ABILITIES = [
   'heroic_leap',
@@ -33,58 +33,14 @@ export default function useTargetingExamine({
   const clearInspect = useCallback(() => setInspectInfo(null), []);
 
   const resolveTargetingTap = useCallback((tileX, tileY) => {
-    const tm = targetingModeRef.current;
-    if (tm && typeof tm === 'object' && tm.ability) {
-      send({ type: 'USE_ARMOR_ABILITY', ability: tm.ability, target_x: tileX, target_y: tileY });
-      setTargetingMode(false);
-      return;
-    }
-    if (tm && typeof tm === 'object' && tm.comboMove) {
-      send({ type: 'USE_COMBO_MOVE', move: tm.comboMove, target_x: tileX, target_y: tileY });
-      setTargetingMode(false);
-      return;
-    }
-    if (tm && typeof tm === 'object' && tm.prepStrike) {
-      send({ type: 'PREPARATION_STRIKE', target_x: tileX, target_y: tileY });
-      setTargetingMode(false);
-      return;
-    }
-    if (tm && typeof tm === 'object' && tm.duelistFinisher) {
-      if (tm.useSecondary) {
-        send({ type: 'USE_WEAPON_ABILITY', target_x: tileX, target_y: tileY, use_secondary: true });
-      } else {
-        send({ type: 'DUELIST_FINISHER', target_x: tileX, target_y: tileY });
-      }
-      setTargetingMode(false);
-      return;
-    }
-    if (tm && typeof tm === 'object' && tm.clericSpell) {
-      send({ type: 'CAST_CLERIC_SPELL', spell: tm.clericSpell, target_x: tileX, target_y: tileY });
-      setTargetingMode(false);
-      return;
-    }
-    if (tm && typeof tm === 'object' && tm.action) {
-      const isCombatAction = tm.action === 'THROW' || tm.action === 'ZAP';
-      if (isCombatAction && !isAttackReady()) return;
-      if (isCombatAction) consumeAttackCooldown();
-      send({ type: 'EXECUTE_ITEM_ACTION', item_id: tm.itemId, action: tm.action, target_x: tileX, target_y: tileY });
-      setTargetingMode(false);
-      return;
-    }
-    const weaponId = typeof tm === 'string' ? tm : equippedItems.weapon?.id;
-    if (weaponId) {
-      if (!isAttackReady()) return;
-      consumeAttackCooldown((equippedItems.weapon?.attack_cooldown ?? 1.0) * 1000);
-      // If the tapped cell is the locked target's cell, let the server auto-aim
-      // (angle around corners) via target_entity_id; SPD QuickSlotButton.autoAim.
-      const lockId = selectedEnemyIdRef?.current || null;
-      const lock = lockId ? entitiesRef.current.mobs[lockId] : null;
-      const onLock = lock && Math.round(lock.renderPos.x) === tileX && Math.round(lock.renderPos.y) === tileY;
-      send({ type: 'RANGED_ATTACK', item_id: weaponId, target_x: tileX, target_y: tileY,
-             target_entity_id: onLock ? lockId : null });
-      setTargetingMode(typeof tm === 'string' ? false : true);
-    }
-  }, [send, equippedItems, setTargetingMode, entitiesRef, selectedEnemyIdRef]);
+    defaultTargetingTapDispatcher.dispatch(targetingModeRef.current, tileX, tileY, {
+      send,
+      equippedItems,
+      entitiesRef,
+      selectedEnemyIdRef,
+      setTargetingMode,
+    });
+  }, [send, equippedItems, entitiesRef, selectedEnemyIdRef, setTargetingMode]);
 
   const resolveExamineTap = useCallback((tileX, tileY) => {
     const info = describeCell({

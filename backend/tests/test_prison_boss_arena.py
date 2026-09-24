@@ -108,6 +108,55 @@ def test_arena_to_won_on_tengu_death():
     assert any(TileType.STAIRS_DOWN in row for row in floor.grid)
 
 
+def test_arena_to_won_adds_prison_exit_visual():
+    """The post-Tengu exit must carry the prison_exit stairs (custom_tiles)
+    and archway (custom_walls) layers, faithful to SPD's ExitVisual /
+    ExitVisualWalls tilemaps (texture, placement and atlas indices)."""
+    game, floor = make_game()
+    player = game.add_player("p1", "Hero")
+    player.floor_id = 10
+    player.pos = Position(x=layout.TENGU_CELL_CENTER.x, y=layout.TENGU_CELL.top + 2)
+
+    game._update_prison_boss(floor, 10)  # -> FIGHT_START
+    tengu = next(m for m in floor.mobs.values() if isinstance(m, Tengu))
+    tengu.hp = tengu.max_hp // 2
+    game._update_prison_boss(floor, 10)  # -> FIGHT_PAUSE
+    player.pos = Position(x=layout.START_HALLWAY.left + 2, y=layout.START_HALLWAY.top)
+    game._update_prison_boss(floor, 10)  # -> FIGHT_ARENA
+    del floor.mobs[tengu.id]
+    game._update_prison_boss(floor, 10)  # -> WON
+
+    assert len(floor.custom_tiles) == 1
+    stairs = floor.custom_tiles[0]
+    assert stairs["texture"] == "prison_exit"
+    assert (stairs["x"], stairs["y"]) == (11, 10)
+    assert (stairs["w"], stairs["h"]) == (14, 11)
+    assert len(stairs["tiles"]) == 11 and all(len(r) == 14 for r in stairs["tiles"])
+    # mapSimpleImage(0, 0): idx = col + row*16, mask==0 -> -1
+    assert stairs["tiles"][0][4] == 4            # top step
+    assert stairs["tiles"][6][11] == 107         # stair-side wall
+    assert stairs["tiles"][10][3] == 163         # bottom step
+    assert stairs["tiles"][0][0] == -1           # transparent corner
+    # whole-mask checksums (154 cells, 74 drawn / 80 transparent)
+    _drawn = [v for r in stairs["tiles"] for v in r if v >= 0]
+    assert len(_drawn) == 74 and sum(_drawn) == 5199
+
+    assert len(floor.custom_walls) == 1
+    arch = floor.custom_walls[0]
+    assert arch["texture"] == "prison_exit"
+    assert (arch["x"], arch["y"]) == (11, 10)
+    assert (arch["w"], arch["h"]) == (14, 22)
+    assert len(arch["tiles"]) == 22 and all(len(r) == 14 for r in arch["tiles"])
+    # mapSimpleImage(0, 10): idx = col + (10+row)*16, mask==0 -> -1
+    assert arch["tiles"][0][9] == 169            # arch keystone
+    assert arch["tiles"][8][13] == 301           # arch right pillar
+    assert arch["tiles"][21][10] == 506          # arch base
+    assert arch["tiles"][0][0] == -1             # transparent corner
+    # whole-mask checksums (308 cells, 66 drawn / 242 transparent)
+    _drawn = [v for r in arch["tiles"] for v in r if v >= 0]
+    assert len(_drawn) == 66 and sum(_drawn) == 21606
+
+
 def test_chasm_in_post_tengu_reveal_can_be_fallen_through():
     from app.engine.dungeon.constants import TileType as TT
 
