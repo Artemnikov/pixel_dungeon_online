@@ -186,14 +186,14 @@ const CharacterSelection = ({ onSelect, showDifficulty = true, allowDungeon = tr
       <div className="hero-vignette-left" />
       <div className="hero-vignette-right" />
 
-      <div className={`hero-ui ${landscape || heroId ? '' : 'center'}`}>
+      <div className={`hero-ui ${heroId ? '' : 'center'}`}>
         <h1 className="hero-title">{t('hero.title')}</h1>
 
         {landscape ? (
           <>
             <div
               ref={bustsRef}
-              className={`hero-busts named ${heroId ? '' : 'away'}`}
+              className="hero-busts named"
               onTransitionEnd={onFlipDone}
             >
               <RosterGrid

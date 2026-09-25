@@ -92,12 +92,25 @@
   bottom: 0;
   right: 0;
   width: 100%;
-  justify-content: center;
+  box-sizing: border-box;
+  justify-content: flex-start;
   align-items: center;
   padding: 4vh 16px;
   text-align: center;
+  overflow-y: auto;
 }
+/* Auto margins center the stack when it fits and, together with
+   flex-start above, top-align it (scrollable) on short viewports. */
+.hero-ui.center > :first-child { margin-top: auto; }
+.hero-ui.center > :last-child { margin-bottom: auto; }
 .hero-select.portrait .hero-ui.center { background: none; }
+/* landscape's plain .hero-ui is a fixed-width left column with higher
+   specificity — widen it back to the full centered column until picked */
+.hero-select.landscape .hero-ui.center {
+  width: 100%;
+  padding: 4vh 16px;
+  justify-content: flex-start;
+}
 
 .hero-picker {
   display: flex;
@@ -197,25 +210,15 @@
 .hero-busts.named .hero-picker-name {
   font-size: 11px;
 }
-.hero-select.landscape .hero-busts.away {
-  position: fixed;
-  top: 50%;
-  left: auto;
-  right: 16px;
-  width: max-content;
-  max-width: 90vw;
-  transform: translate(0, -50%);
-  z-index: 3;
-}
-.hero-select.landscape .hero-busts.away .hero-busts-row {
+.hero-select.landscape .hero-ui.center .hero-busts-row {
   flex-wrap: wrap;
 }
-.hero-select.landscape .hero-busts.away .hero-bust-btn {
+.hero-select.landscape .hero-ui.center .hero-bust-btn {
   flex: 0 0 auto;
   width: 72px;
   padding: 6px 10px;
 }
-.hero-select.landscape .hero-busts.away .hero-picker-name {
+.hero-select.landscape .hero-ui.center .hero-picker-name {
   font-size: 13px;
 }
 .hero-bust-btn {
