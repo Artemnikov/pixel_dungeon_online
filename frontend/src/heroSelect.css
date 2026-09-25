@@ -92,25 +92,24 @@
   bottom: 0;
   right: 0;
   width: 100%;
-  justify-content: center;
+  box-sizing: border-box;
+  justify-content: flex-start;
   align-items: center;
   padding: 4vh 16px;
   text-align: center;
+  overflow-y: auto;
 }
+/* Auto margins center the stack when it fits and, together with
+   flex-start above, top-align it (scrollable) on short viewports. */
+.hero-ui.center > :first-child { margin-top: auto; }
+.hero-ui.center > :last-child { margin-bottom: auto; }
 .hero-select.portrait .hero-ui.center { background: none; }
-/* on landscape the plain .hero-ui is a left column — lower specificity than
-   .hero-select.landscape .hero-ui, so re-center it explicitly while no
-   class is picked so the whole selection screen is centered. */
+/* landscape's plain .hero-ui is a fixed-width left column with higher
+   specificity — widen it back to the full centered column until picked */
 .hero-select.landscape .hero-ui.center {
-  left: 0;
-  right: 0;
-  top: 0;
-  bottom: 0;
   width: 100%;
-  justify-content: center;
-  align-items: center;
   padding: 4vh 16px;
-  text-align: center;
+  justify-content: flex-start;
 }
 
 .hero-picker {
