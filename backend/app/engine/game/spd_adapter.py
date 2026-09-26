@@ -903,6 +903,20 @@ def gen_level_to_floor_state(gen_level: GenLevel, depth: int) -> FloorState:
         _log.warning("gen_level missing exit() method — GenLevel subclass issue?")
         exit_pos = None
 
+    boss_spawn_pos: Optional[Tuple[int, int]] = None
+    if depth == 10:
+        from app.engine.dungeon.spd_levelgen import prison_boss_layout as prison_layout
+        boss_spawn_pos = (prison_layout.TENGU_CELL_CENTER.x, prison_layout.TENGU_CELL_CENTER.y)
+    elif getattr(gen_level, 'yog_pos', None) is not None:
+        y_pos = gen_level.yog_pos
+        if y_pos is not None:
+            boss_spawn_pos = (int(y_pos[0]), int(y_pos[1]))
+    else:
+        for mob in mobs.values():
+            if type(mob).__name__ in ("Goo", "DM300", "DwarfKing", "YogDzewa"):
+                boss_spawn_pos = (mob.pos.x, mob.pos.y)
+                break
+
     floor = FloorState(
         floor_id=depth,
         grid=grid,
@@ -934,6 +948,7 @@ def gen_level_to_floor_state(gen_level: GenLevel, depth: int) -> FloorState:
         alchemy_pots=alchemy_pots,
         entrance_pos=entrance_pos,
         exit_pos=exit_pos,
+        boss_spawn_pos=boss_spawn_pos,
     )
 
     for idx, fire in enumerate(sacrifice_fires):

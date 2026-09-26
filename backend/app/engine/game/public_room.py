@@ -25,21 +25,29 @@ from app.engine.game.constants import (
     ITEM_RESPAWN_TURNS,
     PUBLIC_ROOM_ID,
 )
+from app.engine.game.tengu_arena import PRISON_BOSS_FLOOR
 from app.engine.game.floor_state import FloorState
 from app.engine.game.generation import ALL_POTIONS as _ALL_POTIONS, ALL_SCROLLS as _ALL_SCROLLS, ALL_FOOD as _ALL_FOOD, ALL_RUNESTONES as _ALL_RUNESTONES
+from app.engine.entities.mobs import DM300, DwarfKing, Goo, Tengu, YogDzewa
 from app.engine.dungeon.spd_levelgen.run_state import is_boss_level
 
-# Floor ID → boss mob class (used for boss respawn).
-_BOSS_CLASS_MAP = None
+# Floor ID → boss mob class (used for boss respawn in public rooms).
+BOSS_CLASS_BY_FLOOR = {
+    5: Goo,
+    10: Tengu,
+    15: DM300,
+    20: DwarfKing,
+    25: YogDzewa,
+}
+PUBLIC_ROOM_BOSS_TYPES = tuple(BOSS_CLASS_BY_FLOOR.values())
 
 
-def _boss_class_for_floor(floor_id: int):
-    """Return the boss mob class for a given floor, or None."""
-    global _BOSS_CLASS_MAP
-    if _BOSS_CLASS_MAP is None:
-        from app.engine.entities.mobs import Goo, Tengu, DM300, DwarfKing, YogDzewa
-        _BOSS_CLASS_MAP = {5: Goo, 10: Tengu, 15: DM300, 20: DwarfKing, 25: YogDzewa}
-    return _BOSS_CLASS_MAP.get(floor_id)
+def _purge_dead_bosses(floor: FloorState) -> None:
+    """Remove dead boss corpses from floor.mobs so that "no instance present"
+    reliably means "defeated". Keeps the respawn presence-guard meaningful."""
+    for mob_id, m in list(floor.mobs.items()):
+        if isinstance(m, PUBLIC_ROOM_BOSS_TYPES) and not m.is_alive:
+            del floor.mobs[mob_id]
 
 
 def _empty_floor_tiles(floor: FloorState, players: "List[Player]") -> List[tuple]:
@@ -139,15 +147,23 @@ class PublicRoomMixin:
                                 active_players: List[Player]) -> None:
         if not self._is_public_room() or not is_boss_level(floor_id):
             return
-        boss_cls = _boss_class_for_floor(floor_id)
+        boss_cls = BOSS_CLASS_BY_FLOOR.get(floor_id)
         if boss_cls is None:
             return
 
-        has_alive_boss = any(
-            isinstance(m, boss_cls) and m.is_alive for m in floor.mobs.values()
-        )
-        if has_alive_boss:
-            floor.boss_dead_ticks = 0
+        # "Not initiated / between stages": any instance of this boss present --
+        # whether alive-but-unstarted (fight not yet triggered) or a corpse that
+        # hasn't been purged yet -- means the boss isn't defeated, so don't spawn.
+        if any(isinstance(m, boss_cls) for m in floor.mobs.values()):
+            return
+
+        # The prison-boss state machine (floor 10, Tengu) owns its own lifecycle
+        # through START -> FIGHT_START -> FIGHT_PAUSE -> FIGHT_ARENA -> WON. While
+        # it is mid-fight this generic cooldown respawn must not fire -- during
+        # FIGHT_PAUSE the Tengu is temporarily removed from the world and restored
+        # later, so treating that as a "defeat" would resurrect an extra copy. Only
+        # after a full defeat (WON) does this path take over to bring back new players.
+        if floor_id == PRISON_BOSS_FLOOR and floor.tengu_state != "WON":
             return
 
         floor.boss_dead_ticks += self.sim_ticks
@@ -158,16 +174,29 @@ class PublicRoomMixin:
         # --- Reset locked doors so progression keys work again -----------
         consumed_keys = []
         for item in list(floor.items.values()):
-            if isinstance(item, Key) and getattr(item, "key_id", None) in floor.locked_doors:
+            if isinstance(item, Key) and getattr(item, "key_id", None) in floor.locked_doors.values():
                 consumed_keys.append(item)
         for item in consumed_keys:
             del floor.items[item.id]
 
-        # --- Spawn the boss on a valid tile ------------------------------
+        # --- Spawn the boss on its designated spawn tile (or closest empty tile) ---
         tiles = _empty_floor_tiles(floor, active_players)
-        if not tiles:
+        spawn_pos = floor.boss_spawn_pos
+        occupied_entities = {(m.pos.x, m.pos.y) for m in floor.mobs.values() if m.is_alive}
+        occupied_entities.update((p.pos.x, p.pos.y) for p in active_players if p.pos is not None)
+        walkable = {TileType.FLOOR, TileType.FLOOR_WOOD, TileType.FLOOR_WATER,
+                    TileType.FLOOR_COBBLE, TileType.FLOOR_GRASS}
+
+        if (spawn_pos and 0 <= spawn_pos[0] < floor.width and 0 <= spawn_pos[1] < floor.height
+                and floor.grid[spawn_pos[1]][spawn_pos[0]] in walkable
+                and spawn_pos not in occupied_entities):
+            x, y = spawn_pos
+        elif tiles and spawn_pos:
+            x, y = min(tiles, key=lambda t: (t[0] - spawn_pos[0]) ** 2 + (t[1] - spawn_pos[1]) ** 2)
+        elif tiles:
+            x, y = random.choice(tiles)
+        else:
             return
-        x, y = random.choice(tiles)
         boss = boss_cls(
             id=str(uuid.uuid4()),
             pos=Position(x=x, y=y),

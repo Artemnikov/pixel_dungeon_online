@@ -53,6 +53,7 @@ class FloorState:
 
     entrance_pos: Optional[Tuple[int, int]] = None
     exit_pos: Optional[Tuple[int, int]] = None
+    boss_spawn_pos: Optional[Tuple[int, int]] = None
 
     # Public-room-only: item respawn timer and boss respawn tracker.
     item_respawn_counter: int = 0
