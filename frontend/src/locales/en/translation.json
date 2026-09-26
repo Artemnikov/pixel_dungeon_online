@@ -142,7 +142,9 @@
     "reasonWrongPassword": "wrong password",
     "reasonRoomFull": "room is full",
     "reasonDungeonDisabled": "dungeon faction is disabled in this room",
-    "allowDungeon": "Allow Dungeon Faction (PvP)"
+    "allowDungeon": "Allow Dungeon Faction (PvP)",
+    "turnBased": "Turn-based (SPD turn order)",
+    "turnTimer": "Auto-wait after (s):"
   },
   "app": {
     "titleWelcome": "Online Pixel Dungeon — multiplayer roguelike",
@@ -1262,5 +1264,10 @@
       "stairs": "Stairs to the next floor",
       "boss": "A boss guards every 5th floor!"
     }
+  },
+  "turn": {
+    "turn": "Turn",
+    "yourTurn": "Your turn",
+    "waitingForOthers": "Waiting for other players"
   }
 }

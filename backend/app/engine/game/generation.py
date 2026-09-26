@@ -204,7 +204,8 @@ class GenerationMixin:
         if depth == 26:
             gen_level, _rooms = build_last_level(rng, depth, self.run_state)
         elif is_boss_level(depth):
-            gen_level, _rooms = build_boss_floor(rng, depth, self.run_state)
+            gen_level, _rooms = build_boss_floor(rng, depth, self.run_state,
+                                                 challenged="stronger_bosses" in self.challenges)
         else:
             gen_level, _rooms = build_floor(rng, depth, self.run_state,
                                             mossy_chance, trap_chance)

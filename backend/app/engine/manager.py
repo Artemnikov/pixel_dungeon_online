@@ -20,6 +20,8 @@ from app.engine.entities.player import CharacterClass, Difficulty, Player
 
 from app.engine.game.constants import (
     AUTO_MOVE_INTERVAL,
+    DEFAULT_TURN_TIMER_SECONDS,
+    GAME_MODE_REALTIME,
     HEAL_TICK_INTERVAL,
     MAP_HEIGHT,
     MAP_WIDTH,
@@ -28,6 +30,7 @@ from app.engine.game.constants import (
     PASSIVE_REGEN_INTERVAL,
     RESPAWN_TURNS,
     SEWERS_MAX_FLOOR,
+    TICK_DURATION,
 )
 from app.engine.game.floor_state import FloorState
 from app.engine.game.alchemy import AlchemyMixin
@@ -98,9 +101,28 @@ class GameInstance(
     SerializationMixin,
     PublicRoomMixin,
 ):
-    def __init__(self, game_id: str, seed: Optional[str] = None):
+    def __init__(self, game_id: str, seed: Optional[str] = None,
+                 turn_timer_seconds: float = DEFAULT_TURN_TIMER_SECONDS):
         self.game_id = game_id
         self.depth = 1  # Compatibility view for single-floor tests/legacy callers.
+
+        # Which GameInstance subclass runs this room. The lobby layer reads it
+        # from RoomMeta; the WebSocket envelopes advertise it to clients.
+        self.game_mode = GAME_MODE_REALTIME
+        self.turn_timer_seconds = turn_timer_seconds
+
+        # Simulated seconds advanced by one world-step. Real-time rooms step
+        # every 25ms; turn-based rooms step one whole SPD time unit (TICK) per
+        # completed turn. Every dt-driven system in the engine (buff durations,
+        # regen, blob lifetimes, wand recharge) is authored in these units, so
+        # this single value is all that separates the two modes.
+        self.sim_unit: float = TICK_DURATION
+
+        # Engine ticks charged by one world-step, for the systems that count in
+        # ticks rather than seconds (fuse counters, respawn counters, mob
+        # ability cooldowns). Real-time charges 1; turn-based charges a whole
+        # game turn so tick-counted constants stay correct in both modes.
+        self.sim_ticks: int = 1
 
         self.players: Dict[str, Player] = {}
         self.floors: Dict[int, FloorState] = {}
@@ -164,3 +186,91 @@ class GameInstance(
         init_rng.pop_generator()
 
         self.generate_floor(1)
+
+    def clock(self) -> float:
+        """Monotonic simulated-seconds used by every gameplay timing check.
+
+        Real-time rooms return the wall clock. Turn-based rooms override this
+        to return the turn scheduler's current time, so the same `action_until`
+        / surprise-window / loot-window comparisons read turn units instead.
+        """
+        return time.monotonic()
+
+    def action_blocked(self, entity) -> bool:
+        """Whether a wall-clock action cooldown still blocks `entity`.
+
+        The engine paces real-time actions with `action_until`, the port's
+        stand-in for SPD's `Actor.spend()`. Turn-based rooms override this to
+        always return False: the scheduler charges the SPD cost itself, and it
+        only dequeues an actor when that actor is actually due.
+        """
+        return time.time() < getattr(entity, "action_until", 0.0)
+
+    def attack_ready(self, entity, cooldown: float) -> bool:
+        """Whether `entity`'s attack-rate cooldown has elapsed.
+
+        As with `action_blocked`, this is a real-time rate limit standing in for
+        SPD's `spend(attackDelay())`; turn-based rooms let the scheduler charge
+        the delay instead and always report ready.
+        """
+        return time.time() - entity.last_attack_time >= cooldown
+
+    def turn_state_for(self, player_id: str) -> Optional[dict]:
+        """Per-viewer turn payload for the STATE_UPDATE envelope, or None."""
+        return None
+
+    def wait(self, player_id: str) -> None:
+        return None
+
+    def submit_turn_action(self, player_id: str, message) -> bool:
+        """Turn-room action intake; real-time rooms have no scheduler.
+
+        The dispatcher routes every client message here when the room's
+        game_mode is turnbased, and falls through to the normal ws_handlers
+        otherwise. Returning False is the real-time answer: there is no
+        scheduler to charge the action to.
+        """
+        return False
+
+    def should_broadcast(self) -> bool:
+        return True
+
+    def on_broadcast_complete(self) -> None:
+        return None
+
+    def _gate_steps_on_wall_clock(self) -> bool:
+        """Whether `step_player_move` refuses a step until the step clock expires.
+
+        Real-time rooms: yes, that gate *is* the pacer. A turn room says no,
+        because its input arrives as fast as a player can click and a click must
+        never be swallowed -- the scheduler holds a *walking* hero on the same
+        clock instead (`ActorRef.turn_ready`), which is what keeps a
+        tap-to-travel hop on the same cadence as a held real-time key.
+        """
+        return True
+
+    def step_player_move(self, player_id: str, dx: int, dy: int) -> None:
+        """Move one tile: the single movement path for both game modes.
+
+        The step is paced and recorded identically wherever it runs -- the same
+        `get_step_duration` clock, the same `on_step_executed` / `on_step_failed`
+        bookkeeping the client animates against, and the same `move_entity`
+        validation of the destination. Turn rooms share all of it and differ
+        only in who enforces the wait (see `_gate_steps_on_wall_clock`).
+        """
+        player = self.players.get(player_id)
+        if player is None or player.is_downed or not player.is_alive:
+            return
+        player.movement.stop()
+        if self._gate_steps_on_wall_clock() and not player.movement.is_ready_for_step():
+            return
+        floor = self._get_or_create_floor(player.floor_id)
+        pre_x, pre_y = player.pos.x, player.pos.y
+        self.move_entity(player_id, dx, dy)
+        if (player.pos.x, player.pos.y) != (pre_x, pre_y):
+            step_duration = player.get_step_duration(
+                enemies_nearby=self._has_enemies_nearby(floor, player, radius=3)
+            )
+            player.movement.on_step_executed(None, step_duration, dx, dy)
+        else:
+            player.movement.on_step_failed(None)

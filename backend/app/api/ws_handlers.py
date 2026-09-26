@@ -11,24 +11,8 @@ def handle_move(game: GameInstance, player_id: str, message: msg.Move):
     player = game.players.get(player_id)
     if player is None or player.is_downed or not player.is_alive:
         return
-    player.movement.stop()
-    # Pace the legacy one-shot MOVE through the same server-side step cooldown
-    # the tick uses for queued steps -- otherwise a flood of MOVE messages
-    # moves the hero once per message, faster than the client can animate.
-    # (The live client sends paced MOVE_STEP instead; this guards compat paths.)
-    if not player.movement.is_ready_for_step():
-        return
     dx, dy = message.direction.delta
-    floor = game._get_or_create_floor(player.floor_id)
-    pre_x, pre_y = player.pos.x, player.pos.y
-    game.move_entity(player_id, dx, dy)
-    if (player.pos.x, player.pos.y) != (pre_x, pre_y):
-        step_duration = player.get_step_duration(
-            enemies_nearby=game._has_enemies_nearby(floor, player, radius=3)
-        )
-        player.movement.on_step_executed(None, step_duration, dx, dy)
-    else:
-        player.movement.on_step_failed(None)
+    game.step_player_move(player_id, dx, dy)
 
 
 @dispatcher.register(msg.MoveIntent)
@@ -231,7 +215,7 @@ def handle_search(game: GameInstance, player_id: str, message: msg.Search):
 
 @dispatcher.register(msg.Wait)
 def handle_wait(game: GameInstance, player_id: str, message: msg.Wait):
-    pass
+    game.wait(player_id)
 
 
 @dispatcher.register(msg.SendChat)

@@ -144,7 +144,9 @@
     "reasonWrongPassword": "неверный пароль",
     "reasonRoomFull": "комната заполнена",
     "reasonDungeonDisabled": "фракция подземелья отключена в этой комнате",
-    "allowDungeon": "Разрешить фракцию Подземелья (PvP)"
+    "allowDungeon": "Разрешить фракцию Подземелья (PvP)",
+    "turnBased": "Пошаговый (порядок ходов SPD)",
+    "turnTimer": "Авто-ожидание через (с):"
   },
   "app": {
     "titleWelcome": "Online Pixel Dungeon — мультиплеерный рогалик",
@@ -1170,5 +1172,10 @@
       "stairs": "Лестница на следующий этаж",
       "boss": "Каждые 5 этажей ждёт босс!"
     }
+  },
+  "turn": {
+    "turn": "Ход",
+    "yourTurn": "Ваш ход",
+    "waitingForOthers": "Ожидание других игроков"
   }
 }

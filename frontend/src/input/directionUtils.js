@@ -20,3 +20,25 @@ export function getVector(pressed) {
 
   return { dx: right - left, dy: down - up };
 }
+
+/**
+ * The wire `Direction` for a movement vector, or null for a zero vector.
+ *
+ * A turn-based room moves on a single `MOVE` per key press, so it needs the
+ * vector-to-direction inverse that the real-time path never requires (it sends
+ * dx/dy on MOVE_INTENT and dx/dy on MOVE_STEP instead).
+ */
+const VECTOR_DIRECTIONS = new Map([
+  ['0,-1', 'UP'],
+  ['0,1', 'DOWN'],
+  ['-1,0', 'LEFT'],
+  ['1,0', 'RIGHT'],
+  ['-1,-1', 'UP_LEFT'],
+  ['1,-1', 'UP_RIGHT'],
+  ['-1,1', 'DOWN_LEFT'],
+  ['1,1', 'DOWN_RIGHT'],
+]);
+
+export function vectorToDirection(dx, dy) {
+  return VECTOR_DIRECTIONS.get(`${dx},${dy}`) || null;
+}

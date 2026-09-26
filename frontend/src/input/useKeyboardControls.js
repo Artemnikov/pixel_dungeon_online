@@ -36,6 +36,8 @@ export default function useKeyboardControls(props) {
         emergencyDrinkItem: p.emergencyDrinkItem,
         onEmergencyDrink: p.onEmergencyDrink,
         triggerWait: p.triggerWait,
+        gameModeRef: p.gameModeRef,
+        canActRef: p.canActRef,
         onOpenTalents: p.onOpenTalents,
         onOpenAlchemyRef: p.onOpenAlchemyRef,
         quickslot: p.quickslot,

@@ -8,6 +8,7 @@ import { TrapsSynchronizer } from './TrapsSynchronizer';
 import { PlantsSynchronizer } from './PlantsSynchronizer';
 import { VisionSynchronizer } from './VisionSynchronizer';
 import { EnvironmentSynchronizer } from './EnvironmentSynchronizer';
+import { TurnSynchronizer } from './TurnSynchronizer';
 
 export class StateSynchronizer {
   private synchronizers: IStateSynchronizer[];
@@ -22,6 +23,7 @@ export class StateSynchronizer {
       new PlantsSynchronizer(),
       new VisionSynchronizer(),
       new EnvironmentSynchronizer(),
+      new TurnSynchronizer(),
     ];
   }
 

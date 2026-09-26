@@ -93,7 +93,7 @@ class MeleeCombatMixin:
                     cooldown = entity.equipped_weapon.attack_cooldown
                 cooldown /= furor_multiplier(entity)
 
-            if current_time - entity.last_attack_time < cooldown:
+            if not self.attack_ready(entity, cooldown):
                 return False
 
             entity.last_attack_time = current_time

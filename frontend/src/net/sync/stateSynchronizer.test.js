@@ -5,6 +5,8 @@ import { PlantsSynchronizer } from './PlantsSynchronizer';
 import { WorldManager } from '../services/WorldManager';
 import { EntityManager } from '../services/EntityManager';
 import { HeroStateSync } from '../services/HeroStateSync';
+import { TurnStateSync } from '../services/TurnStateSync';
+import { TurnSynchronizer } from './TurnSynchronizer';
 
 test('StateSynchronizer: reconciles players, mobs, items, traps, plants, and vision', () => {
   let gridState = [
@@ -60,6 +62,8 @@ test('StateSynchronizer: reconciles players, mobs, items, traps, plants, and vis
     setBossInfo: (b) => { bossInfoState = b; },
   });
 
+  const turnState = new TurnStateSync({});
+
   const synchronizer = new StateSynchronizer();
 
   const updateMessage = {
@@ -98,7 +102,7 @@ test('StateSynchronizer: reconciles players, mobs, items, traps, plants, and vis
     events: [],
   };
 
-  synchronizer.sync(updateMessage, { world, entities, heroState });
+  synchronizer.sync(updateMessage, { world, entities, heroState, turnState });
 
   assert.equal(world.depth, 2);
   assert.equal(goldState, 50);
@@ -130,7 +134,7 @@ test('StateSynchronizer: reconciles players, mobs, items, traps, plants, and vis
     ],
   };
 
-  synchronizer.sync(update2, { world, entities, heroState });
+  synchronizer.sync(update2, { world, entities, heroState, turnState });
   assert.equal(Object.keys(entities.getMobs()).length, 0);
   assert.ok(dyingMobsRef.current.mob_1);
   assert.equal(dyingMobsRef.current.mob_1.name, 'Gnoll');
@@ -185,4 +189,59 @@ test('PlantsSynchronizer: updates existing plant types and adds new ones with re
   assert.equal(plant2.renderPos?.x, 4);
   assert.equal(plant2.renderPos?.y, 4);
   assert.ok(typeof plant2.revealStartTime === 'number');
+});
+
+test('TurnSynchronizer: applies the turn payload and clears it when it disappears', () => {
+  const seen = { mode: 'realtime', turn: 'stale' };
+  const turnState = new TurnStateSync({
+    setGameMode: (m) => { seen.mode = m; },
+    setTurnState: (v) => { seen.turn = v; },
+  });
+  const synchronizer = new TurnSynchronizer();
+  const ctx = { turnState };
+
+  synchronizer.sync({
+    type: 'STATE_UPDATE',
+    turn: {
+      turn: 7,
+      is_my_turn: true,
+      timer: 60,
+      order: [
+        { id: 'player_1', kind: 'hero' },
+        { id: 'mob_1', kind: 'mob' },
+      ],
+    },
+  }, ctx);
+  assert.equal(seen.turn.turn, 7);
+  assert.equal(seen.turn.is_my_turn, true);
+  assert.equal(seen.turn.timer, 60);
+  assert.equal(seen.turn.order.length, 2);
+
+  // A real-time room sends no turn payload, so a stale turn must not linger.
+  synchronizer.sync({ type: 'STATE_UPDATE' }, ctx);
+  assert.equal(seen.turn, null);
+  // A STATE_UPDATE never re-asserts the mode: only INIT does.
+  assert.equal(seen.mode, 'realtime');
+});
+
+test('TurnStateSync: the room mode comes from INIT and defaults to real-time', () => {
+  let mode = 'stale';
+  const turnState = new TurnStateSync({
+    setGameMode: (m) => { mode = m; },
+    setTurnState: () => {},
+  });
+  turnState.setGameMode('turnbased');
+  assert.equal(mode, 'turnbased');
+  turnState.setGameMode(null);
+  assert.equal(mode, 'realtime');
+});
+
+test('canActNow: turn rooms gate on the payload, real-time rooms never do', async () => {
+  const { canActNow } = await import('../services/TurnStateSync');
+  assert.equal(canActNow('realtime', null), true);
+  assert.equal(canActNow('realtime', { is_my_turn: false }), true);
+  // Before the first frame there is no turn payload, so a turn room starts closed.
+  assert.equal(canActNow('turnbased', null), false);
+  assert.equal(canActNow('turnbased', { is_my_turn: false }), false);
+  assert.equal(canActNow('turnbased', { is_my_turn: true }), true);
 });

@@ -25,6 +25,8 @@ export default function RoomSelection({ onJoin, onBack, joinError, onDismissErro
   const [createName, setCreateName] = useState('');
   const [createPassword, setCreatePassword] = useState('');
   const [createAllowDungeon, setCreateAllowDungeon] = useState(true);
+  const [createGameMode, setCreateGameMode] = useState('realtime');
+  const [createTurnTimer, setCreateTurnTimer] = useState('60');
   const [creating, setCreating] = useState(false);
 
   const fetchRooms = useCallback(async () => {
@@ -75,7 +77,16 @@ export default function RoomSelection({ onJoin, onBack, joinError, onDismissErro
       const res = await fetch(`${getApiBaseUrl()}/api/rooms`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, password: createPassword || null, allow_dungeon: createAllowDungeon }),
+        body: JSON.stringify({
+          name,
+          password: createPassword || null,
+          allow_dungeon: createAllowDungeon,
+          game_mode: createGameMode,
+          // Only meaningful for a turn room; the server defaults it otherwise.
+          turn_timer_seconds: createGameMode === 'turnbased'
+            ? Math.max(5, Number(createTurnTimer) || 60)
+            : null,
+        }),
       });
       const data = await res.json();
       if (data.room_id) {
@@ -129,6 +140,9 @@ export default function RoomSelection({ onJoin, onBack, joinError, onDismissErro
                   <span className="opd-room-lock" aria-label={t('rooms.locked')}>&#128274;</span>
                 )}
                 {room.name}
+                {room.game_mode === 'turnbased' && (
+                  <span className="opd-room-mode" title={t('rooms.turnBased')}>&#9878;</span>
+                )}
               </span>
               <span className="opd-room-count">{room.player_count}/{room.max_players}</span>
               <MenuButton className="opd-room-join-btn" onClick={() => joinGroup(room)} label={t('rooms.join')} />
@@ -177,6 +191,37 @@ export default function RoomSelection({ onJoin, onBack, joinError, onDismissErro
             />
             {t('rooms.allowDungeon')}
           </label>
+          <label
+            className="hero-challenge-toggle"
+            style={{ margin: '0 0 8px', color: '#ccc', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}
+          >
+            <input
+              type="checkbox"
+              checked={createGameMode === 'turnbased'}
+              onChange={(e) => {
+                AudioManager.play('CLICK');
+                setCreateGameMode(e.target.checked ? 'turnbased' : 'realtime');
+              }}
+            />
+            {t('rooms.turnBased')}
+          </label>
+          {createGameMode === 'turnbased' && (
+            <label
+              className="opd-rooms-create-turn-timer"
+              style={{ margin: '0 0 8px', color: '#ccc', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px' }}
+            >
+              {t('rooms.turnTimer')}
+              <input
+                type="number"
+                min={5}
+                max={300}
+                step={5}
+                value={createTurnTimer}
+                onChange={(e) => setCreateTurnTimer(e.target.value)}
+                style={{ width: '64px' }}
+              />
+            </label>
+          )}
           <MenuButton
             accent
             className="opd-rooms-create-btn"

@@ -4,20 +4,22 @@
 combo/shield/berserk decay, and trinket procs. Extracted from TickMixin.update_tick.
 """
 
-import random
 import time
 from typing import Optional
 
 from app.engine.entities.base import Faction, chebyshev_distance
-from app.engine.entities.buffs import get_buff
 from app.engine.entities.player import CharacterClass, Player
-from app.engine.entities.talent_enum import Talent
-from app.engine.game.constants import PATH_BLOCKED_GIVE_UP_TICKS, TICKS_PER_TURN
-
-
-# Turn accumulator for per-turn operations (armor charge, berserk/seal cooldowns).
-# Incremented by 1.0 each tick; per-turn ops fire when it reaches TICKS_PER_TURN.
-_TURN_ACCUM_ATTR = '_turn_accum'
+from app.engine.game.constants import PATH_BLOCKED_GIVE_UP_TICKS
+from app.engine.game.tick_steps import (
+    advance_turn_accumulator,
+    roll_hold_fast,
+    run_armor_charge_upkeep,
+    run_chaotic_censer_upkeep,
+    run_class_tick_upkeep,
+    run_player_heal_upkeep,
+    run_shield_decay_upkeep,
+    run_stationary_upkeep,
+)
 
 
 class PlayerTickMixin:
@@ -34,14 +36,7 @@ class PlayerTickMixin:
                 data["seq"] = seq
             self.add_event("MOVE_RESULT", data, player_id=player_id)
 
-    def _tick_player(self, player: Player, dt: float) -> None:
-        if player.is_downed or not player.is_alive:
-            return
-
-        pf = self._get_or_create_floor(player.floor_id)
-        enemies_nearby = self._has_enemies_nearby(pf, player, radius=3)
-        step_duration = player.get_step_duration(enemies_nearby=enemies_nearby)  # real seconds
-
+    def _process_player_movement(self, player: Player, pf, step_duration: float) -> None:
         if player.movement.has_queued_step():
             if player.movement.is_ready_for_step():
                 step = player.movement.pop_step()
@@ -83,77 +78,37 @@ class PlayerTickMixin:
                         player.movement.on_step_failed(None)
                         self._emit_move_rejection_if_needed(player.id, pre_x, pre_y)
 
-        self._apply_heal_tick(player)
-        self._apply_aqua_heal_tick(player)
-        self._apply_rest_regen(player, dt)
-        self._apply_passive_regen(player, dt)
-        self._apply_sungrass_heal(player, dt)
-        heal_buff = get_buff(player.buffs, "healing")
-        if heal_buff and player.hp < player.get_total_max_hp():
-            player.set_heal(float(heal_buff.level * 2), 0.1, 1.0)
-        self._tick_passive_wand_recharge(player, dt)
+    def _tick_player(self, player: Player, dt: float) -> None:
+        if player.is_downed or not player.is_alive:
+            return
+
+        pf = self._get_or_create_floor(player.floor_id)
+        enemies_nearby = self._has_enemies_nearby(pf, player, radius=3)
+        step_duration = player.get_step_duration(enemies_nearby=enemies_nearby)  # real seconds
+        self._process_player_movement(player, pf, step_duration)
+
+        run_player_heal_upkeep(self, player, dt)
 
         # Per-turn accumulator: fires once per game turn (~1 second) regardless
         # of tick rate, so these cooldowns / charges are tick-rate-independent.
         # The turn-based cooldowns/charges below (armor charge, berserk/seal
         # cooldowns, Fury turns, ChaoticCenser) intentionally run on SPD's
         # turn-of-20-tick cadence rather than every 20Hz tick.
-        turn_accum = getattr(player, _TURN_ACCUM_ATTR, 0.0) + 1.0
-        is_turn = turn_accum >= TICKS_PER_TURN
-        if is_turn:
-            turn_accum -= TICKS_PER_TURN
-        setattr(player, _TURN_ACCUM_ATTR, turn_accum)
-
-        if is_turn:
-            if player.armor_charge < 100:
-                player.armor_charge = min(100, player.armor_charge + 2)
+        is_turn = advance_turn_accumulator(player)
+        run_armor_charge_upkeep(player, is_turn)
 
         moved = player.movement.is_active()
-        self.tick_rogue(player, dt, moved=moved)
-        self.tick_artifacts(player, dt)
-        self.tick_duelist(player, dt)
-        self.tick_cleric(player, dt)
-
-        if moved:
-            player.stationary_ticks = 0
-            if getattr(player, "patient_strike_tile", None) != (player.pos.x, player.pos.y):
-                player.patient_strike_ready = False
-        else:
-            player.stationary_ticks += 1
-            if player.class_type == CharacterClass.DUELIST and player.talent_info.level(Talent.PATIENT_STRIKE) > 0:
-                player.patient_strike_tile = (player.pos.x, player.pos.y)
-                player.patient_strike_ready = True
+        run_class_tick_upkeep(self, player, dt, moved)
+        run_stationary_upkeep(player, moved)
 
         # Hold Fast (warrior T3): while stationary, slows combo/shield
         # decay and the Broken Seal cooldown (0% decay at +3).
-        hf_factor = player.get_hold_fast_decay_factor()
-        hf_tick = hf_factor >= 1.0 or random.random() < hf_factor
+        hf_factor, hf_tick = roll_hold_fast(player)
 
         # self._apply_hunger_tick(player)  # disabled per request
 
-        if hf_tick:
-            player.decay_shields()
-
-        # ChaoticCenser trinket: periodic gas cloud spawning
-        from app.engine.entities.trinkets import ChaoticCenser as _CC
-        from app.engine.entities.trinkets import trinket_level
-        cc_lvl = trinket_level(player, "chaotic_censer")
-        if is_turn and cc_lvl >= 0:
-            player._cc_turns = getattr(player, "_cc_turns", 0) + 1
-            avg_interval = _CC.average_turns_until_gas(cc_lvl)
-            if avg_interval > 0 and player._cc_turns >= avg_interval:
-                player._cc_turns = 0
-                floor = self._get_or_create_floor(player.floor_id)
-                nearby_mobs = [
-                    m for m in floor.mobs.values()
-                    if m.is_alive and m.faction != player.faction
-                    and chebyshev_distance(m.pos.x, m.pos.y, player.pos.x, player.pos.y) <= 4
-                ]
-                if nearby_mobs:
-                    target = random.choice(nearby_mobs)
-                    gas_type = random.choice(["toxic_gas", "fire", "paralytic_gas"])
-                    from app.engine.game.terrain_effects import _create_gas
-                    _create_gas(floor, (target.pos.x, target.pos.y), 4, gas_type)
+        run_shield_decay_upkeep(player, hf_tick)
+        run_chaotic_censer_upkeep(self, player, is_turn)
 
         # Class-specific per-turn abilities (Broken Seal, Berserk, combo,
         # Fury): data in -> select the ticker by class_type id -> run it.

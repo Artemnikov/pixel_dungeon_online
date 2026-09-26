@@ -128,7 +128,7 @@ class RangedAttackMixin:
             cooldown = item.attack_cooldown
         cooldown /= furor_multiplier(player)
 
-        if (current_time - player.last_attack_time) < cooldown:
+        if not self.attack_ready(player, cooldown):
             return None
 
         # ScrollEmpower (Inscribed Power): +2 effective wand level while active

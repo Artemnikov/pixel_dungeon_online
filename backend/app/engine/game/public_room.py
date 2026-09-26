@@ -103,7 +103,7 @@ class PublicRoomMixin:
                                active_players: List[Player]) -> None:
         if not self._is_public_room() or floor_id in BOSS_FLOORS:
             return
-        floor.item_respawn_counter += 1
+        floor.item_respawn_counter += self.sim_ticks
         if floor.item_respawn_counter < ITEM_RESPAWN_TURNS:
             return
         floor.item_respawn_counter = 0
@@ -150,7 +150,7 @@ class PublicRoomMixin:
             floor.boss_dead_ticks = 0
             return
 
-        floor.boss_dead_ticks += 1
+        floor.boss_dead_ticks += self.sim_ticks
         if floor.boss_dead_ticks < BOSS_RESPAWN_TICKS:
             return
         floor.boss_dead_ticks = 0
@@ -204,7 +204,7 @@ class PublicRoomMixin:
             return
         remaining = []
         for entry in floor.chest_respawn_queue:
-            entry["ticks_left"] -= 1
+            entry["ticks_left"] -= self.sim_ticks
             if entry["ticks_left"] > 0:
                 remaining.append(entry)
                 continue

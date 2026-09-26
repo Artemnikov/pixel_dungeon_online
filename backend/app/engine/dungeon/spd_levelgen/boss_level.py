@@ -34,11 +34,12 @@ from app.engine.dungeon.spd_random import SPDRandom
 # Entry point
 # ---------------------------------------------------------------------------
 
-def build_boss_floor(rng: SPDRandom, depth: int, run_state: RunState) -> Tuple[GenLevel, List[Room]]:
+def build_boss_floor(rng: SPDRandom, depth: int, run_state: RunState,
+                     challenged: bool = False) -> Tuple[GenLevel, List[Room]]:
     if depth == 10:
         return _build_prison_boss_floor(rng, depth, run_state)
     if depth == 15:
-        return _build_caves_boss_floor(rng, depth, run_state)
+        return _build_caves_boss_floor(rng, depth, run_state, challenged)
     if depth == 20:
         return _build_city_boss_floor(rng, depth, run_state)
     if depth == 25:
@@ -111,34 +112,26 @@ def _build_prison_boss_floor(rng: SPDRandom, depth: int, run_state: RunState) ->
     return level, rooms
 
 
-def _build_caves_boss_floor(rng: SPDRandom, depth: int, run_state: RunState) -> Tuple[GenLevel, List[Room]]:
-    """Simplified caves boss level (DM-300, depth 15). Open arena with pillars."""
-    from app.engine.dungeon.spd_levelgen.caves_painter import CavesPainter
+def _build_caves_boss_floor(rng: SPDRandom, depth: int, run_state: RunState,
+                            challenged: bool) -> Tuple[GenLevel, List[Room]]:
+    """Hardcoded port of CavesBossLevel.java (DM-300, depth 15): the fixed
+    33x42 arena layout (gate, ellipse arena, water/wires patch, mirrored
+    entrance/corner stamps, exit area), faithful to the original. DM-300 and
+    the 4 pylons are placed at generation time (Java spawns DM-300 in seal())."""
+    from app.engine.dungeon.spd_levelgen import caves_boss_layout as layout
 
-    level = GenLevel(depth, Feeling.NONE)
+    level = layout.build(rng, depth, challenged)
     level.run_state = run_state
 
-    while True:
-        builder = _boss_builder(rng)
-        init_rooms = _caves_boss_init_rooms(rng, depth)
-        rng.shuffle(init_rooms)
-        for r in init_rooms:
-            r.neighbours.clear()
-            r.connected.clear()
-        rooms = builder.build(list(init_rooms), rng, depth)
-        if rooms is not None:
-            break
-
-    painter = (CavesPainter()
-               .set_water(0.20, 6)
-               .set_grass(0.10, 3)
-               .set_traps(0, (), ()))
-    painter.paint(rng, level, rooms)
+    entrance_room = CavesBossEntranceRoom()
+    entrance_room.set(9, 18, 23, 32)
+    exit_room = CavesBossExitRoom()
+    exit_room.set(14, 0, 18, 2)
+    rooms: List[Room] = [entrance_room, exit_room]
 
     level.rooms = rooms
-    level.room_entrance = next(r for r in rooms if r.is_entrance())
-    level.room_exit = next(r for r in rooms if r.is_exit())
-    level.build_flag_maps()
+    level.room_entrance = entrance_room
+    level.room_exit = exit_room
 
     _boss_create_items(rng, level)
     return level, rooms
@@ -194,24 +187,6 @@ def _boss_init_rooms(rng: SPDRandom, depth: int) -> List[Room]:
 def _boss_standard_rooms(force_max: bool) -> int:
     """Port of SewerBossLevel.standardRooms()."""
     return 3  # always returns 3 when forceMax (and boss level always forces)
-
-
-def _caves_boss_init_rooms(rng: SPDRandom, depth: int) -> List[Room]:
-    rooms: List[Room] = []
-    entrance = CavesBossEntranceRoom()
-    entrance.init_size_cat(rng)
-    rooms.append(entrance)
-    exit_ = CavesBossExitRoom()
-    exit_.init_size_cat(rng)
-    rooms.append(exit_)
-    for _ in range(3):
-        s = create_standard_room(rng, depth)
-        s.set_size_cat(rng, 0, 0)
-        rooms.append(s)
-    boss_room = DM300BossRoom()
-    boss_room.init_size_cat(rng)
-    rooms.append(boss_room)
-    return rooms
 
 
 # ---------------------------------------------------------------------------
@@ -645,83 +620,20 @@ class PrisonBossExitRoom(Room):
 # Caves Boss (DM-300, depth 15) room types
 # ===========================================================================
 
-class CavesBossEntranceRoom(StandardRoom):
-    def min_width(self) -> int:
-        return max(super().min_width(), 7)
-
-    def min_height(self) -> int:
-        return max(super().min_height(), 7)
+class CavesBossEntranceRoom(Room):
+    """Marks the 15x15 entrance-stamp area (centered on the fixed entrance
+    cell (16,25)) of the hardcoded CavesBossLevel layout."""
 
     def is_entrance(self) -> bool:
         return True
 
-    def paint(self, level, rng) -> None:
-        Painter.fill(level, self, terrain.WALL)
-        Painter.fill(level, self, 1, terrain.EMPTY)
-        entrance = level.point_to_cell(self.random(rng, 2))
-        Painter.set(level, entrance, terrain.ENTRANCE)
-        for door in self.connected.values():
-            door.set(DoorType.REGULAR)
 
-
-class CavesBossExitRoom(StandardRoom):
-    def min_width(self) -> int:
-        return max(super().min_width(), 7)
-
-    def min_height(self) -> int:
-        return max(super().min_height(), 7)
+class CavesBossExitRoom(Room):
+    """Marks the exit transition rect (14,0)-(18,2) of the hardcoded
+    CavesBossLevel layout."""
 
     def is_exit(self) -> bool:
         return True
-
-    def paint(self, level, rng) -> None:
-        Painter.fill(level, self, terrain.WALL)
-        Painter.fill(level, self, 1, terrain.EMPTY)
-        c = self.center(rng)
-        Painter.set(level, c, terrain.EXIT)
-        for door in self.connected.values():
-            door.set(DoorType.REGULAR)
-
-
-class DM300BossRoom(StandardRoom):
-    def size_cat_probs(self):
-        return [0.0, 1.0, 0.0]
-
-    def min_width(self) -> int:
-        return max(super().min_width(), 12)
-
-    def min_height(self) -> int:
-        return max(super().min_height(), 12)
-
-    def paint(self, level, rng) -> None:
-        Painter.fill(level, self, terrain.WALL)
-        Painter.fill(level, self, 1, terrain.EMPTY)
-
-        # Place 3 boulder pillars
-        w, h = self.width(), self.height()
-        for px, py in [
-            (self.left + w // 4, self.top + h // 4),
-            (self.right - w // 4, self.top + h // 4),
-            (self.left + w // 2, self.bottom - h // 4),
-        ]:
-            Painter.fill(level, px - 1, py - 1, 2, 2, terrain.MINE_BOULDER)
-
-        for door in self.connected.values():
-            door.set(DoorType.REGULAR)
-
-        c = self.center(rng)
-        dm300_pos = level.point_to_cell(c)
-        level.mobs.append(GenMob(cls_name="DM300", pos=dm300_pos))
-
-        # Pylons at the four corners of the arena interior (CavesBossLevel.pylonPositions),
-        # inset 2 tiles from the walls so they don't sit directly on the inset-1 floor edge.
-        for px, py in [
-            (self.left + 2, self.top + 2),
-            (self.right - 2, self.top + 2),
-            (self.left + 2, self.bottom - 2),
-            (self.right - 2, self.bottom - 2),
-        ]:
-            level.mobs.append(GenMob(cls_name="Pylon", pos=level.point_to_cell(Point(px, py))))
 
 
 # ===========================================================================

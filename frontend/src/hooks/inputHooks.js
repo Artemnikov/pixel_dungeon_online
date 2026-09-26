@@ -7,6 +7,7 @@ import { resolveTapAction } from '../input/resolveTap';
 import * as movementPredictor from '../net/movementPredictor';
 import { defaultMoveResultDispatcher } from '../net/movement/MoveResultDispatcher';
 import { startLocalPlayerMeleeAnim } from '../net/events/combat';
+import { isTurnRoom, sendTurnRoomTap } from '../input/turnTap';
 import { isFloorFadeActive } from '../rendering/floorTransition';
 import AudioManager from '../audio/AudioManager';
 
@@ -23,6 +24,8 @@ export default function useInputHooks({
   handleEscape, quickslot, itemsById,
   send, emergencyHealItem, drinkEmergencyHeal,
   viewport,
+  gameModeRef,
+  canActRef,
 }) {
   const { hasDraggedRef } = useCanvasControls({
     enabled: gameState === 'PLAYING',
@@ -39,6 +42,8 @@ export default function useInputHooks({
     floorFadeRef,
     gridRef, onOpenAlchemyRef,
     playerAnimRef,
+    gameModeRef,
+    canActRef,
   });
 
   useKeyboardControls({
@@ -71,6 +76,8 @@ export default function useInputHooks({
     playerAnimRef,
     emergencyDrinkItem: emergencyHealItem,
     onEmergencyDrink: drinkEmergencyHeal,
+    gameModeRef,
+    canActRef,
   });
 
   const resolveTapAtScreen = useCallback((clientX, clientY) => {
@@ -109,6 +116,15 @@ export default function useInputHooks({
         return;
       }
       if (action.type === 'MOVE' || action.type === 'PATH_STEPS') isRefocusingRef.current = true;
+      if (isTurnRoom(gameModeRef)) {
+        // Turn-based: one tap is one turn, sent as a single message the
+        // scheduler can charge. A turn room drops the MOVE_STEP/PATH_STEPS
+        // plumbing the real-time branch below relies on, so a tap that bumps a
+        // mob has to go out as a plain MOVE for the bump to become the attack.
+        if (canActRef?.current === false) return;
+        sendTurnRoomTap(socketRef.current, action);
+        return;
+      }
       // One-shot actions (WAIT, NPC_INTERACT) and far-tap PATH_STEPS go out as
       // the plain message. Adjacent-tap MOVE is NOT sent raw: it goes through
       // the same paced, seq-acked MOVE_STEP machinery as the keyboard, so the
@@ -145,7 +161,7 @@ export default function useInputHooks({
         }
       }
     }
-  }, [targeting, onOpenAlchemyRef, isRefocusingRef, canvasRef, socketRef, zoomRef, cameraLerpRef, entitiesRef, myPlayerIdRef, gridRef, playerAnimRef]);
+  }, [targeting, onOpenAlchemyRef, isRefocusingRef, canvasRef, socketRef, zoomRef, cameraLerpRef, entitiesRef, myPlayerIdRef, gridRef, playerAnimRef, gameModeRef, canActRef]);
 
   const handleCanvasClick = useCallback((e) => {
     if (isFloorFadeActive(floorFadeRef)) return;

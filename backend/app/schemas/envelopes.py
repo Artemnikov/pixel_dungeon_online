@@ -49,6 +49,11 @@ class InitMessage(_Envelope):
     entrance_pos: Optional[Tuple[int, int]] = None
     exit_pos: Optional[Tuple[int, int]] = None
     self_player: Optional[Dict[str, Any]] = None
+    # Which game loop this room runs. Sent on the first INIT so the client can
+    # switch input handling (no movement prediction, turn-gated actions) before
+    # the first STATE_UPDATE arrives. Always present on a connect INIT; omitted
+    # on the floor-change INIT, where the mode cannot have changed.
+    game_mode: Optional[str] = None
 
 
 class MoveResultMessage(_Envelope):
@@ -80,3 +85,8 @@ class StateUpdateMessage(_Envelope):
     energy: Optional[int] = None
     has_amulet: Optional[Dict[str, Any]] = None
     self_player: Optional[Dict[str, Any]] = None
+    # Turn-based rooms only: which actor the room is waiting on, the turn
+    # counter, the upcoming turn order, and the auto-wait timer. Omitted
+    # entirely by real-time rooms (`turn_state_for` returns None), so a
+    # real-time client sees no new field at all.
+    turn: Optional[Dict[str, Any]] = None

@@ -82,6 +82,15 @@
 .side-tag--cleric:hover { background: rgba(40, 35, 15, 0.85); }
 .side-tag--cleric.on-cooldown { opacity: 0.55; cursor: not-allowed; border-color: #556677; }
 .side-tag-cd { font: 10px monospace; color: #fa4; font-weight: bold; }
+.side-tag-cd.is-urgent { color: #f66; }
+
+/* --- TurnIndicator: whose turn it is, plus the auto-wait countdown --- */
+.side-tag--turn { border-color: #4a7a4a; cursor: default; }
+.side-tag--turn:hover { background: rgba(15, 12, 10, 0.7); }
+.side-tag--turn.is-mine { border-color: #7ec87e; }
+.side-tag--turn.is-mine .side-tag__label { color: #e8f5e8; }
+.side-tag--turn.is-waiting { opacity: 0.5; border-color: #666; }
+.side-tag--turn.is-waiting .side-tag__label { color: #999; }
 
 /* --- LootIndicator — item preview above inventory button --- */
 .loot-indicator {

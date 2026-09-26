@@ -352,6 +352,18 @@ class Player(Entity):
 
     _movement_controller: Optional[PlayerMovementController] = None
 
+    # Runtime-only scratch counters. Leading-underscore attributes are pydantic
+    # private attrs: settable and gettable, but never emitted by model_dump(),
+    # so they stay out of the wire contract. Real-time mode drives them from the
+    # per-tick is_turn accumulator; turn-based rooms drive them from the
+    # scheduler instead.
+    _turn_accum: float = 0.0
+    _cc_turns: int = 0
+    # Set by the turn-based scheduler around an action, so the per-turn
+    # mechanics in turn/world.py know whether this turn included a step. The
+    # real-time path derives the same signal from player.movement.is_active().
+    _moved_this_turn: bool = False
+
     @property
     def movement(self) -> PlayerMovementController:
         if self._movement_controller is None:

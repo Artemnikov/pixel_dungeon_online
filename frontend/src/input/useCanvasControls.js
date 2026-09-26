@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { TILE_SIZE, MIN_ZOOM, MAX_ZOOM } from '../constants';
 import { isFloorFadeActive } from '../rendering/floorTransition';
 import { resolveTapAction } from './resolveTap';
+import { isTurnRoom, sendTurnRoomTap } from './turnTap';
 import * as movementPredictor from '../net/movementPredictor';
 import { defaultMoveResultDispatcher } from '../net/movement/MoveResultDispatcher';
 import { startLocalPlayerMeleeAnim } from '../net/events/combat';
@@ -30,6 +31,8 @@ export default function useCanvasControls({
   gridRef,
   onOpenAlchemyRef,
   playerAnimRef,
+  gameModeRef,
+  canActRef,
 }) {
   const dragStartRef = useRef({ x: 0, y: 0 });
   const dragStartPanRef = useRef({ x: 0, y: 0 });
@@ -243,6 +246,15 @@ export default function useCanvasControls({
         return;
       }
       if (action.type === 'MOVE' || action.type === 'PATH_STEPS') isRefocusingRef.current = true;
+      if (isTurnRoom(gameModeRef)) {
+        // Turn-based: one tap is one turn, sent as a single message the
+        // scheduler can charge. A turn room drops the MOVE_STEP/PATH_STEPS
+        // plumbing the real-time branch below relies on, so a tap that bumps a
+        // mob has to go out as a plain MOVE for the bump to become the attack.
+        if (canActRef?.current === false) return;
+        sendTurnRoomTap(socketRef.current, action);
+        return;
+      }
       // One-shot actions (WAIT, NPC_INTERACT) and far-tap PATH_STEPS go out as
       // the plain message. Adjacent-tap MOVE is NOT sent raw: it goes through
       // the same paced, seq-acked MOVE_STEP machinery as the keyboard, so the
@@ -297,7 +309,7 @@ export default function useCanvasControls({
       canvas.removeEventListener('touchmove', onTouchMove);
       canvas.removeEventListener('touchend', onTouchEnd);
     };
-  }, [enabled, canvasRef, socketRef, panOffsetRef, zoomRef, cameraLerpRef, isDraggingRef, isRefocusingRef, isPinchingRef, isCameraDetachedRef, detachedCameraRef, targetingModeRef, onTargetTapRef, examineModeRef, onExamineTapRef, entitiesRef, myPlayerIdRef, hoveredCellRef, floorFadeRef, gridRef, onOpenAlchemyRef, playerAnimRef]);
+  }, [enabled, canvasRef, socketRef, panOffsetRef, zoomRef, cameraLerpRef, isDraggingRef, isRefocusingRef, isPinchingRef, isCameraDetachedRef, detachedCameraRef, targetingModeRef, onTargetTapRef, examineModeRef, onExamineTapRef, entitiesRef, myPlayerIdRef, hoveredCellRef, floorFadeRef, gridRef, onOpenAlchemyRef, playerAnimRef, gameModeRef, canActRef]);
 
   return { hasDraggedRef };
 }

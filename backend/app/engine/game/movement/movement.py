@@ -105,7 +105,7 @@ class MovementMixin:
 
         floor = self._get_or_create_floor(floor_id)
 
-        if isinstance(entity, Player) and time.time() < entity.action_until:
+        if isinstance(entity, Player) and self.action_blocked(entity):
             return
 
         if isinstance(entity, Player) and entity.is_downed:

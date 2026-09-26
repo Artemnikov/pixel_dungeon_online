@@ -10,7 +10,7 @@ import os
 import urllib.error
 import urllib.parse
 import urllib.request
-from typing import Optional
+from typing import Literal, Optional
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
@@ -21,6 +21,7 @@ from app.api.connection_manager import (
     RoomMeta,
     manager,
 )
+from app.engine.game.constants import DEFAULT_TURN_TIMER_SECONDS
 
 router = APIRouter()
 
@@ -276,6 +277,7 @@ async def list_rooms():
             "max_players": room.max_players,
             "has_password": room.has_password,
             "allow_dungeon": getattr(room, "allow_dungeon_faction", True),
+            "game_mode": room.game_mode,
         }
         for room in manager.rooms.values()
         if not room.is_public
@@ -292,6 +294,8 @@ class CreateRoomRequest(BaseModel):
     name: str
     password: Optional[str] = None
     allow_dungeon: bool = True
+    game_mode: Literal["realtime", "turnbased"] = "realtime"
+    turn_timer_seconds: Optional[float] = None
 
 
 @router.post("/api/rooms")
@@ -305,8 +309,10 @@ async def create_room(body: CreateRoomRequest):
         password=(body.password or None),
         max_players=PRIVATE_ROOM_MAX_PLAYERS,
         allow_dungeon_faction=body.allow_dungeon,
+        game_mode=body.game_mode,
+        turn_timer_seconds=body.turn_timer_seconds or DEFAULT_TURN_TIMER_SECONDS,
     )
-    return {"room_id": room_id, "name": resolved_name, "allow_dungeon": body.allow_dungeon}
+    return {"room_id": room_id, "name": resolved_name, "allow_dungeon": body.allow_dungeon, "game_mode": body.game_mode}
 
 
 @router.post("/dev/xp/{game_id}/{player_id}/{amount}")

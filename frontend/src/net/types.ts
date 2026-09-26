@@ -8,6 +8,8 @@ import type {
   TrapInfo,
   PlantInfo,
   CustomTileLayer,
+  GameMode,
+  TurnState,
   AlchemyPreviewResultEvent,
   AlchemyBrewedEvent,
   AlchemyEnergizedEvent,
@@ -256,6 +258,8 @@ export interface HookProps {
   isCameraDetachedRef?: Ref<boolean>;
   setGrid: Dispatch<SetStateAction<number[][]>>;
   setDepth: (depth: number) => void;
+  setGameMode?: (mode: GameMode) => void;
+  setTurnState?: Dispatch<SetStateAction<TurnState | null>>;
   setMyPlayerId: (id: string) => void;
   setInventory: Dispatch<SetStateAction<Player['inventory']>>;
   setEquippedItems: Dispatch<SetStateAction<{ weapon: Player['equipped_weapon']; wearable: Player['equipped_wearable'] }>>;
@@ -399,6 +403,8 @@ export type SyncCtx = Pick<
   | 'setQuickslot'
   | 'setGold'
   | 'setEnergy'
+  | 'setGameMode'
+  | 'setTurnState'
   | 'setHasAmulet'
   | 'setBossLurking'
 >;

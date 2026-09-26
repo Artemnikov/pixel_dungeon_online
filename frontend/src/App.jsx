@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import './styles/index.css';
 
@@ -18,6 +18,8 @@ import AttackIndicator from './ui/AttackIndicator';
 import ActionIndicator from './ui/ActionIndicator';
 import ClericQuickSpellTag from './ui/ClericQuickSpellTag';
 import ResumeIndicator from './ui/ResumeIndicator';
+import TurnIndicator from './ui/TurnIndicator';
+import { canActNow } from './net/services/TurnStateSync';
 import DangerIndicator from './ui/DangerIndicator';
 import LootIndicator from './ui/LootIndicator';
 import StatusPane from './ui/StatusPane';
@@ -106,6 +108,20 @@ function App() {
   const [bossFightActive, setBossFightActive] = useState(false);
   const [bossBleeding, setBossBleeding] = useState(false);
   const [depth, setDepth] = useState(1);
+  const [gameMode, setGameMode] = useState('realtime');
+  const [turnState, setTurnState] = useState(null);
+  // The input layer reads this synchronously on every key event, so it is a
+  // ref rather than the state value itself. Always defined: `undefined` would
+  // mean "real-time, never gate" to the input code, so a turn room that has
+  // not reported a turn yet must start out refusing input.
+  const canActRef = useRef(true);
+  useEffect(() => {
+    canActRef.current = canActNow(gameMode, turnState);
+  }, [gameMode, turnState]);
+  const gameModeRef = useRef(gameMode);
+  useEffect(() => {
+    gameModeRef.current = gameMode;
+  }, [gameMode]);
   const [, setCamera] = useState({ x: 0, y: 0 });
   const [gold, setGold] = useState(0);
   const [energy, setEnergy] = useState(0);
@@ -143,6 +159,7 @@ function App() {
     myStats, setMyStats, bossInfo, setBossInfo,
     bossFightActive, setBossFightActive, bossBleeding, setBossBleeding,
     depth, setDepth, setCamera,
+    gameMode, setGameMode, turnState, setTurnState,
     gold, setGold, energy, setEnergy, hasAmulet, setHasAmulet,
     bossLurking, setBossLurking, exitPos, setExitPos,
     scoreBreakdown, setScoreBreakdown,
@@ -178,6 +195,7 @@ function App() {
     send: game.send, emergencyHealItem: game.emergencyHealItem,
     drinkEmergencyHeal: game.drinkEmergencyHeal,
     viewport,
+    gameModeRef, canActRef,
   });
 
   const rendering = useRenderingHooks({
@@ -280,8 +298,10 @@ function App() {
         <KeyDisplay keys={myStats.keys} depth={depth} />
 
         <SideTags>
+          <TurnIndicator turn={turnState} />
           <AttackIndicator
             myStats={myStats}
+            canAct={canActNow(gameMode, turnState)}
             onAttack={(targetId) => send({ type: 'ATTACK', target_id: targetId })}
           />
           <ActionIndicator

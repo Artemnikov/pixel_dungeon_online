@@ -108,10 +108,10 @@ class SpawnTickMixin:
         if live_mobs >= floor.mob_limit:
             floor.respawn_counter = 0
             return
-        floor.respawn_counter += 1
-        base = RESPAWN_TURNS + floor_id * RESPAWN_TURNS_FLOOR_SCALE
-        threshold = int(base * PUBLIC_MOB_RESPAWN_SPEEDUP) if is_public else base
-        if floor.respawn_counter < threshold:
+        floor.respawn_counter += self.sim_ticks
+        base_ticks = RESPAWN_TURNS + floor_id * RESPAWN_TURNS_FLOOR_SCALE
+        threshold_ticks = int(base_ticks * PUBLIC_MOB_RESPAWN_SPEEDUP) if is_public else base_ticks
+        if floor.respawn_counter < threshold_ticks:
             return
         floor.respawn_counter = 0
 

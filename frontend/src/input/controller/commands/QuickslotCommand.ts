@@ -10,8 +10,13 @@ export class QuickslotCommand implements IKeyCommand {
     this.doubleTapTracker = doubleTapTracker;
   }
 
-  public canExecute(code: string, _context: InputContext): boolean {
-    return QUICKSLOT_DIGITS.has(code);
+  public canExecute(code: string, context: InputContext): boolean {
+    if (!QUICKSLOT_DIGITS.has(code)) return false;
+    // Using an item spends a turn, so a turn room must not hear it out of turn.
+    if (context.gameModeRef?.current === 'turnbased' && context.canActRef?.current === false) {
+      return false;
+    }
+    return true;
   }
 
   public execute(code: string, context: InputContext, isKeyDown: boolean): void {
