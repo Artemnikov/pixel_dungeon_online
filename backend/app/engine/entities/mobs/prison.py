@@ -140,6 +140,7 @@ class Thief(MobEntity):
     exp: int = 5
     max_lvl: int = 11
     attack_cooldown: float = 1.5
+    attack_delay: float = 0.5
     properties: List[str] = ["UNDEAD"]
     loot_table: List[DropEntry] = [
         DropEntry(item_kind="ring", chance=0.03, max_global=0),

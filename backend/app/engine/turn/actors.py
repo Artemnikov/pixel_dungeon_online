@@ -50,20 +50,27 @@ class PlayerActor(ActorRef):
 
     def requires_input(self) -> bool:
         return (
-            self.player.is_alive
-            and not self.player.is_downed
+            self.player.is_active
             and self.pending_action is None
             and not self.is_auto_walking()
         )
 
     def take_turn(self, game) -> float:
+        from app.engine.turn.walk import refresh_visible_enemies
+
         action = self.pending_action
-        if action is not None:
-            self.pending_action = None
-            return action.execute(game, self.player)
-        if self.is_auto_walking():
-            return game._player_walk_turn(self)
-        return TIME_TO_WAIT
+        pre = (self.player.pos.x, self.player.pos.y)
+        self.player._moved_this_turn = False
+        try:
+            if action is not None:
+                self.pending_action = None
+                return action.execute(game, self.player)
+            if self.is_auto_walking():
+                return game._player_walk_turn(self)
+            return TIME_TO_WAIT
+        finally:
+            self.player._moved_this_turn = (self.player.pos.x, self.player.pos.y) != pre
+            refresh_visible_enemies(game, self)
 
 
 class MobActor(ActorRef):

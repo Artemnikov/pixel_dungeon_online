@@ -36,7 +36,7 @@ def ballistica_trace(
     occupied = {}
     if stop_chars:
         for p in players:
-            if p.id != exclude_id and getattr(p, "is_alive", True):
+            if p.id != exclude_id and getattr(p, "is_alive", True) and not getattr(p, "is_afk", False):
                 occupied[(p.pos.x, p.pos.y)] = p
         for m in mobs:
             if getattr(m, "is_alive", True):

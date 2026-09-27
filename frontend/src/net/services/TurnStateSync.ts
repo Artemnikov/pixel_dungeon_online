@@ -12,6 +12,7 @@ export const GAME_MODE_REALTIME: GameMode = 'realtime';
 export const GAME_MODE_TURNBASED: GameMode = 'turnbased';
 
 export class TurnStateSync {
+  private gameMode: GameMode = GAME_MODE_REALTIME;
   private setters: {
     setGameMode?: (mode: GameMode) => void;
     setTurnState?: (state: TurnState | null) => void;
@@ -23,7 +24,13 @@ export class TurnStateSync {
 
   /** Recorded from INIT, so it is known before the first state frame. */
   public setGameMode(mode: GameMode | null | undefined): void {
-    this.setters.setGameMode?.(mode || GAME_MODE_REALTIME);
+    const resolved = mode || GAME_MODE_REALTIME;
+    this.gameMode = resolved;
+    this.setters.setGameMode?.(resolved);
+  }
+
+  public getGameMode(): GameMode {
+    return this.gameMode;
   }
 
   public syncTurnState(state: TurnState | null | undefined): void {

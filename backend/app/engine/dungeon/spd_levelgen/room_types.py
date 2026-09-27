@@ -236,12 +236,14 @@ class ShopRoom(SpecialRoom):
             door.set(DoorType.REGULAR)
 
 
-def _place_shop_items(level, room: "ShopRoom", items: list) -> None:
+def _place_shop_items(level, room: "SpecialRoom", items: list) -> None:
     """Port of ShopRoom.placeItems()'s clockwise spiral placement."""
     from app.engine.dungeon.spd_levelgen import terrain
     from app.engine.dungeon.spd_levelgen.geom import Point
 
     entrance = room.entrance()
+    if entrance is None:
+        entrance = Door((room.left + room.right) // 2 + 1, room.bottom - 1)
     entry_inset = Point(entrance.x, entrance.y)
     if entry_inset.y == room.top:
         entry_inset.y += 1
@@ -334,6 +336,12 @@ class ImpShopRoom(SpecialRoom):
 
     def max_connections(self, direction: int) -> int:
         return 2
+
+    def entrance(self) -> Door:
+        if not self.connected:
+            return Door((self.left + self.right) // 2 + 1, self.bottom - 1)
+        ent = super().entrance()
+        return ent if ent is not None else Door((self.left + self.right) // 2 + 1, self.bottom - 1)
 
     def paint(self, level, rng: SPDRandom) -> None:
         from app.engine.dungeon.spd_levelgen import terrain

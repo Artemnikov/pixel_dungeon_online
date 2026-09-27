@@ -162,8 +162,8 @@ def _can_surprise_attack(attacker: "Entity", weapon=None) -> bool:
 def _is_surprise_attack(attacker: "Entity", defender: "Entity", is_in_los, weapon=None) -> bool:
     """SPD Mob.surprisedBy(enemy, attacking=true): only mobs get surprised, and
     only by players. True when the attacker is invisible, the mob never noticed
-    an enemy (enemySeen=false -> unaware ai_state here), or the attacker is
-    outside the mob's FOV."""
+    an enemy (enemySeen=false -> unaware ai_state here or enemy_seen=False),
+    the attacker is outside the mob's FOV, or during the real-time surprise window."""
     if getattr(defender, "ai_state", None) is None:
         return False
     if not hasattr(attacker, "belongings"):
@@ -173,6 +173,9 @@ def _is_surprise_attack(attacker: "Entity", defender: "Entity", is_in_los, weapo
     if getattr(attacker, "invisible", 0) > 0:
         return True
     if defender.ai_state in _UNAWARE_AI_STATES:
+        return True
+    # SPD Mob.surprisedBy (!enemySeen): mob lost sight of the player on its turn
+    if not getattr(defender, "enemy_seen", {}).get(attacker.id, True):
         return True
     # The player recently broke LOS on this mob and reappeared in its FOV:
     # strikes land as surprise attacks while the window is open (SPD's stale
@@ -674,6 +677,13 @@ def resolve_melee_attack(
     result["damage"] = actual_damage
     _alert_defender(defender)
 
+    # Dwarf King boss badge challenge: disqualified by direct weapon attacks
+    if getattr(defender, "name", "") == "Dwarf King" and game is not None:
+        if getattr(attacker, "is_player", False) or hasattr(attacker, "belongings"):
+            weapon = getattr(getattr(attacker, "belongings", None), "weapon", None)
+            if weapon is not None:
+                game.qualified_for_boss_challenge = False
+
     # SPD MirrorImage.attackProc: when an ally (mirror image / ghost hero)
     # hits a mob, the mob aggros onto that ally specifically instead of
     # continuing to chase the nearest player.
@@ -886,6 +896,11 @@ def resolve_ranged_attack(
     actual_damage = defender.take_damage(max(0, effective_damage))
     result["damage"] = actual_damage
     _alert_defender(defender)
+
+    # Dwarf King boss badge challenge: disqualified by direct ranged attacks
+    if getattr(defender, "name", "") == "Dwarf King" and game is not None:
+        if getattr(attacker, "is_player", False) or hasattr(attacker, "belongings"):
+            game.qualified_for_boss_challenge = False
 
     if attacker.grim_max_chance > 0 and actual_damage > 0:
         _check_grim(attacker, defender, result)

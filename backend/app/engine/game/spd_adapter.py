@@ -127,6 +127,7 @@ from app.engine.entities.mobs import (
     YogEye,
     YogRipper,
     YogScorpio,
+    Larva,
     DwarfKing,
 )
 from app.engine.game.floor_state import FloorState
@@ -318,6 +319,7 @@ _MOB_CLASSES: Dict[str, type[MobEntity]] = {
     "YogEye": YogEye,
     "YogScorpio": YogScorpio,
     "YogRipper": YogRipper,
+    "Larva": Larva,
     # Static spawners
     "DemonSpawner": DemonSpawner,
     "Pylon": Pylon,
@@ -730,7 +732,10 @@ def _extract_doors(gen_level: GenLevel, width: int, height: int) -> Tuple[Dict[T
         if spd_val == spd_terrain.SECRET_DOOR:
             hidden_doors[(x, y)] = TileType.DOOR
         elif spd_val in (spd_terrain.LOCKED_DOOR, spd_terrain.HERO_LKD_DR):
-            locked_doors[(x, y)] = "iron"
+            if getattr(gen_level, 'depth', 0) == 20 and (x, y) == (7, 25):
+                locked_doors[(x, y)] = "dwarf_king_exit"
+            else:
+                locked_doors[(x, y)] = "iron"
         elif spd_val == spd_terrain.CRYSTAL_DOOR:
             locked_doors[(x, y)] = "crystal"
         elif spd_val == spd_terrain.LOCKED_EXIT:
@@ -938,7 +943,7 @@ def gen_level_to_floor_state(gen_level: GenLevel, depth: int) -> FloorState:
             "magic_wells": magic_wells,
             "sacrifice_fires": sacrifice_fires,
             **({"imp_shop_room": gen_level.imp_shop_room, "imp_shop_spawned": False}
-               if hasattr(gen_level, 'imp_shop_room') else {}),
+               if getattr(gen_level, 'imp_shop_room', None) is not None else {}),
         },
         dk_summon_spots=list(getattr(gen_level, 'dk_summon_spots', [])),
         yog_pos=getattr(gen_level, 'yog_pos', None),

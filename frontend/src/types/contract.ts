@@ -783,6 +783,36 @@ export interface DM300FightStartedEvent {
   data: { mob: string };
 }
 
+/** DM-300 vents toxic gas toward a target position. */
+export interface DM300GasEvent {
+  type: 'DM300_GAS';
+  data: { mob: string; target_x: number; target_y: number };
+}
+
+/** DM-300 rockfall telegraph: threatened cells before boulders crash down. */
+export interface DM300RockfallWarnEvent {
+  type: 'DM300_ROCKFALL_WARN';
+  data: { mob: string; tiles: [number, number][]; duration_ms?: number };
+}
+
+/** DM-300 rockfall impact: boulders crash down on threatened cells. */
+export interface DM300RockfallEvent {
+  type: 'DM300_ROCKFALL';
+  data: { cells: [number, number][] };
+}
+
+/** DM-300 supercharge event: shields up and activates a pylon. */
+export interface DM300SuperchargeEvent {
+  type: 'DM300_SUPERCHARGE';
+  data: { mob: string };
+}
+
+/** Pylon activation event: lightning surges through the pylon. */
+export interface PylonActivatedEvent {
+  type: 'PYLON_ACTIVATED';
+  data: { mob: string; x: number; y: number };
+}
+
 /** Dwarf King noticed the hero — the fight begins. */
 export interface DwarfKingFightStartedEvent {
   type: 'DWARF_KING_FIGHT_STARTED';
@@ -799,6 +829,24 @@ export interface DwarfKingPhase2Event {
 export interface DwarfKingPhase3Event {
   type: 'DWARF_KING_PHASE3';
   data: { mob: string };
+}
+
+/** Dwarf King begins charging a summon on a pedestal. */
+export interface DwarfKingSummonStartEvent {
+  type: 'DWARF_KING_SUMMON_START';
+  data: { x: number; y: number; particle: string };
+}
+
+/** Dwarf King summon finishes charging and bursts into a minion. */
+export interface DwarfKingSummonBurstEvent {
+  type: 'DWARF_KING_SUMMON_BURST';
+  data: { x: number; y: number; mob_cls: string };
+}
+
+/** Dwarf King's Phase 2 barrier is damaged. */
+export interface DwarfKingShieldDamageEvent {
+  type: 'DWARF_KING_SHIELD_DAMAGE';
+  data: { mob: string; amount: number; barrier_hp: number };
 }
 
 /** Yog-Dzewa noticed the hero — the fight begins. */
@@ -835,6 +883,12 @@ export interface EyeChargeEvent {
 export interface EyeDeathRayEvent {
   type: 'EYE_DEATH_RAY';
   data: { mob: string; source_x: number; source_y: number; target_x: number; target_y: number };
+}
+
+/** Life link green health ray between Dwarf King and minion. */
+export interface HealthRayEvent {
+  type: 'HEALTH_RAY';
+  data: { fx: number; fy: number; tx: number; ty: number };
 }
 
 /** Necromancer zaps a cell — summon, heal, or buff its NecroSkeleton (mirrors NecromancerSprite.zap). */
@@ -1244,15 +1298,24 @@ export type GameEvent =
   | GooEnrageEvent
   | GooFightStartedEvent
   | DM300FightStartedEvent
+  | DM300GasEvent
+  | DM300RockfallWarnEvent
+  | DM300RockfallEvent
+  | DM300SuperchargeEvent
+  | PylonActivatedEvent
   | DwarfKingFightStartedEvent
   | DwarfKingPhase2Event
   | DwarfKingPhase3Event
+  | DwarfKingSummonStartEvent
+  | DwarfKingSummonBurstEvent
+  | DwarfKingShieldDamageEvent
   | YogFightStartedEvent
   | YogPhaseChangeEvent
   | YogFinalPhaseEvent
   | TenguFightStartedEvent
   | EyeChargeEvent
   | EyeDeathRayEvent
+  | HealthRayEvent
   | ZapSummonEvent
   | NecroSummonEvent
   | TenguJumpEvent
@@ -1341,6 +1404,9 @@ export interface TurnOrderEntry {
   id: string;
   kind: 'player' | 'mob';
   needs_input: boolean;
+  name?: string;
+  class_type?: string;
+  has_acted?: boolean;
 }
 
 /**
@@ -1387,6 +1453,7 @@ export interface InitMessage {
    */
   game_mode?: GameMode;
   self_player?: Player;
+  turn?: TurnState | null;
 }
 
 /** A decorative tilemap overlay (e.g. GooBossRoom's GooNest). */

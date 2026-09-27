@@ -1,25 +1,36 @@
 from app.engine.dungeon.constants import TileType
-from app.engine.entities.items.consumables import Key
 from app.engine.entities.mobs import YogDzewa
 from app.engine.manager import GameInstance
 
 
-def test_yog_death_drops_key_matching_locked_exit():
+def test_yog_death_unseals_arena_exit_to_last_level():
     game = GameInstance("yog-amulet-path-test")
     floor = game.generate_floor(25)
     yog = next(m for m in floor.mobs.values() if isinstance(m, YogDzewa))
 
-    assert len(floor.locked_doors) == 1
-    (dx, dy), door_key_id = next(iter(floor.locked_doors.items()))
-    assert floor.grid[dy][dx] == TileType.LOCKED_EXIT
+    # Before death: exit at (16, 9) is covered by centerpiece wall/deco
+    assert floor.width == 32
+    assert floor.height == 32
+    assert floor.exit_pos == (16, 9)
+    assert floor.grid[9][16] != TileType.STAIRS_DOWN
 
+    # Kill Yog
     game.handle_mob_death(yog, floor, 25)
 
-    keys = [i for i in floor.items.values() if isinstance(i, Key)]
-    assert len(keys) == 1
-    assert keys[0].key_id == door_key_id
+    # After death: exit at (16, 9) is unsealed as STAIRS_DOWN
+    assert floor.grid[9][16] == TileType.STAIRS_DOWN
+    assert floor.flags is not None
+    assert floor.flags.passable[9][16]
+    assert game.boss_scores[4] == 5000
 
-    # Idempotent: calling it again must not double-drop.
-    game.handle_mob_death(yog, floor, 25)
-    keys = [i for i in floor.items.values() if isinstance(i, Key)]
-    assert len(keys) == 1
+    # Custom tilemaps updated to unsealed
+    custom_tiles = next(l for l in floor.custom_tiles if l["texture"] == "halls_special")
+    assert custom_tiles["tiles"][0][4] == 19
+    assert custom_tiles["tiles"][1][3] == 31
+    assert custom_tiles["tiles"][1][5] == 31
+
+    # Descending from 25 goes to floor 26 (LastLevel)
+    floor_26 = game.generate_floor(26)
+    assert floor_26.width == 16
+    assert floor_26.height == 64
+

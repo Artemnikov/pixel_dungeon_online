@@ -76,6 +76,7 @@ export default function useGameHooks(state) {
   const particlesRef = useRef([]);
   const searchEffectsRef = useRef([]);
   const warnedTilesRef = useRef(null);
+  const rockfallTelegraphRef = useRef(null);
   const floatingTextRef = useRef([]);
   const transmuteEffectsRef = useRef([]);
   const flareEffectsRef = useRef([]);
@@ -189,7 +190,7 @@ export default function useGameHooks(state) {
     socketRef, gridRef, myPlayerIdRef, entitiesRef,
     visionRef, openDoorsRef, projectilesRef,
     customTilesRef, customWallsRef, torchesRef,
-    mobAnimRef, dyingMobsRef, playerAnimRef, particlesRef, searchEffectsRef, floatingTextRef, screenFlashRef, screenShakeRef, wasDownedRef, warnedTilesRef, transmuteEffectsRef, flareEffectsRef, spellSpriteEffectsRef, lightningRef, shieldHaloRef, stateEffectsRef, magicMissileRef, staffAmbientRef, surpriseRef, flyingItemsRef, selectedEnemyIdRef, beamRef, blobAreasRef,
+    mobAnimRef, dyingMobsRef, playerAnimRef, particlesRef, searchEffectsRef, floatingTextRef, screenFlashRef, screenShakeRef, wasDownedRef, warnedTilesRef, rockfallTelegraphRef, transmuteEffectsRef, flareEffectsRef, spellSpriteEffectsRef, lightningRef, shieldHaloRef, stateEffectsRef, magicMissileRef, staffAmbientRef, surpriseRef, flyingItemsRef, selectedEnemyIdRef, beamRef, blobAreasRef,
     cameraLerpRef, isCameraDetachedRef, floorFadeRef,
     setGrid, setDepth, setGameMode, setTurnState, setMyPlayerId, setInventory,
     setEquippedItems, setMyStats, setDifficulty, setBossInfo,
@@ -202,7 +203,8 @@ export default function useGameHooks(state) {
     onTenguFightStarted: () => setBossFightActive(true),
     onDM300FightStarted: () => setBossFightActive(true),
     onDwarfKingFightStarted: () => setBossFightActive(true),
-    onDwarfKingPhase2: () => setBossBleeding(true),
+    onDwarfKingPhase2: () => setBossFightActive(true),
+    onDwarfKingPhase3: () => setBossBleeding(true),
     onYogFightStarted: () => setBossFightActive(true),
     onYogFinalPhase: () => setBossBleeding(true),
     onMetamorphOpen: talent.onMetamorphOpen,
@@ -358,13 +360,15 @@ export default function useGameHooks(state) {
     const lw = canvasRef.current?.getBoundingClientRect()?.width || window.innerWidth;
     const lh = canvasRef.current?.getBoundingClientRect()?.height || window.innerHeight;
     const z = zoomRef.current;
-    cameraLerpRef.current = {
+    const targetCam = {
       x: Math.round(pos.x) * TILE_SIZE + TILE_SIZE / 2 - lw / 2 / z,
       y: Math.round(pos.y) * TILE_SIZE + TILE_SIZE / 2 - lh / 2 / z,
     };
+    cameraLerpRef.current = { ...targetCam };
+    detachedCameraRef.current = { ...targetCam };
     panOffsetRef.current = { x: 0, y: 0 };
     isRefocusingRef.current = false;
-    isCameraDetachedRef.current = false;
+    isCameraDetachedRef.current = true;
   }, []);
 
   return {
@@ -374,7 +378,7 @@ export default function useGameHooks(state) {
     zoomRef, isDraggingRef, isRefocusingRef, isPinchingRef,
     isCameraDetachedRef, detachedCameraRef, wasDownedRef,
     mobAnimRef, dyingMobsRef, playerAnimRef, particlesRef, searchEffectsRef,
-    warnedTilesRef, floatingTextRef, transmuteEffectsRef, flareEffectsRef,
+    warnedTilesRef, rockfallTelegraphRef, floatingTextRef, transmuteEffectsRef, flareEffectsRef,
     spellSpriteEffectsRef, magicMissileRef, staffAmbientRef,
     screenFlashRef, screenShakeRef, beamRef, blobAreasRef, lightningRef,
     shieldHaloRef, stateEffectsRef, surpriseRef, flyingItemsRef,

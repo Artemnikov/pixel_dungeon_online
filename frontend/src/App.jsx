@@ -212,7 +212,7 @@ function App() {
     searchEffectsRef: game.searchEffectsRef,
     floatingTextRef: game.floatingTextRef, screenFlashRef: game.screenFlashRef,
     screenShakeRef: game.screenShakeRef, myPlayerIdRef: game.myPlayerIdRef,
-    warnedTilesRef: game.warnedTilesRef, transmuteEffectsRef: game.transmuteEffectsRef,
+    warnedTilesRef: game.warnedTilesRef, rockfallTelegraphRef: game.rockfallTelegraphRef, transmuteEffectsRef: game.transmuteEffectsRef,
     flareEffectsRef: game.flareEffectsRef, spellSpriteEffectsRef: game.spellSpriteEffectsRef,
     lightningRef: game.lightningRef, shieldHaloRef: game.shieldHaloRef,
     stateEffectsRef: game.stateEffectsRef, magicMissileRef: game.magicMissileRef,
@@ -223,6 +223,7 @@ function App() {
     panOffsetRef: game.panOffsetRef, cameraLerpRef: game.cameraLerpRef,
     zoomRef: game.zoomRef,
     isRefocusingRef: game.isRefocusingRef, isDraggingRef: game.isDraggingRef,
+    isPinchingRef: game.isPinchingRef,
     isCameraDetachedRef: game.isCameraDetachedRef,
     detachedCameraRef: game.detachedCameraRef,
     setCamera,
@@ -297,8 +298,9 @@ function App() {
         <BossHealthBar boss={bossInfo} bleeding={bossBleedingEffective} interfaceSize={interfaceSize} assetImages={assetImages} />
         <KeyDisplay keys={myStats.keys} depth={depth} />
 
+        <TurnIndicator turn={turnState} myPlayerId={myPlayerId} />
+
         <SideTags>
-          <TurnIndicator turn={turnState} />
           <AttackIndicator
             myStats={myStats}
             canAct={canActNow(gameMode, turnState)}
@@ -404,48 +406,50 @@ function App() {
           />
         )}
 
-        <GameHud
-          interfaceSize={interfaceSize}
-          isDesktop={gameDesktop}
-          canvasWidth={viewport.width}
-          assetImages={assetImages}
-          toolbarItems={toolbarItems}
-          equippedItems={equippedItems}
-          targetingMode={targeting.targetingMode}
-          swappedQuickslots={modals.swappedQuickslots}
-          showInventory={modals.showInventory}
-          belongings={belongings}
-          gold={gold}
-          energy={energy}
-          strength={myStats.strength}
-          myStats={myStats}
-          onSearch={handleExamineOrReveal}
-          onInventory={() => modals.setShowInventory(v => !v)}
-          onQuickBag={modals.handleQuickBag}
-          onSwap={modals.handleSwap}
-          onSlotClick={(item, idx, rect) => {
-            if (item && item.kind === 'holy_tome') {
-              modals.openClericCastBar(rect);
-            } else if (!item || item.is_placeholder || item.default_action == null) {
-              modals.openQuickslotPicker(idx);
-            } else {
-              handleToolbarClick(item);
-            }
-          }}
-          onSlotDoubleClick={handleToolbarDoubleClick}
-          onSlotLongPress={(item, idx) => modals.openQuickslotPicker(idx)}
-          onSlotContextMenu={(item, idx) => modals.openQuickslotPicker(idx)}
-          onUseAbility={sendUseAbility}
-          onTriggerBerserk={() => send({ type: 'TRIGGER_BERSERK' })}
-          onPrepStrike={sendPrepStrike}
-          onUseComboMove={sendUseComboMove}
-          onDuelistFinisher={sendDuelistFinisher}
-          onOpenItem={modals.setUseItemTarget}
-          onContextMenu={(item, x, y) => modals.setCtxMenu({ item, x, y })}
-          onDefaultAction={(item) => executeItemAction(item.id, item.default_action)}
-          onCloseInventory={() => modals.setShowInventory(false)}
-          onLayout={setInventoryPos}
-        />
+        {!myStats.isDowned && (
+          <GameHud
+            interfaceSize={interfaceSize}
+            isDesktop={gameDesktop}
+            canvasWidth={viewport.width}
+            assetImages={assetImages}
+            toolbarItems={toolbarItems}
+            equippedItems={equippedItems}
+            targetingMode={targeting.targetingMode}
+            swappedQuickslots={modals.swappedQuickslots}
+            showInventory={modals.showInventory}
+            belongings={belongings}
+            gold={gold}
+            energy={energy}
+            strength={myStats.strength}
+            myStats={myStats}
+            onSearch={handleExamineOrReveal}
+            onInventory={() => modals.setShowInventory(v => !v)}
+            onQuickBag={modals.handleQuickBag}
+            onSwap={modals.handleSwap}
+            onSlotClick={(item, idx, rect) => {
+              if (item && item.kind === 'holy_tome') {
+                modals.openClericCastBar(rect);
+              } else if (!item || item.is_placeholder || item.default_action == null) {
+                modals.openQuickslotPicker(idx);
+              } else {
+                handleToolbarClick(item);
+              }
+            }}
+            onSlotDoubleClick={handleToolbarDoubleClick}
+            onSlotLongPress={(item, idx) => modals.openQuickslotPicker(idx)}
+            onSlotContextMenu={(item, idx) => modals.openQuickslotPicker(idx)}
+            onUseAbility={sendUseAbility}
+            onTriggerBerserk={() => send({ type: 'TRIGGER_BERSERK' })}
+            onPrepStrike={sendPrepStrike}
+            onUseComboMove={sendUseComboMove}
+            onDuelistFinisher={sendDuelistFinisher}
+            onOpenItem={modals.setUseItemTarget}
+            onContextMenu={(item, x, y) => modals.setCtxMenu({ item, x, y })}
+            onDefaultAction={(item) => executeItemAction(item.id, item.default_action)}
+            onCloseInventory={() => modals.setShowInventory(false)}
+            onLayout={setInventoryPos}
+          />
+        )}
 
         <GameLog send={send} />
         <ToastOverlay />
@@ -543,7 +547,6 @@ function App() {
           onAnkhChoice={(ids) => send({ type: 'ANKH_CHOICE', kept_item_ids: ids })}
           onNewGame={() => { clearResumeBundle(); resetForRestart(); setGameState('SELECT'); }}
           onMenu={() => { clearResumeBundle(); resetForRestart(); setGameState('WELCOME'); }}
-          challenges={challenges}
           onReplayTutorial={handleReplayTutorial}
         />
       </div>

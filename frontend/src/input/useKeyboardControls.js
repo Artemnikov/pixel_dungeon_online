@@ -28,6 +28,8 @@ export default function useKeyboardControls(props) {
         gameMenuOpenRef: p.gameMenuOpenRef,
         isRefocusingRef: p.isRefocusingRef,
         isDraggingRef: p.isDraggingRef,
+        isCameraDetachedRef: p.isCameraDetachedRef,
+        panOffsetRef: p.panOffsetRef,
         onCloseItemBrowser: p.onCloseItemBrowser,
         onOpenItemBrowser: p.onOpenItemBrowser,
         setShowInventory: p.setShowInventory,

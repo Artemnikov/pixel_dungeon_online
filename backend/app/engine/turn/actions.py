@@ -33,7 +33,9 @@ from app.engine.game.constants import (
     TIME_TO_ABILITY,
     TIME_TO_ATTACK,
     TIME_TO_DRINK,
+    TIME_TO_DROP,
     TIME_TO_EAT,
+    TIME_TO_EQUIP,
     TIME_TO_INSCRIBE,
     TIME_TO_LIGHT,
     TIME_TO_MOVE_BASE,
@@ -129,11 +131,60 @@ _ITEM_ACTION_COSTS: Dict[str, float] = {
     "ENERGIZE": TIME_TO_ABILITY,
     "DIRECT": TIME_TO_ABILITY,
     "PRICK": TIME_TO_ABILITY,
+    "EQUIP": TIME_TO_EQUIP,
+    "UNEQUIP": TIME_TO_EQUIP,
+    "DROP": TIME_TO_DROP,
 }
+
+_TARGETED_STONES = frozenset(
+    {
+        "magical_infusion",
+        "stone_of_detect_magic",
+        "stone_of_enchantment",
+        "stone_of_intuition",
+        "stone_of_augmentation",
+        "arcane_stylus",
+    }
+)
 
 
 def _item_action_cost(action: str) -> float:
     return _ITEM_ACTION_COSTS.get(action, TIME_TO_ABILITY)
+
+
+def _attack_cost(game, player) -> float:
+    return player.get_attack_delay()
+
+
+def _equip_cost(player, item) -> float:
+    if item is not None and (getattr(item, "type", "") == "weapon" or getattr(item, "slot_type", None) == "weapon"):
+        if hasattr(player, "can_swift_equip") and player.can_swift_equip():
+            return 0.0
+    return TIME_TO_EQUIP
+
+
+def _is_targeted_scroll_action(item, action: str) -> bool:
+    if action != "READ" or item is None:
+        return False
+    from app.engine.entities.scroll_predicates import PREDICATE
+    return getattr(item, "kind", "") in PREDICATE
+
+
+def _is_targeted_stone_action(item, action: str) -> bool:
+    if action != "USE" or item is None:
+        return False
+    return getattr(item, "kind", "") in _TARGETED_STONES
+
+
+def _resolve_item_action_cost(player, item, action_name: str) -> float:
+    """Resolve turn cost for executing an item action."""
+    if action_name == "EQUIP":
+        return _equip_cost(player, item)
+    if action_name == "DROP":
+        return TIME_TO_DROP
+    if _is_targeted_scroll_action(item, action_name) or _is_targeted_stone_action(item, action_name):
+        return 0.0
+    return _item_action_cost(action_name)
 
 
 def _action(cost: float, run: Runner, label: str) -> Builder:
@@ -190,7 +241,86 @@ def _build_move(game, player, message):
 def _build_attack(game, player, message):
     target_id = message.target_id
     return TurnAction(
-        TIME_TO_ATTACK, lambda g, p, _m: g.attack_mob(p.id, target_id), "ATTACK", message
+        _attack_cost(game, player),
+        lambda g, p, _m: g.attack_mob(p.id, target_id),
+        "ATTACK",
+        message,
+    )
+
+
+def _build_use_weapon_ability(game, player, message):
+    weapon = (
+        player.belongings.secondary_weapon
+        if message.use_secondary
+        else player.belongings.weapon
+    )
+    cost = (
+        _attack_cost(game, player)
+        if weapon is not None and getattr(weapon, "type", "") != "shield"
+        else TIME_TO_ABILITY
+    )
+    return TurnAction(
+        cost,
+        lambda g, p, m: g.use_weapon_ability(
+            p.id,
+            target_x=m.target_x,
+            target_y=m.target_y,
+            use_secondary=m.use_secondary,
+        ),
+        "ABILITY",
+        message,
+    )
+
+
+def _build_equip(game, player, message):
+    item = player.belongings.get_item(message.item_id)
+    cost = _equip_cost(player, item)
+    return TurnAction(
+        cost,
+        lambda g, p, m: g.execute_item_action(p.id, m.item_id, "EQUIP"),
+        "EQUIP",
+        message,
+    )
+
+
+def _build_drop(game, player, message):
+    return TurnAction(
+        TIME_TO_DROP,
+        lambda g, p, m: g.execute_item_action(p.id, m.item_id, "DROP"),
+        "DROP",
+        message,
+    )
+
+
+def _build_use_item(game, player, message):
+    item = player.belongings.get_item(message.item_id)
+    if item is None:
+        return None
+    default_act = item.default_action()
+    if not default_act:
+        return None
+    cost = _resolve_item_action_cost(player, item, default_act)
+
+    return TurnAction(
+        cost,
+        lambda g, p, m: g.use_item(p.id, m.item_id),
+        "USE",
+        message,
+    )
+
+
+def _build_execute_item_action(game, player, message):
+    item = player.belongings.get_item(message.item_id)
+    action_name = message.action
+    cost = _resolve_item_action_cost(player, item, action_name)
+
+    return TurnAction(
+        cost,
+        lambda gg, pp, _m: gg.execute_item_action(
+            pp.id, message.item_id, action_name, message.target_x, message.target_y
+        ),
+        action_name,
+        message,
     )
 
 
@@ -237,8 +367,10 @@ def _build_use_quickslot(game, player, message):
     cost = TIME_TO_ABILITY
     if 0 <= index < len(player.quickslot.slots):
         item = player.belongings.get_item(player.quickslot.slots[index].item_id)
-        if item is not None and item.default_action():
-            cost = _item_action_cost(item.default_action())
+        if item is not None:
+            default_act = item.default_action()
+            if default_act:
+                cost = _resolve_item_action_cost(player, item, default_act)
     return TurnAction(
         cost,
         lambda g, p, _m: g.use_quickslot(p.id, index, message.target_x, message.target_y),
@@ -259,14 +391,12 @@ _BUILDERS: Dict[str, Builder] = {
     _msg_type(msg.PickupFloor): _action(
         TIME_TO_PICK_UP, lambda g, p, m: g.pickup_floor_items(p.id), "PICKUP"
     ),
+    _msg_type(msg.EquipItem): _build_equip,
+    _msg_type(msg.DropItem): _build_drop,
+    _msg_type(msg.UseItem): _build_use_item,
+    _msg_type(msg.ExecuteItemAction): _build_execute_item_action,
     _msg_type(msg.UseQuickslot): _build_use_quickslot,
-    _msg_type(msg.UseWeaponAbility): _action(
-        TIME_TO_ABILITY,
-        lambda g, p, m: g.use_weapon_ability(
-            p.id, target_x=m.target_x, target_y=m.target_y, use_secondary=m.use_secondary
-        ),
-        "ABILITY",
-    ),
+    _msg_type(msg.UseWeaponAbility): _build_use_weapon_ability,
     _msg_type(msg.UseMonkAbility): _action(
         TIME_TO_ABILITY,
         lambda g, p, m: g.use_monk_ability(
@@ -292,15 +422,17 @@ _BUILDERS: Dict[str, Builder] = {
     _msg_type(msg.TriggerBerserk): _action(
         TIME_TO_ABILITY, lambda g, p, m: g.trigger_berserk(p.id), "BERSERK"
     ),
-    _msg_type(msg.PreparationStrike): _action(
-        TIME_TO_ABILITY,
-        lambda g, p, m: g.preparation_strike(p.id, m.target_x, m.target_y),
+    _msg_type(msg.PreparationStrike): lambda g, p, m: TurnAction(
+        _attack_cost(g, p),
+        lambda gg, pp, mm: gg.preparation_strike(pp.id, mm.target_x, mm.target_y),
         "STRIKE",
+        m,
     ),
-    _msg_type(msg.DuelistFinisher): _action(
-        TIME_TO_ABILITY,
-        lambda g, p, m: g.action_duelist_finisher(p, m.target_x, m.target_y),
+    _msg_type(msg.DuelistFinisher): lambda g, p, m: TurnAction(
+        _attack_cost(g, p),
+        lambda gg, pp, mm: gg.action_duelist_finisher(pp, mm.target_x, mm.target_y),
         "FINISHER",
+        m,
     ),
     _msg_type(msg.AlchemyBrew): _action(
         TIME_TO_ABILITY,
@@ -324,11 +456,6 @@ _BUILDERS: Dict[str, Builder] = {
         lambda g, p, m: g.select_stone_target(p.id, m.stone_id, m.item_id),
         "USE",
     ),
-    _msg_type(msg.StoneIntuitionChooseItem): _action(
-        TIME_TO_ABILITY,
-        lambda g, p, m: g.stone_intuition_pick(p.id, m.stone_id, m.item_id),
-        "USE",
-    ),
     _msg_type(msg.StoneIntuitionGuess): _action(
         TIME_TO_ABILITY,
         lambda g, p, m: g.stone_intuition_guess(
@@ -344,22 +471,6 @@ _BUILDERS: Dict[str, Builder] = {
         "USE",
     ),
 }
-
-# Item actions whose cost depends on which action the item offers; the generic
-# ExecuteItemAction message carries it in `action`.
-_BUILDERS[_msg_type(msg.ExecuteItemAction)] = lambda g, p, m: TurnAction(
-    _item_action_cost(m.action),
-    lambda gg, pp, _m: gg.execute_item_action(pp.id, m.item_id, m.action, m.target_x, m.target_y),
-    m.action,
-    m,
-)
-_BUILDERS[_msg_type(msg.EquipItem)] = _action(
-    0.0, lambda g, p, m: g.execute_item_action(p.id, m.item_id, "EQUIP"), "EQUIP"
-)
-_BUILDERS[_msg_type(msg.DropItem)] = _action(
-    0.0, lambda g, p, m: g.execute_item_action(p.id, m.item_id, "DROP"), "DROP"
-)
-_BUILDERS[_msg_type(msg.UseItem)] = _free(lambda g, p, m: g.use_item(p.id, m.item_id), "USE")
 
 # Menus and metadata: free, and never end a turn.
 _FREE_MENUS: Dict[str, tuple] = {
@@ -442,6 +553,10 @@ _FREE_MENUS: Dict[str, tuple] = {
         lambda g, p, m: g.change_difficulty(m.difficulty),
         "DIFFICULTY",
     ),
+    _msg_type(msg.StoneIntuitionChooseItem): (
+        lambda g, p, m: g.stone_intuition_pick(p.id, m.stone_id, m.item_id),
+        "USE",
+    ),
     _msg_type(msg.SendChat): (lambda g, p, m: g.handle_chat(p.id, m.channel, m.text), "CHAT"),
     _msg_type(msg.AdminTeleport): (lambda g, p, m: g.admin_teleport(p.id, m.target_floor), "ADMIN"),
     _msg_type(msg.AdminLevelUp): (lambda g, p, m: g.admin_level_up(p.id), "ADMIN"),
@@ -465,7 +580,7 @@ for _type_name, (_run, _label) in _FREE_MENUS.items():
 
 def build_turn_action(game, player, message) -> Optional[TurnAction]:
     """Costed action for `message`, or None to consume it for free."""
-    if player is None or not player.is_alive or player.is_downed:
+    if player is None or not player.is_active:
         return None
     builder = _BUILDERS.get(message.type)
     if builder is None:

@@ -184,6 +184,7 @@ test('buildCandidateTargets merges hostile mobs and enemy players, skips self/al
         me: { id: 'me', faction: 'player' },
         red: { id: 'red', faction: 'enemy' },
         downed: { id: 'downed', faction: 'enemy', is_downed: true },
+        afk: { id: 'afk', faction: 'enemy', is_afk: true },
       },
     },
   };

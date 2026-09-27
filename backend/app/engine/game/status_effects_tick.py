@@ -161,6 +161,10 @@ DEFAULT_STATUS_EFFECT_REGISTRY = StatusEffectRegistry([
     PropertyStatusEffectProvider(_provide_fury),
     PropertyStatusEffectProvider(_provide_locked_floor),
     BuffStatusEffectProvider("invisibility", "invisibility", "Invisible", 12, duration=20.0, fallback_buff_type="shadows"),
+    BuffStatusEffectProvider(
+        "paralysis", "paralysis", "Paralyzed", 4,
+        duration_calculator=lambda p, b: max(3.0, getattr(b, "remaining", 0.0)),
+    ),
     BuffStatusEffectProvider("slow", "slow", "Slowed", 23, duration=30.0),
     BuffStatusEffectProvider("bleeding", "bleeding", "Bleeding", 26, duration=30.0),
     BuffStatusEffectProvider("barkskin", "barkskin", "Barkskin", 24, duration=50.0),

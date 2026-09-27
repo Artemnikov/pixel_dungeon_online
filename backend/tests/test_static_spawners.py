@@ -6,6 +6,7 @@ from app.engine.entities.player import Player
 from app.engine.entities.mobs import DemonSpawner, Pylon, RipperDemon, DM300
 from app.engine.dungeon.constants import TileType
 from app.engine.game.constants import MAP_WIDTH, MAP_HEIGHT
+from app.engine.game.constants import GAME_TURN_TICKS
 from app.engine.game.floor_state import FloorState
 from app.engine.manager import GameInstance
 
@@ -156,7 +157,7 @@ def test_activated_pylon_fires_lightning_at_opposite_shock_cells():
 
     assert player.hp < player.get_total_max_hp()
     assert pylon.fire_target_idx == 2
-    assert pylon.bolt_cooldown == 1
+    assert pylon.bolt_cooldown == GAME_TURN_TICKS
 
 
 def test_activated_pylon_takes_damage_with_dr_cap():

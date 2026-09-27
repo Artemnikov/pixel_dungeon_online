@@ -52,6 +52,7 @@ export default function useInputHooks({
     onExamineOrReveal: targeting.handleExamineOrReveal, onCancelModes: handleEscape,
     triggerWait: () => send({ type: 'WAIT' }),
     isRefocusingRef, isDraggingRef, floorFadeRef,
+    isCameraDetachedRef, panOffsetRef,
     quickslot, itemsById,
     gameMenuOpenRef: modals.gameMenuOpenRef,
     showItemBrowserRef: modals.showItemBrowserRef,
@@ -109,13 +110,18 @@ export default function useInputHooks({
 
     if (socketRef.current?.readyState === WebSocket.OPEN) {
       const myPlayer = entitiesRef.current.players[myPlayerIdRef.current];
+      if (myPlayer?.is_downed || myPlayer?.is_alive === false) return;
       const playerTile = myPlayer ? (myPlayer.targetPos || myPlayer.renderPos) : null;
       const action = resolveTapAction({ tileX, tileY, playerTile, mobs: entitiesRef.current.mobs, players: entitiesRef.current.players, grid: gridRef.current, playerFaction: myPlayer?.faction });
       if (action.type === 'OPEN_ALCHEMY') {
         onOpenAlchemyRef.current();
         return;
       }
-      if (action.type === 'MOVE' || action.type === 'PATH_STEPS') isRefocusingRef.current = true;
+      if (action.type === 'MOVE' || action.type === 'PATH_STEPS') {
+        if (isCameraDetachedRef) isCameraDetachedRef.current = false;
+        if (panOffsetRef) panOffsetRef.current = { x: 0, y: 0 };
+        if (isRefocusingRef) isRefocusingRef.current = false;
+      }
       if (isTurnRoom(gameModeRef)) {
         // Turn-based: one tap is one turn, sent as a single message the
         // scheduler can charge. A turn room drops the MOVE_STEP/PATH_STEPS
@@ -161,7 +167,7 @@ export default function useInputHooks({
         }
       }
     }
-  }, [targeting, onOpenAlchemyRef, isRefocusingRef, canvasRef, socketRef, zoomRef, cameraLerpRef, entitiesRef, myPlayerIdRef, gridRef, playerAnimRef, gameModeRef, canActRef]);
+  }, [targeting, onOpenAlchemyRef, isRefocusingRef, isCameraDetachedRef, panOffsetRef, canvasRef, socketRef, zoomRef, cameraLerpRef, entitiesRef, myPlayerIdRef, gridRef, playerAnimRef, gameModeRef, canActRef]);
 
   const handleCanvasClick = useCallback((e) => {
     if (isFloorFadeActive(floorFadeRef)) return;

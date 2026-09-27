@@ -1,12 +1,13 @@
 import { TILE_SIZE } from '../../constants';
 import { spawnFlame, spawnSacrificeFlame } from './flameParticle';
 import { spawnSmoke } from './smokeParticle';
-import { spawnSparkMoving } from './sparkParticle';
+import { spawnSparkMoving, spawnSparkAttracting } from './sparkParticle';
 import { spawnToxicGas, spawnParalyticGas, spawnCorrosiveGas, spawnConfusionGas } from './gasParticle';
 import { setLightMode } from './blending';
 
 const BLOB_COLORS = {
   electricity: { fill: '#4488FF', alpha: 0.2, edge: '#88CCFF' },
+  pylon_energy: { fill: '#4488FF', alpha: 0.22, edge: '#88CCFF' },
   toxic_gas: { fill: '#00CC33', alpha: 0.12 },
   paralytic_gas: { fill: '#9900CC', alpha: 0.12 },
   corrosive_gas: { fill: '#88CC00', alpha: 0.12 },
@@ -20,7 +21,7 @@ const FIRE_TYPES = new Set(['fire', 'tengu_fire']);
 // Rate doubled vs SPD so the field reads as fire at a glance.
 const FIRE_POUR_INTERVAL = 0.015;
 
-const ELECTRIC_TYPES = new Set(['electricity', 'tengu_shocker']);
+const ELECTRIC_TYPES = new Set(['electricity', 'pylon_energy', 'tengu_shocker']);
 const SPARK_EMIT_RATE = 12;
 
 const SACRIFICE_TYPES = new Set(['sacrificial_fire']);
@@ -45,7 +46,7 @@ function randomVisibleCell(area, visible) {
   return visibleKeys[(Math.random() * visibleKeys.length) | 0];
 }
 
-export function advanceAndDrawBlobParticles(ctx, { blobAreasRef, visionRef, particlesRef }) {
+export function advanceAndDrawBlobParticles(ctx, { blobAreasRef, visionRef, particlesRef, entitiesRef }) {
   if (!blobAreasRef?.current) return;
   const now = performance.now();
   if (lastNow == null) lastNow = now;
@@ -53,6 +54,28 @@ export function advanceAndDrawBlobParticles(ctx, { blobAreasRef, visionRef, part
   lastNow = now;
 
   const visible = visionRef?.current?.visible;
+  const mobs = entitiesRef?.current?.mobs || {};
+
+  // Find active Pylon (or fallback to DM-300) for directed spark flow (CavesBossLevel.java:900)
+  let energyTarget = null;
+  for (const m of Object.values(mobs)) {
+    if (m.is_alive !== false && m.name === 'Pylon' && m.activated) {
+      energyTarget = m;
+      break;
+    }
+  }
+  if (!energyTarget) {
+    for (const m of Object.values(mobs)) {
+      if (m.is_alive !== false && m.name === 'DM-300') {
+        energyTarget = m;
+        break;
+      }
+    }
+  }
+
+  const targetX = energyTarget ? ((energyTarget.renderPos?.x ?? energyTarget.pos?.x ?? 0) * TILE_SIZE + TILE_SIZE / 2) : 0;
+  const targetY = energyTarget ? ((energyTarget.renderPos?.y ?? energyTarget.pos?.y ?? 0) * TILE_SIZE + TILE_SIZE / 2) : 0;
+
   for (const [, area] of Object.entries(blobAreasRef.current)) {
     if (FIRE_TYPES.has(area.type)) {
       area.pourAcc = (area.pourAcc || 0) + dt;
@@ -96,7 +119,22 @@ export function advanceAndDrawBlobParticles(ctx, { blobAreasRef, visionRef, part
         spawnSacrificeFlame(particlesRef, px, py, 1);
       }
     }
-    if (ELECTRIC_TYPES.has(area.type)) {
+    if (area.type === 'pylon_energy' && energyTarget) {
+      // DIRECTED_SPARKS (CavesBossLevel.java:897): sparks flow toward the active pylon
+      for (const [key] of area.cells) {
+        if (visible && !visible.has(key)) continue;
+        const [x, y] = key.split(',').map(Number);
+        const cx = x * TILE_SIZE + TILE_SIZE / 2;
+        const cy = y * TILE_SIZE + TILE_SIZE / 2;
+        const dist = Math.max(Math.abs(targetX - cx), Math.abs(targetY - cy));
+        const distGate = Math.max(0, Math.min(dist - 40, 320));
+        // More sparks closer up, but all cells continuously stream towards pylon
+        const emitProb = dt * SPARK_EMIT_RATE * (1.2 - (distGate / 360) * 0.6);
+        if (Math.random() < emitProb) {
+          spawnSparkAttracting(particlesRef, cx, cy, targetX, targetY, 1);
+        }
+      }
+    } else if (ELECTRIC_TYPES.has(area.type)) {
       for (const [key] of area.cells) {
         if (visible && !visible.has(key)) continue;
         if (Math.random() > dt * SPARK_EMIT_RATE) continue;

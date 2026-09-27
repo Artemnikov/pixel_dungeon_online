@@ -66,6 +66,7 @@ export interface AnimState {
   readUntil?: number;
   pumpUntil?: number;
   chargeUntil?: number;
+  zapUntil?: number;
 }
 
 export interface Projectile {
@@ -237,6 +238,7 @@ export interface HookProps {
   searchEffectsRef: Ref<unknown[]>;
   floatingTextRef: Ref<unknown[]>;
   warnedTilesRef?: Ref<{ tiles: [number, number][]; untilMs: number } | null>;
+  rockfallTelegraphRef?: Ref<{ cells: [number, number][]; untilMs: number; durationMs: number } | null>;
   screenFlashRef?: Ref<{ until: number } | null>;
   transmuteEffectsRef?: Ref<unknown[]>;
   flareEffectsRef?: Ref<unknown[]>;
@@ -285,6 +287,7 @@ export interface HookProps {
   onDM300FightStarted?: (data: { mob: string }) => void;
   onDwarfKingFightStarted?: (data: { mob: string }) => void;
   onDwarfKingPhase2?: (data: { mob: string }) => void;
+  onDwarfKingPhase3?: (data: { mob: string }) => void;
   onYogFightStarted?: (data: { mob: string }) => void;
   onYogFinalPhase?: (data: { mob: string }) => void;
   onShopOpen?: (data: { npc: string; stock: SerializedItem[]; gold: number }) => void;
@@ -331,6 +334,7 @@ export type HandlerCtx = Pick<
   | 'searchEffectsRef'
   | 'floatingTextRef'
   | 'warnedTilesRef'
+  | 'rockfallTelegraphRef'
   | 'screenFlashRef'
   | 'transmuteEffectsRef'
   | 'flareEffectsRef'
@@ -358,6 +362,7 @@ export type HandlerCtx = Pick<
   onDM300FightStarted?: HookProps['onDM300FightStarted'];
   onDwarfKingFightStarted?: HookProps['onDwarfKingFightStarted'];
   onDwarfKingPhase2?: HookProps['onDwarfKingPhase2'];
+  onDwarfKingPhase3?: HookProps['onDwarfKingPhase3'];
   onYogFightStarted?: HookProps['onYogFightStarted'];
   onYogFinalPhase?: HookProps['onYogFinalPhase'];
   onShopOpen?: HookProps['onShopOpen'];

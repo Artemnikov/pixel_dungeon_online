@@ -13,6 +13,8 @@ export interface InputContext {
   gameMenuOpenRef?: { current: boolean };
   isRefocusingRef?: { current: boolean };
   isDraggingRef?: { current: boolean };
+  isCameraDetachedRef?: { current: boolean };
+  panOffsetRef?: { current: { x: number; y: number } };
   onCloseItemBrowser?: () => void;
   onOpenItemBrowser?: () => void;
   setShowInventory?: (cb: (prev: boolean) => boolean) => void;

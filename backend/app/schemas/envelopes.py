@@ -54,6 +54,9 @@ class InitMessage(_Envelope):
     # the first STATE_UPDATE arrives. Always present on a connect INIT; omitted
     # on the floor-change INIT, where the mode cannot have changed.
     game_mode: Optional[str] = None
+    # Turn-based rooms: initial turn state so the client can immediately render
+    # turn badges and gate input without waiting for the first STATE_UPDATE.
+    turn: Optional[Dict[str, Any]] = None
 
 
 class MoveResultMessage(_Envelope):

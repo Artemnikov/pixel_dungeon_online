@@ -640,244 +640,41 @@ class CavesBossExitRoom(Room):
 # City Boss (DwarfKing, depth 20) room types
 # ===========================================================================
 
+from app.engine.dungeon.spd_levelgen.city_boss_layout import (  # noqa: E402
+    CityBossEntranceRoom,
+    CityBossExitRoom,
+    DwarfKingBossRoom,
+)
+
+
 def _build_city_boss_floor(rng: SPDRandom, depth: int, run_state: RunState) -> Tuple[GenLevel, List[Room]]:
-    """Simplified city boss level (DwarfKing, depth 20). Throne room arena."""
-    from app.engine.dungeon.spd_levelgen.city_painter import CityPainter
+    """Direct port of CityBossLevel.java (Dwarf King, depth 20): the fixed
+    15x48 layout with entrance library, diamond throne arena, summon pedestals,
+    exit chasm walkway, grand stairs, and custom ground/wall visuals."""
+    from app.engine.dungeon.spd_levelgen import city_boss_layout as layout
 
-    level = GenLevel(depth, Feeling.NONE)
-    level.run_state = run_state
-
-    while True:
-        builder = _boss_builder(rng)
-        init_rooms = _city_boss_init_rooms(rng, depth)
-        rng.shuffle(init_rooms)
-        for r in init_rooms:
-            r.neighbours.clear()
-            r.connected.clear()
-        rooms = builder.build(list(init_rooms), rng, depth)
-        if rooms is not None:
-            break
-
-    painter = (CityPainter(depth)
-               .set_water(0.10, 4)
-               .set_grass(0.05, 3)
-               .set_traps(0, (), ()))
-    painter.paint(rng, level, rooms)
-
-    level.rooms = rooms
-    level.room_entrance = next(r for r in rooms if r.is_entrance())
-    level.room_exit = next(r for r in rooms if r.is_exit())
-    level.build_flag_maps()
-
+    level, rooms = layout.build(rng, depth, run_state)
     _boss_create_items(rng, level)
     return level, rooms
-
-
-def _city_boss_init_rooms(rng: SPDRandom, depth: int) -> List[Room]:
-    rooms: List[Room] = []
-    entrance = CityBossEntranceRoom()
-    entrance.init_size_cat(rng)
-    rooms.append(entrance)
-    exit_ = CityBossExitRoom()
-    exit_.init_size_cat(rng)
-    rooms.append(exit_)
-    for _ in range(3):
-        s = create_standard_room(rng, depth)
-        s.set_size_cat(rng, 0, 0)
-        rooms.append(s)
-    boss_room = DwarfKingBossRoom()
-    boss_room.init_size_cat(rng)
-    rooms.append(boss_room)
-
-    # ImpShopRoom (Imp quest reward shop): always part of the layout, but
-    # only populated once Imp.Quest is completed (room_types.ImpShopRoom.paint).
-    from app.engine.dungeon.spd_levelgen.room_types import ImpShopRoom
-    rooms.append(ImpShopRoom())
-
-    return rooms
-
-
-class CityBossEntranceRoom(StandardRoom):
-    def min_width(self) -> int:
-        return max(super().min_width(), 7)
-
-    def min_height(self) -> int:
-        return max(super().min_height(), 7)
-
-    def is_entrance(self) -> bool:
-        return True
-
-    def paint(self, level, rng) -> None:
-        Painter.fill(level, self, terrain.WALL)
-        Painter.fill(level, self, 1, terrain.EMPTY)
-        entrance = level.point_to_cell(self.random(rng, 2))
-        Painter.set(level, entrance, terrain.ENTRANCE)
-        for door in self.connected.values():
-            door.set(DoorType.REGULAR)
-
-
-class CityBossExitRoom(StandardRoom):
-    def min_width(self) -> int:
-        return max(super().min_width(), 7)
-
-    def min_height(self) -> int:
-        return max(super().min_height(), 7)
-
-    def is_exit(self) -> bool:
-        return True
-
-    def paint(self, level, rng) -> None:
-        Painter.fill(level, self, terrain.WALL)
-        Painter.fill(level, self, 1, terrain.EMPTY)
-        c = self.center(rng)
-        Painter.set(level, c, terrain.EXIT)
-        for door in self.connected.values():
-            door.set(DoorType.REGULAR)
-
-
-class DwarfKingBossRoom(StandardRoom):
-    def size_cat_probs(self):
-        return [0.0, 1.0, 0.0]
-
-    def min_width(self) -> int:
-        return max(super().min_width(), 12)
-
-    def min_height(self) -> int:
-        return max(super().min_height(), 12)
-
-    def paint(self, level, rng) -> None:
-        Painter.fill(level, self, terrain.WALL)
-        Painter.fill(level, self, 1, terrain.EMPTY)
-
-        for door in self.connected.values():
-            door.set(DoorType.REGULAR)
-
-        c = self.center(rng)
-        dk_pos = level.point_to_cell(c)
-        level.mobs.append(GenMob(cls_name="DwarfKing", pos=dk_pos))
-
-        # 4 summon pedestals at room corners (inset 2 from wall)
-        level.dk_summon_spots = [
-            (self.left + 2, self.top + 2),
-            (self.right - 2, self.top + 2),
-            (self.right - 2, self.bottom - 2),
-            (self.left + 2, self.bottom - 2),
-        ]
 
 
 # ===========================================================================
 # Halls Boss (YogDzewa, depth 25) room types
 # ===========================================================================
 
+from app.engine.dungeon.spd_levelgen.halls_boss_layout import (  # noqa: E402
+    HallsBossEntranceRoom,
+    HallsBossExitRoom,
+    YogDzewaBossRoom,
+)
+
+
 def _build_halls_boss_floor(rng: SPDRandom, depth: int, run_state: RunState) -> Tuple[GenLevel, List[Room]]:
-    """Halls boss level (YogDzewa, depth 25). Demonic arena."""
-    from app.engine.dungeon.spd_levelgen.halls_painter import HallsPainter
+    """Direct port of HallsBossLevel.java (Yog-Dzewa, depth 25): the 32x32
+    arena layout with centerpiece platform/altar, custom ground/wall visuals,
+    and Yog-Dzewa mob."""
+    from app.engine.dungeon.spd_levelgen import halls_boss_layout as layout
 
-    level = GenLevel(depth, Feeling.NONE)
-    level.run_state = run_state
-
-    while True:
-        builder = _boss_builder(rng)
-        init_rooms = _halls_boss_init_rooms(rng, depth)
-        rng.shuffle(init_rooms)
-        for r in init_rooms:
-            r.neighbours.clear()
-            r.connected.clear()
-        rooms = builder.build(list(init_rooms), rng, depth)
-        if rooms is not None:
-            break
-
-    painter = (HallsPainter()
-               .set_water(0.10, 4)
-               .set_grass(0.05, 3)
-               .set_traps(0, (), ()))
-    painter.paint(rng, level, rooms)
-
-    level.rooms = rooms
-    level.room_entrance = next(r for r in rooms if r.is_entrance())
-    level.room_exit = next(r for r in rooms if r.is_exit())
-    level.build_flag_maps()
-
+    level, rooms = layout.build(rng, depth, run_state)
     _boss_create_items(rng, level)
     return level, rooms
-
-
-def _halls_boss_init_rooms(rng: SPDRandom, depth: int) -> List[Room]:
-    rooms: List[Room] = []
-    entrance = HallsBossEntranceRoom()
-    entrance.init_size_cat(rng)
-    rooms.append(entrance)
-    exit_ = HallsBossExitRoom()
-    exit_.init_size_cat(rng)
-    rooms.append(exit_)
-    for _ in range(3):
-        s = create_standard_room(rng, depth)
-        s.set_size_cat(rng, 0, 0)
-        rooms.append(s)
-    boss_room = YogDzewaBossRoom()
-    boss_room.init_size_cat(rng)
-    rooms.append(boss_room)
-    return rooms
-
-
-class HallsBossEntranceRoom(StandardRoom):
-    def min_width(self) -> int:
-        return max(super().min_width(), 7)
-
-    def min_height(self) -> int:
-        return max(super().min_height(), 7)
-
-    def is_entrance(self) -> bool:
-        return True
-
-    def paint(self, level, rng) -> None:
-        Painter.fill(level, self, terrain.WALL)
-        Painter.fill(level, self, 1, terrain.EMPTY)
-        entrance = level.point_to_cell(self.random(rng, 2))
-        Painter.set(level, entrance, terrain.ENTRANCE)
-        for door in self.connected.values():
-            door.set(DoorType.REGULAR)
-
-
-class HallsBossExitRoom(StandardRoom):
-    def min_width(self) -> int:
-        return max(super().min_width(), 7)
-
-    def min_height(self) -> int:
-        return max(super().min_height(), 7)
-
-    def is_exit(self) -> bool:
-        return True
-
-    def paint(self, level, rng) -> None:
-        Painter.fill(level, self, terrain.WALL)
-        Painter.fill(level, self, 1, terrain.EMPTY)
-        c = self.center(rng)
-        Painter.set(level, c, terrain.LOCKED_EXIT)
-        for door in self.connected.values():
-            door.set(DoorType.REGULAR)
-
-
-class YogDzewaBossRoom(StandardRoom):
-    def size_cat_probs(self):
-        return [0.0, 1.0, 0.0]
-
-    def min_width(self) -> int:
-        return max(super().min_width(), 14)
-
-    def min_height(self) -> int:
-        return max(super().min_height(), 14)
-
-    def paint(self, level, rng) -> None:
-        Painter.fill(level, self, terrain.WALL)
-        Painter.fill(level, self, 1, terrain.EMPTY)
-
-        for door in self.connected.values():
-            door.set(DoorType.REGULAR)
-
-        # Yog-Dzewa sits at center-top (upper third of room)
-        cx = (self.left + self.right) // 2
-        cy = self.top + (self.height() // 3)
-        yog_pos = level.point_to_cell(Point(cx, cy))
-        level.mobs.append(GenMob(cls_name="YogDzewa", pos=yog_pos))
-        level.yog_pos = (cx, cy)

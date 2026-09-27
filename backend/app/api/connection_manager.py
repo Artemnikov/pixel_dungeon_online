@@ -221,6 +221,8 @@ class ConnectionManager:
             game.players[player_id].is_afk = False
             game.players[player_id].movement.stop()
             game.players[player_id].movement.last_processed_seq = 0
+            if hasattr(game, "mark_dirty"):
+                game.mark_dirty()
             # Re-open any subclass / armor-ability choice window that was up
             # when the player dropped (the choice isn't consumed by wearing
             # the mask/crown, so it survives the reconnect).
@@ -276,7 +278,9 @@ class ConnectionManager:
             exit_pos=getattr(floor, 'exit_pos', None),
             self_player=self_player,
             game_mode=getattr(game, "game_mode", None),
+            turn=game.turn_state_for(player_id),
         )
+        game.mark_dirty()
         try:
             await websocket.send_json(init.model_dump(exclude_none=True))
             self.last_sent_floor.setdefault(game_id, {})[player_id] = (player_floor, map_version)
@@ -332,6 +336,8 @@ class ConnectionManager:
             player.movement.stop()
             # Ghost mode: non-solid, un-targetable, "(AFK)" tag client-side.
             player.is_afk = True
+            if hasattr(game, "mark_dirty"):
+                game.mark_dirty()
             self.disconnect_deadline.setdefault(game_id, {})[player_id] = (
                 time.monotonic() + DISCONNECT_GRACE_SECONDS
             )

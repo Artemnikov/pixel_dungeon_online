@@ -14,6 +14,7 @@ export default function RankingsPane({
   inventory,
   onNewGame,
   onMenu,
+  onClose,
 }) {
   const { t } = useTranslation();
   const score = depth * 100 + level * 50 + gold * 2;
@@ -36,7 +37,7 @@ export default function RankingsPane({
   }
 
   return (
-    <div className="rankings-overlay" onClick={() => {}}>
+    <div className="rankings-overlay" onClick={onClose || (() => {})}>
       <div className="rankings-pane" onClick={e => e.stopPropagation()}>
         <h2 className="rankings-title">{t('rankings.title')}</h2>
 
@@ -99,6 +100,9 @@ export default function RankingsPane({
         <div className="rankings-buttons">
           <button className="rankings-btn" onClick={onNewGame}>{t('game.newGame')}</button>
           <button className="rankings-btn" onClick={onMenu}>{t('game.menuBtn')}</button>
+          {onClose && (
+            <button className="rankings-btn" onClick={onClose}>{t('ui.close', 'Close')}</button>
+          )}
         </div>
       </div>
     </div>

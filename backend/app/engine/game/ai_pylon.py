@@ -3,9 +3,11 @@
 import random
 from typing import Optional
 
+from app.engine.dungeon.constants import TileType
 from app.engine.dungeon.spd_levelgen.level import _CIRCLE8_OFFSETS
 from app.engine.entities.base import Position
-from app.engine.entities.mobs import Pylon
+from app.engine.entities.mobs import DM300, Pylon
+from app.engine.game.constants import GAME_TURN_TICKS
 from app.engine.game.floor_state import FloorState
 
 
@@ -40,7 +42,7 @@ def _update_pylon(game, pylon: Pylon, floor: FloorState, floor_id: int):
                 if taken > 0:
                     game.add_event("DAMAGE", {"target": p.id, "amount": taken, "shock": True}, floor_id=floor_id)
         for m in floor.mobs.values():
-            if m.is_alive and m.id != pylon.id and m.pos.x == cx and m.pos.y == cy:
+            if m.is_alive and m.id != pylon.id and not isinstance(m, DM300) and m.pos.x == cx and m.pos.y == cy:
                 dmg = random.randint(10, 20)
                 taken = m.take_damage(dmg)
                 game.add_event("ATTACK", {"source": pylon.id, "target": m.id,
@@ -53,7 +55,7 @@ def _update_pylon(game, pylon: Pylon, floor: FloorState, floor_id: int):
                                   "x": pylon.pos.x, "y": pylon.pos.y}, floor_id=floor_id)
 
     pylon.fire_target_idx = (pylon.fire_target_idx + 1) % 8
-    pylon.bolt_cooldown = 1
+    pylon.bolt_cooldown = GAME_TURN_TICKS
 
 
 def _activate_pylon(game, floor: FloorState, floor_id: int, near_pos: Optional[Position] = None):
@@ -71,3 +73,26 @@ def _activate_pylon(game, floor: FloorState, floor_id: int, near_pos: Optional[P
     chosen.activated = True
     game.add_event("PYLON_ACTIVATED", {"mob": chosen.id,
                                        "x": chosen.pos.x, "y": chosen.pos.y}, floor_id=floor_id)
+
+    # Port of CavesBossLevel.activatePylon(): seeds PylonEnergy blob on all
+    # wires (INACTIVE_TRAP), water (FLOOR_WATER), and gate (WALL_DECO) cells
+    # within the arena region.
+    energy_cells = set()
+    start_y = 13  # mainArena.top - 1
+    for y in range(start_y, floor.height):
+        for x in range(floor.width):
+            tile = floor.grid[y][x]
+            if tile in (TileType.INACTIVE_TRAP, TileType.FLOOR_WATER, TileType.WALL_DECO):
+                energy_cells.add((x, y))
+
+    if energy_cells:
+        blob_id = "dm300_pylon_energy"
+        floor.blob_areas[blob_id] = {
+            "type": "pylon_energy",
+            "cells": energy_cells,
+            "volume": {c: 1 for c in energy_cells},
+            "tick_counter": 0,
+        }
+        cell_list = [(c[0], c[1], 1) for c in energy_cells]
+        game.add_event("BLOB_UPDATE", {"id": blob_id, "type": "pylon_energy", "cells": cell_list}, floor_id=floor_id)
+

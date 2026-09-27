@@ -253,6 +253,9 @@ class Mob(Entity):
     # Last tick's per-player LOS state, used to detect the lost→reacquired
     # transition that arms the surprise window above.
     los_prev_seen: Dict[str, bool] = Field(default_factory=dict, exclude=True)
+    # SPD Mob.enemySeen: whether this mob has seen the player on its turn.
+    # In turn-based mode, surprise attacks succeed whenever enemy_seen is False.
+    enemy_seen: Dict[str, bool] = Field(default_factory=dict, exclude=True)
 
     def die(self, attacker=None, floor_mobs=None, tile_x=0, tile_y=0, players=None):
         pass
@@ -363,6 +366,11 @@ class Player(Entity):
     # mechanics in turn/world.py know whether this turn included a step. The
     # real-time path derives the same signal from player.movement.is_active().
     _moved_this_turn: bool = False
+
+    @property
+    def is_active(self) -> bool:
+        """True if the player is alive, not downed, and not AFK."""
+        return self.is_alive and not self.is_downed and not self.is_afk
 
     @property
     def movement(self) -> PlayerMovementController:
@@ -1145,6 +1153,37 @@ class Player(Entity):
         """Return the real-time duration (seconds) for one step at the current speed."""
         from app.engine.game.constants import TICK_DURATION
         return self.get_step_ticks(enemies_nearby=enemies_nearby) * TICK_DURATION
+
+    def get_attack_delay(self) -> float:
+        """SPD Hero.attackDelay(): base 1.0, scaled by weapon delay factor,
+        strength encumbrance, weapon augment, Ring of Furor, and buffs."""
+        if self.has_buff("lethal_momentum"):
+            return 0.0
+
+        delay = 1.0
+        weapon = self.equipped_weapon
+        if weapon is not None:
+            delay = getattr(weapon, "attack_cooldown", 1.0)
+            aug = getattr(weapon, "augment", None)
+            if aug == "speed":
+                delay *= 2.0 / 3.0
+            elif aug == "damage":
+                delay *= 5.0 / 3.0
+            str_req = getattr(weapon, "strength_requirement", 10)
+            encumbrance = str_req - self.get_effective_strength()
+            if encumbrance > 0:
+                delay *= (1.2 ** encumbrance)
+
+        from app.engine.entities.rings import furor_multiplier
+        speed = furor_multiplier(self)
+        if self.has_buff("sword_dance"):
+            speed += 0.6
+        if self.has_buff("adrenaline"):
+            speed *= 1.5
+        if self.has_buff("slow") or self.has_buff("chill"):
+            speed *= 0.5
+
+        return delay / max(0.1, speed)
 
 
 # Legacy aliases — keep existing imports/constructors working during migration.

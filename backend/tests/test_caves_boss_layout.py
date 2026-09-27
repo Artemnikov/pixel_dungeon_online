@@ -152,3 +152,8 @@ def test_floor_state_adaptation():
     assert len(dm300) == 1
     assert len(pylons) == 4
     assert sorted((p.pos.x, p.pos.y) for p in pylons) == [(4, 13), (4, 37), (28, 13), (28, 37)]
+    assert len(floor.custom_tiles) == 2
+    assert len(floor.custom_walls) == 1
+    # Check that electrical rods (tile 37) are generated in custom_tiles
+    arena_layer = next(l for l in floor.custom_tiles if l["y"] == 12)
+    assert any(37 in row for row in arena_layer["tiles"])

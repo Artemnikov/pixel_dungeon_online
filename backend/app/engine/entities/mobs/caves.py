@@ -1,7 +1,7 @@
 # Copyright (C) 2026 ArtemNikov
 #
 import random
-from typing import List, TYPE_CHECKING
+from typing import List, Optional, TYPE_CHECKING
 
 from pydantic import Field
 
@@ -15,28 +15,41 @@ if TYPE_CHECKING:
 # ---------------------------------------------------------------------------
 
 class DM300(MobEntity):
+    # Stats mirror DM300.java: HP=300, attackSkill=20, defenseSkill=15,
+    # damageRoll 15-25, drRoll 0-10. BOSS+LARGE+INORGANIC, immune to Sleep.
     type: str = "boss"
     name: str = "DM-300"
     hp: int = 300
     max_hp: int = 300
-    attack_skill: int = 22
-    defense_skill: int = 10
+    attack_skill: int = 20
+    defense_skill: int = 15
     damage_min: int = 15
-    damage_max: int = 35
-    dr_min: int = 5
+    damage_max: int = 25
+    dr_min: int = 0
     dr_max: int = 10
     exp: int = 30
     max_lvl: int = 30
     attack_cooldown: float = 2.0
-    properties: List[str] = ["INORGANIC"]
+    ai_state: str = "wandering"
+    properties: List[str] = ["BOSS", "INORGANIC", "LARGE"]
+    immunities: List[str] = ["sleep", "magical_sleep", "drowsy"]
 
-    phase2: bool = False
-    rocket_cooldown: int = 0
     fight_started: bool = False
+
+    # Ability scheduler (DM300.java turnsSinceLastAbility/abilityCooldown/
+    # lastAbility, in game-loop ticks): GAS (toxic vent) and ROCKS (boulder
+    # drop) alternate with SPD's probabilities every 5-9 turns.
+    turns_since_last_ability: int = -1
+    ability_cooldown: int = 0
+    last_ability: str = ""
+    # Delayed boulder drop (DM300.FallingRockBuff): telegraphed cells and
+    # the tick countdown until they land.
+    pending_rockfall: Optional[dict] = None
 
     # Supercharge mechanic (DM300.java damage/supercharge/loseSupercharge).
     pylons_activated: int = 0
     supercharged: bool = False
+    charge_announced: bool = False
     # Set by take_damage when a supercharge threshold is crossed; the combat
     # mixin reads/clears this to trigger CavesBossLevel.activatePylon (which
     # needs floor/player context that take_damage doesn't have).
@@ -76,6 +89,15 @@ class DM300(MobEntity):
             self.pending_pylon_activation = True
 
         return dealt
+
+    def lose_supercharge(self) -> None:
+        # DM300.loseSupercharge(): vulnerable again; the ability timer is
+        # clamped so DM-300 doesn't instantly fire an ability on charge end.
+        self.supercharged = False
+        if self.turns_since_last_ability >= 0:
+            from app.engine.game.constants import GAME_TURN_TICKS
+            self.turns_since_last_ability = min(
+                self.turns_since_last_ability, (5 - 3) * GAME_TURN_TICKS)
 
 class Spinner(MobEntity):
     name: str = "Spinner"
@@ -224,6 +246,8 @@ class Monk(MobEntity):
     dr_max: int = 2
     exp: int = 11
     max_lvl: int = 21
+    attack_cooldown: float = 1.5
+    attack_delay: float = 0.5
     loot_table: List[DropEntry] = [
         DropEntry(item_kind="food", chance=0.083, max_global=0),
     ]

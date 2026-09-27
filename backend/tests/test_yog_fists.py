@@ -58,7 +58,7 @@ def test_burning_fist_zaps_at_range_with_los_and_sets_cooldown(monkeypatch):
     add_player(game, floor, target)
 
     # Hit roll: acu (0.9*36) > df (0.1*0) -> hit. Then damage roll uses randint(8,16).
-    rand_calls = iter([0.9, 0.1])
+    rand_calls = iter([0.9, 0.1] + [0.5] * 20)
     monkeypatch.setattr(random, "random", lambda: next(rand_calls))
     monkeypatch.setattr(random, "randint", lambda a, b: 10)
     monkeypatch.setattr(random, "uniform", lambda a, b: 9.0)
@@ -106,7 +106,7 @@ def test_soiled_fist_zap_roots_on_hit(monkeypatch):
     target = make_player(x=5, y=2, defense_skill=0)
     add_player(game, floor, target)
 
-    rand_calls = iter([0.9, 0.1])  # hit
+    rand_calls = iter([0.9, 0.1] + [0.5] * 20)  # hit
     monkeypatch.setattr(random, "random", lambda: next(rand_calls))
     monkeypatch.setattr(random, "uniform", lambda a, b: 9.0)
 
@@ -208,7 +208,7 @@ def test_burning_fist_zap_miss(monkeypatch):
     add_player(game, floor, target)
 
     # acu (low) < df (high) -> miss
-    rand_calls = iter([0.0, 0.9])
+    rand_calls = iter([0.0, 0.9] + [0.5] * 20)
     monkeypatch.setattr(random, "random", lambda: next(rand_calls))
     monkeypatch.setattr(random, "uniform", lambda a, b: 9.0)
 

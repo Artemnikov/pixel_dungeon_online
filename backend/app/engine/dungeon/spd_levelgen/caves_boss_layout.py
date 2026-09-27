@@ -142,6 +142,102 @@ _corner4 = [
 CORNER_VARIANTS = [_corner1, _corner2, _corner3, _corner4]
 
 
+_OVERHANG_ENTRY_WAY = [
+    0, 7, 7, 7, 4,
+    0, 15, 15, 15, 4,
+    -1, 23, 23, 23, -1,
+    -1, -1, -1, -1, -1,
+    -1, 6, -1, 14, -1,
+    -1, -1, -1, -1, -1,
+    -1, 6, -1, 14, -1,
+    -1, -1, -1, -1, -1,
+    -1, 6, -1, 14, -1,
+    -1, -1, -1, -1, -1,
+    -1, -1, -1, -1, -1,
+]
+
+_ENTRY_WAY = [
+    -1, 7, 7, 7, -1,
+    -1, 1, 2, 3, -1,
+    8, 1, 2, 3, 12,
+    16, 9, 10, 11, 20,
+    16, 16, 18, 20, 20,
+    16, 17, 18, 19, 20,
+    16, 16, 18, 20, 20,
+    16, 17, 18, 19, 20,
+    16, 16, 18, 20, 20,
+    16, 17, 18, 19, 20,
+    24, 25, 26, 27, 28,
+]
+
+
+def create_city_entrance_visuals() -> list[list[int]]:
+    """Port of CavesBossLevel.CityEntrance: decorative city entrance floor at rows 0-10."""
+    tiles = []
+    entry_pos = 0
+    for row in range(11):
+        tile_row = []
+        for col in range(WIDTH):
+            if 14 <= col <= 18:
+                tile_row.append(_ENTRY_WAY[entry_pos])
+                entry_pos += 1
+            elif row == 2:
+                tile_row.append(13)
+            elif row == 3:
+                if col in (9, 23):
+                    tile_row.append(-1)
+                else:
+                    tile_row.append(21)
+            else:
+                tile_row.append(-1)
+        tiles.append(tile_row)
+    return tiles
+
+
+def create_entrance_overhang_visuals() -> list[list[int]]:
+    """Port of CavesBossLevel.EntranceOverhang: decorative city entrance overhang walls at rows 0-10."""
+    tiles = []
+    entry_pos = 0
+    for row in range(11):
+        tile_row = []
+        for col in range(WIDTH):
+            if 14 <= col <= 18:
+                tile_row.append(_OVERHANG_ENTRY_WAY[entry_pos])
+                entry_pos += 1
+            else:
+                tile_row.append(-1)
+        tiles.append(tile_row)
+    return tiles
+
+
+def create_arena_visuals(level: GenLevel) -> list[list[int]]:
+    """Port of CavesBossLevel.ArenaVisuals: wires (electrical rods), pylon mounts, and gate at rows 12-38."""
+    tiles = []
+    w = WIDTH
+    for row in range(27):
+        y = 12 + row
+        tile_row = []
+        for col in range(WIDTH):
+            j = col + y * WIDTH
+            t = level.map[j]
+            idx = -1
+            if t == terrain.EMPTY_SP:
+                for k in PYLON_POSITIONS:
+                    kx = k % w
+                    ky = k // w
+                    if max(abs(col - kx), abs(y - ky)) == 1:
+                        # 3x3 surrounding conductive metal plate
+                        idx = 54 + (col + 8 * y) - (kx + 8 * ky)
+                        break
+            elif t == terrain.INACTIVE_TRAP:
+                idx = 37  # Electrical rod / wire sprite
+            elif y == GATE.top and GATE.left <= col < GATE.right:
+                idx = 40 + (col - GATE.left)  # Closed gate row
+            tile_row.append(idx)
+        tiles.append(tile_row)
+    return tiles
+
+
 def _build_entrance(rng: SPDRandom, level: GenLevel) -> None:
     """Port of CavesBossLevel.buildEntrance() -- a random 8x8 variant stamped
     4-way mirrored around the fixed entrance cell."""
@@ -239,6 +335,34 @@ def _build(rng: SPDRandom, depth: int, challenged: bool) -> GenLevel:
     Painter.fill(level, 15, 9, 3, 1, terrain.STATUE)
     Painter.fill(level, 16, 5, 1, 6, terrain.EMPTY_SP)
     Painter.fill(level, 15, 0, 3, 3, terrain.EXIT)
+
+    # Custom Tilemaps (CityEntrance, EntranceOverhang, ArenaVisuals / wires)
+    level.custom_tiles.append({
+        "texture": "caves_boss",
+        "x": 0,
+        "y": 0,
+        "w": WIDTH,
+        "h": 11,
+        "tiles": create_city_entrance_visuals(),
+    })
+
+    level.custom_walls.append({
+        "texture": "caves_boss",
+        "x": 0,
+        "y": 0,
+        "w": WIDTH,
+        "h": 11,
+        "tiles": create_entrance_overhang_visuals(),
+    })
+
+    level.custom_tiles.append({
+        "texture": "caves_boss",
+        "x": 0,
+        "y": 12,
+        "w": WIDTH,
+        "h": 27,
+        "tiles": create_arena_visuals(level),
+    })
 
     # ensures that all pylons can be reached without stepping over water or wires
     passable = [

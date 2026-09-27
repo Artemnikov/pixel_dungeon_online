@@ -91,7 +91,7 @@ def refresh_visible_enemies(game, actor) -> None:
     called when a walk starts -- otherwise a rat that has been sitting in view
     for three turns would read as newly visible and kill the trip on step one.
     """
-    if actor.cancelled or not actor.player.is_alive or actor.player.is_downed:
+    if actor.cancelled or not actor.player.is_active:
         return
     actor.visible_enemies = visible_hostiles(game, actor.player)
 

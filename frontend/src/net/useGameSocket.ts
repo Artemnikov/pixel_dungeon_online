@@ -72,6 +72,7 @@ export default function useGameSocket({
   flyingItemsRef,
   selectedEnemyIdRef,
   warnedTilesRef,
+  rockfallTelegraphRef,
   wasDownedRef,
   floorFadeRef,
   cameraLerpRef,
@@ -105,6 +106,7 @@ export default function useGameSocket({
   onDM300FightStarted,
   onDwarfKingFightStarted,
   onDwarfKingPhase2,
+  onDwarfKingPhase3,
   onYogFightStarted,
   onYogFinalPhase,
   onShopOpen,
@@ -147,6 +149,7 @@ export default function useGameSocket({
       searchEffectsRef,
       floatingTextRef,
       warnedTilesRef,
+      rockfallTelegraphRef,
       screenFlashRef,
       transmuteEffectsRef,
       flareEffectsRef,
@@ -216,6 +219,7 @@ export default function useGameSocket({
       onDM300FightStarted,
       onDwarfKingFightStarted,
       onDwarfKingPhase2,
+      onDwarfKingPhase3,
       onYogFightStarted,
       onYogFinalPhase,
       onShopOpen,
@@ -346,6 +350,7 @@ export default function useGameSocket({
         // Read here, not off the state frame: a turn-based room has to disable
         // movement prediction before the first STATE_UPDATE is applied.
         if (data.game_mode) turnState.setGameMode(data.game_mode);
+        if (data.turn) turnState.syncTurnState(data.turn);
         if (data.player_id) entities.setMyPlayerId(data.player_id);
 
         entities.setTraps((data.traps || []).map(t => ({
@@ -387,6 +392,7 @@ export default function useGameSocket({
             visible_tiles: [],
             events: [],
             self_player: data.self_player,
+            turn: data.turn,
           }, syncContext);
         }
       };

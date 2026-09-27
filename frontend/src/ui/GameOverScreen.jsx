@@ -25,71 +25,63 @@ export default function GameOverScreen({
   const [showScoreBreakdown, setShowScoreBreakdown] = useState(false);
 
   useEffect(() => {
-    const id = requestAnimationFrame(() => setShown(true));
-    return () => cancelAnimationFrame(id);
+    const id = setTimeout(() => setShown(true), 3000);
+    return () => clearTimeout(id);
   }, []);
-
-  useEffect(() => {
-    if (shown) {
-      const id = setTimeout(() => setShowRankings(true), 1500);
-      return () => clearTimeout(id);
-    }
-  }, [shown]);
 
   return (
     <>
       <div
-        style={{
-          position: 'absolute',
-          inset: 0,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: '20px',
-          zIndex: 50,
-          pointerEvents: 'none',
-          opacity: shown ? 1 : 0,
-          transition: 'opacity 2s ease-in',
-        }}
+        className={`wnd-death-dialog ${shown ? 'wnd-death-dialog--visible' : ''}`}
+        role="dialog"
+        aria-label={t('game.youDied')}
+        onPointerDown={(e) => e.stopPropagation()}
+        onMouseDown={(e) => e.stopPropagation()}
+        onTouchStart={(e) => e.stopPropagation()}
       >
-        <div
-          style={{
-            fontFamily: 'monospace',
-            fontSize: '48px',
-            fontWeight: 'bold',
-            color: '#e74c3c',
-            textShadow: '0 2px 6px #000',
-            letterSpacing: '2px',
-          }}
-        >
+        <div className="wnd-death-title">
           {deathCause === 'fall' ? t('game.youDiedFell', 'You fell to death...') : t('game.youDied')}
         </div>
-        {scoreBreakdown && (
-          <div className="game-over-score" style={{ pointerEvents: 'auto' }}>
-            <div className="game-over-score__row">
-              <span>{t('game.score.kills', 'Enemies slain')}</span>
-              <span>{scoreBreakdown.kills}</span>
-            </div>
-            <div className="game-over-score__row">
-              <span>{t('game.score.floors', 'Floors explored')}</span>
-              <span>{scoreBreakdown.floors}</span>
-            </div>
-            <div className="game-over-score__row">
-              <span>{t('game.score.gold', 'Gold collected')}</span>
-              <span>{scoreBreakdown.gold}</span>
-            </div>
-            {scoreBreakdown.total_score != null && (
-              <button
-                className="wnd-close-btn"
-                style={{ marginTop: '8px', width: '100%' }}
-                onClick={() => setShowScoreBreakdown(true)}
-              >
-                {t('score.title')}
-              </button>
-            )}
+
+        <div className="wnd-death-stats">
+          <div className="wnd-death-stat-row">
+            <span className="wnd-death-stat-label">{t('rankings.class')}</span>
+            <span className="wnd-death-stat-value">{classType} {subclass || ''} (Lvl {level})</span>
           </div>
-        )}
+          <div className="wnd-death-stat-row">
+            <span className="wnd-death-stat-label">{t('rankings.depth')}</span>
+            <span className="wnd-death-stat-value">{depth}</span>
+          </div>
+          {scoreBreakdown && (
+            <>
+              <div className="wnd-death-stat-row">
+                <span className="wnd-death-stat-label">{t('game.score.kills', 'Enemies slain')}</span>
+                <span className="wnd-death-stat-value">{scoreBreakdown.kills}</span>
+              </div>
+              <div className="wnd-death-stat-row">
+                <span className="wnd-death-stat-label">{t('game.score.gold', 'Gold collected')}</span>
+                <span className="wnd-death-stat-value">{scoreBreakdown.gold}</span>
+              </div>
+            </>
+          )}
+        </div>
+
+        <div className="wnd-death-actions">
+          <button className="wnd-death-btn wnd-death-btn--primary" onClick={onNewGame}>
+            {t('game.newGame', 'New Game')}
+          </button>
+          <button className="wnd-death-btn" onClick={onMenu}>
+            {t('game.menuBtn', 'Menu')}
+          </button>
+          <button className="wnd-death-btn wnd-death-btn--secondary" onClick={() => setShowRankings(true)}>
+            {t('rankings.title', 'Rankings')}
+          </button>
+          {scoreBreakdown?.total_score != null && (
+            <button className="wnd-death-btn wnd-death-btn--secondary" onClick={() => setShowScoreBreakdown(true)}>
+              {t('score.title', 'Score')}
+            </button>
+          )}
+        </div>
       </div>
 
       {showScoreBreakdown && (
@@ -113,6 +105,7 @@ export default function GameOverScreen({
           inventory={inventory}
           onNewGame={onNewGame}
           onMenu={onMenu}
+          onClose={() => setShowRankings(false)}
         />
       )}
     </>

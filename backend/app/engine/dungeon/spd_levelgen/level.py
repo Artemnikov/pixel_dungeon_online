@@ -100,7 +100,8 @@ class GenLevel:
         # (Generator POTION/SCROLL deck state) without changing every room's
         # paint(level, rng) signature. Untyped here to avoid an import cycle
         # (run_state -> special_rooms -> level).
-        self.run_state = None
+        self.run_state: Any = None
+        self.imp_shop_room: Optional[dict] = None
         # itemsToSpawn (Level.create()'s preamble queues PotionOfStrength/
         # ScrollOfUpgrade/Stylus/StoneOf*/TrinketCatalyst/a FOOD roll before
         # special rooms paint -- see RunState.consume_item_preamble); entries
@@ -142,6 +143,8 @@ class GenLevel:
         # SPD's Torch Emitter+Halo positions (e.g. SewerBossLevel.addVisuals()) --
         # purely cosmetic flame VFX, not a terrain tile.
         self.torches: list[tuple[int, int]] = []
+        self.entrance_cell: Optional[int] = None
+        self.exit_cell: Optional[int] = None
         # Which Builder shape produced this floor's room graph ("loop" or
         # "figure_eight") -- set by build_floor, surfaced via generation_meta
         # for layout-dependent debug/test assertions.
@@ -245,6 +248,8 @@ class GenLevel:
         ENTRANCE_SP onto (LevelTransition.cell(), scanned directly since
         exactly one such tile exists per floor and no transition machinery
         is otherwise needed for layout/spawn parity)."""
+        if self.entrance_cell is not None:
+            return self.entrance_cell
         for cell, value in enumerate(self.map):
             if value == terrain.ENTRANCE or value == terrain.ENTRANCE_SP:
                 return cell
@@ -256,6 +261,8 @@ class GenLevel:
         terrain; regular floors paint Terrain.EXIT there, but boss floors
         (SewerBossExitRoom et al.) paint Terrain.LOCKED_EXIT instead, so
         scanning for EXIT alone misses every boss floor's exit cell."""
+        if self.exit_cell is not None:
+            return self.exit_cell
         for cell, value in enumerate(self.map):
             if value == terrain.EXIT or value == terrain.LOCKED_EXIT:
                 return cell

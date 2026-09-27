@@ -63,6 +63,9 @@ import {
   RIPPER_FW,
   RIPPER_FH,
   RIPPER_DEST,
+  LARVA_FW,
+  LARVA_FH,
+  LARVA_DEST,
   PYLON_FW,
   PYLON_FH,
   PYLON_DEST,
@@ -119,6 +122,7 @@ import {
   getFetidRatFrame,
   getFistFrame,
   getGhostFrame,
+  getGhoulFrame,
   getGnollFrame,
   getGnollTricksterFrame,
   getGooFrame,
@@ -128,12 +132,12 @@ import {
   getHermitCrabFrame,
   getImpFrame,
   getKeeperFrame,
+  getLarvaFrame,
   getMimicFrame,
   getMonkFrame,
   getNecromancerFrame,
   getNewbornElementalFrame,
   getPiranhaFrame,
-  getPylonFrame,
   getRatFrame,
   getRatKingFrame,
   getRipperFrame,
@@ -156,6 +160,7 @@ import {
   getWarlockFrame,
   getWraithFrame,
   getYogFrame,
+  getDwarfKingFrame,
 } from './mobs';
 
 // Gnoll's 12x15 frame, centered/bottom-aligned in the 32px tile per SPD placement
@@ -248,6 +253,7 @@ const MOB_SPRITES = {
   // City
   'Ghoul': { key: 'ghoul', frame: getGhoulFrame, fw: GHOUL_FW, fh: GHOUL_FH, dest: GHOUL_DEST },
   'DK Ghoul': { key: 'ghoul', frame: getGhoulFrame, fw: GHOUL_FW, fh: GHOUL_FH, dest: GHOUL_DEST },
+  'Monk': { key: 'monk', frame: getMonkFrame, fw: MONK_FW, fh: MONK_FH, dest: MONK_DEST },
   'DK Monk': { key: 'monk', frame: getMonkFrame, fw: MONK_FW, fh: MONK_FH, dest: MONK_DEST },
   'Warlock': { key: 'warlock', frame: getWarlockFrame, fw: WARLOCK_FW, fh: WARLOCK_FH, dest: WARLOCK_DEST },
   'DK Warlock': { key: 'warlock', frame: getWarlockFrame, fw: WARLOCK_FW, fh: WARLOCK_FH, dest: WARLOCK_DEST },
@@ -257,6 +263,7 @@ const MOB_SPRITES = {
 
   // Halls
   'Yog-Dzewa': { key: 'yog', frame: getYogFrame, fw: YOG_FW, fh: YOG_FH, dest: YOG_DEST },
+  'Larva': { key: 'larva', frame: getLarvaFrame, fw: LARVA_FW, fh: LARVA_FH, dest: LARVA_DEST },
   'Yog Ripper': { key: 'ripper', frame: getRipperFrame, fw: RIPPER_FW, fh: RIPPER_FH, dest: RIPPER_DEST },
   'Ripper Demon': { key: 'ripper', frame: getRipperFrame, fw: RIPPER_FW, fh: RIPPER_FH, dest: RIPPER_DEST },
   'Evil Eye': { key: 'eye', frame: getEyeFrame, fw: EYE_FW, fh: EYE_FH, dest: EYE_DEST },
@@ -299,5 +306,7 @@ export function resolveMobSprite(mob, assetImages, mobAnim = {}, now = 0) {
     alpha: spec.alpha ?? 1,
   };
 }
+
+export const tileDest = (fw, fh) => ({ dx: Math.round((32 - fw * 2) / 2), dy: 32 - fh * 2, dw: fw * 2, dh: fh * 2 });
 
 export const MOB_SHEET_ROWS = { SHAMAN_ROWS, FIST_ROWS, MIMIC_ROWS, tileDest };

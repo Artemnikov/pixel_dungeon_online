@@ -18,6 +18,7 @@ export class DirectionalMoveCommand implements IKeyCommand {
 
   public canExecute(code: string, context: InputContext): boolean {
     if (!DIRECTION_KEYS.has(code)) return false;
+    if (context.myPlayer?.is_downed || context.myPlayer?.is_alive === false) return false;
     if (this.isTurnMode(context) && context.canActRef?.current === false) return false;
     return true;
   }
@@ -45,6 +46,8 @@ export class DirectionalMoveCommand implements IKeyCommand {
     if (!direction) return;
     if (context.isRefocusingRef) context.isRefocusingRef.current = true;
     if (context.isDraggingRef) context.isDraggingRef.current = false;
+    if (context.isCameraDetachedRef) context.isCameraDetachedRef.current = false;
+    if (context.panOffsetRef) context.panOffsetRef.current = { x: 0, y: 0 };
     context.socket?.send(JSON.stringify({ type: 'MOVE', direction }));
   }
 
@@ -77,6 +80,8 @@ export class DirectionalMoveCommand implements IKeyCommand {
 
     if (context.isRefocusingRef) context.isRefocusingRef.current = true;
     if (context.isDraggingRef) context.isDraggingRef.current = false;
+    if (context.isCameraDetachedRef) context.isCameraDetachedRef.current = false;
+    if (context.panOffsetRef) context.panOffsetRef.current = { x: 0, y: 0 };
 
     const me = context.myPlayer;
     if (me && (isKeyDown || !movementPredictor.isPending())) {

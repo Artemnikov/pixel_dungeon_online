@@ -59,7 +59,7 @@ export function resolveTapAction({ tileX, tileY, playerTile, mobs, players, grid
       }
       if (players) {
         for (const p of Object.values(players)) {
-          if (p.is_alive !== false && !p.is_downed && (p.faction || 'player') !== playerFaction) {
+          if (p.is_alive !== false && !p.is_downed && !p.is_afk && (p.faction || 'player') !== playerFaction) {
             hostileMobs.add(`${Math.round(p.pos.x)},${Math.round(p.pos.y)}`);
           }
         }

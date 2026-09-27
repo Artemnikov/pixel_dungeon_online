@@ -41,6 +41,8 @@ function createContext(overrides = {}) {
     playerAnimRef: { current: null },
     isRefocusingRef: { current: false },
     isDraggingRef: { current: false },
+    isCameraDetachedRef: { current: false },
+    panOffsetRef: { current: { x: 0, y: 0 } },
     ...overrides,
   };
 }
@@ -146,4 +148,32 @@ test('DirectionalMoveCommand: paceStep never auto-walks in a turn room', () => {
 
   command.paceStep(ctx);
   assert.deepEqual(ctx.socket.sent, []);
+});
+
+test('DirectionalMoveCommand: reattaches camera and clears panOffset on move intent', () => {
+  const pressedKeys = new Set(['KeyD']);
+  const command = new DirectionalMoveCommand(pressedKeys);
+  const isCameraDetachedRef = { current: true };
+  const panOffsetRef = { current: { x: 50, y: -20 } };
+  const ctx = createContext({
+    isCameraDetachedRef,
+    panOffsetRef,
+  });
+
+  command.syncMoveIntent(ctx, true);
+  assert.equal(isCameraDetachedRef.current, false);
+  assert.deepEqual(panOffsetRef.current, { x: 0, y: 0 });
+});
+
+test('DirectionalMoveCommand: canExecute refuses movement when player is downed or dead', () => {
+  const command = new DirectionalMoveCommand(new Set());
+  const downedCtx = createContext({
+    myPlayer: { ...createPlayer(), is_downed: true },
+  });
+  assert.equal(command.canExecute('KeyD', downedCtx), false);
+
+  const deadCtx = createContext({
+    myPlayer: { ...createPlayer(), is_alive: false },
+  });
+  assert.equal(command.canExecute('KeyD', deadCtx), false);
 });

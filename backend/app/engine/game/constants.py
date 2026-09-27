@@ -20,6 +20,7 @@ TARGET_TICK_INTERVAL: float = TICK_DURATION
 
 # Movement pacing derived from tick rate
 AUTO_MOVE_INTERVAL = 0.15  # real seconds per tile at base speed
+TURN_BASED_WALK_SPEED_MULTIPLIER = 2.0  # 2x walk animation speed in turn-based mode
 BASE_STEP_TICKS = max(1, int(round(AUTO_MOVE_INTERVAL * GAME_LOOP_HZ)))  # ticks per step (e.g. 6 at 40Hz)
 MAX_PLAYER_INPUT_QUEUE = 8
 KEY_TIME_TO_UNLOCK = 0.5
@@ -148,8 +149,10 @@ TIME_TO_SEARCH = 2.0
 # Hero.TIME_TO_REST -- actors/hero/Hero.java:203
 TIME_TO_REST = 1.0
 # Item.TIME_TO_PICK_UP / TIME_TO_DROP / TIME_TO_THROW -- items/Item.java:66-68
+# EquipableItem.timeToEquip -- items/EquipableItem.java:118
 TIME_TO_PICK_UP = 1.0
 TIME_TO_DROP = 1.0
+TIME_TO_EQUIP = 1.0
 TIME_TO_THROW = 1.0
 # Scroll.TIME_TO_READ -- items/scrolls/Scroll.java:71
 TIME_TO_READ = 1.0

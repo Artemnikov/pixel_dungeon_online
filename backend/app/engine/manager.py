@@ -235,6 +235,9 @@ class GameInstance(
     def should_broadcast(self) -> bool:
         return True
 
+    def mark_dirty(self) -> None:
+        return None
+
     def on_broadcast_complete(self) -> None:
         return None
 
@@ -249,6 +252,10 @@ class GameInstance(
         """
         return True
 
+    def _get_step_duration_multiplier(self) -> float:
+        """Speed multiplier applied to step animation duration."""
+        return 1.0
+
     def step_player_move(self, player_id: str, dx: int, dy: int) -> None:
         """Move one tile: the single movement path for both game modes.
 
@@ -259,7 +266,7 @@ class GameInstance(
         only in who enforces the wait (see `_gate_steps_on_wall_clock`).
         """
         player = self.players.get(player_id)
-        if player is None or player.is_downed or not player.is_alive:
+        if player is None or not player.is_active:
             return
         player.movement.stop()
         if self._gate_steps_on_wall_clock() and not player.movement.is_ready_for_step():
@@ -268,9 +275,8 @@ class GameInstance(
         pre_x, pre_y = player.pos.x, player.pos.y
         self.move_entity(player_id, dx, dy)
         if (player.pos.x, player.pos.y) != (pre_x, pre_y):
-            step_duration = player.get_step_duration(
-                enemies_nearby=self._has_enemies_nearby(floor, player, radius=3)
-            )
+            enemies_nearby = self._has_enemies_nearby(floor, player, radius=3) if floor else False
+            step_duration = player.get_step_duration(enemies_nearby=enemies_nearby) / self._get_step_duration_multiplier()
             player.movement.on_step_executed(None, step_duration, dx, dy)
         else:
             player.movement.on_step_failed(None)

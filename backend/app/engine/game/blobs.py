@@ -148,6 +148,69 @@ def _evolve_electricity_blob(
         events.append(_blob_ev(origin, "PLAY_SOUND", {"sound": "LIGHTNING"}))
 
 
+def _evolve_pylon_energy_blob(
+    floor: FloorState,
+    blob_id: Any,
+    blob: dict,
+    players: Dict[str, Entity],
+    events: List[dict],
+) -> None:
+    # Port of CavesBossLevel.PylonEnergy: persistent energy on wires and water
+    # during pylon activation, dealing 6-12 electricity dmg per turn.
+    tick_counter = blob.get("tick_counter", 0) + 1
+    if tick_counter < GAS_TICK_INTERVAL:
+        blob["tick_counter"] = tick_counter
+        return
+    blob["tick_counter"] = 0
+
+    cells: Set[Tuple[int, int]] = blob.get("cells", set())
+    volume: Dict[Tuple[int, int], int] = blob.get("volume", {})
+    if not cells:
+        return
+
+    from app.engine.entities.mobs import DM300
+
+    # Spreads instantly to all FLOOR_WATER cells in the arena region (y >= 13)
+    cell_changed = False
+    for y in range(13, floor.height):
+        for x in range(floor.width):
+            if floor.grid[y][x] == TileType.FLOOR_WATER and (x, y) not in cells:
+                cells.add((x, y))
+                volume[(x, y)] = 1
+                cell_changed = True
+
+    damaged = False
+    for cx, cy in list(cells):
+        for p in players.values():
+            if p.floor_id != floor.floor_id or not p.is_alive:
+                continue
+            if p.pos.x == cx and p.pos.y == cy and not getattr(p, "flying", False):
+                dmg = random.randint(6, 12)
+                p.take_damage(dmg)
+                events.append({"type": "DAMAGE", "data": {"target": p.id, "amount": dmg, "shock": True}})
+                damaged = True
+
+        for m in list(floor.mobs.values()):
+            if m.is_alive and not getattr(m, "flying", False) and not isinstance(m, DM300) and m.pos.x == cx and m.pos.y == cy:
+                dmg = random.randint(6, 12)
+                taken = m.take_damage(dmg)
+                events.append({"type": "DAMAGE", "data": {"target": m.id, "amount": taken, "shock": True}})
+                damaged = True
+                if not m.is_alive:
+                    m.die(floor_mobs=floor.mobs, tile_x=m.pos.x, tile_y=m.pos.y,
+                          players=list(players.values()))
+                    events.append({"type": "DEATH", "data": {"target": m.id}})
+
+    if damaged:
+        events.append({"type": "PLAY_SOUND", "data": {"sound": "LIGHTNING"}})
+
+    if cell_changed:
+        blob["cells"] = cells
+        blob["volume"] = volume
+        cell_list = [(c[0], c[1], 1) for c in cells]
+        events.append({"type": "BLOB_UPDATE", "data": {"id": blob_id, "type": "pylon_energy", "cells": cell_list}})
+
+
 def _merge_same_type_blobs(floor: FloorState, btype: str) -> None:
     same = [(bid, b) for bid, b in floor.blob_areas.items() if b.get("type") == btype]
     if len(same) <= 1:
@@ -345,6 +408,7 @@ def _evolve_gas_blob(
                     events.append({"type": "DAMAGE", "data": {"target": p.id, "amount": dmg}})
                 elif btype == "paralytic_gas" and not is_immune(p, "paralytic_gas"):
                     add_buff(p.buffs, "paralysis", duration=3.0, level=1, stack_mode="extend")
+                    events.append({"type": "MESSAGE", "data": {"text": "You are paralyzed!"}, "_player_id": p.id})
                 elif btype == "corrosive_gas" and not is_immune(p, "corrosive_gas"):
                     add_buff(p.buffs, "corrosion", duration=5.0, level=1, stack_mode="extend")
                 elif btype == "confusion_gas" and not is_immune(p, "confusion_gas"):
@@ -544,6 +608,9 @@ def tick_blob_areas(floors: Dict[int, FloorState], players: Dict[str, Entity]) -
 
             elif btype == "electricity":
                 _evolve_electricity_blob(floor, blob_id, blob, players, events)
+
+            elif btype == "pylon_energy":
+                _evolve_pylon_energy_blob(floor, blob_id, blob, players, events)
 
             elif btype in ("toxic_gas", "paralytic_gas", "corrosive_gas",
                            "confusion_gas", "shrouding_fog"):

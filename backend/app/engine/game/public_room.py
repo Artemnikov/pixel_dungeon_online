@@ -185,7 +185,7 @@ class PublicRoomMixin:
         occupied_entities = {(m.pos.x, m.pos.y) for m in floor.mobs.values() if m.is_alive}
         occupied_entities.update((p.pos.x, p.pos.y) for p in active_players if p.pos is not None)
         walkable = {TileType.FLOOR, TileType.FLOOR_WOOD, TileType.FLOOR_WATER,
-                    TileType.FLOOR_COBBLE, TileType.FLOOR_GRASS}
+                    TileType.FLOOR_COBBLE, TileType.FLOOR_GRASS, TileType.WALL_DECO}
 
         if (spawn_pos and 0 <= spawn_pos[0] < floor.width and 0 <= spawn_pos[1] < floor.height
                 and floor.grid[spawn_pos[1]][spawn_pos[0]] in walkable
