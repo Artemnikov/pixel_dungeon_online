@@ -87,13 +87,12 @@ class MeleeCombatMixin:
                 return False
 
             current_time = time.time()
-            cooldown = entity.attack_cooldown
             if isinstance(entity, Player):
-                if entity.equipped_weapon:
-                    cooldown = entity.equipped_weapon.attack_cooldown
-                cooldown /= furor_multiplier(entity)
+                cooldown = entity.get_attack_delay()
+            else:
+                cooldown = getattr(entity, "attack_cooldown", 1.0)
 
-            if current_time - entity.last_attack_time < cooldown:
+            if not self.attack_ready(entity, cooldown):
                 return False
 
             entity.last_attack_time = current_time
@@ -243,3 +242,6 @@ class MeleeCombatMixin:
             target.pending_pylon_activation = False
             self.add_event("DM300_SUPERCHARGE", {"mob": target.id}, floor_id=floor_id)
             _activate_pylon(self, floor, floor_id, near_pos=near_pos)
+            target.add_buff("stagger", duration=1.5)
+            self.add_event("BOSS_YELL", {"mob": target.id, "text": "Supercharging...",
+                                         "x": target.pos.x, "y": target.pos.y}, floor_id=floor_id)

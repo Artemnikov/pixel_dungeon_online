@@ -118,6 +118,8 @@ class MobAIMovementMixin:
                     target_player = None
                 else:
                     mob.ai_state = "hunting"
+                    mob.enemy_seen[target_player.id] = True
+                    mob.los_prev_seen[target_player.id] = True
 
         if target_player and isinstance(target_player, Player) and getattr(mob, "ai_state", "") == "wandering":
             dist = self._get_distance(mob.pos, target_player.pos)
@@ -135,6 +137,8 @@ class MobAIMovementMixin:
                     target_player = None
                 else:
                     mob.ai_state = "hunting"
+                    mob.enemy_seen[target_player.id] = True
+                    mob.los_prev_seen[target_player.id] = True
 
         if (isinstance(mob, Goo) and mob.ai_state == "hunting" and not mob.fight_started
                 and target_player is not None

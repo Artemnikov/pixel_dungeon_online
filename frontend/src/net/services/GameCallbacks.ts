@@ -20,6 +20,7 @@ export interface GameCallbacksConfig {
   onDM300FightStarted?: (data: { mob: string }) => void;
   onDwarfKingFightStarted?: (data: { mob: string }) => void;
   onDwarfKingPhase2?: (data: { mob: string }) => void;
+  onDwarfKingPhase3?: (data: { mob: string }) => void;
   onYogFightStarted?: (data: { mob: string }) => void;
   onYogFinalPhase?: (data: { mob: string }) => void;
   onShopOpen?: (data: { npc: string; stock: SerializedItem[]; gold: number }) => void;
@@ -110,6 +111,10 @@ export class GameCallbacks {
 
   public dwarfKingPhase2(data: { mob: string }): void {
     this.config.onDwarfKingPhase2?.(data);
+  }
+
+  public dwarfKingPhase3(data: { mob: string }): void {
+    this.config.onDwarfKingPhase3?.(data);
   }
 
   public yogFightStarted(data: { mob: string }): void {

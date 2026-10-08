@@ -139,7 +139,7 @@ class Dagger(MeleeWeapon):
 class WornShortsword(MeleeWeapon):
     kind: Literal["worn_shortsword"] = "worn_shortsword"
     name: str = "Worn Shortsword"
-    attack_cooldown: float = 1.2
+    attack_cooldown: float = 1.0
     strength_requirement: int = 10
     hit_sound: str = "HIT_SLASH"
     hit_sound_pitch: float = 1.1

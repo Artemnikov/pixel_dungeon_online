@@ -16,6 +16,7 @@ import { advanceAndDrawParticles } from './draw/particles';
 import { advanceAndDrawStaffAmbient } from './draw/staffAmbient';
 import { advanceAndDrawCheckedCells } from './draw/searchEffects';
 import { drawWarnedTiles } from './draw/warnedTiles';
+import { drawRockfallTargetedCells } from './draw/rockfallTargetedCells';
 import { advanceAndDrawFloatingText } from './draw/floatingText';
 import { drawTransmuting } from './draw/transmuting';
 import { advanceAndDrawFlares } from './draw/flare';
@@ -62,6 +63,7 @@ export default function useGameRenderer({
   floatingTextRef,
   screenFlashRef,
   warnedTilesRef,
+  rockfallTelegraphRef,
   myPlayerIdRef,
   panOffsetRef,
   cameraLerpRef,
@@ -70,6 +72,7 @@ export default function useGameRenderer({
   isDraggingRef,
   isCameraDetachedRef,
   detachedCameraRef,
+  isPinchingRef,
   setCamera,
   transmuteEffectsRef,
   flareEffectsRef,
@@ -159,24 +162,19 @@ export default function useGameRenderer({
         const gridRows = grid.length;
         const z = zoomRef.current;
 
+        const playerTile = myPlayer.targetPos || myPlayer.renderPos;
         if (isCameraDetachedRef.current) {
-          const playerTile = myPlayer.targetPos || myPlayer.renderPos;
           if (detachedPlayerPosRef.current &&
               (detachedPlayerPosRef.current.x !== playerTile.x || detachedPlayerPosRef.current.y !== playerTile.y)) {
             isCameraDetachedRef.current = false;
             panOffsetRef.current = { x: 0, y: 0 };
           }
-          detachedPlayerPosRef.current = playerTile;
+        }
+        detachedPlayerPosRef.current = playerTile;
 
-          if (isDraggingRef.current) {
-            cameraX = myPlayer.renderPos.x * TILE_SIZE - lw / 2 + TILE_SIZE / 2 + panOffsetRef.current.x;
-            cameraY = myPlayer.renderPos.y * TILE_SIZE - lh / 2 + TILE_SIZE / 2 + panOffsetRef.current.y;
-            detachedCameraRef.current.x = cameraX;
-            detachedCameraRef.current.y = cameraY;
-          } else {
-            cameraX = detachedCameraRef.current.x;
-            cameraY = detachedCameraRef.current.y;
-          }
+        if (isCameraDetachedRef.current) {
+          cameraX = detachedCameraRef.current.x;
+          cameraY = detachedCameraRef.current.y;
         } else {
           cameraX = myPlayer.renderPos.x * TILE_SIZE - lw / 2 + TILE_SIZE / 2 + panOffsetRef.current.x;
           cameraY = myPlayer.renderPos.y * TILE_SIZE - lh / 2 + TILE_SIZE / 2 + panOffsetRef.current.y;
@@ -188,12 +186,12 @@ export default function useGameRenderer({
         cameraX = Math.max(-halfW, Math.min(cameraX, gridCols * TILE_SIZE - lw / z + halfW));
         cameraY = Math.max(-halfH, Math.min(cameraY, gridRows * TILE_SIZE - lh / z + halfH));
 
-        if (!isCameraDetachedRef.current) {
-          panOffsetRef.current.x = cameraX - (myPlayer.renderPos.x * TILE_SIZE - lw / 2 + TILE_SIZE / 2);
-          panOffsetRef.current.y = cameraY - (myPlayer.renderPos.y * TILE_SIZE - lh / 2 + TILE_SIZE / 2);
+        if (isCameraDetachedRef.current) {
+          detachedCameraRef.current.x = cameraX;
+          detachedCameraRef.current.y = cameraY;
         }
 
-        if (isDraggingRef.current) {
+        if (isDraggingRef.current || isPinchingRef?.current) {
           cameraLerpRef.current.x = cameraX;
           cameraLerpRef.current.y = cameraY;
         } else {
@@ -223,12 +221,13 @@ export default function useGameRenderer({
       drawTraps(ctx, { entitiesRef, visionRef, assetImages, grid });
       drawPlants(ctx, { entitiesRef, visionRef, assetImages, grid });
       advanceAndDrawBlobAreas(ctx, { blobAreasRef, visionRef });
-      advanceAndDrawBlobParticles(ctx, { blobAreasRef, visionRef, particlesRef });
+      advanceAndDrawBlobParticles(ctx, { blobAreasRef, visionRef, particlesRef, entitiesRef });
       advanceSinkDrips({ grid, depth, visionRef, particlesRef });
       advanceAndDrawWaterRipples(ctx, { assetImages, visionRef });
       advanceHallsSteam({ grid, depth, visionRef, particlesRef });
       advanceWaterFlow({ grid, visionRef, particlesRef });
       if (warnedTilesRef) drawWarnedTiles(ctx, { ref: warnedTilesRef });
+      if (rockfallTelegraphRef) drawRockfallTargetedCells(ctx, { rockfallTelegraphRef, particlesRef, visionRef, assetImages });
       drawItems(ctx, { entitiesRef, visionRef, assetImages });
       drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef, dyingMobsRef, shieldFxRef: shieldHaloRef });
       drawCharHealth(ctx, { entitiesRef, visionRef });

@@ -284,6 +284,7 @@ class NpcEconomyMixin:
                 if boss_pos is None:
                     return
                 boss = boss_cls(id=str(uuid.uuid4()), pos=Position(x=boss_pos[0], y=boss_pos[1]))
+                boss.floor_id = floor.floor_id
                 floor.mobs[boss.id] = boss
                 quest.given = True
                 quest.boss_id = boss.id

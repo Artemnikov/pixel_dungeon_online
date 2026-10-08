@@ -1,5 +1,5 @@
 import { setLightMode } from './blending';
-import { TILE_SCALE } from '../../constants';
+import { TILE_SCALE, TILE_SIZE } from '../../constants';
 
 const GRAVITY = 320;        // px/s^2
 const SPREAD = Math.PI / 2; // total cone width (matches bloodBurstA)
@@ -68,6 +68,61 @@ export function spawnDust(particlesRef, cx, cy, count = 6, color = '#997a4d') {
       size: 2 + Math.floor(Math.random() * 2),
       color,
       gravity: true,
+    });
+  }
+}
+
+// EarthParticle.FALLING (EarthParticle.java:81): small falling earth/dust specks
+// raining down from the ceiling on threatened rockfall cells during telegraph.
+const EARTH_COLORS = ['#444444', '#55554e', '#666658', '#777766'];
+export function spawnFallingEarth(particlesRef, cx, cy, count = 2) {
+  if (!particlesRef?.current) return;
+  for (let i = 0; i < count; i++) {
+    const color = EARTH_COLORS[Math.floor(Math.random() * EARTH_COLORS.length)];
+    const life = 0.6 + Math.random() * 0.4;
+    particlesRef.current.push({
+      x: cx + (Math.random() - 0.5) * (TILE_SIZE * 0.7),
+      y: cy - TILE_SIZE / 2 + (Math.random() - 0.5) * 6,
+      vx: (Math.random() - 0.5) * 10,
+      vy: -5,
+      accY: 35,
+      life,
+      maxLife: life,
+      size: 3 + Math.floor(Math.random() * 3),
+      color,
+      gravity: false,
+      centered: true,
+      shrink: true,
+      angle: (Math.random() - 0.5) * Math.PI * 0.5,
+      angularSpeed: (Math.random() - 0.5) * 3,
+    });
+  }
+}
+
+// Speck.ROCK (Speck.java:285 & DelayedRockFall.java:58): bursts of rock chunks
+// from specks.png (frame 8) dropping rapidly onto the impacted cell.
+export function spawnRockSpecks(particlesRef, cx, cy, count = 10) {
+  if (!particlesRef?.current) return;
+  for (let i = 0; i < count; i++) {
+    const angle = Math.random() * Math.PI * 2;
+    const angularSpeed = (Math.random() - 0.5) * 8 * Math.PI;
+    const scale = 1.0 + Math.random(); // 1.0 - 2.0 scale (Speck.ROCK scale)
+    const lifespan = 0.2 + Math.random() * 0.1;
+    const speedY = 120 + Math.random() * 40;
+    particlesRef.current.push({
+      x: cx + (Math.random() - 0.5) * (TILE_SIZE * 0.6),
+      y: cy - (speedY * lifespan) + (Math.random() - 0.5) * 8,
+      vx: (Math.random() - 0.5) * 20,
+      vy: speedY,
+      accY: 0,
+      gravity: false,
+      angle,
+      angularSpeed,
+      speckFrame: 8, // Speck.ROCK frame index in specks.png
+      scale,
+      life: lifespan,
+      maxLife: lifespan,
+      shrink: false,
     });
   }
 }

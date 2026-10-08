@@ -99,6 +99,7 @@ _MOB_OVERRIDES: dict[str, str] = {
     "YogEye": "mob.yog_eye",
     "YogScorpio": "mob.yog_scorpio",
     "YogRipper": "mob.yog_ripper",
+    "Larva": "mob.larva",
     "GnollExile": "mob.gnoll_exile",
     "HermitCrab": "mob.hermit_crab",
     "CausticSlime": "mob.caustic_slime",

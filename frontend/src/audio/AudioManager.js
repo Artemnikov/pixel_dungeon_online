@@ -52,6 +52,7 @@ const tombSound = new URL('../assets/sounds/tomb.mp3', import.meta.url).href;
 const chainsSound = new URL('../assets/sounds/chains.mp3', import.meta.url).href;
 const cursedSound = new URL('../assets/sounds/cursed.mp3', import.meta.url).href;
 const masterySound = new URL('../assets/sounds/mastery.mp3', import.meta.url).href;
+const rocksSound = new URL('../assets/sounds/rocks.mp3', import.meta.url).href;
 import { effectiveSfxVolume, subscribe } from '../menu/menuSettings';
 import { isGrassTile } from '../constants';
 
@@ -134,6 +135,7 @@ class AudioManager {
         this.loadSound('CHAINS', chainsSound);
         this.loadSound('CURSED', cursedSound);
         this.loadSound('MASTERY', masterySound);
+        this.loadSound('ROCKS', rocksSound);
 
         const doorUrl = new URL('../assets/sounds/door_open.mp3', import.meta.url).href;
         if (doorUrl) this.loadSound('DOOR_OPEN', doorUrl);
@@ -255,6 +257,13 @@ class AudioManager {
                 this.playTone(320 * rate, 'sawtooth', 0.16 / Math.max(0.1, rate), 0.35, 0.10 / Math.max(0.1, rate));
                 this.playTone(540 * rate, 'square', 0.10 / Math.max(0.1, rate), 0.25, 0.16 / Math.max(0.1, rate));
                 this.playNoise(0.24 / Math.max(0.1, rate), 0.2, 'bandpass', 1200 * rate);
+                break;
+            case 'ROCKS':
+                this.playTone(65 * rate, 'sawtooth', 0.35, 0.45);
+                this.playTone(90 * rate, 'sawtooth', 0.25, 0.35, 0.05);
+                this.playTone(45 * rate, 'sine', 0.45, 0.5, 0.1);
+                this.playNoise(0.3, 0.35, 'lowpass', 450 * rate);
+                this.playNoise(0.15, 0.2, 'bandpass', 850 * rate);
                 break;
             default:
                 break;

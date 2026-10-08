@@ -1,4 +1,5 @@
 import type { RenderPlayer, EntitiesState, SerializedItem, Ref, AnimState } from '../../net/types';
+import type { GameMode } from '../../types/contract';
 
 export interface InputContext {
   myPlayerId: string;
@@ -12,6 +13,8 @@ export interface InputContext {
   gameMenuOpenRef?: { current: boolean };
   isRefocusingRef?: { current: boolean };
   isDraggingRef?: { current: boolean };
+  isCameraDetachedRef?: { current: boolean };
+  panOffsetRef?: { current: { x: number; y: number } };
   onCloseItemBrowser?: () => void;
   onOpenItemBrowser?: () => void;
   setShowInventory?: (cb: (prev: boolean) => boolean) => void;
@@ -20,6 +23,17 @@ export interface InputContext {
   emergencyDrinkItem?: SerializedItem | null;
   onEmergencyDrink?: (item: SerializedItem) => void;
   triggerWait?: () => void;
+  /**
+   * Which loop the room runs. Decides the *shape* of movement handling, so it
+   * is a ref read on every key event rather than a captured value.
+   */
+  gameModeRef?: { current: GameMode };
+  /**
+   * `false` while a turn-based room is waiting on somebody else. Only
+   * consulted in a turn room: a turn room drops anything sent out of turn
+   * without replying, so input has to stay quiet instead of firing and hoping.
+   */
+  canActRef?: { current: boolean };
   onOpenTalents?: () => void;
   onOpenAlchemyRef?: { current?: () => void };
   quickslot?: { slots?: Array<{ item_id?: string }> };

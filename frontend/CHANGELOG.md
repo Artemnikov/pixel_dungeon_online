@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.0] - 2026-10-08
+
+### Added
+- **Turn-Based Game Mode**: Full server-authoritative turn-based mode (`turn_based`) alongside real-time mode. Powered by an SPD-accurate turn scheduler (`TurnScheduler`) that calculates fractional action costs for movement, attacks, item usage, wands, and waiting. Includes turn queue synchronization (`TURN_STATE`), input gating, room creation support, and the `TurnIndicator` HUD component.
+- **Turn-Based Mob Brains & Ability Pacing**: Implemented a specialized mob actor hierarchy (`TurnMobActor`, `WallClockGatedMobActor`, `TickCounterMobActor`, `RangedMobActor`, and boss actors) translating real-time cooldowns into turn-based cadences so abilities like Shaman lightning, Goo pump-up, and DM-300 gas venting reliably recur across turns.
+- **Boss Arena Layouts**: Overhauled dungeon generation for Caves (DM-300 with power pylons and wire connections), City (Dwarf King throne room with summon pillars), and Halls (Yog-Dzewa altar with elemental fists).
+- **Boss Mechanics & Hazards**: Implemented DM-300 pylon supercharging and rockfall hazard indicators (`rockfallTargetedCells`), Dwarf King summon waves and final deferred-damage phase, and Yog-Dzewa fist battles with invulnerability phases.
+- **Audio & Visual Effects**: Added `rocks.mp3` sound effect for rockfalls, spark particles, enhanced mob sprite atlas definitions, and refined game over screen.
+
+### Changed
+- Boss spawning now includes presence guards to prevent duplicate boss generation when players are present on boss floors.
+- Mobs now have authoritative `floor_id` assignment across all spawn paths to ensure proper scheduling on deep floors.
+
+## [1.1.0] - 2026-09-15
+
+### Added
+- **Cleric Hero Class**: Ported the Cleric class featuring the unique Holy Tome artifact, spell tier progression (Guiding Light, Sacred Fire, Radiant Radiance, Shield of Faith, Hallowed Ground, Sunray, Smite, Divine Intervention), dedicated talents across tiers 1–4, armor abilities, and class-specific UI.
+
 ## [1.0.4] - 2026-09-11
 
 ### Added

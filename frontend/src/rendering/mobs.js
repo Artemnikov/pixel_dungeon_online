@@ -101,6 +101,10 @@ export const RIPPER_FW = 15;
 export const RIPPER_FH = 14;
 export const RIPPER_DEST = { dx: 1, dy: 4, dw: 30, dh: 28 };
 
+export const LARVA_FW = 12;
+export const LARVA_FH = 8;
+export const LARVA_DEST = { dx: 4, dy: 14, dw: 24, dh: 16 };
+
 export const PYLON_FW = 10;
 export const PYLON_FH = 20;
 export const PYLON_DEST = { dx: 6, dy: -8, dw: 20, dh: 40 };
@@ -545,16 +549,57 @@ export const getMimicFrame = (mob, mobAnim, now) => {
 export const getBeeFrame = (mob, mobAnim, now) =>
   [0, 1][Math.floor(now / 100) % 2] * FRAME_W;
 
-// DwarfKing boss: 2-frame idle loop.
-export const getDwarfKingFrame = (mob, mobAnim, now) =>
-  [0, 1][Math.floor(now / 400) % 2] * FRAME_W;
+// DwarfKing boss: SPD KingSprite (16x16 frames, king.png):
+//   idle    12fps loop   [0*12, 1, 2]
+//   run     15fps loop   [3, 4, 5, 6, 7, 8]
+//   attack  15fps once   [9, 10, 11]
+export const getDwarfKingFrame = (mob, mobAnim, now) => {
+  const anim = mobAnim[mob.id] || {};
+  const isAttacking = anim.attackUntil && now < anim.attackUntil;
+  if (isAttacking) {
+    const elapsed = now - (anim.attackUntil - 200);
+    const fi = Math.min(Math.floor(elapsed / 67), 2);
+    return [9, 10, 11][fi] * FRAME_W;
+  }
+  if (isEntityMoving(mob)) {
+    return [3, 4, 5, 6, 7, 8][Math.floor(now / 67) % 6] * FRAME_W;
+  }
+  return [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 2][Math.floor(now / 83) % 14] * FRAME_W;
+};
 
-// DK Ghoul / Monk / Warlock minions: 2-frame idle loop.
-export const getGhoulFrame = (mob, mobAnim, now) =>
-  [0, 1][Math.floor(now / 300) % 2] * GHOUL_FW;
+// Ghoul / DK Ghoul minion: SPD GhoulSprite (12x14 frames, ghoul.png):
+//   idle    2fps loop    [0, 0, 0, 1]
+//   run     12fps loop   [2, 3, 4, 5, 6, 7]
+//   attack  12fps once   [0, 8, 9]
+export const getGhoulFrame = (mob, mobAnim, now) => {
+  const anim = mobAnim[mob.id] || {};
+  if (anim.attackUntil && now < anim.attackUntil) {
+    const elapsed = now - (anim.attackUntil - 250);
+    const fi = Math.min(Math.floor(elapsed / 83), 2);
+    return [0, 8, 9][fi] * GHOUL_FW;
+  }
+  if (isEntityMoving(mob)) {
+    return [2, 3, 4, 5, 6, 7][Math.floor(now / 83) % 6] * GHOUL_FW;
+  }
+  return [0, 0, 0, 1][Math.floor(now / 500) % 4] * GHOUL_FW;
+};
 
-export const getMonkFrame = (mob, mobAnim, now) =>
-  [0, 1][Math.floor(now / 300) % 2] * MONK_FW;
+// Monk / DK Monk minion: SPD MonkSprite (15x14 frames, monk.png):
+//   idle    6fps loop    [1, 0, 1, 2]
+//   run     15fps loop   [11, 12, 13, 14, 15, 16]
+//   attack  12fps once   [3, 4, 3, 4]
+export const getMonkFrame = (mob, mobAnim, now) => {
+  const anim = mobAnim[mob.id] || {};
+  if (anim.attackUntil && now < anim.attackUntil) {
+    const elapsed = now - (anim.attackUntil - 250);
+    const fi = Math.min(Math.floor(elapsed / 83), 3);
+    return [3, 4, 3, 4][fi] * MONK_FW;
+  }
+  if (isEntityMoving(mob)) {
+    return [11, 12, 13, 14, 15, 16][Math.floor(now / 67) % 6] * MONK_FW;
+  }
+  return [1, 0, 1, 2][Math.floor(now / 167) % 4] * MONK_FW;
+};
 
 export const getWarlockFrame = (mob, mobAnim, now) => {
   const anim = mobAnim[mob.id] || {};
@@ -569,9 +614,22 @@ export const getWarlockFrame = (mob, mobAnim, now) => {
   return [0, 0, 0, 1, 0, 0, 1, 1][Math.floor(now / 500) % 8] * WARLOCK_FW;
 };
 
-// DK Golem: heavy, slow 2-frame idle.
-export const getGolemFrame = (mob, mobAnim, now) =>
-  [0, 1][Math.floor(now / 500) % 2] * GOLEM_FW;
+// Golem / DK Golem: SPD GolemSprite (17x19 frames, golem.png):
+//   idle    4fps loop    [0, 1]
+//   run     12fps loop   [2, 3, 4, 5]
+//   attack  10fps once   [6, 7]
+export const getGolemFrame = (mob, mobAnim, now) => {
+  const anim = mobAnim[mob.id] || {};
+  if (anim.attackUntil && now < anim.attackUntil) {
+    const elapsed = now - (anim.attackUntil - 200);
+    const fi = Math.min(Math.floor(elapsed / 100), 1);
+    return [6, 7][fi] * GOLEM_FW;
+  }
+  if (isEntityMoving(mob)) {
+    return [2, 3, 4, 5][Math.floor(now / 83) % 4] * GOLEM_FW;
+  }
+  return [0, 1][Math.floor(now / 250) % 2] * GOLEM_FW;
+};
 
 // Spinner (Cave Spider): SPD SpinnerSprite frame layout
 //   idle    10fps loop   [0,0,0,0,0,1,0,1]
@@ -595,6 +653,20 @@ export const getSpinnerFrame = (mob, mobAnim, now) => {
 // Yog-Dzewa: slow pulsing idle loop.
 export const getYogFrame = (mob, mobAnim, now) =>
   [0, 1, 2, 1][Math.floor(now / 250) % 4] * YOG_FW;
+
+// Larva: SPD LarvaSprite frame layout (12x8 frames, larva.png)
+export const getLarvaFrame = (mob, mobAnim, now) => {
+  const anim = mobAnim[mob.id] || {};
+  if (anim.attackUntil && now < anim.attackUntil) {
+    const elapsed = now - (anim.attackUntil - 200);
+    const fi = Math.min(Math.floor(elapsed / 67), 2);
+    return [6, 5, 7][fi] * LARVA_FW;
+  }
+  if (isEntityMoving(mob)) {
+    return [0, 1, 2, 3][Math.floor(now / 83) % 4] * LARVA_FW;
+  }
+  return [4, 4, 4, 4, 4, 5, 5][Math.floor(now / 200) % 7] * LARVA_FW;
+};
 
 // Yog's Fists: shared 2-frame idle loop across all 6 fist variants (rows differ via sy).
 export const getFistFrame = (mob, mobAnim, now) =>
@@ -631,8 +703,8 @@ export const getRipperFrame = (mob, mobAnim, now) =>
 // Demon Spawner: immobile, single static frame.
 export const getSpawnerFrame = () => 0;
 
-// Pylon: immobile, single static frame.
-export const getPylonFrame = () => 0;
+// Pylon (PylonSprite.java): frame 0 when inactive/neutral, frame 1 when active.
+export const getPylonFrame = (mob) => (mob?.activated ? 1 : 0) * PYLON_FW;
 
 // Statue: static frame when inactive, simple idle loop once activated.
 export const getStatueFrame = (mob, mobAnim, now) =>

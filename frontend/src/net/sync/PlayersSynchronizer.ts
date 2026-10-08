@@ -41,6 +41,10 @@ export class PlayersSynchronizer implements IStateSynchronizer {
       } else {
         const existing = playersState[p.id];
         const isLocalPlayer = p.id === myId;
+        const stepDurationMs = (isLocalPlayer ? (data.self_player as { step_duration_ms?: number })?.step_duration_ms : undefined)
+          ?? (p as { step_duration_ms?: number }).step_duration_ms
+          ?? existing.step_duration_ms;
+        existing.step_duration_ms = stepDurationMs;
         const hasPendingPrediction = isLocalPlayer && movementPredictor.isPending();
 
         const moved = !existing.targetPos
@@ -68,7 +72,7 @@ export class PlayersSynchronizer implements IStateSynchronizer {
           existing.animStartPos = { x: existing.renderPos.x, y: existing.renderPos.y };
           existing.animStartTime = performance.now();
           existing.targetPos = p.pos;
-          existing.moveDuration = glideDuration(existing.renderPos.x, existing.renderPos.y, p.pos.x, p.pos.y);
+          existing.moveDuration = glideDuration(existing.renderPos.x, existing.renderPos.y, p.pos.x, p.pos.y, stepDurationMs);
         }
 
         existing.name = p.name;
@@ -98,9 +102,6 @@ export class PlayersSynchronizer implements IStateSynchronizer {
         existing.level = p.level;
         existing.strength = p.strength;
         existing.faction = p.faction;
-        existing.step_duration_ms =
-          (isLocalPlayer ? (data.self_player as { step_duration_ms?: number })?.step_duration_ms : undefined)
-          ?? (p as { step_duration_ms?: number }).step_duration_ms;
       }
     });
 

@@ -17,6 +17,7 @@ from app.engine.entities.items.consumables import LostBackpack
 from app.engine.entities.items.potions import ELIXIR_BREW_KINDS
 from app.engine.entities.player import Difficulty
 from app.engine.entities.locale_keys import item_locale_key, mob_locale_key
+from app.engine.game.constants import GAME_MODE_TURNBASED, TURN_BASED_WALK_SPEED_MULTIPLIER
 
 # How long a freshly-dropped item (chest-open / monster-death loot) keeps
 # reporting `just_dropped` over the wire, so the client's drop-bounce
@@ -237,8 +238,11 @@ class SerializationMixin:
                         break
         except Exception:
             pass
+        step_dur_ms = p.get_step_duration_ms(enemies_nearby=enemies_nearby)
+        if getattr(self, "game_mode", None) == GAME_MODE_TURNBASED:
+            step_dur_ms = max(1, int(round(step_dur_ms / TURN_BASED_WALK_SPEED_MULTIPLIER)))
         d["attack_target"] = attack_target
-        d["step_duration_ms"] = p.get_step_duration_ms(enemies_nearby=enemies_nearby)
+        d["step_duration_ms"] = step_dur_ms
         d["last_processed_seq"] = p.last_processed_seq
         d["max_weapon_charges"] = p.get_max_weapon_charges()
         return d
@@ -250,6 +254,9 @@ class SerializationMixin:
             enemies_nearby = self._has_enemies_nearby(floor, p, radius=3)
         except Exception:
             pass
+        step_dur_ms = p.get_step_duration_ms(enemies_nearby=enemies_nearby)
+        if getattr(self, "game_mode", None) == GAME_MODE_TURNBASED:
+            step_dur_ms = max(1, int(round(step_dur_ms / TURN_BASED_WALK_SPEED_MULTIPLIER)))
         d = {
             "id": p.id,
             "type": p.type,
@@ -267,7 +274,7 @@ class SerializationMixin:
             "strength": p.strength,
             "faction": p.faction,
             "heal_left": p.heal_left,
-            "step_duration_ms": p.get_step_duration_ms(enemies_nearby=enemies_nearby),
+            "step_duration_ms": step_dur_ms,
             "last_processed_seq": p.last_processed_seq,
             "equipped_wearable": {"tier": p.belongings.armor.tier}
             if p.belongings.armor is not None else None,

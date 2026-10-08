@@ -42,6 +42,7 @@ export interface VisualEffectsRefs {
   searchEffectsRef?: Ref<unknown[]>;
   floatingTextRef?: Ref<unknown[]>;
   warnedTilesRef?: Ref<{ tiles: [number, number][]; untilMs: number } | null>;
+  rockfallTelegraphRef?: Ref<{ cells: [number, number][]; untilMs: number; durationMs: number } | null>;
   screenFlashRef?: Ref<{ until: number } | null>;
   transmuteEffectsRef?: Ref<unknown[]>;
   flareEffectsRef?: Ref<unknown[]>;
@@ -133,6 +134,10 @@ export class VisualEffectsManager {
 
   public get warnedTilesRef(): Ref<{ tiles: [number, number][]; untilMs: number } | null> | undefined {
     return this.refs.warnedTilesRef;
+  }
+
+  public get rockfallTelegraphRef(): Ref<{ cells: [number, number][]; untilMs: number; durationMs: number } | null> | undefined {
+    return this.refs.rockfallTelegraphRef;
   }
 
   public get projectilesRef(): Ref<Projectile[]> | undefined {
@@ -344,6 +349,23 @@ export class VisualEffectsManager {
     }
   }
 
+  public setRockfallTelegraph(cells: [number, number][], durationMs = 2000): void {
+    if (this.refs.rockfallTelegraphRef) {
+      this.refs.rockfallTelegraphRef.current = cells.length
+        ? { cells, untilMs: performance.now() + durationMs, durationMs }
+        : null;
+    }
+  }
+
+  public setMobZap(mobId: string, durationMs = 400): void {
+    if (!this.refs.mobAnimRef) return;
+    if (!this.refs.mobAnimRef.current[mobId]) {
+      this.refs.mobAnimRef.current[mobId] = {};
+    }
+    this.refs.mobAnimRef.current[mobId].zapUntil = performance.now() + durationMs;
+    this.refs.mobAnimRef.current[mobId].attackUntil = 0;
+  }
+
   public setPlayerOperate(playerId: string, durationMs = PLAYER_OPERATE_DURATION): void {
     if (!this.refs.playerAnimRef) return;
     if (!this.refs.playerAnimRef.current[playerId]) {
@@ -407,6 +429,7 @@ export class VisualEffectsManager {
     if (this.refs.searchEffectsRef) this.refs.searchEffectsRef.current = [];
     if (this.refs.floatingTextRef) this.refs.floatingTextRef.current = [];
     if (this.refs.warnedTilesRef) this.refs.warnedTilesRef.current = null;
+    if (this.refs.rockfallTelegraphRef) this.refs.rockfallTelegraphRef.current = null;
     if (this.refs.transmuteEffectsRef) this.refs.transmuteEffectsRef.current = [];
     if (this.refs.flareEffectsRef) this.refs.flareEffectsRef.current = [];
     if (this.refs.spellSpriteEffectsRef) this.refs.spellSpriteEffectsRef.current = [];

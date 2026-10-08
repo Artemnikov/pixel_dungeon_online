@@ -12,7 +12,7 @@ export default function GameOverlay({
   selectedClass, scoreBreakdown, canResurrect, hasAnkh, keptItems, onToggleItem,
   isVictory, respawnsUsed, maxRespawns, lootDropped, deathCause,
   onResurrect, onAnkhChoice,
-  onNewGame, onMenu, challenges, onReplayTutorial,
+  onNewGame, onMenu, onReplayTutorial,
 }) {
   const { t } = useTranslation();
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -48,7 +48,6 @@ export default function GameOverlay({
         <GameMenu
           depth={depth}
           guidePages={guidePages}
-          challenges={challenges}
           onClose={onCloseMenu}
           onLeaveGame={onLeaveGame}
           onReplayTutorial={onReplayTutorial}

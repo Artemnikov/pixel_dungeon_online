@@ -108,10 +108,10 @@ class SpawnTickMixin:
         if live_mobs >= floor.mob_limit:
             floor.respawn_counter = 0
             return
-        floor.respawn_counter += 1
-        base = RESPAWN_TURNS + floor_id * RESPAWN_TURNS_FLOOR_SCALE
-        threshold = int(base * PUBLIC_MOB_RESPAWN_SPEEDUP) if is_public else base
-        if floor.respawn_counter < threshold:
+        floor.respawn_counter += self.sim_ticks
+        base_ticks = RESPAWN_TURNS + floor_id * RESPAWN_TURNS_FLOOR_SCALE
+        threshold_ticks = int(base_ticks * PUBLIC_MOB_RESPAWN_SPEEDUP) if is_public else base_ticks
+        if floor.respawn_counter < threshold_ticks:
             return
         floor.respawn_counter = 0
 
@@ -140,7 +140,7 @@ class SpawnTickMixin:
         if not floor_tiles:
             return
         x, y = random.choice(floor_tiles)
-        mob = self._spawn_mob_at(cls, x, y)
+        mob = self._spawn_mob_at(cls, x, y, floor_id)
         if universal_extra:
             _apply_floor_scaling(mob, floor_id)
         mob.ai_state = "sleeping"
@@ -191,7 +191,7 @@ class SpawnTickMixin:
             return
 
         x, y = random.choice(candidates)
-        wraith = self._spawn_mob_at(DustWraith, x, y)
+        wraith = self._spawn_mob_at(DustWraith, x, y, player.floor_id)
         wraith.ai_state = "hunting"
         _apply_floor_scaling(wraith, player.floor_id)
         floor.mobs[wraith.id] = wraith

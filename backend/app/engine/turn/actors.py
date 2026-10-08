@@ -1,0 +1,100 @@
+from typing import TYPE_CHECKING, FrozenSet, Optional, Tuple
+
+from app.engine.game.constants import HERO_PRIO, MOB_PRIO, TIME_TO_WAIT
+from app.engine.turn.mob_actors import create_mob_actor
+
+if TYPE_CHECKING:
+    from app.engine.turn.actions import TurnAction
+
+
+class ActorRef:
+    def __init__(self, entity_id: str, act_priority: int) -> None:
+        self.entity_id = entity_id
+        self.act_priority = act_priority
+        self.scheduled_time = 0.0
+        # Set when the actor leaves the room (died, downed, disconnected).
+        # The scheduler drops flagged entries lazily instead of deleting them
+        # from the middle of its heap.
+        self.cancelled = False
+
+    def take_turn(self, game) -> float:
+        raise NotImplementedError
+
+    def requires_input(self) -> bool:
+        return False
+
+
+class PlayerActor(ActorRef):
+    def __init__(self, player) -> None:
+        super().__init__(player.id, HERO_PRIO)
+        self.player = player
+        self.pending_action: Optional["TurnAction"] = None
+        # Floor the queued path was computed on. A walk that outlives a change
+        # of floor is stale deltas, not a route, so it is dropped rather than
+        # replayed against the new layout.
+        self.walk_floor_id: Optional[int] = None
+        # SPD's `Hero.visibleEnemies`: what the hero could see last time this
+        # was refreshed, so a walk can tell a new arrival from a mob that was
+        # always in view. See `turn/walk.py`.
+        self.visible_enemies: FrozenSet[Tuple[int, int]] = frozenset()
+
+    def is_auto_walking(self) -> bool:
+        # Deliberately not a floor check: a path planned on another floor is
+        # stale, and `_player_walk_turn` is what notices and drops it. Testing
+        # the floor here would let the hero fall back to waiting for input and
+        # leave the stale queue in place forever.
+        return self.walk_floor_id is not None and self.player.movement.has_path()
+
+    def clear_walk(self) -> None:
+        self.walk_floor_id = None
+        self.player.movement.path_queue.clear()
+
+    def requires_input(self) -> bool:
+        return (
+            self.player.is_active
+            and self.pending_action is None
+            and not self.is_auto_walking()
+        )
+
+    def take_turn(self, game) -> float:
+        from app.engine.turn.walk import refresh_visible_enemies
+
+        action = self.pending_action
+        pre = (self.player.pos.x, self.player.pos.y)
+        self.player._moved_this_turn = False
+        try:
+            if action is not None:
+                self.pending_action = None
+                return action.execute(game, self.player)
+            if self.is_auto_walking():
+                return game._player_walk_turn(self)
+            return TIME_TO_WAIT
+        finally:
+            self.player._moved_this_turn = (self.player.pos.x, self.player.pos.y) != pre
+            refresh_visible_enemies(game, self)
+
+
+class MobActor(ActorRef):
+    def __init__(self, mob, floor_id: int) -> None:
+        super().__init__(mob.id, MOB_PRIO)
+        self.mob = mob
+        # Floor the scheduler last saw this mob on. The floor iteration that
+        # owns the mob is the authority here, not `mob.floor_id`: a mob that
+        # was summoned, re-parented, or spawned by a path that never stamped
+        # the field would otherwise be looked up on the wrong floor and have
+        # its turn dropped before the AI ran.
+        self.floor_id = floor_id
+        # The pacing brain for this mob. `create_mob_actor` picks a subclass by
+        # mob type so bosses and casters carry their own turn cadence; the
+        # registry, the mob id and the priority all stay here.
+        self.brain = create_mob_actor(mob, floor_id)
+
+    def retarget(self, mob, floor_id: int) -> None:
+        """Point the actor at a fresh mob/floor without losing turn cooldown."""
+        self.mob = mob
+        self.floor_id = floor_id
+        self.brain.mob = mob
+        self.brain.floor_id = floor_id
+
+    def take_turn(self, game) -> float:
+        return self.brain.take_turn(game)

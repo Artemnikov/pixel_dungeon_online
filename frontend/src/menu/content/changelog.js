@@ -1,4 +1,4 @@
-export const APP_VERSION = '1.0.4';
+export const APP_VERSION = '1.2.0';
 
 /**
  * @typedef {{ category?: { en: string; ru: string }; description: { en: string; ru: string } }} ChangeItem
@@ -6,6 +6,46 @@ export const APP_VERSION = '1.0.4';
  */
 
 const CHANGELOG = [
+  {
+    version: '1.2.0',
+    title: { en: 'Turn-Based Mode & Boss Arena Overhauls', ru: 'Пошаговый режим и переработка босс-арен' },
+    date: '2026-10-08',
+    type: 'minor',
+    changes: [
+      { category: { en: 'Turn-Based Game Mode', ru: 'Пошаговый режим игры' }, description: {
+        en: 'Introduced authoritative turn-based game mode (`turn_based`) alongside real-time mode. Powered by an SPD-accurate turn scheduler (`TurnScheduler`) that calculates fractional action costs for movement, attacks, item usage, wands, and waiting. Features turn queue synchronization, input gating, a new `TurnIndicator` HUD component, and turn-based room creation.',
+        ru: 'Добавлен серверный пошаговый режим (`turn_based`) наряду с режимом реального времени. Работает на планировщике ходов (`TurnScheduler`) по правилам SPD, рассчитывающем дробную стоимость действий при перемещении, атаке, использовании предметов, жезлов и ожидании. Включает синхронизацию очереди ходов, блокировку ввода вне своего хода, индикатор `TurnIndicator` и создание пошаговых комнат.',
+      } },
+      { category: { en: 'Turn-Based Mob Brains & Ability Pacing', ru: 'Пошаговое поведение мобов и темп способностей' }, description: {
+        en: 'Implemented a dedicated mob actor hierarchy (`TurnMobActor`, `WallClockGatedMobActor`, `TickCounterMobActor`, `RangedMobActor`, boss actors) that translates real-time ability cooldowns into turn-based cadences. Boss and mob abilities (Shaman lightning, Goo pump-up, DM-300 gas venting) now reliably recur across turns without starvation.',
+        ru: 'Реализована иерархия пошаговых акторов мобов (`TurnMobActor`, `WallClockGatedMobActor`, `TickCounterMobActor`, `RangedMobActor`, акторы боссов), переводящая кулдауны реального времени в пошаговый темп. Способности мобов и боссов (молния Шамана, заряд Гу, ядовитый газ ДМ-300) теперь стабильно срабатывают по ходам.',
+      } },
+      { category: { en: 'Boss Arena Layouts & Mechanics', ru: 'Арены боссов и механики' }, description: {
+        en: 'Full port and overhaul of boss arenas for Caves (DM-300 with power pylons and electrical wire paths), City (Dwarf King throne room with phased summon waves and pillars), and Halls (Yog-Dzewa altar with elemental fists). Added arena hazards, rockfall warning indicators (`rockfallTargetedCells`), spark particles, and `rocks.mp3` audio.',
+        ru: 'Полный порт и переработка босс-арен: Пещеры (ДМ-300 с пилонами энергии и проводкой), Город (Тронный зал Короля Дворфов с волнами призыва и колоннами) и Чертоги (Алтарь Йог-Дзевы с элементальными кулаками). Добавлены опасности арен, индикаторы камнепада (`rockfallTargetedCells`), искровые частицы и звук `rocks.mp3`.',
+      } },
+      { category: { en: 'Boss Spawning & Floor Presence Guards', ru: 'Спавн боссов и защита от повторов' }, description: {
+        en: 'Added presence guards preventing duplicate boss spawns when players are on boss floors, along with authoritative mob floor tracking ensuring mobs and bosses on deeper floors receive their turns correctly.',
+        ru: 'Добавлены проверки присутствия, предотвращающие повторный спавн боссов при нахождении игроков на этаже босса, а также точная привязка этажа мобов, гарантирующая передачу ходов на глубоких этажах.',
+      } },
+      { category: { en: 'UI & Visual Polish', ru: 'Интерфейс и визуальные улучшения' }, description: {
+        en: 'Added turn status previews, updated game over screen flow, refined hero selection centering on mobile/short viewports, and enhanced mob sprite atlas definitions.',
+        ru: 'Добавлен предпросмотр статуса ходов, обновлён экран окончания игры, улучшено центрирование выбора героя на мобильных устройствах и коротких экранах, расширен атлас спрайтов мобов.',
+      } },
+    ],
+  },
+  {
+    version: '1.1.0',
+    title: { en: 'Cleric Class & Spellcasting', ru: 'Класс Клирик и заклинания' },
+    date: '2026-09-15',
+    type: 'minor',
+    changes: [
+      { category: { en: 'Cleric Hero Class', ru: 'Класс персонажа Клирик' }, description: {
+        en: 'Ported the Cleric class featuring the unique Holy Tome artifact, progressive spell tier unlocking (Guiding Light, Sacred Fire, Radiant Radiance, Shield of Faith, Hallowed Ground, Sunray, Smite, Divine Intervention), dedicated talents across tiers 1–4, and class-specific UI.',
+        ru: 'Добавлен класс Клирик с уникальным артефактом Священный Гримуар, прогрессивным открытием кругов заклинаний (Направляющий свет, Священный огонь, Сияние, Щит веры, Освящённая земля, Солнечный луч, Кара, Божественное вмешательство), талантами 1–4 тиров и специализированным интерфейсом.',
+      } },
+    ],
+  },
   {
     version: '1.0.4',
     title: { en: 'Seeds & Plants, Combat Sync & Immediate Hit FX', ru: 'Семена и растения, синхронизация боя и мгновенные эффекты ударов' },

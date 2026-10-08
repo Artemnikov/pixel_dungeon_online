@@ -1,8 +1,11 @@
 import { memo } from 'react';
 
-function AttackIndicator({ myStats, onAttack }) {
+function AttackIndicator({ myStats, onAttack, canAct = true }) {
   const target = myStats?.attack_target;
   if (!target) return null;
+  // Attacking costs a turn, so in a turn room the offer disappears until the
+  // room is waiting on this player again -- the server would drop it otherwise.
+  if (!canAct) return null;
   return (
     <div className="side-tag side-tag--attack" onClick={() => onAttack(target.id)} title={`Attack ${target.name}`}>
       <svg viewBox="0 0 16 16" width="16" height="16" fill="#c03838">

@@ -142,7 +142,9 @@
     "reasonWrongPassword": "wrong password",
     "reasonRoomFull": "room is full",
     "reasonDungeonDisabled": "dungeon faction is disabled in this room",
-    "allowDungeon": "Allow Dungeon Faction (PvP)"
+    "allowDungeon": "Allow Dungeon Faction (PvP)",
+    "turnBased": "Turn-based (experimental)",
+    "turnTimer": "Auto-wait after (s):"
   },
   "app": {
     "titleWelcome": "Online Pixel Dungeon — multiplayer roguelike",
@@ -408,6 +410,7 @@
       "fury": "You are angry, enemies won't like you when you're angry. A great rage burns within you, increasing the damage you deal with physical attacks by 50%.",
       "locked_floor": "The floor is sealed by dark magic. You cannot regenerate health while the seal is active. Damage the boss to weaken the seal.",
       "nourished": "Nourished. Healing while standing still is doubled, and you slowly recover HP even in combat.",
+      "paralysis": "You are paralyzed and unable to move or take actions.",
       "provoked_anger": "The Warrior has recently lost their shields, their next physical attack will deal bonus damage."
     }
   },
@@ -657,6 +660,7 @@
     "yog_eye": "Yog Eye",
     "yog_scorpio": "Yog Scorpio",
     "yog_ripper": "Yog Ripper",
+    "larva": "Larva",
     "demon_spawner": "Demon Spawner",
     "pylon": "Pylon",
     "rat_king": "Rat King",
@@ -1262,5 +1266,16 @@
       "stairs": "Stairs to the next floor",
       "boss": "A boss guards every 5th floor!"
     }
+  },
+  "turn": {
+    "turn": "Turn",
+    "yourTurn": "Your turn",
+    "waitingForOthers": "Waiting for other players",
+    "waitingFor": "Waiting for",
+    "ready": "Ready",
+    "acting": "Waiting to move",
+    "you": "You",
+    "hero": "Hero",
+    "dungeon": "Dungeon"
   }
 }

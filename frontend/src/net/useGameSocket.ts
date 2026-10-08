@@ -11,6 +11,7 @@ import { WorldManager } from './services/WorldManager';
 import { EntityManager } from './services/EntityManager';
 import { VisualEffectsManager } from './services/VisualEffectsManager';
 import { HeroStateSync } from './services/HeroStateSync';
+import { TurnStateSync } from './services/TurnStateSync';
 import { GameCallbacks } from './services/GameCallbacks';
 import { defaultStateSynchronizer } from './sync/StateSynchronizer';
 import type { StateSyncContext } from './sync/IStateSynchronizer';
@@ -71,12 +72,15 @@ export default function useGameSocket({
   flyingItemsRef,
   selectedEnemyIdRef,
   warnedTilesRef,
+  rockfallTelegraphRef,
   wasDownedRef,
   floorFadeRef,
   cameraLerpRef,
   isCameraDetachedRef,
   setGrid,
   setDepth,
+  setGameMode,
+  setTurnState,
   setMyPlayerId,
   setInventory,
   setEquippedItems,
@@ -102,6 +106,7 @@ export default function useGameSocket({
   onDM300FightStarted,
   onDwarfKingFightStarted,
   onDwarfKingPhase2,
+  onDwarfKingPhase3,
   onYogFightStarted,
   onYogFinalPhase,
   onShopOpen,
@@ -144,6 +149,7 @@ export default function useGameSocket({
       searchEffectsRef,
       floatingTextRef,
       warnedTilesRef,
+      rockfallTelegraphRef,
       screenFlashRef,
       transmuteEffectsRef,
       flareEffectsRef,
@@ -213,6 +219,7 @@ export default function useGameSocket({
       onDM300FightStarted,
       onDwarfKingFightStarted,
       onDwarfKingPhase2,
+      onDwarfKingPhase3,
       onYogFightStarted,
       onYogFinalPhase,
       onShopOpen,
@@ -240,10 +247,13 @@ export default function useGameSocket({
       onLoreNeeded,
     });
 
+    const turnState = new TurnStateSync({ setGameMode, setTurnState });
+
     const syncContext: StateSyncContext = {
       world,
       entities,
       heroState,
+      turnState,
     };
 
     const eventContext: GameEventContext = {
@@ -337,6 +347,10 @@ export default function useGameSocket({
         });
 
         if (data.difficulty) heroState.setDifficulty(data.difficulty);
+        // Read here, not off the state frame: a turn-based room has to disable
+        // movement prediction before the first STATE_UPDATE is applied.
+        if (data.game_mode) turnState.setGameMode(data.game_mode);
+        if (data.turn) turnState.syncTurnState(data.turn);
         if (data.player_id) entities.setMyPlayerId(data.player_id);
 
         entities.setTraps((data.traps || []).map(t => ({
@@ -378,6 +392,7 @@ export default function useGameSocket({
             visible_tiles: [],
             events: [],
             self_player: data.self_player,
+            turn: data.turn,
           }, syncContext);
         }
       };

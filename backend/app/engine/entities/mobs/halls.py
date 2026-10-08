@@ -1,6 +1,6 @@
 # Copyright (C) 2026 ArtemNikov
 #
-from typing import List
+from typing import List, Tuple
 
 from pydantic import BaseModel, Field
 
@@ -36,6 +36,10 @@ class YogDzewa(MobEntity):
     phase: int = 0
     fist_ids: List[str] = Field(default_factory=list)  # currently-alive spawned fist instance IDs
     fist_order: List[str] = Field(default_factory=list)  # ordered fist class names yet to be spawned
+    challenge_summons: List[str] = Field(default_factory=list)
+    regular_summons: List[str] = Field(default_factory=list)
+    targeted_cells: List[Tuple[int, int]] = Field(default_factory=list)
+    ability_telegraph_timer: int = 0
     # Tick-scaled (~10s) initial cooldowns -- see _TICKS_PER_TURN
     # in ai_yog_dzewa.py for why these aren't the raw SPD turn-count minimums.
     ability_cooldown: float = 10.0 * TICKS_PER_TURN
@@ -43,7 +47,9 @@ class YogDzewa(MobEntity):
     fight_started: bool = False
 
     def defense_proc(self, damage: int, attacker, floor_mobs: dict, tile_x: int, tile_y: int, **kwargs) -> int:
-        # Invincible while any fist is alive (phases 0-4).
+        # Invincible before fight starts, or while any fist is alive (phases 0-4).
+        if self.phase == 0:
+            return 0
         if self.phase < 5:
             alive_fists = [m for m in floor_mobs.values()
                            if m.id in self.fist_ids and getattr(m, 'is_alive', False)]
@@ -51,21 +57,34 @@ class YogDzewa(MobEntity):
                 return 0
         return damage
 
+    def take_damage(self, amount: int, is_split_damage: bool = False) -> int:
+        pre_hp = self.hp
+        dealt = super().take_damage(amount, is_split_damage)
+        if self.phase < 4:
+            self.hp = max(self.hp, self.max_hp - 300 * self.phase)
+        elif self.phase == 4:
+            self.hp = max(self.hp, 100)
+        self.is_alive = self.hp > 0
+        dmg_taken = pre_hp - self.hp
+        if dmg_taken > 0:
+            self.ability_cooldown = max(0.0, self.ability_cooldown - (dmg_taken / 10.0) * TICKS_PER_TURN)
+            self.summon_cooldown = max(0.0, self.summon_cooldown - (dmg_taken / 10.0) * TICKS_PER_TURN)
+        return dmg_taken
 
-# Fists are invincible while standing within this many tiles (Manhattan) of
-# their Yog-Dzewa.
+
+# Fists are invincible while standing within this many tiles (Chebyshev/King-move)
+# of their Yog-Dzewa.
 FIST_INVINCIBILITY_RADIUS = 4
 
 
 def _is_fist_near_yog(fist, floor_mobs: dict) -> bool:
-    """Return True when `fist` is within FIST_INVINCIBILITY_RADIUS tiles of its Yog (Manhattan)."""
+    """Return True when `fist` is within FIST_INVINCIBILITY_RADIUS tiles of its Yog (Chebyshev)."""
     if not fist.yog_id:
         return False
     yog = floor_mobs.get(fist.yog_id)
     if yog is None or not yog.is_alive:
         return False
-    return (abs(fist.pos.x - yog.pos.x) + abs(fist.pos.y - yog.pos.y)
-            <= FIST_INVINCIBILITY_RADIUS)
+    return max(abs(fist.pos.x - yog.pos.x), abs(fist.pos.y - yog.pos.y)) <= FIST_INVINCIBILITY_RADIUS
 
 
 class _YogFistMixin(BaseModel):
@@ -75,11 +94,9 @@ class _YogFistMixin(BaseModel):
     view_distance: int = 6
     # YogFist.java:77 sets `state = HUNTING` in the instance initializer --
     # fists know where the hero is immediately, skipping the generic
-    # idle/sleeping/wandering detection rolls (tick.py). Without this, a
-    # freshly-spawned fist never moves away from its spawn point next to
-    # Yog, staying permanently inside FIST_INVINCIBILITY_RADIUS and making
-    # Yog permanently invulnerable.
+    # idle/sleeping/wandering detection rolls (tick.py).
     ai_state: str = "hunting"
+    invuln_warned: bool = False
 
     def defense_proc(self, damage: int, attacker, floor_mobs: dict, tile_x: int, tile_y: int, **kwargs) -> int:
         if _is_fist_near_yog(self, floor_mobs):
@@ -129,14 +146,14 @@ class SoiledFist(_YogFistMixin, MobEntity):
 
     ranged_cooldown: float = 0.0
 
-    def take_damage(self, amount: int):
+    def take_damage(self, amount: int, is_split_damage: bool = False):
         # SoiledFist.damage(): SPD reduces damage based on nearby grass cells
         # (0-6 -> up to 100% reduction). Grass spread isn't ported, so apply a
         # flat 25% reduction as a documented simplification. (SPD also makes
         # Soiled immune to Burning-sourced damage, but take_damage here has no
         # damage-source param to check, so that part is omitted.)
         amount = round(amount * 0.75)
-        return super().take_damage(amount)
+        return super().take_damage(amount, is_split_damage)
 
 
 class RottingFist(_YogFistMixin, MobEntity):
@@ -181,7 +198,7 @@ class RustedFist(_YogFistMixin, MobEntity):
     ranged_cooldown: float = 0.0
     viscosity_stacks: int = 0
 
-    def take_damage(self, amount: int):
+    def take_damage(self, amount: int, is_split_damage: bool = False):
         # RustedFist.damage(): all incoming damage is deferred via the
         # Viscosity.DeferedDamage buff and released gradually (10%/tick) by
         # _update_yog_fist in tick.py. No immediate HP loss.
@@ -212,8 +229,8 @@ class BrightFist(_YogFistMixin, MobEntity):
     teleport_used: bool = False
     pending_teleport: bool = False
 
-    def take_damage(self, amount: int):
-        dealt = super().take_damage(amount)
+    def take_damage(self, amount: int, is_split_damage: bool = False):
+        dealt = super().take_damage(amount, is_split_damage)
         # BrightFist.damage(): on first crossing below 50% HP, clamp to
         # exactly half HP and teleport away (handled in _update_yog_fist).
         if self.hp <= self.max_hp // 2 and not self.teleport_used:
@@ -246,8 +263,8 @@ class DarkFist(_YogFistMixin, MobEntity):
     teleport_used: bool = False
     pending_teleport: bool = False
 
-    def take_damage(self, amount: int):
-        dealt = super().take_damage(amount)
+    def take_damage(self, amount: int, is_split_damage: bool = False):
+        dealt = super().take_damage(amount, is_split_damage)
         # DarkFist.damage(): same 50%-HP teleport pattern as BrightFist.
         if self.hp <= self.max_hp // 2 and not self.teleport_used:
             self.hp = self.max_hp // 2
@@ -276,3 +293,21 @@ class YogRipper(RipperDemon):
     name: str = "Yog Ripper"
     properties: List[str] = ["DEMONIC", "BOSS_MINION"]
     max_lvl: int = -2
+
+
+class Larva(MobEntity):
+    """Yog-Dzewa minion: Larva. HP=20, defense=12, attack=30, dmg=15-25, dr=0-4."""
+    name: str = "Larva"
+    hp: int = 20
+    max_hp: int = 20
+    attack_skill: int = 30
+    defense_skill: int = 12
+    damage_min: int = 15
+    damage_max: int = 25
+    dr_min: int = 0
+    dr_max: int = 4
+    exp: int = 5
+    max_lvl: int = -2
+    properties: List[str] = ["DEMONIC", "BOSS_MINION"]
+    loot_table: List[DropEntry] = []
+

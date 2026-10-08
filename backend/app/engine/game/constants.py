@@ -20,6 +20,7 @@ TARGET_TICK_INTERVAL: float = TICK_DURATION
 
 # Movement pacing derived from tick rate
 AUTO_MOVE_INTERVAL = 0.15  # real seconds per tile at base speed
+TURN_BASED_WALK_SPEED_MULTIPLIER = 2.0  # 2x walk animation speed in turn-based mode
 BASE_STEP_TICKS = max(1, int(round(AUTO_MOVE_INTERVAL * GAME_LOOP_HZ)))  # ticks per step (e.g. 6 at 40Hz)
 MAX_PLAYER_INPUT_QUEUE = 8
 KEY_TIME_TO_UNLOCK = 0.5
@@ -113,3 +114,68 @@ TICKS_PER_TURN = GAME_TURN_TICKS
 
 # Gas/fog tick interval: one gas cloud update per game turn (~1s).
 GAS_TICK_INTERVAL = GAME_TURN_TICKS
+
+# Game modes and turn-based scheduler constants.
+GAME_MODE_REALTIME = "realtime"
+GAME_MODE_TURNBASED = "turnbased"
+DEFAULT_TURN_TIMER_SECONDS = 60.0
+# Upper bound on actor turns drained inside one 40Hz tick. A long mob cascade
+# yields after this many steps so the tick can broadcast and give the event loop
+# back; the next tick resumes from where it stopped.
+MAX_TURN_STEPS_PER_TICK = 240
+# How many upcoming actor ids ride along in the per-viewer turn payload.
+TURN_ORDER_PREVIEW = 8
+
+# SPD Actor.spendConstant rounds `time` to a whole number when it lands within
+# this distance of one, absorbing float drift (Actor.java:64-67).
+TURN_TIME_EPSILON = 0.001
+
+# SPD actor scheduling priorities (Actor.java:45-50). Higher acts first on a
+# time tie; positive is before the hero, negative after.
+HERO_PRIO = 0
+MOB_PRIO = -20
+
+# --- SPD turn costs -------------------------------------------------------
+# Action costs in SPD time units, ported from the Java source. One unit is one
+# hero turn; a move costs 1/speed so a speed-1.3 mob acts twice per hero turn.
+
+# Char.move(): `c.spend(1 / c.speed())` -- actors/Char.java:298
+TIME_TO_MOVE_BASE = 1.0
+# Mob/Hero.onAttackComplete(): `spend(attackDelay())`, 1f, /1.5 under Adrenaline
+# -- actors/mobs/Mob.java:678, actors/hero/Hero.java:2325
+TIME_TO_ATTACK = 1.0
+# Hero.TIME_TO_SEARCH -- actors/hero/Hero.java:204
+TIME_TO_SEARCH = 2.0
+# Hero.TIME_TO_REST -- actors/hero/Hero.java:203
+TIME_TO_REST = 1.0
+# Item.TIME_TO_PICK_UP / TIME_TO_DROP / TIME_TO_THROW -- items/Item.java:66-68
+# EquipableItem.timeToEquip -- items/EquipableItem.java:118
+TIME_TO_PICK_UP = 1.0
+TIME_TO_DROP = 1.0
+TIME_TO_EQUIP = 1.0
+TIME_TO_THROW = 1.0
+# Scroll.TIME_TO_READ -- items/scrolls/Scroll.java:71
+TIME_TO_READ = 1.0
+# Potion.TIME_TO_DRINK -- items/potions/Potion.java:88
+TIME_TO_DRINK = 1.0
+# Food.TIME_TO_EAT -- items/food/Food.java:47
+TIME_TO_EAT = 3.0
+# Wand.TIME_TO_ZAP -- items/wands/Wand.java:80
+TIME_TO_ZAP = 1.0
+# Key.TIME_TO_UNLOCK -- items/keys/Key.java:38
+TIME_TO_UNLOCK = 1.0
+# Torch.TIME_TO_LIGHT -- items/Torch.java:40
+TIME_TO_LIGHT = 1.0
+# Stylus.TIME_TO_INSCRIBE -- items/Stylus.java:43
+TIME_TO_INSCRIBE = 2.0
+# LloydsBeacon.TIME_TO_USE -- items/artifacts/LloydsBeacon.java:55
+TIME_TO_ABILITY = 1.0
+# Mob.TIME_TO_WAKE_UP -- actors/mobs/Mob.java:134
+TIME_TO_WAKE_UP = 1.0
+# Mob.TIME_TO_IDLE -- actors/mobs/Mob.java:133. Charged when a mob's act() has
+# nothing to do: a sleeping mob, or one that can't reach its target this turn.
+TIME_TO_IDLE = 1.0
+# Port-only: SPD has no such constant -- burning a turn is Hero.rest() at
+# TIME_TO_REST. Used for the turn-timer auto-wait and for the WAIT message.
+TIME_TO_WAIT = TIME_TO_REST
+

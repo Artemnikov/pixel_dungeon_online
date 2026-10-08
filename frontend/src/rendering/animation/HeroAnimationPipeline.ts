@@ -125,8 +125,10 @@ export class WalkAnimationState implements IHeroAnimationState {
   }
 
   public getFrameIndex(ctx: AnimationContext): number {
+    const moveDuration = ctx.player.moveDuration || ctx.player.step_duration_ms || MOVE_DURATION;
+    const frameInterval = Math.max(15, Math.round(50 * (moveDuration / MOVE_DURATION)));
     return WalkAnimationState.RUN_FRAMES[
-      Math.floor(ctx.now / 50) % WalkAnimationState.RUN_FRAMES.length
+      Math.floor(ctx.now / frameInterval) % WalkAnimationState.RUN_FRAMES.length
     ];
   }
 }

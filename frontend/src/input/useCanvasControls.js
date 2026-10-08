@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react';
 import { TILE_SIZE, MIN_ZOOM, MAX_ZOOM } from '../constants';
 import { isFloorFadeActive } from '../rendering/floorTransition';
 import { resolveTapAction } from './resolveTap';
+import { isTurnRoom, sendTurnRoomTap } from './turnTap';
 import * as movementPredictor from '../net/movementPredictor';
 import { defaultMoveResultDispatcher } from '../net/movement/MoveResultDispatcher';
 import { startLocalPlayerMeleeAnim } from '../net/events/combat';
@@ -30,6 +31,8 @@ export default function useCanvasControls({
   gridRef,
   onOpenAlchemyRef,
   playerAnimRef,
+  gameModeRef,
+  canActRef,
 }) {
   const dragStartRef = useRef({ x: 0, y: 0 });
   const dragStartPanRef = useRef({ x: 0, y: 0 });
@@ -47,26 +50,10 @@ export default function useCanvasControls({
     const onMouseDown = (e) => {
       if (isFloorFadeActive(floorFadeRef)) return;
       dragStartRef.current = { x: e.clientX, y: e.clientY };
-      if (isCameraDetachedRef.current) {
-        const rect = canvas.getBoundingClientRect();
-        const myPlayer = entitiesRef.current?.players?.[myPlayerIdRef.current];
-        if (myPlayer) {
-          const lw = rect.width, lh = rect.height;
-          const effectivePan = {
-            x: cameraLerpRef.current.x - (myPlayer.renderPos.x * TILE_SIZE - lw / 2 + TILE_SIZE / 2),
-            y: cameraLerpRef.current.y - (myPlayer.renderPos.y * TILE_SIZE - lh / 2 + TILE_SIZE / 2),
-          };
-          dragStartPanRef.current = effectivePan;
-          panOffsetRef.current = effectivePan;
-        }
-      } else {
-        dragStartPanRef.current = { ...panOffsetRef.current };
-      }
+      dragStartPanRef.current = { ...cameraLerpRef.current };
       isDraggingRef.current = true;
       hasDraggedRef.current = false;
       isRefocusingRef.current = false;
-      isCameraDetachedRef.current = true;
-      detachedCameraRef.current = { ...cameraLerpRef.current };
     };
 
     const onMouseMove = (e) => {
@@ -86,12 +73,19 @@ export default function useCanvasControls({
       if (!isDraggingRef.current) return;
       const dx = e.clientX - dragStartRef.current.x;
       const dy = e.clientY - dragStartRef.current.y;
-      if (Math.sqrt(dx * dx + dy * dy) > 4) hasDraggedRef.current = true;
-      const z = zoomRef.current;
-      panOffsetRef.current = {
-        x: dragStartPanRef.current.x - dx / z,
-        y: dragStartPanRef.current.y - dy / z,
-      };
+      if (!hasDraggedRef.current && (dx * dx + dy * dy > 16)) {
+        hasDraggedRef.current = true;
+        isCameraDetachedRef.current = true;
+        isRefocusingRef.current = false;
+        dragStartPanRef.current = { ...cameraLerpRef.current };
+      }
+      if (hasDraggedRef.current) {
+        const z = zoomRef.current;
+        detachedCameraRef.current = {
+          x: dragStartPanRef.current.x - dx / z,
+          y: dragStartPanRef.current.y - dy / z,
+        };
+      }
     };
 
     const onMouseUp = () => { isDraggingRef.current = false; };
@@ -105,8 +99,16 @@ export default function useCanvasControls({
       const oldZoom = zoomRef.current;
       const factor = e.deltaY < 0 ? 1.1 : 0.9;
       const newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, oldZoom * factor));
-      panOffsetRef.current.x += (cursorX - cw / 2) * (1 / oldZoom - 1 / newZoom);
-      panOffsetRef.current.y += (cursorY - ch / 2) * (1 / oldZoom - 1 / newZoom);
+      if (isCameraDetachedRef.current) {
+        const cursorWorldX = (cursorX - cw / 2) / oldZoom + cameraLerpRef.current.x + cw / 2;
+        const cursorWorldY = (cursorY - ch / 2) / oldZoom + cameraLerpRef.current.y + ch / 2;
+        detachedCameraRef.current = {
+          x: cursorWorldX - (cursorX - cw / 2) / newZoom - cw / 2,
+          y: cursorWorldY - (cursorY - ch / 2) / newZoom - ch / 2,
+        };
+        cameraLerpRef.current.x = detachedCameraRef.current.x;
+        cameraLerpRef.current.y = detachedCameraRef.current.y;
+      }
       zoomRef.current = newZoom;
     };
 
@@ -122,33 +124,18 @@ export default function useCanvasControls({
           x: (t1.clientX + t2.clientX) / 2 - rect.left,
           y: (t1.clientY + t2.clientY) / 2 - rect.top,
         };
-        pinchPanStartRef.current = { ...panOffsetRef.current };
+        pinchPanStartRef.current = { ...cameraLerpRef.current };
         isDraggingRef.current = false;
         hasDraggedRef.current = true;
+        isCameraDetachedRef.current = true;
       } else {
         isPinchingRef.current = false;
         const t = e.touches[0];
         dragStartRef.current = { x: t.clientX, y: t.clientY };
-        if (isCameraDetachedRef.current) {
-          const rect = canvas.getBoundingClientRect();
-          const myPlayer = entitiesRef.current?.players?.[myPlayerIdRef.current];
-          if (myPlayer) {
-            const lw = rect.width, lh = rect.height;
-            const effectivePan = {
-              x: cameraLerpRef.current.x - (myPlayer.renderPos.x * TILE_SIZE - lw / 2 + TILE_SIZE / 2),
-              y: cameraLerpRef.current.y - (myPlayer.renderPos.y * TILE_SIZE - lh / 2 + TILE_SIZE / 2),
-            };
-            dragStartPanRef.current = effectivePan;
-            panOffsetRef.current = effectivePan;
-          }
-        } else {
-          dragStartPanRef.current = { ...panOffsetRef.current };
-        }
+        dragStartPanRef.current = { ...cameraLerpRef.current };
         isDraggingRef.current = true;
         hasDraggedRef.current = false;
         isRefocusingRef.current = false;
-        isCameraDetachedRef.current = true;
-        detachedCameraRef.current = { ...cameraLerpRef.current };
       }
     };
 
@@ -179,10 +166,13 @@ export default function useCanvasControls({
         const cw = rect.width, ch = rect.height;
         const z0 = pinchStartZoomRef.current;
         const mx0 = pinchMidStartRef.current.x, my0 = pinchMidStartRef.current.y;
-        panOffsetRef.current = {
+        isCameraDetachedRef.current = true;
+        detachedCameraRef.current = {
           x: pinchPanStartRef.current.x + (mx0 - cw / 2) / z0 - (midX - cw / 2) / newZoom,
           y: pinchPanStartRef.current.y + (my0 - ch / 2) / z0 - (midY - ch / 2) / newZoom,
         };
+        cameraLerpRef.current.x = detachedCameraRef.current.x;
+        cameraLerpRef.current.y = detachedCameraRef.current.y;
         zoomRef.current = newZoom;
         hasDraggedRef.current = true;
         return;
@@ -193,12 +183,19 @@ export default function useCanvasControls({
       const dy = t.clientY - dragStartRef.current.y;
       // Touch is less precise than a mouse; a higher threshold keeps a deliberate
       // combat tap from being swallowed as an accidental pan.
-      if (Math.sqrt(dx * dx + dy * dy) > 10) hasDraggedRef.current = true;
-      const z = zoomRef.current;
-      panOffsetRef.current = {
-        x: dragStartPanRef.current.x - dx / z,
-        y: dragStartPanRef.current.y - dy / z,
-      };
+      if (!hasDraggedRef.current && (dx * dx + dy * dy > 100)) {
+        hasDraggedRef.current = true;
+        isCameraDetachedRef.current = true;
+        isRefocusingRef.current = false;
+        dragStartPanRef.current = { ...cameraLerpRef.current };
+      }
+      if (hasDraggedRef.current) {
+        const z = zoomRef.current;
+        detachedCameraRef.current = {
+          x: dragStartPanRef.current.x - dx / z,
+          y: dragStartPanRef.current.y - dy / z,
+        };
+      }
     };
 
     const onTouchEnd = (e) => {
@@ -231,6 +228,7 @@ export default function useCanvasControls({
       }
 
       const myPlayer = entitiesRef?.current?.players?.[myPlayerIdRef?.current];
+      if (myPlayer?.is_downed || myPlayer?.is_alive === false) return;
       const playerTile = myPlayer ? (myPlayer.targetPos || myPlayer.renderPos) : null;
       const action = resolveTapAction({
         tileX, tileY, playerTile,
@@ -242,7 +240,20 @@ export default function useCanvasControls({
         onOpenAlchemyRef?.current?.();
         return;
       }
-      if (action.type === 'MOVE' || action.type === 'PATH_STEPS') isRefocusingRef.current = true;
+      if (action.type === 'MOVE' || action.type === 'PATH_STEPS') {
+        isCameraDetachedRef.current = false;
+        panOffsetRef.current = { x: 0, y: 0 };
+        isRefocusingRef.current = false;
+      }
+      if (isTurnRoom(gameModeRef)) {
+        // Turn-based: one tap is one turn, sent as a single message the
+        // scheduler can charge. A turn room drops the MOVE_STEP/PATH_STEPS
+        // plumbing the real-time branch below relies on, so a tap that bumps a
+        // mob has to go out as a plain MOVE for the bump to become the attack.
+        if (canActRef?.current === false) return;
+        sendTurnRoomTap(socketRef.current, action);
+        return;
+      }
       // One-shot actions (WAIT, NPC_INTERACT) and far-tap PATH_STEPS go out as
       // the plain message. Adjacent-tap MOVE is NOT sent raw: it goes through
       // the same paced, seq-acked MOVE_STEP machinery as the keyboard, so the
@@ -297,7 +308,7 @@ export default function useCanvasControls({
       canvas.removeEventListener('touchmove', onTouchMove);
       canvas.removeEventListener('touchend', onTouchEnd);
     };
-  }, [enabled, canvasRef, socketRef, panOffsetRef, zoomRef, cameraLerpRef, isDraggingRef, isRefocusingRef, isPinchingRef, isCameraDetachedRef, detachedCameraRef, targetingModeRef, onTargetTapRef, examineModeRef, onExamineTapRef, entitiesRef, myPlayerIdRef, hoveredCellRef, floorFadeRef, gridRef, onOpenAlchemyRef, playerAnimRef]);
+  }, [enabled, canvasRef, socketRef, panOffsetRef, zoomRef, cameraLerpRef, isDraggingRef, isRefocusingRef, isPinchingRef, isCameraDetachedRef, detachedCameraRef, targetingModeRef, onTargetTapRef, examineModeRef, onExamineTapRef, entitiesRef, myPlayerIdRef, hoveredCellRef, floorFadeRef, gridRef, onOpenAlchemyRef, playerAnimRef, gameModeRef, canActRef]);
 
   return { hasDraggedRef };
 }

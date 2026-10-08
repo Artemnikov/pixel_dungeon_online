@@ -237,6 +237,112 @@
   filter: brightness(1.2);
 }
 
+/* --- Death dialog (small bottom dialog on death) --- */
+.wnd-death-dialog {
+  position: fixed;
+  left: 50%;
+  bottom: max(16px, env(safe-area-inset-bottom, 16px));
+  transform: translateX(-50%) translateY(20px);
+  z-index: 900;
+  width: 340px;
+  max-width: calc(100vw - 32px);
+  background: #1a1a22;
+  border: 2px solid #4a4a55;
+  border-radius: 8px;
+  padding: 14px 16px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.85);
+  font-family: 'Courier New', Courier, monospace;
+  color: #ccc;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+}
+
+.wnd-death-dialog--visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(-50%) translateY(0);
+}
+
+.wnd-death-title {
+  font-size: 18px;
+  font-weight: bold;
+  color: #e74c3c;
+  text-align: center;
+  margin-bottom: 10px;
+  text-shadow: 0 1px 4px #000;
+  letter-spacing: 1px;
+}
+
+.wnd-death-stats {
+  border: 1px solid #333;
+  border-radius: 4px;
+  padding: 6px 10px;
+  margin-bottom: 12px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.wnd-death-stat-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 2px 0;
+  font-size: 12px;
+}
+
+.wnd-death-stat-label {
+  color: #888;
+}
+
+.wnd-death-stat-value {
+  color: #ddd;
+}
+
+.wnd-death-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.wnd-death-btn {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 12px;
+  font-weight: bold;
+  padding: 6px 12px;
+  color: #fff;
+  background: #2c2c34;
+  border: 1px solid #555562;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.wnd-death-btn:hover {
+  background: #3c3c46;
+  border-color: #777788;
+}
+
+.wnd-death-btn--primary {
+  background: #2e5c38;
+  border-color: #4caf50;
+  color: #e8f5e9;
+}
+
+.wnd-death-btn--primary:hover {
+  background: #387044;
+  border-color: #81c784;
+}
+
+.wnd-death-btn--secondary {
+  color: #ffe070;
+  border-color: #7a6a3a;
+}
+
+.wnd-death-btn--secondary:hover {
+  border-color: #ffe070;
+  background: #3a3424;
+}
+
 /* --- score breakdown (game over + victory) --- */
 .game-over-score {
   display: flex;

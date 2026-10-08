@@ -1,6 +1,7 @@
 import logging
 from typing import Any, Callable, Dict, Type
 
+from app.engine.game.constants import GAME_MODE_REALTIME, GAME_MODE_TURNBASED
 from app.engine.manager import GameInstance
 from app.schemas import CLIENT_MESSAGE_ADAPTER, ClientMessage, PongMessage
 from app.schemas import messages as msg
@@ -28,6 +29,16 @@ class MessageDispatcher:
     ) -> None:
         if isinstance(message, msg.Ping):
             await websocket.send_json(PongMessage().model_dump())
+            return
+
+        # A turn-based room owns its own action intake: a message becomes a
+        # costed TurnAction queued for the player's next turn, or is dropped.
+        # Going through the normal handlers instead would let a player act out
+        # of turn, and would run the real-time movement plumbing a turn room
+        # deliberately ignores. `submit_turn_action` reports False for both
+        # "not your turn" and "not an action", so there is nothing else to do.
+        if getattr(game, "game_mode", GAME_MODE_REALTIME) == GAME_MODE_TURNBASED:
+            game.submit_turn_action(player_id, message)
             return
 
         handler = self._handlers.get(type(message))

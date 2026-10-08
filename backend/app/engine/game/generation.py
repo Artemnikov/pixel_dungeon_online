@@ -8,7 +8,7 @@ with mobs, items, traps.
 
 import random
 import uuid
-from typing import List, Tuple, Type
+from typing import List, Optional, Tuple, Type
 
 from app.engine.dungeon.constants import TileType
 from app.engine.dungeon.dungeon_seed import seed_for_depth
@@ -204,7 +204,8 @@ class GenerationMixin:
         if depth == 26:
             gen_level, _rooms = build_last_level(rng, depth, self.run_state)
         elif is_boss_level(depth):
-            gen_level, _rooms = build_boss_floor(rng, depth, self.run_state)
+            gen_level, _rooms = build_boss_floor(rng, depth, self.run_state,
+                                                 challenged="stronger_bosses" in self.challenges)
         else:
             gen_level, _rooms = build_floor(rng, depth, self.run_state,
                                             mossy_chance, trap_chance)
@@ -213,11 +214,14 @@ class GenerationMixin:
         floor = gen_level_to_floor_state(gen_level, depth)
 
         if "stronger_bosses" in self.challenges:
-            from app.engine.entities.mobs import Goo
+            from app.engine.entities.mobs import DwarfKing, Goo
             for mob in floor.mobs.values():
                 if isinstance(mob, Goo):
                     mob.hp = 120
                     mob.max_hp = 120
+                elif isinstance(mob, DwarfKing):
+                    mob.hp = 450
+                    mob.max_hp = 450
 
         self._apply_party_loot_bonus(floor)
         self._trinket_apply_post_spawn(floor)
@@ -303,11 +307,13 @@ class GenerationMixin:
             raw = 5 + floor_id
         return min(raw, MOB_LIMIT_MAX)
 
-    def _spawn_mob_at(self, cls: Type[MobEntity], x: int, y: int) -> MobEntity:
+    def _spawn_mob_at(self, cls: Type[MobEntity], x: int, y: int, floor_id: Optional[int] = None) -> MobEntity:
         mob_id = str(uuid.uuid4())
         # attack_cooldown comes from the mob class, decoupled from movement
         # `speed` (a fast mover chases quicker but does not attack quicker).
         mob = cls(id=mob_id, pos=Position(x=x, y=y), faction=Faction.DUNGEON)
+        if floor_id is not None:
+            mob.floor_id = floor_id
         return mob
 
     def _spawn_content(self, floor: FloorState):
@@ -370,7 +376,7 @@ class GenerationMixin:
                 rare_cls = rare_alts.get(cls)
                 if rare_cls and random.random() < rare_chance:
                     cls = rare_cls
-                mob = self._spawn_mob_at(cls, x, y)
+                mob = self._spawn_mob_at(cls, x, y, floor.floor_id)
                 floor.mobs[mob.id] = mob
 
         num_items = 4 + random.randint(0, 3)

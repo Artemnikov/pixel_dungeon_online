@@ -38,9 +38,15 @@
   }
 
   .fullscreen-btn {
-    bottom: max(12px, env(safe-area-inset-bottom, 12px));
+    top: calc(max(12px, env(safe-area-inset-top)) + 5%);
+    bottom: auto;
     right: 8px;
     width: 36px;
     height: 36px;
+  }
+
+  .side-tag--turn {
+    top: calc(max(12px, env(safe-area-inset-top)) + 5% + 42px);
+    right: 8px;
   }
 }

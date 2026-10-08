@@ -82,6 +82,126 @@
 .side-tag--cleric:hover { background: rgba(40, 35, 15, 0.85); }
 .side-tag--cleric.on-cooldown { opacity: 0.55; cursor: not-allowed; border-color: #556677; }
 .side-tag-cd { font: 10px monospace; color: #fa4; font-weight: bold; }
+.side-tag-cd.is-urgent { color: #f66; }
+
+/* --- TurnIndicator: whose turn it is, plus the auto-wait countdown and player badges --- */
+.side-tag--turn {
+  position: fixed;
+  top: calc(max(12px, env(safe-area-inset-top)) + 46px);
+  right: max(12px, env(safe-area-inset-right));
+  z-index: 46;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+  border-color: #4a7a4a;
+  cursor: default;
+  padding: 4px 6px;
+  background: rgba(15, 12, 10, 0.85);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4);
+}
+.side-tag--turn:hover {
+  background: rgba(20, 16, 14, 0.9);
+}
+.side-tag--turn.is-mine {
+  border-color: #7ec87e;
+  box-shadow: 0 0 8px rgba(126, 200, 126, 0.35);
+}
+.side-tag--turn.is-mine .side-tag__label {
+  color: #e8f5e8;
+}
+.side-tag--turn.is-waiting {
+  border-color: #556655;
+}
+.side-tag--turn.is-waiting .side-tag__label {
+  color: #aaa;
+}
+
+.turn-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.turn-badges {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.turn-badge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 5px;
+  border-radius: 3px;
+  font: 11px monospace;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  transition: all 0.2s ease;
+}
+
+.turn-badge__icon {
+  font-size: 11px;
+  line-height: 1;
+}
+
+.turn-badge__name {
+  flex: 1;
+  max-width: 90px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: bold;
+}
+
+.turn-badge__status {
+  font-size: 10px;
+  line-height: 1;
+}
+
+/* Waiting on this player to move */
+.turn-badge--waiting {
+  border-color: #d4a034;
+  background: rgba(60, 45, 10, 0.55);
+  color: #ffd875;
+}
+.turn-badge--waiting .turn-badge__status {
+  animation: turn-pulse 1.2s infinite ease-in-out;
+}
+
+/* Local player needs to move */
+.turn-badge--waiting.turn-badge--me {
+  border-color: #7ec87e;
+  background: rgba(25, 55, 25, 0.65);
+  color: #98f598;
+}
+
+/* Player has acted and is ready */
+.turn-badge--ready {
+  border-color: #3b6b3b;
+  background: rgba(15, 35, 15, 0.4);
+  color: #88bb88;
+  opacity: 0.75;
+}
+.turn-badge--ready .turn-badge__status {
+  color: #7ec87e;
+  font-weight: bold;
+}
+
+/* Dungeon faction queue indicator */
+.turn-badge--dungeon {
+  border-color: #554444;
+  background: rgba(35, 20, 20, 0.4);
+  color: #bbb;
+  opacity: 0.7;
+}
+
+@keyframes turn-pulse {
+  0%, 100% { opacity: 0.5; transform: scale(0.95); }
+  50% { opacity: 1; transform: scale(1.15); }
+}
 
 /* --- LootIndicator — item preview above inventory button --- */
 .loot-indicator {

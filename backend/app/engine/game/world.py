@@ -391,6 +391,7 @@ def _spawn_wandering_mob(game, floor, floor_id: int, cls, cx: int, cy: int):
     floor as wandering and emit the SUMMON event. Shared by the traps that
     spawn already-woken mobs (SummoningTrap/DistortionTrap/GuardianTrap)."""
     mob = cls(id=str(uuid.uuid4()), pos=Position(x=cx, y=cy), faction=Faction.DUNGEON)
+    mob.floor_id = floor_id
     if hasattr(mob, "floor_level"):
         mob.floor_level = floor_id
     mob.ai_state = "wandering"

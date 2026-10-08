@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import './styles/index.css';
 
@@ -18,6 +18,8 @@ import AttackIndicator from './ui/AttackIndicator';
 import ActionIndicator from './ui/ActionIndicator';
 import ClericQuickSpellTag from './ui/ClericQuickSpellTag';
 import ResumeIndicator from './ui/ResumeIndicator';
+import TurnIndicator from './ui/TurnIndicator';
+import { canActNow } from './net/services/TurnStateSync';
 import DangerIndicator from './ui/DangerIndicator';
 import LootIndicator from './ui/LootIndicator';
 import StatusPane from './ui/StatusPane';
@@ -106,6 +108,20 @@ function App() {
   const [bossFightActive, setBossFightActive] = useState(false);
   const [bossBleeding, setBossBleeding] = useState(false);
   const [depth, setDepth] = useState(1);
+  const [gameMode, setGameMode] = useState('realtime');
+  const [turnState, setTurnState] = useState(null);
+  // The input layer reads this synchronously on every key event, so it is a
+  // ref rather than the state value itself. Always defined: `undefined` would
+  // mean "real-time, never gate" to the input code, so a turn room that has
+  // not reported a turn yet must start out refusing input.
+  const canActRef = useRef(true);
+  useEffect(() => {
+    canActRef.current = canActNow(gameMode, turnState);
+  }, [gameMode, turnState]);
+  const gameModeRef = useRef(gameMode);
+  useEffect(() => {
+    gameModeRef.current = gameMode;
+  }, [gameMode]);
   const [, setCamera] = useState({ x: 0, y: 0 });
   const [gold, setGold] = useState(0);
   const [energy, setEnergy] = useState(0);
@@ -143,6 +159,7 @@ function App() {
     myStats, setMyStats, bossInfo, setBossInfo,
     bossFightActive, setBossFightActive, bossBleeding, setBossBleeding,
     depth, setDepth, setCamera,
+    gameMode, setGameMode, turnState, setTurnState,
     gold, setGold, energy, setEnergy, hasAmulet, setHasAmulet,
     bossLurking, setBossLurking, exitPos, setExitPos,
     scoreBreakdown, setScoreBreakdown,
@@ -178,6 +195,7 @@ function App() {
     send: game.send, emergencyHealItem: game.emergencyHealItem,
     drinkEmergencyHeal: game.drinkEmergencyHeal,
     viewport,
+    gameModeRef, canActRef,
   });
 
   const rendering = useRenderingHooks({
@@ -194,7 +212,7 @@ function App() {
     searchEffectsRef: game.searchEffectsRef,
     floatingTextRef: game.floatingTextRef, screenFlashRef: game.screenFlashRef,
     screenShakeRef: game.screenShakeRef, myPlayerIdRef: game.myPlayerIdRef,
-    warnedTilesRef: game.warnedTilesRef, transmuteEffectsRef: game.transmuteEffectsRef,
+    warnedTilesRef: game.warnedTilesRef, rockfallTelegraphRef: game.rockfallTelegraphRef, transmuteEffectsRef: game.transmuteEffectsRef,
     flareEffectsRef: game.flareEffectsRef, spellSpriteEffectsRef: game.spellSpriteEffectsRef,
     lightningRef: game.lightningRef, shieldHaloRef: game.shieldHaloRef,
     stateEffectsRef: game.stateEffectsRef, magicMissileRef: game.magicMissileRef,
@@ -205,6 +223,7 @@ function App() {
     panOffsetRef: game.panOffsetRef, cameraLerpRef: game.cameraLerpRef,
     zoomRef: game.zoomRef,
     isRefocusingRef: game.isRefocusingRef, isDraggingRef: game.isDraggingRef,
+    isPinchingRef: game.isPinchingRef,
     isCameraDetachedRef: game.isCameraDetachedRef,
     detachedCameraRef: game.detachedCameraRef,
     setCamera,
@@ -279,9 +298,12 @@ function App() {
         <BossHealthBar boss={bossInfo} bleeding={bossBleedingEffective} interfaceSize={interfaceSize} assetImages={assetImages} />
         <KeyDisplay keys={myStats.keys} depth={depth} />
 
+        <TurnIndicator turn={turnState} myPlayerId={myPlayerId} />
+
         <SideTags>
           <AttackIndicator
             myStats={myStats}
+            canAct={canActNow(gameMode, turnState)}
             onAttack={(targetId) => send({ type: 'ATTACK', target_id: targetId })}
           />
           <ActionIndicator
@@ -384,48 +406,50 @@ function App() {
           />
         )}
 
-        <GameHud
-          interfaceSize={interfaceSize}
-          isDesktop={gameDesktop}
-          canvasWidth={viewport.width}
-          assetImages={assetImages}
-          toolbarItems={toolbarItems}
-          equippedItems={equippedItems}
-          targetingMode={targeting.targetingMode}
-          swappedQuickslots={modals.swappedQuickslots}
-          showInventory={modals.showInventory}
-          belongings={belongings}
-          gold={gold}
-          energy={energy}
-          strength={myStats.strength}
-          myStats={myStats}
-          onSearch={handleExamineOrReveal}
-          onInventory={() => modals.setShowInventory(v => !v)}
-          onQuickBag={modals.handleQuickBag}
-          onSwap={modals.handleSwap}
-          onSlotClick={(item, idx, rect) => {
-            if (item && item.kind === 'holy_tome') {
-              modals.openClericCastBar(rect);
-            } else if (!item || item.is_placeholder || item.default_action == null) {
-              modals.openQuickslotPicker(idx);
-            } else {
-              handleToolbarClick(item);
-            }
-          }}
-          onSlotDoubleClick={handleToolbarDoubleClick}
-          onSlotLongPress={(item, idx) => modals.openQuickslotPicker(idx)}
-          onSlotContextMenu={(item, idx) => modals.openQuickslotPicker(idx)}
-          onUseAbility={sendUseAbility}
-          onTriggerBerserk={() => send({ type: 'TRIGGER_BERSERK' })}
-          onPrepStrike={sendPrepStrike}
-          onUseComboMove={sendUseComboMove}
-          onDuelistFinisher={sendDuelistFinisher}
-          onOpenItem={modals.setUseItemTarget}
-          onContextMenu={(item, x, y) => modals.setCtxMenu({ item, x, y })}
-          onDefaultAction={(item) => executeItemAction(item.id, item.default_action)}
-          onCloseInventory={() => modals.setShowInventory(false)}
-          onLayout={setInventoryPos}
-        />
+        {!myStats.isDowned && (
+          <GameHud
+            interfaceSize={interfaceSize}
+            isDesktop={gameDesktop}
+            canvasWidth={viewport.width}
+            assetImages={assetImages}
+            toolbarItems={toolbarItems}
+            equippedItems={equippedItems}
+            targetingMode={targeting.targetingMode}
+            swappedQuickslots={modals.swappedQuickslots}
+            showInventory={modals.showInventory}
+            belongings={belongings}
+            gold={gold}
+            energy={energy}
+            strength={myStats.strength}
+            myStats={myStats}
+            onSearch={handleExamineOrReveal}
+            onInventory={() => modals.setShowInventory(v => !v)}
+            onQuickBag={modals.handleQuickBag}
+            onSwap={modals.handleSwap}
+            onSlotClick={(item, idx, rect) => {
+              if (item && item.kind === 'holy_tome') {
+                modals.openClericCastBar(rect);
+              } else if (!item || item.is_placeholder || item.default_action == null) {
+                modals.openQuickslotPicker(idx);
+              } else {
+                handleToolbarClick(item);
+              }
+            }}
+            onSlotDoubleClick={handleToolbarDoubleClick}
+            onSlotLongPress={(item, idx) => modals.openQuickslotPicker(idx)}
+            onSlotContextMenu={(item, idx) => modals.openQuickslotPicker(idx)}
+            onUseAbility={sendUseAbility}
+            onTriggerBerserk={() => send({ type: 'TRIGGER_BERSERK' })}
+            onPrepStrike={sendPrepStrike}
+            onUseComboMove={sendUseComboMove}
+            onDuelistFinisher={sendDuelistFinisher}
+            onOpenItem={modals.setUseItemTarget}
+            onContextMenu={(item, x, y) => modals.setCtxMenu({ item, x, y })}
+            onDefaultAction={(item) => executeItemAction(item.id, item.default_action)}
+            onCloseInventory={() => modals.setShowInventory(false)}
+            onLayout={setInventoryPos}
+          />
+        )}
 
         <GameLog send={send} />
         <ToastOverlay />
@@ -523,7 +547,6 @@ function App() {
           onAnkhChoice={(ids) => send({ type: 'ANKH_CHOICE', kept_item_ids: ids })}
           onNewGame={() => { clearResumeBundle(); resetForRestart(); setGameState('SELECT'); }}
           onMenu={() => { clearResumeBundle(); resetForRestart(); setGameState('WELCOME'); }}
-          challenges={challenges}
           onReplayTutorial={handleReplayTutorial}
         />
       </div>

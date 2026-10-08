@@ -10,8 +10,8 @@ export type Fadeable = {
   faded?: boolean;
 };
 
-export function glideDuration(fromX: number, fromY: number, toX: number, toY: number): number {
-  return Math.min(4, Math.max(1, Math.round(Math.max(Math.abs(toX - fromX), Math.abs(toY - fromY))))) * MOVE_DURATION;
+export function glideDuration(fromX: number, fromY: number, toX: number, toY: number, stepDurationMs = MOVE_DURATION): number {
+  return Math.min(4, Math.max(1, Math.round(Math.max(Math.abs(toX - fromX), Math.abs(toY - fromY))))) * stepDurationMs;
 }
 
 export function applyInvisFade(entity: Fadeable, newInvis: number, afk = false): void {

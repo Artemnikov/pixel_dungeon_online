@@ -30,7 +30,7 @@ from app.engine.entities.mobs.city import (
 )
 from app.engine.entities.mobs.halls import (
     YogDzewa, BurningFist, SoiledFist, RottingFist, RustedFist,
-    BrightFist, DarkFist, YogEye, YogScorpio, YogRipper,
+    BrightFist, DarkFist, YogEye, YogScorpio, YogRipper, Larva,
 )
 from app.engine.entities.mobs.universal import (
     Wraith, TormentedSpirit, Piranha, PhantomPiranha, Mimic,
@@ -60,7 +60,7 @@ __all__ = [
     "Eye", "Scorpio", "AcidicScorpio", "RipperDemon",
     # halls
     "YogDzewa", "BurningFist", "SoiledFist", "RottingFist", "RustedFist",
-    "BrightFist", "DarkFist", "YogEye", "YogScorpio", "YogRipper",
+    "BrightFist", "DarkFist", "YogEye", "YogScorpio", "YogRipper", "Larva",
     # universal / spawners / npcs
     "Wraith", "TormentedSpirit", "Piranha", "PhantomPiranha", "Mimic",
     "GoldenMimic", "EbonyMimic", "CrystalMimic", "Statue", "ArmoredStatue",

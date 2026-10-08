@@ -783,6 +783,36 @@ export interface DM300FightStartedEvent {
   data: { mob: string };
 }
 
+/** DM-300 vents toxic gas toward a target position. */
+export interface DM300GasEvent {
+  type: 'DM300_GAS';
+  data: { mob: string; target_x: number; target_y: number };
+}
+
+/** DM-300 rockfall telegraph: threatened cells before boulders crash down. */
+export interface DM300RockfallWarnEvent {
+  type: 'DM300_ROCKFALL_WARN';
+  data: { mob: string; tiles: [number, number][]; duration_ms?: number };
+}
+
+/** DM-300 rockfall impact: boulders crash down on threatened cells. */
+export interface DM300RockfallEvent {
+  type: 'DM300_ROCKFALL';
+  data: { cells: [number, number][] };
+}
+
+/** DM-300 supercharge event: shields up and activates a pylon. */
+export interface DM300SuperchargeEvent {
+  type: 'DM300_SUPERCHARGE';
+  data: { mob: string };
+}
+
+/** Pylon activation event: lightning surges through the pylon. */
+export interface PylonActivatedEvent {
+  type: 'PYLON_ACTIVATED';
+  data: { mob: string; x: number; y: number };
+}
+
 /** Dwarf King noticed the hero — the fight begins. */
 export interface DwarfKingFightStartedEvent {
   type: 'DWARF_KING_FIGHT_STARTED';
@@ -799,6 +829,24 @@ export interface DwarfKingPhase2Event {
 export interface DwarfKingPhase3Event {
   type: 'DWARF_KING_PHASE3';
   data: { mob: string };
+}
+
+/** Dwarf King begins charging a summon on a pedestal. */
+export interface DwarfKingSummonStartEvent {
+  type: 'DWARF_KING_SUMMON_START';
+  data: { x: number; y: number; particle: string };
+}
+
+/** Dwarf King summon finishes charging and bursts into a minion. */
+export interface DwarfKingSummonBurstEvent {
+  type: 'DWARF_KING_SUMMON_BURST';
+  data: { x: number; y: number; mob_cls: string };
+}
+
+/** Dwarf King's Phase 2 barrier is damaged. */
+export interface DwarfKingShieldDamageEvent {
+  type: 'DWARF_KING_SHIELD_DAMAGE';
+  data: { mob: string; amount: number; barrier_hp: number };
 }
 
 /** Yog-Dzewa noticed the hero — the fight begins. */
@@ -835,6 +883,12 @@ export interface EyeChargeEvent {
 export interface EyeDeathRayEvent {
   type: 'EYE_DEATH_RAY';
   data: { mob: string; source_x: number; source_y: number; target_x: number; target_y: number };
+}
+
+/** Life link green health ray between Dwarf King and minion. */
+export interface HealthRayEvent {
+  type: 'HEALTH_RAY';
+  data: { fx: number; fy: number; tx: number; ty: number };
 }
 
 /** Necromancer zaps a cell — summon, heal, or buff its NecroSkeleton (mirrors NecromancerSprite.zap). */
@@ -1244,15 +1298,24 @@ export type GameEvent =
   | GooEnrageEvent
   | GooFightStartedEvent
   | DM300FightStartedEvent
+  | DM300GasEvent
+  | DM300RockfallWarnEvent
+  | DM300RockfallEvent
+  | DM300SuperchargeEvent
+  | PylonActivatedEvent
   | DwarfKingFightStartedEvent
   | DwarfKingPhase2Event
   | DwarfKingPhase3Event
+  | DwarfKingSummonStartEvent
+  | DwarfKingSummonBurstEvent
+  | DwarfKingShieldDamageEvent
   | YogFightStartedEvent
   | YogPhaseChangeEvent
   | YogFinalPhaseEvent
   | TenguFightStartedEvent
   | EyeChargeEvent
   | EyeDeathRayEvent
+  | HealthRayEvent
   | ZapSummonEvent
   | NecroSummonEvent
   | TenguJumpEvent
@@ -1330,6 +1393,38 @@ export type GameEventType = GameEvent['type'];
 
 // --- server -> client: message envelopes -----------------------------------
 
+/** Which game loop a room runs. Decided server-side at room creation. */
+export type GameMode = 'realtime' | 'turnbased';
+
+/**
+ * One entry of the room-global turn queue, as previewed by the server.
+ * `needs_input` marks the actor the room is blocked on.
+ */
+export interface TurnOrderEntry {
+  id: string;
+  kind: 'player' | 'mob';
+  needs_input: boolean;
+  name?: string;
+  class_type?: string;
+  has_acted?: boolean;
+}
+
+/**
+ * Per-viewer turn state, sent only by turn-based rooms. Real-time rooms omit
+ * the key entirely, so a real-time client never sees it.
+ *
+ * `timer` is seconds left before the room auto-Waits, and is only sent to the
+ * player the room is currently waiting on -- the client interpolates between
+ * frames rather than expecting a countdown per frame.
+ */
+export interface TurnState {
+  game_mode?: string;
+  is_my_turn: boolean;
+  turn: number;
+  order: TurnOrderEntry[];
+  timer?: number | null;
+}
+
 /** Sent on connect and whenever the player changes floor (main.py:154). */
 export interface InitMessage {
   type: 'INIT';
@@ -1351,7 +1446,14 @@ export interface InitMessage {
   player_id?: string;
   /** True only when this connect spawned a brand-new hero; false on reconnect/resume. Only present alongside player_id. */
   is_new?: boolean;
+  /**
+   * Which loop this room runs. Sent on the connect INIT so the client can
+   * switch input handling (no movement prediction, turn-gated actions) before
+   * the first STATE_UPDATE arrives.
+   */
+  game_mode?: GameMode;
   self_player?: Player;
+  turn?: TurnState | null;
 }
 
 /** A decorative tilemap overlay (e.g. GooBossRoom's GooNest). */
@@ -1386,6 +1488,11 @@ export interface StateUpdateMessage {
    * kept optional to document the consumer's guard.
    */
   open_doors?: Vec2[];
+  /**
+   * Turn-based rooms only. Absent from real-time frames, which is how the
+   * client tells the two modes apart on the state channel.
+   */
+  turn?: TurnState | null;
 }
 
 export interface PongMessage {
@@ -1411,6 +1518,13 @@ export type ClientMessage =
   | { type: 'MOVE_STEP'; seq: number; dx: number; dy: number; replaces?: number }
   | { type: 'MOVE_STOP'; last_seq?: number }
   | { type: 'PATH_STEPS'; steps: [number, number][] }
+  // The main turn action. In a turn-based room this is a turn; in a
+  // real-time room the same message only selects the target and the
+  // MOVE_STEP bump does the attacking.
+  | { type: 'ATTACK'; target_id: string }
+  | { type: 'PICKUP_FLOOR' }
+  | { type: 'RESUME' }
+  | { type: 'RESURRECT' }
   | { type: 'SEND_CHAT'; channel: 'global' | 'direct'; text: string }
   | {
       type: 'EXECUTE_ITEM_ACTION';
@@ -1431,6 +1545,14 @@ export type ClientMessage =
   | { type: 'CHOOSE_SUBCLASS'; subclass: string }
   | { type: 'UPGRADE_TALENT'; talent: string }
   | { type: 'USE_ARMOR_ABILITY'; ability: string; target_x?: number; target_y?: number }
+  | { type: 'CHOOSE_ARMOR_ABILITY'; ability: string }
+  | { type: 'USE_WEAPON_ABILITY'; target_x?: number; target_y?: number; use_secondary?: boolean }
+  | { type: 'USE_COMBO_MOVE'; move: string; target_x?: number; target_y?: number }
+  | { type: 'DUELIST_FINISHER'; target_x?: number; target_y?: number }
+  | { type: 'CAST_CLERIC_SPELL'; spell: string; target_x?: number; target_y?: number }
+  | { type: 'SET_CLERIC_QUICK_SPELL'; spell?: string }
+  | { type: 'GHOST_CLAIM_REWARD'; npc_id: string; choice: 'weapon' | 'armor' }
+  | { type: 'WANDMAKER_CLAIM_REWARD'; npc_id: string; choice: 'wand1' | 'wand2' }
   | { type: 'TRIGGER_BERSERK' }
   | { type: 'PREPARATION_STRIKE'; target_x: number; target_y: number }
   | { type: 'CHOOSE_IMBUE_WAND'; staff_id: string; wand_id: string }

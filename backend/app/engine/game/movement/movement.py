@@ -16,6 +16,9 @@ from app.engine.entities.items.consumables import Amulet, CorpseDust, Dewdrop, E
 from app.engine.entities.player import Player
 from app.engine.entities.buffs import add_buff, break_stationary_plant_buffs, has_buff, is_frozen
 from app.engine.game.constants import AUTO_MOVE_INTERVAL, MAX_FLOOR_ID, MAX_PLAYER_INPUT_QUEUE
+from app.engine.game.ai_dm300 import _dm300_maybe_seal_arena
+from app.engine.game.ai_dwarf_king import _dwarf_king_maybe_seal_arena
+from app.engine.game.ai_yog_dzewa import _yog_maybe_seal_arena
 from app.engine.game.terrain_effects import press_cell
 from app.engine.talents.registry import registry
 from typing import Optional
@@ -105,7 +108,7 @@ class MovementMixin:
 
         floor = self._get_or_create_floor(floor_id)
 
-        if isinstance(entity, Player) and time.time() < entity.action_until:
+        if isinstance(entity, Player) and self.action_blocked(entity):
             return
 
         if isinstance(entity, Player) and entity.is_downed:
@@ -135,7 +138,18 @@ class MovementMixin:
         new_x = entity.pos.x + dx
         new_y = entity.pos.y + dy
 
+        def _reject_move():
+            if isinstance(entity, Player) and seq is not None:
+                self.add_event("MOVE_RESULT", {
+                    "entity": entity_id,
+                    "x": entity.pos.x,
+                    "y": entity.pos.y,
+                    "ok": False,
+                    "seq": seq,
+                }, player_id=entity_id)
+
         if not (0 <= new_x < floor.width and 0 <= new_y < floor.height):
+            _reject_move()
             return
 
         # Any movement attempt cancels a stale chasm-fall confirmation prompt
@@ -157,11 +171,7 @@ class MovementMixin:
                 self._apply_post_step(entity, entity_id, floor, floor_id, old_x, old_y, seq, emit_move=False)
                 return
 
-            if isinstance(entity, Player):
-                res_data = {"entity": entity_id, "x": entity.pos.x, "y": entity.pos.y, "ok": False}
-                if seq is not None:
-                    res_data["seq"] = seq
-                self.add_event("MOVE_RESULT", res_data, player_id=entity_id)
+            _reject_move()
             return
 
         tile = floor.grid[new_y][new_x]
@@ -173,29 +183,34 @@ class MovementMixin:
                 self.add_event("MESSAGE",
                                {"text": "That door was locked by your skeleton key."},
                                floor_id=floor_id, player_id=entity.id)
+                _reject_move()
                 return
             floor.grid[new_y][new_x] = TileType.DOOR
             floor.rebuild_flags()
             self.add_event("MAP_PATCH",
                            {"tiles": [{"x": new_x, "y": new_y, "tile": TileType.DOOR}]},
                            floor_id=floor_id)
+            _reject_move()
             return
 
         if tile in (TileType.LOCKED_DOOR, TileType.CRYSTAL_DOOR, TileType.LOCKED_EXIT):
             if not isinstance(entity, Player):
                 return
             self._try_unlock_locked_door(entity, floor, new_x, new_y)
+            _reject_move()
             return
 
         if isinstance(entity, Player):
             chest = next((item for item in self._items_at(floor, new_x, new_y) if isinstance(item, Chest)), None)
             if chest is not None:
                 self._try_open_chest(entity, floor, floor_id, chest)
+                _reject_move()
                 return
 
         if tile == TileType.WELL:
             if isinstance(entity, Player):
                 self._drink_from_well(entity, floor, floor_id, new_x, new_y)
+            _reject_move()
             return
 
         if tile == TileType.CHASM:
@@ -205,9 +220,11 @@ class MovementMixin:
             if isinstance(entity, Player) and floor_id < MAX_FLOOR_ID:
                 entity.pending_chasm_fall = (new_x, new_y)
                 self.add_event("CHASM_PROMPT", {"x": new_x, "y": new_y}, floor_id=floor_id, player_id=entity.id)
+            _reject_move()
             return
 
         if not floor.flags or not (floor.flags.passable[new_y][new_x] or floor.flags.avoid[new_y][new_x]):
+            _reject_move()
             return
 
         old_x, old_y = entity.pos.x, entity.pos.y
@@ -229,6 +246,9 @@ class MovementMixin:
                 self.gain_momentum(entity)
                 registry.dispatch("on_step", entity, self, payload={"floor_id": floor_id})
             self._auto_pickup_on_step(entity, floor)
+            _dm300_maybe_seal_arena(self, entity, floor, floor_id)
+            _dwarf_king_maybe_seal_arena(self, entity, floor, floor_id)
+            _yog_maybe_seal_arena(self, entity, floor, floor_id)
 
         self._trigger_trap_if_needed(floor, entity, floor_id)
 

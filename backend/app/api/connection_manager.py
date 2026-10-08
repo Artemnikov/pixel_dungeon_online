@@ -21,7 +21,14 @@ from app.api.dispatcher import dispatcher
 import app.api.ws_handlers  # noqa: F401 - Register handlers
 from app.engine.entities.items.consumables import Amulet
 from app.engine.manager import GameInstance
-from app.engine.game.constants import PARTY_LOOT_MAX_PLAYERS, PUBLIC_ROOM_ID
+from app.engine.game.constants import (
+    DEFAULT_TURN_TIMER_SECONDS,
+    GAME_MODE_REALTIME,
+    GAME_MODE_TURNBASED,
+    PARTY_LOOT_MAX_PLAYERS,
+    PUBLIC_ROOM_ID,
+)
+from app.engine.turn.instance import TurnBasedGameInstance
 from app.schemas import CLIENT_MESSAGE_ADAPTER, InitMessage, MoveResultMessage, StateUpdateMessage
 
 logger = logging.getLogger(__name__)
@@ -62,6 +69,16 @@ def _hash_password(password: str, salt: str) -> str:
     return hashlib.sha256((salt + password).encode("utf-8")).hexdigest()
 
 
+_GAME_MODE_CLASSES: Dict[str, type] = {GAME_MODE_REALTIME: GameInstance}
+
+
+def register_game_mode(mode: str, cls: type) -> None:
+    _GAME_MODE_CLASSES[mode] = cls
+
+
+register_game_mode(GAME_MODE_TURNBASED, TurnBasedGameInstance)
+
+
 def _strip_transient_player_fields(p_dict: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
     if not p_dict:
         return None
@@ -79,13 +96,16 @@ class RoomMeta:
 
     def __init__(self, room_id: str, name: str, is_public: bool = False,
                  password: Optional[str] = None, max_players: Optional[int] = None,
-                 allow_dungeon_faction: bool = True):
+                 allow_dungeon_faction: bool = True, game_mode: str = GAME_MODE_REALTIME,
+                 turn_timer_seconds: float = DEFAULT_TURN_TIMER_SECONDS):
         self.room_id = room_id
         self.name = name
         self.is_public = is_public
         self.max_players = max_players
         self.created_at = time.monotonic()
         self.allow_dungeon_faction = allow_dungeon_faction
+        self.game_mode = game_mode
+        self.turn_timer_seconds = turn_timer_seconds
         if password:
             self.password_salt: Optional[str] = secrets.token_hex(8)
             self.password_hash: Optional[str] = _hash_password(password, self.password_salt)
@@ -167,6 +187,13 @@ class ConnectionManager:
                 return "room full"
         return None
 
+    def _create_game_instance(self, game_id: str, seed) -> GameInstance:
+        room = self.rooms.get(game_id)
+        game_mode = getattr(room, "game_mode", GAME_MODE_REALTIME) if room else GAME_MODE_REALTIME
+        cls = _GAME_MODE_CLASSES.get(game_mode, GameInstance)
+        turn_timer = getattr(room, "turn_timer_seconds", DEFAULT_TURN_TIMER_SECONDS)
+        return cls(game_id, seed=seed, turn_timer_seconds=turn_timer)
+
     async def connect(self, game_id: str, websocket: WebSocket, session_id: str, seed: str = "") -> Tuple[str, bool]:
         """Accept a connection and resolve its player identity.
 
@@ -177,7 +204,7 @@ class ConnectionManager:
         await websocket.accept()
         if game_id not in self.game_instances:
             self.active_connections[game_id] = {}
-            self.game_instances[game_id] = GameInstance(
+            self.game_instances[game_id] = self._create_game_instance(
                 game_id,
                 seed=(os.environ.get(PUBLIC_ROOM_SEED_ENV) if game_id == PUBLIC_ROOM_ID else (seed or None)),
             )
@@ -194,6 +221,8 @@ class ConnectionManager:
             game.players[player_id].is_afk = False
             game.players[player_id].movement.stop()
             game.players[player_id].movement.last_processed_seq = 0
+            if hasattr(game, "mark_dirty"):
+                game.mark_dirty()
             # Re-open any subclass / armor-ability choice window that was up
             # when the player dropped (the choice isn't consumed by wearing
             # the mask/crown, so it survives the reconnect).
@@ -248,7 +277,10 @@ class ConnectionManager:
             entrance_pos=getattr(floor, 'entrance_pos', None),
             exit_pos=getattr(floor, 'exit_pos', None),
             self_player=self_player,
+            game_mode=getattr(game, "game_mode", None),
+            turn=game.turn_state_for(player_id),
         )
+        game.mark_dirty()
         try:
             await websocket.send_json(init.model_dump(exclude_none=True))
             self.last_sent_floor.setdefault(game_id, {})[player_id] = (player_floor, map_version)
@@ -304,6 +336,8 @@ class ConnectionManager:
             player.movement.stop()
             # Ghost mode: non-solid, un-targetable, "(AFK)" tag client-side.
             player.is_afk = True
+            if hasattr(game, "mark_dirty"):
+                game.mark_dirty()
             self.disconnect_deadline.setdefault(game_id, {})[player_id] = (
                 time.monotonic() + DISCONNECT_GRACE_SECONDS
             )
@@ -389,6 +423,8 @@ class ConnectionManager:
         if game_id in self.active_connections and game_id in self.game_instances:
             game = self.game_instances[game_id]
             game.update_tick()
+            if not game.should_broadcast():
+                return
             events = game.flush_events()
 
             connections_snapshot = list(self.active_connections[game_id].items())
@@ -427,6 +463,7 @@ class ConnectionManager:
                             entrance_pos=getattr(floor, 'entrance_pos', None),
                             exit_pos=getattr(floor, 'exit_pos', None),
                             self_player=self_player_init,
+                            game_mode=getattr(game, "game_mode", None),
                         )
                         await connection.send_json(init.model_dump(exclude_none=True))
                         self.last_sent_floor[game_id][player_id] = (player_floor, map_version)
@@ -521,6 +558,7 @@ class ConnectionManager:
                         mapped_tiles=mapped_payload,
                         events=frame_events,
                         self_player=self_player_payload,
+                        turn=game.turn_state_for(player_id),
                     )
                     await connection.send_json(update.model_dump(exclude_none=True))
                 except (RuntimeError, Exception) as err:
@@ -546,6 +584,8 @@ class ConnectionManager:
                 # alive forever. Mark AFK directly so the normal grace window +
                 # reaper apply to abnormal closes too.
                 self._mark_disconnected(game_id, pid)
+
+            game.on_broadcast_complete()
 
 
 manager = ConnectionManager()

@@ -12,9 +12,9 @@ import uuid
 
 from app.engine.entities.base import Position, chebyshev_distance
 from app.engine.entities.items.consumables import Key
-from app.engine.entities.mobs import DM300, Goo, Tengu, YogDzewa, DwarfKing
 from app.engine.game.floor_state import FloorState
 from app.engine.game.ai_goo import _goo_unseal_entrance
+from app.engine.game.public_room import PUBLIC_ROOM_BOSS_TYPES, _purge_dead_bosses
 from app.engine.game.constants import PUBLIC_ROOM_ID
 
 def _sacrifice_exp_value(mob) -> int:
@@ -109,16 +109,21 @@ class MobDeathMixin:
         key is dropped here because it needs the floor-specific lock id, and it
         must drop no matter how Goo died (melee or bleed) so progression can't
         soft-lock."""
-        from app.engine.entities.items.consumables import DwarfToken
-        from app.engine.entities.mobs import DM300, Golem, Goo, Monk, Necromancer, Pylon, Skeleton, Tengu, YogDzewa
+        from app.engine.entities.items.consumables import DwarfToken, KingsCrown
+        from app.engine.entities.mobs import DM300, DKGhoul, DKGolem, DKMonk, DKWarlock, DwarfKing, Golem, Goo, Monk, Necromancer, Pylon, Skeleton, Tengu, YogDzewa
         from app.engine.entities.wandmaker_quest import NewbornFireElemental, RotHeart
         from app.engine.entities.wands.wandmaker_quest_items import Embers, RotberrySeed
 
         self._process_sacrifice_fire_death(mob, floor, floor_id)
 
+        # Dwarf King Phase 2 minion death breaking the King's barrier
+        from app.engine.game.ai_dwarf_king import handle_dwarf_king_minion_death
+        handle_dwarf_king_minion_death(self, mob, floor, floor_id)
+
         # Public room: start boss respawn timer when any boss dies.
-        if self.game_id == PUBLIC_ROOM_ID and isinstance(mob, (Goo, Tengu, DM300, DwarfKing, YogDzewa)):
+        if self._is_public_room() and isinstance(mob, PUBLIC_ROOM_BOSS_TYPES):
             floor.boss_dead_ticks = 0
+            _purge_dead_bosses(floor)
 
         # Mimic/GoldenMimic/EbonyMimic die(): drop all carried items at the
         # mob's death position (SPD Mimic.die drops the `items` LinkedList).
@@ -168,10 +173,33 @@ class MobDeathMixin:
         # activated Pylon dies, DM300 becomes vulnerable again. No
         # chain-activation of another pylon.
         if isinstance(mob, Pylon):
+            # Port of CavesBossLevel.ArenaVisuals: update pylon cell to broken base (tile 38)
+            for layer in floor.custom_tiles:
+                if layer.get("texture") == "caves_boss" and layer.get("y") == 12:
+                    prow = mob.pos.y - layer["y"]
+                    pcol = mob.pos.x - layer["x"]
+                    if 0 <= prow < layer["h"] and 0 <= pcol < layer["w"]:
+                        layer["tiles"][prow][pcol] = 38
+                        break
+
+            pylons_remaining = sum(1 for m in floor.mobs.values() if isinstance(m, Pylon) and m.is_alive)
             for other in floor.mobs.values():
                 if isinstance(other, DM300):
-                    other.supercharged = False
+                    other.lose_supercharge()
+                    if other.pylons_activated < other.total_pylons_to_activate():
+                        self.add_event("BOSS_YELL", {"mob": other.id, "text": "Supercharge lost.",
+                                                     "x": other.pos.x, "y": other.pos.y}, floor_id=floor_id)
+                    else:
+                        self.add_event("BOSS_YELL", {"mob": other.id, "text": "All pylons destroyed!",
+                                                     "x": other.pos.x, "y": other.pos.y}, floor_id=floor_id)
                     break
+            # Port of CavesBossLevel.eliminatePylon(): clear the energy blob
+            # if more than 2 pylons remain alive.
+            if pylons_remaining > 2:
+                for bid in list(floor.blob_areas.keys()):
+                    if floor.blob_areas[bid].get("type") == "pylon_energy":
+                        del floor.blob_areas[bid]
+                        self.add_event("BLOB_DEPLETED", {"id": bid}, floor_id=floor_id)
 
         # Skeleton explosion: play bones sound on death (SPD Skeleton.die)
         if isinstance(mob, Skeleton):
@@ -209,23 +237,72 @@ class MobDeathMixin:
             return
 
         if isinstance(mob, YogDzewa):
-            key_id = next(iter(floor.locked_doors.values()), "goo_door")
-            if not any(isinstance(i, Key) and getattr(i, "key_id", None) == key_id
-                       for i in floor.items.values()):
-                key = Key(
-                    id=str(uuid.uuid4()),
-                    name="Worn Key",
-                    pos=Position(x=mob.pos.x, y=mob.pos.y),
-                    key_id=key_id,
-                )
-                floor.items[key.id] = key
+            self.boss_scores[4] += 5000
+            if self.qualified_for_boss_challenge:
+                self.add_event("YOG_DZEWA_BADGE_QUALIFIED", {}, floor_id=floor_id)
+            self.add_event("BOSS_SLAIN", {"mob": mob.id, "depth": floor_id, "badge_image": 18}, floor_id=floor_id)
+            from app.engine.game.ai_yog_dzewa import _yog_unseal_arena
+            _yog_unseal_arena(self, floor, floor_id)
             self.add_event("PLAY_SOUND", {"sound": "BOSS"}, floor_id=floor_id)
             if self.game_id == PUBLIC_ROOM_ID:
                 self.add_event("MESSAGE", {"text": f"{mob.name} has been slain!"})
             return
 
-        if isinstance(mob, (DM300, DwarfKing)) and self.game_id == PUBLIC_ROOM_ID:
-            self.add_event("MESSAGE", {"text": f"{mob.name} has been slain!"})
+        if isinstance(mob, DM300):
+            self.boss_scores[2] += 3000
+            if self.qualified_for_boss_challenge:
+                self.add_event("DM300_BADGE_QUALIFIED", {}, floor_id=floor_id)
+            self.add_event("BOSS_SLAIN", {"mob": mob.id, "depth": floor_id, "badge_image": 16}, floor_id=floor_id)
+            self.add_event("BOSS_YELL", {"mob": mob.id, "text": "System failure...",
+                                         "x": mob.pos.x, "y": mob.pos.y}, floor_id=floor_id)
+            from app.engine.game.ai_dm300 import _dm300_unseal_arena
+            _dm300_unseal_arena(self, floor, floor_id)
+            if self.game_id == PUBLIC_ROOM_ID:
+                self.add_event("MESSAGE", {"text": f"{mob.name} has been slain!"})
+            return
+
+        if isinstance(mob, DwarfKing):
+            self.boss_scores[3] += 4000
+            if self.qualified_for_boss_challenge:
+                self.add_event("DWARF_KING_BADGE_QUALIFIED", {}, floor_id=floor_id)
+            self.add_event("BOSS_SLAIN", {"mob": mob.id, "depth": floor_id, "badge_image": 17}, floor_id=floor_id)
+            self.add_event("BOSS_YELL", {"mob": mob.id, "text": "You've... Doomed us all...",
+                                         "x": mob.pos.x, "y": mob.pos.y}, floor_id=floor_id)
+
+            # Drop King's Crown (push items off throne (7, 31) to (7, 32) if needed)
+            drop_x, drop_y = (7, 32) if (mob.pos.x, mob.pos.y) == (7, 31) else (mob.pos.x, mob.pos.y)
+            for item in list(floor.items.values()):
+                if item.pos and (item.pos.x, item.pos.y) == (7, 31):
+                    item.pos = Position(x=7, y=32)
+
+            if not any(isinstance(i, KingsCrown) for i in floor.items.values()):
+                crown = KingsCrown(
+                    id=str(uuid.uuid4()),
+                    name="King's Crown",
+                    pos=Position(x=drop_x, y=drop_y),
+                )
+                floor.items[crown.id] = crown
+
+            # Unseal arena doors (7, 37) and (7, 25)
+            from app.engine.game.ai_dwarf_king import _dwarf_king_unseal_arena
+            _dwarf_king_unseal_arena(self, floor, floor_id)
+
+            # Kill any remaining minions on floor 20
+            for m in list(floor.mobs.values()):
+                if m.is_alive and isinstance(m, (DKGhoul, DKMonk, DKWarlock, DKGolem)):
+                    m.is_alive = False
+                    self.add_event("DEATH", {"target": m.id}, floor_id=floor_id)
+
+            # Lloyd's Beacon upgrade & cleanse degrade debuff on players
+            for player in self._players_on_floor(floor_id):
+                player.remove_buff("degrade")
+                for inv_item in player.inventory:
+                    if getattr(inv_item, "kind", "") == "lloyds_beacon":
+                        inv_item.level = getattr(inv_item, "level", 0) + 1
+
+            if self.game_id == PUBLIC_ROOM_ID:
+                self.add_event("MESSAGE", {"text": f"{mob.name} has been slain!"})
+            return
 
         if not isinstance(mob, Goo):
             return

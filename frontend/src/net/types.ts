@@ -8,6 +8,8 @@ import type {
   TrapInfo,
   PlantInfo,
   CustomTileLayer,
+  GameMode,
+  TurnState,
   AlchemyPreviewResultEvent,
   AlchemyBrewedEvent,
   AlchemyEnergizedEvent,
@@ -64,6 +66,7 @@ export interface AnimState {
   readUntil?: number;
   pumpUntil?: number;
   chargeUntil?: number;
+  zapUntil?: number;
 }
 
 export interface Projectile {
@@ -235,6 +238,7 @@ export interface HookProps {
   searchEffectsRef: Ref<unknown[]>;
   floatingTextRef: Ref<unknown[]>;
   warnedTilesRef?: Ref<{ tiles: [number, number][]; untilMs: number } | null>;
+  rockfallTelegraphRef?: Ref<{ cells: [number, number][]; untilMs: number; durationMs: number } | null>;
   screenFlashRef?: Ref<{ until: number } | null>;
   transmuteEffectsRef?: Ref<unknown[]>;
   flareEffectsRef?: Ref<unknown[]>;
@@ -256,6 +260,8 @@ export interface HookProps {
   isCameraDetachedRef?: Ref<boolean>;
   setGrid: Dispatch<SetStateAction<number[][]>>;
   setDepth: (depth: number) => void;
+  setGameMode?: (mode: GameMode) => void;
+  setTurnState?: Dispatch<SetStateAction<TurnState | null>>;
   setMyPlayerId: (id: string) => void;
   setInventory: Dispatch<SetStateAction<Player['inventory']>>;
   setEquippedItems: Dispatch<SetStateAction<{ weapon: Player['equipped_weapon']; wearable: Player['equipped_wearable'] }>>;
@@ -281,6 +287,7 @@ export interface HookProps {
   onDM300FightStarted?: (data: { mob: string }) => void;
   onDwarfKingFightStarted?: (data: { mob: string }) => void;
   onDwarfKingPhase2?: (data: { mob: string }) => void;
+  onDwarfKingPhase3?: (data: { mob: string }) => void;
   onYogFightStarted?: (data: { mob: string }) => void;
   onYogFinalPhase?: (data: { mob: string }) => void;
   onShopOpen?: (data: { npc: string; stock: SerializedItem[]; gold: number }) => void;
@@ -327,6 +334,7 @@ export type HandlerCtx = Pick<
   | 'searchEffectsRef'
   | 'floatingTextRef'
   | 'warnedTilesRef'
+  | 'rockfallTelegraphRef'
   | 'screenFlashRef'
   | 'transmuteEffectsRef'
   | 'flareEffectsRef'
@@ -354,6 +362,7 @@ export type HandlerCtx = Pick<
   onDM300FightStarted?: HookProps['onDM300FightStarted'];
   onDwarfKingFightStarted?: HookProps['onDwarfKingFightStarted'];
   onDwarfKingPhase2?: HookProps['onDwarfKingPhase2'];
+  onDwarfKingPhase3?: HookProps['onDwarfKingPhase3'];
   onYogFightStarted?: HookProps['onYogFightStarted'];
   onYogFinalPhase?: HookProps['onYogFinalPhase'];
   onShopOpen?: HookProps['onShopOpen'];
@@ -399,6 +408,8 @@ export type SyncCtx = Pick<
   | 'setQuickslot'
   | 'setGold'
   | 'setEnergy'
+  | 'setGameMode'
+  | 'setTurnState'
   | 'setHasAmulet'
   | 'setBossLurking'
 >;

@@ -14,6 +14,7 @@ export interface RenderTarget {
   faction?: string;
   is_alive?: boolean;
   is_downed?: boolean;
+  is_afk?: boolean;
   hp?: number;
   renderPos?: { x: number; y: number };
 }
@@ -41,7 +42,7 @@ export function buildCandidateTargets(
 ): Record<string, RenderTarget> {
   const targets: Record<string, RenderTarget> = { ...entitiesRef.current.mobs };
   for (const [id, p] of Object.entries(entitiesRef.current.players || {})) {
-    if (id === myPlayerId || p.is_alive === false || p.is_downed || (p.faction || 'player') === myFaction) continue;
+    if (id === myPlayerId || p.is_alive === false || p.is_downed || p.is_afk || (p.faction || 'player') === myFaction) continue;
     targets[id] = { ...p, faction: p.faction || 'player' };
   }
   return targets;

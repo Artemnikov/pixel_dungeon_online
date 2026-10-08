@@ -16,12 +16,12 @@ from app.engine.entities.mobs import (
     BlueShaman, PurpleShaman, Warlock, Spinner, DM200, DM100,
 )
 from app.engine.entities.wandmaker_quest import NewbornFireElemental
-from app.engine.game.constants import AUTO_MOVE_INTERVAL, SURPRISE_WINDOW_SECONDS
+from app.engine.game.constants import AUTO_MOVE_INTERVAL, GAME_MODE_TURNBASED, SURPRISE_WINDOW_SECONDS
 from app.engine.game.floor_state import FloorState
 from app.engine.game.ai_demon_spawner import _update_demon_spawner
 from app.engine.game.ai_dm100 import _update_dm100
 from app.engine.game.ai_dm200 import _update_dm200
-from app.engine.game.ai_dm300 import _update_dm300_chase
+from app.engine.game.ai_dm300 import _update_dm300, _tick_dm300_pending_rockfall
 from app.engine.game.ai_dwarf_king import _update_dwarf_king
 from app.engine.game.ai_eye import _update_eye
 from app.engine.game.ai_goo import _update_goo
@@ -29,7 +29,7 @@ from app.engine.game.ai_guard import _update_guard
 from app.engine.game.ai_mirror_image import _refresh_mirror_image_stats
 from app.engine.game.ai_necromancer import _update_necromancer
 from app.engine.game.ai_newborn_elemental import _update_newborn_elemental
-from app.engine.game.ai_pylon import _update_pylon
+from app.engine.game.ai_pylon import _activate_pylon, _update_pylon
 from app.engine.game.ai_sentry import _update_sentry
 from app.engine.game.ai_shaman import _update_shaman
 from app.engine.game.ai_spinner import _update_spinner
@@ -60,6 +60,9 @@ class MobAIDispatchMixin:
                 self._update_shadow_ally(mob, floor, floor_id)
             return
 
+        if isinstance(mob, DM300):
+            _tick_dm300_pending_rockfall(self, mob, floor, floor_id)
+
         if mob.has_buff("stagger"):
             return
 
@@ -71,7 +74,7 @@ class MobAIDispatchMixin:
 
         if isinstance(mob, DwarfKing):
             _update_dwarf_king(self, mob, floor, floor_id)
-            if "IMMOVABLE" in getattr(mob, "properties", []):
+            if not getattr(mob, "fight_started", False) or "IMMOVABLE" in getattr(mob, "properties", []):
                 return
 
         if isinstance(mob, YogDzewa):
@@ -79,14 +82,15 @@ class MobAIDispatchMixin:
             return
 
         if isinstance(mob, DM300):
-            if not mob.fight_started:
-                target = self._find_nearest_player(mob.pos, floor_id)
-                if target is not None:
-                    mob.fight_started = True
-                    self.add_event("DM300_FIGHT_STARTED", {"mob": mob.id}, floor_id=floor_id)
-            if mob.supercharged:
-                _update_dm300_chase(self, mob, floor, floor_id)
-                _update_dm300_chase(self, mob, floor, floor_id)
+            if mob.pending_pylon_activation:
+                mob.pending_pylon_activation = False
+                self.add_event("DM300_SUPERCHARGE", {"mob": mob.id}, floor_id=floor_id)
+                target_p = self._find_nearest_player(mob.pos, floor_id)
+                _activate_pylon(self, floor, floor_id, near_pos=target_p.pos if target_p else mob.pos)
+                mob.add_buff("stagger", duration=1.5)
+                self.add_event("BOSS_YELL", {"mob": mob.id, "text": "Supercharging...",
+                                             "x": mob.pos.x, "y": mob.pos.y}, floor_id=floor_id)
+            if _update_dm300(self, mob, floor, floor_id):
                 return
 
         if isinstance(mob, DemonSpawner):
@@ -266,13 +270,22 @@ class MobAIDispatchMixin:
         them, then sees them again has a stale enemySeen — strikes land as
         surprise attacks. The real-time loop makes that stale-tick window an
         explicit SURPRISE_WINDOW_SECONDS timer, armed on the lost→reacquired
-        transition of each player's per-tick LOS state."""
+        transition of each player's per-tick LOS state. In turn-based mode,
+        `enemy_seen` directly tracks whether the mob has line of sight on the
+        player on its turn."""
         now = time.time()
         for target in self._players_on_floor(floor_id):
             if not target.is_alive or target.is_downed or target.is_afk or target.invisible > 0:
+                mob.enemy_seen[target.id] = False
+                mob.los_prev_seen[target.id] = False
                 continue
-            in_los = self._is_in_los(mob.pos, target.pos, floor_id)
+            in_los = self._is_in_los(mob.pos, target.pos, floor_id, distance=self._view_distance(mob))
             prev = mob.los_prev_seen.get(target.id)
-            if prev is False and in_los:
+            if getattr(self, "game_mode", None) != GAME_MODE_TURNBASED and prev is False and in_los:
                 mob.surprise_windows[target.id] = now + SURPRISE_WINDOW_SECONDS
             mob.los_prev_seen[target.id] = in_los
+
+            if mob.ai_state in ("hunting", "fleeing"):
+                mob.enemy_seen[target.id] = in_los
+            else:
+                mob.enemy_seen[target.id] = False

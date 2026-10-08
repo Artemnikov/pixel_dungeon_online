@@ -1,7 +1,7 @@
 import type { StateUpdateMessage } from '../../types/contract';
 import type { RenderMob } from '../types';
 import type { IStateSynchronizer, StateSyncContext } from './IStateSynchronizer';
-import { INVIS_ALPHA } from '../../constants';
+import { INVIS_ALPHA, MOVE_DURATION } from '../../constants';
 import { applyInvisFade, glideDuration } from './syncUtils';
 
 export class MobsSynchronizer implements IStateSynchronizer {
@@ -46,7 +46,9 @@ export class MobsSynchronizer implements IStateSynchronizer {
           existing.animStartPos = { x: existing.renderPos.x, y: existing.renderPos.y };
           existing.animStartTime = performance.now();
           existing.targetPos = m.pos;
-          existing.moveDuration = glideDuration(existing.renderPos.x, existing.renderPos.y, m.pos.x, m.pos.y);
+          const isTurnMode = ctx.turnState.getGameMode() === 'turnbased' || data.turn?.game_mode === 'turnbased';
+          const stepDur = isTurnMode ? MOVE_DURATION * 0.5 : MOVE_DURATION;
+          existing.moveDuration = glideDuration(existing.renderPos.x, existing.renderPos.y, m.pos.x, m.pos.y, stepDur);
         }
         existing.hp = m.hp;
         existing.ai_state = m.ai_state;

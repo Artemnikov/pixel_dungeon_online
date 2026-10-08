@@ -8,6 +8,9 @@ import cityTiles from '../assets/pixel-dungeon/environment/tiles_city.png';
 import hallsTiles from '../assets/pixel-dungeon/environment/tiles_halls.png';
 import sewerBossTiles from '../assets/pixel-dungeon/environment/custom_tiles/sewer_boss.png';
 import prisonExitTiles from '../assets/pixel-dungeon/environment/custom_tiles/prison_exit.png';
+import cityBossTiles from '../assets/pixel-dungeon/environment/custom_tiles/city_boss.png';
+import cavesBossTiles from '../assets/pixel-dungeon/environment/custom_tiles/caves_boss.png';
+import hallsSpecialTiles from '../assets/pixel-dungeon/environment/custom_tiles/halls_special.png';
 import water0 from '../assets/pixel-dungeon/environment/water0.png';
 import water1 from '../assets/pixel-dungeon/environment/water1.png';
 import water2 from '../assets/pixel-dungeon/environment/water2.png';
@@ -56,6 +59,7 @@ import fistsSprite from '../assets/pixel-dungeon/sprites/yog_fists.png';
 import eyeSprite from '../assets/pixel-dungeon/sprites/eye.png';
 import ripperSprite from '../assets/pixel-dungeon/sprites/ripper.png';
 import spawnerSprite from '../assets/pixel-dungeon/sprites/spawner.png';
+import larvaSprite from '../assets/pixel-dungeon/sprites/larva.png';
 import succubusSprite from '../assets/pixel-dungeon/sprites/succubus.png';
 import pylonSprite from '../assets/pixel-dungeon/sprites/pylon.png';
 import tenguSprite from '../assets/pixel-dungeon/sprites/tengu.png';
@@ -88,7 +92,7 @@ export default function useAssetImages() {
       halls: null,
     },
     terrainFeatures: null,
-    customTiles: { sewer_boss: null, prison_exit: null },
+    customTiles: { sewer_boss: null, prison_exit: null, city_boss: null, caves_boss: null, halls_special: null },
     waterFrames: [null, null, null, null, null],
     warrior: null,
     mage: null,
@@ -134,6 +138,7 @@ export default function useAssetImages() {
     eye: null,
     ripper: null,
     spawner: null,
+    larva: null,
     succubus: null,
     pylon: null,
     tengu: null,
@@ -207,6 +212,9 @@ export default function useAssetImages() {
     loadImage(terrainFeatures, 'terrainFeatures');
     loadCustomTile(sewerBossTiles, 'sewer_boss');
     loadCustomTile(prisonExitTiles, 'prison_exit');
+    loadCustomTile(cityBossTiles, 'city_boss');
+    loadCustomTile(cavesBossTiles, 'caves_boss');
+    loadCustomTile(hallsSpecialTiles, 'halls_special');
     loadWaterFrame(water0, 0);
     loadWaterFrame(water1, 1);
     loadWaterFrame(water2, 2);
@@ -256,6 +264,7 @@ export default function useAssetImages() {
     loadImage(eyeSprite, 'eye');
     loadImage(ripperSprite, 'ripper');
     loadImage(spawnerSprite, 'spawner');
+    loadImage(larvaSprite, 'larva');
     loadImage(succubusSprite, 'succubus');
     loadImage(pylonSprite, 'pylon');
     loadImage(tenguSprite, 'tengu');

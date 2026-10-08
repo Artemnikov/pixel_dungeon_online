@@ -29,7 +29,7 @@ def _update_demon_spawner(game, spawner: DemonSpawner, floor: FloorState, floor_
 
     if candidates:
         sx, sy = random.choice(candidates)
-        new_mob = game._spawn_mob_at(RipperDemon, sx, sy)
+        new_mob = game._spawn_mob_at(RipperDemon, sx, sy, floor_id)
         new_mob.ai_state = "hunting"
         floor.mobs[new_mob.id] = new_mob
         game.add_event("MOB_SPAWN", {"mob": new_mob.id, "cls": "RipperDemon"}, floor_id=floor_id)
