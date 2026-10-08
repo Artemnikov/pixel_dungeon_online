@@ -8,7 +8,7 @@ with mobs, items, traps.
 
 import random
 import uuid
-from typing import List, Tuple, Type
+from typing import List, Optional, Tuple, Type
 
 from app.engine.dungeon.constants import TileType
 from app.engine.dungeon.dungeon_seed import seed_for_depth
@@ -307,11 +307,13 @@ class GenerationMixin:
             raw = 5 + floor_id
         return min(raw, MOB_LIMIT_MAX)
 
-    def _spawn_mob_at(self, cls: Type[MobEntity], x: int, y: int) -> MobEntity:
+    def _spawn_mob_at(self, cls: Type[MobEntity], x: int, y: int, floor_id: Optional[int] = None) -> MobEntity:
         mob_id = str(uuid.uuid4())
         # attack_cooldown comes from the mob class, decoupled from movement
         # `speed` (a fast mover chases quicker but does not attack quicker).
         mob = cls(id=mob_id, pos=Position(x=x, y=y), faction=Faction.DUNGEON)
+        if floor_id is not None:
+            mob.floor_id = floor_id
         return mob
 
     def _spawn_content(self, floor: FloorState):
@@ -374,7 +376,7 @@ class GenerationMixin:
                 rare_cls = rare_alts.get(cls)
                 if rare_cls and random.random() < rare_chance:
                     cls = rare_cls
-                mob = self._spawn_mob_at(cls, x, y)
+                mob = self._spawn_mob_at(cls, x, y, floor.floor_id)
                 floor.mobs[mob.id] = mob
 
         num_items = 4 + random.randint(0, 3)

@@ -34,9 +34,17 @@ from app.engine.game.constants import (
     TIME_TO_WAIT,
 )
 from app.engine.manager import GameInstance
-from app.engine.entities.mobs.sewers import Rat
+from app.engine.entities.mobs.caves import DM300
+from app.engine.entities.mobs.prison import RedShaman
+from app.engine.entities.mobs.sewers import Goo, Rat
 from app.engine.turn.actions import _BUILDERS, _msg_type, build_turn_action
 from app.engine.turn.instance import TurnBasedGameInstance
+from app.engine.turn.mob_actors import (
+    DM300Actor,
+    RangedMobActor,
+    TurnMobActor,
+    create_mob_actor,
+)
 from app.schemas import messages as msg
 from app.schemas.common import Direction
 
@@ -594,6 +602,41 @@ def test_dead_mob_turn_is_free_to_ignore(turn_game):
     assert turn_game._mob_take_turn(mob) == TIME_TO_WAIT
 
 
+def test_mobs_on_a_boss_floor_still_take_their_turn(turn_game):
+    """Regression: a mob's own floor field is not authoritative.
+
+    Mobs never had `floor_id` written by the spawners, so the turn-based
+    scheduler used to resolve the floor from that stale default of 1. Any mob
+    living on a deeper floor (every boss lives on floors 5/10/15/20/25) was
+    then dropped before its AI ran, so bosses stood still forever. The floor
+    must come from the iteration that holds the mob, not from the mob.
+    """
+    hero = _add_hero(turn_game, 5, 5)
+    boss_floor = turn_game._get_or_create_floor(5)
+    boss_floor.grid = [[TileType.FLOOR for _ in range(20)] for _ in range(20)]
+    boss_floor.rebuild_flags()
+    for mob in list(boss_floor.mobs.values()):
+        boss_floor.mobs.pop(mob.id, None)
+    # The hero must be on the boss floor: mobs only act where a player is.
+    hero.floor_id = 5
+
+    boss = turn_game._spawn_mob_at(Rat, 8, 5, 5)
+    boss.pos = Position(x=8, y=5)
+    # Even with the stale field still on its default, the boss must be ticked.
+    boss.floor_id = 1
+    boss_floor.mobs[boss.id] = boss
+
+    stepped = []
+    turn_game._tick_mob = lambda mob, floor, floor_id: stepped.append(
+        (mob.id, floor.floor_id, floor_id)
+    )
+
+    _pump(turn_game)
+    turn_game.submit_turn_action(hero.id, msg.Wait(type="WAIT"))
+    _pump(turn_game)
+
+    assert stepped == [(boss.id, 5, 5)]
+
 # --- actor registry -------------------------------------------------------
 
 
@@ -627,6 +670,176 @@ def test_downed_hero_stops_holding_the_room(turn_game):
     hero.is_downed = True
     _pump(turn_game)
     assert turn_game.turn_state_for(hero.id)["is_my_turn"] is False
+
+
+# --- special-ability pacing ------------------------------------------------
+#
+# The real-time AI paces boss abilities against the wall clock
+# (`ai_shaman`, `ai_goo`) or against counters denominated in real-time ticks
+# (`ai_dm300`). Neither unit advances during a turn room, so without the
+# actor layer these abilities fire once and then never again. The base
+# `TurnMobActor` stands in for "no pacing" and must show that starvation.
+
+
+def _count_calls(monkeypatch, module, name, counter):
+    real = getattr(module, name)
+
+    def counting(*args, **kwargs):
+        counter.append(1)
+        return real(*args, **kwargs)
+
+    monkeypatch.setattr(module, name, counting)
+
+
+def _open_floor(game, size=30):
+    floor = game._get_or_create_floor(1)
+    floor.grid = [[TileType.FLOOR for _ in range(size)] for _ in range(size)]
+    floor.rebuild_flags()
+    for mob in list(floor.mobs.values()):
+        floor.mobs.pop(mob.id, None)
+    return floor
+
+
+@pytest.mark.parametrize(
+    "mob_cls,turns,min_recurrence",
+    [
+        pytest.param(RedShaman, 40, 5, id="shaman"),
+        # Goo gates its charge behind its own random chance and an internal
+        # cooldown that can outlast the actor's cadence, so the exact count
+        # belongs to `ai_goo` rather than to the actor. Only the A/B holds.
+        pytest.param(Goo, 40, 0, id="goo"),
+        pytest.param(DM300, 20, 2, id="dm300"),
+    ],
+)
+def test_boss_abilities_keep_firing_across_turns(
+    turn_game, monkeypatch, mob_cls, turns, min_recurrence
+):
+    """A boss ability gated on a clock that no turn room advances still recurs."""
+    import app.engine.game.ai_dm300 as ai_dm300
+    import app.engine.game.ai_goo as ai_goo
+    import app.engine.game.ai_shaman as ai_shaman
+
+    ability = {
+        RedShaman: (ai_shaman, "_shaman_zap"),
+        Goo: (ai_goo, "_goo_begin_charge"),
+        DM300: (ai_dm300, "_dm300_vent_gas"),
+    }[mob_cls]
+
+    hero = _add_hero(turn_game, 5, 5)
+    # The hero has to survive the whole horizon, or it stops being a target and
+    # the ability stops for a reason that has nothing to do with pacing.
+    hero.hp = 99999
+    _open_floor(turn_game)
+
+    x = 20 if mob_cls is DM300 else 8
+    boss = _add_mob(turn_game, x, 5, mob_cls=mob_cls)
+    boss.ai_state = "hunting"
+    if hasattr(boss, "fight_started"):
+        boss.fight_started = True
+    if mob_cls is DM300:
+        # `ai_dm300` seeds these when the fight starts; without the seed the
+        # cooldown is never armed and the ability cannot fire at all.
+        boss.turns_since_last_ability = 0
+        boss.ability_cooldown = 5 * TICKS_PER_TURN
+
+    brain = create_mob_actor(boss, 1)
+
+    paced = []
+    _count_calls(monkeypatch, ability[0], ability[1], paced)
+    for _ in range(turns):
+        brain.take_turn(turn_game)
+
+    starved = []
+    _count_calls(monkeypatch, ability[0], ability[1], starved)
+    plain = TurnMobActor(boss, 1)
+    for _ in range(turns):
+        plain.take_turn(turn_game)
+
+    assert len(paced) > len(starved), (
+        f"{mob_cls.__name__} ability fired {len(paced)} times with the actor "
+        f"but {len(starved)} times without it"
+    )
+    assert len(paced) >= min_recurrence, (
+        f"{mob_cls.__name__} ability fired {len(paced)} times, "
+        f"expected at least {min_recurrence}"
+    )
+
+
+def test_wall_clock_actor_uses_its_own_cadence_not_the_ais_timestamp(
+    turn_game, monkeypatch
+):
+    """The cadence is a turn stat, so a mob that never attacked still re-arms.
+
+    `mob_ai_movement` stamps `last_attack_time` to arm a mob's first-strike
+    windup, so a timestamp delta does not mean the ability fired. Driving the
+    ledger off that delta deadlocked every wall-clock ability: the ledger
+    re-armed on a turn the ability was still gated, and it never opened again.
+    """
+    import app.engine.game.ai_shaman as ai_shaman
+
+    hero = _add_hero(turn_game, 5, 5)
+    hero.hp = 99999
+    _open_floor(turn_game)
+    shaman = _add_mob(turn_game, 8, 5, mob_cls=RedShaman)
+    shaman.ai_state = "hunting"
+
+    brain = create_mob_actor(shaman, 1)
+    assert isinstance(brain, RangedMobActor)
+
+    zaps = []
+    _count_calls(monkeypatch, ai_shaman, "_shaman_zap", zaps)
+    for _ in range(20):
+        brain.take_turn(turn_game)
+
+    # `RangedMobActor` spends TIME_TO_ZAP on a zap, so ~every other turn.
+    assert len(zaps) >= 5
+
+
+def test_dm300_advances_elapsed_counters_but_not_thresholds(turn_game):
+    """A cooldown *length* must not be pushed further out every turn.
+
+    `ai_dm300` stores the gas cooldown length in `ability_cooldown` and the
+    elapsed time in `turns_since_last_ability`. Advancing both would reset the
+    fight to square one on each turn, so only the elapsed counter is scaled.
+    """
+    _add_hero(turn_game, 5, 5)
+    _open_floor(turn_game)
+    boss = _add_mob(turn_game, 20, 5, mob_cls=DM300)
+    boss.ai_state = "hunting"
+    boss.turns_since_last_ability = 0
+    boss.ability_cooldown = 5 * TICKS_PER_TURN
+
+    brain = create_mob_actor(boss, 1)
+    assert isinstance(brain, DM300Actor)
+
+    for _ in range(3):
+        brain.take_turn(turn_game)
+
+    # Elapsed time tracks real time: three turns is three turns' worth of ticks.
+    assert boss.turns_since_last_ability >= 3 * TICKS_PER_TURN
+    assert boss.ability_cooldown == 5 * TICKS_PER_TURN
+
+
+def test_tick_counter_and_wall_clock_hooks_both_run_on_a_combined_actor(
+    turn_game,
+):
+    """A boss with both kinds of timer needs both hooks, not just the first.
+
+    `DM300Actor` mixes the wall-clock gate and the tick counters together; a
+    non-cooperative `begin_turn` let the leftmost base in the MRO shadow the
+    other, so DM-300 silently lost its gas cooldown conversion.
+    """
+    _add_hero(turn_game, 5, 5)
+    _open_floor(turn_game)
+    boss = _add_mob(turn_game, 20, 5, mob_cls=DM300)
+    boss.ai_state = "hunting"
+    boss.turns_since_last_ability = 0
+
+    brain = create_mob_actor(boss, 1)
+    brain.begin_turn(turn_game, turn_game._get_or_create_floor(1))
+
+    assert boss.turns_since_last_ability == TICKS_PER_TURN
+    assert boss.last_attack_time < time.time()
 
 
 # --- departed actors must not keep the room busy -------------------------

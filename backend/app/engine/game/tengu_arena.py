@@ -171,6 +171,7 @@ class PrisonBossMixin:
         self.add_event("MAP_PATCH", {"tiles": [{"x": dx, "y": dy, "tile": TileType.LOCKED_DOOR}]}, floor_id=floor_id)
 
         tengu = Tengu(id=str(uuid.uuid4()), pos=Position(x=cx, y=cy), faction=Faction.DUNGEON)
+        tengu.floor_id = floor_id
         _apply_boss_challenge(tengu, self.challenges)
         tengu.ai_state = "hunting"
         tengu.fight_started = True
@@ -229,6 +230,7 @@ class PrisonBossMixin:
             tengu = Tengu(id=str(uuid.uuid4()), faction=Faction.DUNGEON)
             _apply_boss_challenge(tengu, self.challenges)
         tengu.pos = Position(x=layout.ARENA.left + layout.ARENA.width() // 2, y=layout.ARENA.top + 2)
+        tengu.floor_id = floor_id
         tengu.ai_state = "hunting"
         floor.mobs[tengu.id] = tengu
 

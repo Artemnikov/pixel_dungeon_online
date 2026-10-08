@@ -202,6 +202,7 @@ class PublicRoomMixin:
             pos=Position(x=x, y=y),
             faction=Faction.DUNGEON,
         )
+        boss.floor_id = floor_id
         floor.mobs[boss.id] = boss
         self.add_event("MESSAGE",
                        {"text": f"A {boss.name} has respawned on floor {floor_id}!"})

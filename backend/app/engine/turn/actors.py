@@ -1,6 +1,7 @@
 from typing import TYPE_CHECKING, FrozenSet, Optional, Tuple
 
 from app.engine.game.constants import HERO_PRIO, MOB_PRIO, TIME_TO_WAIT
+from app.engine.turn.mob_actors import create_mob_actor
 
 if TYPE_CHECKING:
     from app.engine.turn.actions import TurnAction
@@ -74,9 +75,26 @@ class PlayerActor(ActorRef):
 
 
 class MobActor(ActorRef):
-    def __init__(self, mob) -> None:
+    def __init__(self, mob, floor_id: int) -> None:
         super().__init__(mob.id, MOB_PRIO)
         self.mob = mob
+        # Floor the scheduler last saw this mob on. The floor iteration that
+        # owns the mob is the authority here, not `mob.floor_id`: a mob that
+        # was summoned, re-parented, or spawned by a path that never stamped
+        # the field would otherwise be looked up on the wrong floor and have
+        # its turn dropped before the AI ran.
+        self.floor_id = floor_id
+        # The pacing brain for this mob. `create_mob_actor` picks a subclass by
+        # mob type so bosses and casters carry their own turn cadence; the
+        # registry, the mob id and the priority all stay here.
+        self.brain = create_mob_actor(mob, floor_id)
+
+    def retarget(self, mob, floor_id: int) -> None:
+        """Point the actor at a fresh mob/floor without losing turn cooldown."""
+        self.mob = mob
+        self.floor_id = floor_id
+        self.brain.mob = mob
+        self.brain.floor_id = floor_id
 
     def take_turn(self, game) -> float:
-        return game._mob_take_turn(self.mob)
+        return self.brain.take_turn(game)

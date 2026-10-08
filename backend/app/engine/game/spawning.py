@@ -140,7 +140,7 @@ class SpawnTickMixin:
         if not floor_tiles:
             return
         x, y = random.choice(floor_tiles)
-        mob = self._spawn_mob_at(cls, x, y)
+        mob = self._spawn_mob_at(cls, x, y, floor_id)
         if universal_extra:
             _apply_floor_scaling(mob, floor_id)
         mob.ai_state = "sleeping"
@@ -191,7 +191,7 @@ class SpawnTickMixin:
             return
 
         x, y = random.choice(candidates)
-        wraith = self._spawn_mob_at(DustWraith, x, y)
+        wraith = self._spawn_mob_at(DustWraith, x, y, player.floor_id)
         wraith.ai_state = "hunting"
         _apply_floor_scaling(wraith, player.floor_id)
         floor.mobs[wraith.id] = wraith

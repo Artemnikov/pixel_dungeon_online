@@ -130,10 +130,32 @@ def test_player_actor_take_turn_without_action_waits(game):
     assert actor.take_turn(game) == TIME_TO_WAIT
 
 
-def test_mob_actor_take_turn_dispatches_to_game_hook(game):
+def test_mob_actor_take_turn_dispatches_to_its_brain(game):
     mob = type("Mob", (), {"id": "m1"})()
-    actor = MobActor(mob)
-    game._mob_take_turn = lambda m: 0.5 if m is mob else 1.0
+    actor = MobActor(mob, 3)
+    seen = []
+
+    def _take_turn(game):
+        seen.append(game)
+        return 0.5
+
+    actor.brain.take_turn = _take_turn
 
     assert actor.take_turn(game) == 0.5
+    assert seen == [game]
     assert actor.requires_input() is False
+
+
+def test_mob_actor_retarget_moves_the_brain_to_the_new_floor(game):
+    mob_a = type("Mob", (), {"id": "m1"})()
+    mob_b = type("Mob", (), {"id": "m2"})()
+    actor = MobActor(mob_a, 3)
+
+    actor.retarget(mob_b, 7)
+
+    assert actor.mob is mob_b
+    assert actor.floor_id == 7
+    assert actor.brain.mob is mob_b
+    assert actor.brain.floor_id == 7
+    # The scheduler keys off the id the actor was registered under.
+    assert actor.entity_id == "m1"

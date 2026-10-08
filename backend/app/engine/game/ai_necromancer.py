@@ -126,7 +126,7 @@ def _necro_summon_minion(game, necro: Necromancer, floor: FloorState, floor_id: 
 
     skeleton = floor.mobs.get(necro.my_skeleton_id) if necro.my_skeleton_id else None
     if skeleton is None or not skeleton.is_alive:
-        new_skel = game._spawn_mob_at(NecroSkeleton, x, y)
+        new_skel = game._spawn_mob_at(NecroSkeleton, x, y, floor_id)
         new_skel.faction = necro.faction
         floor.mobs[new_skel.id] = new_skel
         necro.my_skeleton_id = new_skel.id

@@ -185,7 +185,7 @@ def _spawn_fist_at_altar(game, floor: FloorState, floor_id: int, yog: YogDzewa, 
             spawn_pos = c
             break
 
-    new_fist = game._spawn_mob_at(fist_cls, spawn_pos[0], spawn_pos[1])
+    new_fist = game._spawn_mob_at(fist_cls, spawn_pos[0], spawn_pos[1], floor_id)
     new_fist.yog_id = yog.id
     new_fist.ai_state = "hunting"
     floor.mobs[new_fist.id] = new_fist
@@ -369,7 +369,7 @@ def _summon_yog_minion(game, yog: YogDzewa, target, floor: FloorState, floor_id:
             for m in floor.mobs.values()
         )
         if not occupied:
-            minion = game._spawn_mob_at(minion_cls, sx, sy)
+            minion = game._spawn_mob_at(minion_cls, sx, sy, floor_id)
             floor.mobs[minion.id] = minion
             game.add_event("MOB_SPAWN", {"mob": minion.id, "cls": minion_name, "x": sx, "y": sy}, floor_id=floor_id)
             break

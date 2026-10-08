@@ -30,9 +30,6 @@ from app.engine.entities.player import Player
 from app.engine.game.constants import (
     GAME_MODE_TURNBASED,
     TICKS_PER_TURN,
-    TIME_TO_ATTACK,
-    TIME_TO_IDLE,
-    TIME_TO_MOVE_BASE,
     TIME_TO_WAIT,
     TURN_BASED_WALK_SPEED_MULTIPLIER,
     TURN_ORDER_PREVIEW,
@@ -164,9 +161,10 @@ class TurnBasedGameInstance(GameInstance):
                 if mob.is_alive and mob.id in floor.mobs:
                     actor = self._mob_actors.get(mob.id)
                     if actor is not None:
+                        actor.retarget(mob, floor_id)
                         actor.take_turn(self)
                     else:
-                        self._mob_take_turn(mob)
+                        self._mob_take_turn(mob, floor_id)
 
     def _clear_mob_ai_pacing(self, entity) -> None:
         if hasattr(entity, "id"):
@@ -216,33 +214,32 @@ class TurnBasedGameInstance(GameInstance):
 
     # --- mob turns ---------------------------------------------------------
 
-    def _mob_take_turn(self, mob) -> float:
+    def _mob_take_turn(self, mob, floor_id: Optional[int] = None) -> float:
+        """Run one mob's dungeon turn and return the SPD time it charges.
+
+        A thin facade over the actor registry so a direct call (tests, summons
+        that have not been reconciled yet) gets the same brain the scheduler
+        would have used. `floor_id` is the floor the caller is already
+        iterating, which is the only trustworthy source: a mob's own
+        `floor_id` is a default that any spawn path can leave unstamped, and
+        looking the mob up on the wrong floor silently drops its turn before
+        the AI ever runs. The fallback scans for a call with no floor context.
+        """
         if not mob.is_alive:
             return TIME_TO_WAIT
 
-        floor = self._get_or_create_floor(mob.floor_id)
-        if floor is None or mob.id not in floor.mobs:
+        if floor_id is None:
+            floor_id = self._find_mob_floor(mob.id)
+        if floor_id is None:
             return TIME_TO_WAIT
 
-        self._mob_move_times[mob.id] = 0.0
-        self._ally_move_times[mob.id] = 0.0
-
-        pre_x, pre_y = mob.pos.x, mob.pos.y
-        pre_attack_time = getattr(mob, "last_attack_time", 0.0)
-        self._tick_mob(mob, floor, mob.floor_id)
-        if not mob.is_alive:
-            return TIME_TO_WAIT
-
-        if (mob.pos.x, mob.pos.y) != (pre_x, pre_y):
-            return TIME_TO_MOVE_BASE / max(0.1, float(mob.speed))
-        if getattr(mob, "last_attack_time", 0.0) != pre_attack_time or self._mob_can_strike(mob, floor, mob.floor_id):
-            base_dly = getattr(mob, "attack_delay", TIME_TO_ATTACK)
-            if mob.has_buff("slow") or mob.has_buff("chill"):
-                base_dly *= 2.0
-            if mob.has_buff("haste") or mob.has_buff("fury"):
-                base_dly *= 0.5
-            return max(0.1, float(base_dly))
-        return TIME_TO_IDLE
+        actor = self._mob_actors.get(mob.id)
+        if actor is None:
+            actor = MobActor(mob, floor_id)
+            self._mob_actors[mob.id] = actor
+        else:
+            actor.retarget(mob, floor_id)
+        return actor.take_turn(self)
 
     def _mob_can_strike(self, mob, floor, floor_id: int) -> bool:
         for other in floor.mobs.values():
@@ -310,23 +307,26 @@ class TurnBasedGameInstance(GameInstance):
                 self.scheduler.push_back(actor)
                 self._broadcast_dirty = True
 
-        live_mobs: Dict[str, object] = {}
+        live_mobs: Dict[str, tuple] = {}
         for floor_id in self.active_floor_ids:
             floor = self.floors.get(floor_id)
             if floor is None:
                 continue
             for mob in floor.mobs.values():
                 if mob.is_alive:
-                    live_mobs[mob.id] = mob
+                    live_mobs[mob.id] = (mob, floor_id)
         for mob_id, actor in list(self._mob_actors.items()):
             if mob_id not in live_mobs:
                 actor.cancelled = True
                 del self._mob_actors[mob_id]
-        for mob_id, mob in live_mobs.items():
-            if mob_id not in self._mob_actors:
-                actor = MobActor(mob)
+        for mob_id, (mob, floor_id) in live_mobs.items():
+            actor = self._mob_actors.get(mob_id)
+            if actor is None:
+                actor = MobActor(mob, floor_id)
                 self._mob_actors[mob_id] = actor
                 self.scheduler.push_back(actor)
+            else:
+                actor.retarget(mob, floor_id)
 
     # --- broadcast gating --------------------------------------------------
 

@@ -334,7 +334,7 @@ def _tick_pending_summons(game, dk: DwarfKing, floor: FloorState, floor_id: int)
             if candidates:
                 spawn_pos = random.choice(candidates)
 
-        new_mob = game._spawn_mob_at(cls, spawn_pos[0], spawn_pos[1])
+        new_mob = game._spawn_mob_at(cls, spawn_pos[0], spawn_pos[1], floor_id)
         new_mob.ai_state = "hunting"
         if dk.phase == 2:
             new_mob.king_damager = True
