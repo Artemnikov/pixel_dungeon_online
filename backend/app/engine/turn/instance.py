@@ -144,13 +144,20 @@ class TurnBasedGameInstance(GameInstance):
                 self._broadcast_dirty = True
 
     def _resolve_dungeon_phase(self) -> None:
-        """Run dungeon faction turn: all mobs act, upkeep runs, next round begins."""
-        self._run_dungeon_mob_turns()
-        self.scheduler.now += 1.0
-        self._run_due_upkeep()
-        self._players_acted.clear()
-        self._turn_deadline = None
-        self._broadcast_dirty = True
+        """Run dungeon faction turn: all mobs act, upkeep runs, next round begins.
+
+        The round state is cleared in a `finally`: a mob-AI or upkeep failure
+        must not strand players in `_players_acted`, where `submit_turn_action`
+        would reject every following action and lock the room for good.
+        """
+        try:
+            self._run_dungeon_mob_turns()
+            self.scheduler.now += 1.0
+            self._run_due_upkeep()
+        finally:
+            self._players_acted.clear()
+            self._turn_deadline = None
+            self._broadcast_dirty = True
 
     def _run_dungeon_mob_turns(self) -> None:
         for floor_id in list(self.active_floor_ids):
@@ -358,6 +365,9 @@ class TurnBasedGameInstance(GameInstance):
 
         action = build_turn_action(self, player, message)
         if action is None:
+            # A no-op (e.g. bumping a bare wall) spends no turn, but the client
+            # locked its input on send and only a fresh turn state re-arms it.
+            self._broadcast_dirty = True
             return False
 
         if action.cost <= 0.0:
@@ -366,10 +376,12 @@ class TurnBasedGameInstance(GameInstance):
             return True
 
         if player_id in self._players_acted:
+            self._broadcast_dirty = True
             return False
 
         actor = self._player_actors.get(player_id)
         if actor is None or actor.pending_action is not None:
+            self._broadcast_dirty = True
             return False
 
         if action.label != "PATH_STEPS":

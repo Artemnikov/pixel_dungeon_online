@@ -10,20 +10,10 @@ from app.engine.systems.loot import roll_drops
 from app.engine.entities.subclasses import Subclass
 from app.engine.game.ai_tengu import TURN_TICKS
 
+from conftest import make_game_with_floors, make_open_floor, partial
 
-def make_floor(floor_id=10, w=10, h=10):
-    grid = [[TileType.FLOOR for _ in range(w)] for _ in range(h)]
-    floor = FloorState(floor_id=floor_id, grid=grid, rooms=[], mobs={}, items={}, region="prison")
-    floor.rebuild_flags()
-    return floor
-
-
-def make_game(floor):
-    game = GameInstance("test-tengu")
-    game.players = {}
-    game.depth = floor.floor_id
-    game.floors[floor.floor_id] = floor
-    return game
+make_floor = partial(make_open_floor, floor_id=10, region="prison")
+make_game = partial(make_game_with_floors, game_id="test-tengu")
 
 
 def advance_turns(game, tengu, floor, n=1, collect_events=False):

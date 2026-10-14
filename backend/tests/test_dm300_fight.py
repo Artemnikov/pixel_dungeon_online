@@ -44,10 +44,9 @@ def make_floor(floor_id: int = 15, width: int = 33, height: int = 42) -> FloorSt
     return floor
 
 
-def make_game(floor: FloorState) -> GameInstance:
-    game = GameInstance(game_id="test_dm300")
-    game.floors[floor.floor_id] = floor
-    return game
+from conftest import make_game_with_floors, partial
+
+make_game = partial(make_game_with_floors, game_id="test_dm300", set_depth=False)
 
 
 def test_dm300_stats_and_properties():

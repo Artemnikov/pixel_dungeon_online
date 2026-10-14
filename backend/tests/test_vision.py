@@ -14,22 +14,7 @@ from app.engine.entities.player import Mob
 from app.engine.dungeon.constants import TileType
 from app.engine.mechanics import shadowcaster
 
-
-# --- helpers ---------------------------------------------------------------
-
-def _game_with_grid(grid):
-    """Build a GameInstance whose only floor is `grid` (list of rows of tile
-    ids), with flags derived from it."""
-    # width/height now derive from the installed floor's grid.
-    game = GameInstance("test-game")
-    floor = FloorState(floor_id=game.depth, grid=grid, rooms=[], mobs={}, items={})
-    floor.rebuild_flags()
-    game.floors[game.depth] = floor
-    return game
-
-
-def _open_grid(w, h):
-    return [[TileType.FLOOR for _ in range(w)] for _ in range(h)]
+from conftest import make_grid_game as _game_with_grid, open_grid as _open_grid
 
 
 # --- shadowcaster unit tests ----------------------------------------------

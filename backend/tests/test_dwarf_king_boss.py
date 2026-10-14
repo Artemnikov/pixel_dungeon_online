@@ -1,5 +1,6 @@
 # Copyright (C) 2026 ArtemNikov
 #
+import json
 import os
 import sys
 
@@ -428,3 +429,58 @@ def test_stronger_bosses_challenge():
 
     assert dk.phase == 2
     assert dk.barrier_hp == 450
+
+
+def test_dwarf_king_state_json_serializable_when_entering_boss_hall():
+    """Entering the boss hall starts the fight and immediately queues a pedestal summon.
+    The game state must remain strictly JSON-serializable so WebSocket broadcasts do not crash."""
+    game, floor, player = make_boss_game()
+    dk = next(m for m in floor.mobs.values() if isinstance(m, DwarfKing))
+
+    # Step past door into arena
+    player.pos = Position(x=7, y=36)
+    _dwarf_king_maybe_seal_arena(game, player, floor, 20)
+    assert dk.fight_started is True
+
+    # Boss AI runs on the very first tick and queues a pending summon
+    _update_dwarf_king(game, dk, floor, 20)
+    assert len(dk.pending_summons) > 0
+
+    # Serialization must succeed without TypeError (e.g. ModelMetaclass not JSON serializable)
+    state = game.get_state("p1")
+    serialized = json.dumps(state)
+    assert isinstance(serialized, str)
+    assert len(serialized) > 0
+
+    # Ensure DwarfKing model dump excludes pending_summons
+    dk_dump = dk.model_dump()
+    assert "pending_summons" not in dk_dump
+
+    # Tick down pending summon until the minion spawns
+    while dk.pending_summons:
+        _update_dwarf_king(game, dk, floor, 20)
+
+    # State must still serialize cleanly after minion appears
+    state_after_spawn = game.get_state("p1")
+    serialized_after = json.dumps(state_after_spawn)
+    assert isinstance(serialized_after, str)
+
+
+def test_phase2_waves_state_json_serializable():
+    """Phase 2 waves queue scripted pending summons, which must also be JSON-serializable."""
+    game, floor, player = make_boss_game()
+    dk = next(m for m in floor.mobs.values() if isinstance(m, DwarfKing))
+    dk.fight_started = True
+    dk.hp = 50
+    # First tick transitions to phase 2
+    _update_dwarf_king(game, dk, floor, 20)
+    assert dk.phase == 2
+
+    # Second tick runs phase 2 wave updates and queues summons
+    _update_dwarf_king(game, dk, floor, 20)
+    assert len(dk.pending_summons) > 0
+
+    state = game.get_state("p1")
+    serialized = json.dumps(state)
+    assert isinstance(serialized, str)
+

@@ -62,9 +62,3 @@ def test_crystal_vault_room_total_chests_or_mimic():
     chest_heaps = [h for h in level.heaps.values() if getattr(h, 'type', '') == 'CRYSTAL_CHEST']
     crystal_mimics = [m for m in level.mobs if isinstance(m, GenMob) and m.cls_name == 'CrystalMimic']
     assert len(chest_heaps) + len(crystal_mimics) == 2
-
-
-def test_crystal_vault_no_shatter_on_open():
-    """Opening one chest must not remove the other (regression guard)."""
-    # Placeholder — implemented in Task 4 movement tests.
-    pass

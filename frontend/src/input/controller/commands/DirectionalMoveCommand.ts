@@ -6,20 +6,34 @@ import { defaultMoveResultDispatcher } from '../../../net/movement/MoveResultDis
 import { startLocalPlayerMeleeAnim } from '../../../net/events/combat';
 import AudioManager from '../../../audio/AudioManager';
 
+export const DEFAULT_CHORD_DELAY_MS = 35;
+
 export class DirectionalMoveCommand implements IKeyCommand {
   private pressedKeys: Set<string>;
   private lastSentVector: { dx: number; dy: number } = { dx: 0, dy: 0 };
+  private lastTurnStepTime = 0;
   private onVectorChanged?: (hasHeldKeys: boolean) => void;
+  private chordDelayMs: number;
+  private chordTimer: ReturnType<typeof setTimeout> | null = null;
+  private pendingChordVector: { dx: number; dy: number } | null = null;
 
-  constructor(pressedKeys: Set<string>, onVectorChanged?: (hasHeldKeys: boolean) => void) {
+  constructor(
+    pressedKeys: Set<string>,
+    onVectorChanged?: (hasHeldKeys: boolean) => void,
+    chordDelayMs = 0,
+  ) {
     this.pressedKeys = pressedKeys;
     this.onVectorChanged = onVectorChanged;
+    this.chordDelayMs = chordDelayMs;
   }
 
   public canExecute(code: string, context: InputContext): boolean {
     if (!DIRECTION_KEYS.has(code)) return false;
     if (context.myPlayer?.is_downed || context.myPlayer?.is_alive === false) return false;
-    if (this.isTurnMode(context) && context.canActRef?.current === false) return false;
+    // Turn rooms deliberately do NOT gate on canActRef here: direction keys
+    // must always register so a chorded diagonal's second keydown and the
+    // keyup that disarms the pump are seen. sendTurnMove/paceStep decide
+    // whether a turn may actually be spent.
     return true;
   }
 
@@ -33,7 +47,7 @@ export class DirectionalMoveCommand implements IKeyCommand {
   }
 
   /**
-   * A turn-based room moves one tile per key press, on a plain `MOVE`.
+   * A turn-based room moves on a plain `MOVE`, charged by the scheduler.
    *
    * The real-time path below is the wrong shape for it: `MOVE_INTENT`,
    * `MOVE_STEP` and `MOVE_STOP` are dropped by a turn room's dispatcher, and
@@ -56,6 +70,68 @@ export class DirectionalMoveCommand implements IKeyCommand {
     if (!socket || socket.readyState !== WebSocket.OPEN) return;
 
     const { dx, dy } = getVector(this.pressedKeys);
+
+    if (dx === 0 && dy === 0) {
+      if (this.chordTimer !== null && this.pendingChordVector !== null) {
+        const pending = this.pendingChordVector;
+        this.clearChordTimer();
+        this.commitMove(context, pending.dx, pending.dy, true);
+      }
+      this.clearChordTimer();
+      this.commitMove(context, 0, 0, false);
+      return;
+    }
+
+    if (dx !== 0 && dy !== 0) {
+      this.clearChordTimer();
+      this.commitMove(context, dx, dy, isKeyDown);
+      return;
+    }
+
+    if (
+      this.chordDelayMs > 0 &&
+      isKeyDown &&
+      this.lastSentVector.dx === 0 &&
+      this.lastSentVector.dy === 0
+    ) {
+      this.pendingChordVector = { dx, dy };
+      if (this.chordTimer === null) {
+        this.chordTimer = setTimeout(() => {
+          this.chordTimer = null;
+          const pending = this.pendingChordVector;
+          this.pendingChordVector = null;
+          if (pending && (pending.dx !== 0 || pending.dy !== 0)) {
+            this.commitMove(context, pending.dx, pending.dy, true);
+          }
+        }, this.chordDelayMs);
+      }
+      return;
+    }
+
+    this.clearChordTimer();
+    this.commitMove(context, dx, dy, isKeyDown);
+  }
+
+  private clearChordTimer(): void {
+    if (this.chordTimer !== null) {
+      clearTimeout(this.chordTimer);
+      this.chordTimer = null;
+    }
+    this.pendingChordVector = null;
+  }
+
+  public flushChord(context: InputContext): void {
+    if (this.chordTimer !== null && this.pendingChordVector !== null) {
+      const pending = this.pendingChordVector;
+      this.clearChordTimer();
+      this.commitMove(context, pending.dx, pending.dy, true);
+    }
+  }
+
+  private commitMove(context: InputContext, dx: number, dy: number, isKeyDown: boolean): void {
+    const socket = context.socket;
+    if (!socket || socket.readyState !== WebSocket.OPEN) return;
+
     const last = this.lastSentVector;
     if (dx === last.dx && dy === last.dy) return;
 
@@ -71,10 +147,12 @@ export class DirectionalMoveCommand implements IKeyCommand {
     }
 
     if (this.isTurnMode(context)) {
-      // Turn-based: one press, one tile, no pump. Never arm `onVectorChanged`,
-      // which is what starts the per-frame `paceStep` auto-walk.
-      if (isKeyDown) this.sendTurnMove(context, dx, dy);
-      this.onVectorChanged?.(false);
+      if (isKeyDown && context.canActRef?.current === true) {
+        this.sendTurnMove(context, dx, dy);
+        this.lastTurnStepTime = performance.now();
+        context.canActRef.current = false;
+      }
+      this.onVectorChanged?.(true);
       return;
     }
 
@@ -99,12 +177,23 @@ export class DirectionalMoveCommand implements IKeyCommand {
   }
 
   public paceStep(context: InputContext): void {
-    // Turn-based rooms never auto-walk: the pump is only armed by the
-    // real-time branch above. Guarded anyway so a stray frame is a no-op.
-    if (this.isTurnMode(context)) return;
+    if (this.chordTimer !== null) return;
 
     const { dx, dy } = getVector(this.pressedKeys);
     if (dx === 0 && dy === 0) return;
+
+    if (this.isTurnMode(context)) {
+      // Held-key continuation: the pump calls this every frame while a
+      // direction is held. Spend a turn only once the server says we may act
+      // again and the previous step's animation has had time to play.
+      if (context.canActRef?.current !== true) return;
+      const now = performance.now();
+      if (now - this.lastTurnStepTime < movementPredictor.getStepDuration(context.myPlayer)) return;
+      this.sendTurnMove(context, dx, dy);
+      this.lastTurnStepTime = now;
+      context.canActRef.current = false;
+      return;
+    }
 
     const me = context.myPlayer;
     if (!me) return;
@@ -139,6 +228,8 @@ export class DirectionalMoveCommand implements IKeyCommand {
   }
 
   public reset(): void {
+    this.clearChordTimer();
     this.lastSentVector = { dx: 0, dy: 0 };
+    this.lastTurnStepTime = 0;
   }
 }

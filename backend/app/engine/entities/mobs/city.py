@@ -3,6 +3,8 @@
 import random
 from typing import List
 
+from pydantic import Field
+
 from app.engine.entities.mobs.caves import Ghoul, Monk, Warlock, Golem
 from app.engine.entities.player import Mob as MobEntity, DropEntry
 from app.engine.game.constants import TICKS_PER_TURN
@@ -155,7 +157,7 @@ class DwarfKing(MobEntity):
     barrier_max: int = 0
     deferred_damage: int = 0
     phase3_ticks: int = 0
-    pending_summons: List[dict] = []
+    pending_summons: List[dict] = Field(default_factory=list, exclude=True)
     linked_mob_id: str = ""
 
     def take_damage(self, amount: int, is_split_damage: bool = False) -> int:

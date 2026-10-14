@@ -14,17 +14,7 @@ from app.engine.entities.player import Mob
 from app.engine.entities.mobs import Bee, Tengu, Succubus, Eye, Scorpio, RipperDemon, YogDzewa, SoiledFist
 from app.engine.dungeon.constants import TileType
 
-
-def _game_with_grid(grid):
-    game = GameInstance("test-game")
-    floor = FloorState(floor_id=game.depth, grid=grid, rooms=[], mobs={}, items={})
-    floor.rebuild_flags()
-    game.floors[game.depth] = floor
-    return game
-
-
-def _open_grid(w, h):
-    return [[TileType.FLOOR for _ in range(w)] for _ in range(h)]
+from conftest import make_grid_game as _game_with_grid, open_grid as _open_grid
 
 
 # --- 1. mob view_distance overrides ----------------------------------------

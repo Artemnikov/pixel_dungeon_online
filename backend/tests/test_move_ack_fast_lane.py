@@ -14,6 +14,8 @@ from app.api.connection_manager import ConnectionManager
 from app.engine.dungeon.constants import TileType
 from app.engine.entities.base import Position
 
+from conftest import open_floor_on_game as _open_floor
+
 
 class DummyWebSocket:
     def __init__(self):
@@ -25,13 +27,6 @@ class DummyWebSocket:
 
     async def send_json(self, payload):
         self.messages.append(payload)
-
-
-def _open_floor(game):
-    floor = game._get_or_create_floor(1)
-    floor.grid = [[TileType.FLOOR for _ in range(20)] for _ in range(20)]
-    floor.rebuild_flags()
-    return floor
 
 
 async def _connected_player():

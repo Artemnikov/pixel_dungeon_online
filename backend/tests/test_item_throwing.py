@@ -5,7 +5,7 @@ from app.engine.manager import GameInstance
 from app.engine.dungeon.constants import TileType
 from app.engine.dungeon.models import TrapInfo
 from app.engine.entities.base import Action, Position
-from app.engine.entities.items.consumables import Food, Ration, Seed, Stone, ThrowableDagger
+from app.engine.entities.items.consumables import Food, Ration, Seed, Stone, Throwable, ThrowableDagger
 from app.engine.entities.items.potions import (
     HealthPotion, PotionOfFrost, PotionOfLevitation, PotionOfLiquidFlame,
     PotionOfPurity, PotionOfStrength,
@@ -328,3 +328,23 @@ def test_perform_ranged_attack_delegates_non_missile_to_action_throw():
     assert (7, 5) in floor.plants
     assert floor.plants[(7, 5)]["plant_type"] == "sungrass"
     assert floor.grid[5][7] == TileType.FLOOR_GRASS
+
+
+def test_thrown_stack_drops_a_floor_item_on_every_throw():
+    game, p, floor = _setup_test_scene("test-thrown-stack-drop", "warrior")
+    darts = Throwable(id="darts1", name="Dart", quantity=3, min_dmg=1, max_dmg=1)
+    p.belongings.backpack.items.append(darts)
+
+    for expected_remaining in (2, 1, 0):
+        p.last_attack_time = 0
+        floor.items.clear()
+        game.perform_ranged_attack("p1", "darts1", 8, 5)
+
+        assert len(floor.items) == 1, (
+            f"expected a floor item after this throw, remaining stack should be {expected_remaining}"
+        )
+        remaining = p.belongings.get_item("darts1")
+        if expected_remaining == 0:
+            assert remaining is None
+        else:
+            assert remaining is not None and remaining.quantity == expected_remaining

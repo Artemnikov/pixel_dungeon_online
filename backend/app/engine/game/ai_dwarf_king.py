@@ -39,6 +39,13 @@ PEDESTAL_POSITIONS: List[Tuple[int, int]] = [(4, 28), (10, 28), (10, 34), (4, 34
 BOTTOM_DOOR_POS = (7, 37)
 TOP_DOOR_POS = (7, 25)
 
+DK_MINION_CLASSES = {
+    "DKGhoul": DKGhoul,
+    "DKMonk": DKMonk,
+    "DKWarlock": DKWarlock,
+    "DKGolem": DKGolem,
+}
+
 # Dialogue quotes (1-1 faithful to SPD actors.properties)
 YELL_NOTICE = "How dare you! You have no idea what you're interfering with!"
 YELL_LIFELINK_1 = "I have need of your essence, slave!"
@@ -247,7 +254,7 @@ def _dwarf_king_summon(game, dk: DwarfKing, floor: FloorState, floor_id: int) ->
 
     dk.pending_summons.append({
         "pos": pedestal,
-        "cls": cls,
+        "cls": cls.__name__ if hasattr(cls, "__name__") else str(cls),
         "ticks_left": int(delay_turns * TICKS_PER_TURN),
         "particle": particle,
     })
@@ -272,19 +279,21 @@ def _tick_pending_summons(game, dk: DwarfKing, floor: FloorState, floor_id: int)
 
         # Timer expired -> spawn minion
         px, py = summon["pos"]
-        cls = summon["cls"]
+        raw_cls = summon["cls"]
+        cls = DK_MINION_CLASSES.get(raw_cls, raw_cls) if isinstance(raw_cls, str) else raw_cls
 
         # Sound effect on appearance
         sound = "BONES"
-        if cls == DKGolem:
+        if cls is DKGolem:
             sound = "CHARGEUP"
-        elif cls == DKWarlock:
+        elif cls is DKWarlock:
             sound = "CURSED"
-        elif cls == DKMonk:
+        elif cls is DKMonk:
             sound = "BURNING"
 
+        cls_name = cls.__name__ if hasattr(cls, "__name__") else str(cls)
         game.add_event("PLAY_SOUND", {"sound": sound, "x": px, "y": py}, floor_id=floor_id)
-        game.add_event("DWARF_KING_SUMMON_BURST", {"x": px, "y": py, "mob_cls": cls.__name__}, floor_id=floor_id)
+        game.add_event("DWARF_KING_SUMMON_BURST", {"x": px, "y": py, "mob_cls": cls_name}, floor_id=floor_id)
 
         # Check occupant of the pedestal tile
         occupant_player = next((p for p in game._players_on_floor(floor_id) if p.is_alive and p.pos.x == px and p.pos.y == py), None)
@@ -512,7 +521,7 @@ def _update_phase2_waves(game, dk: DwarfKing, floor: FloorState, floor_id: int, 
             pedestal = _get_available_pedestal(dk) or random.choice(PEDESTAL_POSITIONS)
             dk.pending_summons.append({
                 "pos": pedestal,
-                "cls": DKGhoul,
+                "cls": "DKGhoul",
                 "ticks_left": random.randint(int(1 * TICKS_PER_TURN), int(4 * TICKS_PER_TURN)),
                 "particle": "bones",
             })
@@ -532,7 +541,7 @@ def _update_phase2_waves(game, dk: DwarfKing, floor: FloorState, floor_id: int, 
             particle = "bones" if cls == DKGhoul else ("fire" if cls == DKMonk else "shadow")
             dk.pending_summons.append({
                 "pos": pedestal,
-                "cls": cls,
+                "cls": cls.__name__ if hasattr(cls, "__name__") else str(cls),
                 "ticks_left": random.randint(int(1 * TICKS_PER_TURN), int(4 * TICKS_PER_TURN)),
                 "particle": particle,
             })
@@ -552,7 +561,7 @@ def _update_phase2_waves(game, dk: DwarfKing, floor: FloorState, floor_id: int, 
             particle = "bones" if cls == DKGhoul else ("fire" if cls == DKMonk else ("shadow" if cls == DKWarlock else "spark"))
             dk.pending_summons.append({
                 "pos": pedestal,
-                "cls": cls,
+                "cls": cls.__name__ if hasattr(cls, "__name__") else str(cls),
                 "ticks_left": random.randint(int(1 * TICKS_PER_TURN), int(4 * TICKS_PER_TURN)),
                 "particle": particle,
             })

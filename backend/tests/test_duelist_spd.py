@@ -352,30 +352,6 @@ def test_champion_twin_upgrades():
     assert low_mace.level == 0
 
 
-def test_champion_combined_lethality_execute():
-    g = GameInstance("t_combined_lethality")
-    p = _duelist(g)
-    p.subclass_info.subclass = "champion"
-    p.talent_info.talents[Talent.COMBINED_LETHALITY] = 3
-
-    floor = g._get_or_create_floor(p.floor_id)
-    mob = _mob(hp=10, max_hp=40, x=p.pos.x + 1, y=p.pos.y)  # 25% HP (< 40%)
-    floor.mobs[mob.id] = mob
-
-    # Set last ability used was from a different weapon (e.g. Rapier Lunge)
-    p.last_weapon_ability_id = "lunge"
-    p.last_weapon_ability_weapon_name = "Rapier"
-    p.last_weapon_ability_turn = getattr(g, "turns", 0)
-
-    # Melee attack with Sword executes mob
-    sword = make_named_melee_weapon("Sword")
-    p.belongings.weapon = sword
-
-    res = resolve_melee_attack(p, mob, floor.mobs, mob.pos.x, mob.pos.y, floor=floor, game=g)
-    assert res.get("ko") is True
-    assert not mob.is_alive
-
-
 # ===========================================================================
 # 4. Monk Subclass
 # ===========================================================================

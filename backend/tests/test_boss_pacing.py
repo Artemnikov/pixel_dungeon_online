@@ -26,21 +26,10 @@ from app.engine.game.ai_yog_dzewa import _update_yog_dzewa
 from app.engine.game.ai_dwarf_king import _update_dwarf_king
 from app.engine.manager import GameInstance
 
+from conftest import make_game_with_floors, make_open_floor, partial
 
-def make_floor(floor_id, w=10, h=10):
-    grid = [[TileType.FLOOR for _ in range(w)] for _ in range(h)]
-    floor = FloorState(floor_id=floor_id, grid=grid, rooms=[], mobs={}, items={}, region="halls")
-    floor.rebuild_flags()
-    floor.mob_limit = 99
-    return floor
-
-
-def make_game(floor):
-    game = GameInstance(f"test-boss-pacing-{floor.floor_id}")
-    game.players = {}
-    game.floors[floor.floor_id] = floor
-    game.depth = floor.floor_id
-    return game
+make_floor = partial(make_open_floor, region="halls", mob_limit=99)
+make_game = make_game_with_floors
 
 
 def make_player(x, y):

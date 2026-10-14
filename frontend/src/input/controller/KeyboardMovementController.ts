@@ -1,6 +1,6 @@
 import type { InputContext } from './IKeyCommand';
 import { KeyActionRegistry } from './KeyActionRegistry';
-import { DirectionalMoveCommand } from './commands/DirectionalMoveCommand';
+import { DirectionalMoveCommand, DEFAULT_CHORD_DELAY_MS } from './commands/DirectionalMoveCommand';
 import { QuickslotCommand } from './commands/QuickslotCommand';
 import { InventoryToggleCommand } from './commands/InventoryToggleCommand';
 import { TalentsToggleCommand } from './commands/TalentsToggleCommand';
@@ -24,13 +24,17 @@ export class KeyboardMovementController {
 
   constructor(getContext: () => InputContext) {
     this.getContext = getContext;
-    this.directionalMoveCmd = new DirectionalMoveCommand(this.pressedKeys, (hasHeld) => {
-      if (hasHeld) {
-        this.ensurePumping();
-      } else {
-        this.stopPumping();
-      }
-    });
+    this.directionalMoveCmd = new DirectionalMoveCommand(
+      this.pressedKeys,
+      (hasHeld) => {
+        if (hasHeld) {
+          this.ensurePumping();
+        } else {
+          this.stopPumping();
+        }
+      },
+      DEFAULT_CHORD_DELAY_MS,
+    );
     this.quickslotCmd = new QuickslotCommand();
 
     this.registry.register(this.directionalMoveCmd);
