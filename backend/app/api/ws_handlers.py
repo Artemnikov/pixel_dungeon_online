@@ -456,3 +456,17 @@ def handle_choose_enchant(
     game: GameInstance, player_id: str, message: msg.ChooseEnchant
 ):
     game.choose_enchant(player_id, message.target_id, message.choice_index)
+
+
+@dispatcher.register(msg.TenguJoinResponse)
+def handle_tengu_join_response(
+    game: GameInstance, player_id: str, message: msg.TenguJoinResponse
+):
+    game.respond_tengu_join(player_id, message.approve)
+
+
+@dispatcher.register(msg.TenguStartDecision)
+def handle_tengu_start_decision(
+    game: GameInstance, player_id: str, message: msg.TenguStartDecision
+):
+    game.decide_tengu_start(player_id, message.action)

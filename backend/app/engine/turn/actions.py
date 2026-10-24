@@ -537,6 +537,14 @@ _FREE_MENUS: Dict[str, tuple] = {
         lambda g, p, m: g.confirm_chasm_fall(p.id, m.x, m.y),
         "CHASM",
     ),
+    _msg_type(msg.TenguJoinResponse): (
+        lambda g, p, m: g.respond_tengu_join(p.id, m.approve),
+        "TENGU_PROMPT",
+    ),
+    _msg_type(msg.TenguStartDecision): (
+        lambda g, p, m: g.decide_tengu_start(p.id, m.action),
+        "TENGU_PROMPT",
+    ),
     _msg_type(msg.NpcInteract): (lambda g, p, m: g.npc_interact(p.id, m.npc_id), "NPC"),
     _msg_type(msg.ShopBuy): (lambda g, p, m: g.shop_buy(p.id, m.npc_id, m.item_id), "SHOP"),
     _msg_type(msg.ShopSell): (lambda g, p, m: g.shop_sell(p.id, m.item_id), "SHOP"),

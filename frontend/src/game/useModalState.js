@@ -71,6 +71,15 @@ export default function useModalState() {
     setChasmPrompt(null);
   };
 
+  const [tenguPrompt, setTenguPrompt] = useState(null);
+  const [tenguPartyStatus, setTenguPartyStatus] = useState(null);
+  const onTenguJoinPrompt = (data) => setTenguPrompt(data);
+  const onTenguPartyStatus = (data) => setTenguPartyStatus(data);
+  const onTenguPromptClose = () => {
+    setTenguPrompt(null);
+    setTenguPartyStatus(null);
+  };
+
   const [alchemyOpen, setAlchemyOpen] = useState(false);
   const [alchemyPreview, setAlchemyPreview] = useState(null);
   const [alchemyBrewed, setAlchemyBrewed] = useState(null);
@@ -138,6 +147,11 @@ export default function useModalState() {
     chasmPrompt, setChasmPrompt,
     onChasmPrompt,
     dismissChasmPrompt,
+    tenguPrompt, setTenguPrompt,
+    tenguPartyStatus, setTenguPartyStatus,
+    onTenguJoinPrompt,
+    onTenguPartyStatus,
+    onTenguPromptClose,
     alchemyOpen, setAlchemyOpen,
     alchemyPreview, setAlchemyPreview,
     alchemyBrewed, setAlchemyBrewed,

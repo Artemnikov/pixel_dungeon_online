@@ -53,6 +53,27 @@ export function createBossEventHandlers(): IGameEventHandler[] {
       },
     },
     {
+      eventType: 'TENGU_JOIN_PROMPT',
+      handle(event: Extract<GameEvent, { type: 'TENGU_JOIN_PROMPT' }>, ctx: GameEventContext) {
+        ctx.ui.tenguJoinPrompt(event.data);
+        return true;
+      },
+    },
+    {
+      eventType: 'TENGU_PARTY_STATUS',
+      handle(event: Extract<GameEvent, { type: 'TENGU_PARTY_STATUS' }>, ctx: GameEventContext) {
+        ctx.ui.tenguPartyStatus(event.data);
+        return true;
+      },
+    },
+    {
+      eventType: 'TENGU_PROMPT_CLOSE',
+      handle(_event: Extract<GameEvent, { type: 'TENGU_PROMPT_CLOSE' }>, ctx: GameEventContext) {
+        ctx.ui.tenguPromptClose();
+        return true;
+      },
+    },
+    {
       eventType: 'DM300_FIGHT_STARTED',
       handle(event: Extract<GameEvent, { type: 'DM300_FIGHT_STARTED' }>, ctx: GameEventContext) {
         ctx.ui.dm300FightStarted(event.data);

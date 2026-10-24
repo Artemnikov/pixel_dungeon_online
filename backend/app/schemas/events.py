@@ -417,6 +417,23 @@ class ChasmPromptData(_EventData):
     y: int
 
 
+class TenguJoinPromptData(_EventData):
+    initiator_id: str
+    initiator_name: str
+
+
+class TenguPartyStatusData(_EventData):
+    initiator_id: str
+    pending_names: List[str]
+    declined_names: List[str]
+    approved_names: List[str]
+    can_decide: bool
+
+
+class TenguPromptCloseData(_EventData):
+    pass
+
+
 class ChasmFallData(_EventData):
     # SPD Chasm.heroFall -> InterlevelScene.Mode.FALL -> heroLand. Carries
     # everything the client needs to drive the fall transition: who fell, whether
@@ -736,6 +753,9 @@ EVENT_MODELS = {
     "TENGU_BADGE_QUALIFIED": TenguBadgeQualifiedData,
     "GOO_BADGE_QUALIFIED": GooBadgeQualifiedData,
     "CHASM_PROMPT": ChasmPromptData,
+    "TENGU_JOIN_PROMPT": TenguJoinPromptData,
+    "TENGU_PARTY_STATUS": TenguPartyStatusData,
+    "TENGU_PROMPT_CLOSE": TenguPromptCloseData,
     "CHASM_FALL": ChasmFallData,
     "SCREEN_SHAKE": ScreenShakeData,
     "MOB_CHASM_FALL": MobChasmFallData,

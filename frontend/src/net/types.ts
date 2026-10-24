@@ -283,6 +283,9 @@ export interface HookProps {
   onMetamorphOptions?: (data: { old_talent: string; options: string[] }) => void;
   onGooFightStarted?: (data: { mob: string }) => void;
   onTenguFightStarted?: (data: { mob: string }) => void;
+  onTenguJoinPrompt?: (data: { initiator_id: string; initiator_name: string }) => void;
+  onTenguPartyStatus?: (data: { initiator_id: string; pending_names: string[]; declined_names: string[]; approved_names: string[]; can_decide: boolean }) => void;
+  onTenguPromptClose?: () => void;
   onChasmPrompt?: (data: { x: number; y: number }) => void;
   onDM300FightStarted?: (data: { mob: string }) => void;
   onDwarfKingFightStarted?: (data: { mob: string }) => void;
@@ -358,6 +361,9 @@ export type HandlerCtx = Pick<
   onMetamorphOptions?: HookProps['onMetamorphOptions'];
   onGooFightStarted?: HookProps['onGooFightStarted'];
   onTenguFightStarted?: HookProps['onTenguFightStarted'];
+  onTenguJoinPrompt?: HookProps['onTenguJoinPrompt'];
+  onTenguPartyStatus?: HookProps['onTenguPartyStatus'];
+  onTenguPromptClose?: HookProps['onTenguPromptClose'];
   onChasmPrompt?: HookProps['onChasmPrompt'];
   onDM300FightStarted?: HookProps['onDM300FightStarted'];
   onDwarfKingFightStarted?: HookProps['onDwarfKingFightStarted'];

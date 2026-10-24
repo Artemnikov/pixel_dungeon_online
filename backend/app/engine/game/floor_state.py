@@ -43,6 +43,7 @@ class FloorState:
     # PrisonBossLevel.State (START/FIGHT_START/FIGHT_PAUSE/FIGHT_ARENA/WON)
     # and the storedItems list preserved across map rebuilds.
     tengu_state: str = "START"
+    tengu_prompt: Optional[Dict[str, Any]] = None
     map_version: int = 0
     prison_stored_items: List[Item] = field(default_factory=list)
 

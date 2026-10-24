@@ -200,7 +200,13 @@ export default function useGameHooks(state) {
     onSubclassChoiceAvailable: talent.onSubclassChoiceAvailable,
     onArmorAbilityChoiceAvailable: talent.onArmorAbilityChoiceAvailable,
     onGooFightStarted: () => setBossFightActive(true),
-    onTenguFightStarted: () => setBossFightActive(true),
+    onTenguFightStarted: () => {
+      modals.onTenguPromptClose();
+      setBossFightActive(true);
+    },
+    onTenguJoinPrompt: modals.onTenguJoinPrompt,
+    onTenguPartyStatus: modals.onTenguPartyStatus,
+    onTenguPromptClose: modals.onTenguPromptClose,
     onDM300FightStarted: () => setBossFightActive(true),
     onDwarfKingFightStarted: () => setBossFightActive(true),
     onDwarfKingPhase2: () => setBossFightActive(true),

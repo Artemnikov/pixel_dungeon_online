@@ -12,6 +12,7 @@ import WndSadGhost from './WndSadGhost';
 import WndGhostGear from './WndGhostGear';
 import WndWandmaker from './WndWandmaker';
 import WndChasmJump from './WndChasmJump';
+import { WndTenguJoinPrompt, WndTenguPartyStatus } from './WndTenguPrompt';
 import WndQuickBag from './WndQuickBag';
 import WndOverlay from './WndOverlay';
 import { WindowLevel } from '../game/window/WindowTypes';
@@ -51,6 +52,8 @@ function GameModals({
     ghostGearData, setGhostGearData,
     chasmPrompt, setChasmPrompt,
     dismissChasmPrompt,
+    tenguPrompt, setTenguPrompt,
+    tenguPartyStatus, setTenguPartyStatus,
     showQuickBag, setShowQuickBag,
     quickslotPicker, setQuickslotPicker,
     scrollPickerData, setScrollPickerData,
@@ -172,6 +175,34 @@ function GameModals({
             setChasmPrompt(null);
           }}
           onDecline={dismissChasmPrompt}
+        />
+      )}
+
+      {tenguPrompt && (
+        <WndTenguJoinPrompt
+          initiatorName={tenguPrompt.initiator_name}
+          onApprove={() => {
+            send({ type: 'TENGU_JOIN_RESPONSE', approve: true });
+            setTenguPrompt(null);
+          }}
+          onDecline={() => {
+            send({ type: 'TENGU_JOIN_RESPONSE', approve: false });
+            setTenguPrompt(null);
+          }}
+        />
+      )}
+
+      {tenguPartyStatus && (
+        <WndTenguPartyStatus
+          status={tenguPartyStatus}
+          onStartWithout={() => {
+            send({ type: 'TENGU_START_DECISION', action: 'start_without' });
+            setTenguPartyStatus(null);
+          }}
+          onWait={() => {
+            send({ type: 'TENGU_START_DECISION', action: 'wait' });
+            setTenguPartyStatus(null);
+          }}
         />
       )}
 

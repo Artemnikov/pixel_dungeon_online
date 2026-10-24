@@ -231,6 +231,16 @@
       "yes": "Yes, I know what I'm doing",
       "no": "No, I changed my mind"
     },
+    "tenguPrompt": {
+      "title": "Tengu Boss Fight",
+      "joinDesc": "{{name}} unlocked Tengu's cell door! Do you want to join the boss fight?",
+      "joinYes": "Join Fight",
+      "joinNo": "Not Ready",
+      "declinedDesc": "{{names}} is not ready to join the fight.",
+      "waitingDesc": "Waiting for {{names}} to respond...",
+      "startWithout": "Start Without Them",
+      "wait": "Wait"
+    },
     "newGame": "New Game",
     "menuBtn": "Menu",
     "resurrect": {

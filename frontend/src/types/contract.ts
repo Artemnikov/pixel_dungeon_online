@@ -426,6 +426,27 @@ export interface ChasmPromptEvent {
   data: { x: number; y: number };
 }
 
+export interface TenguJoinPromptEvent {
+  type: 'TENGU_JOIN_PROMPT';
+  data: { initiator_id: string; initiator_name: string };
+}
+
+export interface TenguPartyStatusEvent {
+  type: 'TENGU_PARTY_STATUS';
+  data: {
+    initiator_id: string;
+    pending_names: string[];
+    declined_names: string[];
+    approved_names: string[];
+    can_decide: boolean;
+  };
+}
+
+export interface TenguPromptCloseEvent {
+  type: 'TENGU_PROMPT_CLOSE';
+  data: Record<string, never>;
+}
+
 /** SPD Chasm.heroFall: the hero starts falling to the next floor. Drives the
  *  fade + camera snap + FALLING sound on the client. */
 export interface ChasmFallEvent {
@@ -1387,7 +1408,10 @@ export type GameEvent =
   | SpawnEvent
   | EquipCursedEvent
   | PushEvent
-  | SummonEvent;
+  | SummonEvent
+  | TenguJoinPromptEvent
+  | TenguPartyStatusEvent
+  | TenguPromptCloseEvent;
 
 export type GameEventType = GameEvent['type'];
 
@@ -1574,6 +1598,8 @@ export type ClientMessage =
   | { type: 'STONE_AUGMENT_CHOOSE'; stone_id: string; item_id: string; augment_type: string }
   | { type: 'CHOOSE_ENCHANT'; target_id: string; choice_index: number }
   | { type: 'CONFIRM_CHASM_FALL'; x: number; y: number }
+  | { type: 'TENGU_JOIN_RESPONSE'; approve: boolean }
+  | { type: 'TENGU_START_DECISION'; action: 'start_without' | 'wait' }
   | { type: 'ALCHEMY_PREVIEW'; ingredient_ids: string[] }
   | { type: 'ALCHEMY_BREW'; ingredient_ids: string[]; recipe_index: number }
   | { type: 'ALCHEMY_ENERGIZE'; item_id: string; all_items: boolean }

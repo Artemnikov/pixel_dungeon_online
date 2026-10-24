@@ -201,3 +201,94 @@ def test_chasm_in_post_tengu_reveal_can_be_fallen_through():
     game.confirm_chasm_fall(player.id, cx, cy)
     assert player.floor_id == start_floor_id + 1
     assert player.pending_chasm_fall is None
+
+
+def test_unlock_tengu_door_prompts_party_and_teleports_horizontally_on_all_approve():
+    game, floor = make_game()
+    p1 = game.add_player("p1", "Alice")
+    p2 = game.add_player("p2", "Bob")
+    p3 = game.add_player("p3", "Charlie")
+    for idx, p in enumerate((p1, p2, p3)):
+        p.floor_id = 10
+        p.pos = Position(x=layout.TENGU_CELL_DOOR.x, y=layout.TENGU_CELL_DOOR.y - 1 - idx)
+
+    p1.add_key("iron", 10, "Iron Key")
+    game.flush_events()
+
+    dx, dy = layout.TENGU_CELL_DOOR.x, layout.TENGU_CELL_DOOR.y
+    assert game._try_unlock_locked_door(p1, floor, dx, dy) is True
+
+    events = game.flush_events()
+    join_prompts = [e for e in events if e["type"] == "TENGU_JOIN_PROMPT"]
+    status_events = [e for e in events if e["type"] == "TENGU_PARTY_STATUS"]
+    assert {e["_player_id"] for e in join_prompts} == {"p2", "p3"}
+    assert len(status_events) == 1
+    assert status_events[0]["_player_id"] == "p1"
+    assert floor.tengu_state == "START"
+
+    # p2 approves -> still waiting on p3
+    game.respond_tengu_join("p2", True)
+    assert floor.tengu_state == "START"
+    events = game.flush_events()
+    status_events = [e for e in events if e["type"] == "TENGU_PARTY_STATUS"]
+    assert len(status_events) == 1
+    assert status_events[0]["data"]["pending_names"] == ["Charlie"]
+
+    # p3 approves -> everyone approved, fight starts and all 3 teleport horizontally inside cell
+    game.respond_tengu_join("p3", True)
+    assert floor.tengu_state == "FIGHT_START"
+    assert floor.tengu_prompt is None
+
+    expected_y = layout.TENGU_CELL.top + 1
+    assert p1.pos.y == expected_y
+    assert p2.pos.y == expected_y
+    assert p3.pos.y == expected_y
+    xs = [p1.pos.x, p2.pos.x, p3.pos.x]
+    assert len(set(xs)) == 3
+    assert set(xs) == {dx, dx - 1, dx + 1}
+
+    # No dart traps placed on any player's tile
+    for p in (p1, p2, p3):
+        assert (p.pos.x, p.pos.y) not in floor.traps
+
+
+def test_unlock_tengu_door_decline_allows_initiator_to_start_without_or_wait():
+    game, floor = make_game()
+    p1 = game.add_player("p1", "Alice")
+    p2 = game.add_player("p2", "Bob")
+    p1.floor_id = 10
+    p2.floor_id = 10
+    p1.pos = Position(x=layout.TENGU_CELL_DOOR.x, y=layout.TENGU_CELL_DOOR.y - 1)
+    p2.pos = Position(x=layout.TENGU_CELL_DOOR.x, y=layout.TENGU_CELL_DOOR.y - 3)
+    p1.add_key("iron", 10, "Iron Key")
+    game.flush_events()
+
+    dx, dy = layout.TENGU_CELL_DOOR.x, layout.TENGU_CELL_DOOR.y
+    assert game._try_unlock_locked_door(p1, floor, dx, dy) is True
+    game.flush_events()
+
+    # p2 declines -> initiator notified with can_decide=True
+    game.respond_tengu_join("p2", False)
+    assert floor.tengu_state == "START"
+    events = game.flush_events()
+    status_events = [e for e in events if e["type"] == "TENGU_PARTY_STATUS"]
+    assert len(status_events) == 1
+    assert status_events[0]["_player_id"] == "p1"
+    assert status_events[0]["data"]["declined_names"] == ["Bob"]
+    assert status_events[0]["data"]["can_decide"] is True
+
+    # Initiator chooses to wait -> prompt cleared, fight does not start
+    game.decide_tengu_start("p1", "wait")
+    assert floor.tengu_prompt is None
+    assert floor.tengu_state == "START"
+
+    # Re-triggering prompt and choosing start_without teleports only approved players (p1)
+    game._start_tengu_party_prompt(p1, floor)
+    game.respond_tengu_join("p2", False)
+    game.flush_events()
+    game.decide_tengu_start("p1", "start_without")
+
+    assert floor.tengu_state == "FIGHT_START"
+    assert (p1.pos.x, p1.pos.y) == (dx, layout.TENGU_CELL.top + 1)
+    assert (p2.pos.x, p2.pos.y) == (dx, dy - 3)
+

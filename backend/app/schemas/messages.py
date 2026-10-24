@@ -366,6 +366,16 @@ class SetClericQuickSpell(_ClientMessageBase):
     spell: Optional[str] = None
 
 
+class TenguJoinResponse(_ClientMessageBase):
+    type: Literal["TENGU_JOIN_RESPONSE"]
+    approve: bool
+
+
+class TenguStartDecision(_ClientMessageBase):
+    type: Literal["TENGU_START_DECISION"]
+    action: Literal["start_without", "wait"]
+
+
 ClientMessage = Annotated[
     Union[
         Ping,
@@ -398,6 +408,8 @@ ClientMessage = Annotated[
         UseMonkAbility,
         CastClericSpell,
         SetClericQuickSpell,
+        TenguJoinResponse,
+        TenguStartDecision,
         MetamorphChoose,
         MetamorphReplace,
         AdminTeleport,

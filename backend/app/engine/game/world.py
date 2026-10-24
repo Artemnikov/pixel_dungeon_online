@@ -780,6 +780,7 @@ class WorldInteractionMixin:
         player.action_until = max(player.action_until, time.time() + KEY_TIME_TO_UNLOCK)
         self.add_event("UNLOCK", {"player": player.id, "x": x, "y": y}, floor_id=player.floor_id)
         self._register_pending_unlock(floor, x, y, "door", player.id)
+        self._maybe_initiate_tengu_door_prompt(player, floor, x, y)
         return True
 
     def trigger_trap_at(self, floor: FloorState, x: int, y: int, floor_id: int):
