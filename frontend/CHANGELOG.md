@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.2.1] - 2026-10-24
+
+### Added
+- **Tengu Boss Party Prompt & Teleport**: Unlocking Tengu's cell door on Floor 10 prompts all active players on the floor to join. The initiator can choose to start without decliners or wait. Participating players are teleported horizontally across row y=24 inside the cell (with trap clearance underfoot) while non-participating players remain spectators outside.
+
+### Fixed
+- **Turn-Based Diagonal Movement**: Fixed chorded diagonal key handling in turn-based mode to reliably dispatch diagonal steps without unintended cardinal splitting.
+- Cleaned up turn-based test suites and assertions.
+
 ## [1.2.0] - 2026-10-08
 
 ### Added

@@ -1,4 +1,4 @@
-export const APP_VERSION = '1.2.0';
+export const APP_VERSION = '1.2.1';
 
 /**
  * @typedef {{ category?: { en: string; ru: string }; description: { en: string; ru: string } }} ChangeItem
@@ -6,6 +6,22 @@ export const APP_VERSION = '1.2.0';
  */
 
 const CHANGELOG = [
+  {
+    version: '1.2.1',
+    title: { en: 'Tengu Boss Party Prompt & Turn Mode Fixes', ru: 'Групповой вход к Тенгу и исправления пошагового режима' },
+    date: '2026-10-24',
+    type: 'patch',
+    changes: [
+      { category: { en: 'Tengu Boss Arena Party Prompt', ru: 'Групповой вход на арену Тенгу' }, description: {
+        en: 'Unlocking Tengu\'s cell door on Floor 10 now prompts all active players on the floor to join the boss fight. The initiator can choose to start without decliners or wait. When entering, participating players are teleported horizontally inside the cell (with trap clearance underfoot) while non-participants are preserved as spectators outside.',
+        ru: 'Открытие двери камеры Тенгу на 10 этаже теперь отправляет запрос всем активным игрокам на этаже. Инициатор может начать бой без отказавшихся или подождать. При старте участники телепортируются в горизонтальный ряд внутри камеры (с очисткой ловушек под ногами), а остальные игроки остаются зрителями снаружи.',
+      } },
+      { category: { en: 'Turn-Based Movement & Input Fixes', ru: 'Движение и управление в пошаговом режиме' }, description: {
+        en: 'Fixed chorded diagonal key inputs in turn-based mode to reliably dispatch diagonal steps without unintended cardinal splitting, and cleaned up test suites.',
+        ru: 'Исправлена обработка одновременных диагональных нажатий в пошаговом режиме для гарантированной отправки диагонального шага без разделения на кардинальные направления, обновлены и очищены тесты.',
+      } },
+    ],
+  },
   {
     version: '1.2.0',
     title: { en: 'Turn-Based Mode & Boss Arena Overhauls', ru: 'Пошаговый режим и переработка босс-арен' },
