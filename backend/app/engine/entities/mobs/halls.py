@@ -45,6 +45,8 @@ class YogDzewa(MobEntity):
         "frost", "frozen", "chill", "slow", "vertigo"])
     loot_table: List[DropEntry] = []
     owns_attacks: ClassVar[bool] = True
+    # YogDzewa.java: `state = HUNTING` ("so that allies can attack it").
+    ai_state: str = "hunting"
 
     phase: int = 0
     fight_started: bool = False

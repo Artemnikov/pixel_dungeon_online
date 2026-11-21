@@ -157,3 +157,10 @@ test('floor 25 stays silent until Yog notices someone or the arena is won', () =
   assert.equal(hallsArenaPending({ mobs: [] }, ctx), false);
   assert.equal(hallsArenaPending({ mobs: [] }, { world: { depth: 24, getGrid: () => grid } }), false);
 });
+
+test('boss bar waits for Yog-Dzewa to notice someone', () => {
+  let info = 'unset';
+  const sync = new HeroStateSync({ setBossInfo: v => { info = v; } });
+  sync.syncBossInfo([{ id: 'y', type: 'boss', name: 'Yog-Dzewa', hp: 1000, max_hp: 1000, fight_started: false }]);
+  assert.equal(info, null);
+});

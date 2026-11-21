@@ -121,7 +121,9 @@ export class HeroStateSync {
   public syncBossInfo(mobs: Mob[]): void {
     if (!this.setters.setBossInfo) return;
     // Yog's fists are type "boss" too; SPD's boss bar stays on Yog-Dzewa.
-    const bosses = (mobs || []).filter(m => m.type === 'boss' && m.is_alive !== false);
+    // ...and BossHealthBar.assignBoss only happens in YogDzewa.notice().
+    const bosses = (mobs || []).filter(m => m.type === 'boss' && m.is_alive !== false
+      && !(m.name === 'Yog-Dzewa' && (m as { fight_started?: boolean }).fight_started === false));
     const boss = bosses.find(m => !(m as { yog_id?: string }).yog_id) ?? bosses[0];
     this.setters.setBossInfo(boss ? {
       name: boss.name,
