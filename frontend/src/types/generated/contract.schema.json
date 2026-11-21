@@ -98,7 +98,29 @@
           "type": "integer"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "strength_requirement",
+        "charge",
+        "charge_cap",
+        "exp"
+      ]
     },
     "Amulet": {
       "properties": {
@@ -182,7 +204,25 @@
           "default": null
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at"
+      ]
     },
     "Ankh": {
       "properties": {
@@ -274,7 +314,27 @@
           "type": "boolean"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "blessed",
+        "bones"
+      ]
     },
     "AquaBrew": {
       "properties": {
@@ -362,7 +422,26 @@
           "type": "string"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "effect"
+      ]
     },
     "ArcaneBomb": {
       "properties": {
@@ -461,7 +540,27 @@
           "type": "boolean"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "fuse_ticks",
+        "armed"
+      ]
     },
     "ArcaneStylus": {
       "properties": {
@@ -545,7 +644,25 @@
           "default": null
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at"
+      ]
     },
     "Armor": {
       "properties": {
@@ -651,7 +768,29 @@
           "default": null
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "strength_requirement",
+        "tier",
+        "enchantment",
+        "augment"
+      ]
     },
     "ArmorEnchantment": {
       "properties": {
@@ -664,7 +803,11 @@
           "type": "integer"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "type",
+        "level"
+      ]
     },
     "Artifact": {
       "properties": {
@@ -760,7 +903,28 @@
           "type": "integer"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "strength_requirement",
+        "charge",
+        "charge_cap"
+      ]
     },
     "Bag": {
       "properties": {
@@ -1696,7 +1860,27 @@
           "type": "array"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "capacity",
+        "items"
+      ]
     },
     "Belongings": {
       "properties": {
@@ -6822,7 +7006,16 @@
           "default": null
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "backpack",
+        "weapon",
+        "armor",
+        "artifact",
+        "misc",
+        "ring",
+        "secondary_weapon"
+      ]
     },
     "Berry": {
       "properties": {
@@ -6910,7 +7103,26 @@
           "type": "integer"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "energy"
+      ]
     },
     "Blandfruit": {
       "properties": {
@@ -7009,7 +7221,27 @@
           "default": null
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "energy",
+        "potion_type"
+      ]
     },
     "BlizzardBrew": {
       "properties": {
@@ -7097,7 +7329,26 @@
           "type": "string"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "effect"
+      ]
     },
     "Bomb": {
       "properties": {
@@ -7196,7 +7447,27 @@
           "type": "boolean"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "fuse_ticks",
+        "armed"
+      ]
     },
     "Boomerang": {
       "properties": {
@@ -7292,7 +7563,28 @@
           "type": "string"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "damage",
+        "range",
+        "projectile_type"
+      ]
     },
     "Bow": {
       "properties": {
@@ -7442,7 +7734,38 @@
           "type": "number"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "strength_requirement",
+        "damage",
+        "range",
+        "attack_cooldown",
+        "enchantment",
+        "augment",
+        "projectile_type",
+        "surprise_damage_floor",
+        "acc_factor",
+        "dr_bonus_base",
+        "dr_bonus_per_lvl",
+        "hit_sound",
+        "hit_sound_pitch"
+      ]
     },
     "BrokenSeal": {
       "properties": {
@@ -7538,7 +7861,28 @@
           "type": "integer"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "strength_requirement",
+        "charge",
+        "charge_cap"
+      ]
     },
     "Buff": {
       "properties": {
@@ -7582,7 +7926,13 @@
       },
       "required": [
         "id",
-        "type"
+        "type",
+        "remaining",
+        "level",
+        "source_id",
+        "interval",
+        "stack_mode",
+        "mnemonic_extended"
       ],
       "type": "object"
     },
@@ -7684,7 +8034,29 @@
           "type": "integer"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "strength_requirement",
+        "charge",
+        "charge_cap",
+        "exp"
+      ]
     },
     "CausticBrew": {
       "properties": {
@@ -7772,7 +8144,26 @@
           "type": "string"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "effect"
+      ]
     },
     "CeremonialCandle": {
       "description": "items/quest/CeremonialCandle.java -- the Ceremonial Candle quest\nvariant's collectible. 4 are queued as findPrizeItem() prizes when\nRitualSiteRoom is painted (see room_types.RitualSiteRoom); throwing or\ndropping one onto each of the 4 cells cardinally adjacent to the\nritual's center completes the ritual (see world.py's\n_check_ritual_candles, hooked from item_actions.action_drop and\nmovement.perform_ranged_attack). The `aflame` visual-only flag Java\nflips as candles land is dropped -- purely cosmetic, no gameplay effect.",
@@ -7857,7 +8248,25 @@
           "default": null
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at"
+      ]
     },
     "ChaliceOfBlood": {
       "properties": {
@@ -7953,7 +8362,28 @@
           "type": "integer"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "strength_requirement",
+        "charge",
+        "charge_cap"
+      ]
     },
     "ChaoticCenser": {
       "properties": {
@@ -8037,7 +8467,25 @@
           "default": null
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at"
+      ]
     },
     "ChargrilledMeat": {
       "properties": {
@@ -8125,7 +8573,26 @@
           "type": "integer"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "energy"
+      ]
     },
     "Chest": {
       "properties": {
@@ -9080,7 +9547,30 @@
           "type": "boolean"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "chest_type",
+        "opened",
+        "contents",
+        "item_category",
+        "mimic_hint"
+      ]
     },
     "CloakOfShadows": {
       "properties": {
@@ -9180,7 +9670,29 @@
           "type": "integer"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "strength_requirement",
+        "charge",
+        "charge_cap",
+        "exp"
+      ]
     },
     "ClothArmor": {
       "properties": {
@@ -9286,7 +9798,29 @@
           "default": null
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "strength_requirement",
+        "tier",
+        "enchantment",
+        "augment"
+      ]
     },
     "CorpseDust": {
       "properties": {
@@ -9370,7 +9904,25 @@
           "default": null
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at"
+      ]
     },
     "CrackedSpyglass": {
       "properties": {
@@ -9454,7 +10006,25 @@
           "default": null
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at"
+      ]
     },
     "CursedWand": {
       "properties": {
@@ -9592,7 +10162,35 @@
           "type": "number"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "damage",
+        "charges",
+        "max_charges",
+        "range",
+        "projectile_type",
+        "beam_type",
+        "wand_sound",
+        "partial_charge",
+        "staff_name",
+        "recharge_scale"
+      ]
     },
     "Dagger": {
       "properties": {
@@ -9753,7 +10351,39 @@
           "type": "integer"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "strength_requirement",
+        "damage",
+        "range",
+        "attack_cooldown",
+        "enchantment",
+        "augment",
+        "projectile_type",
+        "surprise_damage_floor",
+        "acc_factor",
+        "dr_bonus_base",
+        "dr_bonus_per_lvl",
+        "hit_sound",
+        "hit_sound_pitch",
+        "tier"
+      ]
     },
     "DamageWand": {
       "description": "Base for wands that deal direct damage to a target.\n\nSubclasses define *min(lvl)* and *max(lvl)*; *damage_roll(lvl)* returns a\nrandom integer in that range.",
@@ -9892,7 +10522,35 @@
           "type": "number"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "damage",
+        "charges",
+        "max_charges",
+        "range",
+        "projectile_type",
+        "beam_type",
+        "wand_sound",
+        "partial_charge",
+        "staff_name",
+        "recharge_scale"
+      ]
     },
     "Dewdrop": {
       "properties": {
@@ -9976,7 +10634,25 @@
           "default": null
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at"
+      ]
     },
     "DimensionalSundial": {
       "properties": {
@@ -10060,7 +10736,25 @@
           "default": null
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at"
+      ]
     },
     "DriedRose": {
       "properties": {
@@ -10197,7 +10891,33 @@
           "type": "integer"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "strength_requirement",
+        "charge",
+        "charge_cap",
+        "exp",
+        "ghost_id",
+        "weapon",
+        "armor",
+        "dropped_petals"
+      ]
     },
     "DropEntry": {
       "properties": {
@@ -10225,7 +10945,9 @@
       },
       "required": [
         "item_kind",
-        "chance"
+        "chance",
+        "max_global",
+        "decay_key"
       ],
       "type": "object"
     },
@@ -10311,7 +11033,25 @@
           "default": null
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at"
+      ]
     },
     "Effect": {
       "properties": {
@@ -10336,7 +11076,9 @@
       "required": [
         "key",
         "name",
-        "icon"
+        "icon",
+        "remaining",
+        "duration"
       ],
       "type": "object"
     },
@@ -10426,7 +11168,26 @@
           "type": "string"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "effect"
+      ]
     },
     "ElixirOfArcaneArmor": {
       "properties": {
@@ -10514,7 +11275,26 @@
           "type": "string"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "effect"
+      ]
     },
     "ElixirOfDragonsBlood": {
       "properties": {
@@ -10602,7 +11382,26 @@
           "type": "string"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "effect"
+      ]
     },
     "ElixirOfFeatherFall": {
       "properties": {
@@ -10690,7 +11489,26 @@
           "type": "string"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "effect"
+      ]
     },
     "ElixirOfHoneyedHealing": {
       "properties": {
@@ -10778,7 +11596,26 @@
           "type": "string"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "effect"
+      ]
     },
     "ElixirOfIcyTouch": {
       "properties": {
@@ -10866,7 +11703,26 @@
           "type": "string"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "effect"
+      ]
     },
     "ElixirOfMight": {
       "properties": {
@@ -10954,7 +11810,26 @@
           "type": "string"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "effect"
+      ]
     },
     "ElixirOfToxicEssence": {
       "properties": {
@@ -11042,7 +11917,26 @@
           "type": "string"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "effect"
+      ]
     },
     "Embers": {
       "description": "items/quest/Embers.java -- the Ceremonial Candle quest's turn-in\nitem, dropped by NewbornFireElemental on death (see wandmaker_quest.py\n/ world.py's handle_mob_death). Inert for quest purposes, same as\nRotberrySeed.",
@@ -11127,7 +12021,25 @@
           "default": null
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at"
+      ]
     },
     "EnergyCrystal": {
       "properties": {
@@ -11211,7 +12123,25 @@
           "default": null
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at"
+      ]
     },
     "EtherealChains": {
       "properties": {
@@ -11311,7 +12241,29 @@
           "type": "integer"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "strength_requirement",
+        "charge",
+        "charge_cap",
+        "exp"
+      ]
     },
     "ExoticCrystals": {
       "properties": {
@@ -11395,7 +12347,25 @@
           "default": null
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at"
+      ]
     },
     "ExoticScrollOfEnchantment": {
       "properties": {
@@ -11479,7 +12449,25 @@
           "default": null
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at"
+      ]
     },
     "EyeOfNewt": {
       "properties": {
@@ -11563,7 +12551,25 @@
           "default": null
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at"
+      ]
     },
     "FerretTuft": {
       "properties": {
@@ -11647,7 +12653,25 @@
           "default": null
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at"
+      ]
     },
     "Firebomb": {
       "properties": {
@@ -11746,7 +12770,27 @@
           "type": "boolean"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "fuse_ticks",
+        "armed"
+      ]
     },
     "FlashBangBomb": {
       "properties": {
@@ -11845,7 +12889,27 @@
           "type": "boolean"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "fuse_ticks",
+        "armed"
+      ]
     },
     "Food": {
       "properties": {
@@ -11933,7 +12997,26 @@
           "type": "integer"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "energy"
+      ]
     },
     "FrostBomb": {
       "properties": {
@@ -12032,7 +13115,27 @@
           "type": "boolean"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "fuse_ticks",
+        "armed"
+      ]
     },
     "FrozenCarpaccio": {
       "properties": {
@@ -12120,7 +13223,26 @@
           "type": "integer"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "energy"
+      ]
     },
     "FuryPotion": {
       "properties": {
@@ -12208,7 +13330,26 @@
           "type": "string"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "effect"
+      ]
     },
     "Gold": {
       "properties": {
@@ -12292,7 +13433,25 @@
           "default": null
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at"
+      ]
     },
     "GooBlob": {
       "properties": {
@@ -12376,7 +13535,25 @@
           "default": null
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at"
+      ]
     },
     "HealthPotion": {
       "properties": {
@@ -12464,7 +13641,26 @@
           "type": "string"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "effect"
+      ]
     },
     "HolyBomb": {
       "properties": {
@@ -12563,7 +13759,27 @@
           "type": "boolean"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "fuse_ticks",
+        "armed"
+      ]
     },
     "HolyTome": {
       "properties": {
@@ -12667,7 +13883,30 @@
           "type": "integer"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "strength_requirement",
+        "charge",
+        "charge_cap",
+        "partial_charge",
+        "exp"
+      ]
     },
     "HornOfPlenty": {
       "properties": {
@@ -12767,7 +14006,29 @@
           "type": "integer"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "strength_requirement",
+        "charge",
+        "charge_cap",
+        "exp"
+      ]
     },
     "InfernalBrew": {
       "properties": {
@@ -12855,7 +14116,26 @@
           "type": "string"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "effect"
+      ]
     },
     "Key": {
       "properties": {
@@ -12943,7 +14223,26 @@
           "type": "string"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "key_id"
+      ]
     },
     "KeyRecord": {
       "description": "A held key, tracked outside the bag (mirrors SPD's Notes.KeyRecord).\n\nUniqueness is (key_id, depth): a key only unlocks doors on the floor it\nwas found on, so two records with the same key_id but different depth\nare tracked separately.",
@@ -12965,7 +14264,9 @@
       },
       "required": [
         "key_id",
-        "depth"
+        "depth",
+        "quantity",
+        "name"
       ],
       "type": "object"
     },
@@ -13051,7 +14352,25 @@
           "default": null
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at"
+      ]
     },
     "LeatherArmor": {
       "properties": {
@@ -13157,7 +14476,29 @@
           "default": null
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "strength_requirement",
+        "tier",
+        "enchantment",
+        "augment"
+      ]
     },
     "LloydsBeacon": {
       "properties": {
@@ -13290,7 +14631,32 @@
           "default": null
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "strength_requirement",
+        "charge",
+        "charge_cap",
+        "exp",
+        "beacon_floor",
+        "beacon_x",
+        "beacon_y"
+      ]
     },
     "LostBackpack": {
       "properties": {
@@ -14232,7 +15598,28 @@
           "type": "string"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "stored_items",
+        "quickslot_map",
+        "owner_id"
+      ]
     },
     "MagicalHolster": {
       "properties": {
@@ -15168,7 +16555,27 @@
           "type": "array"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "capacity",
+        "items"
+      ]
     },
     "MagicalInfusion": {
       "properties": {
@@ -15252,7 +16659,25 @@
           "default": null
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at"
+      ]
     },
     "MailArmor": {
       "properties": {
@@ -15358,7 +16783,29 @@
           "default": null
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "strength_requirement",
+        "tier",
+        "enchantment",
+        "augment"
+      ]
     },
     "MasterThievesArmband": {
       "properties": {
@@ -15458,7 +16905,29 @@
           "type": "integer"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "strength_requirement",
+        "charge",
+        "charge_cap",
+        "exp"
+      ]
     },
     "MeatPie": {
       "properties": {
@@ -15546,7 +17015,26 @@
           "type": "integer"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "energy"
+      ]
     },
     "MeleeWeapon": {
       "properties": {
@@ -15707,7 +17195,39 @@
           "type": "integer"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "strength_requirement",
+        "damage",
+        "range",
+        "attack_cooldown",
+        "enchantment",
+        "augment",
+        "projectile_type",
+        "surprise_damage_floor",
+        "acc_factor",
+        "dr_bonus_base",
+        "dr_bonus_per_lvl",
+        "hit_sound",
+        "hit_sound_pitch",
+        "tier"
+      ]
     },
     "MetalShard": {
       "properties": {
@@ -15791,7 +17311,25 @@
           "default": null
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at"
+      ]
     },
     "MimicTooth": {
       "properties": {
@@ -15875,7 +17413,25 @@
           "default": null
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at"
+      ]
     },
     "MissileWeapon": {
       "properties": {
@@ -16036,7 +17592,39 @@
           "type": "integer"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "strength_requirement",
+        "damage",
+        "range",
+        "attack_cooldown",
+        "enchantment",
+        "augment",
+        "projectile_type",
+        "surprise_damage_floor",
+        "acc_factor",
+        "dr_bonus_base",
+        "dr_bonus_per_lvl",
+        "hit_sound",
+        "hit_sound_pitch",
+        "tier"
+      ]
     },
     "Mob": {
       "properties": {
@@ -16149,6 +17737,26 @@
           "type": "number"
         },
         "burning_total_seconds": {
+          "default": 0.0,
+          "type": "number"
+        },
+        "bleeding_level": {
+          "default": 0.0,
+          "type": "number"
+        },
+        "bleeding_ticks": {
+          "default": 0,
+          "type": "integer"
+        },
+        "deferred_damage": {
+          "default": 0,
+          "type": "integer"
+        },
+        "deferred_ticks": {
+          "default": 0,
+          "type": "integer"
+        },
+        "deferred_wait": {
           "default": 0.0,
           "type": "number"
         },
@@ -16308,7 +17916,70 @@
           "default": null
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "id",
+        "type",
+        "name",
+        "pos",
+        "hp",
+        "max_hp",
+        "attack",
+        "defense",
+        "speed",
+        "is_alive",
+        "faction",
+        "floor_id",
+        "properties",
+        "view_distance",
+        "attack_skill",
+        "defense_skill",
+        "damage_min",
+        "damage_max",
+        "dr_min",
+        "dr_max",
+        "max_lvl",
+        "defense_verb",
+        "bleed_amount",
+        "bleed_turns",
+        "ooze_amount",
+        "ooze_cooldown",
+        "burning_accum",
+        "burning_total_seconds",
+        "bleeding_level",
+        "bleeding_ticks",
+        "deferred_damage",
+        "deferred_ticks",
+        "deferred_wait",
+        "poison_accum",
+        "corrosion_accum",
+        "shields",
+        "crit_damage_bonus",
+        "grim_max_chance",
+        "conserved_damage",
+        "has_fury",
+        "fury_turns_remaining",
+        "invisible",
+        "last_attack_time",
+        "attack_cooldown",
+        "buffs",
+        "mob_type",
+        "ai_state",
+        "target_id",
+        "difficulty",
+        "exp",
+        "loot_table",
+        "weighted_drops",
+        "flying",
+        "attack_range",
+        "aggro_windup",
+        "engaged",
+        "last_known_target_pos",
+        "freeze_ticks",
+        "owner_id",
+        "summon_lifespan",
+        "aggro_target_id"
+      ]
     },
     "MossyClump": {
       "properties": {
@@ -16392,7 +18063,25 @@
           "default": null
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at"
+      ]
     },
     "MysteryMeat": {
       "properties": {
@@ -16480,7 +18169,26 @@
           "type": "integer"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "energy"
+      ]
     },
     "Noisemaker": {
       "properties": {
@@ -16579,7 +18287,27 @@
           "type": "boolean"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "fuse_ticks",
+        "armed"
+      ]
     },
     "ParchmentScrap": {
       "properties": {
@@ -16663,7 +18391,25 @@
           "default": null
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at"
+      ]
     },
     "Pasty": {
       "properties": {
@@ -16751,7 +18497,26 @@
           "type": "integer"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "energy"
+      ]
     },
     "Petal": {
       "properties": {
@@ -16835,7 +18600,25 @@
           "default": null
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at"
+      ]
     },
     "PetrifiedSeed": {
       "properties": {
@@ -16919,7 +18702,25 @@
           "default": null
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at"
+      ]
     },
     "PlateArmor": {
       "properties": {
@@ -17025,7 +18826,29 @@
           "default": null
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "strength_requirement",
+        "tier",
+        "enchantment",
+        "augment"
+      ]
     },
     "Player": {
       "properties": {
@@ -17138,6 +18961,26 @@
           "type": "number"
         },
         "burning_total_seconds": {
+          "default": 0.0,
+          "type": "number"
+        },
+        "bleeding_level": {
+          "default": 0.0,
+          "type": "number"
+        },
+        "bleeding_ticks": {
+          "default": 0,
+          "type": "integer"
+        },
+        "deferred_damage": {
+          "default": 0,
+          "type": "integer"
+        },
+        "deferred_ticks": {
+          "default": 0,
+          "type": "integer"
+        },
+        "deferred_wait": {
           "default": 0.0,
           "type": "number"
         },
@@ -20251,6 +22094,143 @@
         }
       },
       "required": [
+        "id",
+        "type",
+        "name",
+        "pos",
+        "hp",
+        "max_hp",
+        "attack",
+        "defense",
+        "speed",
+        "is_alive",
+        "faction",
+        "floor_id",
+        "properties",
+        "view_distance",
+        "attack_skill",
+        "defense_skill",
+        "damage_min",
+        "damage_max",
+        "dr_min",
+        "dr_max",
+        "max_lvl",
+        "defense_verb",
+        "bleed_amount",
+        "bleed_turns",
+        "ooze_amount",
+        "ooze_cooldown",
+        "burning_accum",
+        "burning_total_seconds",
+        "bleeding_level",
+        "bleeding_ticks",
+        "deferred_damage",
+        "deferred_ticks",
+        "deferred_wait",
+        "poison_accum",
+        "corrosion_accum",
+        "shields",
+        "crit_damage_bonus",
+        "grim_max_chance",
+        "conserved_damage",
+        "has_fury",
+        "fury_turns_remaining",
+        "invisible",
+        "last_attack_time",
+        "attack_cooldown",
+        "buffs",
+        "class_type",
+        "experience",
+        "level",
+        "active_effects",
+        "strength",
+        "belongings",
+        "quickslot",
+        "keys",
+        "guide_pages",
+        "discovered_kinds",
+        "gold",
+        "energy",
+        "websocket_id",
+        "is_downed",
+        "death_processed",
+        "death_cause",
+        "pending_ankh",
+        "is_afk",
+        "respawns_used",
+        "witnessed_respawns",
+        "kills_count",
+        "floors_explored",
+        "heal_left",
+        "heal_pct_per_tick",
+        "heal_flat_per_tick",
+        "heal_cooldown",
+        "aqua_heal_left",
+        "locked_floor_left",
+        "pending_chasm_fall",
+        "pending_ascend",
+        "action_until",
+        "stationary_ticks",
+        "is_admin",
+        "subclass_info",
+        "berserk_power",
+        "berserk_active",
+        "berserk_cooldown",
+        "berserk_trigger_power",
+        "combo_count",
+        "combo_timer",
+        "clobber_used",
+        "parry_used",
+        "wealth_tries_to_drop",
+        "wealth_drops_to_equip",
+        "seal_cooldown",
+        "seal_no_enemy_ticks",
+        "seal_initial_shield",
+        "endure_damage_bonus",
+        "endure_hits_left",
+        "endure_banked",
+        "double_jump_ready",
+        "armor_charge",
+        "armor_ability",
+        "seal_affixed",
+        "hunger",
+        "cloak_stealth_active",
+        "prep_seconds",
+        "momentum_stacks",
+        "freerun_seconds",
+        "weapon_charge",
+        "finisher_ready",
+        "duel_mode_active",
+        "duel_mode_target_id",
+        "duel_mode_taken_damage",
+        "duel_mode_turns_left",
+        "last_duel_ended_turn",
+        "last_weapon_enchant",
+        "monk_energy",
+        "brawler_stance",
+        "brawler_stance_turns",
+        "last_weapon_ability_id",
+        "last_weapon_ability_weapon_name",
+        "last_monk_ability_id",
+        "last_weapon_ability_turn",
+        "last_monk_ability_turn",
+        "swift_equip_charges",
+        "swift_equip_cooldown",
+        "patient_strike_tile",
+        "patient_strike_ready",
+        "feint_afterimage_pos",
+        "feint_cooldown_refund_ready",
+        "spell_cooldowns",
+        "cleric_quick_spell",
+        "guiding_light_priest_cd",
+        "current_trinity_forms",
+        "ascended_form_active",
+        "ascended_form_timer",
+        "ascended_form_casts",
+        "flash_casts",
+        "divine_intervention_used",
+        "powered_ally_id",
+        "last_used_inscription",
         "inventory",
         "equipped_weapon",
         "equipped_wearable"
@@ -20358,7 +22338,26 @@
           "type": "string"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "effect"
+      ]
     },
     "PotionBandolier": {
       "properties": {
@@ -21294,7 +23293,27 @@
           "type": "array"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "capacity",
+        "items"
+      ]
     },
     "PotionOfCleansing": {
       "properties": {
@@ -21382,7 +23401,26 @@
           "type": "string"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "effect"
+      ]
     },
     "PotionOfCorrosiveGas": {
       "properties": {
@@ -21470,7 +23508,26 @@
           "type": "string"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "effect"
+      ]
     },
     "PotionOfDivineInspiration": {
       "properties": {
@@ -21558,7 +23615,26 @@
           "type": "string"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "effect"
+      ]
     },
     "PotionOfDragonsBreath": {
       "properties": {
@@ -21646,7 +23722,26 @@
           "type": "string"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "effect"
+      ]
     },
     "PotionOfEarthenArmor": {
       "properties": {
@@ -21734,7 +23829,26 @@
           "type": "string"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "effect"
+      ]
     },
     "PotionOfExperience": {
       "properties": {
@@ -21822,7 +23936,26 @@
           "type": "string"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "effect"
+      ]
     },
     "PotionOfFrost": {
       "properties": {
@@ -21910,7 +24043,26 @@
           "type": "string"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "effect"
+      ]
     },
     "PotionOfHaste": {
       "properties": {
@@ -21998,7 +24150,26 @@
           "type": "string"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "effect"
+      ]
     },
     "PotionOfInvisibility": {
       "properties": {
@@ -22086,7 +24257,26 @@
           "type": "string"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "effect"
+      ]
     },
     "PotionOfLevitation": {
       "properties": {
@@ -22174,7 +24364,26 @@
           "type": "string"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "effect"
+      ]
     },
     "PotionOfLiquidFlame": {
       "properties": {
@@ -22262,7 +24471,26 @@
           "type": "string"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "effect"
+      ]
     },
     "PotionOfMagicalSight": {
       "properties": {
@@ -22350,7 +24578,26 @@
           "type": "string"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "effect"
+      ]
     },
     "PotionOfMastery": {
       "properties": {
@@ -22438,7 +24685,26 @@
           "type": "string"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "effect"
+      ]
     },
     "PotionOfMindVision": {
       "properties": {
@@ -22526,7 +24792,26 @@
           "type": "string"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "effect"
+      ]
     },
     "PotionOfParalyticGas": {
       "properties": {
@@ -22614,7 +24899,26 @@
           "type": "string"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "effect"
+      ]
     },
     "PotionOfPurity": {
       "properties": {
@@ -22702,7 +25006,26 @@
           "type": "string"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "effect"
+      ]
     },
     "PotionOfShielding": {
       "properties": {
@@ -22790,7 +25113,26 @@
           "type": "string"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "effect"
+      ]
     },
     "PotionOfShroudingFog": {
       "properties": {
@@ -22878,7 +25220,26 @@
           "type": "string"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "effect"
+      ]
     },
     "PotionOfSnapFreeze": {
       "properties": {
@@ -22966,7 +25327,26 @@
           "type": "string"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "effect"
+      ]
     },
     "PotionOfStamina": {
       "properties": {
@@ -23054,7 +25434,26 @@
           "type": "string"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "effect"
+      ]
     },
     "PotionOfStormClouds": {
       "properties": {
@@ -23142,7 +25541,26 @@
           "type": "string"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "effect"
+      ]
     },
     "PotionOfStrength": {
       "properties": {
@@ -23230,7 +25648,26 @@
           "type": "string"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "effect"
+      ]
     },
     "PotionOfToxicGas": {
       "properties": {
@@ -23318,7 +25755,26 @@
           "type": "string"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "effect"
+      ]
     },
     "QuickSlot": {
       "properties": {
@@ -23329,7 +25785,10 @@
           "type": "array"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "slots"
+      ]
     },
     "QuickSlotEntry": {
       "properties": {
@@ -23360,7 +25819,12 @@
           "default": null
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "item_id",
+        "is_placeholder",
+        "placeholder_kind"
+      ]
     },
     "RatSkull": {
       "properties": {
@@ -23444,7 +25908,25 @@
           "default": null
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at"
+      ]
     },
     "Ration": {
       "properties": {
@@ -23532,7 +26014,26 @@
           "type": "integer"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "energy"
+      ]
     },
     "RegrowthBomb": {
       "properties": {
@@ -23631,7 +26132,27 @@
           "type": "boolean"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "fuse_ticks",
+        "armed"
+      ]
     },
     "RevivingPotion": {
       "properties": {
@@ -23719,7 +26240,26 @@
           "type": "string"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "effect"
+      ]
     },
     "Ring": {
       "properties": {
@@ -23826,7 +26366,29 @@
           "type": "number"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "strength_requirement",
+        "buff_class",
+        "gem",
+        "levels_to_id"
+      ]
     },
     "RingOfAccuracy": {
       "properties": {
@@ -23926,7 +26488,29 @@
           "type": "number"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "strength_requirement",
+        "buff_class",
+        "gem",
+        "levels_to_id"
+      ]
     },
     "RingOfArcana": {
       "properties": {
@@ -24026,7 +26610,29 @@
           "type": "number"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "strength_requirement",
+        "buff_class",
+        "gem",
+        "levels_to_id"
+      ]
     },
     "RingOfElements": {
       "properties": {
@@ -24126,7 +26732,29 @@
           "type": "number"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "strength_requirement",
+        "buff_class",
+        "gem",
+        "levels_to_id"
+      ]
     },
     "RingOfEnergy": {
       "properties": {
@@ -24226,7 +26854,29 @@
           "type": "number"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "strength_requirement",
+        "buff_class",
+        "gem",
+        "levels_to_id"
+      ]
     },
     "RingOfEvasion": {
       "properties": {
@@ -24326,7 +26976,29 @@
           "type": "number"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "strength_requirement",
+        "buff_class",
+        "gem",
+        "levels_to_id"
+      ]
     },
     "RingOfForce": {
       "properties": {
@@ -24426,7 +27098,29 @@
           "type": "number"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "strength_requirement",
+        "buff_class",
+        "gem",
+        "levels_to_id"
+      ]
     },
     "RingOfFuror": {
       "properties": {
@@ -24526,7 +27220,29 @@
           "type": "number"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "strength_requirement",
+        "buff_class",
+        "gem",
+        "levels_to_id"
+      ]
     },
     "RingOfHaste": {
       "properties": {
@@ -24626,7 +27342,29 @@
           "type": "number"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "strength_requirement",
+        "buff_class",
+        "gem",
+        "levels_to_id"
+      ]
     },
     "RingOfMight": {
       "properties": {
@@ -24726,7 +27464,29 @@
           "type": "number"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "strength_requirement",
+        "buff_class",
+        "gem",
+        "levels_to_id"
+      ]
     },
     "RingOfSharpshooting": {
       "properties": {
@@ -24826,7 +27586,29 @@
           "type": "number"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "strength_requirement",
+        "buff_class",
+        "gem",
+        "levels_to_id"
+      ]
     },
     "RingOfTenacity": {
       "properties": {
@@ -24926,7 +27708,29 @@
           "type": "number"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "strength_requirement",
+        "buff_class",
+        "gem",
+        "levels_to_id"
+      ]
     },
     "RingOfWealth": {
       "properties": {
@@ -25026,7 +27830,29 @@
           "type": "number"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "strength_requirement",
+        "buff_class",
+        "gem",
+        "levels_to_id"
+      ]
     },
     "RotberrySeed": {
       "description": "plants/Rotberry.java's Seed inner class -- the Rotberry quest's\nturn-in item, dropped by RotHeart on death (see wandmaker_quest.py /\nworld.py's handle_mob_death).",
@@ -25115,7 +27941,26 @@
           "type": "string"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "plant_type"
+      ]
     },
     "SaltCube": {
       "properties": {
@@ -25199,7 +28044,25 @@
           "default": null
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at"
+      ]
     },
     "SandalsOfNature": {
       "properties": {
@@ -25305,7 +28168,30 @@
           "type": "array"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "strength_requirement",
+        "charge",
+        "charge_cap",
+        "exp",
+        "stored_seeds"
+      ]
     },
     "ScaleArmor": {
       "properties": {
@@ -25411,7 +28297,29 @@
           "default": null
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "strength_requirement",
+        "tier",
+        "enchantment",
+        "augment"
+      ]
     },
     "Scroll": {
       "properties": {
@@ -25495,7 +28403,25 @@
           "default": null
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at"
+      ]
     },
     "ScrollHolder": {
       "properties": {
@@ -26431,7 +29357,27 @@
           "type": "array"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "capacity",
+        "items"
+      ]
     },
     "ScrollOfAntiMagic": {
       "properties": {
@@ -26515,7 +29461,25 @@
           "default": null
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at"
+      ]
     },
     "ScrollOfChallenge": {
       "properties": {
@@ -26599,7 +29563,25 @@
           "default": null
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at"
+      ]
     },
     "ScrollOfDivination": {
       "properties": {
@@ -26683,7 +29665,25 @@
           "default": null
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at"
+      ]
     },
     "ScrollOfDread": {
       "properties": {
@@ -26767,7 +29767,25 @@
           "default": null
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at"
+      ]
     },
     "ScrollOfEnchantment": {
       "properties": {
@@ -26851,7 +29869,25 @@
           "default": null
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at"
+      ]
     },
     "ScrollOfForesight": {
       "properties": {
@@ -26935,7 +29971,25 @@
           "default": null
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at"
+      ]
     },
     "ScrollOfIdentify": {
       "properties": {
@@ -27019,7 +30073,25 @@
           "default": null
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at"
+      ]
     },
     "ScrollOfLullaby": {
       "properties": {
@@ -27103,7 +30175,25 @@
           "default": null
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at"
+      ]
     },
     "ScrollOfMagicMapping": {
       "properties": {
@@ -27187,7 +30277,25 @@
           "default": null
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at"
+      ]
     },
     "ScrollOfMetamorphosis": {
       "properties": {
@@ -27271,7 +30379,25 @@
           "default": null
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at"
+      ]
     },
     "ScrollOfMirrorImage": {
       "properties": {
@@ -27355,7 +30481,25 @@
           "default": null
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at"
+      ]
     },
     "ScrollOfMysticalEnergy": {
       "properties": {
@@ -27439,7 +30583,25 @@
           "default": null
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at"
+      ]
     },
     "ScrollOfPassage": {
       "properties": {
@@ -27523,7 +30685,25 @@
           "default": null
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at"
+      ]
     },
     "ScrollOfPrismaticImage": {
       "properties": {
@@ -27607,7 +30787,25 @@
           "default": null
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at"
+      ]
     },
     "ScrollOfPsionicBlast": {
       "properties": {
@@ -27691,7 +30889,25 @@
           "default": null
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at"
+      ]
     },
     "ScrollOfRage": {
       "properties": {
@@ -27775,7 +30991,25 @@
           "default": null
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at"
+      ]
     },
     "ScrollOfRecharging": {
       "properties": {
@@ -27859,7 +31093,25 @@
           "default": null
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at"
+      ]
     },
     "ScrollOfRemoveCurse": {
       "properties": {
@@ -27943,7 +31195,25 @@
           "default": null
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at"
+      ]
     },
     "ScrollOfRetribution": {
       "properties": {
@@ -28027,7 +31297,25 @@
           "default": null
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at"
+      ]
     },
     "ScrollOfSirensSong": {
       "properties": {
@@ -28111,7 +31399,25 @@
           "default": null
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at"
+      ]
     },
     "ScrollOfTeleportation": {
       "properties": {
@@ -28195,7 +31501,25 @@
           "default": null
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at"
+      ]
     },
     "ScrollOfTerror": {
       "properties": {
@@ -28279,7 +31603,25 @@
           "default": null
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at"
+      ]
     },
     "ScrollOfTransmutation": {
       "properties": {
@@ -28363,7 +31705,25 @@
           "default": null
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at"
+      ]
     },
     "ScrollOfUpgrade": {
       "properties": {
@@ -28447,7 +31807,25 @@
           "default": null
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at"
+      ]
     },
     "Seed": {
       "properties": {
@@ -28535,7 +31913,26 @@
           "type": "string"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "plant_type"
+      ]
     },
     "ShardOfOblivion": {
       "properties": {
@@ -28619,7 +32016,25 @@
           "default": null
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at"
+      ]
     },
     "Shield": {
       "properties": {
@@ -28640,7 +32055,13 @@
           "type": "string"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "priority",
+        "amount",
+        "decay",
+        "name"
+      ]
     },
     "ShockingBrew": {
       "properties": {
@@ -28728,7 +32149,26 @@
           "type": "string"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "effect"
+      ]
     },
     "ShrapnelBomb": {
       "properties": {
@@ -28827,7 +32267,27 @@
           "type": "boolean"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "fuse_ticks",
+        "armed"
+      ]
     },
     "SkeletonKey": {
       "properties": {
@@ -28927,7 +32387,29 @@
           "type": "integer"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "strength_requirement",
+        "charge",
+        "charge_cap",
+        "exp"
+      ]
     },
     "SmallRation": {
       "properties": {
@@ -29015,7 +32497,26 @@
           "type": "integer"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "energy"
+      ]
     },
     "SmokeBomb": {
       "properties": {
@@ -29114,7 +32615,27 @@
           "type": "boolean"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "fuse_ticks",
+        "armed"
+      ]
     },
     "SpiritBow": {
       "properties": {
@@ -29268,7 +32789,39 @@
           "type": "boolean"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "strength_requirement",
+        "damage",
+        "range",
+        "attack_cooldown",
+        "enchantment",
+        "augment",
+        "projectile_type",
+        "surprise_damage_floor",
+        "acc_factor",
+        "dr_bonus_base",
+        "dr_bonus_per_lvl",
+        "hit_sound",
+        "hit_sound_pitch",
+        "bones"
+      ]
     },
     "Staff": {
       "properties": {
@@ -29450,6 +33003,39 @@
         }
       },
       "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "strength_requirement",
+        "damage",
+        "range",
+        "attack_cooldown",
+        "enchantment",
+        "augment",
+        "projectile_type",
+        "surprise_damage_floor",
+        "acc_factor",
+        "dr_bonus_base",
+        "dr_bonus_per_lvl",
+        "hit_sound",
+        "hit_sound_pitch",
+        "tier",
+        "magic_damage",
+        "imbued_wand",
+        "bones",
         "charges",
         "max_charges"
       ],
@@ -29541,7 +33127,26 @@
           "type": "integer"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "energy"
+      ]
     },
     "Stone": {
       "properties": {
@@ -29637,7 +33242,28 @@
           "type": "string"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "damage",
+        "range",
+        "projectile_type"
+      ]
     },
     "StoneOfAggression": {
       "properties": {
@@ -29721,7 +33347,25 @@
           "default": null
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at"
+      ]
     },
     "StoneOfAugmentation": {
       "properties": {
@@ -29805,7 +33449,25 @@
           "default": null
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at"
+      ]
     },
     "StoneOfBlast": {
       "properties": {
@@ -29889,7 +33551,25 @@
           "default": null
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at"
+      ]
     },
     "StoneOfBlink": {
       "properties": {
@@ -29973,7 +33653,25 @@
           "default": null
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at"
+      ]
     },
     "StoneOfClairvoyance": {
       "properties": {
@@ -30057,7 +33755,25 @@
           "default": null
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at"
+      ]
     },
     "StoneOfDeepSleep": {
       "properties": {
@@ -30141,7 +33857,25 @@
           "default": null
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at"
+      ]
     },
     "StoneOfDetectMagic": {
       "properties": {
@@ -30225,7 +33959,25 @@
           "default": null
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at"
+      ]
     },
     "StoneOfEnchantment": {
       "properties": {
@@ -30309,7 +34061,25 @@
           "default": null
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at"
+      ]
     },
     "StoneOfFear": {
       "properties": {
@@ -30393,7 +34163,25 @@
           "default": null
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at"
+      ]
     },
     "StoneOfFlock": {
       "properties": {
@@ -30477,7 +34265,25 @@
           "default": null
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at"
+      ]
     },
     "StoneOfIntuition": {
       "properties": {
@@ -30561,7 +34367,25 @@
           "default": null
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at"
+      ]
     },
     "StoneOfShock": {
       "properties": {
@@ -30645,7 +34469,25 @@
           "default": null
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at"
+      ]
     },
     "SubclassInfo": {
       "properties": {
@@ -30682,7 +34524,14 @@
           "type": "object"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "subclass",
+        "talent_info",
+        "talent_points",
+        "bonus_talent_points",
+        "metamorphed_talents"
+      ]
     },
     "TalentInfo": {
       "properties": {
@@ -30693,7 +34542,10 @@
           "type": "object"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "talents"
+      ]
     },
     "TalismanOfForesight": {
       "properties": {
@@ -30793,7 +34645,29 @@
           "type": "integer"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "strength_requirement",
+        "charge",
+        "charge_cap",
+        "exp"
+      ]
     },
     "TenguMask": {
       "properties": {
@@ -30877,7 +34751,25 @@
           "default": null
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at"
+      ]
     },
     "ThirteenLeafClover": {
       "properties": {
@@ -30961,7 +34853,25 @@
           "default": null
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at"
+      ]
     },
     "Throwable": {
       "properties": {
@@ -31057,7 +34967,28 @@
           "type": "string"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "damage",
+        "range",
+        "projectile_type"
+      ]
     },
     "ThrowableDagger": {
       "properties": {
@@ -31153,7 +35084,28 @@
           "type": "string"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "damage",
+        "range",
+        "projectile_type"
+      ]
     },
     "TimekeepersHourglass": {
       "properties": {
@@ -31253,7 +35205,29 @@
           "type": "integer"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "strength_requirement",
+        "charge",
+        "charge_cap",
+        "exp"
+      ]
     },
     "TrapMechanism": {
       "properties": {
@@ -31337,7 +35311,25 @@
           "default": null
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at"
+      ]
     },
     "TrinketCatalyst": {
       "properties": {
@@ -31427,7 +35419,26 @@
           "type": "array"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "rolled_kinds"
+      ]
     },
     "UnstableBrew": {
       "properties": {
@@ -31515,7 +35526,26 @@
           "type": "string"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "effect"
+      ]
     },
     "UnstableSpellbook": {
       "properties": {
@@ -31625,7 +35655,31 @@
           "type": "boolean"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "strength_requirement",
+        "charge",
+        "charge_cap",
+        "exp",
+        "scroll_index",
+        "initialized"
+      ]
     },
     "VelvetPouch": {
       "properties": {
@@ -32561,7 +36615,27 @@
           "type": "array"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "capacity",
+        "items"
+      ]
     },
     "VialOfBlood": {
       "properties": {
@@ -32645,7 +36719,25 @@
           "default": null
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at"
+      ]
     },
     "Wand": {
       "properties": {
@@ -32783,7 +36875,35 @@
           "type": "number"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "damage",
+        "charges",
+        "max_charges",
+        "range",
+        "projectile_type",
+        "beam_type",
+        "wand_sound",
+        "partial_charge",
+        "staff_name",
+        "recharge_scale"
+      ]
     },
     "WandOfBlastWave": {
       "properties": {
@@ -32914,7 +37034,35 @@
           "type": "number"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "damage",
+        "charges",
+        "max_charges",
+        "range",
+        "projectile_type",
+        "beam_type",
+        "wand_sound",
+        "partial_charge",
+        "staff_name",
+        "recharge_scale"
+      ]
     },
     "WandOfCorrosion": {
       "properties": {
@@ -33045,7 +37193,35 @@
           "type": "number"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "damage",
+        "charges",
+        "max_charges",
+        "range",
+        "projectile_type",
+        "beam_type",
+        "wand_sound",
+        "partial_charge",
+        "staff_name",
+        "recharge_scale"
+      ]
     },
     "WandOfCorruption": {
       "properties": {
@@ -33176,7 +37352,35 @@
           "type": "number"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "damage",
+        "charges",
+        "max_charges",
+        "range",
+        "projectile_type",
+        "beam_type",
+        "wand_sound",
+        "partial_charge",
+        "staff_name",
+        "recharge_scale"
+      ]
     },
     "WandOfDisintegration": {
       "properties": {
@@ -33300,7 +37504,35 @@
           "type": "number"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "damage",
+        "charges",
+        "max_charges",
+        "range",
+        "projectile_type",
+        "beam_type",
+        "wand_sound",
+        "partial_charge",
+        "staff_name",
+        "recharge_scale"
+      ]
     },
     "WandOfFireblast": {
       "properties": {
@@ -33431,7 +37663,35 @@
           "type": "number"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "damage",
+        "charges",
+        "max_charges",
+        "range",
+        "projectile_type",
+        "beam_type",
+        "wand_sound",
+        "partial_charge",
+        "staff_name",
+        "recharge_scale"
+      ]
     },
     "WandOfFrost": {
       "properties": {
@@ -33562,7 +37822,35 @@
           "type": "number"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "damage",
+        "charges",
+        "max_charges",
+        "range",
+        "projectile_type",
+        "beam_type",
+        "wand_sound",
+        "partial_charge",
+        "staff_name",
+        "recharge_scale"
+      ]
     },
     "WandOfLightning": {
       "properties": {
@@ -33693,7 +37981,35 @@
           "type": "number"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "damage",
+        "charges",
+        "max_charges",
+        "range",
+        "projectile_type",
+        "beam_type",
+        "wand_sound",
+        "partial_charge",
+        "staff_name",
+        "recharge_scale"
+      ]
     },
     "WandOfLivingEarth": {
       "properties": {
@@ -33824,7 +38140,35 @@
           "type": "number"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "damage",
+        "charges",
+        "max_charges",
+        "range",
+        "projectile_type",
+        "beam_type",
+        "wand_sound",
+        "partial_charge",
+        "staff_name",
+        "recharge_scale"
+      ]
     },
     "WandOfMagicMissile": {
       "properties": {
@@ -33955,7 +38299,35 @@
           "type": "number"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "damage",
+        "charges",
+        "max_charges",
+        "range",
+        "projectile_type",
+        "beam_type",
+        "wand_sound",
+        "partial_charge",
+        "staff_name",
+        "recharge_scale"
+      ]
     },
     "WandOfPrismaticLight": {
       "properties": {
@@ -34086,7 +38458,35 @@
           "type": "number"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "damage",
+        "charges",
+        "max_charges",
+        "range",
+        "projectile_type",
+        "beam_type",
+        "wand_sound",
+        "partial_charge",
+        "staff_name",
+        "recharge_scale"
+      ]
     },
     "WandOfRegrowth": {
       "properties": {
@@ -34217,7 +38617,35 @@
           "type": "number"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "damage",
+        "charges",
+        "max_charges",
+        "range",
+        "projectile_type",
+        "beam_type",
+        "wand_sound",
+        "partial_charge",
+        "staff_name",
+        "recharge_scale"
+      ]
     },
     "WandOfTransfusion": {
       "properties": {
@@ -34348,7 +38776,35 @@
           "type": "number"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "damage",
+        "charges",
+        "max_charges",
+        "range",
+        "projectile_type",
+        "beam_type",
+        "wand_sound",
+        "partial_charge",
+        "staff_name",
+        "recharge_scale"
+      ]
     },
     "WandOfWarding": {
       "properties": {
@@ -34479,7 +38935,35 @@
           "type": "number"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "damage",
+        "charges",
+        "max_charges",
+        "range",
+        "projectile_type",
+        "beam_type",
+        "wand_sound",
+        "partial_charge",
+        "staff_name",
+        "recharge_scale"
+      ]
     },
     "Waterskin": {
       "properties": {
@@ -34567,7 +39051,26 @@
           "type": "integer"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "volume"
+      ]
     },
     "WeightedCountDrop": {
       "properties": {
@@ -34591,7 +39094,9 @@
       },
       "required": [
         "item_kind",
-        "weights"
+        "weights",
+        "base_count",
+        "max_global"
       ],
       "type": "object"
     },
@@ -34677,7 +39182,25 @@
           "default": null
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at"
+      ]
     },
     "WoollyBomb": {
       "properties": {
@@ -34776,7 +39299,27 @@
           "type": "boolean"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "fuse_ticks",
+        "armed"
+      ]
     },
     "WornShortsword": {
       "properties": {
@@ -34937,7 +39480,39 @@
           "type": "integer"
         }
       },
-      "type": "object"
+      "type": "object",
+      "required": [
+        "kind",
+        "id",
+        "name",
+        "type",
+        "pos",
+        "quantity",
+        "level",
+        "level_known",
+        "cursed",
+        "cursed_known",
+        "unique",
+        "kept_though_lost",
+        "throw_behavior",
+        "for_sale",
+        "seen",
+        "dropped_at",
+        "strength_requirement",
+        "damage",
+        "range",
+        "attack_cooldown",
+        "enchantment",
+        "augment",
+        "projectile_type",
+        "surprise_damage_floor",
+        "acc_factor",
+        "dr_bonus_base",
+        "dr_bonus_per_lvl",
+        "hit_sound",
+        "hit_sound_pitch",
+        "tier"
+      ]
     }
   },
   "description": "Wrapper whose fields drag every referenced entity model into `$defs`.\n\nPlayer transitively pulls in Belongings, QuickSlot, Effect, Position, and the\nfull AnyItem discriminated union (every item variant), so listing Player + Mob\nhere is enough to emit the whole entity graph.",
