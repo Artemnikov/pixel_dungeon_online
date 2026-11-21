@@ -44,8 +44,8 @@ def find_mob_at(floor: Any, x: Any, y: Any) -> Optional[Any]:
 
 
 def normal_int_range(lo: int, hi: int) -> int:
-    """SPD Random.NormalIntRange: mean-biased average of two uniforms."""
-    return round((_random.randint(lo, hi) + _random.randint(lo, hi)) / 2)
+    """SPD Random.NormalIntRange: `min + (int)((Float() + Float()) * (max - min + 1) / 2f)`."""
+    return lo + int((_random.random() + _random.random()) * (hi - lo + 1) / 2.0)
 
 
 def normal_float(lo: float, hi: float) -> float:

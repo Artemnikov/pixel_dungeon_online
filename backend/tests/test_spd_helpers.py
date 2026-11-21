@@ -112,3 +112,16 @@ def test_act_clock_move_lets_generic_ai_run():
     game = _RealtimeGame()
     assert spd_act_clock.run(game, mob, lambda: None) is False
     assert spd_act_clock.run(game, mob, lambda: 1.0) is False
+
+
+def test_normal_int_range_matches_spd_formula():
+    from app.engine.entities.base import normal_int_range
+    random.seed(11)
+    rolls = [normal_int_range(20, 30) for _ in range(20000)]
+    assert min(rolls) == 20 and max(rolls) == 30
+    counts = {v: rolls.count(v) for v in range(20, 31)}
+    assert counts[25] > counts[22] > counts[20]
+    random.seed(12)
+    a, b = random.random(), random.random()
+    random.seed(12)
+    assert normal_int_range(20, 30) == 20 + int((a + b) * 11 / 2)

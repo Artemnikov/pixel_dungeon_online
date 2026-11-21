@@ -77,11 +77,12 @@ def test_dm100_hit_deals_damage_no_dr(open_game_factory, monkeypatch):
     mob = _hunting(DM100(id="m", pos=Position(x=6, y=10)))
     floor.mobs[mob.id] = mob
     _force_hit(monkeypatch)
-    monkeypatch.setattr(random, "randint", lambda lo, hi: hi)
+    import app.engine.game.ai_dm100 as ai_dm100
+    monkeypatch.setattr(ai_dm100, "_normal_int_range", lambda lo, hi: hi)
 
     start_hp = p.hp
     assert _update_dm100(g, mob, floor, p.floor_id) is True
-    assert p.hp == start_hp - 10  # _normal_int_range(3, 10) with randint stubbed to hi
+    assert p.hp == start_hp - 10
     assert mob.last_attack_time > 0
 
 
