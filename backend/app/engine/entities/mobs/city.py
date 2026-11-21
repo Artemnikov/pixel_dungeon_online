@@ -66,8 +66,9 @@ class Eye(MobEntity):
     attack_delay: float = 1.0
     properties: List[str] = ["DEMONIC"]
     owns_attacks: ClassVar[bool] = True
+    # Eye: lootChance 1, createLoot -> 2 dew (50%), a seed (25%) or a stone (25%).
     loot_table: List[DropEntry] = [
-        DropEntry(item_kind="health_potion", chance=1.0, max_global=0),
+        DropEntry(item_kind="eye_loot", chance=1.0, max_global=0),
     ]
     # SPD Eye beam state (game/ai_eye.py): beam cooldown in SPD turns, whether
     # the gaze is charged, and the cell it was aimed at (beamTarget).
@@ -100,8 +101,9 @@ class Scorpio(MobEntity):
     view_distance: int = 6
     properties: List[str] = ["DEMONIC"]
     owns_attacks: ClassVar[bool] = True
+    # Scorpio: lootChance 0.5, any potion but Healing or Strength.
     loot_table: List[DropEntry] = [
-        DropEntry(item_kind="potion", chance=0.5, max_global=0),
+        DropEntry(item_kind="scorpio_potion", chance=0.5, max_global=0),
     ]
 
     def attack_proc(self, target):
