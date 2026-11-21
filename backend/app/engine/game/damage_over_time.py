@@ -103,10 +103,12 @@ class DamageOverTimeMixin:
                 continue
 
             dmg = random.randint(1, 3 + floor_id // 4)
-            mob.hp -= dmg
-            self.add_event("DAMAGE", {"target": mob.id, "amount": dmg, "burning": True}, floor_id=floor_id)
+            hurt = getattr(mob, "take_burning_damage", None) or mob.take_damage
+            taken = hurt(dmg)
+            self.add_event("DAMAGE", {"target": mob.id, "amount": taken if isinstance(taken, int) else dmg,
+                                      "burning": True}, floor_id=floor_id)
             self._ignite_floor_if_flammable(mob, floor, floor_id)
-            if mob.hp <= 0:
+            if mob.hp <= 0 or not mob.is_alive:
                 mob.hp = 0
                 mob.is_alive = False
                 mob.die(

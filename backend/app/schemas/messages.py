@@ -386,6 +386,16 @@ class DwarfKingStartDecision(_ClientMessageBase):
     action: Literal["start_without", "wait"]
 
 
+class YogJoinResponse(_ClientMessageBase):
+    type: Literal["YOG_JOIN_RESPONSE"]
+    approve: bool
+
+
+class YogStartDecision(_ClientMessageBase):
+    type: Literal["YOG_START_DECISION"]
+    action: Literal["start_without", "wait"]
+
+
 ClientMessage = Annotated[
     Union[
         Ping,
@@ -422,6 +432,8 @@ ClientMessage = Annotated[
         TenguStartDecision,
         DwarfKingJoinResponse,
         DwarfKingStartDecision,
+        YogJoinResponse,
+        YogStartDecision,
         MetamorphChoose,
         MetamorphReplace,
         AdminTeleport,

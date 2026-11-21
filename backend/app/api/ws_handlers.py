@@ -484,3 +484,17 @@ def handle_dwarf_king_start_decision(
     game: GameInstance, player_id: str, message: msg.DwarfKingStartDecision
 ):
     game.decide_dwarf_king_start(player_id, message.action)
+
+
+@dispatcher.register(msg.YogJoinResponse)
+def handle_yog_join_response(
+    game: GameInstance, player_id: str, message: msg.YogJoinResponse
+):
+    game.respond_yog_join(player_id, message.approve)
+
+
+@dispatcher.register(msg.YogStartDecision)
+def handle_yog_start_decision(
+    game: GameInstance, player_id: str, message: msg.YogStartDecision
+):
+    game.decide_yog_start(player_id, message.action)

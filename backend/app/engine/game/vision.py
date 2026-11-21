@@ -206,7 +206,8 @@ class VisionMixin:
         fov = self._fov_from(p1, floor, distance, viewer_id=viewer_id)
         return fov[p2.y * floor.width + p2.x]
 
-    def _get_next_step_to(self, start: Position, target: Position, floor_id: Optional[int] = None, flying: bool = False) -> Optional[tuple]:
+    def _get_next_step_to(self, start: Position, target: Position, floor_id: Optional[int] = None, flying: bool = False,
+                          large: bool = False) -> Optional[tuple]:
         floor = self._get_or_create_floor(floor_id or self.depth)
 
         queue = deque([(start.x, start.y, [])])
@@ -227,6 +228,7 @@ class VisionMixin:
                     and 0 <= ny < floor.height
                     and floor.flags
                     and (floor.flags.passable[ny][nx] or (flying and floor.flags.avoid[ny][nx]))
+                    and (not large or floor.flags.open_space[ny][nx] or (nx == target.x and ny == target.y))
                     and (nx, ny) not in visited
                 ):
                     if dx != 0 and dy != 0:

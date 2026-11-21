@@ -483,6 +483,7 @@ class MobChasmFallData(_EventData):
 class MessageData(_EventData):
     text: str
     color: Optional[str] = None
+    key: Optional[str] = None
 
 
 class ChatData(_EventData):
@@ -530,7 +531,8 @@ class GhostQuestProcessedData(_EventData):
 
 
 class TeleportData(_EventData):
-    player: str
+    player: Optional[str] = None
+    mob: Optional[str] = None
     x: int
     y: int
 
@@ -720,6 +722,140 @@ class EquipCursedData(_EventData):
     y: int = 0
 
 
+class YogJoinPromptData(_EventData):
+    initiator_id: str
+    initiator_name: str
+
+
+class YogPartyStatusData(_EventData):
+    initiator_id: str
+    pending_names: List[str]
+    declined_names: List[str]
+    approved_names: List[str]
+    can_decide: bool
+
+
+class YogPromptCloseData(_EventData):
+    pass
+
+
+class YogArenaSealedData(_EventData):
+    x: int
+    y: int
+
+
+class YogArenaUnsealedData(_EventData):
+    custom_tiles: list
+    custom_walls: list
+
+
+class YogFightStartedData(_EventData):
+    mob: str
+
+
+class YogPhaseChangeData(_EventData):
+    mob: str
+    phase: int
+    view_distance: Optional[int] = None
+
+
+class YogFinalPhaseData(_EventData):
+    mob: str
+
+
+class YogViewDistanceData(_EventData):
+    view_distance: int
+
+
+class YogShadowBurstData(_EventData):
+    # [[x, y, particle count], ...] -- CellEmitter.burst(ShadowParticle.UP, n)
+    cells: List[List[int]]
+
+
+class YogFistSpawnData(_EventData):
+    mob: str
+    fist: str
+    cls: str
+    x: int
+    y: int
+    from_x: int
+    from_y: int
+
+
+class YogTargetedCellsData(_EventData):
+    mob: str
+    cells: List[List[int]]
+    color: int
+    duration_ms: int
+
+
+class YogDeathRayData(_EventData):
+    mob: str
+    sx: int
+    sy: int
+    ends: List[List[int]]
+    hits: List[str]
+
+
+class MobSpawnData(_EventData):
+    mob: str
+    cls: str
+    x: int
+    y: int
+    from_x: Optional[int] = None
+    from_y: Optional[int] = None
+
+
+class FistZapData(_EventData):
+    mob: str
+    kind: str
+    bolt: str
+    x: int
+    y: int
+    target_x: int
+    target_y: int
+
+
+class ScreenFlashData(_EventData):
+    color: int
+    alpha: float
+    light: bool
+
+
+class StatusTextData(_EventData):
+    target: str
+    key: str
+    kind: str
+    x: int
+    y: int
+    value: Optional[str] = None
+
+
+class TerrainBurstData(_EventData):
+    cells: List[List[int]]
+    kind: str
+
+
+class RipperLeapPrepData(_EventData):
+    mob: str
+    x: int
+    y: int
+    color: int
+    duration_ms: int
+
+
+class RipperLeapData(_EventData):
+    mob: str
+    from_x: int
+    from_y: int
+    x: int
+    y: int
+    end_x: int
+    end_y: int
+    victim: Optional[str] = None
+    hit: Optional[bool] = None
+
+
 # event "type" -> payload model. Used by the opt-in dev validation hook.
 EVENT_MODELS = {
     "ATTACK": AttackData,
@@ -776,6 +912,26 @@ EVENT_MODELS = {
     "DWARF_KING_JOIN_PROMPT": DwarfKingJoinPromptData,
     "DWARF_KING_PARTY_STATUS": DwarfKingPartyStatusData,
     "DWARF_KING_PROMPT_CLOSE": DwarfKingPromptCloseData,
+    "YOG_JOIN_PROMPT": YogJoinPromptData,
+    "YOG_PARTY_STATUS": YogPartyStatusData,
+    "YOG_PROMPT_CLOSE": YogPromptCloseData,
+    "YOG_ARENA_SEALED": YogArenaSealedData,
+    "YOG_ARENA_UNSEALED": YogArenaUnsealedData,
+    "YOG_FIGHT_STARTED": YogFightStartedData,
+    "YOG_PHASE_CHANGE": YogPhaseChangeData,
+    "YOG_FINAL_PHASE": YogFinalPhaseData,
+    "YOG_VIEW_DISTANCE": YogViewDistanceData,
+    "YOG_SHADOW_BURST": YogShadowBurstData,
+    "YOG_FIST_SPAWN": YogFistSpawnData,
+    "YOG_TARGETED_CELLS": YogTargetedCellsData,
+    "YOG_DEATH_RAY": YogDeathRayData,
+    "MOB_SPAWN": MobSpawnData,
+    "FIST_ZAP": FistZapData,
+    "SCREEN_FLASH": ScreenFlashData,
+    "STATUS_TEXT": StatusTextData,
+    "TERRAIN_BURST": TerrainBurstData,
+    "RIPPER_LEAP_PREP": RipperLeapPrepData,
+    "RIPPER_LEAP": RipperLeapData,
     "CHASM_FALL": ChasmFallData,
     "SCREEN_SHAKE": ScreenShakeData,
     "MOB_CHASM_FALL": MobChasmFallData,

@@ -34,6 +34,9 @@ ever constructed by `create_mob_actor`, which only the turn room calls.
 import time
 
 from app.engine.entities.mobs import (
+    BrightFist,
+    BurningFist,
+    DarkFist,
     DM100,
     DM200,
     DM300,
@@ -45,7 +48,10 @@ from app.engine.entities.mobs import (
     PurpleShaman,
     RedShaman,
     RipperDemon,
+    RottingFist,
+    RustedFist,
     Scorpio,
+    SoiledFist,
     Spinner,
     Tengu,
     Warlock,
@@ -268,18 +274,6 @@ class DwarfKingActor(TickCounterMobActor):
     elapsed_tick_counters = ("act_ticks", "phase3_ticks")
 
 
-class YogDzewaActor(TickCounterMobActor):
-    """Yog-Dzewa's death-ray telegraph and fist cooldowns, tick-denominated.
-
-    `ability_telegraph_timer` is deliberately left alone: SPD telegraphs the
-    death ray for a turn or two, so scaling it by a turn's worth of ticks would
-    collapse the telegraph into the same turn it was raised. It is one of the
-    cooldowns that still needs a balance pass against real play.
-    """
-
-    elapsed_tick_counters = ("summon_cooldown",)
-
-
 class SpdActMobActor(TurnMobActor):
     """A mob whose SPD `act()` is ported whole on `game/spd_act_clock.py`.
 
@@ -312,8 +306,8 @@ _ACTOR_TYPES = (
     (DM300Actor, (DM300,)),
     (TenguActor, (Tengu,)),
     (DwarfKingActor, (DwarfKing,)),
-    (YogDzewaActor, (YogDzewa,)),
-    (SpdActMobActor, (Eye, Scorpio, RipperDemon)),
+    (SpdActMobActor, (YogDzewa, BurningFist, SoiledFist, RottingFist, RustedFist,
+                      BrightFist, DarkFist, Eye, Scorpio, RipperDemon)),
     (
         RangedMobActor,
         (

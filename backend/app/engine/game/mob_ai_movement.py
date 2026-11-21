@@ -247,7 +247,8 @@ class MobAIMovementMixin:
             elif holds:
                 pass
             elif search_pos and can_move:
-                step = self._get_next_step_to(mob.pos, search_pos, floor_id=floor_id, flying=mob.flying)
+                step = self._get_next_step_to(mob.pos, search_pos, floor_id=floor_id, flying=mob.flying,
+                                                  large=getattr(mob, "large_pathing", False))
                 if step:
                     move_times[mob.id] = now
                     self.move_entity(mob.id, step[0], step[1])
@@ -268,7 +269,8 @@ class MobAIMovementMixin:
                 pass
             elif target_player and target_in_los:
                 if can_move:
-                    step = self._get_next_step_to(mob.pos, target_player.pos, floor_id=floor_id, flying=mob.flying)
+                    step = self._get_next_step_to(mob.pos, target_player.pos, floor_id=floor_id, flying=mob.flying,
+                                                      large=getattr(mob, "large_pathing", False))
                     if step and (dist > melee_reach or not any(
                         m.is_alive and m.pos.x == mob.pos.x + step[0] and m.pos.y == mob.pos.y + step[1]
                         for m in floor.mobs.values() if m.id != mob.id
@@ -276,7 +278,8 @@ class MobAIMovementMixin:
                         move_times[mob.id] = now
                         self.move_entity(mob.id, step[0], step[1])
             elif search_pos and can_move:
-                step = self._get_next_step_to(mob.pos, search_pos, floor_id=floor_id, flying=mob.flying)
+                step = self._get_next_step_to(mob.pos, search_pos, floor_id=floor_id, flying=mob.flying,
+                                                  large=getattr(mob, "large_pathing", False))
                 if step:
                     move_times[mob.id] = now
                     self.move_entity(mob.id, step[0], step[1])
@@ -297,12 +300,14 @@ class MobAIMovementMixin:
                 pass
             elif target_player and dist < 20:
                 if can_move:
-                    step = self._get_next_step_to(mob.pos, target_player.pos, floor_id=floor_id, flying=mob.flying)
+                    step = self._get_next_step_to(mob.pos, target_player.pos, floor_id=floor_id, flying=mob.flying,
+                                                      large=getattr(mob, "large_pathing", False))
                     if step:
                         move_times[mob.id] = now
                         self.move_entity(mob.id, step[0], step[1])
             elif search_pos and can_move:
-                step = self._get_next_step_to(mob.pos, search_pos, floor_id=floor_id, flying=mob.flying)
+                step = self._get_next_step_to(mob.pos, search_pos, floor_id=floor_id, flying=mob.flying,
+                                                  large=getattr(mob, "large_pathing", False))
                 if step:
                     move_times[mob.id] = now
                     self.move_entity(mob.id, step[0], step[1])

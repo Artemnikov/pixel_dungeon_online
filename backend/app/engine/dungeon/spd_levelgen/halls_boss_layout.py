@@ -15,7 +15,6 @@ from app.engine.dungeon.spd_levelgen import patch
 from app.engine.dungeon.spd_levelgen import terrain
 from app.engine.dungeon.spd_levelgen.geom import build_distance_map_limited
 from app.engine.dungeon.spd_levelgen.level import Feeling, GenLevel
-from app.engine.dungeon.spd_levelgen.mob_spawner import GenMob
 from app.engine.dungeon.spd_levelgen.painter import Painter
 from app.engine.dungeon.spd_levelgen.room import Room
 from app.engine.dungeon.spd_levelgen.run_state import RunState
@@ -201,8 +200,7 @@ def build(rng: SPDRandom, depth: int, run_state: RunState) -> Tuple[GenLevel, Li
     level.room_exit = exit_room
     level.build_flag_maps()
 
-    # Pre-spawn YogDzewa mob at boss_pos
-    level.mobs.append(GenMob(cls_name="YogDzewa", pos=boss_pos))
+    # HallsBossLevel.seal() spawns Yog-Dzewa here; nothing is pre-spawned.
     level.yog_pos = (boss_pos % WIDTH, boss_pos // WIDTH)
 
     return level, rooms

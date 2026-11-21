@@ -34,7 +34,8 @@ from app.engine.game.ai_sentry import _update_sentry
 from app.engine.game.ai_shaman import _update_shaman
 from app.engine.game.ai_spinner import _update_spinner
 from app.engine.game.ai_warlock import _update_warlock
-from app.engine.game.ai_yog_dzewa import _update_yog_dzewa, _update_yog_fist
+from app.engine.game.ai_yog_dzewa import _update_yog_dzewa
+from app.engine.game.ai_yog_fists import _update_yog_fist
 from app.engine.game.ai_ripper import _update_ripper
 from app.engine.game.ai_scorpio import _update_scorpio
 

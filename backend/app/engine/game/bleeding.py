@@ -8,7 +8,7 @@ buff detaches. The "bleeding" buff carries the indicator (its level is the
 rounded SPD level); the float level lives on the entity.
 """
 
-from app.engine.entities.base import normal_float
+from app.engine.entities.base import is_immune, normal_float
 from app.engine.entities.buffs import add_buff, get_buff, remove_buff
 from app.engine.game.constants import BLEEDING_BUFF_DURATION, TICKS_PER_TURN
 from app.engine.game.dot_death import finish_dot_kill
@@ -16,7 +16,7 @@ from app.engine.game.dot_death import finish_dot_kill
 
 def apply_bleeding(entity, level: float) -> None:
     """`Buff.affect(target, Bleeding.class).set(level)`."""
-    if level <= 0:
+    if level <= 0 or is_immune(entity, "bleeding"):
         return
     if get_buff(entity.buffs, "bleeding") is None:
         entity.bleeding_level = 0.0

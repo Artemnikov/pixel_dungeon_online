@@ -155,6 +155,7 @@ class TurnBasedGameInstance(GameInstance):
         would reject every following action and lock the room for good.
         """
         try:
+            self._flush_boss_damage_effects()
             self._run_dungeon_mob_turns()
             self.scheduler.now += 1.0
             self._run_due_upkeep()
@@ -197,6 +198,13 @@ class TurnBasedGameInstance(GameInstance):
                     cost = actor.take_turn(self)
                     actor.scheduled_time = TurnScheduler._snap(
                         actor.scheduled_time + max(float(cost), MIN_MOB_TURN_COST))
+
+    def _flush_boss_damage_effects(self) -> None:
+        from app.engine.game.yog_arena import flush_floor
+        for floor_id in list(self.active_floor_ids):
+            floor = self.floors.get(floor_id)
+            if floor is not None:
+                flush_floor(self, floor, floor_id)
 
     def _ensure_mob_actor(self, mob, floor_id: int) -> MobActor:
         actor = self._mob_actors.get(mob.id)

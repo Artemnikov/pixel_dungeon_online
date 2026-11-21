@@ -302,7 +302,9 @@ def fire_volume_at(floor: FloorState, cell: Tuple[int, int]) -> int:
         if b.get("type") != "fire":
             continue
         cells = b.get("cells", set())
-        if cell in cells or list(cell) in cells:
+        present = cell in cells if isinstance(cells, (set, frozenset, dict)) else (
+            cell in cells or list(cell) in cells)
+        if present:
             total += b.get("volume", {}).get(cell, _FIRE_IGNITE_STRENGTH)
     return total
 

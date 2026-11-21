@@ -18,7 +18,7 @@ from app.engine.entities.buffs import add_buff, break_stationary_plant_buffs, ha
 from app.engine.game.constants import AUTO_MOVE_INTERVAL, MAX_FLOOR_ID, MAX_PLAYER_INPUT_QUEUE
 from app.engine.game.ai_dm300 import _dm300_maybe_seal_arena
 from app.engine.game.ai_dwarf_king import _dwarf_king_maybe_seal_arena
-from app.engine.game.ai_yog_dzewa import _yog_maybe_seal_arena
+from app.engine.game.yog_arena import maybe_seal as _yog_maybe_seal_arena
 from app.engine.game.terrain_effects import press_cell
 from app.engine.talents.registry import registry
 from typing import Optional

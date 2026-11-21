@@ -128,7 +128,7 @@ def death_gaze(game, eye: Eye, floor, floor_id: int, beam: Optional[Ballistica])
             dmg = round(dmg * 0.5)
         taken = ch.take_damage(dmg)
         game.add_event("ATTACK", {"source": eye.id, "target": ch.id, "damage": taken,
-                                  "surprise": False}, floor_id=floor_id)
+                                  "surprise": False, "crit": False, "grim_proc": False}, floor_id=floor_id)
         game.add_event("DAMAGE", {"target": ch.id, "amount": taken, "source_x": eye.pos.x,
                                   "source_y": eye.pos.y, "projectile": "beam",
                                   "beam_type": "death_ray", "purple_burst": True,

@@ -264,6 +264,14 @@ class GameInstance(
         from app.engine.game.ai_dwarf_king import decide_dwarf_king_start
         decide_dwarf_king_start(self, player_id, action)
 
+    def respond_yog_join(self, player_id: str, approve: bool) -> None:
+        from app.engine.game.yog_arena import respond_yog_join
+        respond_yog_join(self, player_id, approve)
+
+    def decide_yog_start(self, player_id: str, action: str) -> None:
+        from app.engine.game.yog_arena import decide_yog_start
+        decide_yog_start(self, player_id, action)
+
     def step_player_move(self, player_id: str, dx: int, dy: int) -> None:
         """Move one tile: the single movement path for both game modes.
 

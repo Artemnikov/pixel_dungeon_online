@@ -120,6 +120,13 @@ class MobDeathMixin:
         from app.engine.game.ai_dwarf_king import handle_dwarf_king_minion_death
         handle_dwarf_king_minion_death(self, mob, floor, floor_id)
 
+        # YogFist.die(): Bright/Dark death effects, then Yog's processFistDeath.
+        if getattr(mob, "fist_kind", ""):
+            from app.engine.game.ai_yog_dzewa import process_fist_death
+            from app.engine.game.ai_yog_fists import on_fist_death
+            on_fist_death(self, mob, floor, floor_id)
+            process_fist_death(self, mob, floor, floor_id)
+
         # Public room: start boss respawn timer when any boss dies.
         if self._is_public_room() and isinstance(mob, PUBLIC_ROOM_BOSS_TYPES):
             floor.boss_dead_ticks = 0
@@ -252,12 +259,8 @@ class MobDeathMixin:
             return
 
         if isinstance(mob, YogDzewa):
-            self.boss_scores[4] += 5000
-            if self.qualified_for_boss_challenge:
-                self.add_event("YOG_DZEWA_BADGE_QUALIFIED", {}, floor_id=floor_id)
-            self.add_event("BOSS_SLAIN", {"mob": mob.id, "depth": floor_id, "badge_image": 18}, floor_id=floor_id)
-            from app.engine.game.ai_yog_dzewa import _yog_unseal_arena
-            _yog_unseal_arena(self, floor, floor_id)
+            from app.engine.game.yog_arena import on_yog_death
+            on_yog_death(self, mob, floor, floor_id)
             self.add_event("PLAY_SOUND", {"sound": "BOSS"}, floor_id=floor_id)
             if self.game_id == PUBLIC_ROOM_ID:
                 self.add_event("MESSAGE", {"text": f"{mob.name} has been slain!"})
