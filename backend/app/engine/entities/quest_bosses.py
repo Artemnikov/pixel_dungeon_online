@@ -31,7 +31,7 @@ Scoping notes (deliberate simplifications, not oversights):
 
 from __future__ import annotations
 
-from typing import List
+from typing import List, ClassVar
 
 from app.engine.entities.base import Faction
 from app.engine.entities.player import DropEntry, Mob as MobEntity, WeightedCountDrop
@@ -69,6 +69,7 @@ class GnollTrickster(Gnoll):
     """GnollTrickster.java -- depth 3 quest boss."""
 
     name: str = "Gnoll Trickster"
+    melee_reach: ClassVar[int] = 4
     hp: int = 20
     max_hp: int = 20
     defense_skill: int = 5

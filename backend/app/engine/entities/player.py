@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 from pydantic import BaseModel, Field, computed_field, model_validator, SerializeAsAny
 
-from app.engine.entities.buffs import Buff, add_buff, remove_buff, has_buff, get_buff
+from app.engine.entities.buffs import Buff, add_buff, remove_buff, has_buff, get_buff, is_rooted
 from app.engine.entities.subclasses import SubclassInfo, TalentInfo, Talent, Subclass
 from app.engine.entities.weapons.weapon_defs import WEAPON_DEFS
 from app.engine.talents.registry import MODIFIERS
@@ -219,6 +219,13 @@ class Mob(Entity):
     flying: bool = False
     properties: List[str] = Field(default_factory=list)
     attack_range: int = 1
+    # Generic-AI attack rules (game/mob_ai_movement.py): melee reach in
+    # tiles (SPD Mob.canAttack is adjacent-only), whether a ranged mob stands
+    # its ground while its ability has a target, and whether a ported act()
+    # performs every attack itself so the generic AI only moves the mob.
+    melee_reach: ClassVar[int] = 1
+    holds_at_range: ClassVar[bool] = False
+    owns_attacks: ClassVar[bool] = False
     # Attack speed is an independent property from movement `speed` (mirrors SPD,
     # where a mob's attackDelay and moveSpeed are separate). Baselined to the
     # player's standard weapon cadence so a basic mob trades blow-for-blow rather
@@ -1129,7 +1136,7 @@ class Player(Entity):
 
     def get_movement_speed(self, enemies_nearby: bool = False) -> float:
         from app.engine.entities.buffs import is_frozen
-        if self.has_buff("paralysis") or self.has_buff("stagger") or is_frozen(self.buffs) or self.has_buff("roots"):
+        if self.has_buff("paralysis") or self.has_buff("stagger") or is_frozen(self.buffs) or is_rooted(self):
             return 0.0
 
         mult = 1.0

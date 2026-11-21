@@ -14,6 +14,7 @@ from app.engine.entities.wands.base import knockback_char
 from app.engine.game.constants import AUTO_MOVE_INTERVAL, GAME_LOOP_HZ, GAME_TURN_TICKS
 from app.engine.game.floor_state import FloorState
 from app.engine.systems.ballistica import ballistica_path
+from app.engine.entities.buffs import is_rooted
 
 # Arena bounds from caves_boss_layout.py (mirrors CavesBossLevel.java)
 MAIN_ARENA = Rect(5, 14, 28, 37)
@@ -257,7 +258,7 @@ def _is_cell_occupied(game, floor: FloorState, floor_id: int, x: int, y: int) ->
 def _dm300_wall_smash(game, mob: DM300, target, floor: FloorState, floor_id: int) -> bool:
     """Port of DM300.getCloser(): while supercharged, if DM-300 cannot path to
     its target, it smashes through diggable arena walls to make a path."""
-    if mob.has_buff("root") or mob.has_buff("rooted"):
+    if mob.has_buff("root") or is_rooted(mob):
         return False
     if game._get_distance(mob.pos, target.pos) <= 1:
         return False

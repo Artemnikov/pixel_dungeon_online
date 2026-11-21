@@ -11,6 +11,7 @@ from typing import List, Optional, Tuple
 
 from app.engine.dungeon.constants import TileType
 from app.engine.entities.base import Faction, Position, chebyshev_distance
+from app.engine.game.constants import LIGHT_DISTANCE
 from app.engine.mechanics import shadowcaster
 
 from app.engine.game.floor_state import FloorState
@@ -107,14 +108,17 @@ class VisionMixin:
         from app.engine.entities.trinkets import EyeOfNewt as _EyeOfNewt
         from app.engine.entities.trinkets import trinket_level
 
-        # Per-floor override (e.g. YogDzewa fight shrinking level.viewDistance)
-        # takes precedence over the entity's own view distance, mirroring SPD
-        # where level.viewDistance is forced onto the hero directly.
+        # Per-floor override (SPD Level.viewDistance, e.g. Halls boss arena)
+        # is forced onto the heroes only -- mobs keep their own sight. A
+        # hero with Light sees at least Light.DISTANCE (Light.attachTo).
         floor_id = getattr(entity, "floor_id", None)
-        if floor_id is not None:
+        if floor_id is not None and getattr(entity, "type", None) == "player":
             floor = self.floors.get(floor_id)
             if floor is not None and floor.view_distance is not None:
-                return max(0, min(floor.view_distance, shadowcaster.MAX_DISTANCE))
+                vd = floor.view_distance
+                if entity.has_buff("light"):
+                    vd = max(vd, LIGHT_DISTANCE)
+                return max(0, min(vd, shadowcaster.MAX_DISTANCE))
 
         dist = getattr(entity, "view_distance", 8)
         # Farsight talent: check for dynamic override

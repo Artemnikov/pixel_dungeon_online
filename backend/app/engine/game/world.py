@@ -21,6 +21,7 @@ from app.engine.entities.player import CharacterClass, Player, hurt_warning_soun
 from app.engine.game.floor_state import FloorState
 from app.engine.game.bleeding import apply_bleeding
 from app.engine.game.constants import KEY_TIME_TO_UNLOCK
+from app.engine.entities.buffs import remove_roots
 
 _FIRE_CARDINALS = [(0, -1), (1, 0), (0, 1), (-1, 0)]
 _ELECTRIC_CARDINALS = [(0, -1), (1, 0), (0, 1), (-1, 0)]
@@ -365,7 +366,7 @@ def _teleport_char_generic(game, floor, floor_id: int, entity) -> bool:
     from_x, from_y = entity.pos.x, entity.pos.y
     tx, ty = random.choice(pool)
     entity.pos = Position(x=tx, y=ty)
-    entity.remove_buff("rooted")
+    remove_roots(entity)
     from app.engine.entities.buffs import break_stationary_plant_buffs
     break_stationary_plant_buffs(entity)
     if getattr(entity, "ai_state", None) == "hunting":
@@ -461,7 +462,7 @@ def _trap_gateway(game, floor, player, floor_id, is_player, patches):
             if mob.is_alive and mob.pos.x == cx and mob.pos.y == cy and (mob.pos.x, mob.pos.y) != (tx, ty):
                 from_x, from_y = mob.pos.x, mob.pos.y
                 mob.pos = Position(x=tx, y=ty)
-                mob.remove_buff("rooted")
+                remove_roots(mob)
                 if mob.ai_state == "hunting":
                     mob.ai_state = "wandering"
                 game.add_event("TELEPORT", {"player": mob.id, "from_x": from_x, "from_y": from_y, "x": tx, "y": ty}, floor_id=floor_id)
@@ -469,7 +470,7 @@ def _trap_gateway(game, floor, player, floor_id, is_player, patches):
             if other.floor_id == floor_id and other.is_alive and other.pos.x == cx and other.pos.y == cy and (other.pos.x, other.pos.y) != (tx, ty):
                 from_x, from_y = other.pos.x, other.pos.y
                 other.pos = Position(x=tx, y=ty)
-                other.remove_buff("rooted")
+                remove_roots(other)
                 game.add_event("TELEPORT", {"player": other.id, "from_x": from_x, "from_y": from_y, "x": tx, "y": ty}, floor_id=floor_id)
     return 0, 0
 

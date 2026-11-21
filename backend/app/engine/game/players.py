@@ -37,7 +37,7 @@ HARMFUL_BUFFS = frozenset({
     "poison", "burning", "frozen", "frost", "chilled", "chill",
     "paralysis", "cripple", "blindness", "blinded", "weakness",
     "vulnerable", "hex", "ooze", "corrosion", "vertigo", "terror",
-    "death_mark", "bleeding", "rooted", "sheep_timer", "slow",
+    "death_mark", "bleeding", "rooted", "roots", "sheep_timer", "slow",
     "stagger",
 })
 

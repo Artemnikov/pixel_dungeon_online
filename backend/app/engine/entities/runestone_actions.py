@@ -9,6 +9,7 @@ from app.engine.entities.runestones import InventoryStone, Runestone
 from app.engine.entities.items.equip import Armor, KindOfWeapon
 from app.engine.entities.items.wands import Wand
 from app.engine.entities.weapons.weapon_enchants import apply_random_enchant_or_glyph
+from app.engine.entities.buffs import remove_roots
 
 
 _THROW_SOUNDS = {
@@ -140,7 +141,7 @@ def _blink_effect(game, player, floor, tx, ty) -> None:
             return
     from_x, from_y = player.pos.x, player.pos.y
     player.pos = Position(x=dest_x, y=dest_y)
-    player.remove_buff("rooted")
+    remove_roots(player)
     game.add_event("TELEPORT", {"player": player.id, "from_x": from_x, "from_y": from_y,
                                  "x": dest_x, "y": dest_y}, floor_id=player.floor_id)
 

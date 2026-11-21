@@ -182,6 +182,16 @@ class MobAIMovementMixin:
 
         dist = self._get_distance(mob.pos, target_player.pos) if target_player else float("inf")
         atk_range = getattr(mob, "attack_range", 1)
+        # SPD Mob.canAttack(): melee only reaches adjacent cells (or a
+        # mob's own reach, e.g. GnollExile). `attack_range` is the reach of
+        # a ported ranged ability, which its ai_* module performs; a mob
+        # that `holds_at_range` stands its ground while that ability has a
+        # target, and a mob that `owns_attacks` never bump-attacks here.
+        melee_reach = getattr(mob, "melee_reach", 1)
+        can_melee = (target_player is not None and dist <= melee_reach
+                     and not getattr(mob, "owns_attacks", False))
+        holds = (getattr(mob, "holds_at_range", False) and target_player is not None
+                 and target_in_los and dist <= atk_range)
         is_passive = getattr(mob, "ai_state", "") == "passive"
 
         if is_passive and mob.hp >= mob.max_hp:
@@ -209,7 +219,7 @@ class MobAIMovementMixin:
             mob.hp = min(mob.max_hp, mob.hp + 5)
 
         if "IMMOVABLE" in getattr(mob, "properties", []):
-            if target_player and dist <= atk_range:
+            if can_melee:
                 if not mob.engaged:
                     mob.engaged = True
                     mob.last_attack_time = time.time() - max(
@@ -221,8 +231,7 @@ class MobAIMovementMixin:
                 mob.engaged = False
             return
 
-        in_attack_range = target_player is not None and dist <= atk_range
-        if in_attack_range:
+        if can_melee:
             if not mob.engaged:
                 mob.engaged = True
                 mob.last_attack_time = time.time() - max(
@@ -232,9 +241,11 @@ class MobAIMovementMixin:
             mob.engaged = False
 
         if self.difficulty == Difficulty.EASY:
-            if target_player and dist <= atk_range:
+            if can_melee:
                 dx, dy = target_player.pos.x - mob.pos.x, target_player.pos.y - mob.pos.y
                 self.move_entity(mob.id, dx, dy)
+            elif holds:
+                pass
             elif search_pos and can_move:
                 step = self._get_next_step_to(mob.pos, search_pos, floor_id=floor_id, flying=mob.flying)
                 if step:
@@ -250,13 +261,15 @@ class MobAIMovementMixin:
                     self.move_entity(mob.id, *step)
 
         elif self.difficulty == Difficulty.NORMAL:
-            if target_player and dist <= atk_range:
+            if can_melee:
                 dx, dy = target_player.pos.x - mob.pos.x, target_player.pos.y - mob.pos.y
                 self.move_entity(mob.id, dx, dy)
+            elif holds:
+                pass
             elif target_player and target_in_los:
                 if can_move:
                     step = self._get_next_step_to(mob.pos, target_player.pos, floor_id=floor_id, flying=mob.flying)
-                    if step and (dist > atk_range or not any(
+                    if step and (dist > melee_reach or not any(
                         m.is_alive and m.pos.x == mob.pos.x + step[0] and m.pos.y == mob.pos.y + step[1]
                         for m in floor.mobs.values() if m.id != mob.id
                     )):
@@ -277,9 +290,11 @@ class MobAIMovementMixin:
                     self.move_entity(mob.id, *step)
 
         elif self.difficulty == Difficulty.HARD:
-            if target_player and dist <= atk_range:
+            if can_melee:
                 dx, dy = target_player.pos.x - mob.pos.x, target_player.pos.y - mob.pos.y
                 self.move_entity(mob.id, dx, dy)
+            elif holds:
+                pass
             elif target_player and dist < 20:
                 if can_move:
                     step = self._get_next_step_to(mob.pos, target_player.pos, floor_id=floor_id, flying=mob.flying)

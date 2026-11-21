@@ -2,7 +2,7 @@
 #
 import math
 import random
-from typing import List, TYPE_CHECKING
+from typing import List, TYPE_CHECKING, ClassVar
 
 from app.engine.entities.base import Position, normal_float
 from app.engine.entities.player import Mob as MobEntity, DropEntry, WeightedCountDrop
@@ -195,6 +195,7 @@ class AlbinoRat(MobEntity):
 
 class GnollExile(MobEntity):
     name: str = "Gnoll Exile"
+    melee_reach: ClassVar[int] = 2
     defense_verb: str = "blocked"
     hp: int = 24
     max_hp: int = 24

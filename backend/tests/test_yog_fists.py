@@ -100,7 +100,7 @@ def test_soiled_fist_zap_roots_on_hit(monkeypatch):
     monkeypatch.setattr(random, "uniform", lambda a, b: 9.0)
 
     assert _update_yog_fist(game, fist, floor, floor.floor_id) is True
-    assert has_buff(target.buffs, "rooted")
+    assert has_buff(target.buffs, "roots")
     assert target.hp == 100  # no direct damage
 
 

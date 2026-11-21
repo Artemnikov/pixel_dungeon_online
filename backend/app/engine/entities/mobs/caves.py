@@ -1,7 +1,7 @@
 # Copyright (C) 2026 ArtemNikov
 #
 import random
-from typing import List, Optional, TYPE_CHECKING
+from typing import List, Optional, TYPE_CHECKING, ClassVar
 
 from pydantic import Field
 
@@ -224,6 +224,7 @@ class ChaosElemental(FireElemental):
 
 class Warlock(MobEntity):
     name: str = "Warlock"
+    holds_at_range: ClassVar[bool] = True
     hp: int = 70
     max_hp: int = 70
     attack_skill: int = 25

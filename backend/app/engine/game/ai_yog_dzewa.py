@@ -543,7 +543,7 @@ def _fist_zap_burning(game, fist, target, floor_id: int):
 def _fist_zap_soiled(game, fist, target, floor_id: int):
     if not ranged_accuracy_roll(game, fist, target, floor_id):
         return
-    add_buff(target.buffs, "rooted", duration=3.0, level=1)
+    add_buff(target.buffs, "roots", duration=3.0, level=1)
     game.add_event("ATTACK", {"source": fist.id, "target": target.id,
                               "damage": 0, "surprise": False, "root": True}, floor_id=floor_id)
 
