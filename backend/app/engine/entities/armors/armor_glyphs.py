@@ -324,7 +324,8 @@ def _proc_thorns(defender, attacker, armor, raw_damage, floor_mobs, tile_x, tile
     power_multi = _power_mult(chance)
     bleed = round((4 + lvl) * power_multi)
     if bleed > 0:
-        attacker.add_buff("bleeding", duration=bleed / 2.0, level=bleed)
+        from app.engine.game.bleeding import apply_bleeding
+        apply_bleeding(attacker, bleed)
     if kwargs.get("add_event"):
         kwargs["add_event"]("THORNS_PROC", {
             "defender": defender.id,

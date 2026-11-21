@@ -201,7 +201,6 @@ LOCKED_FLOOR_DURATION_STRONG = 20.0
 BLINDNESS_DURATION = 10.0        # Blindness.DURATION
 CRIPPLE_DURATION = 10.0          # Cripple.DURATION
 ROOTS_DURATION = 5.0             # Roots.DURATION
-OOZE_DURATION = 20.0             # Ooze.DURATION
 BURNING_DURATION = 8.0           # Burning.DURATION
 LIGHT_DISTANCE = 6               # Light.DISTANCE
 
@@ -259,3 +258,6 @@ RIPPER_LEAP_MIN_DIST = 3
 RIPPER_PREP_SPEND = (0.5, 1.5)
 RIPPER_LEAP_BLEED = 0.75
 SCORPIO_CRIPPLE_CHANCE = 0.5
+# Indicator lifetime of the "bleeding" buff; the bleed itself ends when its
+# decaying level rounds to 0 (game/bleeding.py), so this only has to outlast it.
+BLEEDING_BUFF_DURATION = 1000.0

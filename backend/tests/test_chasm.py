@@ -208,8 +208,8 @@ def test_confirm_chasm_fall_applies_damage_cripple_and_bleed():
 
     assert player.hp < full_hp
     assert get_buff(player.buffs, "cripple") is not None
-    assert player.bleed_amount > 0
-    assert player.bleed_turns > 0
+    assert get_buff(player.buffs, "bleeding") is not None
+    assert player.bleeding_level > 0
 
 
 def test_confirm_chasm_fall_emits_chasm_fall_damage_screen_shake_and_descend_sound():

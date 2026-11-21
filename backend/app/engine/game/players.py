@@ -554,8 +554,8 @@ class PlayersMixin:
 
         hp = player.hp
         max_hp = player.get_total_max_hp()
-        player.bleed_amount = max(1, round(max_hp / (6 + 6 * (hp / max_hp))))
-        player.bleed_turns = 2
+        from app.engine.game.bleeding import apply_bleeding
+        apply_bleeding(player, round(max_hp / (6 + 6 * (hp / max_hp))))
 
         lo, hi = sorted((hp // 2, max_hp // 4))
         dmg_roll = random.randint(lo, hi) if lo < hi else lo

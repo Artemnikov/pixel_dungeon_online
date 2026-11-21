@@ -16,6 +16,7 @@ from app.engine.entities.base import chebyshev_distance
 from app.engine.entities.buffs import add_buff, get_buff, has_buff, remove_buff
 from app.engine.entities.talent_enum import Subclass, Talent
 from app.engine.game.armor_ability_base import resolve_target_entity as _find_target
+from app.engine.game.bleeding import apply_bleeding
 from app.engine.systems.combat import resolve_melee_attack
 
 if TYPE_CHECKING:
@@ -566,7 +567,7 @@ class HarvestSkill(WeaponSkill):
         lvl = weapon.buffed_lvl() if hasattr(weapon, "buffed_lvl") else weapon.level
         params = _skill_params(weapon)
         total_bleed = round(params.get("total", 15) + params.get("per_lvl", 2.5) * lvl)
-        add_buff(target.buffs, "bleeding", duration=10.0, level=total_bleed, stack_mode="extend")
+        apply_bleeding(target, total_bleed)
         game.add_event("BLEED", {"target": target.id, "amount": total_bleed}, floor_id=player.floor_id)
 
         res = resolve_melee_attack(

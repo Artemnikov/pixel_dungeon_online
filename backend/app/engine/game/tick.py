@@ -1,4 +1,4 @@
-from app.engine.entities.buffs import get_buff, has_buff
+from app.engine.entities.buffs import has_buff
 from app.engine.game.constants import TICK_DURATION
 from app.engine.game.tick_steps import (
     finalize_dead_players,
@@ -31,7 +31,7 @@ class TickMixin:
 
         for floor_id in active_ids:
             floor = self.floors[floor_id]
-            for mob in floor.mobs.values():
+            for mob in list(floor.mobs.values()):
                 if not mob.is_alive:
                     continue
                 run_buff_upkeep(self, mob, floor, floor_id, False, dt)
@@ -128,11 +128,3 @@ class TickMixin:
             mob.ai_state = "hunting"
         return False
 
-    def _apply_bleed(self, entity) -> None:
-        """Bleeding is presence-keyed (still active), not expiry-keyed, so it
-        is applied every tick rather than routed through the expiry dispatch."""
-        bleed = get_buff(entity.buffs, "bleeding")
-        if bleed:
-            dmg = max(1, bleed.level)
-            entity.take_damage(dmg)
-            self.add_event("DAMAGE", {"target": entity.id, "amount": dmg, "bleed": True})

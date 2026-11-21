@@ -101,6 +101,8 @@ def _detach_invis(entity: Entity) -> None:
 def _detach_bleed(entity: Entity) -> None:
     entity.bleed_amount = 0
     entity.bleed_turns = 0
+    entity.bleeding_level = 0.0
+    entity.bleeding_ticks = 0
 
 
 def _detach_ooze(entity: Entity) -> None:
@@ -171,6 +173,16 @@ class Entity(BaseModel):
     # Burning DoT: accumulating tick timer (seconds) for ~1s burn intervals
     burning_accum: float = 0.0
     burning_total_seconds: float = 0.0  # total time burning (for inventory destruction)
+
+    # SPD Bleeding: the buff's float level (decays every turn) and the ticks
+    # accumulated toward its next once-per-turn act. See game/bleeding.py.
+    bleeding_level: float = 0.0
+    bleeding_ticks: int = 0
+    # SPD Viscosity.DeferedDamage: pooled damage, released 10% per turn after
+    # a one-turn postpone when fresh. See game/deferred_damage.py.
+    deferred_damage: int = 0
+    deferred_ticks: int = 0
+    deferred_wait: float = 0.0
 
     # Poison / Corrosion DoT: accumulating tick timer (seconds) for ~1s intervals
     poison_accum: float = 0.0

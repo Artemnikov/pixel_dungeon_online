@@ -4,7 +4,7 @@ import math
 import random
 from typing import List, TYPE_CHECKING
 
-from app.engine.entities.base import Position
+from app.engine.entities.base import Position, normal_float
 from app.engine.entities.player import Mob as MobEntity, DropEntry, WeightedCountDrop
 from app.engine.game.constants import OOZE_DURATION
 
@@ -189,8 +189,8 @@ class AlbinoRat(MobEntity):
 
     def attack_proc(self, target: "Entity"):
         if random.random() < 0.5:
-            target.bleed_amount = max(getattr(target, "bleed_amount", 0), random.randint(2, 3))
-            target.bleed_turns = max(getattr(target, "bleed_turns", 0), 5)
+            from app.engine.game.bleeding import apply_bleeding
+            apply_bleeding(target, normal_float(2, 3))
 
 
 class GnollExile(MobEntity):

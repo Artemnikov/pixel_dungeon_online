@@ -19,6 +19,7 @@ from app.engine.dungeon.constants import TileType
 from app.engine.entities.base import Faction, Position
 from app.engine.entities.player import CharacterClass, Player, hurt_warning_sound
 from app.engine.game.floor_state import FloorState
+from app.engine.game.bleeding import apply_bleeding
 from app.engine.game.constants import KEY_TIME_TO_UNLOCK
 
 _FIRE_CARDINALS = [(0, -1), (1, 0), (0, 1), (-1, 0)]
@@ -489,7 +490,7 @@ def _trap_flashing(game, floor, player, floor_id, is_player, patches):
     dr_roll = random.randint(player.get_dr_min(), player.get_dr_max())
     damage = max(0, (4 + floor_id // 2) - dr_roll // 2)
     if damage > 0:
-        add_buff(player.buffs, "bleeding", duration=damage / 2.0, level=damage, stack_mode="replace")
+        apply_bleeding(player, damage)
     player.add_buff("blindness", duration=10.0)
     player.add_buff("cripple", duration=20.0)
     if not is_player:

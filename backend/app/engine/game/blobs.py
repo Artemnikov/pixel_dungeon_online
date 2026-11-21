@@ -6,7 +6,7 @@ from typing import Any, Dict, List, Set, Tuple
 from app.engine.dungeon.constants import TileType
 from app.engine.entities.base import Entity, is_immune
 from app.engine.entities.buffs import add_buff
-from app.engine.game.constants import GAS_TICK_INTERVAL, TICK_DURATION
+from app.engine.game.constants import BURNING_DURATION, GAS_TICK_INTERVAL, TICK_DURATION
 from app.engine.game.floor_state import FloorState
 
 _FIRE_IGNITE_STRENGTH = 4
@@ -154,14 +154,12 @@ def _evolve_pylon_energy_blob(
     blob: dict,
     players: Dict[str, Entity],
     events: List[dict],
+    ticks: int = 1,
 ) -> None:
     # Port of CavesBossLevel.PylonEnergy: persistent energy on wires and water
     # during pylon activation, dealing 6-12 electricity dmg per turn.
-    tick_counter = blob.get("tick_counter", 0) + 1
-    if tick_counter < GAS_TICK_INTERVAL:
-        blob["tick_counter"] = tick_counter
+    if _turn_elapsed(blob, ticks, first_immediate=False) <= 0:
         return
-    blob["tick_counter"] = 0
 
     cells: Set[Tuple[int, int]] = blob.get("cells", set())
     volume: Dict[Tuple[int, int], int] = blob.get("volume", {})
@@ -266,80 +264,152 @@ def _burn_floor_items(floor: FloorState, cx: int, cy: int) -> None:
                 )
 
 
+def _turn_elapsed(blob: dict, ticks: int, first_immediate: bool) -> int:
+    """How many whole SPD turns a per-turn blob owes after `ticks` more ticks.
+
+    Real-time rooms pass 1 tick per call and turn rooms a whole turn's worth,
+    so one counter serves both modes. A blob that `first_immediate` evolves on
+    the call after it was seeded, as SPD's blob actor acts on the next turn.
+    """
+    default = GAS_TICK_INTERVAL - 1 if first_immediate else 0
+    counter = blob.get("tick_counter", default) + ticks
+    turns = counter // GAS_TICK_INTERVAL
+    blob["tick_counter"] = counter - turns * GAS_TICK_INTERVAL
+    return int(turns)
+
+
+def seed_fire(floor: FloorState, cell: Tuple[int, int], amount: int, blob_id: str = "fire_seeded") -> None:
+    """SPD `Blob.seed(cell, amount, Fire.class)`: adds `amount` to the cell's fire."""
+    if amount <= 0:
+        return
+    blob = next((b for b in floor.blob_areas.values() if b.get("type") == "fire"), None)
+    if blob is None:
+        blob = {"type": "fire", "cells": set(), "volume": {}}
+        floor.blob_areas[blob_id] = blob
+    cells = blob.setdefault("cells", set())
+    if not isinstance(cells, set):
+        cells = set(tuple(c) for c in cells)
+        blob["cells"] = cells
+    volume = blob.setdefault("volume", {})
+    cells.add(cell)
+    volume[cell] = volume.get(cell, 0) + amount
+
+
+def fire_volume_at(floor: FloorState, cell: Tuple[int, int]) -> int:
+    """SPD `Fire.volumeAt(cell, Fire.class)`."""
+    total = 0
+    for b in floor.blob_areas.values():
+        if b.get("type") != "fire":
+            continue
+        cells = b.get("cells", set())
+        if cell in cells or list(cell) in cells:
+            total += b.get("volume", {}).get(cell, _FIRE_IGNITE_STRENGTH)
+    return total
+
+
+def seed_gas(floor: FloorState, gas_type: str, cell: Tuple[int, int], amount: int, blob_id: str = "") -> None:
+    """SPD `Blob.seed(cell, amount, <Gas>.class)` for one gas type."""
+    blob = next((b for b in floor.blob_areas.values() if b.get("type") == gas_type), None)
+    if blob is None:
+        blob = {"type": gas_type, "cells": set(), "volume": {}}
+        floor.blob_areas[blob_id or f"{gas_type}_seeded"] = blob
+    cells = blob.setdefault("cells", set())
+    if not isinstance(cells, set):
+        cells = set(tuple(c) for c in cells)
+        blob["cells"] = cells
+    volume = blob.setdefault("volume", {})
+    if amount > 0:
+        cells.add(cell)
+        volume[cell] = volume.get(cell, 0) + amount
+
+
+def _fire_burn(floor: FloorState, cx: int, cy: int, players: Dict[str, Entity]) -> bool:
+    """SPD `Fire.burn(pos)`: reignite a char, burn the heap, wither the plant."""
+    burned = False
+    for p in players.values():
+        if p.floor_id != floor.floor_id or not p.is_alive:
+            continue
+        if p.pos.x == cx and p.pos.y == cy and not is_immune(p, "burning"):
+            add_buff(p.buffs, "burning", duration=BURNING_DURATION, level=1, stack_mode="extend")
+            burned = True
+    for m in list(floor.mobs.values()):
+        if m.is_alive and m.pos.x == cx and m.pos.y == cy and not is_immune(m, "burning"):
+            add_buff(m.buffs, "burning", duration=BURNING_DURATION, level=1, stack_mode="extend")
+            burned = True
+    if (cx, cy) in floor.plants:
+        del floor.plants[(cx, cy)]
+    _burn_floor_items(floor, cx, cy)
+    return burned
+
+
 def _evolve_fire_blob(
     floor: FloorState,
     blob_id: Any,
     blob: dict,
     players: Dict[str, Entity],
     events: List[dict],
+    ticks: int = 1,
 ) -> None:
-    cells: Set[Tuple[int, int]] = blob.get("cells", set())
+    """Port of `Fire.evolve()`, run once per SPD turn of elapsed time."""
+    turns = _turn_elapsed(blob, ticks, first_immediate=True)
+    for _ in range(turns):
+        if blob_id not in floor.blob_areas:
+            return
+        _fire_turn(floor, blob_id, blob, players, events)
+
+
+def _fire_turn(
+    floor: FloorState,
+    blob_id: Any,
+    blob: dict,
+    players: Dict[str, Entity],
+    events: List[dict],
+) -> None:
+    cells: Set[Tuple[int, int]] = set(tuple(c) for c in blob.get("cells", set()))
     volume: Dict[Tuple[int, int], int] = blob.get("volume", {})
-    new_cells: Set[Tuple[int, int]] = set()
+    cur = {c: volume.get(c, _FIRE_IGNITE_STRENGTH) for c in cells}
     new_volume: Dict[Tuple[int, int], int] = {}
-    spread_targets: Dict[Tuple[int, int], int] = {}
-    observe = False
     burned = False
     destroyed_tiles: List[Tuple[int, int, int]] = []
+    flamable = floor.flags.flamable if floor.flags else None
 
-    for cx, cy in list(cells):
-        tile = floor.grid[cy][cx]
-        if tile == TileType.FLOOR_WATER:
+    candidates: Set[Tuple[int, int]] = set(c for c, v in cur.items() if v > 0)
+    for cx, cy in list(candidates):
+        for dx, dy in _FIRE_CARDINALS:
+            candidates.add((cx + dx, cy + dy))
+
+    for cx, cy in candidates:
+        if not (0 <= cx < floor.width and 0 <= cy < floor.height):
             continue
-        cur_vol = volume.get((cx, cy), _FIRE_IGNITE_STRENGTH)
-        vol = cur_vol - TICK_DURATION
-        flamable = floor.flags.flamable[cy][cx] if floor.flags else False
-
-        if vol <= 0:
-            if flamable:
+        here = cur.get((cx, cy), 0)
+        is_flamable = bool(flamable[cy][cx]) if flamable else False
+        if here > 0:
+            if floor.grid[cy][cx] == TileType.FLOOR_WATER:
+                continue
+            burned = _fire_burn(floor, cx, cy, players) or burned
+            fire = here - 1
+            if fire <= 0 and is_flamable:
+                tile = floor.grid[cy][cx]
                 new_tile = _BURN_RESULT.get(tile, TileType.EMBERS)
                 floor.grid[cy][cx] = new_tile
                 destroyed_tiles.append((cx, cy, new_tile))
-                observe = True
-            continue
+        elif is_flamable and any(cur.get((cx + dx, cy + dy), 0) > 0 for dx, dy in _FIRE_CARDINALS):
+            fire = _FIRE_IGNITE_STRENGTH
+            burned = _fire_burn(floor, cx, cy, players) or burned
+        else:
+            fire = 0
+        if fire > 0:
+            new_volume[(cx, cy)] = fire
 
-        new_cells.add((cx, cy))
-        new_volume[(cx, cy)] = vol
-
-        for p in players.values():
-            if p.floor_id != floor.floor_id or not p.is_alive:
-                continue
-            if p.pos.x == cx and p.pos.y == cy:
-                add_buff(p.buffs, "burning", duration=8.0, level=1, stack_mode="extend")
-                burned = True
-
-        for m in list(floor.mobs.values()):
-            if m.is_alive and m.pos.x == cx and m.pos.y == cy and not is_immune(m, "burning"):
-                add_buff(m.buffs, "burning", duration=8.0, level=1, stack_mode="extend")
-                burned = True
-
-        if (cx, cy) in floor.plants:
-            del floor.plants[(cx, cy)]
-
-        _burn_floor_items(floor, cx, cy)
-
-        for dx, dy in _FIRE_CARDINALS:
-            nx, ny = cx + dx, cy + dy
-            if 0 <= nx < floor.width and 0 <= ny < floor.height:
-                if floor.flags.flamable[ny][nx] if floor.flags else False:
-                    if (nx, ny) not in new_volume and (nx, ny) not in volume:
-                        spread_targets[(nx, ny)] = _FIRE_IGNITE_STRENGTH
-
-    for cell, vol in spread_targets.items():
-        new_cells.add(cell)
-        new_volume[cell] = vol
-
-    if observe:
+    if destroyed_tiles:
         floor.rebuild_flags()
-        patches = [{"x": cx, "y": cy, "tile": tile}
-                   for cx, cy, tile in destroyed_tiles]
-        if patches:
-            events.append({"type": "MAP_PATCH", "data": {"tiles": patches}})
+        patches = [{"x": cx, "y": cy, "tile": tile} for cx, cy, tile in destroyed_tiles]
+        events.append({"type": "MAP_PATCH", "data": {"tiles": patches}})
 
-    if new_cells:
-        blob["cells"] = new_cells
+    if new_volume:
+        blob["cells"] = set(new_volume)
         blob["volume"] = new_volume
-        cell_list = [(c[0], c[1], new_volume.get(c, 1)) for c in new_cells]
+        cell_list = [(c[0], c[1], v) for c, v in new_volume.items()]
         events.append({"type": "BLOB_UPDATE", "data": {"id": blob_id, "type": "fire", "cells": cell_list}})
     else:
         del floor.blob_areas[blob_id]
@@ -358,13 +428,22 @@ def _evolve_gas_blob(
     blob: dict,
     players: Dict[str, Entity],
     events: List[dict],
+    ticks: int = 1,
 ) -> None:
-    tick_counter = blob.get("tick_counter", 0) + 1
-    if tick_counter < GAS_TICK_INTERVAL:
-        blob["tick_counter"] = tick_counter
-        return
-    blob["tick_counter"] = 0
+    turns = _turn_elapsed(blob, ticks, first_immediate=False)
+    for _ in range(turns):
+        if blob_id not in floor.blob_areas:
+            return
+        _gas_turn(floor, blob_id, blob, players, events)
 
+
+def _gas_turn(
+    floor: FloorState,
+    blob_id: Any,
+    blob: dict,
+    players: Dict[str, Entity],
+    events: List[dict],
+) -> None:
     cells: Set[Tuple[int, int]] = blob.get("cells", set())
     volume: Dict[Tuple[int, int], int] = blob.get("volume", {})
     if not cells:
@@ -460,7 +539,7 @@ def _evolve_gas_blob(
         events.append({"type": "BLOB_DEPLETED", "data": {"id": blob_id}})
 
 
-def _evolve_hallowed_ground_blob(floor: FloorState, blob_id: str, blob: dict, players: Dict[str, Entity], events: List[dict]) -> None:
+def _evolve_hallowed_ground_blob(floor: FloorState, blob_id: str, blob: dict, players: Dict[str, Entity], events: List[dict], dt: float = TICK_DURATION) -> None:
     cells_data = blob.get("cells", [])
     if not cells_data:
         if blob_id in floor.blob_areas:
@@ -495,7 +574,7 @@ def _evolve_hallowed_ground_blob(floor: FloorState, blob_id: str, blob: dict, pl
 
     blob["cells"] = valid_cells
     remaining = blob.get("remaining", 20.0)
-    remaining -= TICK_DURATION
+    remaining -= dt
     if remaining <= 0:
         if blob_id in floor.blob_areas:
             del floor.blob_areas[blob_id]
@@ -504,8 +583,8 @@ def _evolve_hallowed_ground_blob(floor: FloorState, blob_id: str, blob: dict, pl
     blob["remaining"] = remaining
 
     # Accumulate time to tick effects once per second (1 turn)
-    tick_accum = blob.get("tick_accum", 0.0) + TICK_DURATION
-    if tick_accum >= 1.0:
+    tick_accum = blob.get("tick_accum", 0.0) + dt
+    if tick_accum >= 1.0 - 1e-9:
         tick_accum -= 1.0
         cell_set = set((c[0], c[1]) for c in valid_cells)
 
@@ -549,7 +628,15 @@ def _evolve_hallowed_ground_blob(floor: FloorState, blob_id: str, blob: dict, pl
         events.append({"type": "BLOB_UPDATE", "data": {"id": blob_id, "type": "hallowed_ground", "cells": cell_list}})
 
 
-def tick_blob_areas(floors: Dict[int, FloorState], players: Dict[str, Entity]) -> List[dict]:
+def tick_blob_areas(
+    floors: Dict[int, FloorState],
+    players: Dict[str, Entity],
+    dt: float = TICK_DURATION,
+    ticks: int = 1,
+) -> List[dict]:
+    """Advance every blob by one call's worth of time: `dt` SPD turns (as
+    seconds) and `ticks` real-time ticks -- 1/40 and 1 in real time, 1.0 and
+    a whole turn's ticks in a turn room."""
     events: List[dict] = []
 
     for floor in floors.values():
@@ -581,7 +668,7 @@ def tick_blob_areas(floors: Dict[int, FloorState], players: Dict[str, Entity]) -
 
                 remaining = blob.get("remaining", 0.0)
                 if remaining > 0:
-                    remaining -= TICK_DURATION
+                    remaining -= dt
                     blob["remaining"] = remaining
                     if remaining <= 0:
                         del floor.blob_areas[blob_id]
@@ -592,7 +679,7 @@ def tick_blob_areas(floors: Dict[int, FloorState], players: Dict[str, Entity]) -
                 # SPD KeyWall: temporary SOLID|LOS_BLOCKING walls capped at 10
                 # turns. Rebuild flags on expiry so the override is cleared.
                 remaining = blob.get("remaining", _KEY_WALL_SECONDS)
-                remaining -= TICK_DURATION
+                remaining -= dt
                 if remaining <= 0:
                     del floor.blob_areas[blob_id]
                     events.append({"type": "BLOB_DEPLETED", "data": {"id": blob_id}})
@@ -602,7 +689,7 @@ def tick_blob_areas(floors: Dict[int, FloorState], players: Dict[str, Entity]) -
 
             elif btype in ("light_wall", "wall_of_light"):
                 remaining = blob.get("remaining", 20.0)
-                remaining -= TICK_DURATION
+                remaining -= dt
                 if remaining <= 0:
                     owner_id = blob.get("owner")
                     if owner_id and owner_id in players:
@@ -614,20 +701,20 @@ def tick_blob_areas(floors: Dict[int, FloorState], players: Dict[str, Entity]) -
                 blob["remaining"] = remaining
 
             elif btype == "hallowed_ground":
-                _evolve_hallowed_ground_blob(floor, blob_id, blob, players, events)
+                _evolve_hallowed_ground_blob(floor, blob_id, blob, players, events, dt)
 
             elif btype == "fire":
-                _evolve_fire_blob(floor, blob_id, blob, players, events)
+                _evolve_fire_blob(floor, blob_id, blob, players, events, ticks)
 
             elif btype == "electricity":
                 _evolve_electricity_blob(floor, blob_id, blob, players, events)
 
             elif btype == "pylon_energy":
-                _evolve_pylon_energy_blob(floor, blob_id, blob, players, events)
+                _evolve_pylon_energy_blob(floor, blob_id, blob, players, events, ticks)
 
             elif btype in ("toxic_gas", "paralytic_gas", "corrosive_gas",
                            "confusion_gas", "shrouding_fog"):
-                _evolve_gas_blob(floor, blob_id, blob, players, events)
+                _evolve_gas_blob(floor, blob_id, blob, players, events, ticks)
 
             elif btype in ("tengu_fire", "tengu_shocker"):
                 volume = blob.get("volume", {})

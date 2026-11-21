@@ -13,60 +13,46 @@ from app.engine.entities.buffs import get_buff, has_buff, remove_buff
 from app.engine.entities.items.consumables import ChargrilledMeat, FrozenCarpaccio, Gold, MysteryMeat
 from app.engine.entities.mobs import MobEntity
 from app.engine.entities.player import Player
-from app.engine.game.constants import OOZE_TICK_INTERVAL, TICK_DURATION
+from app.engine.game.constants import OOZE_TICK_INTERVAL
 from app.engine.game.floor_state import FloorState
 from app.engine.systems.loot import roll_drops
 
 
+def _ooze_damage(depth: int) -> int:
+    if depth > 5:
+        return 1 + depth // 5
+    if depth == 5:
+        return 1
+    return 1 if random.randint(0, 1) == 0 else 0
+
+
 class DamageOverTimeMixin:
     def _process_bleed_ooze(self, floor_id: int, active_players: List[Player]):
+        """SPD `Ooze.act()` once per turn: washed off by water, otherwise
+        `1 + depth/5` damage past depth 5, 1 at depth 5, a 50% chance of 1
+        in the sewers. (Bleeding is its own buff -- see game/bleeding.py.)"""
         floor = self._get_or_create_floor(floor_id)
         for player in active_players:
-            if player.bleed_turns > 0 and player.bleed_amount > 0:
-                dmg = player.bleed_amount
+            if player.ooze_amount <= 0:
+                continue
+            in_water = (floor.grid[player.pos.y][player.pos.x] == TileType.FLOOR_WATER
+                        and not getattr(player, "flying", False))
+            if in_water:
+                player.ooze_amount = 0
+                player.ooze_cooldown = 0
+                continue
+            player.ooze_cooldown -= self.sim_ticks
+            if player.ooze_cooldown > 0:
+                continue
+            player.ooze_cooldown += OOZE_TICK_INTERVAL
+            dmg = _ooze_damage(floor_id)
+            if dmg > 0:
                 player.take_damage(dmg)
-                self.add_event("DAMAGE", {"target": player.id, "amount": dmg, "bleed": True}, floor_id=floor_id)
-                player.bleed_turns -= 1
-                if player.bleed_turns <= 0:
-                    player.bleed_amount = 0
-
-            if player.ooze_amount > 0:
-                if floor.grid[player.pos.y][player.pos.x] == TileType.FLOOR_WATER:
-                    player.ooze_amount = 0
-                    player.ooze_cooldown = 0
-                elif player.ooze_cooldown > 0:
-                    player.ooze_cooldown -= 1
-                else:
-                    player.take_damage(1)
-                    self.add_event("DAMAGE", {"target": player.id, "amount": 1, "ooze": True}, floor_id=floor_id)
-                    player.ooze_amount -= 1
-                    player.ooze_cooldown = OOZE_TICK_INTERVAL
-
-        for floor in [self._get_or_create_floor(floor_id)]:
-            for mob in floor.mobs.values():
-                if mob.is_alive and mob.bleed_turns > 0 and mob.bleed_amount > 0:
-                    dmg = mob.bleed_amount
-                    mob.hp -= dmg
-                    self.add_event("DAMAGE", {"target": mob.id, "amount": dmg, "bleed": True}, floor_id=floor_id)
-                    mob.bleed_turns -= 1
-                    if mob.hp <= 0:
-                        mob.hp = 0
-                        mob.is_alive = False
-                        mob.die(
-                            floor_mobs=floor.mobs,
-                            tile_x=mob.pos.x,
-                            tile_y=mob.pos.y,
-                            players=list(self._players_on_floor(floor_id)),
-                        )
-                        self.add_event("DEATH", {"target": mob.id}, floor_id=floor_id)
-                        self.handle_mob_death(mob, floor, floor_id)
-                        drops = roll_drops(mob, self.drop_counters, mob.pos.x, mob.pos.y, players=list(self._players_on_floor(floor_id)))
-                        for item in drops:
-                            floor.items[item.id] = item
-                        if any(isinstance(d, Gold) for d in drops):
-                            self.add_event("GOLD_DROP", {"x": mob.pos.x, "y": mob.pos.y}, floor_id=floor_id)
-                    if mob.bleed_turns <= 0:
-                        mob.bleed_amount = 0
+                self.add_event("DAMAGE", {"target": player.id, "amount": dmg, "ooze": True}, floor_id=floor_id)
+            player.ooze_amount -= 1
+            if player.ooze_amount <= 0:
+                player.ooze_amount = 0
+                player.ooze_cooldown = 0
 
     def _process_burning(self, floor_id: int, active_players: List[Player]):
         floor = self._get_or_create_floor(floor_id)
@@ -81,8 +67,8 @@ class DamageOverTimeMixin:
                 player.burning_accum = 0.0
                 continue
 
-            player.burning_accum += TICK_DURATION
-            if player.burning_accum < 1.0:
+            player.burning_accum += self.sim_unit
+            if player.burning_accum < 1.0 - 1e-9:
                 continue
             player.burning_accum = 0.0
 
@@ -106,8 +92,8 @@ class DamageOverTimeMixin:
                 mob.burning_accum = 0.0
                 continue
 
-            mob.burning_accum += TICK_DURATION
-            if mob.burning_accum < 1.0:
+            mob.burning_accum += self.sim_unit
+            if mob.burning_accum < 1.0 - 1e-9:
                 continue
             mob.burning_accum = 0.0
 
@@ -146,8 +132,8 @@ class DamageOverTimeMixin:
                 return
             accum_key = f"{buff_type}_accum"
             accum = getattr(entity, accum_key, 0.0)
-            accum += TICK_DURATION
-            if accum < 1.0:
+            accum += self.sim_unit
+            if accum < 1.0 - 1e-9:
                 setattr(entity, accum_key, accum)
                 return
             setattr(entity, accum_key, 0.0)
