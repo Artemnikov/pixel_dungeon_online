@@ -256,6 +256,15 @@ class Mob(Entity):
     # SPD Mob.enemySeen: whether this mob has seen the player on its turn.
     # In turn-based mode, surprise attacks succeed whenever enemy_seen is False.
     enemy_seen: Dict[str, bool] = Field(default_factory=dict, exclude=True)
+    # SPD Actor time for mobs whose act() is ported once per SPD turn (see
+    # game/spd_act_clock.py): turns until the next act, whether the last act
+    # spent its time on an attack/ability (blocking the generic movement AI),
+    # the delay SPD's GameScene.add(mob, delay) imposes before the first act,
+    # and the time the last act spent, for the turn-room scheduler.
+    act_cooldown: float = Field(default=0.0, exclude=True)
+    act_blocking: bool = Field(default=False, exclude=True)
+    spawn_delay: float = Field(default=0.0, exclude=True)
+    act_spent: Optional[float] = Field(default=None, exclude=True)
 
     def die(self, attacker=None, floor_mobs=None, tile_x=0, tile_y=0, players=None):
         pass

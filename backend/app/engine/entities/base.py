@@ -48,6 +48,26 @@ def normal_int_range(lo: int, hi: int) -> int:
     return round((_random.randint(lo, hi) + _random.randint(lo, hi)) / 2)
 
 
+def normal_float(lo: float, hi: float) -> float:
+    """SPD Random.NormalFloat: triangular float in [lo, hi)."""
+    span = hi - lo
+    return lo + (_random.random() * span + _random.random() * span) / 2.0
+
+
+def spd_chances(weights) -> int:
+    """SPD Random.chances: weighted index, negatives count as 0, -1 if all zero."""
+    total = sum(max(0.0, float(w)) for w in weights)
+    if total <= 0:
+        return -1
+    value = _random.random() * total
+    acc = 0.0
+    for i, w in enumerate(weights):
+        acc += max(0.0, float(w))
+        if value < acc:
+            return i
+    return -1
+
+
 def consume_backpack_item(player, item, detach_all: bool = False):
     """Detach a consumed (drunk/read/thrown-and-used-up) item from the
     backpack, converting any quickslot binding to a placeholder so the slot

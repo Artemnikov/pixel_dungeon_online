@@ -182,3 +182,80 @@ TIME_TO_IDLE = 1.0
 # TIME_TO_REST. Used for the turn-timer auto-wait and for the WAIT message.
 TIME_TO_WAIT = TIME_TO_REST
 
+
+# --- SPD act clock (game/spd_act_clock.py) ---------------------------------
+# Most acts a ported mob may chain inside one real-time tick (SPD acts that
+# spend 0, e.g. a Ripper Demon leap landing, continue straight into another).
+SPD_ACT_LOOP_GUARD = 4
+# Lower bound on the time a turn-room mob turn is charged, so a 0-cost act
+# can't spin the dungeon phase forever.
+MIN_MOB_TURN_COST = 0.05
+# Upper bound on mob-act passes inside one dungeon phase round.
+MAX_MOB_PASSES_PER_ROUND = 8
+
+# --- LockedFloor (actors/buffs/LockedFloor.java) ---------------------------
+LOCKED_FLOOR_DURATION = 50.0
+LOCKED_FLOOR_DURATION_STRONG = 20.0
+
+# --- Shared buff durations, SPD turns --------------------------------------
+BLINDNESS_DURATION = 10.0        # Blindness.DURATION
+CRIPPLE_DURATION = 10.0          # Cripple.DURATION
+ROOTS_DURATION = 5.0             # Roots.DURATION
+OOZE_DURATION = 20.0             # Ooze.DURATION
+BURNING_DURATION = 8.0           # Burning.DURATION
+LIGHT_DISTANCE = 6               # Light.DISTANCE
+
+# --- Yog-Dzewa (actors/mobs/YogDzewa.java) ---------------------------------
+YOG_MIN_ABILITY_CD = 10.0
+YOG_MAX_ABILITY_CD = 15.0
+YOG_MIN_SUMMON_CD = 10.0
+YOG_MAX_SUMMON_CD = 15.0
+YOG_BEAM_HP_PER_EXTRA = 400
+YOG_PHASE_HP_STEP = 300
+YOG_FINAL_HP = 100
+YOG_RAY_DMG = (20, 30)
+YOG_RAY_DMG_STRONG = (30, 50)
+YOG_RAY_SCORE_PENALTY = 500
+YOG_PHASE_UP_MIN_CD = 5.0
+YOG_PHASE5_ABILITY_CAP = 2.0
+YOG_PHASE5_SUMMON_CAP = 3.0
+YOG_FINAL_SUMMON_BURST = -15.0
+YOG_CHARGE_SPEND_MIN = 1.0
+YOG_CHARGE_SPEND_MAX = 3.0
+YOG_DAMAGE_CD_DIVISOR = 10.0
+YOG_LOCK_DIVISOR = 2.0
+YOG_LOCK_DIVISOR_STRONG = 3.0
+YOG_MINION_AGGRO_RADIUS = 4
+YOG_VIEW_DISTANCE = 4
+YOG_SCORE_BASE = 5000
+YOG_SCORE_PER_SPAWNER = 1250
+YOG_TARGETED_CELL_COLOR = 0xFF0000
+YOG_TARGETED_CELL_FADE_MS = 2000
+YOG_SUMMON_LOOP_GUARD = 32
+
+# --- Yog fists (actors/mobs/YogFist.java) ----------------------------------
+YOG_FIST_SPAWN_DELAY = 4.0
+YOG_FIST_INVULN_RADIUS = 4
+YOG_FIST_RANGED_CD = (8.0, 12.0)
+YOG_FIST_ZAP_DMG = (10, 20)
+YOG_FIST_LOCK_DIVISOR = 2.0
+YOG_FIST_LOCK_DIVISOR_STRONG = 4.0
+YOG_FIST_FIRE_VOLUME = 4
+YOG_FIST_ROTTING_GAS = 100
+YOG_FIST_ROTTING_BLEED = 0.6
+YOG_FIST_SOILED_ROOTS = 3.0
+YOG_FIST_RUSTED_CRIPPLE = 4.0
+YOG_FIST_BRIGHT_ZAP_BLIND = BLINDNESS_DURATION / 2.0
+YOG_FIST_BRIGHT_TELEPORT_BLIND = BLINDNESS_DURATION * 1.5
+YOG_FIST_BRIGHT_DEATH_BLIND = BLINDNESS_DURATION * 3.0
+YOG_FIST_DARK_LIGHT_WEAKEN = 50.0
+YOG_FIST_TELEPORT_TRIES = 2000
+
+# --- City / Halls minions --------------------------------------------------
+EYE_BEAM_CD = (4, 6)             # Eye.java: beamCooldown = Random.IntRange(4, 6)
+EYE_GAZE_DMG = (30, 50)          # Eye.deathGaze NormalIntRange(30, 50)
+RIPPER_LEAP_CD = (2, 4)          # RipperDemon: leapCooldown = Random.NormalIntRange(2, 4)
+RIPPER_LEAP_MIN_DIST = 3
+RIPPER_PREP_SPEND = (0.5, 1.5)
+RIPPER_LEAP_BLEED = 0.75
+SCORPIO_CRIPPLE_CHANCE = 0.5
