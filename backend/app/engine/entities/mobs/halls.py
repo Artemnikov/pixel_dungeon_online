@@ -308,6 +308,7 @@ class Larva(MobEntity):
     dr_max: int = 4
     exp: int = 5
     max_lvl: int = -2
+    view_distance: int = 6
     properties: List[str] = ["DEMONIC", "BOSS_MINION"]
     loot_table: List[DropEntry] = []
 

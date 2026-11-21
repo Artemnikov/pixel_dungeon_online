@@ -2,12 +2,14 @@
 #
 import math
 import random
-from typing import List
+from typing import ClassVar, List, Optional, Tuple
 
 from pydantic import Field, PrivateAttr
 
 from app.engine.entities.mobs.caves import Ghoul, Monk, Warlock, Golem
+from app.engine.entities.buffs import add_buff
 from app.engine.entities.player import Mob as MobEntity, DropEntry
+from app.engine.game.constants import CRIPPLE_DURATION, SCORPIO_CRIPPLE_CHANCE
 
 # ---------------------------------------------------------------------------
 # City Enemies (depths 16-19) + Boss DwarfKing (floor 20)
@@ -61,21 +63,25 @@ class Eye(MobEntity):
     max_lvl: int = 26
     flying: bool = True
     view_distance: int = 6
-    attack_delay: float = 2.0
+    attack_delay: float = 1.0
+    properties: List[str] = ["DEMONIC"]
+    owns_attacks: ClassVar[bool] = True
     loot_table: List[DropEntry] = [
         DropEntry(item_kind="health_potion", chance=1.0, max_global=0),
     ]
+    # SPD Eye beam state (game/ai_eye.py): beam cooldown in SPD turns, whether
+    # the gaze is charged, and the cell it was aimed at (beamTarget).
     beam_target_id: str = ""
-    beam_cooldown: float = 0.0  # ticks remaining until next beam
+    beam_cooldown: int = 0
     beam_charged: bool = False
-    charge_ticks: int = 0  # ticks remaining in charge-up (0 = ready to fire)
-    charge_target_x: int = 0  # snapshot of target position when charge began
-    charge_target_y: int = 0
+    has_beam_target: bool = False
+    beam_target_x: int = 0
+    beam_target_y: int = 0
 
-    def defense_proc(self, damage: int, attacker, floor_mobs: dict, tile_x: int, tile_y: int, **kwargs) -> int:
+    def take_damage(self, amount: int, is_split_damage: bool = False):
         if self.beam_charged:
-            damage = max(1, damage // 4)
-        return damage
+            amount = amount // 4
+        return super().take_damage(amount, is_split_damage)
 
 
 class Scorpio(MobEntity):
@@ -92,9 +98,16 @@ class Scorpio(MobEntity):
     exp: int = 14
     max_lvl: int = 27
     view_distance: int = 6
+    properties: List[str] = ["DEMONIC"]
+    owns_attacks: ClassVar[bool] = True
     loot_table: List[DropEntry] = [
         DropEntry(item_kind="potion", chance=0.5, max_global=0),
     ]
+
+    def attack_proc(self, target):
+        # Scorpio.attackProc: 50% Buff.prolong(enemy, Cripple, Cripple.DURATION).
+        if random.random() < SCORPIO_CRIPPLE_CHANCE:
+            add_buff(target.buffs, "cripple", duration=CRIPPLE_DURATION, level=1, stack_mode="extend")
 
 
 class AcidicScorpio(Scorpio):
@@ -114,11 +127,16 @@ class RipperDemon(MobEntity):
     dr_max: int = 4
     exp: int = 9
     max_lvl: int = -2
-    flying: bool = True
     view_distance: int = 6
     attack_cooldown: float = 1.5
     attack_delay: float = 0.5
     properties: List[str] = ["DEMONIC", "UNDEAD"]
+    owns_attacks: ClassVar[bool] = True
+    # RipperDemon leap state: the aimed cell, the leap cooldown (acts), and
+    # where the enemy stood last act (used to aim past it).
+    leap_pos: Optional[Tuple[int, int]] = None
+    leap_cooldown: float = 0.0
+    last_enemy_pos: Optional[Tuple[int, int]] = None
 
 
 # ---------------------------------------------------------------------------

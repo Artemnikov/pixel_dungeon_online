@@ -44,6 +44,8 @@ from app.engine.entities.mobs import (
     Goo,
     PurpleShaman,
     RedShaman,
+    RipperDemon,
+    Scorpio,
     Spinner,
     Tengu,
     Warlock,
@@ -311,6 +313,7 @@ _ACTOR_TYPES = (
     (TenguActor, (Tengu,)),
     (DwarfKingActor, (DwarfKing,)),
     (YogDzewaActor, (YogDzewa,)),
+    (SpdActMobActor, (Eye, Scorpio, RipperDemon)),
     (
         RangedMobActor,
         (
@@ -319,7 +322,6 @@ _ACTOR_TYPES = (
             PurpleShaman,
             Warlock,
             DM100,
-            Eye,
             Spinner,
             DM200,
             FireElemental,

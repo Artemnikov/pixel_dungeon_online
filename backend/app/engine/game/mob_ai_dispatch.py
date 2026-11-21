@@ -13,7 +13,7 @@ from app.engine.entities.mobs import (
     CrystalMimic, GhostHeroMob, MirrorImage, Goo, DwarfKing, YogDzewa, DM300,
     DemonSpawner, Pylon, Sentry, BurningFist, SoiledFist, RottingFist, RustedFist,
     BrightFist, DarkFist, Guard, Necromancer, Tengu, Eye, RedShaman,
-    BlueShaman, PurpleShaman, Warlock, Spinner, DM200, DM100,
+    BlueShaman, PurpleShaman, Warlock, Spinner, DM200, DM100, Scorpio, RipperDemon,
 )
 from app.engine.entities.wandmaker_quest import NewbornFireElemental
 from app.engine.game.constants import AUTO_MOVE_INTERVAL, GAME_MODE_TURNBASED, SURPRISE_WINDOW_SECONDS
@@ -35,6 +35,8 @@ from app.engine.game.ai_shaman import _update_shaman
 from app.engine.game.ai_spinner import _update_spinner
 from app.engine.game.ai_warlock import _update_warlock
 from app.engine.game.ai_yog_dzewa import _update_yog_dzewa, _update_yog_fist
+from app.engine.game.ai_ripper import _update_ripper
+from app.engine.game.ai_scorpio import _update_scorpio
 
 
 class MobAIDispatchMixin:
@@ -137,6 +139,14 @@ class MobAIDispatchMixin:
 
         if isinstance(mob, Eye):
             if _update_eye(self, mob, floor, floor_id):
+                return
+
+        if isinstance(mob, Scorpio):
+            if _update_scorpio(self, mob, floor, floor_id):
+                return
+
+        if isinstance(mob, RipperDemon):
+            if _update_ripper(self, mob, floor, floor_id):
                 return
 
         if isinstance(mob, (RedShaman, BlueShaman, PurpleShaman)):
