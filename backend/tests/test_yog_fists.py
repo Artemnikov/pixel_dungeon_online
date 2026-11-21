@@ -188,7 +188,7 @@ def test_bright_fist_teleports_out_of_sight_at_half_hp(room):
     fist_flush(g, f, floor, 25)
     assert f.ai_state == "wandering"
     assert get_buff(hero.buffs, "blindness").remaining == pytest.approx(15.0)
-    assert any(e["type"] == "SCREEN_FLASH" for e in g.flush_events())
+    assert any(e["type"] == "FLASH_SCREEN" for e in g.flush_events())
 
 
 def test_fist_near_yog_is_invulnerable_and_warns_once(room):
@@ -199,7 +199,7 @@ def test_fist_near_yog_is_invulnerable_and_warns_once(room):
     assert f.take_damage(50) == 0
     fist_flush(g, f, floor, 25)
     warns = [e for e in g.flush_events() if e["type"] == "MESSAGE"
-             and e["data"].get("key") == "mob.yog_fist.invuln_warn"]
+             and e["data"].get("key") == "mobText.yog_fist_invuln_warn"]
     assert len(warns) == 1
 
 

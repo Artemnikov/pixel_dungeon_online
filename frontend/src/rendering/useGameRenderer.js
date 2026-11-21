@@ -38,6 +38,7 @@ import { advanceAndDrawAlchemyBubbles } from './draw/alchemyBubbles';
 import { drawBombItem } from './draw/bombOverlay';
 import { advanceAndDrawFlyingItems } from './draw/flyingItem';
 import { advanceAndDrawFloorFade } from './floorTransition';
+import { applyMobMotions, drawTargetedCells, parseArgb, tickCellEmitters } from './yogEffects';
 import { drawCharHealth } from './draw/charHealth';
 import { drawTargetHealthIndicator } from './draw/targetHealthIndicator';
 import { drawTargetedCell } from './draw/targetedCell';
@@ -134,6 +135,7 @@ export default function useGameRenderer({
           if (ft >= 1.0) entity.fadeStartTime = null;
         }
       });
+      applyMobMotions(entitiesRef.current.mobs, now);
     };
 
     const render = () => {
@@ -229,6 +231,8 @@ export default function useGameRenderer({
       advanceWaterFlow({ grid, visionRef, particlesRef });
       if (warnedTilesRef) drawWarnedTiles(ctx, { ref: warnedTilesRef });
       if (rockfallTelegraphRef) drawRockfallTargetedCells(ctx, { rockfallTelegraphRef, particlesRef, visionRef, assetImages });
+      drawTargetedCells(ctx, { assetImages, visionRef });
+      tickCellEmitters(particlesRef);
       drawItems(ctx, { entitiesRef, visionRef, assetImages });
       drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef, dyingMobsRef, shieldFxRef: shieldHaloRef, particlesRef });
       drawCharHealth(ctx, { entitiesRef, visionRef });
@@ -263,12 +267,24 @@ export default function useGameRenderer({
       // Flying item pickup animation: screen-space (flies to inventory button).
       advanceAndDrawFlyingItems(ctx, canvas, { flyingItemsRef, cameraLerpRef, zoomRef, assetImage: assetImages.items });
 
-      // Retribution screen flash: full-screen white overlay that fades in screen space.
+      // Screen flash (SPD PixelScene.Fader): a full-screen colour block whose
+      // alpha falls linearly to 0 over the flash; light mode blends additively.
+      // Without a colour it is the original quick white Retribution flash.
       if (screenFlashRef?.current?.until > performance.now()) {
-        const remaining = screenFlashRef.current.until - performance.now();
-        const alpha = Math.min(remaining / 100, 1) * 0.5;
-        ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+        const flash = screenFlashRef.current;
+        const remaining = flash.until - performance.now();
+        ctx.save();
+        if (flash.color != null) {
+          const { r, g, b, a } = parseArgb(flash.color);
+          const total = flash.durationMs || 1000;
+          ctx.globalCompositeOperation = flash.light ? 'lighter' : 'source-over';
+          ctx.fillStyle = `rgba(${r},${g},${b},${a * Math.max(0, remaining / total)})`;
+        } else {
+          const alpha = Math.min(remaining / 100, 1) * 0.5;
+          ctx.fillStyle = `rgba(255,255,255,${alpha})`;
+        }
         ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.restore();
       }
 
       // Floor transition fade (black-out/hold/black-in overlay).

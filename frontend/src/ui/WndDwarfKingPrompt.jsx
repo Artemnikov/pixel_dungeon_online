@@ -2,8 +2,9 @@ import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import WndOverlay from './WndOverlay';
 import { WindowLevel } from '../game/window/WindowTypes';
+import { DWARF_KING_TEXT } from './bossPromptText';
 
-export function WndDwarfKingJoinPrompt({ initiatorName, onApprove, onDecline }) {
+export function WndDwarfKingJoinPrompt({ initiatorName, onApprove, onDecline, text = DWARF_KING_TEXT }) {
   const { t } = useTranslation();
 
   useEffect(() => {
@@ -16,24 +17,24 @@ export function WndDwarfKingJoinPrompt({ initiatorName, onApprove, onDecline }) 
 
   return (
     <WndOverlay
-      id="wnd-dwarf-king-join"
+      id={`${text.id}-join`}
       level={WindowLevel.DIALOG}
       onClose={onDecline}
     >
       <div className="wnd-chasm-jump" onClick={(e) => e.stopPropagation()}>
-        <div className="wnd-chasm-jump__title">{t('game.dwarfKingPrompt.title', 'King of Dwarves Boss Fight')}</div>
+        <div className="wnd-chasm-jump__title">{t(`${text.prefix}.title`, text.title)}</div>
         <div className="wnd-chasm-jump__desc">
-          {t('game.dwarfKingPrompt.joinDesc', {
+          {t(`${text.prefix}.joinDesc`, {
             name: initiatorName,
-            defaultValue: '{{name}} is challenging the King of Dwarves! Do you want to join the boss fight?',
+            defaultValue: text.joinDesc,
           })}
         </div>
         <div className="wnd-chasm-jump__actions">
           <button className="wnd-chasm-jump__btn wnd-chasm-jump__btn--yes" onClick={onApprove}>
-            {t('game.dwarfKingPrompt.joinYes', 'Join Fight')}
+            {t(`${text.prefix}.joinYes`, 'Join Fight')}
           </button>
           <button className="wnd-chasm-jump__btn wnd-chasm-jump__btn--no" onClick={onDecline}>
-            {t('game.dwarfKingPrompt.joinNo', 'Not Ready')}
+            {t(`${text.prefix}.joinNo`, 'Not Ready')}
           </button>
         </div>
       </div>
@@ -41,21 +42,21 @@ export function WndDwarfKingJoinPrompt({ initiatorName, onApprove, onDecline }) 
   );
 }
 
-export function WndDwarfKingPartyStatus({ status, onStartWithout, onWait }) {
+export function WndDwarfKingPartyStatus({ status, onStartWithout, onWait, text = DWARF_KING_TEXT }) {
   const { t } = useTranslation();
   const { pending_names = [], declined_names = [], can_decide } = status || {};
 
   return (
     <WndOverlay
-      id="wnd-dwarf-king-status"
+      id={`${text.id}-status`}
       level={WindowLevel.DIALOG}
       onClose={onWait}
     >
       <div className="wnd-chasm-jump" onClick={(e) => e.stopPropagation()}>
-        <div className="wnd-chasm-jump__title">{t('game.dwarfKingPrompt.title', 'King of Dwarves Boss Fight')}</div>
+        <div className="wnd-chasm-jump__title">{t(`${text.prefix}.title`, text.title)}</div>
         {declined_names.length > 0 && (
           <div className="wnd-chasm-jump__desc">
-            {t('game.dwarfKingPrompt.declinedDesc', {
+            {t(`${text.prefix}.declinedDesc`, {
               names: declined_names.join(', '),
               defaultValue: '{{names}} is not ready to join the fight.',
             })}
@@ -63,7 +64,7 @@ export function WndDwarfKingPartyStatus({ status, onStartWithout, onWait }) {
         )}
         {pending_names.length > 0 && (
           <div className="wnd-chasm-jump__desc">
-            {t('game.dwarfKingPrompt.waitingDesc', {
+            {t(`${text.prefix}.waitingDesc`, {
               names: pending_names.join(', '),
               defaultValue: 'Waiting for {{names}} to respond...',
             })}
@@ -72,11 +73,11 @@ export function WndDwarfKingPartyStatus({ status, onStartWithout, onWait }) {
         <div className="wnd-chasm-jump__actions">
           {(can_decide || pending_names.length > 0) && (
             <button className="wnd-chasm-jump__btn wnd-chasm-jump__btn--yes" onClick={onStartWithout}>
-              {t('game.dwarfKingPrompt.startWithout', 'Start Without Them')}
+              {t(`${text.prefix}.startWithout`, 'Start Without Them')}
             </button>
           )}
           <button className="wnd-chasm-jump__btn wnd-chasm-jump__btn--no" onClick={onWait}>
-            {t('game.dwarfKingPrompt.wait', 'Wait')}
+            {t(`${text.prefix}.wait`, 'Wait')}
           </button>
         </div>
       </div>

@@ -6,6 +6,7 @@ import { addFadingTraps, setBombItem, clearBombItem } from '../../rendering/teng
 import { spawnSmoke } from '../../rendering/draw/smokeParticle';
 import { TEXT_ICON } from '../../rendering/draw/floatingTextIcons';
 import { addGameLog } from '../../ui/gameLogHelpers';
+import i18n from '../../i18n';
 import type { GameEvent } from '../../types/contract';
 import type { GameEventContext, IGameEventHandler } from './IGameEventHandler';
 
@@ -433,7 +434,8 @@ export function createBossEventHandlers(): IGameEventHandler[] {
         if (ctx.world.isVisible(event.data.x, event.data.y)) {
           const cx = event.data.x * TILE_SIZE + TILE_SIZE / 2;
           const cy = event.data.y * TILE_SIZE - 2;
-          ctx.effects.spawnFloatingText(cx, cy, event.data.text, '#ffff66');
+          const text = event.data.key ? i18n.t(event.data.key, { defaultValue: event.data.text }) : event.data.text;
+          ctx.effects.spawnFloatingText(cx, cy, text, '#ffff66');
         }
         return true;
       },

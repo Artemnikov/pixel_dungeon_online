@@ -77,6 +77,16 @@ export default function useMusicByDepth({ enabled, menu, depth, bossFightActive,
       // SPD SewerBossLevel.playLevelMusic(): ambient track silenced while
       // the boss is alive but hasn't been engaged yet.
       musicId = 'silence';
+    } else if (depth === 25) {
+      // HallsBossLevel: unseal() fades into THEME_FINALE; with the Amulet the
+      // level is silent (playLevelMusic -> Music.end()).
+      if (amuletObtained) {
+        musicId = 'silence';
+      } else {
+        musicId = 'theme_finale';
+        track = 'theme_finale';
+        loop = true;
+      }
     } else {
       musicId = `play:${depth}`;
       genPlaylist = true;

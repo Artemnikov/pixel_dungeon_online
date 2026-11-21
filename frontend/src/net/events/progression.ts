@@ -285,7 +285,8 @@ export function createProgressionEventHandlers(): IGameEventHandler[] {
     {
       eventType: 'MESSAGE',
       handle(event: Extract<GameEvent, { type: 'MESSAGE' }>) {
-        addGameLog(event.data.text, event.data.color || 'default');
+        const text = event.data.key ? i18n.t(event.data.key, { defaultValue: event.data.text }) : event.data.text;
+        addGameLog(text, event.data.color || 'default');
         return true;
       },
     },

@@ -174,6 +174,8 @@ export interface AttackEvent {
     crit: boolean;
     grim_proc: boolean;
     next_attack_in_ms?: number;
+    /** A Yog fist ranged zap (not a melee swing): no attack hop. */
+    fist_zap?: boolean;
   };
 }
 
@@ -390,7 +392,8 @@ export interface EnergyBurstEvent {
 
 export interface TeleportEvent {
   type: 'TELEPORT';
-  data: { player: string; from_x: number; from_y: number; x: number; y: number };
+  /** `player` for heroes; `mob` for a teleporting mob (ScrollOfTeleportation.appear). */
+  data: { player?: string; mob?: string; from_x: number; from_y: number; x: number; y: number };
 }
 
 export interface ChainsPullEvent {
@@ -410,7 +413,8 @@ export interface MirrorImageEvent {
 
 export interface MessageEvent {
   type: 'MESSAGE';
-  data: { text: string; color?: string };
+  /** `key` is an i18n key; `text` is the English fallback. */
+  data: { text: string; color?: string; key?: string };
 }
 
 /** A player chat message. `channel` is 'global' (all floors) or 'direct'
@@ -909,7 +913,7 @@ export interface YogFightStartedEvent {
 /** Yog-Dzewa entered a new phase. */
 export interface YogPhaseChangeEvent {
   type: 'YOG_PHASE_CHANGE';
-  data: { mob: string; phase: number };
+  data: { mob: string; phase: number; view_distance?: number | null };
 }
 
 /** Yog-Dzewa entered the final phase (phase 5). */
@@ -993,7 +997,7 @@ export interface TenguShockerEvent {
 /** A boss shouts a taunt; rendered as floating text above its tile. */
 export interface BossYellEvent {
   type: 'BOSS_YELL';
-  data: { mob: string; text: string; x: number; y: number };
+  data: { mob: string; text: string; x: number; y: number; key?: string };
 }
 
 /** Tengu trap burst — hidden dart traps appear in the arena with a fade overlay. */
@@ -1264,12 +1268,120 @@ export interface FlareEvent {
 
 export interface FlashScreenEvent {
   type: 'FLASH_SCREEN';
-  data: { color?: string; duration?: number };
+  /** `color` is ARGB hex ("0x80FFFFFF"); `light` = additive blend (SPD Fader light mode). */
+  data: { color?: string; duration?: number; light?: boolean };
 }
 
 export interface HolyIntuitionEvent {
   type: 'HOLY_INTUITION';
   data: { player: string; revealed?: boolean };
+}
+
+/** SPD HallsBossLevel.seal(): the entrance closes behind the party. */
+export interface YogArenaSealedEvent {
+  type: 'YOG_ARENA_SEALED';
+  data: { x: number; y: number };
+}
+
+/** SPD HallsBossLevel.unseal(): stairs reopen and the centre piece changes. */
+export interface YogArenaUnsealedEvent {
+  type: 'YOG_ARENA_UNSEALED';
+  data: { custom_tiles: unknown[]; custom_walls: unknown[] };
+}
+
+/** Level.viewDistance changed (Yog-Dzewa's darkening arena). */
+export interface YogViewDistanceEvent {
+  type: 'YOG_VIEW_DISTANCE';
+  data: { view_distance: number };
+}
+
+/** CellEmitter.burst(ShadowParticle.UP, n) at each [x, y, n]. */
+export interface YogShadowBurstEvent {
+  type: 'YOG_SHADOW_BURST';
+  data: { cells: [number, number, number][] };
+}
+
+/** YogDzewa.addFist: a fist is pushed out of the altar. */
+export interface YogFistSpawnEvent {
+  type: 'YOG_FIST_SPAWN';
+  data: { mob: string; fist: string; cls: string; x: number; y: number; from_x: number; from_y: number };
+}
+
+/** Red TargetedCell markers for Yog-Dzewa's next death ray. */
+export interface YogTargetedCellsEvent {
+  type: 'YOG_TARGETED_CELLS';
+  data: { mob: string; cells: [number, number][]; color: number; duration_ms: number };
+}
+
+/** Yog-Dzewa fires its death rays (one Beam.DeathRay per end cell). */
+export interface YogDeathRayEvent {
+  type: 'YOG_DEATH_RAY';
+  data: { mob: string; sx: number; sy: number; ends: [number, number][]; hits: string[] };
+}
+
+/** A summoned mob is pushed out from `from` (SPD Pushing). */
+export interface MobSpawnEvent {
+  type: 'MOB_SPAWN';
+  data: { mob: string; cls: string; x: number; y: number; from_x?: number | null; from_y?: number | null };
+}
+
+/** A Yog fist's ranged attack (FistSprite.zap bolt, or Bright's light ray). */
+export interface FistZapEvent {
+  type: 'FIST_ZAP';
+  data: { mob: string; kind: string; bolt: string; x: number; y: number; target_x: number; target_y: number };
+}
+
+/** CharSprite.showStatus text over a character (`key` is an i18n key). */
+export interface StatusTextEvent {
+  type: 'STATUS_TEXT';
+  data: { target: string; key: string; kind: string; x: number; y: number; value?: string | null };
+}
+
+/** Terrain particle bursts: steam (evaporated water) or leaves (grass growth). */
+export interface TerrainBurstEvent {
+  type: 'TERRAIN_BURST';
+  data: { cells: [number, number, number][]; kind: 'steam' | 'leaf' | string };
+}
+
+/** Ripper Demon marks its leap target (TargetedCell + leapPrep). */
+export interface RipperLeapPrepEvent {
+  type: 'RIPPER_LEAP_PREP';
+  data: { mob: string; x: number; y: number; color: number; duration_ms: number };
+}
+
+/** Ripper Demon leaps (sprite.jump), bouncing off a victim if it hits one. */
+export interface RipperLeapEvent {
+  type: 'RIPPER_LEAP';
+  data: {
+    mob: string; from_x: number; from_y: number; x: number; y: number;
+    end_x: number; end_y: number; victim?: string | null; hit?: boolean | null;
+  };
+}
+
+export interface EyeChargeEndEvent {
+  type: 'EYE_CHARGE_END';
+  data: { mob: string };
+}
+
+export interface YogJoinPromptEvent {
+  type: 'YOG_JOIN_PROMPT';
+  data: { initiator_id: string; initiator_name: string };
+}
+
+export interface YogPartyStatusEvent {
+  type: 'YOG_PARTY_STATUS';
+  data: {
+    initiator_id: string;
+    pending_names: string[];
+    declined_names: string[];
+    approved_names: string[];
+    can_decide: boolean;
+  };
+}
+
+export interface YogPromptCloseEvent {
+  type: 'YOG_PROMPT_CLOSE';
+  data: Record<string, never>;
 }
 
 export type GameEvent =
@@ -1361,6 +1473,23 @@ export type GameEvent =
   | DwarfKingSummonBurstEvent
   | DwarfKingShieldDamageEvent
   | YogFightStartedEvent
+  | YogArenaSealedEvent
+  | YogArenaUnsealedEvent
+  | YogViewDistanceEvent
+  | YogShadowBurstEvent
+  | YogFistSpawnEvent
+  | YogTargetedCellsEvent
+  | YogDeathRayEvent
+  | MobSpawnEvent
+  | FistZapEvent
+  | StatusTextEvent
+  | TerrainBurstEvent
+  | RipperLeapPrepEvent
+  | RipperLeapEvent
+  | EyeChargeEndEvent
+  | YogJoinPromptEvent
+  | YogPartyStatusEvent
+  | YogPromptCloseEvent
   | YogPhaseChangeEvent
   | YogFinalPhaseEvent
   | TenguFightStartedEvent
@@ -1635,6 +1764,8 @@ export type ClientMessage =
   | { type: 'TENGU_START_DECISION'; action: 'start_without' | 'wait' }
   | { type: 'DWARF_KING_JOIN_RESPONSE'; approve: boolean }
   | { type: 'DWARF_KING_START_DECISION'; action: 'start_without' | 'wait' }
+  | { type: 'YOG_JOIN_RESPONSE'; approve: boolean }
+  | { type: 'YOG_START_DECISION'; action: 'start_without' | 'wait' }
   | { type: 'ALCHEMY_PREVIEW'; ingredient_ids: string[] }
   | { type: 'ALCHEMY_BREW'; ingredient_ids: string[]; recipe_index: number }
   | { type: 'ALCHEMY_ENERGIZE'; item_id: string; all_items: boolean }

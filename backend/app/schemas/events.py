@@ -816,12 +816,6 @@ class FistZapData(_EventData):
     target_y: int
 
 
-class ScreenFlashData(_EventData):
-    color: int
-    alpha: float
-    light: bool
-
-
 class StatusTextData(_EventData):
     target: str
     key: str
@@ -927,7 +921,6 @@ EVENT_MODELS = {
     "YOG_DEATH_RAY": YogDeathRayData,
     "MOB_SPAWN": MobSpawnData,
     "FIST_ZAP": FistZapData,
-    "SCREEN_FLASH": ScreenFlashData,
     "STATUS_TEXT": StatusTextData,
     "TERRAIN_BURST": TerrainBurstData,
     "RIPPER_LEAP_PREP": RipperLeapPrepData,

@@ -1,4 +1,7 @@
 import { TILE_SIZE, ENTITY_LIFT, DEATH_ANIMATION_DURATION, DEATH_FADE_START_MS } from '../../constants';
+import { pourFistEmitter, forgetFistEmitter } from '../yogEffects';
+import { YOG_DIE, FIST_DIE, fistAttackLift } from '../mobs';
+import { spawnBlood } from './particles';
 import {
   FRAME_W,
   FRAME_H,
@@ -564,7 +567,11 @@ export function drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef,
       drawMobSprite(ctx, mob, mobSprite, sx, LARVA_FW, LARVA_FH, flash, LARVA_DEST);
     } else if (isFist) {
       // yog_fists.png stacks the 6 fist variants in rows of FIST_FH.
+      const baseLift = mob.jumpLift || 0;
+      mob.jumpLift = baseLift + fistAttackLift(mob, mobAnimRef.current, now);
       drawMobSprite(ctx, mob, mobSprite, sx, FIST_FW, FIST_FH, flash, FIST_DEST, 1, fistRow * FIST_FH);
+      mob.jumpLift = baseLift;
+      pourFistEmitter(mob, particlesRef, now);
     } else if (isEye) {
       drawMobSprite(ctx, mob, mobSprite, sx, EYE_FW, EYE_FH, flash, EYE_DEST);
     } else if (isRipper || isRipperDemon) {
@@ -736,6 +743,20 @@ export function drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef,
     const isWarlockDeath = mob.name === 'Warlock' || mob.name === 'DK Warlock';
     const isRipperDeath = mob.name === 'Yog Ripper' || mob.name === 'Ripper Demon';
     const isLarvaDeath = mob.name === 'Larva';
+    const isYogDeath = mob.name === 'Yog-Dzewa';
+    const fistDeathRow = { 'Burning Fist': 0, 'Soiled Fist': 1, 'Rotting Fist': 2, 'Rusted Fist': 3, 'Bright Fist': 4, 'Dark Fist': 5 }[mob.name];
+    const isYogScorpioDeath = mob.name === 'Yog Scorpio';
+    if (!mob._deathSplashDone && particlesRef && (isYogDeath || isLarvaDeath || fistDeathRow !== undefined)) {
+      // YogSprite.die / LarvaSprite.die: Splash.at(center, blood, 12 / 10);
+      // fists bleed their FistSprite.blood() colour.
+      mob._deathSplashDone = true;
+      const cx = mob.renderPos.x * TILE_SIZE + TILE_SIZE / 2;
+      const cy = mob.renderPos.y * TILE_SIZE + TILE_SIZE / 2;
+      const color = isYogDeath ? '#bb0000' : isLarvaDeath ? '#bbcc66'
+        : ['#ffdd34', '#7f5424', '#b8bba1', '#7f7f7f', '#ffffff', '#4a2f53'][fistDeathRow];
+      spawnBlood(particlesRef, cx, cy, Math.random() * Math.PI * 2, isYogDeath ? 12 : 10, color);
+    }
+    if (fistDeathRow !== undefined) forgetFistEmitter(id);
     // Unified death window: die frames play at the sprite's native rate, the last
     // frame holds, then alpha fades to 0 over the tail (SPD AlphaTweener).
     const deathDuration = DEATH_ANIMATION_DURATION;
@@ -743,7 +764,15 @@ export function drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef,
     if (!visionRef.current.visible.has(`${Math.round(mob.renderPos.x)},${Math.round(mob.renderPos.y)}`)) return;
     ctx.save();
     ctx.globalAlpha = elapsed <= DEATH_FADE_START_MS ? 1 : Math.max(0, 1 - (elapsed - DEATH_FADE_START_MS) / (DEATH_ANIMATION_DURATION - DEATH_FADE_START_MS));
-    if (isScorpioDeath) {
+    if (isYogDeath) {
+      // YogSprite.die: [0,7,8,9] @ 10fps.
+      const fi = Math.min(Math.floor(elapsed / 100), 3);
+      drawMobSprite(ctx, mob, assetImages.yog, YOG_DIE[fi] * YOG_FW, YOG_FW, YOG_FH, false, YOG_DEST);
+    } else if (fistDeathRow !== undefined) {
+      // FistSprite.die: [c, c+2, c+3, c+4] @ 10fps.
+      const fi = Math.min(Math.floor(elapsed / 100), 3);
+      drawMobSprite(ctx, mob, assetImages.fists, FIST_DIE[fi] * FIST_FW, FIST_FW, FIST_FH, false, FIST_DEST, 1, fistDeathRow * FIST_FH);
+    } else if (isScorpioDeath || isYogScorpioDeath) {
       const fi = Math.min(Math.floor(elapsed / 83), 4);
       drawMobSprite(ctx, mob, assetImages.scorpio, [0, 7, 8, 9, 10][fi] * SCORPIO_FW, SCORPIO_FW, SCORPIO_FW);
     } else if (isGooDeath) {

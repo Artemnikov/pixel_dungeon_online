@@ -115,8 +115,8 @@ def _prepare_leap(game, mob, enemy, floor, floor_id: int) -> bool:
         "mob": mob.id, "x": target[0], "y": target[1],
         "color": YOG_TARGETED_CELL_COLOR, "duration_ms": YOG_TARGETED_CELL_FADE_MS,
     }, floor_id=floor_id)
-    game.add_event("MESSAGE", {"key": "mob.ripper_demon.leap",
-                               "text": "The ripper demon is preparing to leap!"}, floor_id=floor_id)
+    game.add_event("MESSAGE", {"key": "mobText.ripper_leap",
+                               "text": "The ripper demon prepares to leap!"}, floor_id=floor_id)
     from app.engine.game.ai_spd_common import interrupt_players_near
     interrupt_players_near(game, floor_id, [(mob.pos.x, mob.pos.y), target])
     return True

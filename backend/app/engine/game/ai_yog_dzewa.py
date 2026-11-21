@@ -173,16 +173,16 @@ def yog_flush(game, yog: YogDzewa, floor: FloorState, floor_id: int) -> None:
         yog.locked_floor_credit = 0.0
     while yog.status_popups:
         kind = yog.status_popups.pop(0)
-        game.add_event("STATUS_TEXT", {"target": yog.id, "key": f"status.{kind}",
+        game.add_event("STATUS_TEXT", {"target": yog.id, "key": f"statusText.{kind}",
                                        "kind": "positive", "x": yog.pos.x, "y": yog.pos.y},
                        floor_id=floor_id)
 
 
 def _phase_up(game, yog: YogDzewa, floor: FloorState, floor_id: int) -> None:
     update_visibility(game, yog, floor, floor_id)
-    game.add_event("MESSAGE", {"key": "mob.yog_dzewa.darkness",
+    game.add_event("MESSAGE", {"key": "mobText.yog_darkness",
                                "text": "The darkness pulls in closer..."}, floor_id=floor_id)
-    game.add_event("STATUS_TEXT", {"target": yog.id, "key": "status.invulnerable",
+    game.add_event("STATUS_TEXT", {"target": yog.id, "key": "statusText.invulnerable",
                                    "kind": "positive", "x": yog.pos.x, "y": yog.pos.y}, floor_id=floor_id)
     game.add_event("YOG_PHASE_CHANGE", {"mob": yog.id, "phase": yog.phase,
                                         "view_distance": floor.view_distance}, floor_id=floor_id)
@@ -256,7 +256,7 @@ def process_fist_death(game, fist, floor: FloorState, floor_id: int) -> None:
     yog.fists_alive = sum(1 for m in floor.mobs.values()
                           if m.id in yog.fist_ids and m.is_alive and m.id != fist.id)
     if yog.phase == 4 and yog.fists_alive == 0:
-        _yell(game, yog, "mob.yog_dzewa.hope", "YOUR. HOPE. IS. AN. ILLUSION!", floor_id)
+        _yell(game, yog, "mobText.yog_hope", "YOUR. HOPE. IS. AN. ILLUSION!", floor_id)
         yog.summon_cooldown = YOG_FINAL_SUMMON_BURST
         yog.phase = 5
         game.add_event("YOG_FINAL_PHASE", {"mob": yog.id}, floor_id=floor_id)
@@ -270,7 +270,7 @@ def find_yog(floor: FloorState) -> Optional[YogDzewa]:
 
 def _notice(game, yog: YogDzewa, floor: FloorState, floor_id: int) -> None:
     """`YogDzewa.notice()` the first time a hero sees Yog."""
-    _yell(game, yog, "mob.yog_dzewa.notice", "I. SEE. YOU.", floor_id)
+    _yell(game, yog, "mobText.yog_notice", "I. SEE. YOU.", floor_id)
     game.add_event("YOG_FIGHT_STARTED", {"mob": yog.id}, floor_id=floor_id)
     if yog.phase == 0:
         yog.phase = 1

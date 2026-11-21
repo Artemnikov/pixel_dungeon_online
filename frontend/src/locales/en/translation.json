@@ -251,6 +251,16 @@
       "startWithout": "Start Without Them",
       "wait": "Wait"
     },
+    "yogPrompt": {
+      "title": "Yog-Dzewa Boss Fight",
+      "joinDesc": "{{name}} is about to face Yog-Dzewa! The way back closes once the fight begins. Do you want to join?",
+      "joinYes": "Join Fight",
+      "joinNo": "Not Ready",
+      "declinedDesc": "{{names}} is not ready and will be sent back upstairs if you start without them.",
+      "waitingDesc": "Waiting for {{names}} to respond...",
+      "startWithout": "Start Without Them",
+      "wait": "Wait"
+    },
     "newGame": "New Game",
     "menuBtn": "Menu",
     "resurrect": {
@@ -1297,5 +1307,20 @@
     "you": "You",
     "hero": "Hero",
     "dungeon": "Dungeon"
+  },
+  "mobText": {
+    "yog_notice": "I. SEE. YOU.",
+    "yog_darkness": "The darkness pulls in closer...",
+    "yog_hope": "YOUR. HOPE. IS. AN. ILLUSION!",
+    "yog_defeated": "...",
+    "yog_fist_invuln_warn": "The fist is invulnerable while near to the eye!",
+    "bright_fist_teleport": "The fist teleports away in a flash of light that seriously blinds you!",
+    "dark_fist_teleport": "The fist teleports away in a blast of darkness that extinguishes your light source!",
+    "ripper_leap": "The ripper demon prepares to leap!"
+  },
+  "statusText": {
+    "invulnerable": "invulnerable",
+    "bleeding": "Bleeding {{value}}",
+    "deferred": "deferred {{value}}"
   }
 }

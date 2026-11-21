@@ -240,7 +240,7 @@ def on_yog_death(game, yog: YogDzewa, floor: FloorState, floor_id: int) -> None:
         game.add_event("YOG_DZEWA_BADGE_QUALIFIED", {}, floor_id=floor_id)
     game.boss_scores[4] += YOG_SCORE_BASE + YOG_SCORE_PER_SPAWNER * spawners
     unseal(game, floor, floor_id)
-    game.add_event("BOSS_YELL", {"mob": yog.id, "key": "mob.yog_dzewa.defeated", "text": "...",
+    game.add_event("BOSS_YELL", {"mob": yog.id, "key": "mobText.yog_defeated", "text": "...",
                                  "x": yog.pos.x, "y": yog.pos.y}, floor_id=floor_id)
 
 

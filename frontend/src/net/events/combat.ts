@@ -51,6 +51,9 @@ import type {
 import type { AnimState, MoveResult, RenderPlayer, Ref } from '../types';
 import type { GameEventContext, IGameEventHandler } from './IGameEventHandler';
 import { defaultMoveResultDispatcher } from '../movement/MoveResultDispatcher';
+import { FIST_ATTACK_MS, RIPPER_ATTACK_MS } from '../../rendering/mobs';
+
+const FIST_NAMES = new Set(['Burning Fist', 'Soiled Fist', 'Rotting Fist', 'Rusted Fist', 'Bright Fist', 'Dark Fist']);
 
 const BLOOD_COLORS: Record<string, string> = {
   Goo: '#000000',
@@ -384,7 +387,15 @@ export function createCombatEventHandlers(): IGameEventHandler[] {
           if (event.data.crit || event.data.grim_proc) ctx.audio.play('HIT_STRONG');
         }
 
-        if (srcMob) {
+        if (srcMob && FIST_NAMES.has(srcMob.name) && !event.data.fist_zap) {
+          // FistSprite.attack: hop in place, then PixelScene.shake(4, 0.2f).
+          ctx.effects.setMobAttack(src, FIST_ATTACK_MS);
+          setTimeout(() => ctx.effects.shakeScreen(4, 200), FIST_ATTACK_MS);
+        } else if (srcMob && (srcMob.name === 'Ripper Demon' || srcMob.name === 'Yog Ripper')) {
+          // RipperSprite.attack alternates the attack and stab animations.
+          ctx.effects.setMobAttack(src, RIPPER_ATTACK_MS);
+          ctx.effects.toggleMobStab(src);
+        } else if (srcMob) {
           const attackDuration = srcMob.name === 'Goo' ? 300 : srcMob.name === 'Scorpio' || srcMob.name === 'Yog Scorpio' || srcMob.name === 'Larva' ? 200 : srcMob.name === 'Rat' ? 333 : srcMob.name === 'Snake' ? 333 : 250;
           ctx.effects.setMobAttack(src, attackDuration);
         } else if (srcPlayer) {

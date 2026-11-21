@@ -22,6 +22,10 @@ export interface GameCallbacksConfig {
   onDwarfKingJoinPrompt?: (data: { initiator_id: string; initiator_name: string }) => void;
   onDwarfKingPartyStatus?: (data: { initiator_id: string; pending_names: string[]; declined_names: string[]; approved_names: string[]; can_decide: boolean }) => void;
   onDwarfKingPromptClose?: () => void;
+  onYogJoinPrompt?: (data: { initiator_id: string; initiator_name: string }) => void;
+  onYogPartyStatus?: (data: { initiator_id: string; pending_names: string[]; declined_names: string[]; approved_names: string[]; can_decide: boolean }) => void;
+  onYogPromptClose?: () => void;
+  onYogPhaseChange?: (data: { mob: string; phase: number }) => void;
   onChasmPrompt?: (data: { x: number; y: number }) => void;
   onDM300FightStarted?: (data: { mob: string }) => void;
   onDwarfKingFightStarted?: (data: { mob: string }) => void;
@@ -129,6 +133,22 @@ export class GameCallbacks {
 
   public dwarfKingPromptClose(): void {
     this.config.onDwarfKingPromptClose?.();
+  }
+
+  public yogJoinPrompt(data: { initiator_id: string; initiator_name: string }): void {
+    this.config.onYogJoinPrompt?.(data);
+  }
+
+  public yogPartyStatus(data: { initiator_id: string; pending_names: string[]; declined_names: string[]; approved_names: string[]; can_decide: boolean }): void {
+    this.config.onYogPartyStatus?.(data);
+  }
+
+  public yogPromptClose(): void {
+    this.config.onYogPromptClose?.();
+  }
+
+  public yogPhaseChange(data: { mob: string; phase: number }): void {
+    this.config.onYogPhaseChange?.(data);
   }
 
   public dm300FightStarted(data: { mob: string }): void {

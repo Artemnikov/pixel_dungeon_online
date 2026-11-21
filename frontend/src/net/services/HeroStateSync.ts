@@ -120,7 +120,9 @@ export class HeroStateSync {
 
   public syncBossInfo(mobs: Mob[]): void {
     if (!this.setters.setBossInfo) return;
-    const boss = (mobs || []).find(m => m.type === 'boss' && m.is_alive !== false);
+    // Yog's fists are type "boss" too; SPD's boss bar stays on Yog-Dzewa.
+    const bosses = (mobs || []).filter(m => m.type === 'boss' && m.is_alive !== false);
+    const boss = bosses.find(m => !(m as { yog_id?: string }).yog_id) ?? bosses[0];
     this.setters.setBossInfo(boss ? {
       name: boss.name,
       hp: boss.hp,
@@ -132,9 +134,12 @@ export class HeroStateSync {
     } : null);
   }
 
-  public syncBossLurking(mobs: Mob[]): void {
+  /** `hallsArenaPending`: the Halls boss arena is not yet won and Yog-Dzewa
+   *  has not noticed anyone (HallsBossLevel.playLevelMusic: silent until then). */
+  public syncBossLurking(mobs: Mob[], hallsArenaPending = false): void {
     if (!this.setters.setBossLurking) return;
-    const isBossLurking = (mobs || []).some(m => m.is_alive !== false && (m as { fight_started?: boolean }).fight_started === false);
+    const isBossLurking = hallsArenaPending
+      || (mobs || []).some(m => m.is_alive !== false && (m as { fight_started?: boolean }).fight_started === false);
     this.setters.setBossLurking(isBossLurking);
   }
 }

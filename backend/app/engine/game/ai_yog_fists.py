@@ -82,12 +82,12 @@ def fist_flush(game, fist, floor: FloorState, floor_id: int) -> None:
     while fist.status_popups:
         kind = fist.status_popups.pop(0)
         if kind == "invuln_warn":
-            game.add_event("MESSAGE", {"key": "mob.yog_fist.invuln_warn",
-                                       "text": "The fist is invulnerable while near to Yog-Dzewa!"},
+            game.add_event("MESSAGE", {"key": "mobText.yog_fist_invuln_warn",
+                                       "text": "The fist is invulnerable while near to the eye!"},
                            floor_id=floor_id)
             continue
         key, _, value = kind.partition(":")
-        game.add_event("STATUS_TEXT", {"target": fist.id, "key": f"status.{key}", "value": value or None,
+        game.add_event("STATUS_TEXT", {"target": fist.id, "key": f"statusText.{key}", "value": value or None,
                                        "kind": "positive" if key == "invulnerable" else "warning",
                                        "x": fist.pos.x, "y": fist.pos.y}, floor_id=floor_id)
     if isinstance(fist, (BrightFist, DarkFist)) and getattr(fist, "pending_teleport", False):
@@ -173,7 +173,8 @@ def _miss(game, fist, enemy, floor_id) -> None:
 def _hurt(game, fist, enemy, dmg, floor_id) -> None:
     taken = enemy.take_damage(dmg)
     game.add_event("ATTACK", {"source": fist.id, "target": enemy.id, "damage": taken,
-                              "surprise": False, "crit": False, "grim_proc": False}, floor_id=floor_id)
+                              "surprise": False, "crit": False, "grim_proc": False,
+                              "fist_zap": True}, floor_id=floor_id)
     if taken:
         game.add_event("DAMAGE", {"target": enemy.id, "amount": taken, "x": enemy.pos.x,
                                   "y": enemy.pos.y}, floor_id=floor_id)
@@ -340,10 +341,11 @@ def _has_path_to(game, floor, start, goal) -> bool:
 
 
 def _flash(game, fist, floor_id) -> None:
+    """`GameScene.flash(0x80FFFFFF)` / `GameScene.flash(0, false)`: a 1 s Fader."""
     if isinstance(fist, BrightFist):
-        game.add_event("SCREEN_FLASH", {"color": 0xFFFFFF, "alpha": 0.5, "light": True}, floor_id=floor_id)
+        game.add_event("FLASH_SCREEN", {"color": "0x80FFFFFF", "duration": 1000, "light": True}, floor_id=floor_id)
     else:
-        game.add_event("SCREEN_FLASH", {"color": 0x000000, "alpha": 1.0, "light": False}, floor_id=floor_id)
+        game.add_event("FLASH_SCREEN", {"color": "0xFF000000", "duration": 1000, "light": False}, floor_id=floor_id)
 
 
 def _half_hp_teleport(game, fist, floor, floor_id) -> None:
@@ -374,8 +376,10 @@ def _half_hp_teleport(game, fist, floor, floor_id) -> None:
                                     "x": dest[0], "y": dest[1]}, floor_id=floor_id)
     fist.ai_state = "wandering"
     _flash(game, fist, floor_id)
-    game.add_event("MESSAGE", {"key": f"mob.{fist.fist_kind}_fist.teleport",
-                               "text": "The fist teleports away!"}, floor_id=floor_id)
+    text = ("The fist teleports away in a flash of light that seriously blinds you!"
+            if isinstance(fist, BrightFist) else
+            "The fist teleports away in a blast of darkness that extinguishes your light source!")
+    game.add_event("MESSAGE", {"key": f"mobText.{fist.fist_kind}_fist_teleport", "text": text}, floor_id=floor_id)
 
 
 def on_fist_death(game, fist, floor, floor_id) -> None:

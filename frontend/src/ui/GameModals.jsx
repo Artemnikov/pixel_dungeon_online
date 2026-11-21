@@ -14,6 +14,7 @@ import WndWandmaker from './WndWandmaker';
 import WndChasmJump from './WndChasmJump';
 import { WndTenguJoinPrompt, WndTenguPartyStatus } from './WndTenguPrompt';
 import { WndDwarfKingJoinPrompt, WndDwarfKingPartyStatus } from './WndDwarfKingPrompt';
+import { YOG_TEXT } from './bossPromptText';
 import WndQuickBag from './WndQuickBag';
 import WndOverlay from './WndOverlay';
 import { WindowLevel } from '../game/window/WindowTypes';
@@ -56,6 +57,8 @@ function GameModals({
     tenguPrompt, setTenguPrompt,
     tenguPartyStatus, setTenguPartyStatus,
     dwarfKingPrompt, setDwarfKingPrompt,
+    yogPrompt, setYogPrompt,
+    yogPartyStatus, setYogPartyStatus,
     dwarfKingPartyStatus, setDwarfKingPartyStatus,
     showQuickBag, setShowQuickBag,
     quickslotPicker, setQuickslotPicker,
@@ -233,6 +236,36 @@ function GameModals({
           onWait={() => {
             send({ type: 'DWARF_KING_START_DECISION', action: 'wait' });
             setDwarfKingPartyStatus(null);
+          }}
+        />
+      )}
+
+      {yogPrompt && (
+        <WndDwarfKingJoinPrompt
+          text={YOG_TEXT}
+          initiatorName={yogPrompt.initiator_name}
+          onApprove={() => {
+            send({ type: 'YOG_JOIN_RESPONSE', approve: true });
+            setYogPrompt(null);
+          }}
+          onDecline={() => {
+            send({ type: 'YOG_JOIN_RESPONSE', approve: false });
+            setYogPrompt(null);
+          }}
+        />
+      )}
+
+      {yogPartyStatus && (
+        <WndDwarfKingPartyStatus
+          text={YOG_TEXT}
+          status={yogPartyStatus}
+          onStartWithout={() => {
+            send({ type: 'YOG_START_DECISION', action: 'start_without' });
+            setYogPartyStatus(null);
+          }}
+          onWait={() => {
+            send({ type: 'YOG_START_DECISION', action: 'wait' });
+            setYogPartyStatus(null);
           }}
         />
       )}

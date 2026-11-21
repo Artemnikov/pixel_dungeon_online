@@ -179,6 +179,12 @@ export class WorldManager {
     }
   }
 
+  /** Replace the custom tile overlays (e.g. HallsBossLevel's centre piece on unseal). */
+  public setCustomLayers(customTiles?: CustomTileLayer[], customWalls?: CustomTileLayer[]): void {
+    if (customTiles && this.refs.customTilesRef) this.refs.customTilesRef.current = customTiles;
+    if (customWalls && this.refs.customWallsRef) this.refs.customWallsRef.current = customWalls;
+  }
+
   public initFloor(data: {
     grid: number[][];
     depth?: number;

@@ -78,7 +78,7 @@ def test_yog_notices_only_when_a_hero_sees_it():
     assert yog.phase == 1 and yog.fight_started
     assert 9 <= yog.ability_cooldown < 15 and 9 <= yog.summon_cooldown < 15
     yells = [e for e in g.flush_events() if e["type"] == "BOSS_YELL"]
-    assert yells and yells[0]["data"]["key"] == "mob.yog_dzewa.notice"
+    assert yells and yells[0]["data"]["key"] == "mobText.yog_notice"
 
 
 def test_party_prompt_holds_initiator_then_seals_on_approval():

@@ -215,6 +215,9 @@ export default function useGameHooks(state) {
     onDwarfKingJoinPrompt: modals.onDwarfKingJoinPrompt,
     onDwarfKingPartyStatus: modals.onDwarfKingPartyStatus,
     onDwarfKingPromptClose: modals.onDwarfKingPromptClose,
+    onYogJoinPrompt: modals.onYogJoinPrompt,
+    onYogPartyStatus: modals.onYogPartyStatus,
+    onYogPromptClose: modals.onYogPromptClose,
     onDM300FightStarted: () => setBossFightActive(true),
     onDwarfKingFightStarted: () => {
       modals.onDwarfKingPromptClose();
@@ -222,7 +225,10 @@ export default function useGameHooks(state) {
     },
     onDwarfKingPhase2: () => setBossFightActive(true),
     onDwarfKingPhase3: () => setBossBleeding(true),
-    onYogFightStarted: () => setBossFightActive(true),
+    onYogFightStarted: () => {
+      modals.onYogPromptClose();
+      setBossFightActive(true);
+    },
     onYogFinalPhase: () => setBossBleeding(true),
     onMetamorphOpen: talent.onMetamorphOpen,
     onMetamorphOptions: talent.onMetamorphOptions,

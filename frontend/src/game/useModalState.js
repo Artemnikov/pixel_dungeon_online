@@ -89,6 +89,15 @@ export default function useModalState() {
     setDwarfKingPartyStatus(null);
   };
 
+  const [yogPrompt, setYogPrompt] = useState(null);
+  const [yogPartyStatus, setYogPartyStatus] = useState(null);
+  const onYogJoinPrompt = (data) => setYogPrompt(data);
+  const onYogPartyStatus = (data) => setYogPartyStatus(data);
+  const onYogPromptClose = () => {
+    setYogPrompt(null);
+    setYogPartyStatus(null);
+  };
+
   const [alchemyOpen, setAlchemyOpen] = useState(false);
   const [alchemyPreview, setAlchemyPreview] = useState(null);
   const [alchemyBrewed, setAlchemyBrewed] = useState(null);
@@ -166,6 +175,11 @@ export default function useModalState() {
     onDwarfKingJoinPrompt,
     onDwarfKingPartyStatus,
     onDwarfKingPromptClose,
+    yogPrompt, setYogPrompt,
+    yogPartyStatus, setYogPartyStatus,
+    onYogJoinPrompt,
+    onYogPartyStatus,
+    onYogPromptClose,
     alchemyOpen, setAlchemyOpen,
     alchemyPreview, setAlchemyPreview,
     alchemyBrewed, setAlchemyBrewed,

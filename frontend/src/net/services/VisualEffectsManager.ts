@@ -43,7 +43,7 @@ export interface VisualEffectsRefs {
   floatingTextRef?: Ref<unknown[]>;
   warnedTilesRef?: Ref<{ tiles: [number, number][]; untilMs: number } | null>;
   rockfallTelegraphRef?: Ref<{ cells: [number, number][]; untilMs: number; durationMs: number } | null>;
-  screenFlashRef?: Ref<{ until: number } | null>;
+  screenFlashRef?: Ref<{ until: number; durationMs?: number; color?: string | number; light?: boolean } | null>;
   transmuteEffectsRef?: Ref<unknown[]>;
   flareEffectsRef?: Ref<unknown[]>;
   spellSpriteEffectsRef?: Ref<unknown[]>;
@@ -335,9 +335,11 @@ export class VisualEffectsManager {
     }
   }
 
-  public flashScreen(durationMs = 350): void {
+  public flashScreen(durationMs = 350, color?: string | number, light?: boolean): void {
     if (this.refs.screenFlashRef) {
-      this.refs.screenFlashRef.current = { until: performance.now() + durationMs };
+      this.refs.screenFlashRef.current = color == null
+        ? { until: performance.now() + durationMs }
+        : { until: performance.now() + durationMs, durationMs, color, light: !!light };
     }
   }
 
@@ -396,6 +398,18 @@ export class VisualEffectsManager {
       this.refs.mobAnimRef.current[mobId] = {};
     }
     this.refs.mobAnimRef.current[mobId].attackUntil = performance.now() + durationMs;
+  }
+
+  public toggleMobStab(mobId: string): void {
+    if (!this.refs.mobAnimRef) return;
+    const anim = this.refs.mobAnimRef.current[mobId] || (this.refs.mobAnimRef.current[mobId] = {});
+    anim.stab = !anim.stab;
+  }
+
+  public setMobAnimUntil(mobId: string, key: 'prepUntil' | 'leapUntil' | 'zapUntil', durationMs: number): void {
+    if (!this.refs.mobAnimRef) return;
+    const anim = this.refs.mobAnimRef.current[mobId] || (this.refs.mobAnimRef.current[mobId] = {});
+    anim[key] = performance.now() + durationMs;
   }
 
   public setMobCharge(mobId: string, durationMs = 1000): void {

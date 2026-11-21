@@ -8,6 +8,7 @@ import { createPlayerEventHandlers } from './player';
 import { createCombatEventHandlers } from './combat';
 import { createProgressionEventHandlers } from './progression';
 import { createChatEventHandlers } from './chat';
+import { createYogEventHandlers } from './yog';
 
 const playSoundHandler: IGameEventHandler<Extract<GameEvent, { type: 'PLAY_SOUND' }>> = {
   eventType: 'PLAY_SOUND',
@@ -30,6 +31,7 @@ export function createDefaultEventDispatcher(): GameEventDispatcher {
   dispatcher.registerAll(createCombatEventHandlers());
   dispatcher.registerAll(createProgressionEventHandlers());
   dispatcher.registerAll(createChatEventHandlers());
+  dispatcher.registerAll(createYogEventHandlers());
   return dispatcher;
 }
 

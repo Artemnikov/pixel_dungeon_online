@@ -67,6 +67,9 @@ export interface AnimState {
   pumpUntil?: number;
   chargeUntil?: number;
   zapUntil?: number;
+  prepUntil?: number;
+  leapUntil?: number;
+  stab?: boolean;
 }
 
 export interface Projectile {
@@ -239,7 +242,7 @@ export interface HookProps {
   floatingTextRef: Ref<unknown[]>;
   warnedTilesRef?: Ref<{ tiles: [number, number][]; untilMs: number } | null>;
   rockfallTelegraphRef?: Ref<{ cells: [number, number][]; untilMs: number; durationMs: number } | null>;
-  screenFlashRef?: Ref<{ until: number } | null>;
+  screenFlashRef?: Ref<{ until: number; durationMs?: number; color?: string | number; light?: boolean } | null>;
   transmuteEffectsRef?: Ref<unknown[]>;
   flareEffectsRef?: Ref<unknown[]>;
   spellSpriteEffectsRef?: Ref<unknown[]>;
