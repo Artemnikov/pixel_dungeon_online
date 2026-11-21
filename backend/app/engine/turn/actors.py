@@ -1,3 +1,4 @@
+import itertools
 from typing import TYPE_CHECKING, FrozenSet, Optional, Tuple
 
 from app.engine.game.constants import HERO_PRIO, MOB_PRIO, TIME_TO_WAIT
@@ -7,11 +8,16 @@ if TYPE_CHECKING:
     from app.engine.turn.actions import TurnAction
 
 
+_ACTOR_SEQ = itertools.count()
+
+
 class ActorRef:
     def __init__(self, entity_id: str, act_priority: int) -> None:
         self.entity_id = entity_id
         self.act_priority = act_priority
         self.scheduled_time = 0.0
+        # Creation order, the tie-break SPD's actor list gives on equal time.
+        self.seq = next(_ACTOR_SEQ)
         # Set when the actor leaves the room (died, downed, disconnected).
         # The scheduler drops flagged entries lazily instead of deleting them
         # from the middle of its heap.
@@ -88,6 +94,9 @@ class MobActor(ActorRef):
         # mob type so bosses and casters carry their own turn cadence; the
         # registry, the mob id and the priority all stay here.
         self.brain = create_mob_actor(mob, floor_id)
+        # Time the mob last acted, so a brain can tell how much SPD time
+        # passed since -- one turn normally, more after a long spend.
+        self.last_act_time: Optional[float] = None
 
     def retarget(self, mob, floor_id: int) -> None:
         """Point the actor at a fresh mob/floor without losing turn cooldown."""
@@ -97,4 +106,9 @@ class MobActor(ActorRef):
         self.brain.floor_id = floor_id
 
     def take_turn(self, game) -> float:
+        if self.last_act_time is None:
+            self.brain.elapsed = 1.0
+        else:
+            self.brain.elapsed = max(0.0, self.scheduled_time - self.last_act_time)
+        self.last_act_time = self.scheduled_time
         return self.brain.take_turn(game)

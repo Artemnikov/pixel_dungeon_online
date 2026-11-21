@@ -375,6 +375,8 @@ class Player(Entity):
     # mechanics in turn/world.py know whether this turn included a step. The
     # real-time path derives the same signal from player.movement.is_active().
     _moved_this_turn: bool = False
+    # SPD time the player's last turn-room action cost (`hero.cooldown()`).
+    _last_turn_cost: Optional[float] = None
 
     @property
     def is_active(self) -> bool:

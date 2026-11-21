@@ -23,13 +23,17 @@ Differences from the real-time path:
 * A far tap is a path request: `path_queue` is drained one tile per turn round.
 """
 
+import math
 import time
 from typing import Dict, List, Optional, Set
 
 from app.engine.entities.player import Player
 from app.engine.game.constants import (
     GAME_MODE_TURNBASED,
+    MAX_MOB_PASSES_PER_ROUND,
+    MIN_MOB_TURN_COST,
     TICKS_PER_TURN,
+    TURN_TIME_EPSILON,
     TIME_TO_WAIT,
     TURN_BASED_WALK_SPEED_MULTIPLIER,
     TURN_ORDER_PREVIEW,
@@ -133,13 +137,13 @@ class TurnBasedGameInstance(GameInstance):
                 continue
 
             if actor.pending_action is not None:
-                actor.take_turn(self)
+                player._last_turn_cost = actor.take_turn(self)
                 self._players_acted.add(pid)
                 self._broadcast_dirty = True
             elif pid not in self._players_acted and actor.is_auto_walking():
                 if actor.walk_floor_id == player.floor_id and not player.movement.is_ready_for_step():
                     continue
-                actor.take_turn(self)
+                player._last_turn_cost = actor.take_turn(self)
                 self._players_acted.add(pid)
                 self._broadcast_dirty = True
 
@@ -160,18 +164,59 @@ class TurnBasedGameInstance(GameInstance):
             self._broadcast_dirty = True
 
     def _run_dungeon_mob_turns(self) -> None:
+        """Every mob acts as often as its SPD time allows inside this round.
+
+        A mob's `scheduled_time` is when it is next due. The round covers
+        `[now, now + 1)`: each pass runs the mobs due before the round ends, in
+        time order, and charges each the time its turn spent -- so a speed-2 mob
+        acts twice a round and one that spent two turns sits the next round out
+        (SPD `Actor.spend`). A mob is never due earlier than the round start,
+        so time spent idle off-floor or asleep is never banked.
+        """
+        start = self.scheduler.now
+        end = start + 1.0
         for floor_id in list(self.active_floor_ids):
-            floor = self.floors.get(floor_id)
-            if floor is None:
-                continue
-            for mob in list(floor.mobs.values()):
-                if mob.is_alive and mob.id in floor.mobs:
-                    actor = self._mob_actors.get(mob.id)
-                    if actor is not None:
-                        actor.retarget(mob, floor_id)
-                        actor.take_turn(self)
-                    else:
-                        self._mob_take_turn(mob, floor_id)
+            for _ in range(MAX_MOB_PASSES_PER_ROUND):
+                floor = self.floors.get(floor_id)
+                if floor is None:
+                    break
+                due = []
+                for mob in list(floor.mobs.values()):
+                    if not mob.is_alive:
+                        continue
+                    actor = self._ensure_mob_actor(mob, floor_id)
+                    if actor.scheduled_time < end - TURN_TIME_EPSILON:
+                        due.append(actor)
+                if not due:
+                    break
+                due.sort(key=lambda a: (a.scheduled_time, -a.act_priority, a.seq))
+                for actor in due:
+                    if not actor.mob.is_alive or actor.mob.id not in floor.mobs:
+                        continue
+                    actor.scheduled_time = max(actor.scheduled_time, start)
+                    cost = actor.take_turn(self)
+                    actor.scheduled_time = TurnScheduler._snap(
+                        actor.scheduled_time + max(float(cost), MIN_MOB_TURN_COST))
+
+    def _ensure_mob_actor(self, mob, floor_id: int) -> MobActor:
+        actor = self._mob_actors.get(mob.id)
+        if actor is None:
+            actor = self._new_mob_actor(mob, floor_id)
+        else:
+            actor.retarget(mob, floor_id)
+        return actor
+
+    def _new_mob_actor(self, mob, floor_id: int) -> MobActor:
+        """SPD `GameScene.add(mob, delay)`: the first act waits `delay` turns,
+        rounded up to a whole turn."""
+        actor = MobActor(mob, floor_id)
+        delay = float(getattr(mob, "spawn_delay", 0.0) or 0.0)
+        actor.scheduled_time = float(math.ceil(self.scheduler.now + delay - TURN_TIME_EPSILON))
+        if delay:
+            mob.spawn_delay = 0.0
+        self._mob_actors[mob.id] = actor
+        self.scheduler.push_back(actor)
+        return actor
 
     def _clear_mob_ai_pacing(self, entity) -> None:
         if hasattr(entity, "id"):
@@ -240,13 +285,7 @@ class TurnBasedGameInstance(GameInstance):
         if floor_id is None:
             return TIME_TO_WAIT
 
-        actor = self._mob_actors.get(mob.id)
-        if actor is None:
-            actor = MobActor(mob, floor_id)
-            self._mob_actors[mob.id] = actor
-        else:
-            actor.retarget(mob, floor_id)
-        return actor.take_turn(self)
+        return self._ensure_mob_actor(mob, floor_id).take_turn(self)
 
     def _mob_can_strike(self, mob, floor, floor_id: int) -> bool:
         for other in floor.mobs.values():
@@ -327,13 +366,7 @@ class TurnBasedGameInstance(GameInstance):
                 actor.cancelled = True
                 del self._mob_actors[mob_id]
         for mob_id, (mob, floor_id) in live_mobs.items():
-            actor = self._mob_actors.get(mob_id)
-            if actor is None:
-                actor = MobActor(mob, floor_id)
-                self._mob_actors[mob_id] = actor
-                self.scheduler.push_back(actor)
-            else:
-                actor.retarget(mob, floor_id)
+            self._ensure_mob_actor(mob, floor_id)
 
     # --- broadcast gating --------------------------------------------------
 
