@@ -104,6 +104,19 @@ export class WorldManager {
     });
   }
 
+  public patchCustomTiles(
+    patches: Array<{ texture: string; layer_y: number; row: number; col: number; tile: number }>,
+  ): void {
+    if (!this.refs.customTilesRef?.current || !patches?.length) return;
+    for (const p of patches) {
+      for (const layer of this.refs.customTilesRef.current) {
+        if (layer.texture === p.texture && layer.y === p.layer_y && layer.tiles?.[p.row]) {
+          layer.tiles[p.row][p.col] = p.tile;
+        }
+      }
+    }
+  }
+
   public updateVision(
     visibleTiles: Array<[number, number]> | undefined,
     mappedTiles?: Array<[number, number]>,

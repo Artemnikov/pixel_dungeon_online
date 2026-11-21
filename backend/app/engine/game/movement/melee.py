@@ -238,10 +238,23 @@ class MeleeCombatMixin:
 
     def _maybe_trigger_dm300_supercharge(self, target: "MobEntity", floor, floor_id: int, near_pos: Position):
         """Trigger DM300 pylon activation if target is DM300 with pending activation."""
-        if isinstance(target, DM300) and target.pending_pylon_activation:
-            target.pending_pylon_activation = False
-            self.add_event("DM300_SUPERCHARGE", {"mob": target.id}, floor_id=floor_id)
-            _activate_pylon(self, floor, floor_id, near_pos=near_pos)
-            target.add_buff("stagger", duration=1.5)
-            self.add_event("BOSS_YELL", {"mob": target.id, "text": "Supercharging...",
-                                         "x": target.pos.x, "y": target.pos.y}, floor_id=floor_id)
+        if isinstance(target, DM300):
+            if getattr(target, "pending_invuln_hint", False):
+                target.pending_invuln_hint = False
+                self.add_event("MESSAGE", {
+                    "text": "DM-300 is invulnerable while it is being energized by a pylon!",
+                }, floor_id=floor_id)
+            if target.pending_pylon_activation:
+                target.pending_pylon_activation = False
+                is_stronger = "stronger_bosses" in getattr(self, "challenges", set())
+                stagger_dur = 1.0 if is_stronger else 1.5
+                self.add_event("DM300_SUPERCHARGE", {
+                    "mob": target.id,
+                    "x": target.pos.x,
+                    "y": target.pos.y,
+                    "duration_ms": int(stagger_dur * 1000),
+                }, floor_id=floor_id)
+                _activate_pylon(self, floor, floor_id, near_pos=near_pos)
+                target.add_buff("stagger", duration=stagger_dur)
+                self.add_event("BOSS_YELL", {"mob": target.id, "text": "SUSTAINING DAMAGE! ACTIVATING POWER PYLON!",
+                                             "x": target.pos.x, "y": target.pos.y}, floor_id=floor_id)

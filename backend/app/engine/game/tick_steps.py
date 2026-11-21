@@ -39,7 +39,14 @@ def run_blob_round_upkeep(game, active_ids) -> None:
     active_floors = {fid: game.floors[fid] for fid in active_ids}
     blob_events = tick_blob_areas(active_floors, game.players)
     for ev in blob_events:
-        game.add_event(ev["type"], ev["data"],
+        data = ev.get("data", {})
+        if ev["type"] == "DAMAGE" and data.pop("_pylon_energy_hit", False):
+            dm_supercharged = data.pop("_dm300_supercharged", False)
+            if hasattr(game, "boss_scores") and len(game.boss_scores) > 2:
+                game.boss_scores[2] -= 200
+            if dm_supercharged:
+                game.qualified_for_boss_challenge = False
+        game.add_event(ev["type"], data,
                        floor_id=ev.get("_floor_id"),
                        source_player_id=ev.get("_source_player_id"))
     for ev in blob_events:

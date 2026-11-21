@@ -700,3 +700,129 @@ test('DefaultEventDispatcher: SUBCLASS_CHOSEN plays MASTERY sound, operates play
   assert.equal(particlesRef.current.length, 20, 'Particles spawned for visible remote player');
   assert.ok(playerAnimRef.current.remoteVisible?.operateUntil > performance.now(), 'Operate animation set for visible remote player');
 });
+
+test('DefaultEventDispatcher: DK Warlock ranged zap and Larva attack/blood/death animations', () => {
+  const dispatcher = createDefaultEventDispatcher();
+
+  const gridRef = { current: [[1, 2], [1, 2]] };
+  const visionRef = { current: { visible: new Set(['0,0', '1,0', '3,0']), discovered: new Set() } };
+  const world = new WorldManager({
+    gridRef,
+    setGrid: () => {},
+    visionRef,
+  });
+
+  const entitiesRef = {
+    current: {
+      players: {
+        hero: { id: 'hero', name: 'Warrior', renderPos: { x: 1, y: 0 }, pos: { x: 1, y: 0 }, hp: 50, max_hp: 50 },
+      },
+      mobs: {
+        dkw: { id: 'dkw', name: 'DK Warlock', renderPos: { x: 3, y: 0 }, pos: { x: 3, y: 0 }, hp: 70, max_hp: 70, facing: 'RIGHT', flipX: false },
+        larva: { id: 'larva', name: 'Larva', renderPos: { x: 0, y: 0 }, pos: { x: 0, y: 0 }, hp: 20, max_hp: 20, facing: 'LEFT', flipX: true },
+      },
+      items: [],
+      traps: [],
+    },
+  };
+  const dyingMobsRef = { current: {} };
+  const entities = new EntityManager({
+    entitiesRef,
+    dyingMobsRef,
+    myPlayerIdRef: { current: 'hero' },
+  });
+
+  const particlesRef = { current: [] };
+  const floatingTextRef = { current: [] };
+  const magicMissileRef = { current: [] };
+  const mobAnimRef = { current: {} };
+  const playerAnimRef = { current: {} };
+
+  const effects = new VisualEffectsManager({
+    particlesRef,
+    floatingTextRef,
+    magicMissileRef,
+    mobAnimRef,
+    playerAnimRef,
+  });
+
+  const soundsPlayed = [];
+  const mockAudio = {
+    play: (name, rate) => { soundsPlayed.push({ name, rate }); },
+    playStep: () => {},
+  };
+
+  const ctx = {
+    myPlayerId: 'hero',
+    world,
+    entities,
+    effects,
+    ui: new GameCallbacks({}),
+    audio: mockAudio,
+  };
+
+  // 1. DK Warlock ranged zap from (3, 0) -> hero at (1, 0)
+  dispatcher.dispatch({
+    type: 'RANGED_ATTACK',
+    data: {
+      source: 'dkw',
+      x: 3,
+      y: 0,
+      target_x: 1,
+      target_y: 0,
+      projectile: 'shadow',
+      is_wand: true,
+      sound: 'ZAP',
+      crit: false,
+      grim_proc: false,
+    },
+  }, ctx);
+
+  assert.ok(mobAnimRef.current.dkw?.attackUntil > performance.now(), 'DK Warlock zap triggers mob attack animation');
+  assert.equal(entitiesRef.current.mobs.dkw.facing, 'LEFT', 'DK Warlock faces left toward target');
+  assert.equal(entitiesRef.current.mobs.dkw.flipX, true, 'DK Warlock flipX updated');
+  assert.equal(magicMissileRef.current.length, 1, 'Shadow bolt missile spawned');
+  assert.ok(soundsPlayed.some(s => s.name === 'ZAP'), 'ZAP sound played');
+
+  // 2. Hero hits Larva -> #bbcc66 blood splash
+  particlesRef.current = [];
+  dispatcher.dispatch({
+    type: 'ATTACK',
+    data: {
+      source: 'hero',
+      target: 'larva',
+      damage: 10,
+      surprise: false,
+    },
+  }, ctx);
+
+  assert.ok(particlesRef.current.length > 0, 'Blood particles spawned when Larva takes damage');
+  assert.ok(particlesRef.current.every(p => p.color === '#bbcc66'), 'Larva blood uses SPD 0xbbcc66 color');
+
+  // 3. Larva attacks hero -> 200ms attack animation and facing RIGHT
+  dispatcher.dispatch({
+    type: 'ATTACK',
+    data: {
+      source: 'larva',
+      target: 'hero',
+      damage: 5,
+      surprise: false,
+    },
+  }, ctx);
+
+  assert.ok(mobAnimRef.current.larva?.attackUntil > performance.now(), 'Larva attack animation started');
+  assert.equal(entitiesRef.current.mobs.larva.facing, 'RIGHT', 'Larva faces right toward target');
+
+  // 4. Larva dies -> 10 #bbcc66 splash particles + recorded in dyingMobsRef
+  particlesRef.current = [];
+  dispatcher.dispatch({
+    type: 'DEATH',
+    data: {
+      target: 'larva',
+    },
+  }, ctx);
+
+  assert.equal(particlesRef.current.length, 10, 'Larva death spawns 10 splash particles per LarvaSprite.die()');
+  assert.ok(particlesRef.current.every(p => p.color === '#bbcc66'), 'Larva death splash uses #bbcc66');
+  assert.ok(dyingMobsRef.current.larva, 'Larva recorded in dyingMobsRef');
+});

@@ -245,14 +245,15 @@ class TenguActor(TickCounterMobActor):
 
 
 class DwarfKingActor(TickCounterMobActor):
-    """Dwarf King's summon and life-link cooldowns, tick-denominated.
+    """Dwarf King's turn clock and Viscosity bleed clock, tick-denominated.
 
-    `ai_dwarf_king.py` sets `summon_cooldown`/`ability_cooldown` to
-    `8..14 * TICKS_PER_TURN` and decrements them once per call, so they are
-    elapsed counters here too.
+    `ai_dwarf_king.py` runs DwarfKing.act() (cooldowns, waves, summons) each time
+    `act_ticks` reaches `TICKS_PER_TURN`, and bleeds deferred damage each time
+    `phase3_ticks` does, so a turn's worth of ticks per call keeps both on SPD's
+    once-per-turn cadence.
     """
 
-    elapsed_tick_counters = ("summon_cooldown", "ability_cooldown")
+    elapsed_tick_counters = ("act_ticks", "phase3_ticks")
 
 
 class YogDzewaActor(TickCounterMobActor):

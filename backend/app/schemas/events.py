@@ -434,6 +434,23 @@ class TenguPromptCloseData(_EventData):
     pass
 
 
+class DwarfKingJoinPromptData(_EventData):
+    initiator_id: str
+    initiator_name: str
+
+
+class DwarfKingPartyStatusData(_EventData):
+    initiator_id: str
+    pending_names: List[str]
+    declined_names: List[str]
+    approved_names: List[str]
+    can_decide: bool
+
+
+class DwarfKingPromptCloseData(_EventData):
+    pass
+
+
 class ChasmFallData(_EventData):
     # SPD Chasm.heroFall -> InterlevelScene.Mode.FALL -> heroLand. Carries
     # everything the client needs to drive the fall transition: who fell, whether
@@ -756,6 +773,9 @@ EVENT_MODELS = {
     "TENGU_JOIN_PROMPT": TenguJoinPromptData,
     "TENGU_PARTY_STATUS": TenguPartyStatusData,
     "TENGU_PROMPT_CLOSE": TenguPromptCloseData,
+    "DWARF_KING_JOIN_PROMPT": DwarfKingJoinPromptData,
+    "DWARF_KING_PARTY_STATUS": DwarfKingPartyStatusData,
+    "DWARF_KING_PROMPT_CLOSE": DwarfKingPromptCloseData,
     "CHASM_FALL": ChasmFallData,
     "SCREEN_SHAKE": ScreenShakeData,
     "MOB_CHASM_FALL": MobChasmFallData,

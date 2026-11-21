@@ -418,7 +418,11 @@ class SerializationMixin:
 
             visible_mobs = [
                 s_mob for mob_obj, s_mob in serialized_mobs
-                if (mob_obj.pos.x, mob_obj.pos.y) in visible_set or (mob_obj.pos.x, mob_obj.pos.y) in mind_vision_set
+                if (
+                    (mob_obj.pos.x, mob_obj.pos.y) in visible_set
+                    or (mob_obj.pos.x, mob_obj.pos.y) in mind_vision_set
+                    or (getattr(mob_obj, "type", None) == "boss" and getattr(mob_obj, "fight_started", False))
+                )
             ]
 
             visible_items = [

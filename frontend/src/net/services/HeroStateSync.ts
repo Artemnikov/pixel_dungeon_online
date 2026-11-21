@@ -12,7 +12,15 @@ export interface HeroStateSetters {
   setGold?: (gold: number) => void;
   setEnergy?: (energy: number) => void;
   setHasAmulet?: (hasAmulet: boolean) => void;
-  setBossInfo?: (info: { name: string; hp: number; maxHp: number; shield?: number; effects?: { key?: string; name?: string; icon?: number; remaining?: number; duration?: number }[] } | null) => void;
+  setBossInfo?: (info: {
+    name: string;
+    hp: number;
+    maxHp: number;
+    shield?: number;
+    supercharged?: boolean;
+    pylonsActivated?: number;
+    effects?: { key?: string; name?: string; icon?: number; remaining?: number; duration?: number }[];
+  } | null) => void;
   setBossLurking?: (bossLurking: boolean) => void;
   setDifficulty?: (difficulty: Difficulty) => void;
 }
@@ -118,6 +126,8 @@ export class HeroStateSync {
       hp: boss.hp,
       maxHp: boss.max_hp,
       shield: (boss.shields || []).reduce((sum, s) => sum + (s.amount || 0), 0),
+      supercharged: (boss as { supercharged?: boolean }).supercharged,
+      pylonsActivated: (boss as { pylons_activated?: number }).pylons_activated,
       effects: boss.buffs || [],
     } : null);
   }

@@ -7,13 +7,18 @@ import { startLocalPlayerMeleeAnim } from '../../../net/events/combat';
 import AudioManager from '../../../audio/AudioManager';
 
 export const DEFAULT_CHORD_DELAY_MS = 35;
+export const DEFAULT_TURN_CHORD_DELAY_MS = 60;
+export const DEFAULT_HOLD_REPEAT_DELAY_MS = 200;
 
 export class DirectionalMoveCommand implements IKeyCommand {
   private pressedKeys: Set<string>;
   private lastSentVector: { dx: number; dy: number } = { dx: 0, dy: 0 };
   private lastTurnStepTime = 0;
+  private turnRepeatAt: number | null = null;
   private onVectorChanged?: (hasHeldKeys: boolean) => void;
   private chordDelayMs: number;
+  private holdRepeatDelayMs: number;
+  private turnChordDelayMs: number;
   private chordTimer: ReturnType<typeof setTimeout> | null = null;
   private pendingChordVector: { dx: number; dy: number } | null = null;
 
@@ -21,10 +26,14 @@ export class DirectionalMoveCommand implements IKeyCommand {
     pressedKeys: Set<string>,
     onVectorChanged?: (hasHeldKeys: boolean) => void,
     chordDelayMs = 0,
+    holdRepeatDelayMs = 0,
+    turnChordDelayMs = chordDelayMs,
   ) {
     this.pressedKeys = pressedKeys;
     this.onVectorChanged = onVectorChanged;
     this.chordDelayMs = chordDelayMs;
+    this.holdRepeatDelayMs = holdRepeatDelayMs;
+    this.turnChordDelayMs = turnChordDelayMs;
   }
 
   public canExecute(code: string, context: InputContext): boolean {
@@ -63,6 +72,10 @@ export class DirectionalMoveCommand implements IKeyCommand {
     if (context.isCameraDetachedRef) context.isCameraDetachedRef.current = false;
     if (context.panOffsetRef) context.panOffsetRef.current = { x: 0, y: 0 };
     context.socket?.send(JSON.stringify({ type: 'MOVE', direction }));
+    const now = performance.now();
+    this.lastTurnStepTime = now;
+    this.turnRepeatAt ??= now + this.holdRepeatDelayMs;
+    if (context.canActRef) context.canActRef.current = false;
   }
 
   public syncMoveIntent(context: InputContext, isKeyDown = false): void {
@@ -88,8 +101,9 @@ export class DirectionalMoveCommand implements IKeyCommand {
       return;
     }
 
+    const chordDelayMs = this.isTurnMode(context) ? this.turnChordDelayMs : this.chordDelayMs;
     if (
-      this.chordDelayMs > 0 &&
+      chordDelayMs > 0 &&
       isKeyDown &&
       this.lastSentVector.dx === 0 &&
       this.lastSentVector.dy === 0
@@ -103,7 +117,7 @@ export class DirectionalMoveCommand implements IKeyCommand {
           if (pending && (pending.dx !== 0 || pending.dy !== 0)) {
             this.commitMove(context, pending.dx, pending.dy, true);
           }
-        }, this.chordDelayMs);
+        }, chordDelayMs);
       }
       return;
     }
@@ -147,10 +161,9 @@ export class DirectionalMoveCommand implements IKeyCommand {
     }
 
     if (this.isTurnMode(context)) {
-      if (isKeyDown && context.canActRef?.current === true) {
+      if (last.dx === 0 && last.dy === 0) this.turnRepeatAt = null;
+      if (isKeyDown && this.turnRepeatAt === null && context.canActRef?.current === true) {
         this.sendTurnMove(context, dx, dy);
-        this.lastTurnStepTime = performance.now();
-        context.canActRef.current = false;
       }
       this.onVectorChanged?.(true);
       return;
@@ -185,13 +198,13 @@ export class DirectionalMoveCommand implements IKeyCommand {
     if (this.isTurnMode(context)) {
       // Held-key continuation: the pump calls this every frame while a
       // direction is held. Spend a turn only once the server says we may act
-      // again and the previous step's animation has had time to play.
+      // again, the key has been held past the repeat delay (so a tap stays one
+      // tile), and the previous step's animation has had time to play.
       if (context.canActRef?.current !== true) return;
       const now = performance.now();
+      if (this.turnRepeatAt !== null && now < this.turnRepeatAt) return;
       if (now - this.lastTurnStepTime < movementPredictor.getStepDuration(context.myPlayer)) return;
       this.sendTurnMove(context, dx, dy);
-      this.lastTurnStepTime = now;
-      context.canActRef.current = false;
       return;
     }
 
@@ -231,5 +244,6 @@ export class DirectionalMoveCommand implements IKeyCommand {
     this.clearChordTimer();
     this.lastSentVector = { dx: 0, dy: 0 };
     this.lastTurnStepTime = 0;
+    this.turnRepeatAt = null;
   }
 }

@@ -80,6 +80,15 @@ export default function useModalState() {
     setTenguPartyStatus(null);
   };
 
+  const [dwarfKingPrompt, setDwarfKingPrompt] = useState(null);
+  const [dwarfKingPartyStatus, setDwarfKingPartyStatus] = useState(null);
+  const onDwarfKingJoinPrompt = (data) => setDwarfKingPrompt(data);
+  const onDwarfKingPartyStatus = (data) => setDwarfKingPartyStatus(data);
+  const onDwarfKingPromptClose = () => {
+    setDwarfKingPrompt(null);
+    setDwarfKingPartyStatus(null);
+  };
+
   const [alchemyOpen, setAlchemyOpen] = useState(false);
   const [alchemyPreview, setAlchemyPreview] = useState(null);
   const [alchemyBrewed, setAlchemyBrewed] = useState(null);
@@ -152,6 +161,11 @@ export default function useModalState() {
     onTenguJoinPrompt,
     onTenguPartyStatus,
     onTenguPromptClose,
+    dwarfKingPrompt, setDwarfKingPrompt,
+    dwarfKingPartyStatus, setDwarfKingPartyStatus,
+    onDwarfKingJoinPrompt,
+    onDwarfKingPartyStatus,
+    onDwarfKingPromptClose,
     alchemyOpen, setAlchemyOpen,
     alchemyPreview, setAlchemyPreview,
     alchemyBrewed, setAlchemyBrewed,

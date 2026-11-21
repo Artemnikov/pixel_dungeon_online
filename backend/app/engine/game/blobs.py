@@ -180,6 +180,10 @@ def _evolve_pylon_energy_blob(
                 cell_changed = True
 
     damaged = False
+    any_dm300_supercharged = any(
+        isinstance(m, DM300) and m.is_alive and getattr(m, "supercharged", False)
+        for m in floor.mobs.values()
+    )
     for cx, cy in list(cells):
         for p in players.values():
             if p.floor_id != floor.floor_id or not p.is_alive:
@@ -187,7 +191,16 @@ def _evolve_pylon_energy_blob(
             if p.pos.x == cx and p.pos.y == cy and not getattr(p, "flying", False):
                 dmg = random.randint(6, 12)
                 p.take_damage(dmg)
-                events.append({"type": "DAMAGE", "data": {"target": p.id, "amount": dmg, "shock": True}})
+                events.append({
+                    "type": "DAMAGE",
+                    "data": {
+                        "target": p.id,
+                        "amount": dmg,
+                        "shock": True,
+                        "_pylon_energy_hit": True,
+                        "_dm300_supercharged": any_dm300_supercharged,
+                    },
+                })
                 damaged = True
 
         for m in list(floor.mobs.values()):

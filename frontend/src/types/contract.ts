@@ -149,6 +149,15 @@ export interface TilePatch {
   x: number;
   y: number;
   tile: number;
+  fx?: 'rock' | 'blast';
+}
+
+export interface CustomTilePatch {
+  texture: string;
+  layer_y: number;
+  row: number;
+  col: number;
+  tile: number;
 }
 
 // --- server -> client: events ----------------------------------------------
@@ -345,7 +354,7 @@ export interface LightningArcEvent {
 /** DM-300 stepped on an inactive trap and gained a barrier. */
 export interface DM300TrapStepEvent {
   type: 'DM300_TRAP_STEP';
-  data: { mob: string; x: number; y: number };
+  data: { mob: string; x: number; y: number; shield?: number; warn?: boolean };
 }
 
 export interface DrinkEvent {
@@ -418,7 +427,7 @@ export interface ToastEvent {
 
 export interface MapPatchEvent {
   type: 'MAP_PATCH';
-  data: { tiles: TilePatch[] };
+  data: { tiles: TilePatch[]; custom_tiles?: CustomTilePatch[] };
 }
 
 export interface ChasmPromptEvent {
@@ -444,6 +453,27 @@ export interface TenguPartyStatusEvent {
 
 export interface TenguPromptCloseEvent {
   type: 'TENGU_PROMPT_CLOSE';
+  data: Record<string, never>;
+}
+
+export interface DwarfKingJoinPromptEvent {
+  type: 'DWARF_KING_JOIN_PROMPT';
+  data: { initiator_id: string; initiator_name: string };
+}
+
+export interface DwarfKingPartyStatusEvent {
+  type: 'DWARF_KING_PARTY_STATUS';
+  data: {
+    initiator_id: string;
+    pending_names: string[];
+    declined_names: string[];
+    approved_names: string[];
+    can_decide: boolean;
+  };
+}
+
+export interface DwarfKingPromptCloseEvent {
+  type: 'DWARF_KING_PROMPT_CLOSE';
   data: Record<string, never>;
 }
 
@@ -825,7 +855,7 @@ export interface DM300RockfallEvent {
 /** DM-300 supercharge event: shields up and activates a pylon. */
 export interface DM300SuperchargeEvent {
   type: 'DM300_SUPERCHARGE';
-  data: { mob: string };
+  data: { mob: string; x?: number; y?: number; duration_ms?: number };
 }
 
 /** Pylon activation event: lightning surges through the pylon. */
@@ -840,22 +870,22 @@ export interface DwarfKingFightStartedEvent {
   data: { mob: string };
 }
 
-/** Dwarf King enters phase 2 (HP <= 200). */
+/** Dwarf King enters phase 2: teleports to the throne behind his barrier (HP <= 50, 100 on stronger bosses). */
 export interface DwarfKingPhase2Event {
   type: 'DWARF_KING_PHASE2';
-  data: { mob: string };
+  data: { mob: string; x: number; y: number };
 }
 
-/** Dwarf King enters phase 3 (HP <= 100). */
+/** Dwarf King enters phase 3 once his barrier breaks. */
 export interface DwarfKingPhase3Event {
   type: 'DWARF_KING_PHASE3';
   data: { mob: string };
 }
 
-/** Dwarf King begins charging a summon on a pedestal. */
-export interface DwarfKingSummonStartEvent {
-  type: 'DWARF_KING_SUMMON_START';
-  data: { x: number; y: number; particle: string };
+/** Dwarf King's phase-3 hit was deferred into Viscosity.DeferedDamage (shows "deferred N"). */
+export interface DwarfKingDeferredEvent {
+  type: 'DWARF_KING_DEFERRED';
+  data: { mob: string; amount: number; x: number; y: number };
 }
 
 /** Dwarf King summon finishes charging and bursts into a minion. */
@@ -1327,7 +1357,7 @@ export type GameEvent =
   | DwarfKingFightStartedEvent
   | DwarfKingPhase2Event
   | DwarfKingPhase3Event
-  | DwarfKingSummonStartEvent
+  | DwarfKingDeferredEvent
   | DwarfKingSummonBurstEvent
   | DwarfKingShieldDamageEvent
   | YogFightStartedEvent
@@ -1411,7 +1441,10 @@ export type GameEvent =
   | SummonEvent
   | TenguJoinPromptEvent
   | TenguPartyStatusEvent
-  | TenguPromptCloseEvent;
+  | TenguPromptCloseEvent
+  | DwarfKingJoinPromptEvent
+  | DwarfKingPartyStatusEvent
+  | DwarfKingPromptCloseEvent;
 
 export type GameEventType = GameEvent['type'];
 
@@ -1600,6 +1633,8 @@ export type ClientMessage =
   | { type: 'CONFIRM_CHASM_FALL'; x: number; y: number }
   | { type: 'TENGU_JOIN_RESPONSE'; approve: boolean }
   | { type: 'TENGU_START_DECISION'; action: 'start_without' | 'wait' }
+  | { type: 'DWARF_KING_JOIN_RESPONSE'; approve: boolean }
+  | { type: 'DWARF_KING_START_DECISION'; action: 'start_without' | 'wait' }
   | { type: 'ALCHEMY_PREVIEW'; ingredient_ids: string[] }
   | { type: 'ALCHEMY_BREW'; ingredient_ids: string[]; recipe_index: number }
   | { type: 'ALCHEMY_ENERGIZE'; item_id: string; all_items: boolean }

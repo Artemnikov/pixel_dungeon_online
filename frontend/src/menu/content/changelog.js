@@ -8,10 +8,26 @@ export const APP_VERSION = '1.2.1';
 const CHANGELOG = [
   {
     version: '1.2.1',
-    title: { en: 'Tengu Boss Party Prompt & Turn Mode Fixes', ru: 'Групповой вход к Тенгу и исправления пошагового режима' },
-    date: '2026-10-24',
+    title: { en: 'Dwarf King Fight, Boss Party Prompts & Turn Mode Fixes', ru: 'Бой с Королём Дворфов, групповой вход к боссам и исправления пошагового режима' },
+    date: '2026-11-21',
     type: 'patch',
     changes: [
+      { category: { en: 'Dwarf King Fight', ru: 'Бой с Королём Дворфов' }, description: {
+        en: 'Completed the SPD port of the Dwarf King: Life Link with damage shared across every link, Teleport Subject with SPD positioning, turn-by-turn phase 2 summon waves with a regenerating barrier, minion deaths of any cause (including allies, abilities and wands) damaging the barrier, and phase 3 per-turn summons with a deferred-damage bleed. Pedestals now show inbound summons for the whole delay, with "invulnerable" and "deferred N" status text.',
+        ru: 'Завершён порт боя с Королём Дворфов из SPD: Связь жизни с распределением урона по всем связям, Телепорт подданного с позиционированием как в SPD, пошаговые волны призыва во 2-й фазе с восстанавливающимся барьером, урон по барьеру от гибели миньонов по любой причине (включая союзников, способности и жезлы), призыв каждый ход и отложенный урон в 3-й фазе. Пьедесталы показывают призыв на всё время ожидания, добавлены надписи «неуязвим» и «отложено N».',
+      } },
+      { category: { en: 'Dwarf King Pacing & Fixes', ru: 'Темп и исправления боя с Королём Дворфов' }, description: {
+        en: 'In real-time rooms the shielded King\'s clock runs 4x faster while none of his minions are alive, removing long waits between waves. In turn-based mode the King now acts once per round. Fixed the double King\'s Crown drop, the arena door re-locking after victory, abilities while paralysed, minion loot and XP, and missing XP when the King dies from deferred damage.',
+        ru: 'В режиме реального времени часы Короля под щитом идут в 4 раза быстрее, пока нет живых миньонов, — долгих пауз между волнами больше нет. В пошаговом режиме Король теперь действует раз в раунд. Исправлены двойное выпадение Короны, повторная блокировка двери арены после победы, способности под параличом, добыча и опыт с миньонов и отсутствие опыта при смерти Короля от отложенного урона.',
+      } },
+      { category: { en: 'Dwarf King Party Prompt', ru: 'Групповой вход к Королю Дворфов' }, description: {
+        en: 'Entering the throne room with other players on Floor 20 prompts them to join the fight; participants are teleported into the arena.',
+        ru: 'При входе в тронный зал другие игроки на 20 этаже получают приглашение в бой; участники телепортируются на арену.',
+      } },
+      { category: { en: 'DM-300 & Warlock Effects', ru: 'ДМ-300 и эффекты Чернокнижника' }, description: {
+        en: 'DM-300 fidelity pass (SPD ability cooldowns, gas cone line-of-sight, supercharged wall breaking, arena sealing). Warlock bolts and Wand of Corruption now use SPD\'s dark shadow-particle stream, the zap sound plays once with the real sample, and the Degrade sound was added.',
+        ru: 'Доработка ДМ-300 по SPD (кулдауны способностей, видимость конуса газа, разрушение стен в режиме перегрузки, запечатывание арены). Снаряды Чернокнижника и Жезла порчи теперь — тёмный поток теневых частиц как в SPD, звук выстрела проигрывается один раз настоящим сэмплом, добавлен звук Деградации.',
+      } },
       { category: { en: 'Tengu Boss Arena Party Prompt', ru: 'Групповой вход на арену Тенгу' }, description: {
         en: 'Unlocking Tengu\'s cell door on Floor 10 now prompts all active players on the floor to join the boss fight. The initiator can choose to start without decliners or wait. When entering, participating players are teleported horizontally inside the cell (with trap clearance underfoot) while non-participants are preserved as spectators outside.',
         ru: 'Открытие двери камеры Тенгу на 10 этаже теперь отправляет запрос всем активным игрокам на этаже. Инициатор может начать бой без отказавшихся или подождать. При старте участники телепортируются в горизонтальный ряд внутри камеры (с очисткой ловушек под ногами), а остальные игроки остаются зрителями снаружи.',

@@ -1,13 +1,13 @@
 # Copyright (C) 2026 ArtemNikov
 #
+import math
 import random
 from typing import List
 
-from pydantic import Field
+from pydantic import Field, PrivateAttr
 
 from app.engine.entities.mobs.caves import Ghoul, Monk, Warlock, Golem
 from app.engine.entities.player import Mob as MobEntity, DropEntry
-from app.engine.game.constants import TICKS_PER_TURN
 
 # ---------------------------------------------------------------------------
 # City Enemies (depths 16-19) + Boss DwarfKing (floor 20)
@@ -140,126 +140,102 @@ class DwarfKing(MobEntity):
     max_lvl: int = -2
     properties: List[str] = ["UNDEAD", "BOSS"]
     attack_cooldown: float = 1.0
-    loot_table: List[DropEntry] = [
-        DropEntry(item_kind="kings_crown", chance=1.0, max_global=0),
-    ]
 
-    # Boss runtime state
+    # Boss runtime state; cooldowns/delays are in game turns (DwarfKing.act() runs once per turn)
     phase: int = 1
     summons_made: int = 0
     summon_cooldown: float = 0.0
     ability_cooldown: float = 0.0
     last_ability: int = 0  # 0=NONE, 1=LINK, 2=TELE
     fight_started: bool = False
-    enrage_announced: bool = False
-    losing_announced: bool = False
     barrier_hp: int = 0
     barrier_max: int = 0
     deferred_damage: int = 0
     phase3_ticks: int = 0
-    pending_summons: List[dict] = Field(default_factory=list, exclude=True)
-    linked_mob_id: str = ""
+    act_ticks: int = 0
+    wave_wait: int = 0
+    turn_spent: bool = False
+    pending_summons: List[dict] = Field(default_factory=list)
+    king_damager_ids: List[str] = Field(default_factory=list)
+
+    _life_links: list = PrivateAttr(default_factory=list)
+    _deferred_popups: list = PrivateAttr(default_factory=list)
+    _locked_floor_credit: float = PrivateAttr(default=0.0)
 
     def take_damage(self, amount: int, is_split_damage: bool = False) -> int:
+        """DwarfKing.damage(): phase 1 shares damage over LifeLinks and cannot drop
+        below the phase-2 threshold, phase 2 is invulnerable (KingDamager is applied
+        by the AI), phase 3 defers every hit into Viscosity.DeferedDamage."""
         if not self.is_alive or amount <= 0:
             return 0
 
-        # Phase 1: Melee & Lifelink damage sharing
         if self.phase == 1:
-            if not is_split_damage and self.has_buff("life_link"):
-                owner = getattr(self, "_owner_ref", None)
-                if owner is not None and getattr(owner, "is_alive", False):
-                    split = amount // 2
-                    amount = amount - split
-                    owner.take_damage(split, is_split_damage=True)
+            if not is_split_damage:
+                links = [link[0] for link in self._life_links if link[0].is_alive]
+                if links:
+                    amount = math.ceil(amount / (len(links) + 1))
+                    for linked in links:
+                        linked.take_damage(amount, is_split_damage=True)
+            amount, _ = self.process_shields(amount)
+            self.hp -= amount
+            turns = amount / 8.0
+            self.summon_cooldown -= turns
+            self.ability_cooldown -= turns
+            self._locked_floor_credit += amount
+            threshold = 100 if self.max_hp > 300 else 50
+            if self.hp <= threshold:
+                self.hp = threshold
+            return amount
 
-            hp_threshold = 100 if self.max_hp > 300 else 50
-            max_take = max(0, self.hp - hp_threshold)
-            actual_dmg = min(amount, max_take)
-            self.hp -= actual_dmg
-            if actual_dmg > 0:
-                accel = (actual_dmg / 8.0) * TICKS_PER_TURN
-                self.summon_cooldown = max(0.0, self.summon_cooldown - accel)
-                self.ability_cooldown = max(0.0, self.ability_cooldown - accel)
-            return actual_dmg
-
-        # Phase 2: King is invulnerable on throne; shield is broken by killing KingDamager minions
         if self.phase == 2:
             return 0
 
-        # Phase 3: Viscosity deferred damage — direct hits add to deferred pool
-        if self.phase == 3:
-            if not is_split_damage:
-                self.deferred_damage += amount
-            else:
-                self.hp = max(0, self.hp - amount)
-                if self.hp <= 0:
-                    self.hp = 0
-                    self.is_alive = False
-            return 0
-
-        return super().take_damage(amount, is_split_damage=is_split_damage)
+        if self.deferred_damage == 0:
+            self.phase3_ticks = 0
+        self.deferred_damage += amount
+        self._deferred_popups.append(amount)
+        return 0
 
 
 class DKGhoul(Ghoul):
-    """DwarfKing minion — enhanced Ghoul, always starts hunting."""
+    """DwarfKing minion — Ghoul that always starts hunting and never partners."""
     name: str = "DK Ghoul"
-    hp: int = 40
-    max_hp: int = 40
-    attack_skill: int = 15
-    defense_skill: int = 10
-    damage_min: int = 6
-    damage_max: int = 12
+    exp: int = 0
+    loot_table: List[DropEntry] = []
     properties: List[str] = ["UNDEAD", "BOSS_MINION"]
     max_lvl: int = -2
     king_damager: bool = False
     linked_king_id: str = ""
-    linked_mob_id: str = ""
 
 
 class DKMonk(Monk):
-    """DwarfKing minion — enhanced Monk, always starts hunting."""
+    """DwarfKing minion — Monk that always starts hunting."""
     name: str = "DK Monk"
-    hp: int = 70
-    max_hp: int = 70
-    attack_skill: int = 22
-    defense_skill: int = 24
-    damage_min: int = 10
-    damage_max: int = 18
-    properties: List[str] = ["BOSS_MINION"]
-    max_lvl: int = -2
-    king_damager: bool = False
-    linked_king_id: str = ""
-    linked_mob_id: str = ""
-
-
-class DKWarlock(Warlock):
-    """DwarfKing minion — enhanced Warlock, always starts hunting."""
-    name: str = "DK Warlock"
-    hp: int = 60
-    max_hp: int = 60
-    attack_skill: int = 20
-    defense_skill: int = 18
-    damage_min: int = 10
-    damage_max: int = 16
+    exp: int = 0
+    loot_table: List[DropEntry] = []
     properties: List[str] = ["UNDEAD", "BOSS_MINION"]
     max_lvl: int = -2
     king_damager: bool = False
     linked_king_id: str = ""
-    linked_mob_id: str = ""
 
 
-class DKGolem(Golem):
-    """DwarfKing minion — enhanced Golem, always starts hunting."""
-    name: str = "DK Golem"
-    hp: int = 110
-    max_hp: int = 110
-    attack_skill: int = 24
-    defense_skill: int = 12
-    damage_min: int = 20
-    damage_max: int = 35
-    properties: List[str] = ["INORGANIC", "BOSS_MINION"]
+class DKWarlock(Warlock):
+    """DwarfKing minion — Warlock that always starts hunting."""
+    name: str = "DK Warlock"
+    exp: int = 0
+    loot_table: List[DropEntry] = []
+    properties: List[str] = ["UNDEAD", "BOSS_MINION"]
     max_lvl: int = -2
     king_damager: bool = False
     linked_king_id: str = ""
-    linked_mob_id: str = ""
+
+
+class DKGolem(Golem):
+    """DwarfKing minion — Golem that always starts hunting."""
+    name: str = "DK Golem"
+    exp: int = 0
+    loot_table: List[DropEntry] = []
+    properties: List[str] = ["INORGANIC", "LARGE", "BOSS_MINION"]
+    max_lvl: int = -2
+    king_damager: bool = False
+    linked_king_id: str = ""

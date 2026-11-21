@@ -730,12 +730,17 @@ export const getTenguFrame = (mob, mobAnim, now) => {
 
 // Faithful to original SPD DM300Sprite (25x22 frames, dm300.png is 2 rows of 10 columns:
 // row 0 = normal, row 1 = supercharged/enraged):
-//   idle    10fps loop  [0,1]
-//   run     10fps loop  [0,2]
-//   attack  15fps once  [3,4,5]
-//   zap     15fps loop  [6,7,7,6]    (die handled in draw/mobs.js)
+//   idle    10fps (15fps enraged) loop  [c+0,c+1]
+//   run     10fps (15fps enraged) loop  [c+0,c+2]
+//   attack  15fps once                  [c+3,c+4,c+5]
+//   zap     15fps once                  [6,7,7,6] (always row 0)
+//   charge   4fps loop                  [0,10] (row 0 col 0 <-> row 1 col 0)
 export const getDM300Frame = (mob, mobAnim, now) => {
   const anim = mobAnim[mob.id] || {};
+  const isCharging = anim.chargeUntil && now < anim.chargeUntil;
+  if (isCharging) {
+    return 0;
+  }
   const isAttacking = anim.attackUntil && now < anim.attackUntil;
   const isZapping = anim.zapUntil && now < anim.zapUntil;
   if (isAttacking) {
@@ -746,10 +751,11 @@ export const getDM300Frame = (mob, mobAnim, now) => {
   if (isZapping) {
     return [6, 7, 7, 6][Math.floor(now / 67) % 4] * DM300_FW;
   }
+  const frameMs = mob.supercharged ? 67 : 100;
   if (isEntityMoving(mob)) {
-    return [0, 2][Math.floor(now / 100) % 2] * DM300_FW;
+    return [0, 2][Math.floor(now / frameMs) % 2] * DM300_FW;
   }
-  return [0, 1][Math.floor(now / 100) % 2] * DM300_FW;
+  return [0, 1][Math.floor(now / frameMs) % 2] * DM300_FW;
 };
 
 // Faithful to original SPD BruteSprite (12x16 frames, brute.png is 2 rows: Brute = row 0,

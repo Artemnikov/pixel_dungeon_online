@@ -52,7 +52,12 @@ import type { AnimState, MoveResult, RenderPlayer, Ref } from '../types';
 import type { GameEventContext, IGameEventHandler } from './IGameEventHandler';
 import { defaultMoveResultDispatcher } from '../movement/MoveResultDispatcher';
 
-const BLOOD_COLORS: Record<string, string> = { Goo: '#000000' };
+const BLOOD_COLORS: Record<string, string> = {
+  Goo: '#000000',
+  Larva: '#bbcc66',
+  'DM-300': '#ffff88',
+  Pylon: '#ffff88',
+};
 
 let nextAttackReadyAt = 0;
 let lastAttackCooldownMs = 1000;
@@ -310,11 +315,18 @@ export function createCombatEventHandlers(): IGameEventHandler[] {
         }
 
         const srcPlayer = ctx.entities.getPlayer(src);
+        const srcMob = ctx.entities.getMob(src);
         if (srcPlayer && event.data.is_wand) {
           ctx.effects.setPlayerAttack(src, PLAYER_ATTACK_DURATION);
           const dx = event.data.target_x - event.data.x;
           if (dx > 0) { srcPlayer.facing = 'RIGHT'; srcPlayer.flipX = false; }
           else if (dx < 0) { srcPlayer.facing = 'LEFT'; srcPlayer.flipX = true; }
+        } else if (srcMob) {
+          const attackDuration = srcMob.name === 'Scorpio' || srcMob.name === 'Yog Scorpio' || srcMob.name === 'DM-200' || srcMob.name === 'DM-201' ? 200 : 250;
+          ctx.effects.setMobAttack(src, attackDuration);
+          const dx = event.data.target_x - event.data.x;
+          if (dx > 0) { srcMob.facing = 'RIGHT'; srcMob.flipX = false; }
+          else if (dx < 0) { srcMob.facing = 'LEFT'; srcMob.flipX = true; }
         }
 
         if (projType === 'lightning') {
@@ -373,7 +385,7 @@ export function createCombatEventHandlers(): IGameEventHandler[] {
         }
 
         if (srcMob) {
-          const attackDuration = srcMob.name === 'Goo' ? 300 : srcMob.name === 'Scorpio' ? 200 : srcMob.name === 'Rat' ? 333 : srcMob.name === 'Snake' ? 333 : 250;
+          const attackDuration = srcMob.name === 'Goo' ? 300 : srcMob.name === 'Scorpio' || srcMob.name === 'Yog Scorpio' || srcMob.name === 'Larva' ? 200 : srcMob.name === 'Rat' ? 333 : srcMob.name === 'Snake' ? 333 : 250;
           ctx.effects.setMobAttack(src, attackDuration);
         } else if (srcPlayer) {
           ctx.effects.setPlayerAttack(src, PLAYER_ATTACK_DURATION);
@@ -676,6 +688,19 @@ export function createCombatEventHandlers(): IGameEventHandler[] {
         }
         const mob = ctx.entities.getMob(id);
         if (mob) {
+          const mx = Math.round(mob.renderPos.x);
+          const my = Math.round(mob.renderPos.y);
+          if (ctx.world.isVisible(mx, my)) {
+            const cx = mob.renderPos.x * TILE_SIZE + TILE_SIZE / 2;
+            const cy = mob.renderPos.y * TILE_SIZE + TILE_SIZE / 2;
+            if (mob.name === 'Larva' && ctx.effects.particlesRef) {
+              spawnBlood(ctx.effects.particlesRef, cx, cy, -Math.PI / 2, 10, '#bbcc66');
+            } else if (mob.name === 'Pylon') {
+              // PylonSprite.play(die): burst(BlastParticle.FACTORY, 20) + Sample.play(BLAST)
+              if (ctx.effects.particlesRef) spawnBombBlast(ctx.effects.particlesRef, cx, cy, 20);
+              ctx.audio.play('BLAST');
+            }
+          }
           ctx.entities.recordDyingMob(id, mob);
           if (mob.faction === 'enemy') addGameLog(`${mob.name} defeated!`, 'positive');
         }

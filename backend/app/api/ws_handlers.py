@@ -470,3 +470,17 @@ def handle_tengu_start_decision(
     game: GameInstance, player_id: str, message: msg.TenguStartDecision
 ):
     game.decide_tengu_start(player_id, message.action)
+
+
+@dispatcher.register(msg.DwarfKingJoinResponse)
+def handle_dwarf_king_join_response(
+    game: GameInstance, player_id: str, message: msg.DwarfKingJoinResponse
+):
+    game.respond_dwarf_king_join(player_id, message.approve)
+
+
+@dispatcher.register(msg.DwarfKingStartDecision)
+def handle_dwarf_king_start_decision(
+    game: GameInstance, player_id: str, message: msg.DwarfKingStartDecision
+):
+    game.decide_dwarf_king_start(player_id, message.action)

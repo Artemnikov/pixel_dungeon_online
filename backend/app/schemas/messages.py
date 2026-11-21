@@ -376,6 +376,16 @@ class TenguStartDecision(_ClientMessageBase):
     action: Literal["start_without", "wait"]
 
 
+class DwarfKingJoinResponse(_ClientMessageBase):
+    type: Literal["DWARF_KING_JOIN_RESPONSE"]
+    approve: bool
+
+
+class DwarfKingStartDecision(_ClientMessageBase):
+    type: Literal["DWARF_KING_START_DECISION"]
+    action: Literal["start_without", "wait"]
+
+
 ClientMessage = Annotated[
     Union[
         Ping,
@@ -410,6 +420,8 @@ ClientMessage = Annotated[
         SetClericQuickSpell,
         TenguJoinResponse,
         TenguStartDecision,
+        DwarfKingJoinResponse,
+        DwarfKingStartDecision,
         MetamorphChoose,
         MetamorphReplace,
         AdminTeleport,

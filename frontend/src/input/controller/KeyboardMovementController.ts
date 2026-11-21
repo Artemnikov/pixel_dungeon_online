@@ -1,6 +1,11 @@
 import type { InputContext } from './IKeyCommand';
 import { KeyActionRegistry } from './KeyActionRegistry';
-import { DirectionalMoveCommand, DEFAULT_CHORD_DELAY_MS } from './commands/DirectionalMoveCommand';
+import {
+  DirectionalMoveCommand,
+  DEFAULT_CHORD_DELAY_MS,
+  DEFAULT_HOLD_REPEAT_DELAY_MS,
+  DEFAULT_TURN_CHORD_DELAY_MS,
+} from './commands/DirectionalMoveCommand';
 import { QuickslotCommand } from './commands/QuickslotCommand';
 import { InventoryToggleCommand } from './commands/InventoryToggleCommand';
 import { TalentsToggleCommand } from './commands/TalentsToggleCommand';
@@ -34,6 +39,8 @@ export class KeyboardMovementController {
         }
       },
       DEFAULT_CHORD_DELAY_MS,
+      DEFAULT_HOLD_REPEAT_DELAY_MS,
+      DEFAULT_TURN_CHORD_DELAY_MS,
     );
     this.quickslotCmd = new QuickslotCommand();
 

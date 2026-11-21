@@ -174,28 +174,43 @@ class MobDeathMixin:
         # chain-activation of another pylon.
         if isinstance(mob, Pylon):
             # Port of CavesBossLevel.ArenaVisuals: update pylon cell to broken base (tile 38)
+            custom_tile_patches = []
             for layer in floor.custom_tiles:
                 if layer.get("texture") == "caves_boss" and layer.get("y") == 12:
                     prow = mob.pos.y - layer["y"]
                     pcol = mob.pos.x - layer["x"]
                     if 0 <= prow < layer["h"] and 0 <= pcol < layer["w"]:
                         layer["tiles"][prow][pcol] = 38
+                        custom_tile_patches.append({
+                            "texture": "caves_boss",
+                            "layer_y": 12,
+                            "row": prow,
+                            "col": pcol,
+                            "tile": 38,
+                        })
                         break
+            if custom_tile_patches:
+                self.add_event("MAP_PATCH", {
+                    "tiles": [],
+                    "custom_tiles": custom_tile_patches,
+                }, floor_id=floor_id)
 
             pylons_remaining = sum(1 for m in floor.mobs.values() if isinstance(m, Pylon) and m.is_alive)
             for other in floor.mobs.values():
                 if isinstance(other, DM300):
                     other.lose_supercharge()
                     if other.pylons_activated < other.total_pylons_to_activate():
-                        self.add_event("BOSS_YELL", {"mob": other.id, "text": "Supercharge lost.",
+                        self.add_event("BOSS_YELL", {"mob": other.id, "text": "PYLON DESTROYED! REVERTING TO LOCAL POWER!",
                                                      "x": other.pos.x, "y": other.pos.y}, floor_id=floor_id)
                     else:
-                        self.add_event("BOSS_YELL", {"mob": other.id, "text": "All pylons destroyed!",
+                        self.add_event("BOSS_YELL", {"mob": other.id, "text": "ALERT! INSTABILITY DETECTED IN POWER GRID!",
                                                      "x": other.pos.x, "y": other.pos.y}, floor_id=floor_id)
                     break
             # Port of CavesBossLevel.eliminatePylon(): clear the energy blob
-            # if more than 2 pylons remain alive.
-            if pylons_remaining > 2:
+            # if more than finalPylonsRemaining (1 with stronger_bosses, else 2) remain alive.
+            is_stronger = "stronger_bosses" in getattr(self, "challenges", set())
+            final_pylons_remaining = 1 if is_stronger else 2
+            if pylons_remaining > final_pylons_remaining:
                 for bid in list(floor.blob_areas.keys()):
                     if floor.blob_areas[bid].get("type") == "pylon_energy":
                         del floor.blob_areas[bid]
@@ -253,7 +268,7 @@ class MobDeathMixin:
             if self.qualified_for_boss_challenge:
                 self.add_event("DM300_BADGE_QUALIFIED", {}, floor_id=floor_id)
             self.add_event("BOSS_SLAIN", {"mob": mob.id, "depth": floor_id, "badge_image": 16}, floor_id=floor_id)
-            self.add_event("BOSS_YELL", {"mob": mob.id, "text": "System failure...",
+            self.add_event("BOSS_YELL", {"mob": mob.id, "text": "CRITICAL DAMAGE! ATTEMPTING SHUTDO-",
                                          "x": mob.pos.x, "y": mob.pos.y}, floor_id=floor_id)
             from app.engine.game.ai_dm300 import _dm300_unseal_arena
             _dm300_unseal_arena(self, floor, floor_id)

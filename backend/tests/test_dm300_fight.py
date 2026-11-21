@@ -202,21 +202,35 @@ def test_pylon_energy_damages_entities_and_skips_dm300():
     assert dm.hp == dm.max_hp
 
 
-def test_dm300_trap_step_no_shield_when_energized():
+def test_dm300_trap_step_replaces_shield_and_no_shield_when_energized():
     floor = make_floor()
     game = make_game(floor)
 
     floor.grid[15][10] = TileType.INACTIVE_TRAP
     dm = DM300(id="dm1", pos=Position(x=10, y=15), faction=Faction.DUNGEON)
+    dm.ai_state = "hunting"
     floor.mobs[dm.id] = dm
 
-    # 1. Normal un-energized step: gains barrier
+    # 1. Normal un-energized step: gains barrier (30 + (300-300)//10 = 30), warn=True on first step
     from app.engine.game.ai_dm300 import _check_dm300_trap_step
     _check_dm300_trap_step(game, dm, floor, floor.floor_id)
     assert len(dm.shields) == 1
     assert dm.shields[0].name == "dm300_barrier"
+    assert dm.shields[0].amount == 30
+    ev = [e for e in game.flush_events() if e["type"] == "DM300_TRAP_STEP"][0]
+    assert ev["data"]["shield"] == 30
+    assert ev["data"]["warn"] is True
 
-    # 2. Energized step: no new barrier
+    # 2. Second step while already shielded replaces (does NOT stack) and sets warn=False
+    dm.hp = 200  # 30 + (300-200)//10 = 40
+    _check_dm300_trap_step(game, dm, floor, floor.floor_id)
+    assert len(dm.shields) == 1
+    assert dm.shields[0].amount == 40
+    ev2 = [e for e in game.flush_events() if e["type"] == "DM300_TRAP_STEP"][0]
+    assert ev2["data"]["shield"] == 40
+    assert ev2["data"]["warn"] is False
+
+    # 3. Energized step: no new barrier
     dm.shields = []
     floor.blob_areas["dm300_pylon_energy"] = {
         "type": "pylon_energy",
@@ -390,4 +404,118 @@ def test_pylon_elimination_clears_energy_on_first_and_retains_on_second():
     game.handle_mob_death(pylons[1], floor, floor.floor_id)
     assert dm.supercharged is False
     assert "dm300_pylon_energy" in floor.blob_areas
+
+
+def test_stronger_bosses_dm300_and_pylon_scaling():
+    floor = make_floor()
+    game = make_game(floor)
+    game.set_challenges("stronger_bosses")
+
+    dm = DM300(id="dm1", pos=Position(x=16, y=20), hp=400, max_hp=400, faction=Faction.DUNGEON)
+    floor.mobs[dm.id] = dm
+    pylons = [
+        Pylon(id=f"p{i}", pos=Position(x=px, y=py), hp=80, max_hp=80, faction=Faction.DUNGEON)
+        for i, (px, py) in enumerate(PYLON_COORDS)
+    ]
+    for p in pylons:
+        floor.mobs[p.id] = p
+
+    assert dm.total_pylons_to_activate() == 3
+
+    # Thresholds at 300, 200, 100 HP
+    dm.take_damage(150)
+    assert dm.hp == 300
+    assert dm.supercharged is True
+    assert dm.pylons_activated == 1
+
+    # Kill 1st pylon (3 remain > 1) -> energy cleared
+    floor.blob_areas["dm300_pylon_energy"] = {"type": "pylon_energy", "cells": {(10, 10)}}
+    pylons[0].is_alive = False
+    game.handle_mob_death(pylons[0], floor, floor.floor_id)
+    assert dm.supercharged is False
+    assert "dm300_pylon_energy" not in floor.blob_areas
+
+    # 2nd threshold at 200 HP
+    dm.take_damage(150)
+    assert dm.hp == 200
+    assert dm.supercharged is True
+    assert dm.pylons_activated == 2
+
+    # Kill 2nd pylon (2 remain > 1) -> energy cleared
+    floor.blob_areas["dm300_pylon_energy"] = {"type": "pylon_energy", "cells": {(10, 10)}}
+    pylons[1].is_alive = False
+    game.handle_mob_death(pylons[1], floor, floor.floor_id)
+    assert dm.supercharged is False
+    assert "dm300_pylon_energy" not in floor.blob_areas
+
+    # 3rd threshold at 100 HP
+    dm.take_damage(150)
+    assert dm.hp == 100
+    assert dm.supercharged is True
+    assert dm.pylons_activated == 3
+
+    # Kill 3rd pylon (1 remains <= 1) -> energy retained in final phase
+    floor.blob_areas["dm300_pylon_energy"] = {"type": "pylon_energy", "cells": {(10, 10)}}
+    pylons[2].is_alive = False
+    game.handle_mob_death(pylons[2], floor, floor.floor_id)
+    assert dm.supercharged is False
+    assert "dm300_pylon_energy" in floor.blob_areas
+
+
+def test_pylon_and_pylon_energy_score_and_badge_penalties():
+    floor = make_floor()
+    game = make_game(floor)
+    game.qualified_for_boss_challenge = True
+    initial_score = game.boss_scores[2]
+
+    dm = DM300(id="dm1", pos=Position(x=16, y=20), faction=Faction.DUNGEON)
+    dm.supercharged = True
+    floor.mobs[dm.id] = dm
+
+    pylon = Pylon(id="p0", pos=Position(x=10, y=10), faction=Faction.DUNGEON)
+    pylon.activated = True
+    pylon.fire_target_idx = 1  # CIRCLE8[1] = (0, -1) -> (10, 9)
+    pylon.bolt_cooldown = 1
+    floor.mobs[pylon.id] = pylon
+
+    player = game.add_player("p1", "Hero")
+    player.floor_id = floor.floor_id
+    player.pos = Position(x=10, y=9)
+    player.hp = player.get_total_max_hp()
+
+    from app.engine.game.ai_pylon import _update_pylon
+    _update_pylon(game, pylon, floor, floor.floor_id)
+    assert game.qualified_for_boss_challenge is False
+    assert game.boss_scores[2] == initial_score - 100
+
+    # PylonEnergy hit deducts 200 from boss_scores[2]
+    game.qualified_for_boss_challenge = True
+    floor.blob_areas["dm300_pylon_energy"] = {
+        "type": "pylon_energy",
+        "cells": {(10, 9)},
+        "volume": {(10, 9): 1},
+        "tick_counter": GAME_TURN_TICKS - 1,
+    }
+    from app.engine.game.tick_steps import run_blob_round_upkeep
+    run_blob_round_upkeep(game, [floor.floor_id])
+    assert game.boss_scores[2] == initial_score - 300
+    assert game.qualified_for_boss_challenge is False
+
+
+def test_engaged_dm300_stays_in_serialized_mobs_outside_fov():
+    floor = make_floor()
+    game = make_game(floor)
+
+    dm = DM300(id="dm1", pos=Position(x=5, y=15), faction=Faction.DUNGEON)
+    dm.fight_started = True
+    floor.mobs[dm.id] = dm
+
+    player = game.add_player("p1", "Hero")
+    player.floor_id = floor.floor_id
+    player.pos = Position(x=28, y=37)  # Far outside view_distance=8
+
+    state = game.get_state(player.id)
+    mob_ids = [m["id"] for m in state["mobs"]]
+    assert dm.id in mob_ids
+
 

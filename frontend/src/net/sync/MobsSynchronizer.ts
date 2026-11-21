@@ -51,8 +51,16 @@ export class MobsSynchronizer implements IStateSynchronizer {
           existing.moveDuration = glideDuration(existing.renderPos.x, existing.renderPos.y, m.pos.x, m.pos.y, stepDur);
         }
         existing.hp = m.hp;
+        existing.max_hp = m.max_hp;
+        existing.shields = m.shields;
+        existing.buffs = m.buffs;
         existing.ai_state = m.ai_state;
         existing.faction = m.faction;
+        if ('activated' in m) (existing as RenderMob & { activated?: boolean }).activated = (m as { activated?: boolean }).activated;
+        if ('supercharged' in m) (existing as RenderMob & { supercharged?: boolean }).supercharged = (m as { supercharged?: boolean }).supercharged;
+        if ('pylons_activated' in m) (existing as RenderMob & { pylons_activated?: number }).pylons_activated = (m as { pylons_activated?: number }).pylons_activated;
+        if ('fight_started' in m) (existing as RenderMob & { fight_started?: boolean }).fight_started = (m as { fight_started?: boolean }).fight_started;
+        if ('pending_summons' in m) (existing as RenderMob & { pending_summons?: unknown }).pending_summons = (m as { pending_summons?: unknown }).pending_summons;
         applyInvisFade(existing, m.invisible || 0);
       }
     });

@@ -223,6 +223,10 @@ class MovementMixin:
             _reject_move()
             return
 
+        if tile == TileType.DOOR and floor_id == 20 and (new_x, new_y) == (7, 37):
+            from app.engine.game.ai_dwarf_king import _maybe_initiate_dwarf_king_door_prompt
+            _maybe_initiate_dwarf_king_door_prompt(self, entity, floor, new_x, new_y)
+
         if not floor.flags or not (floor.flags.passable[new_y][new_x] or floor.flags.avoid[new_y][new_x]):
             _reject_move()
             return

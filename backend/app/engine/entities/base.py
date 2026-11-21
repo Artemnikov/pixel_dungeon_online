@@ -306,6 +306,15 @@ class Entity(BaseModel):
         self.shields.append(s)
         return s
 
+    def set_shield(self, name: str, amount: int, priority: int = 0, decay: int = 1) -> Shield:
+        existing = self.get_shield(name)
+        if existing:
+            existing.amount = amount
+            return existing
+        s = Shield(name=name, amount=amount, priority=priority, decay=decay)
+        self.shields.append(s)
+        return s
+
     def decay_shields(self):
         active = []
         for s in self.shields:

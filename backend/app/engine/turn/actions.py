@@ -545,6 +545,14 @@ _FREE_MENUS: Dict[str, tuple] = {
         lambda g, p, m: g.decide_tengu_start(p.id, m.action),
         "TENGU_PROMPT",
     ),
+    _msg_type(msg.DwarfKingJoinResponse): (
+        lambda g, p, m: g.respond_dwarf_king_join(p.id, m.approve),
+        "DWARF_KING_PROMPT",
+    ),
+    _msg_type(msg.DwarfKingStartDecision): (
+        lambda g, p, m: g.decide_dwarf_king_start(p.id, m.action),
+        "DWARF_KING_PROMPT",
+    ),
     _msg_type(msg.NpcInteract): (lambda g, p, m: g.npc_interact(p.id, m.npc_id), "NPC"),
     _msg_type(msg.ShopBuy): (lambda g, p, m: g.shop_buy(p.id, m.npc_id, m.item_id), "SHOP"),
     _msg_type(msg.ShopSell): (lambda g, p, m: g.shop_sell(p.id, m.item_id), "SHOP"),

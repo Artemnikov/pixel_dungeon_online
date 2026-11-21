@@ -3,7 +3,8 @@ import time
 import uuid
 
 from app.engine.entities.base import Position
-from app.engine.entities.mobs import Warlock
+from app.engine.entities.mobs import DKWarlock, Warlock
+from app.engine.entities.player import Player
 from app.engine.game.ai_ranged_common import (
     ranged_accuracy_roll, ranged_approach, ranged_death_check, ranged_dr_damage,
 )
@@ -16,6 +17,10 @@ def _update_warlock(game, mob: Warlock, floor, floor_id: int) -> bool:
     target, dist, in_los = approach
 
     if dist <= mob.attack_range and in_los:
+        now = time.time()
+        last = getattr(mob, "last_attack_time", 0)
+        if now - last < getattr(mob, "attack_cooldown", 1.0):
+            return False
         _warlock_zap(game, mob, target, floor, floor_id)
         return True
 
@@ -23,6 +28,9 @@ def _update_warlock(game, mob: Warlock, floor, floor_id: int) -> bool:
 
 
 def _warlock_zap(game, mob, target, floor, floor_id: int):
+    if isinstance(mob, DKWarlock) and isinstance(target, Player):
+        if hasattr(game, "boss_scores") and 3 in game.boss_scores:
+            game.boss_scores[3] -= 400
     bolt_type = getattr(mob, "bolt_type", "shadow")
     game.add_event("RANGED_ATTACK", {
         "source": mob.id,
@@ -36,7 +44,6 @@ def _warlock_zap(game, mob, target, floor, floor_id: int):
         "crit": False,
         "grim_proc": False,
     }, floor_id=floor_id)
-    game.add_event("PLAY_SOUND", {"sound": "ZAP"}, floor_id=floor_id)
 
     mob.last_attack_time = time.time()
 

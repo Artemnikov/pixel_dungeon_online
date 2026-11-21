@@ -63,6 +63,28 @@ class MobAIDispatchMixin:
         if isinstance(mob, DM300):
             _tick_dm300_pending_rockfall(self, mob, floor, floor_id)
 
+        if isinstance(mob, DM300):
+            if getattr(mob, "pending_invuln_hint", False):
+                mob.pending_invuln_hint = False
+                self.add_event("MESSAGE", {
+                    "text": "DM-300 is invulnerable while it is being energized by a pylon!",
+                }, floor_id=floor_id)
+            if mob.pending_pylon_activation:
+                mob.pending_pylon_activation = False
+                is_stronger = "stronger_bosses" in getattr(self, "challenges", set())
+                stagger_dur = 1.0 if is_stronger else 1.5
+                self.add_event("DM300_SUPERCHARGE", {
+                    "mob": mob.id,
+                    "x": mob.pos.x,
+                    "y": mob.pos.y,
+                    "duration_ms": int(stagger_dur * 1000),
+                }, floor_id=floor_id)
+                target_p = self._find_nearest_player(mob.pos, floor_id)
+                _activate_pylon(self, floor, floor_id, near_pos=target_p.pos if target_p else mob.pos)
+                mob.add_buff("stagger", duration=stagger_dur)
+                self.add_event("BOSS_YELL", {"mob": mob.id, "text": "SUSTAINING DAMAGE! ACTIVATING POWER PYLON!",
+                                             "x": mob.pos.x, "y": mob.pos.y}, floor_id=floor_id)
+
         if mob.has_buff("stagger"):
             return
 
@@ -73,8 +95,7 @@ class MobAIDispatchMixin:
                 return
 
         if isinstance(mob, DwarfKing):
-            _update_dwarf_king(self, mob, floor, floor_id)
-            if not getattr(mob, "fight_started", False) or "IMMOVABLE" in getattr(mob, "properties", []):
+            if _update_dwarf_king(self, mob, floor, floor_id):
                 return
 
         if isinstance(mob, YogDzewa):
@@ -82,14 +103,6 @@ class MobAIDispatchMixin:
             return
 
         if isinstance(mob, DM300):
-            if mob.pending_pylon_activation:
-                mob.pending_pylon_activation = False
-                self.add_event("DM300_SUPERCHARGE", {"mob": mob.id}, floor_id=floor_id)
-                target_p = self._find_nearest_player(mob.pos, floor_id)
-                _activate_pylon(self, floor, floor_id, near_pos=target_p.pos if target_p else mob.pos)
-                mob.add_buff("stagger", duration=1.5)
-                self.add_event("BOSS_YELL", {"mob": mob.id, "text": "Supercharging...",
-                                             "x": mob.pos.x, "y": mob.pos.y}, floor_id=floor_id)
             if _update_dm300(self, mob, floor, floor_id):
                 return
 

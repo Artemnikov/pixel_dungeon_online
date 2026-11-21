@@ -225,6 +225,16 @@
       "startWithout": "Начать без них",
       "wait": "Подождать"
     },
+    "dwarfKingPrompt": {
+      "title": "Бой с Королём Дворфов",
+      "joinDesc": "{{name}} бросает вызов Королю Дворфов! Хотите присоединиться к бою?",
+      "joinYes": "В бой",
+      "joinNo": "Не готов",
+      "declinedDesc": "{{names}} не готов присоединиться к бою.",
+      "waitingDesc": "Ожидание ответа от {{names}}...",
+      "startWithout": "Начать без них",
+      "wait": "Подождать"
+    },
     "newGame": "Новая игра",
     "menuBtn": "Меню",
     "resurrect": {

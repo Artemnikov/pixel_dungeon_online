@@ -5,12 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.2.1] - 2026-10-24
+## [1.2.1] - 2026-11-21
 
 ### Added
+- **Dwarf King Fight (SPD port completed)**: Phase 1 Life Link (multi-link damage sharing) and Teleport Subject with SPD positioning; phase 2 turn-by-turn summon waves (normal and Stronger Bosses), regenerating barrier, and KingDamager barrier damage (including overflow to HP and corrupted/charmed minions); phase 3 summons every turn with Viscosity deferred-damage bleed. Summon pedestals now telegraph inbound minions for the whole delay, and "invulnerable" / "deferred N" status text is shown.
+- **Dwarf King Party Prompt**: Entering the throne room with other players on Floor 20 prompts them to join the fight; participants are teleported into the arena.
+- **Dwarf King Idle Pacing (real-time)**: While the King is shielded and none of his minions are alive, his turn clock runs 4x faster, so players no longer stand around waiting for the next wave (turn-based mode is unchanged).
+- **DM-300 Fidelity Pass**: SPD ability cooldowns, toxic gas cone line-of-sight, supercharged wall breaking, arena sealing displacement, and supercharge yell.
 - **Tengu Boss Party Prompt & Teleport**: Unlocking Tengu's cell door on Floor 10 prompts all active players on the floor to join. The initiator can choose to start without decliners or wait. Participating players are teleported horizontally across row y=24 inside the cell (with trap clearance underfoot) while non-participating players remain spectators outside.
 
 ### Fixed
+- **Dwarf King Barrier Stalls**: Phase 2 minions killed by allies, armor abilities, wands, or any other cause now always damage the King's barrier, so the next wave can no longer stall.
+- **Dwarf King Turn-Based Pacing**: The King now acts once per round in turn-based mode (summons previously took hundreds of turns).
+- **Dwarf King Bugs**: King's Crown no longer drops twice; re-entering the arena after victory no longer re-locks the door; a paralysed King no longer uses abilities; King minions no longer drop loot or grant XP; killing the King with deferred damage now grants XP.
+- **Warlock Zap Effects**: Warlock bolts (and Wand of Corruption) now render as SPD's dark shadow-particle stream; `ZAP` plays the real zap sound once instead of a synthesized double beep; added the Degrade sound.
 - **Turn-Based Diagonal Movement**: Fixed chorded diagonal key handling in turn-based mode to reliably dispatch diagonal steps without unintended cardinal splitting.
 - Cleaned up turn-based test suites and assertions.
 

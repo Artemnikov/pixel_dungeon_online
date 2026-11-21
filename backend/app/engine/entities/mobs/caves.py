@@ -50,10 +50,14 @@ class DM300(MobEntity):
     pylons_activated: int = 0
     supercharged: bool = False
     charge_announced: bool = False
+    invuln_warned: bool = False
     # Set by take_damage when a supercharge threshold is crossed; the combat
     # mixin reads/clears this to trigger CavesBossLevel.activatePylon (which
     # needs floor/player context that take_damage doesn't have).
     pending_pylon_activation: bool = False
+    # Set by take_damage when attacked while supercharged for the first time
+    # (DM300.isInvulnerable -> GLog.w(Messages.get(this, "charging_hint"))).
+    pending_invuln_hint: bool = False
 
     loot_table: List[DropEntry] = [
         DropEntry(item_kind="overloaded_charger", chance=1.0, max_global=0),
@@ -68,23 +72,31 @@ class DM300(MobEntity):
         return self.hp * 2 <= self.max_hp
 
     def total_pylons_to_activate(self) -> int:
-        # SPD: Challenges.STRONGER_BOSSES would raise this to 3; not implemented.
-        return 2
+        # SPD DM300.totalPylonsToActivate(): 3 with STRONGER_BOSSES (max_hp == 400), else 2.
+        return 3 if self.max_hp >= 400 else 2
 
     def take_damage(self, amount: int):
         # DM300.isInvulnerable(): true while supercharged.
         if self.supercharged:
+            if not self.invuln_warned:
+                self.invuln_warned = True
+                self.pending_invuln_hint = True
             return 0
 
         dealt = super().take_damage(amount)
 
         # DM300.damage(): after applying damage, check the supercharge
-        # threshold for the *next* pylon (HT/3 * (2 - pylonsActivated)).
-        threshold = self.max_hp // 3 * (2 - self.pylons_activated)
+        # threshold for the *next* pylon:
+        # normal: HT / 3 * (2 - pylonsActivated)
+        # stronger_bosses: HT / 4 * (3 - pylonsActivated)
+        total_pylons = self.total_pylons_to_activate()
+        div = 4 if total_pylons == 3 else 3
+        threshold = (self.max_hp // div) * (total_pylons - self.pylons_activated)
         if self.hp <= threshold and threshold > 0:
             self.hp = threshold
             self.is_alive = True
             self.supercharged = True
+            self.charge_announced = False
             self.pylons_activated += 1
             self.pending_pylon_activation = True
 
@@ -232,6 +244,8 @@ class Warlock(MobEntity):
     def attack_proc(self, target: "Entity") -> None:
         if random.random() < 0.5:
             target.add_buff("degrade", duration=30.0, level=1)
+            if hasattr(target, "belongings"):
+                self._pending_sound = "DEGRADE"
 
 
 class Monk(MobEntity):

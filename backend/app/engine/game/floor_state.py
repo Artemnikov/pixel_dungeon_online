@@ -44,6 +44,7 @@ class FloorState:
     # and the storedItems list preserved across map rebuilds.
     tengu_state: str = "START"
     tengu_prompt: Optional[Dict[str, Any]] = None
+    dwarf_king_prompt: Optional[Dict[str, Any]] = None
     map_version: int = 0
     prison_stored_items: List[Item] = field(default_factory=list)
 

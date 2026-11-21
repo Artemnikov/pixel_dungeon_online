@@ -256,6 +256,14 @@ class GameInstance(
         """Speed multiplier applied to step animation duration."""
         return 1.0
 
+    def respond_dwarf_king_join(self, player_id: str, approve: bool) -> None:
+        from app.engine.game.ai_dwarf_king import respond_dwarf_king_join
+        respond_dwarf_king_join(self, player_id, approve)
+
+    def decide_dwarf_king_start(self, player_id: str, action: str) -> None:
+        from app.engine.game.ai_dwarf_king import decide_dwarf_king_start
+        decide_dwarf_king_start(self, player_id, action)
+
     def step_player_move(self, player_id: str, dx: int, dy: int) -> None:
         """Move one tile: the single movement path for both game modes.
 

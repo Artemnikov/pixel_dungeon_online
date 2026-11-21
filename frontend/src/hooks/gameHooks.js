@@ -46,7 +46,12 @@ export default function useGameHooks(state) {
   } = state;
 
   const bossBleedingEffective = bossBleeding
-    || (bossInfo?.name === 'Tengu' && bossInfo.hp * 2 <= bossInfo.maxHp);
+    || (bossInfo?.name === 'Tengu' && bossInfo.hp * 2 <= bossInfo.maxHp)
+    || (
+      bossInfo?.name === 'DM-300'
+      && !bossInfo.supercharged
+      && (bossInfo.pylonsActivated ?? 0) >= (bossInfo.maxHp >= 400 ? 3 : 2)
+    );
 
   // --- shared refs ---
   const socketRef = useRef(null);
@@ -207,8 +212,14 @@ export default function useGameHooks(state) {
     onTenguJoinPrompt: modals.onTenguJoinPrompt,
     onTenguPartyStatus: modals.onTenguPartyStatus,
     onTenguPromptClose: modals.onTenguPromptClose,
+    onDwarfKingJoinPrompt: modals.onDwarfKingJoinPrompt,
+    onDwarfKingPartyStatus: modals.onDwarfKingPartyStatus,
+    onDwarfKingPromptClose: modals.onDwarfKingPromptClose,
     onDM300FightStarted: () => setBossFightActive(true),
-    onDwarfKingFightStarted: () => setBossFightActive(true),
+    onDwarfKingFightStarted: () => {
+      modals.onDwarfKingPromptClose();
+      setBossFightActive(true);
+    },
     onDwarfKingPhase2: () => setBossFightActive(true),
     onDwarfKingPhase3: () => setBossBleeding(true),
     onYogFightStarted: () => setBossFightActive(true),

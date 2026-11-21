@@ -64,6 +64,9 @@ import {
   RIPPER_FW,
   RIPPER_FH,
   RIPPER_DEST,
+  LARVA_FW,
+  LARVA_FH,
+  LARVA_DEST,
   PYLON_FW,
   PYLON_FH,
   PYLON_DEST,
@@ -140,6 +143,7 @@ import {
    getGolemFrame,
    getSpinnerFrame,
    getYogFrame,
+  getLarvaFrame,
   getFistFrame,
   getEyeFrame,
   getRipperFrame,
@@ -162,6 +166,9 @@ import {
    getSheepFrame,
 } from '../mobs';
 import { drawShieldFx } from './shieldHalo';
+import { spawnSparkStatic } from './sparkParticle';
+import { spawnBombBlast } from './particles';
+import AudioManager from '../../audio/AudioManager';
 
 // Gnoll's 12x15 frame, centered/bottom-aligned in the 32px tile per SPD placement
 // (x=(col+0.5)*16-w/2, y=(row+1)*16-h), scaled 2x -> 24x30 at offset (+4,+2).
@@ -211,7 +218,7 @@ export function forceAlertMob(mobId, durationMs = ALERT_DURATION) {
   mobAlertUntil[mobId] = performance.now() + durationMs;
 }
 
-export function drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef, dyingMobsRef, shieldFxRef }) {
+export function drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef, dyingMobsRef, shieldFxRef, particlesRef }) {
   const now = performance.now();
 
   Object.values(entitiesRef.current.mobs).forEach(mob => {
@@ -350,7 +357,7 @@ export function drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef,
     } else if (mob.name === 'Ghoul' || mob.name === 'DK Ghoul') {
       mobSprite = assetImages.ghoul;
       sx = getGhoulFrame(mob, mobAnimRef.current, now);
-    } else if (mob.name === 'DK Monk') {
+    } else if (mob.name === 'DK Monk' || mob.name === 'Monk' || mob.name === 'Senior') {
       mobSprite = assetImages.monk;
       sx = getMonkFrame(mob, mobAnimRef.current, now);
     } else if (mob.name === 'Warlock' || mob.name === 'DK Warlock') {
@@ -365,6 +372,9 @@ export function drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef,
     } else if (mob.name === 'Yog-Dzewa') {
       mobSprite = assetImages.yog;
       sx = getYogFrame(mob, mobAnimRef.current, now);
+    } else if (mob.name === 'Larva') {
+      mobSprite = assetImages.larva;
+      sx = getLarvaFrame(mob, mobAnimRef.current, now);
     } else if (
       mob.name === 'Burning Fist' || mob.name === 'Soiled Fist' || mob.name === 'Rotting Fist' ||
       mob.name === 'Rusted Fist' || mob.name === 'Bright Fist' || mob.name === 'Dark Fist'
@@ -466,11 +476,12 @@ export function drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef,
     const isStatue = mob.name === 'Statue';
     const isArmoredStatue = mob.name === 'Armored Statue';
     const isGhoul = mob.name === 'Ghoul' || mob.name === 'DK Ghoul';
-    const isMonk = mob.name === 'DK Monk';
+    const isMonk = mob.name === 'DK Monk' || mob.name === 'Monk' || mob.name === 'Senior';
     const isWarlock = mob.name === 'Warlock' || mob.name === 'DK Warlock';
     const isGolem = mob.name === 'Golem' || mob.name === 'DK Golem';
     const isSpinner = mob.name === 'Spinner';
     const isYog = mob.name === 'Yog-Dzewa';
+    const isLarva = mob.name === 'Larva';
     const fistRow = { 'Burning Fist': 0, 'Soiled Fist': 1, 'Rotting Fist': 2, 'Rusted Fist': 3, 'Bright Fist': 4, 'Dark Fist': 5 }[mob.name];
     const isFist = fistRow !== undefined;
     const isEye = mob.name === 'Evil Eye' || mob.name === 'Yog Eye';
@@ -549,6 +560,8 @@ export function drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef,
       drawMobSprite(ctx, mob, mobSprite, sx, FRAME_W, FRAME_H, flash);
     } else if (isYog) {
       drawMobSprite(ctx, mob, mobSprite, sx, YOG_FW, YOG_FH, flash, YOG_DEST);
+    } else if (isLarva) {
+      drawMobSprite(ctx, mob, mobSprite, sx, LARVA_FW, LARVA_FH, flash, LARVA_DEST);
     } else if (isFist) {
       // yog_fists.png stacks the 6 fist variants in rows of FIST_FH.
       drawMobSprite(ctx, mob, mobSprite, sx, FIST_FW, FIST_FH, flash, FIST_DEST, 1, fistRow * FIST_FH);
@@ -563,8 +576,23 @@ export function drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef,
     } else if (isTengu) {
       drawMobSprite(ctx, mob, mobSprite, sx, TENGU_FW, TENGU_FH, flash, TENGU_DEST);
     } else if (isDM300) {
-      const sy = mob.supercharged ? DM300_FH : 0;
+      const anim = mobAnimRef.current[mob.id] || {};
+      const isCharging = anim.chargeUntil && now < anim.chargeUntil;
+      const isZapping = anim.zapUntil && now < anim.zapUntil;
+      let sy = 0;
+      if (isCharging) {
+        // DM300Sprite.charge: 4fps (250ms) alternating frame 0 (row 0) and frame 10 (row 1)
+        sy = (Math.floor(now / 250) % 2) * DM300_FH;
+      } else if (!isZapping && mob.supercharged) {
+        sy = DM300_FH;
+      }
       drawMobSprite(ctx, mob, mobSprite, sx, DM300_FW, DM300_FH, flash, DM300_DEST, 1, sy);
+      // DM300Sprite.superchargeSparks: pour(SparkParticle.STATIC, 0.05f) while supercharged
+      if (mob.supercharged && particlesRef && Math.random() < 0.35) {
+        const sparkX = (mob.renderPos.x + (Math.random() - 0.5) * 1.1) * TILE_SIZE + TILE_SIZE / 2;
+        const sparkY = (mob.renderPos.y + (Math.random() - 0.5) * 1.1) * TILE_SIZE + TILE_SIZE / 2 - ENTITY_LIFT;
+        spawnSparkStatic(particlesRef, sparkX, sparkY, 1);
+      }
     } else if (isBrute || isArmoredBrute) {
       // brute.png stacks variants in 16px rows: Brute = row 0, Armored Brute = row 1.
       drawMobSprite(ctx, mob, mobSprite, sx, BRUTE_FW, BRUTE_FH, flash, BRUTE_DEST, 1, isArmoredBrute ? BRUTE_FH : 0);
@@ -694,6 +722,7 @@ export function drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef,
     const isNecromancerDeath = mob.name === 'Necromancer';
     const isTenguDeath = mob.name === 'Tengu';
     const isDM300Death = mob.name === 'DM-300';
+    const isPylonDeath = mob.name === 'Pylon';
     const isBruteDeath = mob.name === 'Brute' || mob.name === 'Armored Brute';
     const isFetidRatDeath = mob.name === 'Fetid Rat';
     const isGnollTricksterDeath = mob.name === 'Gnoll Trickster';
@@ -706,6 +735,7 @@ export function drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef,
     const isSuccubusDeath = mob.name === 'Succubus';
     const isWarlockDeath = mob.name === 'Warlock' || mob.name === 'DK Warlock';
     const isRipperDeath = mob.name === 'Yog Ripper' || mob.name === 'Ripper Demon';
+    const isLarvaDeath = mob.name === 'Larva';
     // Unified death window: die frames play at the sprite's native rate, the last
     // frame holds, then alpha fades to 0 over the tail (SPD AlphaTweener).
     const deathDuration = DEATH_ANIMATION_DURATION;
@@ -762,11 +792,25 @@ export function drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef,
       const sx = [8, 9, 10, 10, 10, 10, 10, 10][fi] * TENGU_FW;
       drawMobSprite(ctx, mob, assetImages.tengu, sx, TENGU_FW, TENGU_FH, false, TENGU_DEST);
     } else if (isDM300Death) {
-      // DM-300 death: alternate frames [0,1] (row-relative) over ~1000ms.
-      const sy = mob.supercharged ? DM300_FH : 0;
-      const fi = Math.floor(elapsed / 50) % 2;
-      const sx = [0, 1][fi] * DM300_FW;
-      drawMobSprite(ctx, mob, assetImages.dm300, sx, DM300_FW, DM300_FH, false, DM300_DEST, 1, sy);
+      // DM300Sprite.die: 20 frames alternating [0, 10] (row 0 col 0 <-> row 1 col 0) @ 20fps (50ms/frame = 1000ms),
+      // then onComplete -> Sample.play(BLAST) + emitter().burst(BlastParticle.FACTORY, 100).
+      const fi = Math.min(Math.floor(elapsed / 50), 19);
+      const sy = (fi % 2) * DM300_FH;
+      drawMobSprite(ctx, mob, assetImages.dm300, 0, DM300_FW, DM300_FH, false, DM300_DEST, 1, sy);
+      if (elapsed >= 950 && !mob._deathBlastTriggered) {
+        mob._deathBlastTriggered = true;
+        AudioManager.play('BLAST');
+        if (particlesRef) {
+          const cx = mob.renderPos.x * TILE_SIZE + TILE_SIZE / 2;
+          const cy = mob.renderPos.y * TILE_SIZE + TILE_SIZE / 2;
+          spawnBombBlast(particlesRef, cx, cy, 100);
+        }
+      }
+    } else if (isPylonDeath) {
+      // PylonSprite.die: frame 2, always facing right (turnTo(pos, pos+1)) to merge with custom tiles.
+      mob.facing = 'RIGHT';
+      mob.flipX = false;
+      drawMobSprite(ctx, mob, assetImages.pylon, 2 * PYLON_FW, PYLON_FW, PYLON_FH, false, PYLON_DEST);
     } else if (isBruteDeath) {
       // Brute / Armored Brute death: [8,9,10] @ 12fps (~83ms/frame, ~250ms total).
       const sy = mob.name === 'Armored Brute' ? BRUTE_FH : 0;
@@ -791,10 +835,13 @@ export function drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef,
       // Succubus death: single frame 12 (SPD SuccubusSprite die = [12] @ 10fps).
       drawMobSprite(ctx, mob, assetImages.succubus, 12 * SUCCUBUS_FW, SUCCUBUS_FW, SUCCUBUS_FH, false, SUCCUBUS_DEST);
     } else if (isWarlockDeath) {
-      // Warlock death: [0,7,8,8,9,10] @ 15fps (~67ms/frame, ~335ms total per SPD WarlockSprite).
-      const fi = Math.min(Math.floor(elapsed / 67), 4);
+      // Warlock death: [0,7,8,8,9,10] @ 15fps (~67ms/frame, ~400ms total per SPD WarlockSprite).
+      const fi = Math.min(Math.floor(elapsed / 67), 5);
       const sx = [0, 7, 8, 8, 9, 10][fi] * WARLOCK_FW;
       drawMobSprite(ctx, mob, assetImages.warlock, sx, WARLOCK_FW, WARLOCK_FH, false, WARLOCK_DEST);
+    } else if (isLarvaDeath) {
+      // Larva death: single frame 8 (SPD LarvaSprite die = [8] @ 10fps).
+      drawMobSprite(ctx, mob, assetImages.larva, 8 * LARVA_FW, LARVA_FW, LARVA_FH, false, LARVA_DEST);
     } else if (isRipperDeath) {
       // Ripper death: [1,13,14,15,16] @ 15fps (~67ms/frame, ~333ms total per SPD RipperSprite).
       const fi = Math.min(Math.floor(elapsed / 67), 4);

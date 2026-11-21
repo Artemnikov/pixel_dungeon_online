@@ -241,6 +241,16 @@
       "startWithout": "Start Without Them",
       "wait": "Wait"
     },
+    "dwarfKingPrompt": {
+      "title": "King of Dwarves Boss Fight",
+      "joinDesc": "{{name}} is challenging the King of Dwarves! Do you want to join the boss fight?",
+      "joinYes": "Join Fight",
+      "joinNo": "Not Ready",
+      "declinedDesc": "{{names}} is not ready to join the fight.",
+      "waitingDesc": "Waiting for {{names}} to respond...",
+      "startWithout": "Start Without Them",
+      "wait": "Wait"
+    },
     "newGame": "New Game",
     "menuBtn": "Menu",
     "resurrect": {

@@ -294,6 +294,8 @@ class GuidingLightSpell(ClericSpell):
                 break
 
         if target_mob is not None:
+            if getattr(target_mob, "name", "") == "Dwarf King":
+                game.qualified_for_boss_challenge = False
             dmg = random.randint(2, 8)
             dealt = target_mob.take_damage(dmg)
             game.add_event(
@@ -471,6 +473,8 @@ class SunraySpell(ClericSpell):
         target_mob = _resolve_target_mob(game, player, floor, tx, ty)
         if target_mob is None or not target_mob.is_alive:
             return False
+        if getattr(target_mob, "name", "") == "Dwarf King":
+            game.qualified_for_boss_challenge = False
 
         pts = player.talent_info.level("sunray")
         min_dmg, max_dmg = (6, 12) if pts >= 2 else (4, 8)
@@ -654,6 +658,8 @@ class RadianceSpell(ClericSpell):
             mob.add_buff("paralysis", duration=3.0)
             if mob.has_buff("illuminated"):
                 mob.remove_buff("illuminated")
+                if getattr(mob, "name", "") == "Dwarf King":
+                    game.qualified_for_boss_challenge = False
                 dmg = player.level + 5
                 dealt = mob.take_damage(dmg)
                 game.add_event("DAMAGE", {"target": mob.id, "amount": dealt, "holy": True}, floor_id=player.floor_id)
@@ -687,6 +693,8 @@ class HolyLanceSpell(ClericSpell):
         target_mob = _resolve_target_mob(game, player, floor, tx, ty)
         if target_mob is None or not target_mob.is_alive:
             return False
+        if getattr(target_mob, "name", "") == "Dwarf King":
+            game.qualified_for_boss_challenge = False
 
         pts = player.talent_info.level("holy_lance")
         dmg_table = {1: (30, 55), 2: (45, 83), 3: (60, 110)}
@@ -842,6 +850,8 @@ class SmiteSpell(ClericSpell):
 
         if abs(target_mob.pos.x - player.pos.x) > 1 or abs(target_mob.pos.y - player.pos.y) > 1:
             return False
+        if getattr(target_mob, "name", "") == "Dwarf King":
+            game.qualified_for_boss_challenge = False
 
         min_bonus = 5 + player.level // 2
         max_bonus = 10 + player.level
@@ -1050,6 +1060,8 @@ class JudgementSpell(ClericSpell):
         for mob in list(game._mobs_in_fov(player, floor, player.floor_id)):
             if mob.faction == player.faction or not mob.is_alive:
                 continue
+            if getattr(mob, "name", "") == "Dwarf King":
+                game.qualified_for_boss_challenge = False
             dmg = round(random.randint(min_d, max_d) * mult)
             dealt = mob.take_damage(dmg)
             game.add_event("DAMAGE", {"target": mob.id, "amount": dealt, "holy": True}, floor_id=player.floor_id)
@@ -1145,6 +1157,8 @@ class MindFormSpell(ClericSpell):
         target_mob = _resolve_target_mob(game, player, floor, tx, ty)
         if target_mob is None or not target_mob.is_alive:
             return False
+        if getattr(target_mob, "name", "") == "Dwarf King":
+            game.qualified_for_boss_challenge = False
 
         pts = player.talent_info.level("mind_form")
         dmg = random.randint(15, 30) + pts * 5

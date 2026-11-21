@@ -15,6 +15,7 @@ export function handleEvent(event: GameEvent, ctx: HandlerCtx): void {
     visionRef: ctx.visionRef,
     depthRef: ctx.depth !== undefined ? { current: ctx.depth } : undefined,
     blobAreasRef: ctx.blobAreasRef,
+    customTilesRef: ctx.customTilesRef,
   });
 
   const entities = new EntityManager({

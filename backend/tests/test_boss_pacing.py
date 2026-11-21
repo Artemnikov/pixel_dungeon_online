@@ -97,9 +97,16 @@ def test_dwarf_king_summon_cooldown_is_tick_scaled(monkeypatch):
     target = make_player(x=5, y=8)
     game.players[target.id] = target
 
-    monkeypatch.setattr(random, "randint", lambda a, b: 10)
+    import app.engine.game.ai_dwarf_king as ai
+    monkeypatch.setattr(ai, "normal_int_range", lambda a, b: 10)
 
-    _update_dwarf_king(game, dk, floor, floor.floor_id)
+    # DwarfKing.act() runs once per game turn, so its 10-turn cooldown spans
+    # 10 * TICKS_PER_TURN ticks rather than 10 ticks.
+    for _ in range(TICKS_PER_TURN):
+        _update_dwarf_king(game, dk, floor, floor.floor_id)
+    assert dk.summon_cooldown == 10
 
-    # phase != 3 -> raw cooldown = randint(10,14) = 10 "turns" -> 10 * TICKS_PER_TURN.
-    assert dk.summon_cooldown == 10 * TICKS_PER_TURN
+    for _ in range(TICKS_PER_TURN * 9):
+        _update_dwarf_king(game, dk, floor, floor.floor_id)
+    assert dk.summon_cooldown == 1
+    assert dk.summons_made == 1

@@ -13,6 +13,7 @@ import WndGhostGear from './WndGhostGear';
 import WndWandmaker from './WndWandmaker';
 import WndChasmJump from './WndChasmJump';
 import { WndTenguJoinPrompt, WndTenguPartyStatus } from './WndTenguPrompt';
+import { WndDwarfKingJoinPrompt, WndDwarfKingPartyStatus } from './WndDwarfKingPrompt';
 import WndQuickBag from './WndQuickBag';
 import WndOverlay from './WndOverlay';
 import { WindowLevel } from '../game/window/WindowTypes';
@@ -54,6 +55,8 @@ function GameModals({
     dismissChasmPrompt,
     tenguPrompt, setTenguPrompt,
     tenguPartyStatus, setTenguPartyStatus,
+    dwarfKingPrompt, setDwarfKingPrompt,
+    dwarfKingPartyStatus, setDwarfKingPartyStatus,
     showQuickBag, setShowQuickBag,
     quickslotPicker, setQuickslotPicker,
     scrollPickerData, setScrollPickerData,
@@ -202,6 +205,34 @@ function GameModals({
           onWait={() => {
             send({ type: 'TENGU_START_DECISION', action: 'wait' });
             setTenguPartyStatus(null);
+          }}
+        />
+      )}
+
+      {dwarfKingPrompt && (
+        <WndDwarfKingJoinPrompt
+          initiatorName={dwarfKingPrompt.initiator_name}
+          onApprove={() => {
+            send({ type: 'DWARF_KING_JOIN_RESPONSE', approve: true });
+            setDwarfKingPrompt(null);
+          }}
+          onDecline={() => {
+            send({ type: 'DWARF_KING_JOIN_RESPONSE', approve: false });
+            setDwarfKingPrompt(null);
+          }}
+        />
+      )}
+
+      {dwarfKingPartyStatus && (
+        <WndDwarfKingPartyStatus
+          status={dwarfKingPartyStatus}
+          onStartWithout={() => {
+            send({ type: 'DWARF_KING_START_DECISION', action: 'start_without' });
+            setDwarfKingPartyStatus(null);
+          }}
+          onWait={() => {
+            send({ type: 'DWARF_KING_START_DECISION', action: 'wait' });
+            setDwarfKingPartyStatus(null);
           }}
         />
       )}

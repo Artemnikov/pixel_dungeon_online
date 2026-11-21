@@ -12,6 +12,7 @@ import { drawMobs } from './draw/mobs';
 import { drawPlayers } from './draw/players';
 import { advanceAndDrawProjectiles } from './draw/projectiles';
 import { advanceAndDrawMagicMissiles } from './draw/magicMissile';
+import { advanceDwarfKingSummons } from './draw/dwarfKingSummons';
 import { advanceAndDrawParticles } from './draw/particles';
 import { advanceAndDrawStaffAmbient } from './draw/staffAmbient';
 import { advanceAndDrawCheckedCells } from './draw/searchEffects';
@@ -229,7 +230,7 @@ export default function useGameRenderer({
       if (warnedTilesRef) drawWarnedTiles(ctx, { ref: warnedTilesRef });
       if (rockfallTelegraphRef) drawRockfallTargetedCells(ctx, { rockfallTelegraphRef, particlesRef, visionRef, assetImages });
       drawItems(ctx, { entitiesRef, visionRef, assetImages });
-      drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef, dyingMobsRef, shieldFxRef: shieldHaloRef });
+      drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef, dyingMobsRef, shieldFxRef: shieldHaloRef, particlesRef });
       drawCharHealth(ctx, { entitiesRef, visionRef });
       drawTargetHealthIndicator(ctx, { entitiesRef, visionRef, selectedEnemyIdRef });
       drawPlayers(ctx, { entitiesRef, visionRef, assetImages, playerAnimRef, myPlayerId, shieldFxRef: shieldHaloRef });
@@ -241,6 +242,7 @@ export default function useGameRenderer({
       drawTargetedCell(ctx, { hoveredCellRef, assetImages });
       drawLastTargetCrosshair(ctx, { targetingModeRef, selectedEnemyIdRef, entitiesRef, visionRef, assetImages });
       advanceAndDrawCheckedCells(ctx, { ref: searchEffectsRef });
+      advanceDwarfKingSummons({ entitiesRef, particlesRef, visionRef });
       advanceAndDrawParticles(ctx, { particlesRef, assetImages, visionRef });
       advanceAndDrawFlares(ctx, { flareRef: flareEffectsRef });
       advanceAndDrawSpellSprites(ctx, { spellSpriteRef: spellSpriteEffectsRef, assetImages });
@@ -250,7 +252,7 @@ export default function useGameRenderer({
       advanceAndDrawStateEffects(ctx, { stateEffectsRef });
       drawTransmuting(ctx, { transmuteEffectsRef, assetImages });
       advanceAndDrawProjectiles(ctx, { projectilesRef, assetImages });
-      advanceAndDrawMagicMissiles(ctx, magicMissileRef);
+      advanceAndDrawMagicMissiles(ctx, magicMissileRef, particlesRef);
       advanceAndDrawBeams(ctx, { beamRef, assetImages });
       advanceAndDrawLightning(ctx, { lightningRef });
       advanceAndDrawFadingTraps(ctx, assetImages, { visionRef });

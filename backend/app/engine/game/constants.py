@@ -38,6 +38,9 @@ PATH_BLOCKED_GIVE_UP_TICKS = 6
 GAME_TURN_TICKS = int(round(GAME_LOOP_HZ * 1.0))  # ticks per game turn (e.g. 40 at 40Hz)
 HEAL_TICK_INTERVAL = GAME_TURN_TICKS              # 1 turn (~1s at 40Hz) between heal ticks
 PASSIVE_REGEN_INTERVAL = max(1, int(round(0.5 * GAME_LOOP_HZ)))  # ~0.5s regen tick
+# Real-time stand-in for SPD's idle turns passing as fast as the hero waits: while the
+# shielded Dwarf King has no living minion, his turn clock runs this many times faster.
+DK_IDLE_CLOCK_MULTIPLIER = 4
 
 REST_HEAL_INTERVAL = 3.0                          # real seconds for rest healing
 REST_STILL_TICKS = int(round(2.0 * GAME_LOOP_HZ)) # ticks of stillness before rest regen (~2s)
