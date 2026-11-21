@@ -84,7 +84,7 @@ def _tick_dm300_pending_rockfall(game, mob: DM300, floor: FloorState, floor_id: 
     if not rockfall:
         return
 
-    rockfall["ticks_left"] -= 1
+    rockfall["ticks_left"] -= game.sim_ticks
     if rockfall["ticks_left"] > 0:
         return
 
@@ -238,6 +238,11 @@ def _dm300_drop_rocks(game, mob: DM300, target, floor: FloorState, floor_id: int
     # Telegraph: ~2s warning duration before rocks crash down
     delay_ms = 2000
     delay_ticks = int(round(2.0 * GAME_LOOP_HZ))
+    if getattr(game, "game_mode", None) == "turnbased":
+        # DM300.dropRocks: the rocks land after min(target.cooldown(), 3)
+        # turns -- on the target's next action.
+        from app.engine.game.boss_targets import hero_cooldown_turns, spend_gate
+        delay_ticks = int(spend_gate(hero_cooldown_turns(game, target), 1, 3) * GAME_TURN_TICKS)
     mob.pending_rockfall = {"cells": rock_cells, "ticks_left": delay_ticks}
 
     tiles_list = [[c[0], c[1]] for c in rock_cells]

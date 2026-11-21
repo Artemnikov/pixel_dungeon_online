@@ -261,3 +261,6 @@ SCORPIO_CRIPPLE_CHANCE = 0.5
 # Indicator lifetime of the "bleeding" buff; the bleed itself ends when its
 # decaying level rounds to 0 (game/bleeding.py), so this only has to outlast it.
 BLEEDING_BUFF_DURATION = 1000.0
+# Tengu bomb countdown (Tengu.BombAbility timer 3 -> 2 -> 1 -> boom): real-time
+# ticks per countdown step. Turn rooms advance one step per turn.
+TENGU_BOMB_STEP_TICKS = 20

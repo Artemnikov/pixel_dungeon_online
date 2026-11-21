@@ -252,14 +252,14 @@ class DM300Actor(WallClockGatedMobActor, TickCounterMobActor):
 
 
 class TenguActor(TickCounterMobActor):
-    """Tengu's bomb and shocker, both already tick-denominated.
+    """Tengu's ability clock, tick-denominated.
 
-    `ai_tengu.py` gates its abilities on `turn_tick` against `TURN_TICKS` and
-    counts the bomb down one unit per call, so both need a turn's worth of
-    ticks per call to keep the cadence the code was written against.
+    `ai_tengu.py` gates its abilities on `turn_tick` against `TURN_TICKS`, so
+    it needs a turn's worth of ticks per call. The bomb fuse is a countdown
+    that ai_tengu.py steps once per turn in a turn room itself.
     """
 
-    elapsed_tick_counters = ("turn_tick", "bomb_timer")
+    elapsed_tick_counters = ("turn_tick",)
 
 
 class DwarfKingActor(TickCounterMobActor):
