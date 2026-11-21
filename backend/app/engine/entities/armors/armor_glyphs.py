@@ -178,9 +178,9 @@ def _proc_viscosity(defender, attacker, armor, raw_damage, floor_mobs, tile_x, t
     deferred = math.ceil(raw_damage * percent)
     actual = raw_damage - deferred
     if deferred > 0:
-        existing = defender.get_buff("deferred_damage")
-        total = deferred + (existing.level if existing else 0)
-        defender.add_buff("deferred_damage", duration=999.0, level=total)
+        # Viscosity.ViscosityTracker.deferDamage -> DeferedDamage.extend(amount)
+        from app.engine.game.deferred_damage import extend_deferred
+        extend_deferred(defender, deferred)
     if kwargs.get("add_event"):
         kwargs["add_event"]("VISCOSITY_PROC", {
             "defender": defender.id,

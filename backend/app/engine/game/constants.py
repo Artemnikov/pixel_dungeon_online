@@ -264,3 +264,6 @@ BLEEDING_BUFF_DURATION = 1000.0
 # Tengu bomb countdown (Tengu.BombAbility timer 3 -> 2 -> 1 -> boom): real-time
 # ticks per countdown step. Turn rooms advance one step per turn.
 TENGU_BOMB_STEP_TICKS = 20
+# Indicator lifetime of the "deferred_damage" buff (Viscosity / Rusted Fist);
+# the pool is what ends it (game/deferred_damage.py), refreshed every release.
+DEFERRED_BUFF_DURATION = 1000.0
