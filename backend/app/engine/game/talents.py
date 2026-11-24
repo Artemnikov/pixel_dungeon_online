@@ -407,7 +407,7 @@ class TalentsMixin:
         result = resolve_melee_attack(
             player, target, floor.mobs, player.pos.x, player.pos.y,
             is_in_los=is_in_los, dmg_multi=dmg_multi, dmg_bonus=dmg_bonus, guaranteed_hit=True,
-            add_event=lambda t, d: self.add_event(t, d, floor_id=floor_id, source_player_id=player.id),
+            add_event=lambda t, d: self.add_event(t, d, floor_id=floor_id, source_player_id=player.id, echo_to_source=True),
             floor=floor, game=self,
         )
         dmg = result["damage"]
@@ -416,6 +416,7 @@ class TalentsMixin:
             "surprise": result["surprise"], "crit": result.get("crit", False),
             "grim_proc": result.get("grim_proc", False),
         }, floor_id=floor_id)
+        self._emit_player_melee_hit_sound(player, result, floor_id)
         self.add_event("COMBO_MOVE_USED", {"player": player.id, "move": move, "target": target.id}, floor_id=floor_id, source_player_id=player.id)
         if dmg > 0:
             self.add_event("DAMAGE", {"target": target.id, "amount": dmg, "grim_proc": result.get("grim_proc", False)}, floor_id=floor_id)

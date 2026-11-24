@@ -9,7 +9,6 @@ import { defaultMoveResultDispatcher } from '../net/movement/MoveResultDispatche
 import { startLocalPlayerMeleeAnim } from '../net/events/combat';
 import { isTurnRoom, sendTurnRoomTap } from '../input/turnTap';
 import { isFloorFadeActive } from '../rendering/floorTransition';
-import AudioManager from '../audio/AudioManager';
 
 export default function useInputHooks({
   gameState, showTutorial, loreOverlay, myStats,
@@ -148,7 +147,7 @@ export default function useInputHooks({
           myPlayer,
           playerAnimRef,
           onOpenAlchemyRef,
-          onMeleeAttack: () => startLocalPlayerMeleeAnim(myPlayer, playerAnimRef, AudioManager),
+          onMeleeAttack: () => startLocalPlayerMeleeAnim(myPlayer, playerAnimRef),
           socket: socketRef.current,
           dx: d[0],
           dy: d[1],
@@ -163,7 +162,7 @@ export default function useInputHooks({
         // local swing should start now (mirrors the moved-tap bump outcome).
         if (preview?.kind === 'bumped') {
           const primary = movementPredictor.primaryBlocker(preview.blockers);
-          if (primary?.action === 'melee-attack') startLocalPlayerMeleeAnim(myPlayer, playerAnimRef, AudioManager);
+          if (primary?.action === 'melee-attack') startLocalPlayerMeleeAnim(myPlayer, playerAnimRef);
         }
       }
     }

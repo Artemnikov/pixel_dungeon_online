@@ -6,7 +6,6 @@ import { isTurnRoom, sendTurnRoomTap } from './turnTap';
 import * as movementPredictor from '../net/movementPredictor';
 import { defaultMoveResultDispatcher } from '../net/movement/MoveResultDispatcher';
 import { startLocalPlayerMeleeAnim } from '../net/events/combat';
-import AudioManager from '../audio/AudioManager';
 
 export default function useCanvasControls({
   enabled,
@@ -271,7 +270,7 @@ export default function useCanvasControls({
           myPlayer,
           playerAnimRef,
           onOpenAlchemyRef,
-          onMeleeAttack: () => startLocalPlayerMeleeAnim(myPlayer, playerAnimRef, AudioManager),
+          onMeleeAttack: () => startLocalPlayerMeleeAnim(myPlayer, playerAnimRef),
           socket: socketRef.current,
           dx: d[0],
           dy: d[1],
@@ -286,7 +285,7 @@ export default function useCanvasControls({
         // local swing should start now (mirrors the moved-tap bump outcome).
         if (preview?.kind === 'bumped') {
           const primary = movementPredictor.primaryBlocker(preview.blockers);
-          if (primary?.action === 'melee-attack') startLocalPlayerMeleeAnim(myPlayer, playerAnimRef, AudioManager);
+          if (primary?.action === 'melee-attack') startLocalPlayerMeleeAnim(myPlayer, playerAnimRef);
         }
       }
     };

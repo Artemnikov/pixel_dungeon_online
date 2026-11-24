@@ -108,6 +108,7 @@ class WeaponSkill(ABC):
             {"sound": sound, "rate": rate},
             floor_id=floor_id,
             source_player_id=player.id,
+            echo_to_source=True,
         )
         if extra_sound:
             game.add_event(
@@ -115,6 +116,7 @@ class WeaponSkill(ABC):
                 {"sound": extra_sound, "rate": pitch_jitter},
                 floor_id=floor_id,
                 source_player_id=player.id,
+                echo_to_source=True,
             )
 
     def _apply_aggressive_barrier(self, game: GameInstance, player: Player) -> None:

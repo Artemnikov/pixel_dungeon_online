@@ -89,8 +89,6 @@ export function resetAttackCooldown(): void {
 export interface EquippedWeaponMeta {
   name?: string;
   kind?: string;
-  hit_sound?: string;
-  hit_sound_pitch?: number;
   attack_cooldown?: number;
 }
 
@@ -101,7 +99,6 @@ function weaponMeta(me: RenderPlayer | null | undefined): EquippedWeaponMeta | n
 export function startLocalPlayerMeleeAnim(
   me: RenderPlayer | null | undefined,
   playerAnimRef: Ref<Record<string, AnimState>> | undefined,
-  audioService?: { play: (sound: string, rate?: number) => void },
 ): void {
   if (!me || me.is_downed || !playerAnimRef) return;
   if (!isAttackReady()) return;
@@ -112,15 +109,12 @@ export function startLocalPlayerMeleeAnim(
 
   if (!playerAnimRef.current[me.id]) playerAnimRef.current[me.id] = {};
   playerAnimRef.current[me.id].attackUntil = now + PLAYER_ATTACK_DURATION;
-
-  audioService?.play(weapon?.hit_sound || 'HIT_BODY', (weapon?.hit_sound_pitch ?? 1.0) * (0.87 + Math.random() * 0.28));
 }
 
 export interface BumpCtx {
   me: RenderPlayer | null | undefined;
   playerAnimRef?: Ref<Record<string, AnimState>>;
   onOpenAlchemy?: () => void;
-  audio?: { play: (sound: string, rate?: number) => void };
 }
 
 export function runLocalBumpFlow(result: MoveResult, ctx: BumpCtx): void {
@@ -128,7 +122,7 @@ export function runLocalBumpFlow(result: MoveResult, ctx: BumpCtx): void {
     myPlayer: ctx.me ?? null,
     playerAnimRef: ctx.playerAnimRef,
     onOpenAlchemyRef: { current: ctx.onOpenAlchemy },
-    onMeleeAttack: () => startLocalPlayerMeleeAnim(ctx.me, ctx.playerAnimRef, ctx.audio),
+    onMeleeAttack: () => startLocalPlayerMeleeAnim(ctx.me, ctx.playerAnimRef),
     dx: 0,
     dy: 0,
   });
@@ -380,11 +374,8 @@ export function createCombatEventHandlers(): IGameEventHandler[] {
           ctx.entities.setSelectedEnemyId(tgt);
         }
 
-        if (src === ctx.myPlayerId) {
-          if (event.data.next_attack_in_ms != null) {
-            noteNextAttackReady(event.data.next_attack_in_ms);
-          }
-          if (event.data.crit || event.data.grim_proc) ctx.audio.play('HIT_STRONG');
+        if (src === ctx.myPlayerId && event.data.next_attack_in_ms != null) {
+          noteNextAttackReady(event.data.next_attack_in_ms);
         }
 
         if (srcMob && FIST_NAMES.has(srcMob.name) && !event.data.fist_zap) {

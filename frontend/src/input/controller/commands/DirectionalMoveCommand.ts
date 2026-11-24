@@ -4,7 +4,6 @@ import { DIRECTION_KEYS, getVector, vectorToDirection } from '../../directionUti
 import * as movementPredictor from '../../../net/movementPredictor';
 import { defaultMoveResultDispatcher } from '../../../net/movement/MoveResultDispatcher';
 import { startLocalPlayerMeleeAnim } from '../../../net/events/combat';
-import AudioManager from '../../../audio/AudioManager';
 
 export const DEFAULT_CHORD_DELAY_MS = 35;
 export const DEFAULT_TURN_CHORD_DELAY_MS = 60;
@@ -233,7 +232,7 @@ export class DirectionalMoveCommand implements IKeyCommand {
       myPlayer: context.myPlayer,
       playerAnimRef: context.playerAnimRef,
       onOpenAlchemyRef: context.onOpenAlchemyRef,
-      onMeleeAttack: () => startLocalPlayerMeleeAnim(context.myPlayer, context.playerAnimRef, AudioManager),
+      onMeleeAttack: () => startLocalPlayerMeleeAnim(context.myPlayer, context.playerAnimRef),
       socket: context.socket,
       dx,
       dy,
