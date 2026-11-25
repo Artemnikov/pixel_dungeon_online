@@ -10,7 +10,7 @@ from collections import deque
 from typing import List, Optional, Tuple
 
 from app.engine.dungeon.constants import TileType
-from app.engine.entities.base import Faction, Position, chebyshev_distance
+from app.engine.entities.base import Faction, Position, chebyshev_distance, factions_hostile
 from app.engine.game.constants import LIGHT_DISTANCE
 from app.engine.mechanics import shadowcaster
 
@@ -39,13 +39,13 @@ class VisionMixin:
         candidates: List = [
             p for p in self._players_on_floor(floor_id)
             if (exclude_id is None or p.id != exclude_id) and p.is_alive and not p.is_downed
-            and not p.has_buff("time_stasis") and p.faction != faction
+            and not p.has_buff("time_stasis") and factions_hostile(faction, p.faction)
         ]
         floor = self.floors.get(floor_id)
         if floor is not None:
             candidates.extend(
                 m for m in floor.mobs.values()
-                if (exclude_id is None or m.id != exclude_id) and m.is_alive and m.faction != faction
+                if (exclude_id is None or m.id != exclude_id) and m.is_alive and factions_hostile(faction, m.faction)
             )
 
         nearest = None

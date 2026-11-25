@@ -19,6 +19,7 @@ from app.engine.entities.quest_bosses import Ghost
 from app.engine.entities.rings import furor_multiplier
 from app.engine.entities.talent_enum import Subclass
 from app.engine.game.ai_goo import _goo_add_locked_floor_time
+from app.engine.game.ai_spd_common import mob_attack_cooldown
 from app.engine.game.ai_pylon import _activate_pylon
 from app.engine.systems.combat import resolve_melee_attack
 from app.engine.systems.loot import roll_drops
@@ -90,7 +91,7 @@ class MeleeCombatMixin:
             if isinstance(entity, Player):
                 cooldown = entity.get_attack_delay()
             else:
-                cooldown = getattr(entity, "attack_cooldown", 1.0)
+                cooldown = mob_attack_cooldown(entity)
 
             if not self.attack_ready(entity, cooldown):
                 return False

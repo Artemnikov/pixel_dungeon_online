@@ -17,6 +17,7 @@ if TYPE_CHECKING:
 class Tengu(MobEntity):
     type: str = "boss"
     name: str = "Tengu"
+    properties: List[str] = ["BOSS"]
     melee_reach: ClassVar[int] = 6
     hp: int = 200
     max_hp: int = 200

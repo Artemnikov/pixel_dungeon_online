@@ -234,6 +234,7 @@ export default function useGameHooks(state) {
     onMetamorphOptions: talent.onMetamorphOptions,
     onShopOpen: modals.onShopOpen,
     onImpDialogue: modals.onImpDialogue,
+    onRatKingDialogue: modals.onRatKingDialogue,
     onGhostDialogue: modals.onGhostDialogue,
     onWandmakerDialogue: modals.onWandmakerDialogue,
     onChasmPrompt: modals.onChasmPrompt,

@@ -8,6 +8,7 @@ const BTN_H = 52;
 export default function TalentButton({
   talentId,
   iconIndex,
+  armorAbility,
   name,
   currentLevel,
   maxPoints,
@@ -75,7 +76,7 @@ export default function TalentButton({
       }}
     >
       <div style={{ position: 'absolute', top: 4, left: 4 }}>
-        <TalentIcon talentId={talentId} iconIndex={iconIndex} alpha={locked ? 0.5 : 1} />
+        <TalentIcon talentId={talentId} iconIndex={iconIndex} armorAbility={armorAbility} alpha={locked ? 0.5 : 1} />
       </div>
       <div
         className="talent-fill"

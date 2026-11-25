@@ -8,6 +8,7 @@ import { WindowLevel } from '../game/window/WindowTypes';
 export default function WndInfoTalent({
   talentId,
   name,
+  armorAbility,
   desc: descProp,
   currentLevel,
   maxPoints,
@@ -27,7 +28,7 @@ export default function WndInfoTalent({
     <WndOverlay id="wnd-info-talent" level={WindowLevel.SECONDARY} onClose={onClose}>
       <div className="wnd-info-talent" onClick={(e) => e.stopPropagation()}>
         <div className="wnd-info-title">
-          <TalentIcon talentId={talentId} />
+          <TalentIcon talentId={talentId} armorAbility={armorAbility} />
           <span className="wnd-info-name">{name || talentId}</span>
           {currentLevel > 0 && <span className="wnd-info-level">+{currentLevel}</span>}
         </div>

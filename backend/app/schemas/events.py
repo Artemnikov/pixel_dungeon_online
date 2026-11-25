@@ -501,6 +501,21 @@ class ImpDialogueData(_EventData):
     tokens: Optional[int] = None
 
 
+class RatKingDialogueData(_EventData):
+    player: str
+    npc: str
+
+
+class MobNoticeData(_EventData):
+    mob: str
+
+
+class RatlomacyData(_EventData):
+    mob: str
+    x: int
+    y: int
+
+
 class ImpRewardData(_EventData):
     player: str
     npc: str
@@ -929,6 +944,9 @@ EVENT_MODELS = {
     "SCREEN_SHAKE": ScreenShakeData,
     "MOB_CHASM_FALL": MobChasmFallData,
     "IMP_DIALOGUE": ImpDialogueData,
+    "RAT_KING_DIALOGUE": RatKingDialogueData,
+    "MOB_NOTICE": MobNoticeData,
+    "RATLOMACY": RatlomacyData,
     "IMP_REWARD": ImpRewardData,
     "GHOST_DIALOGUE": GhostDialogueData,
     "GHOST_REWARD": GhostRewardData,

@@ -419,6 +419,13 @@ def handle_wandmaker_claim_reward(
     game.wandmaker_claim_reward(player_id, message.npc_id, message.choice)
 
 
+@dispatcher.register(msg.RatKingCrownChoice)
+def handle_rat_king_crown_choice(
+    game: GameInstance, player_id: str, message: msg.RatKingCrownChoice
+):
+    game.rat_king_crown_choice(player_id, message.npc_id, message.accept)
+
+
 @dispatcher.register(msg.SelectStoneTarget)
 def handle_select_stone_target(
     game: GameInstance, player_id: str, message: msg.SelectStoneTarget

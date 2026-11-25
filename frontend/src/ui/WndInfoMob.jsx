@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import IconTitle from './IconTitle';
+import { mobDisplayName, mobDescriptionKey } from './mobText';
 import buffsImg from '../assets/pixel-dungeon/interfaces/buffs.png';
 
 const BUFF_SIZE = 7;
@@ -43,18 +44,16 @@ function BuffIcons({ effects, scale = 2 }) {
   );
 }
 
-export default function WndInfoMob({ mob }) {
+export default function WndInfoMob({ mob, heroArmorAbility }) {
   const { t } = useTranslation();
   if (!mob) return null;
 
-  const name = mob.locale_key ? t(mob.locale_key, { defaultValue: mob.name }) : mob.name;
+  const name = mobDisplayName(t, mob);
   const totalShield = (mob.shields || []).reduce((sum, s) => sum + (s.amount || s || 0), mob.shield || 0);
   const hpPct = mob.max_hp > 0 ? Math.max(0, Math.min(1, mob.hp / mob.max_hp)) : 0;
   const shieldPct = mob.max_hp > 0 ? Math.max(0, Math.min(1, (mob.hp + totalShield) / mob.max_hp)) : 0;
 
-  const descKey = mob.locale_key
-    ? `${mob.locale_key.replace(/^mob\./, 'mob.desc.')}`
-    : null;
+  const descKey = mobDescriptionKey(mob, heroArmorAbility);
   const description = (descKey && t(descKey, { defaultValue: '' })) || mob.description || '';
 
   const stats = [

@@ -694,11 +694,15 @@
     "demon_spawner": "Demon Spawner",
     "pylon": "Pylon",
     "rat_king": "Rat King",
+    "transmog_rat": "Ratmogrified {{name}}",
     "shopkeeper": "Shopkeeper",
     "imp": "Imp",
     "mirror_image": "Mirror Image",
     "ghost_hero": "Ghost Hero",
     "desc": {
+      "rat_king": "This rat is a little bigger than a regular marsupial rat. It's wearing a tiny crown on its head.",
+      "rat_king_crown": "This rat is a little bigger than a regular marsupial rat. It's wearing dwarf king's crown on its head.",
+      "transmog_rat": "This enemy has been transformed into a rat. A big improvement, if you ask me! - Rat King",
       "rat": "Marsupial rats are aggressive but rather weak denizens of the sewers. They have a nasty bite, but are only life threatening in large numbers.",
       "snake": "These oversized serpents are capable of quickly slithering around blows, making them quite hard to hit. Magical attacks or surprise attacks are capable of catching them off-guard however.",
       "gnoll": "Gnolls are hyena-like humanoids. They dwell in sewers and dungeons, venturing up to raid the surface from time to time. Gnoll scouts are regular members of their pack, they are not as strong as brutes and not as intelligent as shamans.",
@@ -1021,6 +1025,17 @@
     "power_of_many": {
       "name": "Power of Many",
       "desc": "Summon a radiant Light Ally to fight by your side"
+    },
+    "ratmogrify": {
+      "name": "Ratmogrify",
+      "desc": "The hero transforms an enemy into a rat for 6 turns! Bosses, allies, and rats cannot be ratmogrified.\n\nRatmogrified enemies retain their original stats, but do not have any abilities.",
+      "cant_transform": "You can't ratmogrify that!",
+      "too_strong": "That enemy is too strong to ratmogrify!",
+      "ratgraded": "Rat King's paws glow brightly as your armor transforms!"
+    },
+    "target": {
+      "no_target": "There's nothing to target there!",
+      "self_target": "You can't target yourself!"
     }
   },
   "combat": {
@@ -1316,7 +1331,17 @@
     "yog_fist_invuln_warn": "The fist is invulnerable while near to the eye!",
     "bright_fist_teleport": "The fist teleports away in a flash of light that seriously blinds you!",
     "dark_fist_teleport": "The fist teleports away in a blast of darkness that extinguishes your light source!",
-    "ripper_leap": "The ripper demon prepares to leap!"
+    "ripper_leap": "The ripper demon prepares to leap!",
+    "rat_king_not_sleeping": "I'm not sleeping!",
+    "rat_king_what_is_it": "What is it? I have no time for this nonsense. My kingdom won't rule itself!",
+    "rat_king_crown_clothes": "Put some clothes on! You're in no state to talk to royalty!",
+    "rat_king_crown_desc": "Oooh, is that crown for me!? It looks much shinier than mine, so I graciously accept!\n\nIn fact, I think I can offer you something as a reward for this crown. A tremendous power befitting a hero such as yourself! Would you like that?",
+    "rat_king_crown_yes": "Of course!",
+    "rat_king_crown_info": "Tell me more first.",
+    "rat_king_crown_no": "I'd rather not...",
+    "rat_king_crown_thankyou": "Hehehe, thank you! Now go and make your king proud!",
+    "rat_king_crown_fine": "Fine! It's not like I wanted it anyway...",
+    "rat_king_crown_after": "Enjoying your new armor? No take-backsies!"
   },
   "statusText": {
     "invulnerable": "invulnerable",

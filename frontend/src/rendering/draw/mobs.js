@@ -109,6 +109,7 @@ import {
    RATKING_FW,
    RATKING_FH,
    RATKING_DEST,
+   RATKING_CROWNED_SY,
    GHOST_FW,
    GHOST_FH,
    GHOST_DEST,
@@ -169,6 +170,7 @@ import {
    getSheepFrame,
 } from '../mobs';
 import { drawShieldFx } from './shieldHalo';
+import { drawAura } from './flare';
 import { spawnSparkStatic } from './sparkParticle';
 import { spawnBombBlast } from './particles';
 import AudioManager from '../../audio/AudioManager';
@@ -221,8 +223,16 @@ export function forceAlertMob(mobId, durationMs = ALERT_DURATION) {
   mobAlertUntil[mobId] = performance.now() + durationMs;
 }
 
-export function drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef, dyingMobsRef, shieldFxRef, particlesRef }) {
+// Ratmogrify's TransmogRat keeps the original mob's name but wears the rat sprite.
+const isRatSprite = (mob) => mob.name === 'Rat' || mob.mob_type === 'transmog_rat';
+
+// SPD RatKingSprite: crowned frames + yellow aura while the hero has Ratmogrify.
+const RAT_KING_AURA_COLOR = '#ffff00';
+const RAT_KING_AURA_RAYS = 5;
+
+export function drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef, dyingMobsRef, shieldFxRef, particlesRef, myPlayerId }) {
   const now = performance.now();
+  const heroHasRatmogrify = entitiesRef.current.players?.[myPlayerId]?.armor_ability === 'ratmogrify';
 
   Object.values(entitiesRef.current.mobs).forEach(mob => {
     if (!visionRef.current.visible.has(`${Math.round(mob.renderPos.x)},${Math.round(mob.renderPos.y)}`)) return;
@@ -284,7 +294,7 @@ export function drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef,
 
     let mobSprite = assetImages.rat;
     let sx = 0;
-    if (mob.name === 'Rat') {
+    if (isRatSprite(mob)) {
       mobSprite = assetImages.rat;
       sx = getRatFrame(mob, mobAnimRef.current, now);
     } else if (mob.name === 'Crab') {
@@ -616,7 +626,13 @@ export function drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef,
     } else if (isNewbornElemental) {
       drawMobSprite(ctx, mob, mobSprite, sx, NEWBORN_ELEMENTAL_FW, NEWBORN_ELEMENTAL_FH, flash, NEWBORN_ELEMENTAL_DEST);
     } else if (isRatKing) {
-      drawMobSprite(ctx, mob, mobSprite, sx, RATKING_FW, RATKING_FH, flash, RATKING_DEST);
+      if (heroHasRatmogrify) {
+        const auraCx = mob.renderPos.x * TILE_SIZE + TILE_SIZE / 2;
+        const auraCy = mob.renderPos.y * TILE_SIZE - ENTITY_LIFT + TILE_SIZE / 2;
+        drawAura(ctx, auraCx, auraCy, RAT_KING_AURA_RAYS, (RATKING_FH + 4) * (TILE_SIZE / 16), RAT_KING_AURA_COLOR, now);
+      }
+      drawMobSprite(ctx, mob, mobSprite, sx, RATKING_FW, RATKING_FH, flash, RATKING_DEST, 1,
+        heroHasRatmogrify ? RATKING_CROWNED_SY : 0);
     } else if (isGhost) {
       // Ghost: additive blending for translucent glow (SPD Blending.setLightMode)
       ctx.save();
@@ -714,7 +730,7 @@ export function drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef,
     const elapsed = now - mob.deathStart;
     const isScorpioDeath = mob.name === 'Scorpio';
     const isGooDeath = mob.name === 'Goo';
-    const isRatDeath = mob.name === 'Rat';
+    const isRatDeath = isRatSprite(mob);
     const isCrabDeath = mob.name === 'Crab';
     const isHermitCrabDeath = mob.name === 'Hermit Crab';
     const isSlimeDeath = mob.name === 'Slime';

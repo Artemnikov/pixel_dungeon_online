@@ -80,6 +80,7 @@ class TickMixin:
 
     _MOB_BUFF_EXPIRY_HANDLERS = {
         "sheep_timer": "_on_sheep_expired",
+        "transmog_timer": "_on_transmog_expired",
         **_SHARED_BUFF_EXPIRY_HANDLERS,
         "drowsy": "_on_drowsy_expired",
         "terror": "_on_terror_expired",
@@ -117,6 +118,11 @@ class TickMixin:
         self.add_event("DEATH", {"target": mob.id}, floor_id=floor_id)
         self.handle_mob_death(mob, floor, floor_id)
         return True
+
+    def _on_transmog_expired(self, mob, floor, floor_id=None) -> bool:
+        if not mob.is_alive or not hasattr(mob, "revert"):
+            return False
+        return mob.revert(self, floor, floor_id)
 
     def _on_drowsy_expired(self, mob, floor, floor_id=None) -> bool:
         if mob.ai_state in ("idle", "wandering"):

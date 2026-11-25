@@ -194,6 +194,7 @@ export default function TalentPane({
         <WndInfoTalent
           talentId={info.talentId}
           name={info.name}
+          armorAbility={armorAbility}
           desc={info.desc}
           currentLevel={info.currentLevel}
           maxPoints={info.maxPoints}
@@ -213,6 +214,7 @@ export default function TalentPane({
         <WndInfoTalent
           talentId={info.talentId}
           name={info.name}
+          armorAbility={armorAbility}
           desc={info.desc}
           currentLevel={info.currentLevel}
           maxPoints={info.maxPoints}

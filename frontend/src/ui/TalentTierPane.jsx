@@ -21,6 +21,12 @@ export default function TalentTierPane({
 
   const ptsAvailable = talentPoints?.[tier] || 0;
 
+  // SPD Talent.title(): Heroic Energy is "Ratroic Energy" with Ratmogrify.
+  function talentTitle(t) {
+    if (t.rat_title && armorAbility === 'ratmogrify') return t.rat_title;
+    return t.name || t.id;
+  }
+
   function isTalentLocked(t) {
     if (t.subclass && t.subclass !== subclass) return true;
     if (t.ability && t.ability !== armorAbility) return true;
@@ -82,7 +88,8 @@ export default function TalentTierPane({
             <TalentButton
               key={t.id}
               talentId={t.id}
-              name={t.name || t.id}
+              name={talentTitle(t)}
+              armorAbility={armorAbility}
               currentLevel={currentLevel}
               maxPoints={t.max_pts}
               pointsAvailable={ptsAvailable}

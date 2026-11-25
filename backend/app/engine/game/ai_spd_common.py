@@ -11,7 +11,7 @@ import random
 import time
 from typing import Optional, Set, Tuple
 
-from app.engine.entities.base import Faction
+from app.engine.entities.base import Faction, is_hostile
 from app.engine.game.boss_targets import mob_fov
 
 INFINITE_ACCURACY = 1_000_000
@@ -29,7 +29,7 @@ def visible_enemy(game, mob, floor, floor_id: int, fov: Optional[Set[Tuple[int, 
             return target
     best, best_d = None, None
     for p in game._players_on_floor(floor_id):
-        if not p.is_alive or getattr(p, "is_downed", False) or p.faction == mob.faction:
+        if not p.is_alive or getattr(p, "is_downed", False) or not is_hostile(mob, p):
             continue
         if p.invisible > 0 or getattr(p, "is_afk", False) or p.has_buff("time_stasis"):
             continue
@@ -39,7 +39,7 @@ def visible_enemy(game, mob, floor, floor_id: int, fov: Optional[Set[Tuple[int, 
         if best is None or d < best_d:
             best, best_d = p, d
     for m in floor.mobs.values():
-        if m.id == mob.id or not m.is_alive or m.faction == mob.faction:
+        if m.id == mob.id or not m.is_alive or not is_hostile(mob, m):
             continue
         if mob.faction == Faction.DUNGEON and m.faction != Faction.PLAYER:
             continue
@@ -77,7 +77,7 @@ def spd_attack(game, mob, target) -> float:
     enemy's cell directly, so this also resolves a ranged regular attack.
     """
     if getattr(game, "game_mode", None) != "turnbased":
-        cooldown = float(getattr(mob, "attack_cooldown", 1.0))
+        cooldown = mob_attack_cooldown(mob)
         if not game.attack_ready(mob, cooldown):
             remaining = mob.last_attack_time + cooldown - time.time()
             return max(0.05, remaining)
@@ -94,11 +94,30 @@ def attack_delay(mob) -> float:
         dly *= 2.0
     if mob.has_buff("haste") or mob.has_buff("fury"):
         dly *= 0.5
+    if mob.has_buff("adrenaline"):
+        dly /= 1.5
     return max(0.1, dly)
 
 
+def mob_attack_cooldown(mob) -> float:
+    """Real-time attack-rate limit of a mob: its `attack_cooldown`, cut by
+    SPD Adrenaline's `attackDelay() / 1.5`."""
+    cooldown = float(getattr(mob, "attack_cooldown", 1.0))
+    if mob.has_buff("adrenaline"):
+        cooldown /= 1.5
+    return cooldown
+
+
+def mob_speed(mob) -> float:
+    """SPD `Char.speed()` buff multipliers the port models for mobs."""
+    speed = float(mob.speed)
+    if mob.has_buff("adrenaline"):
+        speed *= 2.0
+    return speed
+
+
 def move_cost(mob) -> float:
-    return 1.0 / max(0.1, float(mob.speed))
+    return 1.0 / max(0.1, mob_speed(mob))
 
 
 def is_paralysed(mob) -> bool:

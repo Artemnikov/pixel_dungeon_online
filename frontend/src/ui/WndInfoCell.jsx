@@ -60,7 +60,7 @@ export default function WndInfoCell({ cellInfo, style, onClose }) {
   let content;
   switch (cellInfo.kind) {
     case 'mob':
-      content = <WndInfoMob mob={cellInfo.mob} />;
+      content = <WndInfoMob mob={cellInfo.mob} heroArmorAbility={cellInfo.heroArmorAbility} />;
       break;
     case 'item':
       content = <WndInfoItem item={cellInfo.item} />;

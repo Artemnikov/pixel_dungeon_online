@@ -267,3 +267,7 @@ TENGU_BOMB_STEP_TICKS = 20
 # Indicator lifetime of the "deferred_damage" buff (Viscosity / Rusted Fist);
 # the pool is what ends it (game/deferred_damage.py), refreshed every release.
 DEFERRED_BUFF_DURATION = 1000.0
+
+# Ratmogrify (SPD Ratmogrify.TransmogRat.timeLeft): turns before a
+# ratmogrified enemy turns back.
+TRANSMOG_RAT_DURATION: float = 6.0

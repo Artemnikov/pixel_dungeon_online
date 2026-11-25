@@ -190,7 +190,16 @@ export const TALENT_ICONS = {
   beaming_ray: 183,
   life_link: 184,
   stasis: 185,
+
+  // ===== RATMOGRIFY (any class) =====
+  ratsistance: 215,
+  ratlomacy: 216,
+  ratforcements: 217,
 };
+
+// SPD Talent.icon(): Heroic Energy shows as "Ratroic Energy" while the hero's
+// armor ability is Ratmogrify.
+const RATROIC_ENERGY_ICON = 218;
 
 const HEROIC_ENERGY_ICONS = {
   warrior: 26,
@@ -201,7 +210,10 @@ const HEROIC_ENERGY_ICONS = {
   cleric: 186,
 };
 
-export function getTalentIconIndex(talentId, classType) {
+export function getTalentIconIndex(talentId, classType, armorAbility) {
+  if (talentId === 'heroic_energy' && armorAbility === 'ratmogrify') {
+    return RATROIC_ENERGY_ICON;
+  }
   if (talentId === 'heroic_energy' && classType && HEROIC_ENERGY_ICONS[classType]) {
     return HEROIC_ENERGY_ICONS[classType];
   }

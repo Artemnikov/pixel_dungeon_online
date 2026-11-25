@@ -573,6 +573,10 @@ _FREE_MENUS: Dict[str, tuple] = {
         lambda g, p, m: g.wandmaker_claim_reward(p.id, m.npc_id, m.choice),
         "REWARD",
     ),
+    _msg_type(msg.RatKingCrownChoice): (
+        lambda g, p, m: g.rat_king_crown_choice(p.id, m.npc_id, m.accept),
+        "REWARD",
+    ),
     _msg_type(msg.ChangeDifficulty): (
         lambda g, p, m: g.change_difficulty(m.difficulty),
         "DIFFICULTY",

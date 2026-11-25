@@ -66,6 +66,7 @@ export function handleEvent(event: GameEvent, ctx: HandlerCtx): void {
     onYogFinalPhase: ctx.onYogFinalPhase,
     onShopOpen: ctx.onShopOpen,
     onImpDialogue: ctx.onImpDialogue,
+    onRatKingDialogue: ctx.onRatKingDialogue,
     onGhostDialogue: ctx.onGhostDialogue,
     onWandmakerDialogue: ctx.onWandmakerDialogue,
     onGhostQuestGiven: ctx.onGhostQuestGiven,

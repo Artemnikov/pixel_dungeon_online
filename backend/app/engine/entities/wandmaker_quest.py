@@ -106,7 +106,7 @@ class RotHeart(MobEntity):
     exp: int = 4
     loot_table: List[DropEntry] = []
     ai_state: str = "passive"
-    properties: List[str] = ["IMMOVABLE"]
+    properties: List[str] = ["IMMOVABLE", "MINIBOSS"]
 
     def defense_proc(self, damage: int, attacker, floor_mobs: dict, tile_x: int, tile_y: int, **kwargs) -> int:
         # RotHeart.defenseProc(): spreads ToxicGas on every hit taken --
@@ -136,7 +136,7 @@ class RotLasher(MobEntity):
     exp: int = 1
     view_distance: int = 1
     ai_state: str = "wandering"
-    properties: List[str] = ["IMMOVABLE"]
+    properties: List[str] = ["IMMOVABLE", "MINIBOSS"]
     loot_table: List[DropEntry] = [
         DropEntry(item_kind="seed", chance=0.75, max_global=0),
     ]

@@ -309,6 +309,7 @@ export interface HookProps {
   onYogFinalPhase?: (data: { mob: string }) => void;
   onShopOpen?: (data: { npc: string; stock: SerializedItem[]; gold: number }) => void;
   onImpDialogue?: (data: { npc: string; text: string; can_claim: boolean; tokens?: number | null }) => void;
+  onRatKingDialogue?: (data: { npc: string }) => void;
   onGhostQuestGiven?: () => void;
   onGhostQuestProcessed?: () => void;
   onGhostQuestComplete?: () => void;
@@ -391,6 +392,7 @@ export type HandlerCtx = Pick<
   onYogFinalPhase?: HookProps['onYogFinalPhase'];
   onShopOpen?: HookProps['onShopOpen'];
   onImpDialogue?: HookProps['onImpDialogue'];
+  onRatKingDialogue?: HookProps['onRatKingDialogue'];
   onGhostDialogue?: HookProps['onGhostDialogue'];
   onWandmakerDialogue?: HookProps['onWandmakerDialogue'];
   onGhostQuestGiven?: HookProps['onGhostQuestGiven'];

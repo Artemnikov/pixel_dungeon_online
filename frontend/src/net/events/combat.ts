@@ -387,7 +387,7 @@ export function createCombatEventHandlers(): IGameEventHandler[] {
           ctx.effects.setMobAttack(src, RIPPER_ATTACK_MS);
           ctx.effects.toggleMobStab(src);
         } else if (srcMob) {
-          const attackDuration = srcMob.name === 'Goo' ? 300 : srcMob.name === 'Scorpio' || srcMob.name === 'Yog Scorpio' || srcMob.name === 'Larva' ? 200 : srcMob.name === 'Rat' ? 333 : srcMob.name === 'Snake' ? 333 : 250;
+          const attackDuration = srcMob.name === 'Goo' ? 300 : srcMob.name === 'Scorpio' || srcMob.name === 'Yog Scorpio' || srcMob.name === 'Larva' ? 200 : srcMob.name === 'Rat' || srcMob.mob_type === 'transmog_rat' ? 333 : srcMob.name === 'Snake' ? 333 : 250;
           ctx.effects.setMobAttack(src, attackDuration);
         } else if (srcPlayer) {
           ctx.effects.setPlayerAttack(src, PLAYER_ATTACK_DURATION);

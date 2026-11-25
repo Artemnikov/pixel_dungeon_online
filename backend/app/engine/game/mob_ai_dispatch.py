@@ -8,17 +8,20 @@ generic mob AI (see mob_ai_movement.py) when no special case applies.
 import time
 from typing import Optional
 
-from app.engine.entities.base import Faction, Position
+from app.engine.entities.base import Faction, Position, is_hostile
 from app.engine.entities.mobs import (
     CrystalMimic, GhostHeroMob, MirrorImage, Goo, DwarfKing, YogDzewa, DM300,
     DemonSpawner, Pylon, Sentry, BurningFist, SoiledFist, RottingFist, RustedFist,
     BrightFist, DarkFist, Guard, Necromancer, Tengu, Eye, RedShaman,
     BlueShaman, PurpleShaman, Warlock, Spinner, DM200, DM100, Scorpio, RipperDemon,
+    RatKing,
 )
+from app.engine.entities.mobs.sewers import SpdRat
 from app.engine.entities.wandmaker_quest import NewbornFireElemental
 from app.engine.game.constants import AUTO_MOVE_INTERVAL, GAME_MODE_TURNBASED, SURPRISE_WINDOW_SECONDS
 from app.engine.game.floor_state import FloorState
 from app.engine.game.ai_demon_spawner import _update_demon_spawner
+from app.engine.game.ai_rat_king import _update_rat_king
 from app.engine.game.ai_dm100 import _update_dm100
 from app.engine.game.ai_dm200 import _update_dm200
 from app.engine.game.ai_dm300 import _update_dm300, _tick_dm300_pending_rockfall
@@ -46,6 +49,13 @@ class MobAIDispatchMixin:
             return
 
         if isinstance(mob, CrystalMimic) and mob.disguised:
+            return
+
+        if isinstance(mob, SpdRat):
+            mob.update_ratmogrify_alignment(self, floor_id)
+
+        if isinstance(mob, RatKing):
+            _update_rat_king(self, mob, floor, floor_id)
             return
 
         if mob.faction == Faction.PLAYER or getattr(mob, "owner_id", None) is not None:
@@ -213,10 +223,10 @@ class MobAIDispatchMixin:
             return
 
         enemies = [m for m in floor.mobs.values()
-                   if m.is_alive and m.faction != ally.faction]
+                   if m.is_alive and is_hostile(ally, m)]
         enemies.extend(
             p for p in self._players_on_floor(floor_id)
-            if p.is_alive and not p.is_downed and p.faction != ally.faction and p.invisible == 0
+            if p.is_alive and not p.is_downed and is_hostile(ally, p) and p.invisible == 0
         )
 
         # If GhostHeroMob has a direct position, prioritize it

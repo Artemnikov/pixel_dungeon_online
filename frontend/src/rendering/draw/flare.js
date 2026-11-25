@@ -37,3 +37,26 @@ export function advanceAndDrawFlares(ctx, { flareRef }) {
     ctx.restore();
   }
 }
+
+// CharSprite.aura(color, nRays): a Flare of `nRays` rays spinning at 90°/s
+// behind the sprite for as long as the state lasts.
+export function drawAura(ctx, cx, cy, nRays, radius, color, now = performance.now()) {
+  const spin = ((now / 1000) * 90 * Math.PI) / 180;
+  ctx.save();
+  ctx.globalCompositeOperation = 'lighter';
+  for (let r = 0; r < nRays; r++) {
+    const angle = spin + (r / nRays) * Math.PI * 2;
+    const grad = ctx.createLinearGradient(cx, cy, cx + Math.cos(angle) * radius, cy + Math.sin(angle) * radius);
+    grad.addColorStop(0, color);
+    grad.addColorStop(1, 'rgba(0,0,0,0)');
+    const half = Math.PI / nRays / 2;
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.moveTo(cx, cy);
+    ctx.lineTo(cx + Math.cos(angle - half) * radius, cy + Math.sin(angle - half) * radius);
+    ctx.lineTo(cx + Math.cos(angle + half) * radius, cy + Math.sin(angle + half) * radius);
+    ctx.closePath();
+    ctx.fill();
+  }
+  ctx.restore();
+}

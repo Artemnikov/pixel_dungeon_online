@@ -222,6 +222,12 @@ class WandmakerClaimReward(_ClientMessageBase):
     choice: Literal["wand1", "wand2"]
 
 
+class RatKingCrownChoice(_ClientMessageBase):
+    type: Literal["RAT_KING_CROWN_CHOICE"]
+    npc_id: str
+    accept: bool
+
+
 class ChooseImbueWand(_ClientMessageBase):
     type: Literal["CHOOSE_IMBUE_WAND"]
     staff_id: str
@@ -446,6 +452,7 @@ ClientMessage = Annotated[
         ImpClaimReward,
         GhostClaimReward,
         WandmakerClaimReward,
+        RatKingCrownChoice,
         SelectScrollTarget,
         SelectStoneTarget,
         StoneIntuitionChooseItem,

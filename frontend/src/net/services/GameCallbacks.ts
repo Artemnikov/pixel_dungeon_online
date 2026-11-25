@@ -35,6 +35,7 @@ export interface GameCallbacksConfig {
   onYogFinalPhase?: (data: { mob: string }) => void;
   onShopOpen?: (data: { npc: string; stock: SerializedItem[]; gold: number }) => void;
   onImpDialogue?: (data: { npc: string; text: string; can_claim: boolean; tokens?: number | null }) => void;
+  onRatKingDialogue?: (data: { npc: string }) => void;
   onGhostQuestGiven?: () => void;
   onGhostQuestProcessed?: () => void;
   onGhostQuestComplete?: () => void;
@@ -185,6 +186,10 @@ export class GameCallbacks {
 
   public impDialogue(data: { npc: string; text: string; can_claim: boolean; tokens?: number | null }): void {
     this.config.onImpDialogue?.(data);
+  }
+
+  public ratKingDialogue(data: { npc: string }): void {
+    this.config.onRatKingDialogue?.(data);
   }
 
   public ghostDialogue(data: { npc: string; text: string; can_claim: boolean; weapon?: SerializedItem | null; armor?: SerializedItem | null }): void {

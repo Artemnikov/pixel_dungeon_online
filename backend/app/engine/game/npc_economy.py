@@ -17,7 +17,7 @@ from app.engine.entities.items.consumables import CorpseDust, DwarfToken
 from app.engine.entities.wands.wandmaker_quest_items import CeremonialCandle, Embers, RotberrySeed
 from app.engine.entities.items.equip import LeatherArmor, MailArmor, PlateArmor, ScaleArmor, make_named_melee_weapon
 from app.engine.entities.player import Item, Player
-from app.engine.entities.mobs import Imp, Shopkeeper
+from app.engine.entities.mobs import Imp, RatKing, Shopkeeper
 from app.engine.entities.quest_bosses import FetidRat, Ghost, GnollTrickster, GreatCrab
 from app.engine.entities.wandmaker_quest import DustWraith, NewbornFireElemental, Wandmaker
 from app.engine.entities.weapons.weapon_defs import WEP_TIER_ORDER
@@ -190,6 +190,12 @@ class NpcEconomyMixin:
             return None, None, None
         return player, floor, npc
 
+    def rat_king_crown_choice(self, player_id: str, npc_id: str, accept: bool) -> None:
+        player, _floor, npc = self._resolve_adjacent_npc(player_id, npc_id, RatKing)
+        if npc is None or not player.is_alive:
+            return
+        npc.answer_crown_offer(self, player, accept)
+
     def _buy_price(self, item, depth: int) -> int:
         # Shopkeeper.sellPrice(): the price the *shop* charges to sell an item
         # to the hero. Greedy 5x markup, scaling with depth.
@@ -213,7 +219,10 @@ class NpcEconomyMixin:
         if npc is None or npc.type != "npc":
             return
 
-        if isinstance(npc, Shopkeeper):
+        if isinstance(npc, RatKing):
+            npc.interact(self, player)
+
+        elif isinstance(npc, Shopkeeper):
             stock = [
                 self._serialize_floor_item(i, player.discovered_kinds)
                 for i in floor.items.values()

@@ -234,7 +234,7 @@ export default function useGameRenderer({
       drawTargetedCells(ctx, { assetImages, visionRef });
       tickCellEmitters(particlesRef);
       drawItems(ctx, { entitiesRef, visionRef, assetImages });
-      drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef, dyingMobsRef, shieldFxRef: shieldHaloRef, particlesRef });
+      drawMobs(ctx, { entitiesRef, visionRef, assetImages, mobAnimRef, dyingMobsRef, shieldFxRef: shieldHaloRef, particlesRef, myPlayerId });
       drawCharHealth(ctx, { entitiesRef, visionRef });
       drawTargetHealthIndicator(ctx, { entitiesRef, visionRef, selectedEnemyIdRef });
       drawPlayers(ctx, { entitiesRef, visionRef, assetImages, playerAnimRef, myPlayerId, shieldFxRef: shieldHaloRef });

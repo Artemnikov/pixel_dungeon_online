@@ -216,11 +216,11 @@ def _roll_damage(attacker: "Entity", result: dict, prep: Optional[dict] = None, 
             diff = dmg_max - dmg_min
             dmg_min = dmg_min + int(diff * floor)
 
-    dmg_roll = random.randint(dmg_min, dmg_max)
+    dmg_roll = attacker.adjust_damage_roll(random.randint(dmg_min, dmg_max))
     # Preparation: keep the highest of N rolls.
     if prep is not None:
         for _ in range(prep["rolls"] - 1):
-            r = random.randint(dmg_min, dmg_max)
+            r = attacker.adjust_damage_roll(random.randint(dmg_min, dmg_max))
             if r > dmg_roll:
                 dmg_roll = r
 

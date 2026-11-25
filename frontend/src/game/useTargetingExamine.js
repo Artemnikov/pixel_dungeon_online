@@ -11,6 +11,7 @@ const TARGETED_ABILITIES = [
   'challenge',
   'elemental_strike',
   'power_of_many',
+  'ratmogrify',
 ];
 
 export default function useTargetingExamine({

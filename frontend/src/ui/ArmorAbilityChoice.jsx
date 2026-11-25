@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { getHeroIconIndex } from '../data/heroIcons';
 import HeroIcon from './HeroIcon';
 import WndOverlay from './WndOverlay';
+import WndInfoArmorAbility from './WndInfoArmorAbility';
 import { WindowLevel, WindowBackdrop } from '../game/window/WindowTypes';
 
 function talentIdToAbility(tid) {
@@ -50,24 +51,7 @@ export default function ArmorAbilityChoice({ options, onChoose, onSkip, abilityS
 
   if (info) {
     const infoAbility = abilitySelectors?.[info] || talentIdToAbility(info || '');
-    return (
-      <WndOverlay
-        id="wnd-armor-ability-info"
-        level={WindowLevel.SECONDARY}
-        backdrop={WindowBackdrop.DARK}
-        onClose={() => setInfo(null)}
-        className="choice-overlay"
-      >
-        <div className="wnd-info-ability" onClick={(e) => e.stopPropagation()}>
-          <div className="wnd-info-title">
-            <HeroIcon index={getHeroIconIndex('ability', infoAbility)} size={32} />
-            <span className="wnd-info-name">{t(`ability.${infoAbility}.name`, { defaultValue: infoAbility.replace(/_/g, ' ') })}</span>
-          </div>
-          <div className="wnd-info-desc">{t(`ability.${infoAbility}.desc`)}</div>
-          <button className="wnd-close-btn" onClick={() => setInfo(null)}>{t('subclass.close')}</button>
-        </div>
-      </WndOverlay>
-    );
+    return <WndInfoArmorAbility ability={infoAbility} onClose={() => setInfo(null)} />;
   }
 
   return (

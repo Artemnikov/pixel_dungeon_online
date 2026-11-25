@@ -50,7 +50,7 @@ class FetidRat(Rat):
     dr_min: int = 0
     dr_max: int = 3
     exp: int = 4
-    properties: List[str] = ["DEMONIC"]
+    properties: List[str] = ["DEMONIC", "MINIBOSS"]
 
     def attack_proc(self, target) -> None:
         # FetidRat.attackProc(): 1/3 chance to ooze the target on a landed hit.
@@ -69,6 +69,7 @@ class GnollTrickster(Gnoll):
     """GnollTrickster.java -- depth 3 quest boss."""
 
     name: str = "Gnoll Trickster"
+    properties: List[str] = ["MINIBOSS"]
     melee_reach: ClassVar[int] = 4
     hp: int = 20
     max_hp: int = 20
@@ -94,6 +95,7 @@ class GreatCrab(Crab):
     """GreatCrab.java -- depth 4 quest boss."""
 
     name: str = "Great Crab"
+    properties: List[str] = ["MINIBOSS"]
     hp: int = 25
     max_hp: int = 25
     defense_skill: int = 0  # see get_effective_defense_skill

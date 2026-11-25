@@ -4,6 +4,7 @@ from typing import List, Optional
 from app.engine.entities.base import chebyshev_distance
 from app.engine.entities.player import Player
 from app.engine.entities.buffs import add_buff, get_buff, remove_buff
+from app.engine.entities.items.consumables import KingsCrown
 from app.engine.entities.subclasses import (
     Subclass,
     Talent,
@@ -130,18 +131,12 @@ class TalentsMixin:
         base_class = CLASS_TALENT_BASE.get(player.class_type, player.class_type)
         if ability not in CLASS_ARMOR_ABILITIES.get(base_class, ()):
             return False
-        player.armor_ability = ability
-        player._kings_crown_worn = False
         # The crown is consumed by the pick, not by wearing it (SPD
         # KingsCrown.upgradeArmor). Best-effort: if the crown was thrown away
         # the pending choice still stands.
         crown = next((it for it in player.belongings.all_items()
-                      if getattr(it, "kind", "") == "kings_crown"), None)
-        if crown is not None:
-            from app.engine.entities.base import consume_backpack_item
-            consume_backpack_item(player, crown)
-        self._recompute_talent_points(player)
-        self.add_event("ARMOR_ABILITY_CHOSEN", {"player": player.id, "ability": ability}, floor_id=player.floor_id)
+                      if isinstance(it, KingsCrown)), None)
+        (crown or KingsCrown()).upgrade_armor(self, player, ability)
         return True
 
     def reemit_pending_choices(self, player_id: str) -> None:

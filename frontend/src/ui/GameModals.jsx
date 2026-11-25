@@ -8,6 +8,7 @@ import WndJournal from './WndJournal';
 import RightClickMenu from './RightClickMenu';
 import WndShop from './WndShop';
 import WndImp from './WndImp';
+import WndRatKing from './WndRatKing';
 import WndSadGhost from './WndSadGhost';
 import WndGhostGear from './WndGhostGear';
 import WndWandmaker from './WndWandmaker';
@@ -49,6 +50,7 @@ function GameModals({
     ctxMenu, setCtxMenu,
     shopWindow, setShopWindow,
     impWindow, setImpWindow,
+    ratKingWindow, setRatKingWindow,
     ghostWindow, setGhostWindow,
     wandmakerWindow, setWandmakerWindow,
     ghostGearData, setGhostGearData,
@@ -127,6 +129,17 @@ function GameModals({
             setImpWindow(null);
           }}
           onClose={() => setImpWindow(null)}
+        />
+      )}
+
+      {ratKingWindow && (
+        <WndRatKing
+          npcId={ratKingWindow.npc}
+          onChoose={(npcId, accept) => {
+            send({ type: 'RAT_KING_CROWN_CHOICE', npc_id: npcId, accept });
+            setRatKingWindow(null);
+          }}
+          onClose={() => setRatKingWindow(null)}
         />
       )}
 

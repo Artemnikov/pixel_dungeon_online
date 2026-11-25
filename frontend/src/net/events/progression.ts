@@ -151,6 +151,15 @@ export function createProgressionEventHandlers(): IGameEventHandler[] {
       },
     },
     {
+      eventType: 'RAT_KING_DIALOGUE',
+      handle(event: Extract<GameEvent, { type: 'RAT_KING_DIALOGUE' }>, ctx: GameEventContext) {
+        if (event.data.player === ctx.myPlayerId) {
+          ctx.ui.ratKingDialogue({ npc: event.data.npc });
+        }
+        return true;
+      },
+    },
+    {
       eventType: 'IMP_REWARD',
       handle(event: Extract<GameEvent, { type: 'IMP_REWARD' }>, ctx: GameEventContext) {
         if (event.data.player === ctx.myPlayerId) ctx.audio.play('BOSS');

@@ -184,6 +184,9 @@ const NEWBORN_ELEMENTAL_TEX_OFFSET = 14;
 export const RATKING_FW = 16;
 export const RATKING_FH = 17;
 export const RATKING_DEST = { dx: 0, dy: -2, dw: 32, dh: 34 };
+// RatKingSprite.resetAnims(): frame offset c = 24 (row 3 of ratking.png) once
+// the viewing hero has Ratmogrify — the Rat King wears the Dwarf King's crown.
+export const RATKING_CROWNED_SY = 3 * RATKING_FH;
 
 // Ghost NPC: 14x15 frames (GhostSprite TextureFilm(texture, 14, 15)), ghost.png.
 // 128x16 sheet; 8 frames (0-7). Centered/bottom-aligned in 32px tile, scaled 2x -> 28x30 @ +2,+2.
@@ -866,9 +869,14 @@ export const getRotLasherFrame = () => 0;
 export const getNewbornElementalFrame = () => NEWBORN_ELEMENTAL_TEX_OFFSET * NEWBORN_ELEMENTAL_FW;
 
 // Faithful to original SPD RatKingSprite (16x17 frames, ratking.png):
-//   idle 2fps loop [0,0,0,1]
-export const getRatKingFrame = (mob, mobAnim, now) =>
-  [0, 0, 0, 1][Math.floor(now / 500) % 4] * RATKING_FW;
+//   idle  2fps loop [0,0,0,1]
+//   run  10fps loop [2,3,4,5,6]
+export const getRatKingFrame = (mob, mobAnim, now) => {
+  if (isEntityMoving(mob)) {
+    return [2, 3, 4, 5, 6][Math.floor(now / 100) % 5] * RATKING_FW;
+  }
+  return [0, 0, 0, 1][Math.floor(now / 500) % 4] * RATKING_FW;
+};
 
 // Faithful to original SPD GhostSprite (14x15 frames, ghost.png):
 //   idle    5fps loop  [0,1]

@@ -10,7 +10,7 @@ import math
 import random
 import time
 
-from app.engine.entities.base import Position
+from app.engine.entities.base import Faction, Position
 from app.engine.entities.buffs import is_frozen
 from app.engine.entities.mobs import CrystalMimic, Goo
 from app.engine.entities.player import Difficulty, Player
@@ -18,6 +18,7 @@ from app.engine.entities.wandmaker_quest import RotLasher
 from app.engine.game.constants import AUTO_MOVE_INTERVAL
 from app.engine.game.floor_state import FloorState
 from app.engine.game.ai_goo import _goo_seal_entrance
+from app.engine.game.ai_spd_common import mob_speed
 
 
 class MobAIMovementMixin:
@@ -26,7 +27,7 @@ class MobAIMovementMixin:
         if move_times is None:
             move_times = self._mob_move_times = {}
         now = time.time()
-        move_interval = 2 * AUTO_MOVE_INTERVAL / max(0.1, mob.speed)
+        move_interval = 2 * AUTO_MOVE_INTERVAL / max(0.1, mob_speed(mob))
         if mob.has_buff("slow") or mob.has_buff("chill"):
             move_interval *= 2
         if mob.has_buff("paralysis") or mob.has_buff("spectator_freeze"):
@@ -46,6 +47,9 @@ class MobAIMovementMixin:
         # mirror image / ghost hero attacks), chase that target instead
         # of scanning for the nearest player.
         target_player = None
+        if mob.faction == Faction.NEUTRAL:
+            # SPD Mob.chooseEnemy(): a NEUTRAL mob never picks an enemy.
+            mob.aggro_target_id = None
         aggro_id = getattr(mob, "aggro_target_id", None)
         if aggro_id:
             aggro_target = floor.mobs.get(aggro_id)

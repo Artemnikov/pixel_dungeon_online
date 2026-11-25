@@ -565,6 +565,24 @@ export interface ImpDialogueEvent {
   data: { player: string; npc: string; text: string; can_claim: boolean; tokens?: number | null };
 }
 
+/** Rat King offers Ratmogrify for the Dwarf King's crown (SPD RatKing WndOptions). */
+export interface RatKingDialogueEvent {
+  type: 'RAT_KING_DIALOGUE';
+  data: { player: string; npc: string };
+}
+
+/** A mob notices something (SPD Mob.notice → EmoIcon.Alert). */
+export interface MobNoticeEvent {
+  type: 'MOB_NOTICE';
+  data: { mob: string };
+}
+
+/** Ratlomacy befriended a ratmogrified enemy (heart particles). */
+export interface RatlomacyEvent {
+  type: 'RATLOMACY';
+  data: { mob: string; x: number; y: number };
+}
+
 /** Player claimed the Imp's quest reward; the Imp despawns. */
 export interface ImpRewardEvent {
   type: 'IMP_REWARD';
@@ -1420,6 +1438,9 @@ export type GameEvent =
   | ShopBuyEvent
   | ShopSellEvent
   | ImpDialogueEvent
+  | RatKingDialogueEvent
+  | MobNoticeEvent
+  | RatlomacyEvent
   | ImpRewardEvent
   | GhostDialogueEvent
   | GhostRewardEvent
@@ -1739,6 +1760,7 @@ export type ClientMessage =
   | { type: 'SET_CLERIC_QUICK_SPELL'; spell?: string }
   | { type: 'GHOST_CLAIM_REWARD'; npc_id: string; choice: 'weapon' | 'armor' }
   | { type: 'WANDMAKER_CLAIM_REWARD'; npc_id: string; choice: 'wand1' | 'wand2' }
+  | { type: 'RAT_KING_CROWN_CHOICE'; npc_id: string; accept: boolean }
   | { type: 'TRIGGER_BERSERK' }
   | { type: 'PREPARATION_STRIKE'; target_x: number; target_y: number }
   | { type: 'CHOOSE_IMBUE_WAND'; staff_id: string; wand_id: string }

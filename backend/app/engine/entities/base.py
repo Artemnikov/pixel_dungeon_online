@@ -21,6 +21,25 @@ class EntityType:
 class Faction:
     PLAYER = "player"
     DUNGEON = "dungeon"
+    NEUTRAL = "neutral"
+
+
+def factions_hostile(fa: str, fb: str) -> bool:
+    """SPD alignment rule: NEUTRAL characters neither pick nor are picked as
+    enemies; otherwise characters of different factions are hostile."""
+    if fa == Faction.NEUTRAL or fb == Faction.NEUTRAL:
+        return False
+    return fa != fb
+
+
+def is_hostile(a, b) -> bool:
+    return factions_hostile(a.faction, b.faction)
+
+
+def is_boss_or_miniboss(ch) -> bool:
+    """SPD `Char.hasProp(ch, BOSS) || Char.hasProp(ch, MINIBOSS)`."""
+    props = getattr(ch, "properties", None) or ()
+    return "BOSS" in props or "MINIBOSS" in props
 
 class Position(BaseModel):
     x: int
@@ -280,6 +299,11 @@ class Entity(BaseModel):
 
     def get_damage_max(self) -> int:
         return self.damage_max
+
+    def adjust_damage_roll(self, roll: int) -> int:
+        """Hook on the rolled base damage (SPD `damageRoll()` overrides that
+        scale their result); identity by default."""
+        return roll
 
     def get_surprise_damage_floor(self) -> float:
         return 0.0

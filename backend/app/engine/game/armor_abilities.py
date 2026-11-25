@@ -7,6 +7,7 @@ from app.engine.entities.player import Player
 from app.engine.entities.subclasses import Talent
 from app.engine.game.cleric_armor_abilities import CLERIC_ARMOR_ABILITY_MAP
 from app.engine.game.duelist_armor_abilities import DUELIST_ARMOR_ABILITY_MAP
+from app.engine.game.ratmogrify import RATMOGRIFY_ARMOR_ABILITY_MAP
 from app.engine.game.rogue_armor_abilities import ROGUE_ARMOR_ABILITY_MAP
 from app.engine.game.warrior_armor_abilities import WARRIOR_ARMOR_ABILITY_MAP
 
@@ -23,6 +24,7 @@ class ArmorAbilitiesMixin:
         **ROGUE_ARMOR_ABILITY_MAP,
         **CLERIC_ARMOR_ABILITY_MAP,
         **DUELIST_ARMOR_ABILITY_MAP,
+        **RATMOGRIFY_ARMOR_ABILITY_MAP,
     }
 
     def _finalize_endure(self, player: Player) -> None:

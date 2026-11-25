@@ -187,6 +187,30 @@ export function spawnNote(particlesRef, cx, cy, count = 8) {
   }
 }
 
+// Speck.HEART (specks.png frame 11) rising from a befriended char — SPD's
+// emitter().start(Speck.factory(Speck.HEART), 0.2f, 5): five hearts, one
+// every 0.2s, drifting up for 1s while fading (am = 1 - p * p).
+export function spawnHearts(particlesRef, cx, cy, count = 5) {
+  if (!particlesRef?.current) return;
+  for (let i = 0; i < count; i++) {
+    particlesRef.current.push({
+      x: cx + (Math.random() - 0.5) * 8,
+      y: cy + (Math.random() - 0.5) * 8,
+      vx: Math.random() * 20 - 10,
+      vy: -40,
+      gravity: false,
+      angle: 0,
+      angularSpeed: ((Math.random() * 90 - 45) * Math.PI) / 180,
+      speckFrame: 11,
+      quadraticFade: true,
+      delay: i * 0.2,
+      life: 1,
+      maxLife: 1,
+      shrink: false,
+    });
+  }
+}
+
 // Fast outward burst — Speck.SCREAM for Scroll of Rage.
 export function spawnScream(particlesRef, cx, cy, count = 10) {
   for (let i = 0; i < count; i++) {

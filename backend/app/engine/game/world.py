@@ -13,7 +13,7 @@ were unrelated concerns bundled under one 1300-line mixin.
 import random
 import time
 import uuid
-from typing import Callable, Dict, List
+from typing import Callable, Dict, List, Optional
 
 from app.engine.dungeon.constants import TileType
 from app.engine.entities.base import Faction, Position
@@ -388,18 +388,26 @@ def _trap_alarm(game, floor, player, floor_id, is_player, patches):
     return 0, 0
 
 
-def _spawn_wandering_mob(game, floor, floor_id: int, cls, cx: int, cy: int):
+def _spawn_mob_at(game, floor, floor_id: int, cls, cx: int, cy: int, *,
+                  faction: str = Faction.DUNGEON, ai_state: str = "wandering",
+                  owner_id: Optional[str] = None):
     """Construct `cls` at (cx, cy), stamp floor_level, register it on the
-    floor as wandering and emit the SUMMON event. Shared by the traps that
-    spawn already-woken mobs (SummoningTrap/DistortionTrap/GuardianTrap)."""
-    mob = cls(id=str(uuid.uuid4()), pos=Position(x=cx, y=cy), faction=Faction.DUNGEON)
+    floor in `ai_state` and emit the SUMMON event."""
+    mob = cls(id=str(uuid.uuid4()), pos=Position(x=cx, y=cy), faction=faction)
     mob.floor_id = floor_id
     if hasattr(mob, "floor_level"):
         mob.floor_level = floor_id
-    mob.ai_state = "wandering"
+    mob.ai_state = ai_state
+    mob.owner_id = owner_id
     floor.mobs[mob.id] = mob
     game.add_event("SUMMON", {"id": mob.id, "x": cx, "y": cy, "name": mob.name}, floor_id=floor_id)
     return mob
+
+
+def _spawn_wandering_mob(game, floor, floor_id: int, cls, cx: int, cy: int):
+    """Spawn an already-woken dungeon mob. Shared by the traps that spawn
+    them (SummoningTrap/DistortionTrap/GuardianTrap)."""
+    return _spawn_mob_at(game, floor, floor_id, cls, cx, cy)
 
 
 def _trap_summoning(game, floor, player, floor_id, is_player, patches):
