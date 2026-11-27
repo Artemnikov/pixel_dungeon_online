@@ -1,4 +1,4 @@
-export const APP_VERSION = '1.2.1';
+export const APP_VERSION = '1.3.0';
 
 /**
  * @typedef {{ category?: { en: string; ru: string }; description: { en: string; ru: string } }} ChangeItem
@@ -7,11 +7,31 @@ export const APP_VERSION = '1.2.1';
 
 const CHANGELOG = [
   {
-    version: '1.2.1',
-    title: { en: 'Dwarf King Fight, Boss Party Prompts & Turn Mode Fixes', ru: 'Бой с Королём Дворфов, групповой вход к боссам и исправления пошагового режима' },
-    date: '2026-11-21',
-    type: 'patch',
+    version: '1.3.0',
+    title: { en: 'Yog-Dzewa, Ratmogrify & Boss Fights', ru: 'Йог-Дзева, Крысоморфоза и бои с боссами' },
+    date: '2026-11-27',
+    type: 'minor',
     changes: [
+      { category: { en: 'Yog-Dzewa Fight', ru: 'Бой с Йог-Дзевой' }, description: {
+        en: 'Ported the Yog-Dzewa finale from SPD: telegraphed death-ray beams that multiply as Yog loses health, an endless stream of summons, invulnerability phases that raise new fists at the altar, and the six fists with their own abilities (Burning, Soiled, Rotting, Rusted, Bright and Dark Fist). Entering the Floor 25 arena prompts other players on the floor to join; decliners are sent back to Floor 24. Includes SPD visuals, sprites, boss bar and the finale theme after victory.',
+        ru: 'Перенесён финальный бой с Йог-Дзевой из SPD: предупреждаемые лучи смерти, число которых растёт по мере потери здоровья, непрерывный призыв прислужников, фазы неуязвимости с появлением новых кулаков у алтаря и шесть кулаков со своими способностями (Пылающий, Земляной, Гниющий, Ржавый, Светлый и Тёмный). Вход на арену 25 этажа отправляет приглашение другим игрокам на этаже; отказавшиеся возвращаются на 24 этаж. Добавлены визуальные эффекты и спрайты из SPD, полоса здоровья босса и финальная музыка после победы.',
+      } },
+      { category: { en: 'Rat King & Ratmogrify', ru: 'Крысиный король и Крысоморфоза' }, description: {
+        en: 'Talk to the Rat King to wake him; bring him the Dwarf King\'s crown while wearing armor and he will trade it for the Ratmogrify armor ability, which turns an enemy into a rat for 6 turns (bosses, allies and rats are immune). Comes with the Ratsistance, Ratlomacy and Ratforcements talents, and rats seen by a Ratmogrify hero turn neutral.',
+        ru: 'Заговорите с Крысиным королём, чтобы разбудить его; принесите ему корону Короля Дворфов, будучи в броне, и он обменяет её на способность брони «Крысоморфоза», превращающую врага в крысу на 6 ходов (боссы, союзники и крысы невосприимчивы). В комплекте таланты «Крысистентность», «Крысипломатия» и «Крысокрепления», а крысы, увидевшие героя с Крысоморфозой, становятся нейтральными.',
+      } },
+      { category: { en: 'Evil Eye, Scorpio & Ripper Demon', ru: 'Злобный глаз, Скорпион и Демон-потрошитель' }, description: {
+        en: 'Evil Eyes charge their death gaze and fire along the aimed line, hitting everything in its path; Scorpios attack only from range and step back to keep their distance; Ripper Demons telegraph and perform a bleeding leap. Evil Eyes and Scorpios now drop what they drop in SPD.',
+        ru: 'Злобные глаза заряжают смертельный взгляд и бьют вдоль выбранной линии, поражая всех на пути; Скорпионы атакуют только издалека и отступают, держа дистанцию; Демоны-потрошители предупреждают о прыжке и совершают его, вызывая кровотечение. Злобные глаза и Скорпионы теперь роняют ту же добычу, что и в SPD.',
+      } },
+      { category: { en: 'SPD Turn Timing', ru: 'Ходы как в SPD' }, description: {
+        en: 'Fire, gases, burning, poison, bleeding and other world effects now advance once per SPD turn in both modes (fire no longer spreads every tick in real time). In turn-based rooms mobs are charged the time their turn took, so fast mobs act twice per round, and Tengu bombs and DM-300 rockfall go off on time.',
+        ru: 'Огонь, газы, горение, яд, кровотечение и другие эффекты мира теперь обновляются раз в ход SPD в обоих режимах (огонь больше не распространяется каждый тик в реальном времени). В пошаговых комнатах мобы тратят столько времени, сколько занял их ход, поэтому быстрые мобы ходят дважды за раунд, а бомбы Тенгу и камнепад ДМ-300 срабатывают вовремя.',
+      } },
+      { category: { en: 'Combat & Glyph Fixes', ru: 'Исправления боя и глифов' }, description: {
+        en: 'Mobs now melee only when adjacent and casters hold position while they can zap; a hero with Light always sees at least 6 tiles; roots reliably stop movement. The attacker now hears the hit sound of every landed blow, misses are silent, and surprise hits add a strong-hit sound. The Viscosity glyph now actually deals its deferred damage over time.',
+        ru: 'Мобы теперь бьют в ближнем бою только вплотную, а заклинатели держат позицию, пока могут атаковать издалека; герой со Светом всегда видит минимум на 6 клеток; корни надёжно останавливают движение. Атакующий теперь слышит звук каждого попавшего удара, промахи беззвучны, а внезапные удары добавляют звук сильного удара. Глиф Вязкости теперь действительно наносит отложенный урон со временем.',
+      } },
       { category: { en: 'Dwarf King Fight', ru: 'Бой с Королём Дворфов' }, description: {
         en: 'Completed the SPD port of the Dwarf King: Life Link with damage shared across every link, Teleport Subject with SPD positioning, turn-by-turn phase 2 summon waves with a regenerating barrier, minion deaths of any cause (including allies, abilities and wands) damaging the barrier, and phase 3 per-turn summons with a deferred-damage bleed. Pedestals now show inbound summons for the whole delay, with "invulnerable" and "deferred N" status text.',
         ru: 'Завершён порт боя с Королём Дворфов из SPD: Связь жизни с распределением урона по всем связям, Телепорт подданного с позиционированием как в SPD, пошаговые волны призыва во 2-й фазе с восстанавливающимся барьером, урон по барьеру от гибели миньонов по любой причине (включая союзников, способности и жезлы), призыв каждый ход и отложенный урон в 3-й фазе. Пьедесталы показывают призыв на всё время ожидания, добавлены надписи «неуязвим» и «отложено N».',
