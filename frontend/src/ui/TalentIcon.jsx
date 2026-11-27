@@ -5,8 +5,8 @@ const COLS = 32;
 const SHEET_W = 1024;
 const SHEET_H = 256;
 
-export default function TalentIcon({ talentId, iconIndex, className, alpha, classType }) {
-  const idx = iconIndex ?? getTalentIconIndex(talentId, classType);
+export default function TalentIcon({ talentId, iconIndex, className, alpha, classType, armorAbility }) {
+  const idx = iconIndex ?? getTalentIconIndex(talentId, classType, armorAbility);
   const col = idx % COLS;
   const row = Math.floor(idx / COLS);
 

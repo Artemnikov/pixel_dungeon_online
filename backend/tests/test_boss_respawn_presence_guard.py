@@ -5,7 +5,6 @@ from app.engine.entities.base import Faction, Position
 from app.engine.entities.mobs.sewers import Goo
 from app.engine.entities.mobs.caves import DM300
 from app.engine.entities.mobs.city import DwarfKing
-from app.engine.entities.mobs.halls import YogDzewa
 from app.engine.manager import GameInstance
 from app.engine.game.constants import BOSS_RESPAWN_TICKS, PUBLIC_ROOM_ID
 
@@ -19,7 +18,6 @@ BOSS_ROOMS = {
     5: Goo,
     15: DM300,
     20: DwarfKing,
-    25: YogDzewa,
 }
 
 

@@ -10,7 +10,8 @@ from collections import deque
 from typing import List, Optional, Tuple
 
 from app.engine.dungeon.constants import TileType
-from app.engine.entities.base import Faction, Position, chebyshev_distance
+from app.engine.entities.base import Faction, Position, chebyshev_distance, factions_hostile
+from app.engine.game.constants import LIGHT_DISTANCE
 from app.engine.mechanics import shadowcaster
 
 from app.engine.game.floor_state import FloorState
@@ -38,13 +39,13 @@ class VisionMixin:
         candidates: List = [
             p for p in self._players_on_floor(floor_id)
             if (exclude_id is None or p.id != exclude_id) and p.is_alive and not p.is_downed
-            and not p.has_buff("time_stasis") and p.faction != faction
+            and not p.has_buff("time_stasis") and factions_hostile(faction, p.faction)
         ]
         floor = self.floors.get(floor_id)
         if floor is not None:
             candidates.extend(
                 m for m in floor.mobs.values()
-                if (exclude_id is None or m.id != exclude_id) and m.is_alive and m.faction != faction
+                if (exclude_id is None or m.id != exclude_id) and m.is_alive and factions_hostile(faction, m.faction)
             )
 
         nearest = None
@@ -107,14 +108,17 @@ class VisionMixin:
         from app.engine.entities.trinkets import EyeOfNewt as _EyeOfNewt
         from app.engine.entities.trinkets import trinket_level
 
-        # Per-floor override (e.g. YogDzewa fight shrinking level.viewDistance)
-        # takes precedence over the entity's own view distance, mirroring SPD
-        # where level.viewDistance is forced onto the hero directly.
+        # Per-floor override (SPD Level.viewDistance, e.g. Halls boss arena)
+        # is forced onto the heroes only -- mobs keep their own sight. A
+        # hero with Light sees at least Light.DISTANCE (Light.attachTo).
         floor_id = getattr(entity, "floor_id", None)
-        if floor_id is not None:
+        if floor_id is not None and getattr(entity, "type", None) == "player":
             floor = self.floors.get(floor_id)
             if floor is not None and floor.view_distance is not None:
-                return max(0, min(floor.view_distance, shadowcaster.MAX_DISTANCE))
+                vd = floor.view_distance
+                if entity.has_buff("light"):
+                    vd = max(vd, LIGHT_DISTANCE)
+                return max(0, min(vd, shadowcaster.MAX_DISTANCE))
 
         dist = getattr(entity, "view_distance", 8)
         # Farsight talent: check for dynamic override
@@ -202,7 +206,8 @@ class VisionMixin:
         fov = self._fov_from(p1, floor, distance, viewer_id=viewer_id)
         return fov[p2.y * floor.width + p2.x]
 
-    def _get_next_step_to(self, start: Position, target: Position, floor_id: Optional[int] = None, flying: bool = False) -> Optional[tuple]:
+    def _get_next_step_to(self, start: Position, target: Position, floor_id: Optional[int] = None, flying: bool = False,
+                          large: bool = False) -> Optional[tuple]:
         floor = self._get_or_create_floor(floor_id or self.depth)
 
         queue = deque([(start.x, start.y, [])])
@@ -223,6 +228,7 @@ class VisionMixin:
                     and 0 <= ny < floor.height
                     and floor.flags
                     and (floor.flags.passable[ny][nx] or (flying and floor.flags.avoid[ny][nx]))
+                    and (not large or floor.flags.open_space[ny][nx] or (nx == target.x and ny == target.y))
                     and (nx, ny) not in visited
                 ):
                     if dx != 0 and dy != 0:

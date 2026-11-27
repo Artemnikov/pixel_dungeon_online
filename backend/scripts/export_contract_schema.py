@@ -54,12 +54,33 @@ def _strip_property_titles(node: object) -> None:
             _strip_property_titles(item)
 
 
+def _require_serialized_fields(node: object) -> None:
+    """Mark every serialized property as required.
+
+    `model_dump` always emits a field that has a default, so on the wire none
+    of them is ever missing; pydantic's schema still lists only default-less
+    fields as `required`, which would make json-schema-to-typescript emit them
+    all as optional (`pos?: Position`). Fields excluded from serialization are
+    already absent from `properties`, so they stay out of the TS types.
+    """
+    if isinstance(node, dict):
+        props = node.get("properties")
+        if isinstance(props, dict) and node.get("type") == "object":
+            node["required"] = list(props.keys())
+        for value in node.values():
+            _require_serialized_fields(value)
+    elif isinstance(node, list):
+        for item in node:
+            _require_serialized_fields(item)
+
+
 def main() -> None:
     # mode="serialization" matches the wire format (model_dump): it includes
     # @computed_field views like Player.inventory / equipped_weapon that the client
     # reads but which validation-mode schemas omit.
     schema = _Contract.model_json_schema(mode="serialization", ref_template="#/$defs/{model}")
     _strip_property_titles(schema)
+    _require_serialized_fields(schema)
 
     repo_root = Path(__file__).resolve().parents[2]
     out_path = repo_root / "frontend" / "src" / "types" / "generated" / "contract.schema.json"

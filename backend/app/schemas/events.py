@@ -417,6 +417,40 @@ class ChasmPromptData(_EventData):
     y: int
 
 
+class TenguJoinPromptData(_EventData):
+    initiator_id: str
+    initiator_name: str
+
+
+class TenguPartyStatusData(_EventData):
+    initiator_id: str
+    pending_names: List[str]
+    declined_names: List[str]
+    approved_names: List[str]
+    can_decide: bool
+
+
+class TenguPromptCloseData(_EventData):
+    pass
+
+
+class DwarfKingJoinPromptData(_EventData):
+    initiator_id: str
+    initiator_name: str
+
+
+class DwarfKingPartyStatusData(_EventData):
+    initiator_id: str
+    pending_names: List[str]
+    declined_names: List[str]
+    approved_names: List[str]
+    can_decide: bool
+
+
+class DwarfKingPromptCloseData(_EventData):
+    pass
+
+
 class ChasmFallData(_EventData):
     # SPD Chasm.heroFall -> InterlevelScene.Mode.FALL -> heroLand. Carries
     # everything the client needs to drive the fall transition: who fell, whether
@@ -449,6 +483,7 @@ class MobChasmFallData(_EventData):
 class MessageData(_EventData):
     text: str
     color: Optional[str] = None
+    key: Optional[str] = None
 
 
 class ChatData(_EventData):
@@ -464,6 +499,21 @@ class ImpDialogueData(_EventData):
     text: str
     can_claim: bool
     tokens: Optional[int] = None
+
+
+class RatKingDialogueData(_EventData):
+    player: str
+    npc: str
+
+
+class MobNoticeData(_EventData):
+    mob: str
+
+
+class RatlomacyData(_EventData):
+    mob: str
+    x: int
+    y: int
 
 
 class ImpRewardData(_EventData):
@@ -496,7 +546,8 @@ class GhostQuestProcessedData(_EventData):
 
 
 class TeleportData(_EventData):
-    player: str
+    player: Optional[str] = None
+    mob: Optional[str] = None
     x: int
     y: int
 
@@ -686,6 +737,134 @@ class EquipCursedData(_EventData):
     y: int = 0
 
 
+class YogJoinPromptData(_EventData):
+    initiator_id: str
+    initiator_name: str
+
+
+class YogPartyStatusData(_EventData):
+    initiator_id: str
+    pending_names: List[str]
+    declined_names: List[str]
+    approved_names: List[str]
+    can_decide: bool
+
+
+class YogPromptCloseData(_EventData):
+    pass
+
+
+class YogArenaSealedData(_EventData):
+    x: int
+    y: int
+
+
+class YogArenaUnsealedData(_EventData):
+    custom_tiles: list
+    custom_walls: list
+
+
+class YogFightStartedData(_EventData):
+    mob: str
+
+
+class YogPhaseChangeData(_EventData):
+    mob: str
+    phase: int
+    view_distance: Optional[int] = None
+
+
+class YogFinalPhaseData(_EventData):
+    mob: str
+
+
+class YogViewDistanceData(_EventData):
+    view_distance: int
+
+
+class YogShadowBurstData(_EventData):
+    # [[x, y, particle count], ...] -- CellEmitter.burst(ShadowParticle.UP, n)
+    cells: List[List[int]]
+
+
+class YogFistSpawnData(_EventData):
+    mob: str
+    fist: str
+    cls: str
+    x: int
+    y: int
+    from_x: int
+    from_y: int
+
+
+class YogTargetedCellsData(_EventData):
+    mob: str
+    cells: List[List[int]]
+    color: int
+    duration_ms: int
+
+
+class YogDeathRayData(_EventData):
+    mob: str
+    sx: int
+    sy: int
+    ends: List[List[int]]
+    hits: List[str]
+
+
+class MobSpawnData(_EventData):
+    mob: str
+    cls: str
+    x: int
+    y: int
+    from_x: Optional[int] = None
+    from_y: Optional[int] = None
+
+
+class FistZapData(_EventData):
+    mob: str
+    kind: str
+    bolt: str
+    x: int
+    y: int
+    target_x: int
+    target_y: int
+
+
+class StatusTextData(_EventData):
+    target: str
+    key: str
+    kind: str
+    x: int
+    y: int
+    value: Optional[str] = None
+
+
+class TerrainBurstData(_EventData):
+    cells: List[List[int]]
+    kind: str
+
+
+class RipperLeapPrepData(_EventData):
+    mob: str
+    x: int
+    y: int
+    color: int
+    duration_ms: int
+
+
+class RipperLeapData(_EventData):
+    mob: str
+    from_x: int
+    from_y: int
+    x: int
+    y: int
+    end_x: int
+    end_y: int
+    victim: Optional[str] = None
+    hit: Optional[bool] = None
+
+
 # event "type" -> payload model. Used by the opt-in dev validation hook.
 EVENT_MODELS = {
     "ATTACK": AttackData,
@@ -736,10 +915,38 @@ EVENT_MODELS = {
     "TENGU_BADGE_QUALIFIED": TenguBadgeQualifiedData,
     "GOO_BADGE_QUALIFIED": GooBadgeQualifiedData,
     "CHASM_PROMPT": ChasmPromptData,
+    "TENGU_JOIN_PROMPT": TenguJoinPromptData,
+    "TENGU_PARTY_STATUS": TenguPartyStatusData,
+    "TENGU_PROMPT_CLOSE": TenguPromptCloseData,
+    "DWARF_KING_JOIN_PROMPT": DwarfKingJoinPromptData,
+    "DWARF_KING_PARTY_STATUS": DwarfKingPartyStatusData,
+    "DWARF_KING_PROMPT_CLOSE": DwarfKingPromptCloseData,
+    "YOG_JOIN_PROMPT": YogJoinPromptData,
+    "YOG_PARTY_STATUS": YogPartyStatusData,
+    "YOG_PROMPT_CLOSE": YogPromptCloseData,
+    "YOG_ARENA_SEALED": YogArenaSealedData,
+    "YOG_ARENA_UNSEALED": YogArenaUnsealedData,
+    "YOG_FIGHT_STARTED": YogFightStartedData,
+    "YOG_PHASE_CHANGE": YogPhaseChangeData,
+    "YOG_FINAL_PHASE": YogFinalPhaseData,
+    "YOG_VIEW_DISTANCE": YogViewDistanceData,
+    "YOG_SHADOW_BURST": YogShadowBurstData,
+    "YOG_FIST_SPAWN": YogFistSpawnData,
+    "YOG_TARGETED_CELLS": YogTargetedCellsData,
+    "YOG_DEATH_RAY": YogDeathRayData,
+    "MOB_SPAWN": MobSpawnData,
+    "FIST_ZAP": FistZapData,
+    "STATUS_TEXT": StatusTextData,
+    "TERRAIN_BURST": TerrainBurstData,
+    "RIPPER_LEAP_PREP": RipperLeapPrepData,
+    "RIPPER_LEAP": RipperLeapData,
     "CHASM_FALL": ChasmFallData,
     "SCREEN_SHAKE": ScreenShakeData,
     "MOB_CHASM_FALL": MobChasmFallData,
     "IMP_DIALOGUE": ImpDialogueData,
+    "RAT_KING_DIALOGUE": RatKingDialogueData,
+    "MOB_NOTICE": MobNoticeData,
+    "RATLOMACY": RatlomacyData,
     "IMP_REWARD": ImpRewardData,
     "GHOST_DIALOGUE": GhostDialogueData,
     "GHOST_REWARD": GhostRewardData,

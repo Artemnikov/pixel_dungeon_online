@@ -187,6 +187,30 @@ export function spawnNote(particlesRef, cx, cy, count = 8) {
   }
 }
 
+// Speck.HEART (specks.png frame 11) rising from a befriended char — SPD's
+// emitter().start(Speck.factory(Speck.HEART), 0.2f, 5): five hearts, one
+// every 0.2s, drifting up for 1s while fading (am = 1 - p * p).
+export function spawnHearts(particlesRef, cx, cy, count = 5) {
+  if (!particlesRef?.current) return;
+  for (let i = 0; i < count; i++) {
+    particlesRef.current.push({
+      x: cx + (Math.random() - 0.5) * 8,
+      y: cy + (Math.random() - 0.5) * 8,
+      vx: Math.random() * 20 - 10,
+      vy: -40,
+      gravity: false,
+      angle: 0,
+      angularSpeed: ((Math.random() * 90 - 45) * Math.PI) / 180,
+      speckFrame: 11,
+      quadraticFade: true,
+      delay: i * 0.2,
+      life: 1,
+      maxLife: 1,
+      shrink: false,
+    });
+  }
+}
+
 // Fast outward burst — Speck.SCREAM for Scroll of Rage.
 export function spawnScream(particlesRef, cx, cy, count = 10) {
   for (let i = 0; i < count; i++) {
@@ -356,6 +380,46 @@ export function spawnShadowUp(particlesRef, cx, cy, count = 10) {
       maxLife: life,
       size: 6,
       color: '#440044',
+      gravity: false,
+    });
+  }
+}
+
+// ShadowParticle.MISSILE — trail poured by MagicMissile.SHADOW (Warlock bolt, Wand of Corruption).
+export function spawnShadowMissileParticle(particlesRef, x, y) {
+  const life = 0.5;
+  particlesRef.current.push({
+    x,
+    y,
+    vx: (Math.random() * 2 - 1) * 10,
+    vy: (Math.random() * 2 - 1) * 10,
+    life,
+    maxLife: life,
+    size: 12,
+    color: '#440044',
+    triangleAlphaScale: 2,
+    gravity: false,
+  });
+}
+
+// ShadowParticle.CURSE — dark motes converging on a cell (DK Warlock summon burst).
+export function spawnShadowCurse(particlesRef, cx, cy, count = 10) {
+  for (let i = 0; i < count; i++) {
+    const life = 0.5;
+    const angle = Math.random() * Math.PI * 2;
+    const speed = 32 + Math.random() * 32;
+    const vx = Math.cos(angle) * speed;
+    const vy = Math.sin(angle) * speed;
+    particlesRef.current.push({
+      x: cx - vx * life,
+      y: cy - vy * life,
+      vx,
+      vy,
+      life,
+      maxLife: life,
+      size: 16,
+      color: '#440044',
+      triangleAlphaScale: 2,
       gravity: false,
     });
   }

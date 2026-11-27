@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { DirectionalMoveCommand } from './DirectionalMoveCommand.ts';
+import * as movementPredictor from '../../../net/movementPredictor';
 
 function createSocket() {
   const sent = [];
@@ -28,7 +29,7 @@ function createContext(overrides = {}) {
     socket,
     myPlayer: createPlayer(),
     myPlayerId: 'p1',
-    grid: { get: () => 1, isWalkable: () => true, isBlockingEntity: () => false, at: () => 1 },
+    grid: Array.from({ length: 25 }, () => Array(25).fill(2)),
     entities: {
       players: {},
       mobs: {},
@@ -66,25 +67,36 @@ test('DirectionalMoveCommand: a turn room sends one plain MOVE per press', () =>
   assert.deepEqual(ctx.socket.sent.filter((m) => forbidden.includes(m.type)), []);
 });
 
-test('DirectionalMoveCommand: a held key does not repeat moves in a turn room', () => {
+test('DirectionalMoveCommand: a held key continues moving as each turn arrives', () => {
   const pressedKeys = new Set(['KeyD']);
   const command = new DirectionalMoveCommand(pressedKeys);
   const ctx = createContext({
     gameModeRef: { current: 'turnbased' },
     canActRef: { current: true },
+    // Zero step duration so animation pacing never gates the synthetic
+    // same-millisecond turn transitions below.
+    myPlayer: { ...createPlayer(), step_duration_ms: 0 },
   });
 
   command.syncMoveIntent(ctx, true);
-  // Auto-repeat and the next turn arriving both look like this: same vector held.
-  command.syncMoveIntent(ctx, true);
   assert.equal(ctx.socket.sent.filter((m) => m.type === 'MOVE').length, 1);
+  // Spending the turn locks input until the next STATE_UPDATE re-allows it.
+  assert.equal(ctx.canActRef.current, false);
+
+  // The next turn arriving looks like canAct flipping back to true while the
+  // same vector is still held: paceStep (driven by the pump) takes the step.
+  ctx.canActRef.current = true;
+  command.paceStep(ctx);
+  assert.equal(ctx.socket.sent.filter((m) => m.type === 'MOVE').length, 2);
+  assert.equal(ctx.canActRef.current, false);
 
   // Releasing and pressing again is a new turn's worth of movement.
   pressedKeys.delete('KeyD');
   command.syncMoveIntent(ctx, false);
+  ctx.canActRef.current = true;
   pressedKeys.add('KeyD');
   command.syncMoveIntent(ctx, true);
-  assert.equal(ctx.socket.sent.filter((m) => m.type === 'MOVE').length, 2);
+  assert.equal(ctx.socket.sent.filter((m) => m.type === 'MOVE').length, 3);
 });
 
 test('DirectionalMoveCommand: releasing a key is silent in a turn room', () => {
@@ -103,13 +115,15 @@ test('DirectionalMoveCommand: releasing a key is silent in a turn room', () => {
   assert.equal(ctx.socket.sent.filter((m) => m.type === 'MOVE').length, 1);
 });
 
-test('DirectionalMoveCommand: canExecute refuses movement when it is not my turn', () => {
+test('DirectionalMoveCommand: canExecute registers direction keys even when it is not my turn', () => {
   const command = new DirectionalMoveCommand(new Set());
+  // Ungated so chorded diagonals and keyups are never swallowed while waiting;
+  // syncMoveIntent/paceStep decide whether a turn may actually be spent.
   const waiting = createContext({
     gameModeRef: { current: 'turnbased' },
     canActRef: { current: false },
   });
-  assert.equal(command.canExecute('KeyD', waiting), false);
+  assert.equal(command.canExecute('KeyD', waiting), true);
 
   const mine = createContext({
     gameModeRef: { current: 'turnbased' },
@@ -138,16 +152,82 @@ test('DirectionalMoveCommand: a real-time room is never gated and never sends a 
   assert.equal(ctx.socket.sent.filter((m) => m.type === 'MOVE_STOP').length, 1);
 });
 
-test('DirectionalMoveCommand: paceStep never auto-walks in a turn room', () => {
+test('DirectionalMoveCommand: paceStep auto-walks a held key in a turn room when it can act', () => {
   const pressedKeys = new Set(['KeyD']);
   const command = new DirectionalMoveCommand(pressedKeys);
   const ctx = createContext({
     gameModeRef: { current: 'turnbased' },
     canActRef: { current: true },
+    myPlayer: { ...createPlayer(), step_duration_ms: 0 },
+  });
+
+  command.paceStep(ctx);
+  const moves = ctx.socket.sent.filter((m) => m.type === 'MOVE');
+  assert.equal(moves.length, 1);
+  assert.equal(moves[0].direction, 'RIGHT');
+  assert.equal(ctx.canActRef.current, false);
+});
+
+test('DirectionalMoveCommand: paceStep stays quiet while waiting for the turn', () => {
+  const pressedKeys = new Set(['KeyD']);
+  const command = new DirectionalMoveCommand(pressedKeys);
+  const ctx = createContext({
+    gameModeRef: { current: 'turnbased' },
+    canActRef: { current: false },
   });
 
   command.paceStep(ctx);
   assert.deepEqual(ctx.socket.sent, []);
+  assert.equal(ctx.canActRef.current, false);
+});
+
+test('DirectionalMoveCommand: paceStep does not outpace the walk animation in a turn room', () => {
+  const pressedKeys = new Set(['KeyD']);
+  const command = new DirectionalMoveCommand(pressedKeys);
+  const ctx = createContext({
+    gameModeRef: { current: 'turnbased' },
+    canActRef: { current: true },
+    myPlayer: { ...createPlayer(), step_duration_ms: 60000 },
+  });
+
+  command.syncMoveIntent(ctx, true);
+  assert.equal(ctx.socket.sent.filter((m) => m.type === 'MOVE').length, 1);
+
+  // A turn arriving before the previous step's animation finished is not spent.
+  ctx.canActRef.current = true;
+  command.paceStep(ctx);
+  assert.equal(ctx.socket.sent.filter((m) => m.type === 'MOVE').length, 1);
+  assert.equal(ctx.canActRef.current, true);
+});
+
+test('DirectionalMoveCommand: a chorded diagonal continues as a diagonal next turn', () => {
+  const pressedKeys = new Set();
+  const command = new DirectionalMoveCommand(pressedKeys);
+  const ctx = createContext({
+    gameModeRef: { current: 'turnbased' },
+    canActRef: { current: true },
+    myPlayer: { ...createPlayer(), step_duration_ms: 0 },
+  });
+
+  // First chord key lands and spends the turn on a cardinal step...
+  pressedKeys.add('KeyW');
+  command.execute('KeyW', ctx, true);
+  assert.equal(ctx.socket.sent.filter((m) => m.type === 'MOVE').length, 1);
+  assert.equal(ctx.canActRef.current, false);
+
+  // ...the second key is pressed while the turn is spent: no extra MOVE, but
+  // the keydown must register so the combined vector survives.
+  pressedKeys.add('KeyD');
+  command.execute('KeyD', ctx, true);
+  assert.equal(ctx.socket.sent.filter((m) => m.type === 'MOVE').length, 1);
+
+  // Next turn: the held chord steps diagonally.
+  ctx.canActRef.current = true;
+  command.paceStep(ctx);
+  const moves = ctx.socket.sent.filter((m) => m.type === 'MOVE');
+  assert.equal(moves.length, 2);
+  assert.equal(moves[1].direction, 'UP_RIGHT');
+  assert.equal(ctx.canActRef.current, false);
 });
 
 test('DirectionalMoveCommand: reattaches camera and clears panOffset on move intent', () => {
@@ -176,4 +256,253 @@ test('DirectionalMoveCommand: canExecute refuses movement when player is downed 
     myPlayer: { ...createPlayer(), is_alive: false },
   });
   assert.equal(command.canExecute('KeyD', deadCtx), false);
+});
+
+test('DirectionalMoveCommand: chorded diagonal keys within chord window send exactly 1 diagonal step in turn mode', () => {
+  const pressedKeys = new Set();
+  const command = new DirectionalMoveCommand(pressedKeys, undefined, 35);
+  const ctx = createContext({
+    gameModeRef: { current: 'turnbased' },
+    canActRef: { current: true },
+    myPlayer: { ...createPlayer(), step_duration_ms: 0 },
+  });
+
+  // First key lands and is buffered in chord window:
+  pressedKeys.add('KeyW');
+  command.execute('KeyW', ctx, true);
+  assert.equal(ctx.socket.sent.filter((m) => m.type === 'MOVE').length, 0);
+  assert.equal(ctx.canActRef.current, true);
+
+  // Second key lands within chord window: forms UP_RIGHT diagonal and fires immediately!
+  pressedKeys.add('KeyD');
+  command.execute('KeyD', ctx, true);
+  const moves = ctx.socket.sent.filter((m) => m.type === 'MOVE');
+  assert.equal(moves.length, 1);
+  assert.equal(moves[0].direction, 'UP_RIGHT');
+  assert.equal(ctx.canActRef.current, false);
+
+  // Next turn continues walking diagonally:
+  ctx.canActRef.current = true;
+  command.paceStep(ctx);
+  const movesAfter = ctx.socket.sent.filter((m) => m.type === 'MOVE');
+  assert.equal(movesAfter.length, 2);
+  assert.equal(movesAfter[1].direction, 'UP_RIGHT');
+  assert.equal(ctx.canActRef.current, false);
+});
+
+test('DirectionalMoveCommand: chorded diagonal keys within chord window send 1 MOVE_STEP in real-time mode', () => {
+  movementPredictor.clear();
+  const pressedKeys = new Set();
+  const command = new DirectionalMoveCommand(pressedKeys, undefined, 35);
+  const ctx = createContext({
+    gameModeRef: { current: 'realtime' },
+  });
+
+  pressedKeys.add('KeyW');
+  command.execute('KeyW', ctx, true);
+  assert.equal(ctx.socket.sent.length, 0);
+
+  pressedKeys.add('KeyD');
+  command.execute('KeyD', ctx, true);
+  assert.equal(ctx.socket.sent.length, 1);
+  assert.equal(ctx.socket.sent[0].type, 'MOVE_STEP');
+  assert.equal(ctx.socket.sent[0].dx, 1);
+  assert.equal(ctx.socket.sent[0].dy, -1);
+});
+
+test('DirectionalMoveCommand: quick tap flushes cardinal step immediately on keyup', () => {
+  movementPredictor.clear();
+  const pressedKeys = new Set();
+  const command = new DirectionalMoveCommand(pressedKeys, undefined, 35);
+  const ctx = createContext({
+    gameModeRef: { current: 'realtime' },
+  });
+
+  pressedKeys.add('KeyW');
+  command.execute('KeyW', ctx, true);
+  assert.equal(ctx.socket.sent.length, 0);
+
+  pressedKeys.delete('KeyW');
+  command.execute('KeyW', ctx, false);
+  assert.equal(ctx.socket.sent.length, 2);
+  assert.equal(ctx.socket.sent[0].type, 'MOVE_STEP');
+  assert.equal(ctx.socket.sent[0].dx, 0);
+  assert.equal(ctx.socket.sent[0].dy, -1);
+  assert.equal(ctx.socket.sent[1].type, 'MOVE_STOP');
+});
+
+test('DirectionalMoveCommand: single cardinal key held past chord delay sends move', async () => {
+  movementPredictor.clear();
+  const pressedKeys = new Set();
+  const command = new DirectionalMoveCommand(pressedKeys, undefined, 35);
+  const ctx = createContext({
+    gameModeRef: { current: 'realtime' },
+  });
+
+  pressedKeys.add('KeyW');
+  command.execute('KeyW', ctx, true);
+  assert.equal(ctx.socket.sent.length, 0);
+
+  await new Promise((resolve) => setTimeout(resolve, 50));
+  assert.equal(ctx.socket.sent.length, 1);
+  assert.equal(ctx.socket.sent[0].type, 'MOVE_STEP');
+  assert.equal(ctx.socket.sent[0].dx, 0);
+  assert.equal(ctx.socket.sent[0].dy, -1);
+});
+
+function mockClock(t, startMs = 1000) {
+  const clock = { now: startMs };
+  t.mock.method(performance, 'now', () => clock.now);
+  return clock;
+}
+
+function createTurnContext(canAct = true) {
+  return createContext({
+    gameModeRef: { current: 'turnbased' },
+    canActRef: { current: canAct },
+    myPlayer: { ...createPlayer(), step_duration_ms: 75 },
+  });
+}
+
+const turnMoves = (ctx) => ctx.socket.sent.filter((m) => m.type === 'MOVE');
+
+test('DirectionalMoveCommand: a chorded diagonal tap moves exactly one tile in a turn room', (t) => {
+  const clock = mockClock(t);
+  const pressedKeys = new Set();
+  const command = new DirectionalMoveCommand(pressedKeys, undefined, 35, 200);
+  const ctx = createTurnContext();
+
+  pressedKeys.add('KeyW');
+  command.execute('KeyW', ctx, true);
+  clock.now += 15;
+  pressedKeys.add('KeyD');
+  command.execute('KeyD', ctx, true);
+  assert.deepEqual(turnMoves(ctx).map((m) => m.direction), ['UP_RIGHT']);
+
+  // The server re-arms the turn within a tick while both keys are still down.
+  clock.now += 30;
+  ctx.canActRef.current = true;
+  for (let i = 0; i < 6; i++) {
+    clock.now += 16;
+    command.paceStep(ctx);
+  }
+  pressedKeys.delete('KeyW');
+  command.execute('KeyW', ctx, false);
+  clock.now += 20;
+  command.paceStep(ctx);
+  pressedKeys.delete('KeyD');
+  command.execute('KeyD', ctx, false);
+
+  assert.deepEqual(turnMoves(ctx).map((m) => m.direction), ['UP_RIGHT']);
+});
+
+test('DirectionalMoveCommand: a key held past the repeat delay keeps walking at step pace', (t) => {
+  const clock = mockClock(t);
+  const pressedKeys = new Set(['KeyD']);
+  const command = new DirectionalMoveCommand(pressedKeys, undefined, 0, 200);
+  const ctx = createTurnContext();
+
+  command.syncMoveIntent(ctx, true);
+  assert.equal(turnMoves(ctx).length, 1);
+
+  ctx.canActRef.current = true;
+  clock.now += 199;
+  command.paceStep(ctx);
+  assert.equal(turnMoves(ctx).length, 1);
+
+  clock.now += 1;
+  command.paceStep(ctx);
+  assert.equal(turnMoves(ctx).length, 2);
+
+  // Past the delay, only the step animation paces the walk.
+  ctx.canActRef.current = true;
+  clock.now += 74;
+  command.paceStep(ctx);
+  assert.equal(turnMoves(ctx).length, 2);
+  clock.now += 1;
+  command.paceStep(ctx);
+  assert.equal(turnMoves(ctx).length, 3);
+});
+
+test('DirectionalMoveCommand: a key pressed while waiting steps as soon as the turn arrives', (t) => {
+  const clock = mockClock(t);
+  const pressedKeys = new Set(['KeyD']);
+  const command = new DirectionalMoveCommand(pressedKeys, undefined, 0, 200);
+  const ctx = createTurnContext(false);
+
+  command.syncMoveIntent(ctx, true);
+  assert.equal(turnMoves(ctx).length, 0);
+
+  clock.now += 50;
+  ctx.canActRef.current = true;
+  command.paceStep(ctx);
+  assert.equal(turnMoves(ctx).length, 1);
+
+  // That step starts the repeat delay, so the next turn is not spent yet.
+  ctx.canActRef.current = true;
+  clock.now += 100;
+  command.paceStep(ctx);
+  assert.equal(turnMoves(ctx).length, 1);
+});
+
+test('DirectionalMoveCommand: rapid separate taps are not throttled by the repeat delay', (t) => {
+  const clock = mockClock(t);
+  const pressedKeys = new Set();
+  const command = new DirectionalMoveCommand(pressedKeys, undefined, 0, 200);
+  const ctx = createTurnContext();
+
+  for (let i = 0; i < 3; i++) {
+    pressedKeys.add('KeyD');
+    command.execute('KeyD', ctx, true);
+    clock.now += 60;
+    pressedKeys.delete('KeyD');
+    command.execute('KeyD', ctx, false);
+    clock.now += 40;
+    ctx.canActRef.current = true;
+  }
+  assert.equal(turnMoves(ctx).length, 3);
+});
+
+test('DirectionalMoveCommand: a staggered chord inside the turn chord window is one diagonal', (t) => {
+  t.mock.timers.enable({ apis: ['setTimeout'] });
+  const clock = mockClock(t);
+  const pressedKeys = new Set();
+  const command = new DirectionalMoveCommand(pressedKeys, undefined, 35, 200, 60);
+  const ctx = createTurnContext();
+
+  pressedKeys.add('KeyW');
+  command.execute('KeyW', ctx, true);
+  clock.now += 50;
+  t.mock.timers.tick(50);
+  assert.equal(turnMoves(ctx).length, 0);
+
+  pressedKeys.add('KeyD');
+  command.execute('KeyD', ctx, true);
+  t.mock.timers.tick(100);
+  assert.deepEqual(turnMoves(ctx).map((m) => m.direction), ['UP_RIGHT']);
+});
+
+test('DirectionalMoveCommand: a second key after the hold already stepped takes no extra step', (t) => {
+  const clock = mockClock(t);
+  const pressedKeys = new Set();
+  const command = new DirectionalMoveCommand(pressedKeys, undefined, 0, 200);
+  const ctx = createTurnContext();
+
+  pressedKeys.add('KeyW');
+  command.execute('KeyW', ctx, true);
+  assert.deepEqual(turnMoves(ctx).map((m) => m.direction), ['UP']);
+
+  // The server re-armed the turn before the late second chord key landed.
+  clock.now += 40;
+  ctx.canActRef.current = true;
+  pressedKeys.add('KeyD');
+  command.execute('KeyD', ctx, true);
+  clock.now += 100;
+  command.paceStep(ctx);
+  pressedKeys.delete('KeyW');
+  command.execute('KeyW', ctx, false);
+  pressedKeys.delete('KeyD');
+  command.execute('KeyD', ctx, false);
+
+  assert.deepEqual(turnMoves(ctx).map((m) => m.direction), ['UP']);
 });

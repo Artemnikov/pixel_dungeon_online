@@ -72,29 +72,7 @@ def test_normal_ai_chases_in_los():
     # Should move closer to (1,1)
     assert mob.pos.x < 5, "Normal mob should move towards player in LOS"
 
-def test_normal_ai_ignores_without_los():
-    game = setup_game()
-    game.difficulty = Difficulty.NORMAL
-    
-    player = game.add_player("p1", "Player")
-    player.pos = Position(x=1, y=1)
-    
-    # Place a wall between player and mob
-    game.grid[1][3] = TileType.WALL
-    
-    mob = list(game.mobs.values())[0]
-    mob.pos = Position(x=5, y=1)
-    
-    # Run few ticks, shouldn't move towards player (though might roaming randomly)
-    # Roaming is 5% chance. Chasing is deterministic. 
-    # We check if it moves deterministic towards player.
-    for _ in range(20):
-        game.update_tick()
-        if mob.pos.x < 5:
-            # If it moves closer, it might be random roam. 
-            # But it shouldn't be aggressive.
-            pass
-    
+
 def test_hard_ai_hunts():
     game = setup_game()
     game.difficulty = Difficulty.HARD

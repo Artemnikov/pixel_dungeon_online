@@ -2,7 +2,7 @@ services:
   backend:
     build: ./backend
     ports:
-      - "8080:8080"
+      - "8081:8080"
     volumes:
       - ./backend:/app
     environment:
@@ -25,5 +25,5 @@ services:
     depends_on:
       - backend
     environment:
-      - VITE_API_URL=http://localhost:8080
+      - VITE_API_URL=http://localhost:8081
       - VITE_DEBUG_TILES='true'

@@ -149,6 +149,15 @@ export interface TilePatch {
   x: number;
   y: number;
   tile: number;
+  fx?: 'rock' | 'blast';
+}
+
+export interface CustomTilePatch {
+  texture: string;
+  layer_y: number;
+  row: number;
+  col: number;
+  tile: number;
 }
 
 // --- server -> client: events ----------------------------------------------
@@ -165,6 +174,8 @@ export interface AttackEvent {
     crit: boolean;
     grim_proc: boolean;
     next_attack_in_ms?: number;
+    /** A Yog fist ranged zap (not a melee swing): no attack hop. */
+    fist_zap?: boolean;
   };
 }
 
@@ -345,7 +356,7 @@ export interface LightningArcEvent {
 /** DM-300 stepped on an inactive trap and gained a barrier. */
 export interface DM300TrapStepEvent {
   type: 'DM300_TRAP_STEP';
-  data: { mob: string; x: number; y: number };
+  data: { mob: string; x: number; y: number; shield?: number; warn?: boolean };
 }
 
 export interface DrinkEvent {
@@ -381,7 +392,8 @@ export interface EnergyBurstEvent {
 
 export interface TeleportEvent {
   type: 'TELEPORT';
-  data: { player: string; from_x: number; from_y: number; x: number; y: number };
+  /** `player` for heroes; `mob` for a teleporting mob (ScrollOfTeleportation.appear). */
+  data: { player?: string; mob?: string; from_x: number; from_y: number; x: number; y: number };
 }
 
 export interface ChainsPullEvent {
@@ -401,7 +413,8 @@ export interface MirrorImageEvent {
 
 export interface MessageEvent {
   type: 'MESSAGE';
-  data: { text: string; color?: string };
+  /** `key` is an i18n key; `text` is the English fallback. */
+  data: { text: string; color?: string; key?: string };
 }
 
 /** A player chat message. `channel` is 'global' (all floors) or 'direct'
@@ -418,12 +431,54 @@ export interface ToastEvent {
 
 export interface MapPatchEvent {
   type: 'MAP_PATCH';
-  data: { tiles: TilePatch[] };
+  data: { tiles: TilePatch[]; custom_tiles?: CustomTilePatch[] };
 }
 
 export interface ChasmPromptEvent {
   type: 'CHASM_PROMPT';
   data: { x: number; y: number };
+}
+
+export interface TenguJoinPromptEvent {
+  type: 'TENGU_JOIN_PROMPT';
+  data: { initiator_id: string; initiator_name: string };
+}
+
+export interface TenguPartyStatusEvent {
+  type: 'TENGU_PARTY_STATUS';
+  data: {
+    initiator_id: string;
+    pending_names: string[];
+    declined_names: string[];
+    approved_names: string[];
+    can_decide: boolean;
+  };
+}
+
+export interface TenguPromptCloseEvent {
+  type: 'TENGU_PROMPT_CLOSE';
+  data: Record<string, never>;
+}
+
+export interface DwarfKingJoinPromptEvent {
+  type: 'DWARF_KING_JOIN_PROMPT';
+  data: { initiator_id: string; initiator_name: string };
+}
+
+export interface DwarfKingPartyStatusEvent {
+  type: 'DWARF_KING_PARTY_STATUS';
+  data: {
+    initiator_id: string;
+    pending_names: string[];
+    declined_names: string[];
+    approved_names: string[];
+    can_decide: boolean;
+  };
+}
+
+export interface DwarfKingPromptCloseEvent {
+  type: 'DWARF_KING_PROMPT_CLOSE';
+  data: Record<string, never>;
 }
 
 /** SPD Chasm.heroFall: the hero starts falling to the next floor. Drives the
@@ -508,6 +563,24 @@ export interface ShopSellEvent {
 export interface ImpDialogueEvent {
   type: 'IMP_DIALOGUE';
   data: { player: string; npc: string; text: string; can_claim: boolean; tokens?: number | null };
+}
+
+/** Rat King offers Ratmogrify for the Dwarf King's crown (SPD RatKing WndOptions). */
+export interface RatKingDialogueEvent {
+  type: 'RAT_KING_DIALOGUE';
+  data: { player: string; npc: string };
+}
+
+/** A mob notices something (SPD Mob.notice → EmoIcon.Alert). */
+export interface MobNoticeEvent {
+  type: 'MOB_NOTICE';
+  data: { mob: string };
+}
+
+/** Ratlomacy befriended a ratmogrified enemy (heart particles). */
+export interface RatlomacyEvent {
+  type: 'RATLOMACY';
+  data: { mob: string; x: number; y: number };
 }
 
 /** Player claimed the Imp's quest reward; the Imp despawns. */
@@ -804,7 +877,7 @@ export interface DM300RockfallEvent {
 /** DM-300 supercharge event: shields up and activates a pylon. */
 export interface DM300SuperchargeEvent {
   type: 'DM300_SUPERCHARGE';
-  data: { mob: string };
+  data: { mob: string; x?: number; y?: number; duration_ms?: number };
 }
 
 /** Pylon activation event: lightning surges through the pylon. */
@@ -819,22 +892,22 @@ export interface DwarfKingFightStartedEvent {
   data: { mob: string };
 }
 
-/** Dwarf King enters phase 2 (HP <= 200). */
+/** Dwarf King enters phase 2: teleports to the throne behind his barrier (HP <= 50, 100 on stronger bosses). */
 export interface DwarfKingPhase2Event {
   type: 'DWARF_KING_PHASE2';
-  data: { mob: string };
+  data: { mob: string; x: number; y: number };
 }
 
-/** Dwarf King enters phase 3 (HP <= 100). */
+/** Dwarf King enters phase 3 once his barrier breaks. */
 export interface DwarfKingPhase3Event {
   type: 'DWARF_KING_PHASE3';
   data: { mob: string };
 }
 
-/** Dwarf King begins charging a summon on a pedestal. */
-export interface DwarfKingSummonStartEvent {
-  type: 'DWARF_KING_SUMMON_START';
-  data: { x: number; y: number; particle: string };
+/** Dwarf King's phase-3 hit was deferred into Viscosity.DeferedDamage (shows "deferred N"). */
+export interface DwarfKingDeferredEvent {
+  type: 'DWARF_KING_DEFERRED';
+  data: { mob: string; amount: number; x: number; y: number };
 }
 
 /** Dwarf King summon finishes charging and bursts into a minion. */
@@ -858,7 +931,7 @@ export interface YogFightStartedEvent {
 /** Yog-Dzewa entered a new phase. */
 export interface YogPhaseChangeEvent {
   type: 'YOG_PHASE_CHANGE';
-  data: { mob: string; phase: number };
+  data: { mob: string; phase: number; view_distance?: number | null };
 }
 
 /** Yog-Dzewa entered the final phase (phase 5). */
@@ -942,7 +1015,7 @@ export interface TenguShockerEvent {
 /** A boss shouts a taunt; rendered as floating text above its tile. */
 export interface BossYellEvent {
   type: 'BOSS_YELL';
-  data: { mob: string; text: string; x: number; y: number };
+  data: { mob: string; text: string; x: number; y: number; key?: string };
 }
 
 /** Tengu trap burst — hidden dart traps appear in the arena with a fade overlay. */
@@ -1213,12 +1286,120 @@ export interface FlareEvent {
 
 export interface FlashScreenEvent {
   type: 'FLASH_SCREEN';
-  data: { color?: string; duration?: number };
+  /** `color` is ARGB hex ("0x80FFFFFF"); `light` = additive blend (SPD Fader light mode). */
+  data: { color?: string; duration?: number; light?: boolean };
 }
 
 export interface HolyIntuitionEvent {
   type: 'HOLY_INTUITION';
   data: { player: string; revealed?: boolean };
+}
+
+/** SPD HallsBossLevel.seal(): the entrance closes behind the party. */
+export interface YogArenaSealedEvent {
+  type: 'YOG_ARENA_SEALED';
+  data: { x: number; y: number };
+}
+
+/** SPD HallsBossLevel.unseal(): stairs reopen and the centre piece changes. */
+export interface YogArenaUnsealedEvent {
+  type: 'YOG_ARENA_UNSEALED';
+  data: { custom_tiles: unknown[]; custom_walls: unknown[] };
+}
+
+/** Level.viewDistance changed (Yog-Dzewa's darkening arena). */
+export interface YogViewDistanceEvent {
+  type: 'YOG_VIEW_DISTANCE';
+  data: { view_distance: number };
+}
+
+/** CellEmitter.burst(ShadowParticle.UP, n) at each [x, y, n]. */
+export interface YogShadowBurstEvent {
+  type: 'YOG_SHADOW_BURST';
+  data: { cells: [number, number, number][] };
+}
+
+/** YogDzewa.addFist: a fist is pushed out of the altar. */
+export interface YogFistSpawnEvent {
+  type: 'YOG_FIST_SPAWN';
+  data: { mob: string; fist: string; cls: string; x: number; y: number; from_x: number; from_y: number };
+}
+
+/** Red TargetedCell markers for Yog-Dzewa's next death ray. */
+export interface YogTargetedCellsEvent {
+  type: 'YOG_TARGETED_CELLS';
+  data: { mob: string; cells: [number, number][]; color: number; duration_ms: number };
+}
+
+/** Yog-Dzewa fires its death rays (one Beam.DeathRay per end cell). */
+export interface YogDeathRayEvent {
+  type: 'YOG_DEATH_RAY';
+  data: { mob: string; sx: number; sy: number; ends: [number, number][]; hits: string[] };
+}
+
+/** A summoned mob is pushed out from `from` (SPD Pushing). */
+export interface MobSpawnEvent {
+  type: 'MOB_SPAWN';
+  data: { mob: string; cls: string; x: number; y: number; from_x?: number | null; from_y?: number | null };
+}
+
+/** A Yog fist's ranged attack (FistSprite.zap bolt, or Bright's light ray). */
+export interface FistZapEvent {
+  type: 'FIST_ZAP';
+  data: { mob: string; kind: string; bolt: string; x: number; y: number; target_x: number; target_y: number };
+}
+
+/** CharSprite.showStatus text over a character (`key` is an i18n key). */
+export interface StatusTextEvent {
+  type: 'STATUS_TEXT';
+  data: { target: string; key: string; kind: string; x: number; y: number; value?: string | null };
+}
+
+/** Terrain particle bursts: steam (evaporated water) or leaves (grass growth). */
+export interface TerrainBurstEvent {
+  type: 'TERRAIN_BURST';
+  data: { cells: [number, number, number][]; kind: 'steam' | 'leaf' | string };
+}
+
+/** Ripper Demon marks its leap target (TargetedCell + leapPrep). */
+export interface RipperLeapPrepEvent {
+  type: 'RIPPER_LEAP_PREP';
+  data: { mob: string; x: number; y: number; color: number; duration_ms: number };
+}
+
+/** Ripper Demon leaps (sprite.jump), bouncing off a victim if it hits one. */
+export interface RipperLeapEvent {
+  type: 'RIPPER_LEAP';
+  data: {
+    mob: string; from_x: number; from_y: number; x: number; y: number;
+    end_x: number; end_y: number; victim?: string | null; hit?: boolean | null;
+  };
+}
+
+export interface EyeChargeEndEvent {
+  type: 'EYE_CHARGE_END';
+  data: { mob: string };
+}
+
+export interface YogJoinPromptEvent {
+  type: 'YOG_JOIN_PROMPT';
+  data: { initiator_id: string; initiator_name: string };
+}
+
+export interface YogPartyStatusEvent {
+  type: 'YOG_PARTY_STATUS';
+  data: {
+    initiator_id: string;
+    pending_names: string[];
+    declined_names: string[];
+    approved_names: string[];
+    can_decide: boolean;
+  };
+}
+
+export interface YogPromptCloseEvent {
+  type: 'YOG_PROMPT_CLOSE';
+  data: Record<string, never>;
 }
 
 export type GameEvent =
@@ -1257,6 +1438,9 @@ export type GameEvent =
   | ShopBuyEvent
   | ShopSellEvent
   | ImpDialogueEvent
+  | RatKingDialogueEvent
+  | MobNoticeEvent
+  | RatlomacyEvent
   | ImpRewardEvent
   | GhostDialogueEvent
   | GhostRewardEvent
@@ -1306,10 +1490,27 @@ export type GameEvent =
   | DwarfKingFightStartedEvent
   | DwarfKingPhase2Event
   | DwarfKingPhase3Event
-  | DwarfKingSummonStartEvent
+  | DwarfKingDeferredEvent
   | DwarfKingSummonBurstEvent
   | DwarfKingShieldDamageEvent
   | YogFightStartedEvent
+  | YogArenaSealedEvent
+  | YogArenaUnsealedEvent
+  | YogViewDistanceEvent
+  | YogShadowBurstEvent
+  | YogFistSpawnEvent
+  | YogTargetedCellsEvent
+  | YogDeathRayEvent
+  | MobSpawnEvent
+  | FistZapEvent
+  | StatusTextEvent
+  | TerrainBurstEvent
+  | RipperLeapPrepEvent
+  | RipperLeapEvent
+  | EyeChargeEndEvent
+  | YogJoinPromptEvent
+  | YogPartyStatusEvent
+  | YogPromptCloseEvent
   | YogPhaseChangeEvent
   | YogFinalPhaseEvent
   | TenguFightStartedEvent
@@ -1387,7 +1588,13 @@ export type GameEvent =
   | SpawnEvent
   | EquipCursedEvent
   | PushEvent
-  | SummonEvent;
+  | SummonEvent
+  | TenguJoinPromptEvent
+  | TenguPartyStatusEvent
+  | TenguPromptCloseEvent
+  | DwarfKingJoinPromptEvent
+  | DwarfKingPartyStatusEvent
+  | DwarfKingPromptCloseEvent;
 
 export type GameEventType = GameEvent['type'];
 
@@ -1553,6 +1760,7 @@ export type ClientMessage =
   | { type: 'SET_CLERIC_QUICK_SPELL'; spell?: string }
   | { type: 'GHOST_CLAIM_REWARD'; npc_id: string; choice: 'weapon' | 'armor' }
   | { type: 'WANDMAKER_CLAIM_REWARD'; npc_id: string; choice: 'wand1' | 'wand2' }
+  | { type: 'RAT_KING_CROWN_CHOICE'; npc_id: string; accept: boolean }
   | { type: 'TRIGGER_BERSERK' }
   | { type: 'PREPARATION_STRIKE'; target_x: number; target_y: number }
   | { type: 'CHOOSE_IMBUE_WAND'; staff_id: string; wand_id: string }
@@ -1574,6 +1782,12 @@ export type ClientMessage =
   | { type: 'STONE_AUGMENT_CHOOSE'; stone_id: string; item_id: string; augment_type: string }
   | { type: 'CHOOSE_ENCHANT'; target_id: string; choice_index: number }
   | { type: 'CONFIRM_CHASM_FALL'; x: number; y: number }
+  | { type: 'TENGU_JOIN_RESPONSE'; approve: boolean }
+  | { type: 'TENGU_START_DECISION'; action: 'start_without' | 'wait' }
+  | { type: 'DWARF_KING_JOIN_RESPONSE'; approve: boolean }
+  | { type: 'DWARF_KING_START_DECISION'; action: 'start_without' | 'wait' }
+  | { type: 'YOG_JOIN_RESPONSE'; approve: boolean }
+  | { type: 'YOG_START_DECISION'; action: 'start_without' | 'wait' }
   | { type: 'ALCHEMY_PREVIEW'; ingredient_ids: string[] }
   | { type: 'ALCHEMY_BREW'; ingredient_ids: string[]; recipe_index: number }
   | { type: 'ALCHEMY_ENERGIZE'; item_id: string; all_items: boolean }

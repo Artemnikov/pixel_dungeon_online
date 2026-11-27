@@ -51,8 +51,16 @@ import type {
 import type { AnimState, MoveResult, RenderPlayer, Ref } from '../types';
 import type { GameEventContext, IGameEventHandler } from './IGameEventHandler';
 import { defaultMoveResultDispatcher } from '../movement/MoveResultDispatcher';
+import { FIST_ATTACK_MS, RIPPER_ATTACK_MS } from '../../rendering/mobs';
 
-const BLOOD_COLORS: Record<string, string> = { Goo: '#000000' };
+const FIST_NAMES = new Set(['Burning Fist', 'Soiled Fist', 'Rotting Fist', 'Rusted Fist', 'Bright Fist', 'Dark Fist']);
+
+const BLOOD_COLORS: Record<string, string> = {
+  Goo: '#000000',
+  Larva: '#bbcc66',
+  'DM-300': '#ffff88',
+  Pylon: '#ffff88',
+};
 
 let nextAttackReadyAt = 0;
 let lastAttackCooldownMs = 1000;
@@ -81,8 +89,6 @@ export function resetAttackCooldown(): void {
 export interface EquippedWeaponMeta {
   name?: string;
   kind?: string;
-  hit_sound?: string;
-  hit_sound_pitch?: number;
   attack_cooldown?: number;
 }
 
@@ -93,7 +99,6 @@ function weaponMeta(me: RenderPlayer | null | undefined): EquippedWeaponMeta | n
 export function startLocalPlayerMeleeAnim(
   me: RenderPlayer | null | undefined,
   playerAnimRef: Ref<Record<string, AnimState>> | undefined,
-  audioService?: { play: (sound: string, rate?: number) => void },
 ): void {
   if (!me || me.is_downed || !playerAnimRef) return;
   if (!isAttackReady()) return;
@@ -104,15 +109,12 @@ export function startLocalPlayerMeleeAnim(
 
   if (!playerAnimRef.current[me.id]) playerAnimRef.current[me.id] = {};
   playerAnimRef.current[me.id].attackUntil = now + PLAYER_ATTACK_DURATION;
-
-  audioService?.play(weapon?.hit_sound || 'HIT_BODY', (weapon?.hit_sound_pitch ?? 1.0) * (0.87 + Math.random() * 0.28));
 }
 
 export interface BumpCtx {
   me: RenderPlayer | null | undefined;
   playerAnimRef?: Ref<Record<string, AnimState>>;
   onOpenAlchemy?: () => void;
-  audio?: { play: (sound: string, rate?: number) => void };
 }
 
 export function runLocalBumpFlow(result: MoveResult, ctx: BumpCtx): void {
@@ -120,7 +122,7 @@ export function runLocalBumpFlow(result: MoveResult, ctx: BumpCtx): void {
     myPlayer: ctx.me ?? null,
     playerAnimRef: ctx.playerAnimRef,
     onOpenAlchemyRef: { current: ctx.onOpenAlchemy },
-    onMeleeAttack: () => startLocalPlayerMeleeAnim(ctx.me, ctx.playerAnimRef, ctx.audio),
+    onMeleeAttack: () => startLocalPlayerMeleeAnim(ctx.me, ctx.playerAnimRef),
     dx: 0,
     dy: 0,
   });
@@ -310,11 +312,18 @@ export function createCombatEventHandlers(): IGameEventHandler[] {
         }
 
         const srcPlayer = ctx.entities.getPlayer(src);
+        const srcMob = ctx.entities.getMob(src);
         if (srcPlayer && event.data.is_wand) {
           ctx.effects.setPlayerAttack(src, PLAYER_ATTACK_DURATION);
           const dx = event.data.target_x - event.data.x;
           if (dx > 0) { srcPlayer.facing = 'RIGHT'; srcPlayer.flipX = false; }
           else if (dx < 0) { srcPlayer.facing = 'LEFT'; srcPlayer.flipX = true; }
+        } else if (srcMob) {
+          const attackDuration = srcMob.name === 'Scorpio' || srcMob.name === 'Yog Scorpio' || srcMob.name === 'DM-200' || srcMob.name === 'DM-201' ? 200 : 250;
+          ctx.effects.setMobAttack(src, attackDuration);
+          const dx = event.data.target_x - event.data.x;
+          if (dx > 0) { srcMob.facing = 'RIGHT'; srcMob.flipX = false; }
+          else if (dx < 0) { srcMob.facing = 'LEFT'; srcMob.flipX = true; }
         }
 
         if (projType === 'lightning') {
@@ -365,15 +374,20 @@ export function createCombatEventHandlers(): IGameEventHandler[] {
           ctx.entities.setSelectedEnemyId(tgt);
         }
 
-        if (src === ctx.myPlayerId) {
-          if (event.data.next_attack_in_ms != null) {
-            noteNextAttackReady(event.data.next_attack_in_ms);
-          }
-          if (event.data.crit || event.data.grim_proc) ctx.audio.play('HIT_STRONG');
+        if (src === ctx.myPlayerId && event.data.next_attack_in_ms != null) {
+          noteNextAttackReady(event.data.next_attack_in_ms);
         }
 
-        if (srcMob) {
-          const attackDuration = srcMob.name === 'Goo' ? 300 : srcMob.name === 'Scorpio' ? 200 : srcMob.name === 'Rat' ? 333 : srcMob.name === 'Snake' ? 333 : 250;
+        if (srcMob && FIST_NAMES.has(srcMob.name) && !event.data.fist_zap) {
+          // FistSprite.attack: hop in place, then PixelScene.shake(4, 0.2f).
+          ctx.effects.setMobAttack(src, FIST_ATTACK_MS);
+          setTimeout(() => ctx.effects.shakeScreen(4, 200), FIST_ATTACK_MS);
+        } else if (srcMob && (srcMob.name === 'Ripper Demon' || srcMob.name === 'Yog Ripper')) {
+          // RipperSprite.attack alternates the attack and stab animations.
+          ctx.effects.setMobAttack(src, RIPPER_ATTACK_MS);
+          ctx.effects.toggleMobStab(src);
+        } else if (srcMob) {
+          const attackDuration = srcMob.name === 'Goo' ? 300 : srcMob.name === 'Scorpio' || srcMob.name === 'Yog Scorpio' || srcMob.name === 'Larva' ? 200 : srcMob.name === 'Rat' || srcMob.mob_type === 'transmog_rat' ? 333 : srcMob.name === 'Snake' ? 333 : 250;
           ctx.effects.setMobAttack(src, attackDuration);
         } else if (srcPlayer) {
           ctx.effects.setPlayerAttack(src, PLAYER_ATTACK_DURATION);
@@ -676,6 +690,19 @@ export function createCombatEventHandlers(): IGameEventHandler[] {
         }
         const mob = ctx.entities.getMob(id);
         if (mob) {
+          const mx = Math.round(mob.renderPos.x);
+          const my = Math.round(mob.renderPos.y);
+          if (ctx.world.isVisible(mx, my)) {
+            const cx = mob.renderPos.x * TILE_SIZE + TILE_SIZE / 2;
+            const cy = mob.renderPos.y * TILE_SIZE + TILE_SIZE / 2;
+            if (mob.name === 'Larva' && ctx.effects.particlesRef) {
+              spawnBlood(ctx.effects.particlesRef, cx, cy, -Math.PI / 2, 10, '#bbcc66');
+            } else if (mob.name === 'Pylon') {
+              // PylonSprite.play(die): burst(BlastParticle.FACTORY, 20) + Sample.play(BLAST)
+              if (ctx.effects.particlesRef) spawnBombBlast(ctx.effects.particlesRef, cx, cy, 20);
+              ctx.audio.play('BLAST');
+            }
+          }
           ctx.entities.recordDyingMob(id, mob);
           if (mob.faction === 'enemy') addGameLog(`${mob.name} defeated!`, 'positive');
         }

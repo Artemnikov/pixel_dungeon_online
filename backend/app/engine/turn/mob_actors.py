@@ -34,6 +34,9 @@ ever constructed by `create_mob_actor`, which only the turn room calls.
 import time
 
 from app.engine.entities.mobs import (
+    BrightFist,
+    BurningFist,
+    DarkFist,
     DM100,
     DM200,
     DM300,
@@ -44,6 +47,11 @@ from app.engine.entities.mobs import (
     Goo,
     PurpleShaman,
     RedShaman,
+    RipperDemon,
+    RottingFist,
+    RustedFist,
+    Scorpio,
+    SoiledFist,
     Spinner,
     Tengu,
     Warlock,
@@ -70,6 +78,10 @@ class TurnMobActor:
         # the field would otherwise be looked up on the wrong floor and have
         # its turn dropped before the AI ran.
         self.floor_id = floor_id
+        # SPD time since this mob's previous turn, set by the scheduler before
+        # each call: 1.0 normally, 2.0 after a turn that spent two, 0.5 for a
+        # speed-2 mover. Brains that keep their own cadence advance by it.
+        self.elapsed: float = 1.0
 
     # --- SPD time costs (what the scheduler charges the actor) --------------
 
@@ -112,12 +124,18 @@ class TurnMobActor:
 
         pre_pos = (mob.pos.x, mob.pos.y)
         pre_attack_time = getattr(mob, "last_attack_time", 0.0)
+        mob.act_spent = None
 
         self.begin_turn(game, floor)
         game._tick_mob(mob, floor, self.floor_id)
 
         if not mob.is_alive:
             return TIME_TO_WAIT
+
+        if mob.act_spent is not None:
+            spent = float(mob.act_spent)
+            mob.act_spent = None
+            return spent
 
         acted = getattr(mob, "last_attack_time", 0.0) != pre_attack_time
 
@@ -171,7 +189,7 @@ class WallClockGatedMobActor(TurnMobActor):
 
     def begin_turn(self, game, floor) -> None:
         if self.turns_until_ability > 0:
-            self.turns_until_ability -= 1.0
+            self.turns_until_ability = max(0.0, self.turns_until_ability - self.elapsed)
         else:
             self.turns_until_ability = self.ability_cadence()
             gate = self._gate_seconds()
@@ -201,7 +219,7 @@ class TickCounterMobActor(TurnMobActor):
         for name in self.elapsed_tick_counters:
             value = getattr(self.mob, name, None)
             if isinstance(value, int) and not isinstance(value, bool):
-                setattr(self.mob, name, value + GAME_TURN_TICKS)
+                setattr(self.mob, name, value + int(round(self.elapsed * GAME_TURN_TICKS)))
         super().begin_turn(game, floor)
 
 
@@ -234,37 +252,40 @@ class DM300Actor(WallClockGatedMobActor, TickCounterMobActor):
 
 
 class TenguActor(TickCounterMobActor):
-    """Tengu's bomb and shocker, both already tick-denominated.
+    """Tengu's ability clock, tick-denominated.
 
-    `ai_tengu.py` gates its abilities on `turn_tick` against `TURN_TICKS` and
-    counts the bomb down one unit per call, so both need a turn's worth of
-    ticks per call to keep the cadence the code was written against.
+    `ai_tengu.py` gates its abilities on `turn_tick` against `TURN_TICKS`, so
+    it needs a turn's worth of ticks per call. The bomb fuse is a countdown
+    that ai_tengu.py steps once per turn in a turn room itself.
     """
 
-    elapsed_tick_counters = ("turn_tick", "bomb_timer")
+    elapsed_tick_counters = ("turn_tick",)
 
 
 class DwarfKingActor(TickCounterMobActor):
-    """Dwarf King's summon and life-link cooldowns, tick-denominated.
+    """Dwarf King's turn clock and Viscosity bleed clock, tick-denominated.
 
-    `ai_dwarf_king.py` sets `summon_cooldown`/`ability_cooldown` to
-    `8..14 * TICKS_PER_TURN` and decrements them once per call, so they are
-    elapsed counters here too.
+    `ai_dwarf_king.py` runs DwarfKing.act() (cooldowns, waves, summons) each time
+    `act_ticks` reaches `TICKS_PER_TURN`, and bleeds deferred damage each time
+    `phase3_ticks` does, so a turn's worth of ticks per call keeps both on SPD's
+    once-per-turn cadence.
     """
 
-    elapsed_tick_counters = ("summon_cooldown", "ability_cooldown")
+    elapsed_tick_counters = ("act_ticks", "phase3_ticks")
 
 
-class YogDzewaActor(TickCounterMobActor):
-    """Yog-Dzewa's death-ray telegraph and fist cooldowns, tick-denominated.
+class SpdActMobActor(TurnMobActor):
+    """A mob whose SPD `act()` is ported whole on `game/spd_act_clock.py`.
 
-    `ability_telegraph_timer` is deliberately left alone: SPD telegraphs the
-    death ray for a turn or two, so scaling it by a turn's worth of ticks would
-    collapse the telegraph into the same turn it was raised. It is one of the
-    cooldowns that still needs a balance pass against real play.
+    The scheduler only calls this actor when the mob is due, so the act clock
+    is told it is due, the act runs exactly once, and the time it spent comes
+    back through `mob.act_spent` as this turn's cost.
     """
 
-    elapsed_tick_counters = ("summon_cooldown",)
+    def begin_turn(self, game, floor) -> None:
+        self.mob.act_cooldown = 0.0
+        self.mob.act_blocking = False
+        super().begin_turn(game, floor)
 
 
 class RangedMobActor(WallClockGatedMobActor):
@@ -285,7 +306,8 @@ _ACTOR_TYPES = (
     (DM300Actor, (DM300,)),
     (TenguActor, (Tengu,)),
     (DwarfKingActor, (DwarfKing,)),
-    (YogDzewaActor, (YogDzewa,)),
+    (SpdActMobActor, (YogDzewa, BurningFist, SoiledFist, RottingFist, RustedFist,
+                      BrightFist, DarkFist, Eye, Scorpio, RipperDemon)),
     (
         RangedMobActor,
         (
@@ -294,7 +316,6 @@ _ACTOR_TYPES = (
             PurpleShaman,
             Warlock,
             DM100,
-            Eye,
             Spinner,
             DM200,
             FireElemental,

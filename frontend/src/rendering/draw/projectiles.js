@@ -10,9 +10,11 @@ const PROJECTILE_SPRITE_MAP = {
   boomerang: [12, 9],
   dagger: [2, 9],
   shuriken: [3, 9],
+  // Scorpio's ranged attack (ScorpioSprite.zap: MissileSprite with FISHING_SPEAR).
+  fishing_spear: [4, 9],
 };
 
-const NON_ROTATING_PROJECTILES = new Set(['arrow', 'spirit_arrow']);
+const NON_ROTATING_PROJECTILES = new Set(['arrow', 'spirit_arrow', 'fishing_spear']);
 
 export function advanceAndDrawProjectiles(ctx, { projectilesRef, assetImages }) {
   const finishedIndices = [];

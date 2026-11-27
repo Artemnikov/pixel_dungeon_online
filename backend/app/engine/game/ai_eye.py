@@ -1,150 +1,144 @@
+# Copyright (C) 2026 ArtemNikov
+#
+"""Port of SPD `actors/mobs/Eye.java` (Evil Eye; Yog-Dzewa's YogEye too).
+
+The Eye charges its death gaze for `2 * attackDelay` once it has a clear
+STOP_SOLID line to its target, then fires on its next act at the cell it
+aimed at -- even if the target has since stepped away or out of sight. The
+gaze hits every character on the path, burns flammable terrain, and puts the
+beam on a 4..6 turn cooldown; in between, the Eye melees only adjacent foes.
+"""
+
 import random
+from typing import Optional
 
 from app.engine.dungeon.constants import TileType
-from app.engine.entities.base import Faction, Position
+from app.engine.entities.base import normal_int_range
 from app.engine.entities.mobs import Eye
-from app.engine.game.constants import GAME_TURN_TICKS
-
-_CHARGE_TICKS = GAME_TURN_TICKS      # ~1s (matches SPD 2x attackDelay feel)
-_COOLDOWN_MIN = 4 * GAME_TURN_TICKS  # ~4s (SPD Random.IntRange(4, 6) turns)
-_COOLDOWN_MAX = 6 * GAME_TURN_TICKS  # ~6s
+from app.engine.game import spd_act_clock
+from app.engine.game.ai_spd_common import (
+    adjacent, attack_delay, is_paralysed, spd_attack, spd_hit, visible_enemy,
+)
+from app.engine.game.boss_targets import mob_fov
+from app.engine.game.constants import EYE_BEAM_CD, EYE_GAZE_DMG
+from app.engine.systems.spd_ballistica import STOP_SOLID, Ballistica, char_lookup
 
 
 def _update_eye(game, eye: Eye, floor, floor_id: int) -> bool:
-    target = game._find_nearest_player(eye.pos, floor_id)
-    if target is None:
-        _eye_cancel_charge(game, eye, floor_id)
-        return False
+    return spd_act_clock.run(game, eye, lambda: eye_act(game, eye, floor, floor_id))
 
-    if eye.ai_state != "hunting":
-        _eye_cancel_charge(game, eye, floor_id)
-        return False
 
-    dist = game._get_distance(eye.pos, target.pos)
-    in_los = game._is_in_los(eye.pos, target.pos, floor_id=floor_id)
+def _beam(game, eye, floor, floor_id: int, cell) -> Ballistica:
+    return Ballistica((eye.pos.x, eye.pos.y), cell, STOP_SOLID, floor, char_lookup(game, floor, floor_id))
 
-    if eye.beam_charged:
-        if dist <= eye.attack_range and in_los:
-            eye.charge_ticks -= 1
-            if eye.charge_ticks <= 0:
-                _eye_fire_death_gaze(game, eye, target, floor, floor_id)
-            return True
-        else:
-            _eye_cancel_charge(game, eye, floor_id)
-            return False
 
+def eye_act(game, eye: Eye, floor, floor_id: int) -> Optional[float]:
+    if eye.beam_charged and eye.ai_state != "hunting":
+        eye.beam_charged = False
+        game.add_event("EYE_CHARGE_END", {"mob": eye.id}, floor_id=floor_id)
     if eye.beam_cooldown > 0:
         eye.beam_cooldown -= 1
-        return False
 
-    if dist <= eye.attack_range and in_los:
+    if is_paralysed(eye):
+        return 1.0
+    if eye.ai_state != "hunting":
+        return None
+
+    fov = mob_fov(game, eye, floor_id)
+    enemy = visible_enemy(game, eye, floor, floor_id, fov)
+
+    if eye.beam_charged and enemy is None and eye.beam_target_id:
+        enemy = floor.mobs.get(eye.beam_target_id) or game.players.get(eye.beam_target_id)
+        if enemy is not None and not enemy.is_alive:
+            enemy = None
+    if eye.beam_charged and enemy is not None and _can_attack(game, eye, enemy, floor, floor_id, fov):
+        return _do_attack(game, eye, enemy, floor, floor_id)
+
+    if enemy is not None and _can_attack(game, eye, enemy, floor, floor_id, fov):
+        return _do_attack(game, eye, enemy, floor, floor_id)
+    return None
+
+
+def _can_attack(game, eye: Eye, enemy, floor, floor_id: int, fov) -> bool:
+    if eye.beam_cooldown == 0:
+        aim = _beam(game, eye, floor, floor_id, (enemy.pos.x, enemy.pos.y))
+        seen = (enemy.pos.x, enemy.pos.y) in fov and getattr(enemy, "invisible", 0) == 0
+        if seen and not enemy.has_buff("charm") and (
+                adjacent(eye, enemy) or (enemy.pos.x, enemy.pos.y) in aim.sub_path(1, aim.dist)):
+            eye.beam_target_x, eye.beam_target_y = enemy.pos.x, enemy.pos.y
+            eye.has_beam_target = True
+            eye.beam_target_id = enemy.id
+            return True
+        return eye.beam_charged
+    return adjacent(eye, enemy)
+
+
+def _do_attack(game, eye: Eye, enemy, floor, floor_id: int) -> float:
+    if eye.has_beam_target:
+        beam = _beam(game, eye, floor, floor_id, (eye.beam_target_x, eye.beam_target_y))
+        on_line = (enemy.pos.x, enemy.pos.y) in beam.sub_path(1, beam.dist)
+    else:
+        beam, on_line = None, False
+
+    if eye.beam_cooldown > 0 or (not eye.beam_charged and not on_line):
+        return spd_attack(game, eye, enemy)
+
+    if not eye.beam_charged:
         eye.beam_charged = True
-        eye.charge_ticks = _CHARGE_TICKS
-        eye.charge_target_x = target.pos.x
-        eye.charge_target_y = target.pos.y
         game.add_event("EYE_CHARGE", {
-            "mob": eye.id,
-            "target_x": target.pos.x,
-            "target_y": target.pos.y,
+            "mob": eye.id, "target_x": eye.beam_target_x, "target_y": eye.beam_target_y,
         }, floor_id=floor_id)
-        game.add_event("PLAY_SOUND", {"sound": "CHARGEUP"}, floor_id=floor_id)
-        return True
+        game.add_event("PLAY_SOUND", {"sound": "CHARGEUP", "x": eye.pos.x, "y": eye.pos.y},
+                       floor_id=floor_id)
+        return attack_delay(eye) * 2.0
 
-    return False
-
-
-def _eye_cancel_charge(game, eye: Eye, floor_id: int):
-    if eye.beam_charged:
-        eye.beam_charged = False
-        eye.charge_ticks = 0
+    death_gaze(game, eye, floor, floor_id, beam)
+    return attack_delay(eye)
 
 
-def _eye_fire_death_gaze(game, eye: Eye, target, floor, floor_id: int):
+def death_gaze(game, eye: Eye, floor, floor_id: int, beam: Optional[Ballistica]) -> None:
+    """`Eye.deathGaze()`."""
+    if not eye.beam_charged or eye.beam_cooldown > 0 or beam is None:
+        return
     eye.beam_charged = False
-    eye.beam_cooldown = random.randint(_COOLDOWN_MIN, _COOLDOWN_MAX)
+    eye.beam_cooldown = random.randint(*EYE_BEAM_CD)
 
-    tx, ty = eye.charge_target_x, eye.charge_target_y
-    cells = _rasterize_line(game, eye.pos.x, eye.pos.y, tx, ty)
-
+    cx, cy = beam.collision_pos
     game.add_event("EYE_DEATH_RAY", {
-        "mob": eye.id,
-        "source_x": eye.pos.x,
-        "source_y": eye.pos.y,
-        "target_x": tx,
-        "target_y": ty,
+        "mob": eye.id, "source_x": eye.pos.x, "source_y": eye.pos.y,
+        "target_x": cx, "target_y": cy,
     }, floor_id=floor_id)
-    game.add_event("PLAY_SOUND", {"sound": "RAY"}, floor_id=floor_id)
+    game.add_event("PLAY_SOUND", {"sound": "RAY", "x": eye.pos.x, "y": eye.pos.y}, floor_id=floor_id)
 
     destroyed = []
-    for cx, cy in cells:
-        if not (0 <= cx < floor.width and 0 <= cy < floor.height):
+    lookup = char_lookup(game, floor, floor_id)
+    for x, y in beam.sub_path(1, beam.dist):
+        if floor.flags and floor.flags.flamable[y][x]:
+            floor.grid[y][x] = TileType.EMBERS
+            destroyed.append({"x": x, "y": y, "tile": TileType.EMBERS})
+        ch = lookup(x, y)
+        if ch is None or not ch.is_alive:
             continue
-        if floor.flags and floor.flags.flamable[cy][cx]:
-            floor.grid[cy][cx] = TileType.EMBERS
-            destroyed.append((cx, cy, TileType.EMBERS))
-
-        for player in game._players_on_floor(floor_id):
-            if not player.is_alive or player.is_downed:
-                continue
-            if player.pos.x == cx and player.pos.y == cy:
-                dmg = random.randint(30, 50)
-                taken = player.take_damage(dmg)
-                game.add_event("ATTACK", {
-                    "source": eye.id, "target": player.id,
-                    "damage": taken, "surprise": False,
-                }, floor_id=floor_id)
-                if taken > 0:
-                    game.add_event("DAMAGE", {
-                        "target": player.id, "amount": taken,
-                        "source_x": eye.pos.x, "source_y": eye.pos.y,
-                        "projectile": "beam", "beam_type": "death_ray",
-                    }, floor_id=floor_id)
-                    game.add_event("PLAY_SOUND", {"sound": "HIT_MAGIC"}, floor_id=floor_id)
-                break
-
-        for mob in floor.mobs.values():
-            if not mob.is_alive or mob.id == eye.id:
-                continue
-            if mob.pos.x != cx or mob.pos.y != cy:
-                continue
-            if random.random() * eye.attack_skill > random.random() * mob.defense_skill:
-                dmg = random.randint(30, 50)
-                taken = mob.take_damage(dmg)
-                game.add_event("ATTACK", {
-                    "source": eye.id, "target": mob.id,
-                    "damage": taken, "surprise": False,
-                }, floor_id=floor_id)
-            else:
-                game.add_event("MISS", {
-                    "source": eye.id, "target": mob.id,
-                    "defense_verb": mob.defense_verb,
-                }, floor_id=floor_id)
-            break
+        if not spd_hit(eye, ch):
+            game.add_event("MISS", {"source": eye.id, "target": ch.id,
+                                    "defense_verb": getattr(ch, "defense_verb", "dodged")}, floor_id=floor_id)
+            continue
+        dmg = normal_int_range(*EYE_GAZE_DMG)
+        if isinstance(ch, Eye):
+            dmg = round(dmg * 0.5)
+        taken = ch.take_damage(dmg)
+        game.add_event("ATTACK", {"source": eye.id, "target": ch.id, "damage": taken,
+                                  "surprise": False, "crit": False, "grim_proc": False}, floor_id=floor_id)
+        game.add_event("DAMAGE", {"target": ch.id, "amount": taken, "source_x": eye.pos.x,
+                                  "source_y": eye.pos.y, "projectile": "beam",
+                                  "beam_type": "death_ray", "purple_burst": True,
+                                  "x": x, "y": y}, floor_id=floor_id)
+        if not ch.is_alive and getattr(ch, "type", None) != "player":
+            from app.engine.game.dot_death import finish_dot_kill
+            finish_dot_kill(game, ch, floor_id)
 
     if destroyed:
-        game.add_event("MAP_PATCH", {
-            "tiles": [{"x": x, "y": y, "tile": t} for x, y, t in destroyed],
-        }, floor_id=floor_id)
         floor.rebuild_flags()
-
-
-def _rasterize_line(game, x0: int, y0: int, x1: int, y1: int):
-    cells = []
-    dx = abs(x1 - x0)
-    dy = abs(y1 - y0)
-    sx = 1 if x0 < x1 else -1
-    sy = 1 if y0 < y1 else -1
-    err = dx - dy
-    cx, cy = x0, y0
-    while True:
-        cells.append((cx, cy))
-        if cx == x1 and cy == y1:
-            break
-        e2 = 2 * err
-        if e2 > -dy:
-            err -= dy
-            cx += sx
-        if e2 < dx:
-            err += dx
-            cy += sy
-    return cells
+        game.add_event("MAP_PATCH", {"tiles": destroyed}, floor_id=floor_id)
+    eye.has_beam_target = False
+    eye.beam_target_id = ""

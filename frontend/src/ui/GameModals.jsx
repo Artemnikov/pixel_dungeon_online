@@ -8,10 +8,14 @@ import WndJournal from './WndJournal';
 import RightClickMenu from './RightClickMenu';
 import WndShop from './WndShop';
 import WndImp from './WndImp';
+import WndRatKing from './WndRatKing';
 import WndSadGhost from './WndSadGhost';
 import WndGhostGear from './WndGhostGear';
 import WndWandmaker from './WndWandmaker';
 import WndChasmJump from './WndChasmJump';
+import { WndTenguJoinPrompt, WndTenguPartyStatus } from './WndTenguPrompt';
+import { WndDwarfKingJoinPrompt, WndDwarfKingPartyStatus } from './WndDwarfKingPrompt';
+import { YOG_TEXT } from './bossPromptText';
 import WndQuickBag from './WndQuickBag';
 import WndOverlay from './WndOverlay';
 import { WindowLevel } from '../game/window/WindowTypes';
@@ -46,11 +50,18 @@ function GameModals({
     ctxMenu, setCtxMenu,
     shopWindow, setShopWindow,
     impWindow, setImpWindow,
+    ratKingWindow, setRatKingWindow,
     ghostWindow, setGhostWindow,
     wandmakerWindow, setWandmakerWindow,
     ghostGearData, setGhostGearData,
     chasmPrompt, setChasmPrompt,
     dismissChasmPrompt,
+    tenguPrompt, setTenguPrompt,
+    tenguPartyStatus, setTenguPartyStatus,
+    dwarfKingPrompt, setDwarfKingPrompt,
+    yogPrompt, setYogPrompt,
+    yogPartyStatus, setYogPartyStatus,
+    dwarfKingPartyStatus, setDwarfKingPartyStatus,
     showQuickBag, setShowQuickBag,
     quickslotPicker, setQuickslotPicker,
     scrollPickerData, setScrollPickerData,
@@ -121,6 +132,17 @@ function GameModals({
         />
       )}
 
+      {ratKingWindow && (
+        <WndRatKing
+          npcId={ratKingWindow.npc}
+          onChoose={(npcId, accept) => {
+            send({ type: 'RAT_KING_CROWN_CHOICE', npc_id: npcId, accept });
+            setRatKingWindow(null);
+          }}
+          onClose={() => setRatKingWindow(null)}
+        />
+      )}
+
       {ghostWindow && (
         <WndSadGhost
           npcId={ghostWindow.npc}
@@ -172,6 +194,92 @@ function GameModals({
             setChasmPrompt(null);
           }}
           onDecline={dismissChasmPrompt}
+        />
+      )}
+
+      {tenguPrompt && (
+        <WndTenguJoinPrompt
+          initiatorName={tenguPrompt.initiator_name}
+          onApprove={() => {
+            send({ type: 'TENGU_JOIN_RESPONSE', approve: true });
+            setTenguPrompt(null);
+          }}
+          onDecline={() => {
+            send({ type: 'TENGU_JOIN_RESPONSE', approve: false });
+            setTenguPrompt(null);
+          }}
+        />
+      )}
+
+      {tenguPartyStatus && (
+        <WndTenguPartyStatus
+          status={tenguPartyStatus}
+          onStartWithout={() => {
+            send({ type: 'TENGU_START_DECISION', action: 'start_without' });
+            setTenguPartyStatus(null);
+          }}
+          onWait={() => {
+            send({ type: 'TENGU_START_DECISION', action: 'wait' });
+            setTenguPartyStatus(null);
+          }}
+        />
+      )}
+
+      {dwarfKingPrompt && (
+        <WndDwarfKingJoinPrompt
+          initiatorName={dwarfKingPrompt.initiator_name}
+          onApprove={() => {
+            send({ type: 'DWARF_KING_JOIN_RESPONSE', approve: true });
+            setDwarfKingPrompt(null);
+          }}
+          onDecline={() => {
+            send({ type: 'DWARF_KING_JOIN_RESPONSE', approve: false });
+            setDwarfKingPrompt(null);
+          }}
+        />
+      )}
+
+      {dwarfKingPartyStatus && (
+        <WndDwarfKingPartyStatus
+          status={dwarfKingPartyStatus}
+          onStartWithout={() => {
+            send({ type: 'DWARF_KING_START_DECISION', action: 'start_without' });
+            setDwarfKingPartyStatus(null);
+          }}
+          onWait={() => {
+            send({ type: 'DWARF_KING_START_DECISION', action: 'wait' });
+            setDwarfKingPartyStatus(null);
+          }}
+        />
+      )}
+
+      {yogPrompt && (
+        <WndDwarfKingJoinPrompt
+          text={YOG_TEXT}
+          initiatorName={yogPrompt.initiator_name}
+          onApprove={() => {
+            send({ type: 'YOG_JOIN_RESPONSE', approve: true });
+            setYogPrompt(null);
+          }}
+          onDecline={() => {
+            send({ type: 'YOG_JOIN_RESPONSE', approve: false });
+            setYogPrompt(null);
+          }}
+        />
+      )}
+
+      {yogPartyStatus && (
+        <WndDwarfKingPartyStatus
+          text={YOG_TEXT}
+          status={yogPartyStatus}
+          onStartWithout={() => {
+            send({ type: 'YOG_START_DECISION', action: 'start_without' });
+            setYogPartyStatus(null);
+          }}
+          onWait={() => {
+            send({ type: 'YOG_START_DECISION', action: 'wait' });
+            setYogPartyStatus(null);
+          }}
         />
       )}
 

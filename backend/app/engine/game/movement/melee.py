@@ -19,6 +19,7 @@ from app.engine.entities.quest_bosses import Ghost
 from app.engine.entities.rings import furor_multiplier
 from app.engine.entities.talent_enum import Subclass
 from app.engine.game.ai_goo import _goo_add_locked_floor_time
+from app.engine.game.ai_spd_common import mob_attack_cooldown
 from app.engine.game.ai_pylon import _activate_pylon
 from app.engine.systems.combat import resolve_melee_attack
 from app.engine.systems.loot import roll_drops
@@ -90,7 +91,7 @@ class MeleeCombatMixin:
             if isinstance(entity, Player):
                 cooldown = entity.get_attack_delay()
             else:
-                cooldown = getattr(entity, "attack_cooldown", 1.0)
+                cooldown = mob_attack_cooldown(entity)
 
             if not self.attack_ready(entity, cooldown):
                 return False
@@ -113,6 +114,7 @@ class MeleeCombatMixin:
                 add_event=lambda type, data, **kw: self.add_event(type, data, **{
                     "floor_id": floor_id,
                     "source_player_id": entity.id if isinstance(entity, Player) else None,
+                    "echo_to_source": True,
                     **kw,
                 }),
                 game=self,
@@ -137,34 +139,19 @@ class MeleeCombatMixin:
                 "grim_proc": result.get("grim_proc", False),
                 "next_attack_in_ms": next_attack_in_ms,
             }, floor_id=floor_id)
-            # SPD Char.java:509 plays hitSound(Random.Float(0.87f, 1.15f)),
-            # then KindOfWeapon multiplies by hitSoundPitch. Mobs use the
-            # default HIT/HIT_BODY at pitch 1.0 (no mob overrides hitSound).
-            pitch_jitter = random.uniform(0.87, 1.15)
             if isinstance(entity, Player):
-                weapon = getattr(getattr(entity, "belongings", None), "weapon", None)
-                if result.get("crit"):
-                    sound = "HIT_STRONG"
-                    rate = pitch_jitter
-                elif weapon and getattr(weapon, "hit_sound", None):
-                    sound = weapon.hit_sound
-                    rate = pitch_jitter * getattr(weapon, "hit_sound_pitch", 1.0)
-                else:
-                    sound = "HIT_SLASH"
-                    rate = pitch_jitter
-                self.add_event("PLAY_SOUND", {"sound": sound, "rate": rate}, floor_id=floor_id, source_player_id=entity.id)
+                self._emit_player_melee_hit_sound(entity, result, floor_id)
             else:
-                # Mob melee: broadcast HIT_BODY from the mob's position so
+                # SPD Char.java:509 hitSound(Random.Float(0.87f, 1.15f)); mobs
+                # use the default HIT_BODY. Broadcast from the mob's position so
                 # every player who can see it hears the hit.
-                self.add_event("PLAY_SOUND", {"sound": "HIT_BODY", "rate": pitch_jitter, "x": entity.pos.x, "y": entity.pos.y}, floor_id=floor_id)
+                self.add_event("PLAY_SOUND", {"sound": "HIT_BODY", "rate": random.uniform(0.87, 1.15), "x": entity.pos.x, "y": entity.pos.y}, floor_id=floor_id)
             if dmg > 0:
                 self.add_event("DAMAGE", {
                     "target": target_entity.id,
                     "amount": dmg,
                     "grim_proc": result.get("grim_proc", False),
                 }, floor_id=floor_id)
-                if result.get("grim_proc"):
-                    self.add_event("PLAY_SOUND", {"sound": "HIT_STRONG"}, floor_id=floor_id, source_player_id=entity.id)
                 if isinstance(target_entity, Player) and isinstance(entity, Player):
                     # Friendly-fire only: mob-on-player hits are already
                     # covered by the broadcast HIT_BODY above.
@@ -192,6 +179,24 @@ class MeleeCombatMixin:
             if not target_entity.is_alive:
                 self._finish_kill(entity, target_entity, floor, floor_id)
         return False
+
+    def _emit_player_melee_hit_sound(self, player: Player, result: dict, floor_id: int) -> None:
+        """The hero's landed melee hit, as SPD plays it.
+
+        Char.attack (Char.java:509) plays hitSound(Random.Float(0.87f, 1.15f)),
+        which KindOfWeapon scales by hitSoundPitch; a surprise hit additionally
+        plays HIT_STRONG (Mob.defenseProc, Mob.java:716). The server is the only
+        source of these sounds, so they are echoed to the attacker as well."""
+        weapon = getattr(getattr(player, "belongings", None), "weapon", None)
+        rate = random.uniform(0.87, 1.15)
+        if weapon and getattr(weapon, "hit_sound", None):
+            sound = weapon.hit_sound
+            rate *= getattr(weapon, "hit_sound_pitch", 1.0)
+        else:
+            sound = "HIT_SLASH"
+        self.add_event("PLAY_SOUND", {"sound": sound, "rate": rate}, floor_id=floor_id, source_player_id=player.id, echo_to_source=True)
+        if result.get("crit"):
+            self.add_event("PLAY_SOUND", {"sound": "HIT_STRONG"}, floor_id=floor_id, source_player_id=player.id, echo_to_source=True)
 
     def _finish_kill(self, attacker, target_entity, floor, floor_id: int) -> None:
         """Shared post-death handling for a combat kill (melee bump or
@@ -238,10 +243,23 @@ class MeleeCombatMixin:
 
     def _maybe_trigger_dm300_supercharge(self, target: "MobEntity", floor, floor_id: int, near_pos: Position):
         """Trigger DM300 pylon activation if target is DM300 with pending activation."""
-        if isinstance(target, DM300) and target.pending_pylon_activation:
-            target.pending_pylon_activation = False
-            self.add_event("DM300_SUPERCHARGE", {"mob": target.id}, floor_id=floor_id)
-            _activate_pylon(self, floor, floor_id, near_pos=near_pos)
-            target.add_buff("stagger", duration=1.5)
-            self.add_event("BOSS_YELL", {"mob": target.id, "text": "Supercharging...",
-                                         "x": target.pos.x, "y": target.pos.y}, floor_id=floor_id)
+        if isinstance(target, DM300):
+            if getattr(target, "pending_invuln_hint", False):
+                target.pending_invuln_hint = False
+                self.add_event("MESSAGE", {
+                    "text": "DM-300 is invulnerable while it is being energized by a pylon!",
+                }, floor_id=floor_id)
+            if target.pending_pylon_activation:
+                target.pending_pylon_activation = False
+                is_stronger = "stronger_bosses" in getattr(self, "challenges", set())
+                stagger_dur = 1.0 if is_stronger else 1.5
+                self.add_event("DM300_SUPERCHARGE", {
+                    "mob": target.id,
+                    "x": target.pos.x,
+                    "y": target.pos.y,
+                    "duration_ms": int(stagger_dur * 1000),
+                }, floor_id=floor_id)
+                _activate_pylon(self, floor, floor_id, near_pos=near_pos)
+                target.add_buff("stagger", duration=stagger_dur)
+                self.add_event("BOSS_YELL", {"mob": target.id, "text": "SUSTAINING DAMAGE! ACTIVATING POWER PYLON!",
+                                             "x": target.pos.x, "y": target.pos.y}, floor_id=floor_id)

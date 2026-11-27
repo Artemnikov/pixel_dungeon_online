@@ -5,14 +5,9 @@ from app.engine.entities.base import Position
 from app.engine.entities.player import CharacterClass, Mob as MobEntity
 from app.engine.dungeon.constants import TileType
 
+from conftest import make_open_game, partial
 
-def _open_game():
-    """A game with a fully-open 12x12 floor so line-of-fire is deterministic."""
-    game = GameInstance("test-autoaim")
-    game.mobs = {}
-    game.grid = [[TileType.FLOOR for _ in range(12)] for _ in range(12)]
-    game._get_or_create_floor(game.depth).rebuild_flags()
-    return game
+_open_game = partial(make_open_game, width=12, height=12, game_id="test-autoaim")
 
 
 def _mob(game, mob_id, x, y):

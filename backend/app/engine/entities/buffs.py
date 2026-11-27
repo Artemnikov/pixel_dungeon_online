@@ -105,6 +105,21 @@ def has_buff(buffs: list[Buff], buff_type: str) -> bool:
     return any(b.type == buff_type for b in buffs)
 
 
+ROOT_BUFFS = ("roots", "rooted")
+
+
+def is_rooted(entity) -> bool:
+    """SPD `Char.rooted` (Roots buff). "roots" is canonical; "rooted" is a
+    legacy spelling some sources still apply."""
+    buffs = getattr(entity, "buffs", None) or []
+    return any(b.type in ROOT_BUFFS for b in buffs)
+
+
+def remove_roots(entity) -> None:
+    for name in ROOT_BUFFS:
+        remove_buff(entity.buffs, name)
+
+
 def get_buff(buffs: list[Buff], buff_type: str) -> Optional[Buff]:
     return next((b for b in buffs if b.type == buff_type), None)
 

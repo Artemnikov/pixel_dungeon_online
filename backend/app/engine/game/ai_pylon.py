@@ -1,5 +1,6 @@
 # Copyright (C) 2026 ArtemNikov
 #
+import math
 import random
 from typing import Optional
 
@@ -19,10 +20,15 @@ def _update_pylon(game, pylon: Pylon, floor: FloorState, floor_id: int):
     if pylon.bolt_cooldown > 0:
         return
 
+    is_stronger = "stronger_bosses" in getattr(game, "challenges", set())
     idx_a = pylon.fire_target_idx
-    idx_b = (pylon.fire_target_idx + 4) % 8
+    if is_stronger:
+        shock_indices = (idx_a, (idx_a + 3) % 8, (idx_a + 5) % 8)
+    else:
+        shock_indices = (idx_a, (idx_a + 4) % 8)
+
     shock_cells = []
-    for idx in (idx_a, idx_b):
+    for idx in shock_indices:
         ox, oy = _CIRCLE8_OFFSETS[idx]
         shock_cells.append((pylon.pos.x + ox, pylon.pos.y + oy))
 
@@ -36,6 +42,9 @@ def _update_pylon(game, pylon: Pylon, floor: FloorState, floor_id: int):
             if p.is_alive and p.pos.x == cx and p.pos.y == cy:
                 dmg = random.randint(10, 20)
                 taken = p.take_damage(dmg)
+                game.qualified_for_boss_challenge = False
+                if hasattr(game, "boss_scores") and len(game.boss_scores) > 2:
+                    game.boss_scores[2] -= 100
                 game.add_event("ATTACK", {"source": pylon.id, "target": p.id,
                                           "damage": taken, "surprise": False},
                                floor_id=floor_id)
@@ -64,7 +73,7 @@ def _activate_pylon(game, floor: FloorState, floor_id: int, near_pos: Optional[P
         return
 
     if len(candidates) > 1 and near_pos is not None:
-        closest = min(candidates, key=lambda p: game._get_distance(p.pos, near_pos))
+        closest = min(candidates, key=lambda p: math.hypot(p.pos.x - near_pos.x, p.pos.y - near_pos.y))
         pool = [p for p in candidates if p.id != closest.id]
     else:
         pool = candidates

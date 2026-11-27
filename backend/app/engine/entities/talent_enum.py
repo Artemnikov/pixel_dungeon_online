@@ -54,6 +54,8 @@ class ArmorAbilityType:
     ASCENDED_FORM = "ascended_form"
     TRINITY = "trinity"
     POWER_OF_MANY = "power_of_many"
+    # Any class, granted by the Rat King for the Dwarf King's crown
+    RATMOGRIFY = "ratmogrify"
 
 
 class Talent(StrEnum):
@@ -101,6 +103,11 @@ class Talent(StrEnum):
 
     # Tier 4 — universal (charge cost reduction)
     HEROIC_ENERGY = "heroic_energy"
+
+    # Tier 4 — Ratmogrify (any class)
+    RATSISTANCE = "ratsistance"
+    RATLOMACY = "ratlomacy"
+    RATFORCEMENTS = "ratforcements"
 
     # ===================== ROGUE =====================
     # Tier 1 (level 2)

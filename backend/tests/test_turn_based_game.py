@@ -48,6 +48,8 @@ from app.engine.turn.mob_actors import (
 from app.schemas import messages as msg
 from app.schemas.common import Direction
 
+from conftest import open_floor_on_game
+
 TICK = TICK_DURATION
 
 
@@ -692,12 +694,7 @@ def _count_calls(monkeypatch, module, name, counter):
 
 
 def _open_floor(game, size=30):
-    floor = game._get_or_create_floor(1)
-    floor.grid = [[TileType.FLOOR for _ in range(size)] for _ in range(size)]
-    floor.rebuild_flags()
-    for mob in list(floor.mobs.values()):
-        floor.mobs.pop(mob.id, None)
-    return floor
+    return open_floor_on_game(game, depth=1, w=size, h=size)
 
 
 @pytest.mark.parametrize(
@@ -907,6 +904,53 @@ def test_acting_marks_the_room_dirty(turn_game):
 
     turn_game.submit_turn_action(hero.id, msg.Wait(type="WAIT"))
     assert turn_game.should_broadcast() is True
+
+
+def test_noop_wall_bump_spends_no_turn_but_rearms_the_client(turn_game):
+    """A rejected no-op must still ship a frame: the client locked its input
+    on send and only a fresh `is_my_turn` re-arms it, so a silent drop reads
+    as a frozen room until the turn timer happens to fire."""
+    hero = _add_hero(turn_game, 5, 5)
+    _wall_at(turn_game, 6, 5)
+    _pump(turn_game)
+    turn_game.should_broadcast()
+
+    assert turn_game.submit_turn_action(hero.id, msg.Move(type="MOVE", direction=Direction.RIGHT)) is False
+    assert hero.id not in turn_game._players_acted
+    assert turn_game.should_broadcast() is True
+    assert turn_game.turn_state_for(hero.id)["is_my_turn"] is True
+
+
+def test_out_of_turn_rejection_marks_the_room_dirty(turn_game):
+    hero = _add_hero(turn_game, 5, 5)
+    _pump(turn_game)
+
+    assert turn_game.submit_turn_action(hero.id, msg.Wait(type="WAIT")) is True
+    turn_game.should_broadcast()
+
+    assert turn_game.submit_turn_action(hero.id, msg.Wait(type="WAIT")) is False
+    assert turn_game.should_broadcast() is True
+
+
+def test_dungeon_phase_failure_does_not_lock_the_round(turn_game, monkeypatch):
+    """A mob-AI crash mid-dungeon-phase must not strand the hero in
+    `_players_acted`: every later action would be rejected out of turn and
+    the room would never accept input again."""
+    hero = _add_hero(turn_game, 5, 5)
+    _pump(turn_game)
+
+    def _boom():
+        raise RuntimeError("mob ai exploded")
+
+    monkeypatch.setattr(turn_game, "_run_dungeon_mob_turns", _boom)
+    assert turn_game.submit_turn_action(hero.id, msg.Wait(type="WAIT")) is True
+    with pytest.raises(RuntimeError):
+        turn_game.update_tick(TICK)
+
+    assert hero.id not in turn_game._players_acted
+    assert turn_game.should_broadcast() is True
+
+    assert turn_game.submit_turn_action(hero.id, msg.Wait(type="WAIT")) is True
 
 
 # --- mode isolation -------------------------------------------------------

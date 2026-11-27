@@ -14,6 +14,7 @@ from app.engine.entities.wands.base import knockback_char
 from app.engine.game.constants import AUTO_MOVE_INTERVAL, GAME_LOOP_HZ, GAME_TURN_TICKS
 from app.engine.game.floor_state import FloorState
 from app.engine.systems.ballistica import ballistica_path
+from app.engine.entities.buffs import is_rooted
 
 # Arena bounds from caves_boss_layout.py (mirrors CavesBossLevel.java)
 MAIN_ARENA = Rect(5, 14, 28, 37)
@@ -23,11 +24,57 @@ PYLON_COORDS = [(4, 13), (28, 13), (4, 37), (28, 37)]
 
 MIN_COOLDOWN_TURNS = 5
 MAX_COOLDOWN_TURNS = 9
+MAX_COOLDOWN_TURNS_STRONGER = 7
 
 _CIRCLE8 = [
     (0, -1), (1, -1), (1, 0), (1, 1),
     (0, 1), (-1, 1), (-1, 0), (-1, -1),
 ]
+
+
+def _roll_ability_cooldown(game) -> int:
+    is_stronger = "stronger_bosses" in getattr(game, "challenges", set())
+    max_cd = MAX_COOLDOWN_TURNS_STRONGER if is_stronger else MAX_COOLDOWN_TURNS
+    return random.randint(MIN_COOLDOWN_TURNS, max_cd) * GAME_TURN_TICKS
+
+
+def _cone_can_hit_target(src_x: int, src_y: int, tgt_x: int, tgt_y: int, floor: FloorState, degrees: float = 30.0) -> bool:
+    """Port of SPD ConeAOE(Ballistica(pos, enemy.pos, WONT_STOP), +inf, 30, STOP_SOLID)
+    check (`aim.cells.contains(enemy.pos)`): checks whether any ray within +-degrees/2
+    around the vector from src to tgt reaches tgt without hitting a solid wall first."""
+    from_x = src_x + 0.5
+    from_y = src_y + 0.5
+    to_x = tgt_x + 0.5
+    to_y = tgt_y + 0.5
+    dist = math.hypot(to_x - from_x, to_y - from_y)
+    if dist < 0.001:
+        return True
+    circle_radius = dist + 0.5
+    initial_angle = math.degrees(math.atan2(to_y - from_y, to_x - from_x))
+
+    target_cells = []
+    seen = set()
+    a = initial_angle + degrees / 2.0
+    end_a = initial_angle - degrees / 2.0 - 1e-6
+    while a >= end_a:
+        rad = math.radians(a)
+        for r in ((circle_radius, circle_radius - 1.0) if circle_radius >= 4.0 else (circle_radius,)):
+            sx = from_x + math.cos(rad) * r
+            sy = from_y + math.sin(rad) * r
+            sx += 0.5 if from_x > sx else -0.5
+            sy += 0.5 if from_y > sy else -0.5
+            cx = max(0, min(int(math.floor(sx)), floor.width - 1))
+            cy = max(0, min(int(math.floor(sy)), floor.height - 1))
+            if (cx, cy) not in seen:
+                seen.add((cx, cy))
+                target_cells.append((cx, cy))
+        a -= 0.5
+
+    for cx, cy in target_cells:
+        ray = ballistica_path(src_x, src_y, cx, cy, floor.flags, floor.width, floor.height)
+        if (tgt_x, tgt_y) in ray[1:]:
+            return True
+    return False
 
 
 def _tick_dm300_pending_rockfall(game, mob: DM300, floor: FloorState, floor_id: int) -> None:
@@ -37,7 +84,7 @@ def _tick_dm300_pending_rockfall(game, mob: DM300, floor: FloorState, floor_id: 
     if not rockfall:
         return
 
-    rockfall["ticks_left"] -= 1
+    rockfall["ticks_left"] -= game.sim_ticks
     if rockfall["ticks_left"] > 0:
         return
 
@@ -145,7 +192,7 @@ def _dm300_drop_rocks(game, mob: DM300, target, floor: FloorState, floor_id: int
     # Safe cell selection: random neighbor of rock center, re-rolled if on
     # DM300, or with 50% chance if solid or energized.
     safe_cell: Optional[Tuple[int, int]] = None
-    for _ in range(20):
+    for _ in range(40):
         ox, oy = random.choice(_CIRCLE8)
         candidate = (rock_center[0] + ox, rock_center[1] + oy)
         if candidate == (mob.pos.x, mob.pos.y):
@@ -166,8 +213,12 @@ def _dm300_drop_rocks(game, mob: DM300, target, floor: FloorState, floor_id: int
         break
 
     if safe_cell is None:
-        ox, oy = random.choice(_CIRCLE8)
-        safe_cell = (rock_center[0] + ox, rock_center[1] + oy)
+        non_dm_neighbors = [
+            (rock_center[0] + ox, rock_center[1] + oy)
+            for ox, oy in _CIRCLE8
+            if (rock_center[0] + ox, rock_center[1] + oy) != (mob.pos.x, mob.pos.y)
+        ]
+        safe_cell = random.choice(non_dm_neighbors) if non_dm_neighbors else (rock_center[0] + 1, rock_center[1])
 
     # 7x7 falling rock pattern around rock_center
     rock_cells: List[Tuple[int, int]] = []
@@ -187,6 +238,11 @@ def _dm300_drop_rocks(game, mob: DM300, target, floor: FloorState, floor_id: int
     # Telegraph: ~2s warning duration before rocks crash down
     delay_ms = 2000
     delay_ticks = int(round(2.0 * GAME_LOOP_HZ))
+    if getattr(game, "game_mode", None) == "turnbased":
+        # DM300.dropRocks: the rocks land after min(target.cooldown(), 3)
+        # turns -- on the target's next action.
+        from app.engine.game.boss_targets import hero_cooldown_turns, spend_gate
+        delay_ticks = int(spend_gate(hero_cooldown_turns(game, target), 1, 3) * GAME_TURN_TICKS)
     mob.pending_rockfall = {"cells": rock_cells, "ticks_left": delay_ticks}
 
     tiles_list = [[c[0], c[1]] for c in rock_cells]
@@ -194,18 +250,35 @@ def _dm300_drop_rocks(game, mob: DM300, target, floor: FloorState, floor_id: int
     game.add_event("PLAY_SOUND", {"sound": "ROCKS", "x": mob.pos.x, "y": mob.pos.y}, floor_id=floor_id)
 
 
+def _is_cell_occupied(game, floor: FloorState, floor_id: int, x: int, y: int) -> bool:
+    for p in game._players_on_floor(floor_id):
+        if p.is_alive and not getattr(p, "is_downed", False) and p.pos.x == x and p.pos.y == y:
+            return True
+    for m in floor.mobs.values():
+        if m.is_alive and m.pos.x == x and m.pos.y == y:
+            return True
+    return False
+
+
 def _dm300_wall_smash(game, mob: DM300, target, floor: FloorState, floor_id: int) -> bool:
     """Port of DM300.getCloser(): while supercharged, if DM-300 cannot path to
     its target, it smashes through diggable arena walls to make a path."""
-    best_pos = (mob.pos.x, mob.pos.y)
-    curr_dist = game._get_distance(mob.pos, target.pos)
+    if mob.has_buff("root") or is_rooted(mob):
+        return False
+    if game._get_distance(mob.pos, target.pos) <= 1:
+        return False
 
-    # Find neighbor cell that reduces distance to target
+    best_pos = (mob.pos.x, mob.pos.y)
+    curr_dist = math.hypot(mob.pos.x - target.pos.x, mob.pos.y - target.pos.y)
+
+    # Find unoccupied neighbor cell that reduces true Euclidean distance to target
     for dx, dy in _CIRCLE8:
         nx, ny = mob.pos.x + dx, mob.pos.y + dy
         if not (0 <= nx < floor.width and 0 <= ny < floor.height):
             continue
-        ndist = max(abs(nx - target.pos.x), abs(ny - target.pos.y))
+        if _is_cell_occupied(game, floor, floor_id, nx, ny):
+            continue
+        ndist = math.hypot(nx - target.pos.x, ny - target.pos.y)
         if ndist < curr_dist:
             best_pos = (nx, ny)
             curr_dist = ndist
@@ -213,7 +286,7 @@ def _dm300_wall_smash(game, mob: DM300, target, floor: FloorState, floor_id: int
     if best_pos == (mob.pos.x, mob.pos.y):
         return False
 
-    # Break breakable walls in 3x3 around mob
+    # Break breakable walls and clear LightWall blobs in 3x3 around mob
     smashed = False
     map_patches = []
     for dy in range(-1, 2):
@@ -221,6 +294,16 @@ def _dm300_wall_smash(game, mob: DM300, target, floor: FloorState, floor_id: int
             sx, sy = mob.pos.x + dx, mob.pos.y + dy
             if not (0 <= sx < floor.width and 0 <= sy < floor.height):
                 continue
+            # Clear WallOfLight.LightWall blobs on NEIGBOURS9
+            for bid, b in list(floor.blob_areas.items()):
+                if b.get("type") in ("light_wall", "wall_of_light"):
+                    b_cells = b.get("cells")
+                    if isinstance(b_cells, set) and (sx, sy) in b_cells:
+                        b_cells.discard((sx, sy))
+                        smashed = True
+                    elif isinstance(b_cells, list) and (sx, sy) in b_cells:
+                        b_cells.remove((sx, sy))
+                        smashed = True
             # Gate protection: don't break the gate or walls around it
             if sy < GATE.bottom and GATE.left - 2 <= sx < GATE.right + 2:
                 continue
@@ -237,17 +320,39 @@ def _dm300_wall_smash(game, mob: DM300, target, floor: FloorState, floor_id: int
         return False
 
     floor.rebuild_flags()
-    game.add_event("MAP_PATCH", {"tiles": map_patches}, floor_id=floor_id)
+    if map_patches:
+        game.add_event("MAP_PATCH", {"tiles": map_patches}, floor_id=floor_id)
     game.add_event("SCREEN_SHAKE", {"intensity": 5, "duration_ms": 1000}, floor_id=floor_id)
     game.add_event("PLAY_SOUND", {"sound": "ROCKS", "x": mob.pos.x, "y": mob.pos.y}, floor_id=floor_id)
 
-    # DM300 spends 3 turns (1.5s pause)
-    mob.add_buff("stagger", duration=1.5)
+    # DM300 spends 3 turns (2 turns with stronger_bosses)
+    is_stronger = "stronger_bosses" in getattr(game, "challenges", set())
+    mob.add_buff("stagger", duration=1.0 if is_stronger else 1.5)
 
-    # Step toward target
-    if floor.flags and floor.flags.passable[best_pos[1]][best_pos[0]]:
-        dx = best_pos[0] - mob.pos.x
-        dy = best_pos[1] - mob.pos.y
+    # Re-evaluate best_pos requiring openSpace (3x3 passability for LARGE mob)
+    step_pos = (mob.pos.x, mob.pos.y)
+    step_dist = math.hypot(mob.pos.x - target.pos.x, mob.pos.y - target.pos.y)
+    for dx, dy in _CIRCLE8:
+        nx, ny = mob.pos.x + dx, mob.pos.y + dy
+        if not (0 <= nx < floor.width and 0 <= ny < floor.height):
+            continue
+        if _is_cell_occupied(game, floor, floor_id, nx, ny):
+            continue
+        is_open = (
+            floor.flags.open_space[ny][nx]
+            if floor.flags and hasattr(floor.flags, "open_space") and floor.flags.open_space
+            else (floor.flags.passable[ny][nx] if floor.flags else True)
+        )
+        if not is_open:
+            continue
+        ndist = math.hypot(nx - target.pos.x, ny - target.pos.y)
+        if ndist < step_dist:
+            step_pos = (nx, ny)
+            step_dist = ndist
+
+    if step_pos != (mob.pos.x, mob.pos.y):
+        dx = step_pos[0] - mob.pos.x
+        dy = step_pos[1] - mob.pos.y
         game.move_entity(mob.id, dx, dy)
 
     return True
@@ -256,6 +361,8 @@ def _dm300_wall_smash(game, mob: DM300, target, floor: FloorState, floor_id: int
 def _check_dm300_trap_step(game, mob: DM300, floor: FloorState, floor_id: int) -> None:
     """Port of DM300.move(): DM-300 gains barrier + sparks when stepping on
     inactive traps (wires), UNLESS the tile is currently energized by a pylon."""
+    if getattr(mob, "flying", False) or mob.ai_state == "sleeping":
+        return
     tile = floor.grid[mob.pos.y][mob.pos.x]
     if tile != TileType.INACTIVE_TRAP:
         return
@@ -270,10 +377,18 @@ def _check_dm300_trap_step(game, mob: DM300, floor: FloorState, floor_id: int) -
     if is_energized:
         return
 
+    existing_barrier = mob.get_shield("dm300_barrier")
+    had_barrier = existing_barrier is not None and existing_barrier.amount > 0
     shield_amt = 30 + (mob.max_hp - mob.hp) // 10
-    mob.add_shield("dm300_barrier", shield_amt, priority=0)
+    mob.set_shield("dm300_barrier", shield_amt, priority=0, decay=0)
     game.add_event("PLAY_SOUND", {"sound": "LIGHTNING", "x": mob.pos.x, "y": mob.pos.y}, floor_id=floor_id)
-    game.add_event("DM300_TRAP_STEP", {"mob": mob.id, "x": mob.pos.x, "y": mob.pos.y}, floor_id=floor_id)
+    game.add_event("DM300_TRAP_STEP", {
+        "mob": mob.id,
+        "x": mob.pos.x,
+        "y": mob.pos.y,
+        "shield": shield_amt,
+        "warn": not had_barrier,
+    }, floor_id=floor_id)
 
 
 def _dm300_maybe_seal_arena(game, player: Player, floor: FloorState, floor_id: int) -> None:
@@ -310,21 +425,34 @@ def _dm300_seal_arena(game, floor: FloorState, floor_id: int) -> None:
     entrance = floor.entrance_pos or (16, 25)
     ex, ey = entrance
 
-    # Displace any character standing on the entrance cell
+    passable_neighbors = [
+        (ex + dx, ey + dy)
+        for dx, dy in _CIRCLE8
+        if 0 <= ex + dx < floor.width and 0 <= ey + dy < floor.height
+        and (not floor.flags or floor.flags.passable[ey + dy][ex + dx])
+    ]
+
+    # Displace any floor items standing on the entrance cell (CavesBossLevel.seal:301)
+    if passable_neighbors:
+        for item in list(floor.items.values()):
+            if item.pos and item.pos.x == ex and item.pos.y == ey:
+                nx, ny = random.choice(passable_neighbors)
+                item.pos = Position(x=nx, y=ny)
+
+    # Displace any character standing on the entrance cell (CavesBossLevel.seal:311)
     for ch in list(game._players_on_floor(floor_id)) + list(floor.mobs.values()):
         if ch.is_alive and ch.pos.x == ex and ch.pos.y == ey:
-            for dx, dy in _CIRCLE8:
-                nx, ny = ex + dx, ey + dy
-                if 0 <= nx < floor.width and 0 <= ny < floor.height:
-                    if floor.flags and floor.flags.passable[ny][nx]:
-                        ch.pos = Position(x=nx, y=ny)
-                        break
+            if passable_neighbors:
+                nx, ny = random.choice(passable_neighbors)
+                ch.pos = Position(x=nx, y=ny)
 
     # Turn entrance into wall
     floor.grid[ey][ex] = TileType.WALL
     floor.rebuild_flags()
 
-    game.add_event("MAP_PATCH", {"tiles": [{"x": ex, "y": ey, "tile": TileType.WALL}]}, floor_id=floor_id)
+    game.add_event("MAP_PATCH", {
+        "tiles": [{"x": ex, "y": ey, "tile": TileType.WALL, "fx": "rock"}],
+    }, floor_id=floor_id)
     game.add_event("SCREEN_SHAKE", {"intensity": 3, "duration_ms": 700}, floor_id=floor_id)
     game.add_event("PLAY_SOUND", {"sound": "ROCKS", "x": ex, "y": ey}, floor_id=floor_id)
 
@@ -334,9 +462,9 @@ def _dm300_seal_arena(game, floor: FloorState, floor_id: int) -> None:
             mob.fight_started = True
             mob.ai_state = "hunting"
             mob.turns_since_last_ability = 0
-            mob.ability_cooldown = random.randint(MIN_COOLDOWN_TURNS, MAX_COOLDOWN_TURNS) * GAME_TURN_TICKS
+            mob.ability_cooldown = _roll_ability_cooldown(game)
             game.add_event("DM300_FIGHT_STARTED", {"mob": mob.id}, floor_id=floor_id)
-            game.add_event("BOSS_YELL", {"mob": mob.id, "text": "Intruder detected.",
+            game.add_event("BOSS_YELL", {"mob": mob.id, "text": "UNAUTHORIZED PERSONNEL DETECTED!",
                                          "x": mob.pos.x, "y": mob.pos.y}, floor_id=floor_id)
 
     # SPD LockedFloor: 50 turns
@@ -352,27 +480,39 @@ def _dm300_unseal_arena(game, floor: FloorState, floor_id: int) -> None:
 
     entrance = floor.entrance_pos or (16, 25)
     ex, ey = entrance
-    patches = [{"x": ex, "y": ey, "tile": TileType.STAIRS_UP}]
+    patches: list[dict] = [{"x": ex, "y": ey, "tile": TileType.STAIRS_UP}]
     floor.grid[ey][ex] = TileType.STAIRS_UP
 
     # Break gate cells (x 14..18, y 13)
     for gx in range(GATE.left, GATE.right):
         if 0 <= gx < floor.width and 0 <= GATE.top < floor.height:
             floor.grid[GATE.top][gx] = TileType.FLOOR
-            patches.append({"x": gx, "y": GATE.top, "tile": TileType.FLOOR})
+            patches.append({"x": gx, "y": GATE.top, "tile": TileType.FLOOR, "fx": "blast"})
 
     # Port of CavesBossLevel.ArenaVisuals: update gate row in custom_tiles to broken gate (tiles 32..36)
+    custom_tile_patches = []
     for layer in floor.custom_tiles:
         if layer.get("texture") == "caves_boss" and layer.get("y") == 12:
             grow = GATE.top - layer["y"]
             for gx in range(GATE.left, GATE.right):
                 gcol = gx - layer["x"]
                 if 0 <= grow < layer["h"] and 0 <= gcol < layer["w"]:
-                    layer["tiles"][grow][gcol] = 32 + (gx - GATE.left)
+                    tile_idx = 32 + (gx - GATE.left)
+                    layer["tiles"][grow][gcol] = tile_idx
+                    custom_tile_patches.append({
+                        "texture": "caves_boss",
+                        "layer_y": 12,
+                        "row": grow,
+                        "col": gcol,
+                        "tile": tile_idx,
+                    })
             break
 
     floor.rebuild_flags()
-    game.add_event("MAP_PATCH", {"tiles": patches}, floor_id=floor_id)
+    game.add_event("MAP_PATCH", {
+        "tiles": patches,
+        "custom_tiles": custom_tile_patches,
+    }, floor_id=floor_id)
 
     # Clear all pylon_energy blobs
     for bid in list(floor.blob_areas.keys()):
@@ -413,18 +553,18 @@ def _update_dm300(game, mob: DM300, floor: FloorState, floor_id: int) -> bool:
 
         # Aggressive ability usage when DM-300 cannot reach its target
         if not can_reach and mob.turns_since_last_ability >= MIN_COOLDOWN_TURNS * GAME_TURN_TICKS:
-            target_in_los = game._is_in_los(mob.pos, target_player.pos, floor_id=floor_id)
+            can_cone_gas = _cone_can_hit_target(mob.pos.x, mob.pos.y, target_player.pos.x, target_player.pos.y, floor)
             target_inorganic = "INORGANIC" in getattr(target_player, "properties", [])
-            if target_in_los and not target_inorganic:
+            if can_cone_gas and not target_inorganic:
                 _dm300_vent_gas(game, mob, target_player, floor, floor_id)
                 mob.last_ability = "gas"
                 mob.turns_since_last_ability = 0
-                mob.ability_cooldown = random.randint(MIN_COOLDOWN_TURNS, MAX_COOLDOWN_TURNS) * GAME_TURN_TICKS
+                mob.ability_cooldown = _roll_ability_cooldown(game)
             elif not target_player.has_buff("paralysis"):
                 _dm300_drop_rocks(game, mob, target_player, floor, floor_id)
                 mob.last_ability = "rocks"
                 mob.turns_since_last_ability = 0
-                mob.ability_cooldown = random.randint(MIN_COOLDOWN_TURNS, MAX_COOLDOWN_TURNS) * GAME_TURN_TICKS
+                mob.ability_cooldown = _roll_ability_cooldown(game)
         elif mob.turns_since_last_ability >= mob.ability_cooldown and game._is_in_los(mob.pos, target_player.pos, floor_id=floor_id):
             target_inorganic = "INORGANIC" in getattr(target_player, "properties", [])
             if target_inorganic:
@@ -443,7 +583,17 @@ def _update_dm300(game, mob: DM300, floor: FloorState, floor_id: int) -> bool:
 
             mob.last_ability = chosen
             mob.turns_since_last_ability = 0
-            mob.ability_cooldown = random.randint(MIN_COOLDOWN_TURNS, MAX_COOLDOWN_TURNS) * GAME_TURN_TICKS
+            mob.ability_cooldown = _roll_ability_cooldown(game)
+    else:
+        # SPD DM300.act(): yell "DESTROY! DESTROY! DESTROY!" on first act after supercharging
+        if not mob.charge_announced:
+            mob.charge_announced = True
+            game.add_event("BOSS_YELL", {
+                "mob": mob.id,
+                "text": "DESTROY! DESTROY! DESTROY!",
+                "x": mob.pos.x,
+                "y": mob.pos.y,
+            }, floor_id=floor_id)
 
     # Movement / Melee combat
     dist = game._get_distance(mob.pos, target_player.pos)
@@ -462,6 +612,10 @@ def _update_dm300(game, mob: DM300, floor: FloorState, floor_id: int) -> bool:
         if step:
             move_times[mob.id] = now
             game.move_entity(mob.id, step[0], step[1])
+            game.add_event("SCREEN_SHAKE", {
+                "intensity": 3 if mob.supercharged else 1,
+                "duration_ms": 250,
+            }, floor_id=floor_id)
             _check_dm300_trap_step(game, mob, floor, floor_id)
         elif mob.supercharged:
             _dm300_wall_smash(game, mob, target_player, floor, floor_id)

@@ -216,11 +216,11 @@ def _roll_damage(attacker: "Entity", result: dict, prep: Optional[dict] = None, 
             diff = dmg_max - dmg_min
             dmg_min = dmg_min + int(diff * floor)
 
-    dmg_roll = random.randint(dmg_min, dmg_max)
+    dmg_roll = attacker.adjust_damage_roll(random.randint(dmg_min, dmg_max))
     # Preparation: keep the highest of N rolls.
     if prep is not None:
         for _ in range(prep["rolls"] - 1):
-            r = random.randint(dmg_min, dmg_max)
+            r = attacker.adjust_damage_roll(random.randint(dmg_min, dmg_max))
             if r > dmg_roll:
                 dmg_roll = r
 
@@ -680,8 +680,9 @@ def resolve_melee_attack(
     # Dwarf King boss badge challenge: disqualified by direct weapon attacks
     if getattr(defender, "name", "") == "Dwarf King" and game is not None:
         if getattr(attacker, "is_player", False) or hasattr(attacker, "belongings"):
+            from app.engine.entities.rings.ring_mechanics import using_force
             weapon = getattr(getattr(attacker, "belongings", None), "weapon", None)
-            if weapon is not None:
+            if weapon is not None or using_force(attacker) or attacker.has_buff("ring_of_force_brawler"):
                 game.qualified_for_boss_challenge = False
 
     # SPD MirrorImage.attackProc: when an ally (mirror image / ghost hero)

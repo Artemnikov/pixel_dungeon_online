@@ -4,7 +4,7 @@
 from __future__ import annotations
 import random as R
 from app.engine.game.terrain_primitives import _create_gas
-from app.engine.entities.base import Position
+from app.engine.entities.base import Faction, Position, is_boss_or_miniboss
 
 # ── Tier lists (SPD CursedWand.java) ────────────────────────────────
 COMMON = [
@@ -167,7 +167,7 @@ def _summon_sheep(g, p, item, tx, ty, f, pos):
     sheep = MobEntity(id=sid, type="mob", mob_type="sheep", name="Sheep",
                       pos=Position(x=tx, y=ty), hp=1, max_hp=1,
                       attack=0, defense=0, damage_min=0, damage_max=0,
-                      faction="neutral", view_distance=4)
+                      faction=Faction.NEUTRAL, view_distance=4)
     f.mobs[sid] = sheep
     _e(g, f, "SUMMON", {"id": sid, "x": tx, "y": ty, "name": "Sheep"})
 
@@ -188,14 +188,13 @@ def _alarm(g, p, item, tx, ty, f, pos):
 def _sheep_polymorph(g, p, item, tx, ty, f, pos):
     t = _target(f, tx, ty)
     if t is None: return
-    props = getattr(t, "properties", None) or []
-    if "BOSS" in props or "MINIBOSS" in props: return
+    if is_boss_or_miniboss(t): return
     from app.engine.entities.player import Mob as MobEntity
     sid = str(R.getrandbits(64))
     sheep = MobEntity(id=sid, type="mob", mob_type="sheep", name="Sheep",
                       pos=Position(x=t.pos.x, y=t.pos.y), hp=1, max_hp=1,
                       attack=0, defense=0, damage_min=0, damage_max=0,
-                      faction="neutral", view_distance=4)
+                      faction=Faction.NEUTRAL, view_distance=4)
     del f.mobs[t.id]
     f.mobs[sid] = sheep
     _e(g, f, "SUMMON", {"id": sid, "x": sheep.pos.x, "y": sheep.pos.y, "name": "Sheep"})

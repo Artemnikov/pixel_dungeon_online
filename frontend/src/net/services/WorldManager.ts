@@ -104,6 +104,19 @@ export class WorldManager {
     });
   }
 
+  public patchCustomTiles(
+    patches: Array<{ texture: string; layer_y: number; row: number; col: number; tile: number }>,
+  ): void {
+    if (!this.refs.customTilesRef?.current || !patches?.length) return;
+    for (const p of patches) {
+      for (const layer of this.refs.customTilesRef.current) {
+        if (layer.texture === p.texture && layer.y === p.layer_y && layer.tiles?.[p.row]) {
+          layer.tiles[p.row][p.col] = p.tile;
+        }
+      }
+    }
+  }
+
   public updateVision(
     visibleTiles: Array<[number, number]> | undefined,
     mappedTiles?: Array<[number, number]>,
@@ -164,6 +177,12 @@ export class WorldManager {
     if (this.refs.blobAreasRef) {
       this.refs.blobAreasRef.current = {};
     }
+  }
+
+  /** Replace the custom tile overlays (e.g. HallsBossLevel's centre piece on unseal). */
+  public setCustomLayers(customTiles?: CustomTileLayer[], customWalls?: CustomTileLayer[]): void {
+    if (customTiles && this.refs.customTilesRef) this.refs.customTilesRef.current = customTiles;
+    if (customWalls && this.refs.customWallsRef) this.refs.customWallsRef.current = customWalls;
   }
 
   public initFloor(data: {

@@ -1,4 +1,5 @@
 import i18n from '../i18n';
+import { mobDisplayName } from '../ui/mobText';
 
 // Describe whatever occupies a cell, for the examine-mode "inspect" action.
 // Mirrors the spirit of GameScene.examineCell() in the original Shattered Pixel
@@ -74,10 +75,9 @@ export function describeCell({ tileX, tileY, gridRef, entitiesRef, visionRef, my
       const t = entityTile(mob);
       if (t && t.x === tileX && t.y === tileY) {
         const hp = mob.hp != null && mob.max_hp != null ? `HP ${mob.hp}/${mob.max_hp}` : null;
-        const mobName = mob.locale_key
-          ? i18n.t(mob.locale_key, { defaultValue: mob.name || '' })
-          : (mob.name || i18n.t('entity.creature'));
-        return { kind: 'mob', name: mobName, sub: hp, anchor: { type: 'mob', id: mob.id }, mob };
+        const mobName = mobDisplayName(i18n.t.bind(i18n), mob, i18n.t('entity.creature'));
+        const heroArmorAbility = ents.players?.[myPlayerId]?.armor_ability || null;
+        return { kind: 'mob', name: mobName, sub: hp, anchor: { type: 'mob', id: mob.id }, mob, heroArmorAbility };
       }
     }
     for (const pl of Object.values(ents.players || {})) {

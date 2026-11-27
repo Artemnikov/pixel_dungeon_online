@@ -12,7 +12,15 @@ export interface HeroStateSetters {
   setGold?: (gold: number) => void;
   setEnergy?: (energy: number) => void;
   setHasAmulet?: (hasAmulet: boolean) => void;
-  setBossInfo?: (info: { name: string; hp: number; maxHp: number; shield?: number; effects?: { key?: string; name?: string; icon?: number; remaining?: number; duration?: number }[] } | null) => void;
+  setBossInfo?: (info: {
+    name: string;
+    hp: number;
+    maxHp: number;
+    shield?: number;
+    supercharged?: boolean;
+    pylonsActivated?: number;
+    effects?: { key?: string; name?: string; icon?: number; remaining?: number; duration?: number }[];
+  } | null) => void;
   setBossLurking?: (bossLurking: boolean) => void;
   setDifficulty?: (difficulty: Difficulty) => void;
 }
@@ -112,19 +120,28 @@ export class HeroStateSync {
 
   public syncBossInfo(mobs: Mob[]): void {
     if (!this.setters.setBossInfo) return;
-    const boss = (mobs || []).find(m => m.type === 'boss' && m.is_alive !== false);
+    // Yog's fists are type "boss" too; SPD's boss bar stays on Yog-Dzewa.
+    // ...and BossHealthBar.assignBoss only happens in YogDzewa.notice().
+    const bosses = (mobs || []).filter(m => m.type === 'boss' && m.is_alive !== false
+      && !(m.name === 'Yog-Dzewa' && (m as { fight_started?: boolean }).fight_started === false));
+    const boss = bosses.find(m => !(m as { yog_id?: string }).yog_id) ?? bosses[0];
     this.setters.setBossInfo(boss ? {
       name: boss.name,
       hp: boss.hp,
       maxHp: boss.max_hp,
       shield: (boss.shields || []).reduce((sum, s) => sum + (s.amount || 0), 0),
+      supercharged: (boss as { supercharged?: boolean }).supercharged,
+      pylonsActivated: (boss as { pylons_activated?: number }).pylons_activated,
       effects: boss.buffs || [],
     } : null);
   }
 
-  public syncBossLurking(mobs: Mob[]): void {
+  /** `hallsArenaPending`: the Halls boss arena is not yet won and Yog-Dzewa
+   *  has not noticed anyone (HallsBossLevel.playLevelMusic: silent until then). */
+  public syncBossLurking(mobs: Mob[], hallsArenaPending = false): void {
     if (!this.setters.setBossLurking) return;
-    const isBossLurking = (mobs || []).some(m => m.is_alive !== false && (m as { fight_started?: boolean }).fight_started === false);
+    const isBossLurking = hallsArenaPending
+      || (mobs || []).some(m => m.is_alive !== false && (m as { fight_started?: boolean }).fight_started === false);
     this.setters.setBossLurking(isBossLurking);
   }
 }

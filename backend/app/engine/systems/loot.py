@@ -43,7 +43,44 @@ RANDOM_POTIONS = [
 # Party-size loot scaling applies only to potion/scroll kinds (see
 # party_loot_multiplier) -- other loot (gold, weapons, armor, quest items)
 # is left at its solo rate.
-_PARTY_SCALED_KINDS = {"potion", "health_potion", "scroll"}
+_PARTY_SCALED_KINDS = {"potion", "health_potion", "scroll", "scorpio_potion"}
+
+# SPD Generator.Category SEED / STONE classes with their defaultProbs, for
+# Generator.randomUsingDefaults(category).
+_SEED_DEFAULTS = (
+    ("rotberry_seed", 0), ("sungrass_seed", 2), ("fadeleaf_seed", 2), ("icecap_seed", 2),
+    ("firebloom_seed", 2), ("sorrowmoss_seed", 2), ("swiftthistle_seed", 2),
+    ("blindweed_seed", 2), ("stormvine_seed", 2), ("earthroot_seed", 2),
+    ("mageroyal_seed", 2), ("starflower_seed", 1),
+)
+_STONE_DEFAULTS = (
+    ("stone_enchantment", 0), ("stone_intuition", 2), ("stone_detect_magic", 2),
+    ("stone_flock", 2), ("stone_shock", 2), ("stone_blink", 2), ("stone_deep_sleep", 2),
+    ("stone_clairvoyance", 2), ("stone_aggression", 2), ("stone_blast", 2),
+    ("stone_fear", 2), ("stone_augmentation", 0),
+)
+
+
+def _random_using_defaults(table) -> Optional[ItemBase]:
+    from app.engine.entities.items.catalog import make_catalog_item
+    kinds = [k for k, _ in table]
+    weights = [w for _, w in table]
+    return make_catalog_item(kinds[_weighted_choice(weights)])
+
+
+def _make_items(item_kind: str) -> List[ItemBase]:
+    """Kinds whose SPD createLoot() yields something other than one item."""
+    if item_kind == "eye_loot":
+        # Eye.createLoot: Random.Int(4) -> 0/1 a dewdrop plus a second one
+        # dropped beside it, 2 a seed, 3 a runestone (randomUsingDefaults).
+        roll = random.randint(0, 3)
+        if roll <= 1:
+            from app.engine.entities.items.consumables import Dewdrop
+            return [Dewdrop(), Dewdrop()]
+        item = _random_using_defaults(_SEED_DEFAULTS if roll == 2 else _STONE_DEFAULTS)
+        return [item] if item is not None else []
+    item = _make_item(item_kind)
+    return [item] if item is not None else []
 
 
 def roll_drops(
@@ -79,12 +116,10 @@ def roll_drops(
             if not any(p.subclass_info.subclass is None for p in players):
                 continue
         for _ in range(count):
-            item = _make_item(entry.item_kind)
-            if item is None:
-                continue
-            item.id = str(uuid.uuid4())
-            item.pos = Position(x=death_x, y=death_y)
-            items.append(item)
+            for item in _make_items(entry.item_kind):
+                item.id = str(uuid.uuid4())
+                item.pos = Position(x=death_x, y=death_y)
+                items.append(item)
         if entry.max_global > 0:
             drop_counters[entry.item_kind] = drop_counters.get(entry.item_kind, 0) + count
         if entry.decay_key is not None:
@@ -217,6 +252,12 @@ def _make_item(item_kind: str) -> Optional[ItemBase]:
     elif item_kind == "potion":
         effect = random.choice(RANDOM_POTIONS)
         return Potion(name="Potion", effect=effect)
+    elif item_kind == "scorpio_potion":
+        # Scorpio.createLoot: Random.oneOf(POTION.classes), never Healing or Strength.
+        from app.engine.game.spd_adapter import POTION_CLASS_BY_INDEX
+        from app.engine.entities.items.potions import HealthPotion as _Heal
+        pool = [c for c in POTION_CLASS_BY_INDEX if c is not _Heal and c.__name__ != "PotionOfStrength"]
+        return random.choice(pool)()
     elif item_kind == "goo_blob":
         return GooBlob()
     elif item_kind == "tengu_mask":

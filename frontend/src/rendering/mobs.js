@@ -184,6 +184,9 @@ const NEWBORN_ELEMENTAL_TEX_OFFSET = 14;
 export const RATKING_FW = 16;
 export const RATKING_FH = 17;
 export const RATKING_DEST = { dx: 0, dy: -2, dw: 32, dh: 34 };
+// RatKingSprite.resetAnims(): frame offset c = 24 (row 3 of ratking.png) once
+// the viewing hero has Ratmogrify — the Rat King wears the Dwarf King's crown.
+export const RATKING_CROWNED_SY = 3 * RATKING_FH;
 
 // Ghost NPC: 14x15 frames (GhostSprite TextureFilm(texture, 14, 15)), ghost.png.
 // 128x16 sheet; 8 frames (0-7). Centered/bottom-aligned in 32px tile, scaled 2x -> 28x30 @ +2,+2.
@@ -650,9 +653,13 @@ export const getSpinnerFrame = (mob, mobAnim, now) => {
   return [0, 0, 0, 0, 0, 1, 0, 1][Math.floor(now / 100) % 8] * FRAME_W;
 };
 
-// Yog-Dzewa: slow pulsing idle loop.
+// Yog-Dzewa: SPD YogSprite (20x19 frames, yog.png)
+//   idle  10fps loop  [0,1,2,2,1,0,3,4,4,3,0,5,6,6,5]
+//   die   10fps once  [0,7,8,9]                        (death in draw/mobs.js)
+export const YOG_IDLE = [0, 1, 2, 2, 1, 0, 3, 4, 4, 3, 0, 5, 6, 6, 5];
+export const YOG_DIE = [0, 7, 8, 9];
 export const getYogFrame = (mob, mobAnim, now) =>
-  [0, 1, 2, 1][Math.floor(now / 250) % 4] * YOG_FW;
+  YOG_IDLE[Math.floor(now / 100) % YOG_IDLE.length] * YOG_FW;
 
 // Larva: SPD LarvaSprite frame layout (12x8 frames, larva.png)
 export const getLarvaFrame = (mob, mobAnim, now) => {
@@ -668,9 +675,34 @@ export const getLarvaFrame = (mob, mobAnim, now) => {
   return [4, 4, 4, 4, 4, 5, 5][Math.floor(now / 200) % 7] * LARVA_FW;
 };
 
-// Yog's Fists: shared 2-frame idle loop across all 6 fist variants (rows differ via sy).
-export const getFistFrame = (mob, mobAnim, now) =>
-  [0, 1][Math.floor(now / 250) % 2] * FIST_FW;
+// Yog's Fists: SPD FistSprite (24x17 frames, yog_fists.png; each fist is a
+// 10-frame row c = row*10, so the row is sy and these are in-row columns):
+//   idle    2fps loop  [c, c, c+1]
+//   run     3fps loop  [c, c+1]
+//   attack  3fps once  [c]  (plus a 9px hop over 0.33s, then shake(4, 0.2))
+//   zap     8fps once  [c, c+5, c+6]
+//   die    10fps once  [c, c+2, c+3, c+4]           (death in draw/mobs.js)
+export const FIST_ZAP_MS = 375;
+export const FIST_ATTACK_MS = 330;
+export const FIST_DIE = [0, 2, 3, 4];
+export const getFistFrame = (mob, mobAnim, now) => {
+  const anim = mobAnim[mob.id] || {};
+  if (anim.zapUntil && now < anim.zapUntil) {
+    const elapsed = now - (anim.zapUntil - FIST_ZAP_MS);
+    return [0, 5, 6][Math.min(Math.floor(elapsed / 125), 2)] * FIST_FW;
+  }
+  if (anim.attackUntil && now < anim.attackUntil) return 0;
+  if (isEntityMoving(mob)) return [0, 1][Math.floor(now / 333) % 2] * FIST_FW;
+  return [0, 0, 1][Math.floor(now / 500) % 3] * FIST_FW;
+};
+
+/** FistSprite.attack: jump(pos, pos, 9, 0.33f) -- an in-place hop of 9px (x2 here). */
+export const fistAttackLift = (mob, mobAnim, now) => {
+  const anim = mobAnim[mob.id] || {};
+  if (!anim.attackUntil || now >= anim.attackUntil) return 0;
+  const t = 1 - (anim.attackUntil - now) / FIST_ATTACK_MS;
+  return 4 * 18 * Math.max(0, t) * (1 - Math.max(0, t));
+};
 
 // Evil Eye / Yog Eye: SPD EyeSprite frame layout
 //   idle    8fps loop   [0,1,2]
@@ -696,9 +728,27 @@ export const getEyeFrame = (mob, mobAnim, now) => {
   return [0, 0, 0, 1, 2, 2, 2, 1][Math.floor(now / 125) % 8] * EYE_FW;
 };
 
-// Yog Ripper: 2-frame idle loop.
-export const getRipperFrame = (mob, mobAnim, now) =>
-  [0, 1][Math.floor(now / 250) % 2] * RIPPER_FW;
+// Ripper Demon / Yog Ripper: SPD RipperSprite (15x14 frames, ripper.png)
+//   idle    4fps loop  [1,0,1,2]
+//   run    15fps loop  [3,4,5,6,7,8]
+//   attack 12fps once  [0,9,10,9]   alternating with
+//   stab   12fps once  [0,9,11,9]
+//   prep   1 frame     [9]          (leap telegraph)
+//   leap   1 frame     [12]
+//   die    15fps once  [1,13,14,15,16]   (death in draw/mobs.js)
+export const RIPPER_ATTACK_MS = 333;
+export const getRipperFrame = (mob, mobAnim, now) => {
+  const anim = mobAnim[mob.id] || {};
+  if (mob.jumpLift > 0 || (anim.leapUntil && now < anim.leapUntil)) return 12 * RIPPER_FW;
+  if (anim.attackUntil && now < anim.attackUntil) {
+    const elapsed = now - (anim.attackUntil - RIPPER_ATTACK_MS);
+    const frames = anim.stab ? [0, 9, 11, 9] : [0, 9, 10, 9];
+    return frames[Math.min(Math.floor(elapsed / 83), 3)] * RIPPER_FW;
+  }
+  if (anim.prepUntil && now < anim.prepUntil) return 9 * RIPPER_FW;
+  if (isEntityMoving(mob)) return [3, 4, 5, 6, 7, 8][Math.floor(now / 67) % 6] * RIPPER_FW;
+  return [1, 0, 1, 2][Math.floor(now / 250) % 4] * RIPPER_FW;
+};
 
 // Demon Spawner: immobile, single static frame.
 export const getSpawnerFrame = () => 0;
@@ -730,12 +780,17 @@ export const getTenguFrame = (mob, mobAnim, now) => {
 
 // Faithful to original SPD DM300Sprite (25x22 frames, dm300.png is 2 rows of 10 columns:
 // row 0 = normal, row 1 = supercharged/enraged):
-//   idle    10fps loop  [0,1]
-//   run     10fps loop  [0,2]
-//   attack  15fps once  [3,4,5]
-//   zap     15fps loop  [6,7,7,6]    (die handled in draw/mobs.js)
+//   idle    10fps (15fps enraged) loop  [c+0,c+1]
+//   run     10fps (15fps enraged) loop  [c+0,c+2]
+//   attack  15fps once                  [c+3,c+4,c+5]
+//   zap     15fps once                  [6,7,7,6] (always row 0)
+//   charge   4fps loop                  [0,10] (row 0 col 0 <-> row 1 col 0)
 export const getDM300Frame = (mob, mobAnim, now) => {
   const anim = mobAnim[mob.id] || {};
+  const isCharging = anim.chargeUntil && now < anim.chargeUntil;
+  if (isCharging) {
+    return 0;
+  }
   const isAttacking = anim.attackUntil && now < anim.attackUntil;
   const isZapping = anim.zapUntil && now < anim.zapUntil;
   if (isAttacking) {
@@ -746,10 +801,11 @@ export const getDM300Frame = (mob, mobAnim, now) => {
   if (isZapping) {
     return [6, 7, 7, 6][Math.floor(now / 67) % 4] * DM300_FW;
   }
+  const frameMs = mob.supercharged ? 67 : 100;
   if (isEntityMoving(mob)) {
-    return [0, 2][Math.floor(now / 100) % 2] * DM300_FW;
+    return [0, 2][Math.floor(now / frameMs) % 2] * DM300_FW;
   }
-  return [0, 1][Math.floor(now / 100) % 2] * DM300_FW;
+  return [0, 1][Math.floor(now / frameMs) % 2] * DM300_FW;
 };
 
 // Faithful to original SPD BruteSprite (12x16 frames, brute.png is 2 rows: Brute = row 0,
@@ -813,9 +869,14 @@ export const getRotLasherFrame = () => 0;
 export const getNewbornElementalFrame = () => NEWBORN_ELEMENTAL_TEX_OFFSET * NEWBORN_ELEMENTAL_FW;
 
 // Faithful to original SPD RatKingSprite (16x17 frames, ratking.png):
-//   idle 2fps loop [0,0,0,1]
-export const getRatKingFrame = (mob, mobAnim, now) =>
-  [0, 0, 0, 1][Math.floor(now / 500) % 4] * RATKING_FW;
+//   idle  2fps loop [0,0,0,1]
+//   run  10fps loop [2,3,4,5,6]
+export const getRatKingFrame = (mob, mobAnim, now) => {
+  if (isEntityMoving(mob)) {
+    return [2, 3, 4, 5, 6][Math.floor(now / 100) % 5] * RATKING_FW;
+  }
+  return [0, 0, 0, 1][Math.floor(now / 500) % 4] * RATKING_FW;
+};
 
 // Faithful to original SPD GhostSprite (14x15 frames, ghost.png):
 //   idle    5fps loop  [0,1]
@@ -871,7 +932,7 @@ export const getSheepFrame = (mob, mobAnim, now) => {
 // alpha (optional): 0..1 used for the death fade-out.
 export const drawMobSprite = (ctx, mob, sprite, sx, fw = FRAME_W, fh = FRAME_H, flash = false, dest = null, alpha = 1, sy = 0, brightness = 1) => {
   const x = mob.renderPos.x * TILE_SIZE;
-  const y = mob.renderPos.y * TILE_SIZE - ENTITY_LIFT;
+  const y = mob.renderPos.y * TILE_SIZE - ENTITY_LIFT - (mob.jumpLift || 0);
   const dx = dest ? dest.dx : 0;
   const dy = dest ? dest.dy : 0;
   const dw = dest ? dest.dw : TILE_SIZE;

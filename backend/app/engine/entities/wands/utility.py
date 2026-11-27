@@ -84,6 +84,8 @@ class WandOfCorrosion(Wand):
         self.on_hit(ctx.attacker, ctx.target_entity, ctx.damage_dealt,
                      floor_mobs=ctx.floor_mobs, tile_x=cx, tile_y=cy,
                      floor=floor, add_event=ctx.add_event)
+        if getattr(ctx.target_entity, "name", "") == "Dwarf King" and ctx.game is not None:
+            ctx.game.qualified_for_boss_challenge = False
         if ctx.hit and ctx.damage_dealt > 0 and ctx.target_entity:
             ctx.add_event("DAMAGE", {
                 "target": ctx.target_entity.id,
@@ -137,6 +139,8 @@ class WandOfCorruption(Wand):
         from app.engine.entities.player import Mob as MobEntity
         if not isinstance(target, MobEntity):
             return
+        if getattr(target, "name", "") == "Dwarf King" and ctx.game is not None:
+            ctx.game.qualified_for_boss_challenge = False
         lvl = self.buffed_lvl()
         corrupting_power = 3.0 + lvl / 3.0
         # SPD: base enemy resistance from depth/exp

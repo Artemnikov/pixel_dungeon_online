@@ -1,6 +1,6 @@
 # Copyright (C) 2026 ArtemNikov
 #
-from typing import List, Optional
+from typing import ClassVar, Dict, List, Optional
 
 from pydantic import Field
 
@@ -12,8 +12,9 @@ from app.engine.entities.player import Mob as MobEntity, DropEntry
 # ---------------------------------------------------------------------------
 
 class RatKing(MobEntity):
-    """Cosmetic NPC in the sewer boss secret treasure room (RatKing.java).
-    Sleeps forever, never wakes/attacks, takes no damage and dodges everything."""
+    """The sewer boss secret room's NPC (RatKing.java). Sleeps until a hero
+    talks to him, then wanders without ever choosing an enemy; takes no damage
+    and dodges everything. Trades Ratmogrify for the Dwarf King's crown."""
     name: str = "Rat King"
     type: str = "npc"
     faction: str = Faction.PLAYER
@@ -27,11 +28,21 @@ class RatKing(MobEntity):
     dr_max: int = 0
     exp: int = 0
     max_lvl: int = -2
+    speed: float = 2.0
     loot_table: List[DropEntry] = []
     ai_state: str = "sleeping"
-    # Mirrors RatKing.java: never transitions out of SLEEPING (chooseEnemy()
-    # always returns null), so the generic wake-up check in tick.py skips it.
+    # Mirrors RatKing.java chooseEnemy() returning null: the generic wake-up
+    # check never fires; only talking to him wakes him (see interact()).
     never_wakes: bool = True
+
+    LINES: ClassVar[Dict[str, str]] = {
+        "not_sleeping": "I'm not sleeping!",
+        "what_is_it": "What is it? I have no time for this nonsense. My kingdom won't rule itself!",
+        "crown_clothes": "Put some clothes on! You're in no state to talk to royalty!",
+        "crown_thankyou": "Hehehe, thank you! Now go and make your king proud!",
+        "crown_fine": "Fine! It's not like I wanted it anyway...",
+        "crown_after": "Enjoying your new armor? No take-backsies!",
+    }
 
     def take_damage(self, amount: int):
         # RatKing.damage(): does nothing — immune to all damage.
@@ -40,6 +51,49 @@ class RatKing(MobEntity):
     def get_effective_defense_skill(self) -> int:
         # RatKing.defenseSkill(): INFINITE_EVASION — always dodges.
         return 10 ** 9
+
+    def yell(self, game, player, line: str) -> None:
+        game.add_event("BOSS_YELL", {
+            "mob": self.id, "key": f"mobText.rat_king_{line}", "text": self.LINES[line],
+            "x": self.pos.x, "y": self.pos.y,
+        }, floor_id=player.floor_id, player_id=player.id)
+
+    @staticmethod
+    def _crown_of(player):
+        from app.engine.entities.items.consumables import KingsCrown
+        return next((i for i in player.belongings.all_items() if isinstance(i, KingsCrown)), None)
+
+    def interact(self, game, player) -> None:
+        """SPD `RatKing.interact(hero)`."""
+        from app.engine.entities.talent_enum import ArmorAbilityType
+        crown = self._crown_of(player)
+        if self.ai_state == "sleeping":
+            game.add_event("MOB_NOTICE", {"mob": self.id}, floor_id=player.floor_id)
+            self.yell(game, player, "not_sleeping")
+            self.ai_state = "wandering"
+        elif crown is not None:
+            if player.belongings.armor is None:
+                self.yell(game, player, "crown_clothes")
+            else:
+                game.add_event("RAT_KING_DIALOGUE", {"player": player.id, "npc": self.id},
+                               player_id=player.id)
+        elif player.armor_ability == ArmorAbilityType.RATMOGRIFY:
+            self.yell(game, player, "crown_after")
+        else:
+            self.yell(game, player, "what_is_it")
+
+    def answer_crown_offer(self, game, player, accept: bool) -> None:
+        """SPD `RatKing.interact` WndOptions.onSelect: "Of course!" trades the
+        crown for Ratmogrify, "I'd rather not..." keeps it."""
+        from app.engine.entities.talent_enum import ArmorAbilityType
+        crown = self._crown_of(player)
+        if crown is None or player.belongings.armor is None:
+            return
+        if accept:
+            crown.upgrade_armor(game, player, ArmorAbilityType.RATMOGRIFY)
+            self.yell(game, player, "crown_thankyou")
+        else:
+            self.yell(game, player, "crown_fine")
 
 
 class Shopkeeper(MobEntity):

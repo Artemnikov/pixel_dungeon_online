@@ -151,6 +151,15 @@ export function createProgressionEventHandlers(): IGameEventHandler[] {
       },
     },
     {
+      eventType: 'RAT_KING_DIALOGUE',
+      handle(event: Extract<GameEvent, { type: 'RAT_KING_DIALOGUE' }>, ctx: GameEventContext) {
+        if (event.data.player === ctx.myPlayerId) {
+          ctx.ui.ratKingDialogue({ npc: event.data.npc });
+        }
+        return true;
+      },
+    },
+    {
       eventType: 'IMP_REWARD',
       handle(event: Extract<GameEvent, { type: 'IMP_REWARD' }>, ctx: GameEventContext) {
         if (event.data.player === ctx.myPlayerId) ctx.audio.play('BOSS');
@@ -285,7 +294,8 @@ export function createProgressionEventHandlers(): IGameEventHandler[] {
     {
       eventType: 'MESSAGE',
       handle(event: Extract<GameEvent, { type: 'MESSAGE' }>) {
-        addGameLog(event.data.text, event.data.color || 'default');
+        const text = event.data.key ? i18n.t(event.data.key, { defaultValue: event.data.text }) : event.data.text;
+        addGameLog(text, event.data.color || 'default');
         return true;
       },
     },

@@ -46,7 +46,7 @@ def _elemental_area_shock(game: GameInstance, floor: Any, player: Player, mob: A
 
 
 def _elemental_area_bloom(game: GameInstance, floor: Any, player: Player, mob: Any, power_mult: float) -> None:
-    add_buff(mob.buffs, "rooted", duration=6.0 * power_mult, level=1)
+    add_buff(mob.buffs, "roots", duration=6.0 * power_mult, level=1)
 
 
 def _elemental_area_block(game: GameInstance, floor: Any, player: Player, mob: Any, power_mult: float) -> None:

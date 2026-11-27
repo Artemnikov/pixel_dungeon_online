@@ -156,7 +156,10 @@ async def get_talents(class_type: str):
         TALENT_CLASS_REQ, ABILITY_TALENTS, TIER_UNLOCK_LEVELS,
         TIER_MAX_POINTS, CLASS_SUBCLASSES,
         T4_ABILITY_TALENTS, CLASS_ARMOR_ABILITIES, CLASS_TALENT_BASE, Talent,
+        UNIVERSAL_ABILITY_T4_TALENTS,
     )
+    from app.engine.entities.talent_data.common import HEROIC_ENERGY_RAT_TITLE
+    from app.engine.entities.talent_enum import ArmorAbilityType
     from app.engine.entities.player import CharacterClass
 
     valid = {
@@ -178,8 +181,9 @@ async def get_talents(class_type: str):
 
     def _belongs_to_class(tid: str, sreq: Optional[str]) -> bool:
         # HEROIC_ENERGY is a shared T4 universal talent, available to any class
-        # once T4 is unlocked (see TALENT_CLASS_REQ comment).
-        if tid == Talent.HEROIC_ENERGY:
+        # once T4 is unlocked (see TALENT_CLASS_REQ comment); the Ratmogrify
+        # talents ride on the Rat King's class-agnostic armor ability.
+        if tid == Talent.HEROIC_ENERGY or tid in UNIVERSAL_ABILITY_T4_TALENTS:
             return True
         if TALENT_CLASS_REQ.get(tid) == base_class:
             return True
@@ -206,6 +210,8 @@ async def get_talents(class_type: str):
 
         if talent_id in ABILITY_TALENTS:
             entry["unlocks_ability"] = ABILITY_TALENTS[talent_id]
+        if talent_id == Talent.HEROIC_ENERGY:
+            entry["rat_title"] = HEROIC_ENERGY_RAT_TITLE
 
         tier_key = str(tier)
         if tier_key not in tiers:
@@ -224,6 +230,8 @@ async def get_talents(class_type: str):
     has_t4_mapping = False
     for tid, (_, t, sreq) in TALENT_DEFS.items():
         if t != 4 or sreq is not None or not _belongs_to_class(tid, sreq):
+            continue
+        if tid in UNIVERSAL_ABILITY_T4_TALENTS:
             continue
         ability = T4_ABILITY_TALENTS.get(tid)
         if ability is not None:
@@ -246,6 +254,12 @@ async def get_talents(class_type: str):
                 if a_req == base_class or (asr and asr in own_subclasses):
                     ability_to_talents.setdefault(ability, []).append(tid)
                     break
+
+    # SPD Ratmogrify.talents(): any class can get it from the Rat King.
+    ability_to_talents[ArmorAbilityType.RATMOGRIFY] = [
+        tid for tid in TALENT_DEFS
+        if T4_ABILITY_TALENTS.get(tid) == ArmorAbilityType.RATMOGRIFY
+    ] + [Talent.HEROIC_ENERGY]
 
     ability_selectors: dict = {}
     for tid, ability in ABILITY_TALENTS.items():

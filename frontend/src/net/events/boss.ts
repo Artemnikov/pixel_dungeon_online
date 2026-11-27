@@ -1,9 +1,12 @@
 import { TILE_SIZE } from '../../constants';
-import { spawnDust, spawnCritSparkle, spawnLight, spawnFallingEarth, spawnRockSpecks, spawnBoneRattle, spawnShadowUp, spawnCurse, spawnWhiteSplash } from '../../rendering/draw/particles';
-import { spawnSparkMoving } from '../../rendering/draw/sparkParticle';
+import { spawnDust, spawnCritSparkle, spawnLight, spawnFallingEarth, spawnRockSpecks, spawnBoneRattle, spawnShadowCurse, spawnWhiteSplash } from '../../rendering/draw/particles';
+import { spawnSparkMoving, spawnSparkStatic } from '../../rendering/draw/sparkParticle';
 import { spawnElmo } from '../../rendering/draw/elmoParticle';
 import { addFadingTraps, setBombItem, clearBombItem } from '../../rendering/tenguEffects';
 import { spawnSmoke } from '../../rendering/draw/smokeParticle';
+import { TEXT_ICON } from '../../rendering/draw/floatingTextIcons';
+import { addGameLog } from '../../ui/gameLogHelpers';
+import i18n from '../../i18n';
 import type { GameEvent } from '../../types/contract';
 import type { GameEventContext, IGameEventHandler } from './IGameEventHandler';
 
@@ -53,6 +56,48 @@ export function createBossEventHandlers(): IGameEventHandler[] {
       },
     },
     {
+      eventType: 'TENGU_JOIN_PROMPT',
+      handle(event: Extract<GameEvent, { type: 'TENGU_JOIN_PROMPT' }>, ctx: GameEventContext) {
+        ctx.ui.tenguJoinPrompt(event.data);
+        return true;
+      },
+    },
+    {
+      eventType: 'TENGU_PARTY_STATUS',
+      handle(event: Extract<GameEvent, { type: 'TENGU_PARTY_STATUS' }>, ctx: GameEventContext) {
+        ctx.ui.tenguPartyStatus(event.data);
+        return true;
+      },
+    },
+    {
+      eventType: 'TENGU_PROMPT_CLOSE',
+      handle(_event: Extract<GameEvent, { type: 'TENGU_PROMPT_CLOSE' }>, ctx: GameEventContext) {
+        ctx.ui.tenguPromptClose();
+        return true;
+      },
+    },
+    {
+      eventType: 'DWARF_KING_JOIN_PROMPT',
+      handle(event: Extract<GameEvent, { type: 'DWARF_KING_JOIN_PROMPT' }>, ctx: GameEventContext) {
+        ctx.ui.dwarfKingJoinPrompt(event.data);
+        return true;
+      },
+    },
+    {
+      eventType: 'DWARF_KING_PARTY_STATUS',
+      handle(event: Extract<GameEvent, { type: 'DWARF_KING_PARTY_STATUS' }>, ctx: GameEventContext) {
+        ctx.ui.dwarfKingPartyStatus(event.data);
+        return true;
+      },
+    },
+    {
+      eventType: 'DWARF_KING_PROMPT_CLOSE',
+      handle(_event: Extract<GameEvent, { type: 'DWARF_KING_PROMPT_CLOSE' }>, ctx: GameEventContext) {
+        ctx.ui.dwarfKingPromptClose();
+        return true;
+      },
+    },
+    {
       eventType: 'DM300_FIGHT_STARTED',
       handle(event: Extract<GameEvent, { type: 'DM300_FIGHT_STARTED' }>, ctx: GameEventContext) {
         ctx.ui.dm300FightStarted(event.data);
@@ -62,7 +107,18 @@ export function createBossEventHandlers(): IGameEventHandler[] {
     {
       eventType: 'DM300_GAS',
       handle(event: Extract<GameEvent, { type: 'DM300_GAS' }>, ctx: GameEventContext) {
-        ctx.effects.setMobZap(event.data.mob, 400);
+        ctx.effects.setMobZap(event.data.mob, 267);
+        const mob = ctx.entities.getMob(event.data.mob);
+        if (mob) {
+          const dx = event.data.target_x - mob.renderPos.x;
+          if (dx > 0) { mob.facing = 'RIGHT'; mob.flipX = false; }
+          else if (dx < 0) { mob.facing = 'LEFT'; mob.flipX = true; }
+          const startX = mob.renderPos.x * TILE_SIZE + TILE_SIZE / 2;
+          const startY = mob.renderPos.y * TILE_SIZE + TILE_SIZE / 2;
+          const targetX = event.data.target_x * TILE_SIZE + TILE_SIZE / 2;
+          const targetY = event.data.target_y * TILE_SIZE + TILE_SIZE / 2;
+          ctx.effects.spawnMagicMissile(startX, startY, targetX, targetY, 'toxic_gas');
+        }
         return true;
       },
     },
@@ -72,7 +128,13 @@ export function createBossEventHandlers(): IGameEventHandler[] {
         const tiles = event.data.tiles || [];
         const dur = event.data.duration_ms ?? 2000;
         ctx.effects.setRockfallTelegraph(tiles, dur);
-        ctx.effects.setMobAttack(event.data.mob, 400);
+        ctx.effects.setMobAttack(event.data.mob, 200);
+        const mob = ctx.entities.getMob(event.data.mob);
+        if (mob && tiles.length > 0) {
+          const dx = tiles[0][0] - mob.renderPos.x;
+          if (dx > 0) { mob.facing = 'RIGHT'; mob.flipX = false; }
+          else if (dx < 0) { mob.facing = 'LEFT'; mob.flipX = true; }
+        }
         ctx.effects.shakeScreen(3, 700);
         ctx.audio.play('ROCKS');
 
@@ -107,7 +169,15 @@ export function createBossEventHandlers(): IGameEventHandler[] {
     {
       eventType: 'DM300_SUPERCHARGE',
       handle(event: Extract<GameEvent, { type: 'DM300_SUPERCHARGE' }>, ctx: GameEventContext) {
-        ctx.effects.setMobCharge(event.data.mob, 1500);
+        ctx.effects.setMobCharge(event.data.mob, event.data.duration_ms ?? 1500);
+        const mob = ctx.entities.getMob(event.data.mob);
+        const mx = event.data.x ?? (mob ? Math.round(mob.renderPos.x) : undefined);
+        const my = event.data.y ?? (mob ? Math.round(mob.renderPos.y) : undefined);
+        if (mx !== undefined && my !== undefined && ctx.world.isVisible(mx, my)) {
+          const cx = mx * TILE_SIZE + TILE_SIZE / 2;
+          const cy = my * TILE_SIZE - 8;
+          ctx.effects.spawnFloatingText(cx, cy, 'invulnerable', '#00ff00');
+        }
         return true;
       },
     },
@@ -133,6 +203,22 @@ export function createBossEventHandlers(): IGameEventHandler[] {
       eventType: 'DWARF_KING_PHASE2',
       handle(event: Extract<GameEvent, { type: 'DWARF_KING_PHASE2' }>, ctx: GameEventContext) {
         ctx.ui.dwarfKingPhase2(event.data);
+        if (ctx.world.isVisible(event.data.x, event.data.y)) {
+          const cx = event.data.x * TILE_SIZE + TILE_SIZE / 2;
+          const cy = event.data.y * TILE_SIZE - 8;
+          ctx.effects.spawnFloatingText(cx, cy, 'invulnerable', '#00ff00');
+        }
+        return true;
+      },
+    },
+    {
+      eventType: 'DWARF_KING_DEFERRED',
+      handle(event: Extract<GameEvent, { type: 'DWARF_KING_DEFERRED' }>, ctx: GameEventContext) {
+        if (ctx.world.isVisible(event.data.x, event.data.y)) {
+          const cx = event.data.x * TILE_SIZE + TILE_SIZE / 2;
+          const cy = event.data.y * TILE_SIZE - 8;
+          ctx.effects.spawnFloatingText(cx, cy, `deferred ${event.data.amount}`, '#ff8800');
+        }
         return true;
       },
     },
@@ -144,21 +230,6 @@ export function createBossEventHandlers(): IGameEventHandler[] {
       },
     },
     {
-      eventType: 'DWARF_KING_SUMMON_START',
-      handle(event: Extract<GameEvent, { type: 'DWARF_KING_SUMMON_START' }>, ctx: GameEventContext) {
-        if (ctx.effects.particlesRef && ctx.world.isVisible(event.data.x, event.data.y)) {
-          const cx = event.data.x * TILE_SIZE + TILE_SIZE / 2;
-          const cy = event.data.y * TILE_SIZE + TILE_SIZE / 2;
-          const p = event.data.particle;
-          if (p === 'fire') spawnElmo(ctx.effects.particlesRef, cx, cy, 6);
-          else if (p === 'shadow') spawnShadowUp(ctx.effects.particlesRef, cx, cy, 6);
-          else if (p === 'spark') spawnSparkMoving(ctx.effects.particlesRef, cx, cy, 6);
-          else spawnBoneRattle(ctx.effects.particlesRef, cx, cy, 6);
-        }
-        return true;
-      },
-    },
-    {
       eventType: 'DWARF_KING_SUMMON_BURST',
       handle(event: Extract<GameEvent, { type: 'DWARF_KING_SUMMON_BURST' }>, ctx: GameEventContext) {
         if (ctx.effects.particlesRef && ctx.world.isVisible(event.data.x, event.data.y)) {
@@ -166,7 +237,7 @@ export function createBossEventHandlers(): IGameEventHandler[] {
           const cy = event.data.y * TILE_SIZE + TILE_SIZE / 2;
           const cls = event.data.mob_cls;
           if (cls === 'DKMonk') spawnElmo(ctx.effects.particlesRef, cx, cy, 14);
-          else if (cls === 'DKWarlock') spawnCurse(ctx.effects.particlesRef, cx, cy, 14);
+          else if (cls === 'DKWarlock') spawnShadowCurse(ctx.effects.particlesRef, cx, cy, 10);
           else if (cls === 'DKGolem') spawnSparkMoving(ctx.effects.particlesRef, cx, cy, 14);
           else {
             spawnBoneRattle(ctx.effects.particlesRef, cx, cy, 14);
@@ -363,7 +434,8 @@ export function createBossEventHandlers(): IGameEventHandler[] {
         if (ctx.world.isVisible(event.data.x, event.data.y)) {
           const cx = event.data.x * TILE_SIZE + TILE_SIZE / 2;
           const cy = event.data.y * TILE_SIZE - 2;
-          ctx.effects.spawnFloatingText(cx, cy, event.data.text, '#ffff66');
+          const text = event.data.key ? i18n.t(event.data.key, { defaultValue: event.data.text }) : event.data.text;
+          ctx.effects.spawnFloatingText(cx, cy, text, '#ffff66');
         }
         return true;
       },
@@ -374,8 +446,13 @@ export function createBossEventHandlers(): IGameEventHandler[] {
         if (ctx.world.isVisible(event.data.x, event.data.y)) {
           const cx = event.data.x * TILE_SIZE + TILE_SIZE / 2;
           const cy = event.data.y * TILE_SIZE + TILE_SIZE / 2;
-          if (ctx.effects.particlesRef) spawnSparkMoving(ctx.effects.particlesRef, cx, cy, 8);
-          ctx.effects.shakeScreen(8, 200);
+          if (ctx.effects.particlesRef) spawnSparkStatic(ctx.effects.particlesRef, cx, cy, 20);
+          if (event.data.shield != null) {
+            ctx.effects.spawnFloatingText(cx, cy - TILE_SIZE / 2, `${event.data.shield}`, '#00ff00', TEXT_ICON.SHIELDING);
+          }
+          if (event.data.warn) {
+            addGameLog('DM-300 pulls power from the exposed wires and shields itself!', 'warning');
+          }
         }
         return true;
       },

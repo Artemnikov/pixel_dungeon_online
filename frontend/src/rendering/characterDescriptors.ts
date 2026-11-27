@@ -53,6 +53,7 @@ const KNOWN_MOBS: Record<string, CharacterFrameDef> = {
   succubus: { x: 0, y: 0, w: 14, h: 16 },
   eye: { x: 0, y: 0, w: 16, h: 16 },
   yog: { x: 0, y: 0, w: 20, h: 19 },
+  larva: { x: 0, y: 0, w: 12, h: 8 },
 };
 
 export function getCharacterDescriptor(classType?: string): CharacterDescriptor {

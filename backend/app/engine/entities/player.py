@@ -11,7 +11,7 @@ if TYPE_CHECKING:
 
 from pydantic import BaseModel, Field, computed_field, model_validator, SerializeAsAny
 
-from app.engine.entities.buffs import Buff, add_buff, remove_buff, has_buff, get_buff
+from app.engine.entities.buffs import Buff, add_buff, remove_buff, has_buff, get_buff, is_rooted
 from app.engine.entities.subclasses import SubclassInfo, TalentInfo, Talent, Subclass
 from app.engine.entities.weapons.weapon_defs import WEAPON_DEFS
 from app.engine.talents.registry import MODIFIERS
@@ -219,6 +219,13 @@ class Mob(Entity):
     flying: bool = False
     properties: List[str] = Field(default_factory=list)
     attack_range: int = 1
+    # Generic-AI attack rules (game/mob_ai_movement.py): melee reach in
+    # tiles (SPD Mob.canAttack is adjacent-only), whether a ranged mob stands
+    # its ground while its ability has a target, and whether a ported act()
+    # performs every attack itself so the generic AI only moves the mob.
+    melee_reach: ClassVar[int] = 1
+    holds_at_range: ClassVar[bool] = False
+    owns_attacks: ClassVar[bool] = False
     # Attack speed is an independent property from movement `speed` (mirrors SPD,
     # where a mob's attackDelay and moveSpeed are separate). Baselined to the
     # player's standard weapon cadence so a basic mob trades blow-for-blow rather
@@ -256,6 +263,15 @@ class Mob(Entity):
     # SPD Mob.enemySeen: whether this mob has seen the player on its turn.
     # In turn-based mode, surprise attacks succeed whenever enemy_seen is False.
     enemy_seen: Dict[str, bool] = Field(default_factory=dict, exclude=True)
+    # SPD Actor time for mobs whose act() is ported once per SPD turn (see
+    # game/spd_act_clock.py): turns until the next act, whether the last act
+    # spent its time on an attack/ability (blocking the generic movement AI),
+    # the delay SPD's GameScene.add(mob, delay) imposes before the first act,
+    # and the time the last act spent, for the turn-room scheduler.
+    act_cooldown: float = Field(default=0.0, exclude=True)
+    act_blocking: bool = Field(default=False, exclude=True)
+    spawn_delay: float = Field(default=0.0, exclude=True)
+    act_spent: Optional[float] = Field(default=None, exclude=True)
 
     def die(self, attacker=None, floor_mobs=None, tile_x=0, tile_y=0, players=None):
         pass
@@ -366,6 +382,8 @@ class Player(Entity):
     # mechanics in turn/world.py know whether this turn included a step. The
     # real-time path derives the same signal from player.movement.is_active().
     _moved_this_turn: bool = False
+    # SPD time the player's last turn-room action cost (`hero.cooldown()`).
+    _last_turn_cost: Optional[float] = None
 
     @property
     def is_active(self) -> bool:
@@ -1118,7 +1136,7 @@ class Player(Entity):
 
     def get_movement_speed(self, enemies_nearby: bool = False) -> float:
         from app.engine.entities.buffs import is_frozen
-        if self.has_buff("paralysis") or self.has_buff("stagger") or is_frozen(self.buffs) or self.has_buff("roots"):
+        if self.has_buff("paralysis") or self.has_buff("stagger") or is_frozen(self.buffs) or is_rooted(self):
             return 0.0
 
         mult = 1.0

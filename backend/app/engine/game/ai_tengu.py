@@ -8,7 +8,7 @@ from app.engine.dungeon.spd_levelgen.level import _CIRCLE8_OFFSETS
 from app.engine.entities.base import Position, chebyshev_distance, is_immune, normal_int_range as _normal_int_range
 from app.engine.entities.buffs import add_buff
 from app.engine.entities.mobs import Tengu
-from app.engine.game.constants import GAME_TURN_TICKS
+from app.engine.game.constants import GAME_MODE_TURNBASED, GAME_TURN_TICKS, TENGU_BOMB_STEP_TICKS
 from app.engine.game.floor_state import FloorState
 from app.engine.systems.loot import roll_drops
 
@@ -45,12 +45,12 @@ class TenguAIMixin:
         if floor.floor_id != 10:
             return
 
-        # Gate tengu blob decay to once per game turn (every 20 ticks)
-        tick = getattr(floor, "_tengu_blob_tick", 0) + 1
+        # Gate tengu blob decay to once per game turn.
+        tick = getattr(floor, "_tengu_blob_tick", 0) + self.sim_ticks
         if tick < TURN_TICKS:
             floor._tengu_blob_tick = tick
             return
-        floor._tengu_blob_tick = 0
+        floor._tengu_blob_tick = tick - TURN_TICKS
 
         for blob_id, blob in list(floor.blob_areas.items()):
             if blob.get("type") == "tengu_fire":
@@ -155,12 +155,16 @@ class TenguAIMixin:
                                              "x": tengu.pos.x, "y": tengu.pos.y}, floor_id=floor_id)
 
         if tengu.bomb_timer > 0:
-            tengu.bomb_timer -= 1
+            # One countdown step (3, 2, 1, boom -- Tengu.BombAbility) is
+            # TENGU_BOMB_STEP_TICKS real-time ticks; a turn room takes one
+            # step per turn.
+            step = TENGU_BOMB_STEP_TICKS if self.game_mode == GAME_MODE_TURNBASED else 1
+            tengu.bomb_timer = max(0, tengu.bomb_timer - step)
             if tengu.bomb_timer == 0:
                 self._tengu_detonate_bomb(tengu, floor, floor_id)
                 return True
-            if tengu.bomb_timer % 20 == 0 and tengu.bomb_timer < 60:
-                countdown = tengu.bomb_timer // 20
+            if tengu.bomb_timer % TENGU_BOMB_STEP_TICKS == 0 and tengu.bomb_timer < 3 * TENGU_BOMB_STEP_TICKS:
+                countdown = tengu.bomb_timer // TENGU_BOMB_STEP_TICKS
                 self.add_event("TENGU_BOMB_COUNTDOWN", {
                     "mob": tengu.id, "x": tengu.bomb_x, "y": tengu.bomb_y, "count": countdown,
                 }, floor_id=floor_id)
@@ -481,7 +485,7 @@ class TenguAIMixin:
 
         x, y = target_cell
         tengu.bomb_x, tengu.bomb_y = x, y
-        tengu.bomb_timer = 60
+        tengu.bomb_timer = 3 * TENGU_BOMB_STEP_TICKS
 
         self.add_event("RANGED_ATTACK", {"source": tengu.id, "x": tengu.pos.x, "y": tengu.pos.y,
                                           "target_x": x, "target_y": y, "projectile": "shuriken",

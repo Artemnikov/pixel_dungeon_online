@@ -9,20 +9,10 @@ from app.engine.dungeon.constants import TileType
 from app.engine.game.floor_state import FloorState
 from app.engine.manager import GameInstance
 
+from conftest import make_game_with_floors, make_open_floor, partial
 
-def _make_floor(floor_id=16, w=10, h=10):
-    grid = [[TileType.FLOOR for _ in range(w)] for _ in range(h)]
-    floor = FloorState(floor_id=floor_id, grid=grid, rooms=[], mobs={}, items={}, region="halls")
-    floor.rebuild_flags()
-    return floor
-
-
-def _make_game(floor):
-    game = GameInstance("test-crystal-mimic")
-    game.players = {}
-    game.floors[floor.floor_id] = floor
-    game.depth = floor.floor_id
-    return game
+_make_floor = partial(make_open_floor, floor_id=16, region="halls")
+_make_game = partial(make_game_with_floors, game_id="test-crystal-mimic")
 
 
 def test_crystal_chest_open_does_not_remove_other_chest():

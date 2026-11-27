@@ -16,6 +16,16 @@ export interface GameCallbacksConfig {
   onMetamorphOptions?: (data: { old_talent: string; options: string[] }) => void;
   onGooFightStarted?: (data: { mob: string }) => void;
   onTenguFightStarted?: (data: { mob: string }) => void;
+  onTenguJoinPrompt?: (data: { initiator_id: string; initiator_name: string }) => void;
+  onTenguPartyStatus?: (data: { initiator_id: string; pending_names: string[]; declined_names: string[]; approved_names: string[]; can_decide: boolean }) => void;
+  onTenguPromptClose?: () => void;
+  onDwarfKingJoinPrompt?: (data: { initiator_id: string; initiator_name: string }) => void;
+  onDwarfKingPartyStatus?: (data: { initiator_id: string; pending_names: string[]; declined_names: string[]; approved_names: string[]; can_decide: boolean }) => void;
+  onDwarfKingPromptClose?: () => void;
+  onYogJoinPrompt?: (data: { initiator_id: string; initiator_name: string }) => void;
+  onYogPartyStatus?: (data: { initiator_id: string; pending_names: string[]; declined_names: string[]; approved_names: string[]; can_decide: boolean }) => void;
+  onYogPromptClose?: () => void;
+  onYogPhaseChange?: (data: { mob: string; phase: number }) => void;
   onChasmPrompt?: (data: { x: number; y: number }) => void;
   onDM300FightStarted?: (data: { mob: string }) => void;
   onDwarfKingFightStarted?: (data: { mob: string }) => void;
@@ -25,6 +35,7 @@ export interface GameCallbacksConfig {
   onYogFinalPhase?: (data: { mob: string }) => void;
   onShopOpen?: (data: { npc: string; stock: SerializedItem[]; gold: number }) => void;
   onImpDialogue?: (data: { npc: string; text: string; can_claim: boolean; tokens?: number | null }) => void;
+  onRatKingDialogue?: (data: { npc: string }) => void;
   onGhostQuestGiven?: () => void;
   onGhostQuestProcessed?: () => void;
   onGhostQuestComplete?: () => void;
@@ -101,6 +112,46 @@ export class GameCallbacks {
     this.config.onTenguFightStarted?.(data);
   }
 
+  public tenguJoinPrompt(data: { initiator_id: string; initiator_name: string }): void {
+    this.config.onTenguJoinPrompt?.(data);
+  }
+
+  public tenguPartyStatus(data: { initiator_id: string; pending_names: string[]; declined_names: string[]; approved_names: string[]; can_decide: boolean }): void {
+    this.config.onTenguPartyStatus?.(data);
+  }
+
+  public tenguPromptClose(): void {
+    this.config.onTenguPromptClose?.();
+  }
+
+  public dwarfKingJoinPrompt(data: { initiator_id: string; initiator_name: string }): void {
+    this.config.onDwarfKingJoinPrompt?.(data);
+  }
+
+  public dwarfKingPartyStatus(data: { initiator_id: string; pending_names: string[]; declined_names: string[]; approved_names: string[]; can_decide: boolean }): void {
+    this.config.onDwarfKingPartyStatus?.(data);
+  }
+
+  public dwarfKingPromptClose(): void {
+    this.config.onDwarfKingPromptClose?.();
+  }
+
+  public yogJoinPrompt(data: { initiator_id: string; initiator_name: string }): void {
+    this.config.onYogJoinPrompt?.(data);
+  }
+
+  public yogPartyStatus(data: { initiator_id: string; pending_names: string[]; declined_names: string[]; approved_names: string[]; can_decide: boolean }): void {
+    this.config.onYogPartyStatus?.(data);
+  }
+
+  public yogPromptClose(): void {
+    this.config.onYogPromptClose?.();
+  }
+
+  public yogPhaseChange(data: { mob: string; phase: number }): void {
+    this.config.onYogPhaseChange?.(data);
+  }
+
   public dm300FightStarted(data: { mob: string }): void {
     this.config.onDM300FightStarted?.(data);
   }
@@ -135,6 +186,10 @@ export class GameCallbacks {
 
   public impDialogue(data: { npc: string; text: string; can_claim: boolean; tokens?: number | null }): void {
     this.config.onImpDialogue?.(data);
+  }
+
+  public ratKingDialogue(data: { npc: string }): void {
+    this.config.onRatKingDialogue?.(data);
   }
 
   public ghostDialogue(data: { npc: string; text: string; can_claim: boolean; weapon?: SerializedItem | null; armor?: SerializedItem | null }): void {

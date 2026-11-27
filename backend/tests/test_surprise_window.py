@@ -17,21 +17,12 @@ from app.engine.game.constants import SURPRISE_WINDOW_SECONDS
 from app.engine.manager import GameInstance
 from app.engine.systems.combat import resolve_melee_attack, resolve_ranged_attack
 
+from conftest import make_open_game
+
 
 def _open_game(w: int = 12, h: int = 12) -> GameInstance:
     import uuid
-    game = GameInstance(f"test-surprise-{uuid.uuid4()}")
-    game.players = {}
-    game.mobs = {}
-    floor = game._get_or_create_floor(game.depth)
-    floor.grid = [[TileType.FLOOR for _ in range(w)] for _ in range(h)]
-    floor.mobs.clear()
-    floor.items.clear()
-    floor.traps.clear()
-    floor.plants.clear()
-    floor.rebuild_flags()
-    game.difficulty = Difficulty.NORMAL
-    return game
+    return make_open_game(width=w, height=h, game_id=f"test-surprise-{uuid.uuid4()}", difficulty=Difficulty.NORMAL)
 
 
 def _combat_mob(**kwargs) -> MobEntity:

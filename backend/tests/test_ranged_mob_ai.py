@@ -77,11 +77,12 @@ def test_dm100_hit_deals_damage_no_dr(open_game_factory, monkeypatch):
     mob = _hunting(DM100(id="m", pos=Position(x=6, y=10)))
     floor.mobs[mob.id] = mob
     _force_hit(monkeypatch)
-    monkeypatch.setattr(random, "randint", lambda lo, hi: hi)
+    import app.engine.game.ai_dm100 as ai_dm100
+    monkeypatch.setattr(ai_dm100, "_normal_int_range", lambda lo, hi: hi)
 
     start_hp = p.hp
     assert _update_dm100(g, mob, floor, p.floor_id) is True
-    assert p.hp == start_hp - 10  # _normal_int_range(3, 10) with randint stubbed to hi
+    assert p.hp == start_hp - 10
     assert mob.last_attack_time > 0
 
 
@@ -177,6 +178,55 @@ def test_warlock_miss_deals_no_damage(open_game_factory, monkeypatch):
     start_hp = p.hp
     assert _update_warlock(g, mob, floor, p.floor_id) is True
     assert p.hp == start_hp
+
+
+def test_warlock_respects_attack_cooldown(open_game_factory, monkeypatch):
+    g, p, floor = _room(open_game_factory, px=10, py=10)
+    mob = _hunting(Warlock(id="m", pos=Position(x=6, y=10)))
+    floor.mobs[mob.id] = mob
+    _force_hit(monkeypatch)
+    assert _update_warlock(g, mob, floor, p.floor_id) is True
+    assert _update_warlock(g, mob, floor, p.floor_id) is False
+
+
+def _zap_sounds(g):
+    sounds = []
+    for e in g.events:
+        if e["type"] == "RANGED_ATTACK":
+            sounds.append(e["data"].get("sound"))
+        elif e["type"] == "PLAY_SOUND":
+            sounds.append(e["data"]["sound"])
+    return sounds
+
+
+def test_warlock_zap_plays_zap_once_and_degrade_on_proc(open_game_factory, monkeypatch):
+    g, p, floor = _room(open_game_factory, px=10, py=10)
+    mob = _hunting(Warlock(id="m", pos=Position(x=6, y=10)))
+    floor.mobs[mob.id] = mob
+    _force_hit(monkeypatch)
+    g.events.clear()
+
+    assert _update_warlock(g, mob, floor, p.floor_id) is True
+    zap = next(e for e in g.events if e["type"] == "RANGED_ATTACK")
+    assert zap["data"]["projectile"] == "shadow"
+    sounds = _zap_sounds(g)
+    assert sounds.count("ZAP") == 1
+    assert "DEGRADE" in sounds
+    assert p.has_buff("degrade")
+
+
+def test_warlock_zap_without_degrade_proc_has_no_degrade_sound(open_game_factory, monkeypatch):
+    g, p, floor = _room(open_game_factory, px=10, py=10)
+    mob = _hunting(Warlock(id="m", pos=Position(x=6, y=10)))
+    floor.mobs[mob.id] = mob
+    vals = itertools.chain([0.99, 0.0], itertools.repeat(0.99))
+    monkeypatch.setattr(random, "random", lambda: next(vals))
+    g.events.clear()
+
+    assert _update_warlock(g, mob, floor, p.floor_id) is True
+    sounds = _zap_sounds(g)
+    assert sounds.count("ZAP") == 1
+    assert "DEGRADE" not in sounds
 
 
 # --- Spinner (no damage, applies cripple, decrementing counter cooldown) ---

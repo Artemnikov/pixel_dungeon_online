@@ -5,7 +5,6 @@ import sys
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
 
-from app.engine.dungeon.constants import TileType
 from app.engine.dungeon.spd_levelgen import halls_boss_layout as layout
 from app.engine.dungeon.spd_levelgen import terrain
 from app.engine.dungeon.spd_levelgen.run_state import RunState
@@ -44,8 +43,8 @@ def test_level_dimensions_and_positions():
 
     # Yog pos is at (16, 12)
     assert level.yog_pos == (16, 12)
-    yog_mob = next(m for m in level.mobs if m.cls_name == "YogDzewa")
-    assert yog_mob.pos == 16 + 12 * 32
+    # HallsBossLevel.seal() spawns Yog-Dzewa; the level starts without it.
+    assert not any(m.cls_name == "YogDzewa" for m in level.mobs)
 
 
 def test_custom_tilemaps():
@@ -81,9 +80,9 @@ def test_floor_state_generation():
     assert floor.entrance_pos[0] == 16
     assert floor.exit_pos == (16, 9)
 
-    yog = next(m for m in floor.mobs.values() if isinstance(m, YogDzewa))
-    assert yog.pos.x == 16
-    assert yog.pos.y == 12
+    assert not any(isinstance(m, YogDzewa) for m in floor.mobs.values())
+    assert floor.yog_pos == (16, 12)
+    assert floor.view_distance == 4
 
     assert len(floor.custom_tiles) == 1
     assert floor.custom_tiles[0]["texture"] == "halls_special"

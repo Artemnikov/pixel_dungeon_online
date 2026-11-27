@@ -1,6 +1,7 @@
 const atkBowSound = new URL('../assets/pixel-dungeon/audio/atk_bow.mp3', import.meta.url).href;
 const zapSound = new URL('../assets/pixel-dungeon/audio/zap.mp3', import.meta.url).href;
 const hitMagicSound = new URL('../assets/pixel-dungeon/audio/hit_magic.mp3', import.meta.url).href;
+const degradeSound = new URL('../assets/pixel-dungeon/audio/degrade.mp3', import.meta.url).href;
 const stepSound = new URL('../assets/pixel-dungeon/audio/step.mp3', import.meta.url).href;
 const hitArrowSound = new URL('../assets/pixel-dungeon/audio/hit_arrow.mp3', import.meta.url).href;
 const hitSlashSound = new URL('../assets/pixel-dungeon/audio/hit_slash.mp3', import.meta.url).href;
@@ -84,6 +85,8 @@ class AudioManager {
         this.loadSound('THROW', throwSound);
         this.loadSound('MISS', throwSound);
         this.loadSound('ATTACK_MAGIC', zapSound);
+        this.loadSound('ZAP', zapSound);
+        this.loadSound('DEGRADE', degradeSound);
         this.loadSound('HIT_MAGIC', hitMagicSound);
         this.loadSound('STEP', stepSound);
         this.loadSound('STEP_WATER', waterStepSound);

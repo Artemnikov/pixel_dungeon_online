@@ -1,5 +1,6 @@
 import { TILE_SIZE } from '../../constants';
 import { setLightMode } from './blending';
+import { spawnShadowMissileParticle } from './particles';
 
 const MAGIC_MISSILE_SPEED = 400; // px/s (2x SPD's 200px/s for 32px tiles)
 
@@ -13,7 +14,7 @@ export const MISSILE_TYPES = {
   foliage:       { color: '#004400', size: 4, life: 1200, trailCount: 6, arcHeight: 1.5, colorEnd: '#88CC44' },
   force:         { color: '#664422', size: 4, life: 600, trailCount: 4, arcHeight: 0.5 },
   beacon:        { color: '#FFFFFF', size: 4, life: 500, trailCount: 8, arcHeight: 1.5, orbit: true },
-  shadow:        { color: '#440066', size: 4, life: 500, trailCount: 4, arcHeight: 1.5, colorEnd: '#000000' },
+  shadow:        { particle: spawnShadowMissileParticle, size: 4, pourInterval: 0.01, arcHeight: 0 },
   rainbow:       { color: null, size: 4, life: 500, trailCount: 4, arcHeight: 1.5, rainbow: true },
   earth:         { color: '#805500', size: 4, life: 500, trailCount: 4, arcHeight: 1.0, gravityY: 40 },
   ward:          { color: '#8822FF', size: 4, life: 600, trailCount: 4, arcHeight: 1.5, shrink: true },
@@ -36,6 +37,7 @@ function getType(typeName) {
     ...cfg,
     size: isCone ? 10 : cfg.size,
     life: isCone ? cfg.life : cfg.life,
+    pourInterval: isCone && cfg.pourInterval ? 0.03 : cfg.pourInterval,
     isCone,
   };
 }
@@ -47,7 +49,19 @@ function lerpColor(c1, c2, t) {
   return `#${rr.toString(16).padStart(2, '0')}${gg.toString(16).padStart(2, '0')}${bb.toString(16).padStart(2, '0')}`;
 }
 
-export function advanceAndDrawMagicMissiles(ctx, magicMissileRef) {
+function pourMissileParticles(m, x, y, now, particlesRef) {
+  if (!particlesRef?.current) return;
+  const dt = Math.min((now - (m.lastPourAt ?? m.startTime)) / 1000, 0.05);
+  m.lastPourAt = now;
+  m.pourAcc = (m.pourAcc || 0) + dt;
+  const area = m.size * (TILE_SIZE / 16);
+  while (m.pourAcc >= m.pourInterval) {
+    m.pourAcc -= m.pourInterval;
+    m.particle(particlesRef, x + (Math.random() - 0.5) * area, y + (Math.random() - 0.5) * area);
+  }
+}
+
+export function advanceAndDrawMagicMissiles(ctx, magicMissileRef, particlesRef) {
   const active = magicMissileRef.current;
   const now = performance.now();
   const finished = [];
@@ -71,6 +85,11 @@ export function advanceAndDrawMagicMissiles(ctx, magicMissileRef) {
 
     const x = m.startX + (m.endX - m.startX) * t;
     const y = m.startY + (m.endY - m.startY) * t - arc + driftY;
+
+    if (m.particle) {
+      pourMissileParticles(m, x, y, now, particlesRef);
+      continue;
+    }
 
     const headSize = m.size + Math.sin(t * Math.PI) * (m.size * 0.5);
 
@@ -140,6 +159,8 @@ export function spawnMagicMissile(missileRef, startX, startY, endX, endY, typeNa
     driftY: cfg.driftY,
     colorEnd: cfg.colorEnd,
     rainbow: cfg.rainbow,
+    particle: cfg.particle,
+    pourInterval: cfg.pourInterval,
     startTime: performance.now(),
   };
   missileRef.current.push(m);

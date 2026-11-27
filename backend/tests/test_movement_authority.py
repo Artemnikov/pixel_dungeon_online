@@ -16,15 +16,9 @@ from app.engine.manager import GameInstance
 from app.schemas import messages as msg
 from app.schemas.common import Direction
 
+from conftest import make_open_game, partial
 
-def _open_room_game(width=20, height=20):
-    game = GameInstance("test-game")
-    game.players = {}
-    game.mobs = {}
-    floor = game._get_or_create_floor(1)
-    floor.grid = [[TileType.FLOOR for _ in range(width)] for _ in range(height)]
-    floor.rebuild_flags()
-    return game
+_open_room_game = partial(make_open_game, width=20, height=20)
 
 
 def _spawn_rat(game, x, y):

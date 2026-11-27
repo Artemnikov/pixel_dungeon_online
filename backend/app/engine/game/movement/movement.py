@@ -14,11 +14,11 @@ from app.engine.entities.items.union import Chest
 from app.engine.entities.items.bombs import Bomb
 from app.engine.entities.items.consumables import Amulet, CorpseDust, Dewdrop, EnergyCrystal, Gold, Key, LostBackpack
 from app.engine.entities.player import Player
-from app.engine.entities.buffs import add_buff, break_stationary_plant_buffs, has_buff, is_frozen
+from app.engine.entities.buffs import add_buff, break_stationary_plant_buffs, has_buff, is_frozen, is_rooted
 from app.engine.game.constants import AUTO_MOVE_INTERVAL, MAX_FLOOR_ID, MAX_PLAYER_INPUT_QUEUE
 from app.engine.game.ai_dm300 import _dm300_maybe_seal_arena
 from app.engine.game.ai_dwarf_king import _dwarf_king_maybe_seal_arena
-from app.engine.game.ai_yog_dzewa import _yog_maybe_seal_arena
+from app.engine.game.yog_arena import maybe_seal as _yog_maybe_seal_arena
 from app.engine.game.terrain_effects import press_cell
 from app.engine.talents.registry import registry
 from typing import Optional
@@ -174,6 +174,11 @@ class MovementMixin:
             _reject_move()
             return
 
+        # SPD Roots: a rooted character can still strike (the bump above)
+        # but can't step. Players are gated the same way in Player.can_move.
+        if not isinstance(entity, Player) and is_rooted(entity):
+            return
+
         tile = floor.grid[new_y][new_x]
         if tile == TileType.HERO_LKD_DR and isinstance(entity, Player):
             # SPD Hero.actUnlock (HERO_LKD_DR): a door the hero locked with
@@ -222,6 +227,10 @@ class MovementMixin:
                 self.add_event("CHASM_PROMPT", {"x": new_x, "y": new_y}, floor_id=floor_id, player_id=entity.id)
             _reject_move()
             return
+
+        if tile == TileType.DOOR and floor_id == 20 and (new_x, new_y) == (7, 37):
+            from app.engine.game.ai_dwarf_king import _maybe_initiate_dwarf_king_door_prompt
+            _maybe_initiate_dwarf_king_door_prompt(self, entity, floor, new_x, new_y)
 
         if not floor.flags or not (floor.flags.passable[new_y][new_x] or floor.flags.avoid[new_y][new_x]):
             _reject_move()

@@ -208,6 +208,23 @@ export function createPlayerEventHandlers(): IGameEventHandler[] {
     {
       eventType: 'TELEPORT',
       handle(event: Extract<GameEvent, { type: 'TELEPORT' }>, ctx: GameEventContext) {
+        if (event.data.mob) {
+          // ScrollOfTeleportation.appear(mob, cell): snap there, light burst, TELEPORT sound.
+          const mob = ctx.entities.getMob(event.data.mob);
+          if (mob) {
+            mob.renderPos = { x: event.data.x, y: event.data.y };
+            mob.animStartPos = { x: event.data.x, y: event.data.y };
+            mob.targetPos = { x: event.data.x, y: event.data.y };
+            mob.animStartTime = null;
+          }
+          if (ctx.world.isVisible(event.data.x, event.data.y)) {
+            ctx.audio.play('TELEPORT');
+            if (ctx.effects.particlesRef) {
+              spawnLight(ctx.effects.particlesRef, event.data.x * TILE_SIZE + TILE_SIZE / 2, event.data.y * TILE_SIZE + TILE_SIZE / 2);
+            }
+          }
+          return true;
+        }
         const pid = event.data.player;
         const isLocal = pid === ctx.myPlayerId;
         const fromVisible = ctx.world.isVisible(event.data.from_x, event.data.from_y);
@@ -535,7 +552,9 @@ export function createPlayerEventHandlers(): IGameEventHandler[] {
     {
       eventType: 'FLASH_SCREEN',
       handle(event: Extract<GameEvent, { type: 'FLASH_SCREEN' }>, ctx: GameEventContext) {
-        ctx.effects.flashScreen(event.data.duration || 350);
+        const light = event.data.light;
+        if (light === undefined) ctx.effects.flashScreen(event.data.duration || 350);
+        else ctx.effects.flashScreen(event.data.duration || 1000, event.data.color, light);
         return true;
       },
     },

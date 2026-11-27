@@ -24,7 +24,7 @@ class BombsMixin:
             if isinstance(item, Noisemaker) and item.armed:
                 self._noisemaker_tick(floor, floor_id, item)
                 continue
-            item.fuse_ticks -= 1
+            item.fuse_ticks -= self.sim_ticks
             if item.fuse_ticks > 0:
                 continue
             if isinstance(item, Noisemaker) and not item.armed:
@@ -49,7 +49,7 @@ class BombsMixin:
         if occupied:
             self.explode_bomb(floor, floor_id, bomb)
             return
-        bomb.fuse_ticks -= 1
+        bomb.fuse_ticks -= self.sim_ticks
         if bomb.fuse_ticks <= 0:
             bomb.fuse_ticks = 120
             self.add_event("PLAY_SOUND", {"sound": "ALERT"}, floor_id=floor_id)

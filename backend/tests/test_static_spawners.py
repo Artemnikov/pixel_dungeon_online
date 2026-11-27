@@ -10,21 +10,10 @@ from app.engine.game.constants import GAME_TURN_TICKS
 from app.engine.game.floor_state import FloorState
 from app.engine.manager import GameInstance
 
+from conftest import make_game_with_floors, make_open_floor, partial
 
-def make_floor(floor_id=15, w=10, h=10):
-    grid = [[TileType.FLOOR for _ in range(w)] for _ in range(h)]
-    floor = FloorState(floor_id=floor_id, grid=grid, rooms=[], mobs={}, items={}, region="halls")
-    floor.rebuild_flags()
-    floor.mob_limit = 99  # avoid respawn churn during the test
-    return floor
-
-
-def make_game(floor):
-    game = GameInstance("test-static-spawners")
-    game.players = {}
-    game.floors[floor.floor_id] = floor
-    game.depth = floor.floor_id
-    return game
+make_floor = partial(make_open_floor, floor_id=15, mob_limit=99)
+make_game = partial(make_game_with_floors, game_id="test-static-spawners")
 
 
 # ---------------------------------------------------------------------------
@@ -234,8 +223,8 @@ def test_pylon_death_desupercharges_dm300_without_chain_activation():
     floor.mobs[pylon_b.id] = pylon_b
 
     # Kill pylon_a via the bleed-death path, which calls handle_mob_death.
-    pylon_a.bleed_turns = 1
-    pylon_a.bleed_amount = 5
+    from app.engine.game.bleeding import apply_bleeding
+    apply_bleeding(pylon_a, 50)
 
     player = game.add_player("p1", "Hero")
     player.floor_id = floor.floor_id

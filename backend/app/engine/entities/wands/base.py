@@ -7,6 +7,7 @@ from typing import ClassVar, List, Optional
 
 from app.engine.entities.base import *  # noqa: F401,F403
 from app.engine.entities.base import _charm_value
+from app.engine.entities.buffs import is_rooted
 
 
 class ZapContext:
@@ -55,7 +56,7 @@ def knockback_char(floor, char, dx, dy, power, damage_on_collision=True,
     props = getattr(char, "properties", None) or []
     if "IMMOVABLE" in props:
         return char.pos.x, char.pos.y
-    if char.has_buff("rooted"):
+    if is_rooted(char):
         return char.pos.x, char.pos.y
     if getattr(char, "type", None) == EntityType.BOSS:
         power = (power + 1) // 2

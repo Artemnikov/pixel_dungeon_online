@@ -7,6 +7,7 @@ export default function useModalState() {
   const [ctxMenu, setCtxMenu] = useState(null);
   const [shopWindow, setShopWindow] = useState(null);
   const [impWindow, setImpWindow] = useState(null);
+  const [ratKingWindow, setRatKingWindow] = useState(null);
   const [ghostWindow, setGhostWindow] = useState(null);
   const [wandmakerWindow, setWandmakerWindow] = useState(null);
   const [scrollPickerData, setScrollPickerData] = useState(null);
@@ -43,6 +44,7 @@ export default function useModalState() {
   // Socket callbacks for useGameSocket
   const onShopOpen = ({ npc, stock, gold: shopGold }) => setShopWindow({ npc, stock, gold: shopGold });
   const onImpDialogue = ({ npc, text, can_claim, tokens }) => setImpWindow({ npc, text, canClaim: can_claim, tokens });
+  const onRatKingDialogue = ({ npc }) => setRatKingWindow({ npc });
   const [ghostGearData, setGhostGearData] = useState(null);
   const onGhostDialogue = ({ npc, text, can_claim, weapon, armor }) =>
     setGhostWindow({ npc, text, canClaim: can_claim, weapon, armor });
@@ -69,6 +71,33 @@ export default function useModalState() {
   const dismissChasmPrompt = () => {
     chasmSuppressUntilRef.current = Date.now() + 2000;
     setChasmPrompt(null);
+  };
+
+  const [tenguPrompt, setTenguPrompt] = useState(null);
+  const [tenguPartyStatus, setTenguPartyStatus] = useState(null);
+  const onTenguJoinPrompt = (data) => setTenguPrompt(data);
+  const onTenguPartyStatus = (data) => setTenguPartyStatus(data);
+  const onTenguPromptClose = () => {
+    setTenguPrompt(null);
+    setTenguPartyStatus(null);
+  };
+
+  const [dwarfKingPrompt, setDwarfKingPrompt] = useState(null);
+  const [dwarfKingPartyStatus, setDwarfKingPartyStatus] = useState(null);
+  const onDwarfKingJoinPrompt = (data) => setDwarfKingPrompt(data);
+  const onDwarfKingPartyStatus = (data) => setDwarfKingPartyStatus(data);
+  const onDwarfKingPromptClose = () => {
+    setDwarfKingPrompt(null);
+    setDwarfKingPartyStatus(null);
+  };
+
+  const [yogPrompt, setYogPrompt] = useState(null);
+  const [yogPartyStatus, setYogPartyStatus] = useState(null);
+  const onYogJoinPrompt = (data) => setYogPrompt(data);
+  const onYogPartyStatus = (data) => setYogPartyStatus(data);
+  const onYogPromptClose = () => {
+    setYogPrompt(null);
+    setYogPartyStatus(null);
   };
 
   const [alchemyOpen, setAlchemyOpen] = useState(false);
@@ -101,6 +130,7 @@ export default function useModalState() {
     ctxMenu, setCtxMenu,
     shopWindow, setShopWindow,
     impWindow, setImpWindow,
+    ratKingWindow, setRatKingWindow,
     ghostWindow, setGhostWindow,
     wandmakerWindow, setWandmakerWindow,
     ghostGearData, setGhostGearData,
@@ -124,6 +154,7 @@ export default function useModalState() {
     openQuickslotPicker,
     onShopOpen,
     onImpDialogue,
+    onRatKingDialogue,
     onGhostDialogue,
     onWandmakerDialogue,
     onImbueWand,
@@ -138,6 +169,21 @@ export default function useModalState() {
     chasmPrompt, setChasmPrompt,
     onChasmPrompt,
     dismissChasmPrompt,
+    tenguPrompt, setTenguPrompt,
+    tenguPartyStatus, setTenguPartyStatus,
+    onTenguJoinPrompt,
+    onTenguPartyStatus,
+    onTenguPromptClose,
+    dwarfKingPrompt, setDwarfKingPrompt,
+    dwarfKingPartyStatus, setDwarfKingPartyStatus,
+    onDwarfKingJoinPrompt,
+    onDwarfKingPartyStatus,
+    onDwarfKingPromptClose,
+    yogPrompt, setYogPrompt,
+    yogPartyStatus, setYogPartyStatus,
+    onYogJoinPrompt,
+    onYogPartyStatus,
+    onYogPromptClose,
     alchemyOpen, setAlchemyOpen,
     alchemyPreview, setAlchemyPreview,
     alchemyBrewed, setAlchemyBrewed,

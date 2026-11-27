@@ -13,6 +13,7 @@ const ABILITY_COSTS = {
   ascended_form: 40,
   trinity: 33,
   power_of_many: 50,
+  ratmogrify: 50,
 };
 
 export default function AbilityButton({

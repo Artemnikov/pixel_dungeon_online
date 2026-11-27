@@ -1,7 +1,7 @@
 # Copyright (C) 2026 ArtemNikov
 #
 import random
-from typing import List, Optional, TYPE_CHECKING
+from typing import List, Optional, TYPE_CHECKING, ClassVar
 
 from pydantic import Field
 
@@ -17,6 +17,8 @@ if TYPE_CHECKING:
 class Tengu(MobEntity):
     type: str = "boss"
     name: str = "Tengu"
+    properties: List[str] = ["BOSS"]
+    melee_reach: ClassVar[int] = 6
     hp: int = 200
     max_hp: int = 200
     attack_skill: int = 20
@@ -161,6 +163,7 @@ class Thief(MobEntity):
 
 class DM100(MobEntity):
     name: str = "DM-100"
+    holds_at_range: ClassVar[bool] = True
     hp: int = 20
     max_hp: int = 20
     attack_skill: int = 11
@@ -301,6 +304,7 @@ class ArmoredBrute(Brute):
 
 class Shaman(MobEntity):
     name: str = "Shaman"
+    holds_at_range: ClassVar[bool] = True
     hp: int = 35
     max_hp: int = 35
     attack_skill: int = 18

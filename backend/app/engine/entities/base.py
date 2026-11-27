@@ -21,6 +21,25 @@ class EntityType:
 class Faction:
     PLAYER = "player"
     DUNGEON = "dungeon"
+    NEUTRAL = "neutral"
+
+
+def factions_hostile(fa: str, fb: str) -> bool:
+    """SPD alignment rule: NEUTRAL characters neither pick nor are picked as
+    enemies; otherwise characters of different factions are hostile."""
+    if fa == Faction.NEUTRAL or fb == Faction.NEUTRAL:
+        return False
+    return fa != fb
+
+
+def is_hostile(a, b) -> bool:
+    return factions_hostile(a.faction, b.faction)
+
+
+def is_boss_or_miniboss(ch) -> bool:
+    """SPD `Char.hasProp(ch, BOSS) || Char.hasProp(ch, MINIBOSS)`."""
+    props = getattr(ch, "properties", None) or ()
+    return "BOSS" in props or "MINIBOSS" in props
 
 class Position(BaseModel):
     x: int
@@ -44,8 +63,28 @@ def find_mob_at(floor: Any, x: Any, y: Any) -> Optional[Any]:
 
 
 def normal_int_range(lo: int, hi: int) -> int:
-    """SPD Random.NormalIntRange: mean-biased average of two uniforms."""
-    return round((_random.randint(lo, hi) + _random.randint(lo, hi)) / 2)
+    """SPD Random.NormalIntRange: `min + (int)((Float() + Float()) * (max - min + 1) / 2f)`."""
+    return lo + int((_random.random() + _random.random()) * (hi - lo + 1) / 2.0)
+
+
+def normal_float(lo: float, hi: float) -> float:
+    """SPD Random.NormalFloat: triangular float in [lo, hi)."""
+    span = hi - lo
+    return lo + (_random.random() * span + _random.random() * span) / 2.0
+
+
+def spd_chances(weights) -> int:
+    """SPD Random.chances: weighted index, negatives count as 0, -1 if all zero."""
+    total = sum(max(0.0, float(w)) for w in weights)
+    if total <= 0:
+        return -1
+    value = _random.random() * total
+    acc = 0.0
+    for i, w in enumerate(weights):
+        acc += max(0.0, float(w))
+        if value < acc:
+            return i
+    return -1
 
 
 def consume_backpack_item(player, item, detach_all: bool = False):
@@ -81,6 +120,8 @@ def _detach_invis(entity: Entity) -> None:
 def _detach_bleed(entity: Entity) -> None:
     entity.bleed_amount = 0
     entity.bleed_turns = 0
+    entity.bleeding_level = 0.0
+    entity.bleeding_ticks = 0
 
 
 def _detach_ooze(entity: Entity) -> None:
@@ -151,6 +192,16 @@ class Entity(BaseModel):
     # Burning DoT: accumulating tick timer (seconds) for ~1s burn intervals
     burning_accum: float = 0.0
     burning_total_seconds: float = 0.0  # total time burning (for inventory destruction)
+
+    # SPD Bleeding: the buff's float level (decays every turn) and the ticks
+    # accumulated toward its next once-per-turn act. See game/bleeding.py.
+    bleeding_level: float = 0.0
+    bleeding_ticks: int = 0
+    # SPD Viscosity.DeferedDamage: pooled damage, released 10% per turn after
+    # a one-turn postpone when fresh. See game/deferred_damage.py.
+    deferred_damage: int = 0
+    deferred_ticks: int = 0
+    deferred_wait: float = 0.0
 
     # Poison / Corrosion DoT: accumulating tick timer (seconds) for ~1s intervals
     poison_accum: float = 0.0
@@ -249,6 +300,11 @@ class Entity(BaseModel):
     def get_damage_max(self) -> int:
         return self.damage_max
 
+    def adjust_damage_roll(self, roll: int) -> int:
+        """Hook on the rolled base damage (SPD `damageRoll()` overrides that
+        scale their result); identity by default."""
+        return roll
+
     def get_surprise_damage_floor(self) -> float:
         return 0.0
 
@@ -301,6 +357,15 @@ class Entity(BaseModel):
         existing = self.get_shield(name)
         if existing:
             existing.amount += amount
+            return existing
+        s = Shield(name=name, amount=amount, priority=priority, decay=decay)
+        self.shields.append(s)
+        return s
+
+    def set_shield(self, name: str, amount: int, priority: int = 0, decay: int = 1) -> Shield:
+        existing = self.get_shield(name)
+        if existing:
+            existing.amount = amount
             return existing
         s = Shield(name=name, amount=amount, priority=priority, decay=decay)
         self.shields.append(s)

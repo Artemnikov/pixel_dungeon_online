@@ -154,7 +154,17 @@ T4_ABILITY_TALENTS: Dict[str, str] = {
     Talent.BEAMING_RAY: ArmorAbilityType.POWER_OF_MANY,
     Talent.LIFE_LINK: ArmorAbilityType.POWER_OF_MANY,
     Talent.STASIS: ArmorAbilityType.POWER_OF_MANY,
+    # Ratmogrify (any class)
+    Talent.RATSISTANCE: ArmorAbilityType.RATMOGRIFY,
+    Talent.RATLOMACY: ArmorAbilityType.RATMOGRIFY,
+    Talent.RATFORCEMENTS: ArmorAbilityType.RATMOGRIFY,
 }
+
+# Armor-ability-specific T4 talents any class may take (they ride on a
+# class-agnostic ability rather than on a class's own ability list).
+UNIVERSAL_ABILITY_T4_TALENTS: frozenset = frozenset({
+    Talent.RATSISTANCE, Talent.RATLOMACY, Talent.RATFORCEMENTS,
+})
 
 # Armor abilities a class may choose from, by class_type.
 CLASS_ARMOR_ABILITIES: Dict[str, tuple[str, ...]] = {

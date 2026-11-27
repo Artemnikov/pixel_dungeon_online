@@ -222,6 +222,12 @@ class WandmakerClaimReward(_ClientMessageBase):
     choice: Literal["wand1", "wand2"]
 
 
+class RatKingCrownChoice(_ClientMessageBase):
+    type: Literal["RAT_KING_CROWN_CHOICE"]
+    npc_id: str
+    accept: bool
+
+
 class ChooseImbueWand(_ClientMessageBase):
     type: Literal["CHOOSE_IMBUE_WAND"]
     staff_id: str
@@ -366,6 +372,36 @@ class SetClericQuickSpell(_ClientMessageBase):
     spell: Optional[str] = None
 
 
+class TenguJoinResponse(_ClientMessageBase):
+    type: Literal["TENGU_JOIN_RESPONSE"]
+    approve: bool
+
+
+class TenguStartDecision(_ClientMessageBase):
+    type: Literal["TENGU_START_DECISION"]
+    action: Literal["start_without", "wait"]
+
+
+class DwarfKingJoinResponse(_ClientMessageBase):
+    type: Literal["DWARF_KING_JOIN_RESPONSE"]
+    approve: bool
+
+
+class DwarfKingStartDecision(_ClientMessageBase):
+    type: Literal["DWARF_KING_START_DECISION"]
+    action: Literal["start_without", "wait"]
+
+
+class YogJoinResponse(_ClientMessageBase):
+    type: Literal["YOG_JOIN_RESPONSE"]
+    approve: bool
+
+
+class YogStartDecision(_ClientMessageBase):
+    type: Literal["YOG_START_DECISION"]
+    action: Literal["start_without", "wait"]
+
+
 ClientMessage = Annotated[
     Union[
         Ping,
@@ -398,6 +434,12 @@ ClientMessage = Annotated[
         UseMonkAbility,
         CastClericSpell,
         SetClericQuickSpell,
+        TenguJoinResponse,
+        TenguStartDecision,
+        DwarfKingJoinResponse,
+        DwarfKingStartDecision,
+        YogJoinResponse,
+        YogStartDecision,
         MetamorphChoose,
         MetamorphReplace,
         AdminTeleport,
@@ -410,6 +452,7 @@ ClientMessage = Annotated[
         ImpClaimReward,
         GhostClaimReward,
         WandmakerClaimReward,
+        RatKingCrownChoice,
         SelectScrollTarget,
         SelectStoneTarget,
         StoneIntuitionChooseItem,

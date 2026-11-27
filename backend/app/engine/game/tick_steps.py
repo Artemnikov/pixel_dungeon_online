@@ -16,7 +16,9 @@ from app.engine.entities.buffs import get_buff, process_buffs
 from app.engine.entities.items.consumables import Gold
 from app.engine.entities.player import CharacterClass, Player
 from app.engine.entities.talent_enum import Talent
+from app.engine.game.bleeding import tick_bleeding
 from app.engine.game.blobs import tick_blob_areas
+from app.engine.game.deferred_damage import tick_deferred_damage
 from app.engine.game.constants import TICKS_PER_TURN
 from app.engine.systems.loot import roll_drops
 
@@ -27,7 +29,10 @@ def run_buff_upkeep(game, entity, floor, floor_id: int, is_player: bool, dt: flo
     removed = process_buffs(entity.buffs, dt)
     if game._process_removed_buffs(entity, removed, floor=floor, floor_id=floor_id, is_player=is_player):
         return False
-    game._apply_bleed(entity)
+    tick_bleeding(game, entity, floor_id)
+    tick_deferred_damage(game, entity, floor_id)
+    if not entity.is_alive:
+        return False
     if not is_player:
         game._apply_sungrass_heal(entity, dt, floor_id=floor_id)
     return True
@@ -37,9 +42,16 @@ def run_blob_round_upkeep(game, active_ids) -> None:
     if not active_ids:
         return
     active_floors = {fid: game.floors[fid] for fid in active_ids}
-    blob_events = tick_blob_areas(active_floors, game.players)
+    blob_events = tick_blob_areas(active_floors, game.players, game.sim_unit, game.sim_ticks)
     for ev in blob_events:
-        game.add_event(ev["type"], ev["data"],
+        data = ev.get("data", {})
+        if ev["type"] == "DAMAGE" and data.pop("_pylon_energy_hit", False):
+            dm_supercharged = data.pop("_dm300_supercharged", False)
+            if hasattr(game, "boss_scores") and len(game.boss_scores) > 2:
+                game.boss_scores[2] -= 200
+            if dm_supercharged:
+                game.qualified_for_boss_challenge = False
+        game.add_event(ev["type"], data,
                        floor_id=ev.get("_floor_id"),
                        source_player_id=ev.get("_source_player_id"))
     for ev in blob_events:

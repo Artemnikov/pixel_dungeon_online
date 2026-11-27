@@ -5,14 +5,7 @@ from app.engine.entities.base import Position
 from app.engine.entities.mobs import Rat
 from app.engine.manager import GameInstance
 
-
-def _open_room_game():
-    game = GameInstance("test-game")
-    game.players = {}
-    game.grid = [[TileType.FLOOR for _ in range(10)] for _ in range(10)]
-    game._get_or_create_floor(game.depth).rebuild_flags()
-    game.mobs = {}
-    return game
+from conftest import make_open_game as _open_room_game
 
 
 def test_afk_player_does_not_block_another_player():

@@ -11,8 +11,11 @@ import {
   spawnBombBlast,
   spawnDust,
   spawnCritSparkle,
+  spawnRockSpecks,
+  spawnHearts,
 } from '../../rendering/draw/particles';
 import { regionForDepth } from '../../rendering/regions';
+import { forceAlertMob } from '../../rendering/draw/mobs';
 import type { GameEvent } from '../../types/contract';
 import type { GameEventContext, IGameEventHandler } from './IGameEventHandler';
 
@@ -196,12 +199,44 @@ export function createWorldEventHandlers(): IGameEventHandler[] {
     {
       eventType: 'MAP_PATCH',
       handle(event: Extract<GameEvent, { type: 'MAP_PATCH' }>, ctx: GameEventContext) {
+        if (event.data?.custom_tiles) {
+          ctx.world.patchCustomTiles(event.data.custom_tiles);
+        }
         if (event.data?.tiles) {
           ctx.world.patchGrid(event.data.tiles, (x, y) => {
             if (ctx.effects.particlesRef) {
               spawnSewerBarrelBurst(ctx.effects.particlesRef, x * TILE_SIZE + TILE_SIZE / 2, y * TILE_SIZE + TILE_SIZE / 2);
             }
           });
+          if (ctx.effects.particlesRef) {
+            for (const t of event.data.tiles) {
+              if (!t.fx || !ctx.world.isVisible(t.x, t.y)) continue;
+              const cx = t.x * TILE_SIZE + TILE_SIZE / 2;
+              const cy = t.y * TILE_SIZE + TILE_SIZE / 2;
+              if (t.fx === 'rock') {
+                spawnRockSpecks(ctx.effects.particlesRef, cx, cy, 10);
+              } else if (t.fx === 'blast') {
+                spawnBombBlast(ctx.effects.particlesRef, cx, cy, 10);
+              }
+            }
+          }
+        }
+        return true;
+      },
+    },
+    {
+      eventType: 'MOB_NOTICE',
+      handle(event: Extract<GameEvent, { type: 'MOB_NOTICE' }>) {
+        forceAlertMob(event.data.mob);
+        return true;
+      },
+    },
+    {
+      eventType: 'RATLOMACY',
+      handle(event: Extract<GameEvent, { type: 'RATLOMACY' }>, ctx: GameEventContext) {
+        const { x, y } = event.data;
+        if (ctx.world.isVisible(x, y) && ctx.effects.particlesRef) {
+          spawnHearts(ctx.effects.particlesRef, x * TILE_SIZE + TILE_SIZE / 2, y * TILE_SIZE + TILE_SIZE / 2);
         }
         return true;
       },

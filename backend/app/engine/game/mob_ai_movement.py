@@ -10,7 +10,7 @@ import math
 import random
 import time
 
-from app.engine.entities.base import Position
+from app.engine.entities.base import Faction, Position
 from app.engine.entities.buffs import is_frozen
 from app.engine.entities.mobs import CrystalMimic, Goo
 from app.engine.entities.player import Difficulty, Player
@@ -18,6 +18,7 @@ from app.engine.entities.wandmaker_quest import RotLasher
 from app.engine.game.constants import AUTO_MOVE_INTERVAL
 from app.engine.game.floor_state import FloorState
 from app.engine.game.ai_goo import _goo_seal_entrance
+from app.engine.game.ai_spd_common import mob_speed
 
 
 class MobAIMovementMixin:
@@ -26,7 +27,7 @@ class MobAIMovementMixin:
         if move_times is None:
             move_times = self._mob_move_times = {}
         now = time.time()
-        move_interval = 2 * AUTO_MOVE_INTERVAL / max(0.1, mob.speed)
+        move_interval = 2 * AUTO_MOVE_INTERVAL / max(0.1, mob_speed(mob))
         if mob.has_buff("slow") or mob.has_buff("chill"):
             move_interval *= 2
         if mob.has_buff("paralysis") or mob.has_buff("spectator_freeze"):
@@ -46,6 +47,9 @@ class MobAIMovementMixin:
         # mirror image / ghost hero attacks), chase that target instead
         # of scanning for the nearest player.
         target_player = None
+        if mob.faction == Faction.NEUTRAL:
+            # SPD Mob.chooseEnemy(): a NEUTRAL mob never picks an enemy.
+            mob.aggro_target_id = None
         aggro_id = getattr(mob, "aggro_target_id", None)
         if aggro_id:
             aggro_target = floor.mobs.get(aggro_id)
@@ -182,6 +186,16 @@ class MobAIMovementMixin:
 
         dist = self._get_distance(mob.pos, target_player.pos) if target_player else float("inf")
         atk_range = getattr(mob, "attack_range", 1)
+        # SPD Mob.canAttack(): melee only reaches adjacent cells (or a
+        # mob's own reach, e.g. GnollExile). `attack_range` is the reach of
+        # a ported ranged ability, which its ai_* module performs; a mob
+        # that `holds_at_range` stands its ground while that ability has a
+        # target, and a mob that `owns_attacks` never bump-attacks here.
+        melee_reach = getattr(mob, "melee_reach", 1)
+        can_melee = (target_player is not None and dist <= melee_reach
+                     and not getattr(mob, "owns_attacks", False))
+        holds = (getattr(mob, "holds_at_range", False) and target_player is not None
+                 and target_in_los and dist <= atk_range)
         is_passive = getattr(mob, "ai_state", "") == "passive"
 
         if is_passive and mob.hp >= mob.max_hp:
@@ -209,7 +223,7 @@ class MobAIMovementMixin:
             mob.hp = min(mob.max_hp, mob.hp + 5)
 
         if "IMMOVABLE" in getattr(mob, "properties", []):
-            if target_player and dist <= atk_range:
+            if can_melee:
                 if not mob.engaged:
                     mob.engaged = True
                     mob.last_attack_time = time.time() - max(
@@ -221,8 +235,7 @@ class MobAIMovementMixin:
                 mob.engaged = False
             return
 
-        in_attack_range = target_player is not None and dist <= atk_range
-        if in_attack_range:
+        if can_melee:
             if not mob.engaged:
                 mob.engaged = True
                 mob.last_attack_time = time.time() - max(
@@ -232,11 +245,14 @@ class MobAIMovementMixin:
             mob.engaged = False
 
         if self.difficulty == Difficulty.EASY:
-            if target_player and dist <= atk_range:
+            if can_melee:
                 dx, dy = target_player.pos.x - mob.pos.x, target_player.pos.y - mob.pos.y
                 self.move_entity(mob.id, dx, dy)
+            elif holds:
+                pass
             elif search_pos and can_move:
-                step = self._get_next_step_to(mob.pos, search_pos, floor_id=floor_id, flying=mob.flying)
+                step = self._get_next_step_to(mob.pos, search_pos, floor_id=floor_id, flying=mob.flying,
+                                                  large=getattr(mob, "large_pathing", False))
                 if step:
                     move_times[mob.id] = now
                     self.move_entity(mob.id, step[0], step[1])
@@ -250,20 +266,24 @@ class MobAIMovementMixin:
                     self.move_entity(mob.id, *step)
 
         elif self.difficulty == Difficulty.NORMAL:
-            if target_player and dist <= atk_range:
+            if can_melee:
                 dx, dy = target_player.pos.x - mob.pos.x, target_player.pos.y - mob.pos.y
                 self.move_entity(mob.id, dx, dy)
+            elif holds:
+                pass
             elif target_player and target_in_los:
                 if can_move:
-                    step = self._get_next_step_to(mob.pos, target_player.pos, floor_id=floor_id, flying=mob.flying)
-                    if step and (dist > atk_range or not any(
+                    step = self._get_next_step_to(mob.pos, target_player.pos, floor_id=floor_id, flying=mob.flying,
+                                                      large=getattr(mob, "large_pathing", False))
+                    if step and (dist > melee_reach or not any(
                         m.is_alive and m.pos.x == mob.pos.x + step[0] and m.pos.y == mob.pos.y + step[1]
                         for m in floor.mobs.values() if m.id != mob.id
                     )):
                         move_times[mob.id] = now
                         self.move_entity(mob.id, step[0], step[1])
             elif search_pos and can_move:
-                step = self._get_next_step_to(mob.pos, search_pos, floor_id=floor_id, flying=mob.flying)
+                step = self._get_next_step_to(mob.pos, search_pos, floor_id=floor_id, flying=mob.flying,
+                                                  large=getattr(mob, "large_pathing", False))
                 if step:
                     move_times[mob.id] = now
                     self.move_entity(mob.id, step[0], step[1])
@@ -277,17 +297,21 @@ class MobAIMovementMixin:
                     self.move_entity(mob.id, *step)
 
         elif self.difficulty == Difficulty.HARD:
-            if target_player and dist <= atk_range:
+            if can_melee:
                 dx, dy = target_player.pos.x - mob.pos.x, target_player.pos.y - mob.pos.y
                 self.move_entity(mob.id, dx, dy)
+            elif holds:
+                pass
             elif target_player and dist < 20:
                 if can_move:
-                    step = self._get_next_step_to(mob.pos, target_player.pos, floor_id=floor_id, flying=mob.flying)
+                    step = self._get_next_step_to(mob.pos, target_player.pos, floor_id=floor_id, flying=mob.flying,
+                                                      large=getattr(mob, "large_pathing", False))
                     if step:
                         move_times[mob.id] = now
                         self.move_entity(mob.id, step[0], step[1])
             elif search_pos and can_move:
-                step = self._get_next_step_to(mob.pos, search_pos, floor_id=floor_id, flying=mob.flying)
+                step = self._get_next_step_to(mob.pos, search_pos, floor_id=floor_id, flying=mob.flying,
+                                                  large=getattr(mob, "large_pathing", False))
                 if step:
                     move_times[mob.id] = now
                     self.move_entity(mob.id, step[0], step[1])

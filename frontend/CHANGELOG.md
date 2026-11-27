@@ -5,6 +5,40 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.3.0] - 2026-11-27
+
+### Added
+- **Yog-Dzewa Fight (SPD port)**: 1:1 port of Yog-Dzewa, its six fists and the Halls boss arena on Floor 25, running on the SPD act clock in both room modes. Includes telegraphed death-ray beams (more beams as Yog loses HP), the summon loop, invulnerability and HP-floor phases that add fists at the altar, and every fist's own abilities (Burning, Soiled, Rotting, Rusted, Bright and Dark Fist). Yog spawns when the arena seals; entering prompts other players on the floor to join, decliners are sent back to Floor 24 and late arrivals are locked in. The won arena resets in public rooms.
+- **Yog-Dzewa Visuals & Audio**: SPD targeted-cell markers, death-ray beams, fist bolts and light rays, altar shadow bursts, spawn tweens, seal flames, Yog/fist/Ripper sprites and death animations, a boss bar that stays on Yog while fists live, silence on Floor 25 until Yog notices someone, and the finale theme after victory.
+- **Eye, Scorpio & Ripper Demon (SPD ports)**: Evil Eyes charge their death gaze and fire along the aimed line, hitting everything in its path; Scorpios attack only from range and step back to keep their distance; Ripper Demons telegraph and perform their bleeding leap.
+- **Rat King & Ratmogrify**: Talking to the Rat King wakes him; with the Dwarf King's crown and worn armor he offers to trade it for the **Ratmogrify** armor ability (with an option to read about it first). Ratmogrify turns an enemy into a rat for 6 turns (bosses, allies and rats are immune), with its Tier 4 talents Ratsistance, Ratlomacy and Ratforcements; Heroic Energy becomes Ratroic Energy. Rats seen by a Ratmogrify hero turn neutral.
+- **Dwarf King Fight (SPD port completed)**: Phase 1 Life Link (multi-link damage sharing) and Teleport Subject with SPD positioning; phase 2 turn-by-turn summon waves (normal and Stronger Bosses), regenerating barrier, and KingDamager barrier damage (including overflow to HP and corrupted/charmed minions); phase 3 summons every turn with Viscosity deferred-damage bleed. Summon pedestals now telegraph inbound minions for the whole delay, and "invulnerable" / "deferred N" status text is shown.
+- **Dwarf King Party Prompt**: Entering the throne room with other players on Floor 20 prompts them to join the fight; participants are teleported into the arena.
+- **Dwarf King Idle Pacing (real-time)**: While the King is shielded and none of his minions are alive, his turn clock runs 4x faster, so players no longer stand around waiting for the next wave (turn-based mode is unchanged).
+- **DM-300 Fidelity Pass**: SPD ability cooldowns, toxic gas cone line-of-sight, supercharged wall breaking, arena sealing displacement, and supercharge yell.
+- **Tengu Boss Party Prompt & Teleport**: Unlocking Tengu's cell door on Floor 10 prompts all active players on the floor to join. The initiator can choose to start without decliners or wait. Participating players are teleported horizontally across row y=24 inside the cell (with trap clearance underfoot) while non-participating players remain spectators outside.
+
+### Changed
+- **World Systems Run on SPD Turns**: Fire, gases, pylon energy, hallowed ground, foliage, burning, poison, corrosion and ooze now advance once per SPD turn in both room modes (fire previously spread every tick in real time). Bleeding is a port of SPD's Bleeding, and Ooze uses SPD's depth-scaled damage.
+- **Turn-Based Mob Timing**: Each mob is charged the SPD time its turn spent, so speed, attack delay and multi-turn actions now matter in turn-based rooms (a speed-2 mob acts twice per round).
+- **Mob Melee & Casters**: Mobs melee only within reach (adjacent, Gnoll Exile 2); Warlocks, Shamans and DM-100s hold position while they have a target to zap instead of bump-attacking from range.
+- **Light & Roots**: A hero with Light sees at least 6 tiles even on dark floors; rooting is handled uniformly, so Soiled Fist and Duelist roots now actually stop movement and rooted mobs can no longer step.
+- **Random Distribution**: `NormalIntRange` now uses SPD's exact formula.
+
+### Fixed
+- **Melee Hit Sounds**: The attacker now hears the server's hit sound for every landed blow (with the weapon's own sound and pitch); misses play no hit sound, and surprise hits add SPD's strong-hit sound.
+- **Viscosity Glyph**: The deferred part of the damage is now actually dealt over time (it previously worked as plain damage reduction) and is shown as a buff.
+- **Evil Eye & Scorpio Loot**: Eyes drop dewdrops, a seed or a runestone, and Scorpios have a 50% chance to drop any potion except Healing and Strength, as in SPD.
+- **Yog-Dzewa Awareness**: Yog is always hunting (no sleeping icon), and the boss bar appears only once Yog has seen a hero.
+- **Turn-Based Boss Hazards**: Tengu's bombs now go off after 3 turns, DM-300's rockfall lands on the target's next action, and Tengu's blobs and bomb fuses advance correctly in turn-based rooms.
+- **Dwarf King Barrier Stalls**: Phase 2 minions killed by allies, armor abilities, wands, or any other cause now always damage the King's barrier, so the next wave can no longer stall.
+- **Dwarf King Turn-Based Pacing**: The King now acts once per round in turn-based mode (summons previously took hundreds of turns).
+- **Dwarf King Bugs**: King's Crown no longer drops twice; re-entering the arena after victory no longer re-locks the door; a paralysed King no longer uses abilities; King minions no longer drop loot or grant XP; killing the King with deferred damage now grants XP.
+- **Warlock Zap Effects**: Warlock bolts (and Wand of Corruption) now render as SPD's dark shadow-particle stream; `ZAP` plays the real zap sound once instead of a synthesized double beep; added the Degrade sound.
+- **Turn-Based Diagonal Movement**: Fixed chorded diagonal key handling in turn-based mode to reliably dispatch diagonal steps without unintended cardinal splitting.
+- **Generated Contract Types**: Generated entity types now mark every serialized field as required, so the regenerated `entities.ts` typechecks again.
+- Cleaned up turn-based test suites and assertions.
+
 ## [1.2.0] - 2026-10-08
 
 ### Added

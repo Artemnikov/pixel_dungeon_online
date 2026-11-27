@@ -165,6 +165,8 @@ class WandOfRegrowth(Wand):
             # Root chars
             for m in floor.mobs.values():
                 if m.is_alive and m.pos.x == cx and m.pos.y == cy:
+                    if getattr(m, "name", "") == "Dwarf King" and ctx.game is not None:
+                        ctx.game.qualified_for_boss_challenge = False
                     m.add_buff("roots", duration=4.0 * cpc, level=1)
             for p in (getattr(floor, "players", {}) or {}).values():
                 if getattr(p, "is_alive", True) and p.pos.x == cx and p.pos.y == cy:

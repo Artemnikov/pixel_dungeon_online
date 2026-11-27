@@ -41,6 +41,7 @@ from app.engine.entities.mobs.spawners import DemonSpawner, Pylon
 from app.engine.entities.mobs.npcs import (
     RatKing, Shopkeeper, Imp, GhostHeroMob, MirrorImage,
 )
+from app.engine.entities.mobs.transmog_rat import TransmogRat
 
 __all__ = [
     "MobEntity",
@@ -67,4 +68,5 @@ __all__ = [
     "Guardian", "Bee", "Sentry",
     "DemonSpawner", "Pylon",
     "RatKing", "Shopkeeper", "Imp", "GhostHeroMob", "MirrorImage",
+    "TransmogRat",
 ]

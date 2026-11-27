@@ -15,15 +15,9 @@ from app.engine.entities.player import Difficulty, Mob as MobEntity, Player
 from app.engine.manager import GameInstance
 from app.engine.systems.combat import resolve_melee_attack
 
+from conftest import make_open_game, partial
 
-def _open_game(w: int = 12, h: int = 12) -> GameInstance:
-    game = GameInstance("test-game")
-    game.players = {}
-    game.mobs = {}
-    game.grid = [[TileType.FLOOR for _ in range(w)] for _ in range(h)]
-    game._get_or_create_floor(game.depth).rebuild_flags()
-    game.difficulty = Difficulty.NORMAL
-    return game
+_open_game = partial(make_open_game, width=12, height=12, difficulty=Difficulty.NORMAL)
 
 
 def _grass_wall(game: GameInstance, x: int):

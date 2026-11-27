@@ -1,334 +1,218 @@
-import sys, os
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+# Copyright (C) 2026 ArtemNikov
+#
+"""Yog-Dzewa's six fists (YogFist.java) driven turn by turn."""
 
-import random
+import pytest
 
-from app.engine.entities.base import Faction, Position
-from app.engine.entities.player import Player
-from app.engine.entities.buffs import has_buff, get_buff
-from app.engine.entities.mobs import (
-    BurningFist, SoiledFist, RottingFist, RustedFist, BrightFist, DarkFist,
-)
 from app.engine.dungeon.constants import TileType
-from app.engine.game.floor_state import FloorState
-from app.engine.game.ai_yog_dzewa import _update_yog_fist
-from app.engine.manager import GameInstance
+from app.engine.entities.base import Position
+from app.engine.entities.buffs import add_buff, get_buff, is_rooted
+from app.engine.entities.mobs import (
+    BrightFist, BurningFist, DarkFist, RottingFist, RustedFist, SoiledFist,
+)
+from app.engine.game import ai_yog_fists
+from app.engine.game.ai_yog_fists import fist_act, fist_flush
+from app.engine.game.blobs import fire_volume_at
+from app.engine.turn.instance import TurnBasedGameInstance
+
+YOG = (10, 3)
 
 
-def make_floor(floor_id=15, w=10, h=10):
-    grid = [[TileType.FLOOR for _ in range(w)] for _ in range(h)]
-    floor = FloorState(floor_id=floor_id, grid=grid, rooms=[], mobs={}, items={}, region="caves")
+@pytest.fixture
+def room():
+    g = TurnBasedGameInstance("fists")
+    g.players = {}
+    floor = g._get_or_create_floor(25)
+    floor.grid = [[TileType.FLOOR for _ in range(24)] for _ in range(24)]
+    for i in range(24):
+        floor.grid[0][i] = floor.grid[23][i] = floor.grid[i][0] = floor.grid[i][23] = TileType.WALL
+    floor.mobs.clear()
+    floor.items.clear()
+    floor.traps.clear()
+    floor.blob_areas.clear()
+    floor.exit_pos = (10, 1)
     floor.rebuild_flags()
-    floor.mob_limit = 99
-    return floor
-
-
-def make_game(floor):
-    game = GameInstance("test-yog-fists")
-    game.players = {}
-    game.floors[floor.floor_id] = floor
-    game.depth = floor.floor_id
-    return game
-
-
-def make_player(x=5, y=5, defense_skill=0):
-    p = Player(id="p1", name="Hero", pos=Position(x=x, y=y), hp=100, max_hp=100,
-               attack=10, defense=0, floor_id=15)
-    p.defense_skill = defense_skill
-    return p
-
-
-def add_player(game, floor, player):
-    game.players[player.id] = player
-
-
-# ---------------------------------------------------------------------------
-# Ranged-vs-melee dispatch
-# ---------------------------------------------------------------------------
-
-def test_burning_fist_zaps_at_range_with_los_and_sets_cooldown(monkeypatch):
-    floor = make_floor()
-    game = make_game(floor)
-
-    fist = BurningFist(id="f1", pos=Position(x=2, y=2), faction=Faction.DUNGEON)
-    floor.mobs[fist.id] = fist
-    fist.ranged_cooldown = 0
-
-    target = make_player(x=5, y=2, defense_skill=0)
-    add_player(game, floor, target)
-
-    # Hit roll: acu (0.9*36) > df (0.1*0) -> hit. Then damage roll uses randint(8,16).
-    rand_calls = iter([0.9, 0.1] + [0.5] * 20)
-    monkeypatch.setattr(random, "random", lambda: next(rand_calls))
-    monkeypatch.setattr(random, "randint", lambda a, b: 10)
-    monkeypatch.setattr(random, "uniform", lambda a, b: 9.0)
-
-    consumed = _update_yog_fist(game, fist, floor, floor.floor_id)
-
-    assert consumed is True
-    assert fist.ranged_cooldown == 9.0
-    assert target.hp == 90
-    assert has_buff(target.buffs, "burning")
-
-
-def test_burning_fist_melees_when_adjacent_and_on_cooldown(monkeypatch):
-    floor = make_floor()
-    game = make_game(floor)
-
-    fist = BurningFist(id="f1", pos=Position(x=5, y=5), faction=Faction.DUNGEON)
-    floor.mobs[fist.id] = fist
-    fist.ranged_cooldown = 5  # on cooldown
-
-    target = make_player(x=6, y=5)  # adjacent
-    add_player(game, floor, target)
-
-    monkeypatch.setattr(random, "random", lambda: 0.5)
-
-    consumed = _update_yog_fist(game, fist, floor, floor.floor_id)
-
-    # Adjacent + cooldown>0 -> let generic melee/chase AI handle it.
-    assert consumed is False
-    assert fist.ranged_cooldown == 4  # decremented by one this tick
-
-
-# ---------------------------------------------------------------------------
-# Per-fist zap effects
-# ---------------------------------------------------------------------------
-
-def test_soiled_fist_zap_roots_on_hit(monkeypatch):
-    floor = make_floor()
-    game = make_game(floor)
-
-    fist = SoiledFist(id="f1", pos=Position(x=2, y=2), faction=Faction.DUNGEON)
-    floor.mobs[fist.id] = fist
-    fist.ranged_cooldown = 0
-
-    target = make_player(x=5, y=2, defense_skill=0)
-    add_player(game, floor, target)
-
-    rand_calls = iter([0.9, 0.1] + [0.5] * 20)  # hit
-    monkeypatch.setattr(random, "random", lambda: next(rand_calls))
-    monkeypatch.setattr(random, "uniform", lambda a, b: 9.0)
-
-    assert _update_yog_fist(game, fist, floor, floor.floor_id) is True
-    assert has_buff(target.buffs, "rooted")
-    assert target.hp == 100  # no direct damage
-
-
-def test_rotting_fist_zap_damage_and_ooze_chance(monkeypatch):
-    floor = make_floor()
-    game = make_game(floor)
-
-    fist = RottingFist(id="f1", pos=Position(x=2, y=2), faction=Faction.DUNGEON)
-    floor.mobs[fist.id] = fist
-    fist.ranged_cooldown = 0
-
-    target = make_player(x=5, y=2, defense_skill=0)
-    add_player(game, floor, target)
-
-    # random.random() sequence: hit-roll acu, hit-roll df, ooze-chance roll
-    rand_calls = iter([0.9, 0.1, 0.0])
-    monkeypatch.setattr(random, "random", lambda: next(rand_calls))
-    monkeypatch.setattr(random, "randint", lambda a, b: 15)
-    monkeypatch.setattr(random, "uniform", lambda a, b: 9.0)
-
-    assert _update_yog_fist(game, fist, floor, floor.floor_id) is True
-    assert target.hp == 85
-    assert has_buff(target.buffs, "ooze")
-
-
-def test_rusted_fist_zap_applies_cripple_no_damage(monkeypatch):
-    floor = make_floor()
-    game = make_game(floor)
-
-    fist = RustedFist(id="f1", pos=Position(x=2, y=2), faction=Faction.DUNGEON)
-    floor.mobs[fist.id] = fist
-    fist.ranged_cooldown = 0
-
-    target = make_player(x=5, y=2, defense_skill=0)
-    add_player(game, floor, target)
-
-    rand_calls = iter([0.9, 0.1])  # hit
-    monkeypatch.setattr(random, "random", lambda: next(rand_calls))
-    monkeypatch.setattr(random, "uniform", lambda a, b: 9.0)
-
-    assert _update_yog_fist(game, fist, floor, floor.floor_id) is True
-    assert has_buff(target.buffs, "cripple")
-    assert target.hp == 100
-
-
-def test_bright_fist_zap_damages_and_blinds(monkeypatch):
-    floor = make_floor()
-    game = make_game(floor)
-
-    fist = BrightFist(id="f1", pos=Position(x=2, y=2), faction=Faction.DUNGEON)
-    floor.mobs[fist.id] = fist
-
-    target = make_player(x=5, y=2, defense_skill=0)
-    add_player(game, floor, target)
-
-    rand_calls = iter([0.9, 0.1])  # hit
-    monkeypatch.setattr(random, "random", lambda: next(rand_calls))
-    monkeypatch.setattr(random, "randint", lambda a, b: 15)
-
-    # BrightFist always zaps when in LOS, regardless of distance/cooldown.
-    assert _update_yog_fist(game, fist, floor, floor.floor_id) is True
-    assert target.hp == 85
-    assert has_buff(target.buffs, "blindness")
-
-
-def test_dark_fist_zap_damages_and_blinds(monkeypatch):
-    floor = make_floor()
-    game = make_game(floor)
-
-    fist = DarkFist(id="f1", pos=Position(x=2, y=2), faction=Faction.DUNGEON)
-    floor.mobs[fist.id] = fist
-
-    target = make_player(x=5, y=2, defense_skill=0)
-    add_player(game, floor, target)
-
-    rand_calls = iter([0.9, 0.1])  # hit
-    monkeypatch.setattr(random, "random", lambda: next(rand_calls))
-    monkeypatch.setattr(random, "randint", lambda a, b: 12)
-
-    assert _update_yog_fist(game, fist, floor, floor.floor_id) is True
-    assert target.hp == 88
-    assert has_buff(target.buffs, "blindness")
-
-
-def test_burning_fist_zap_miss(monkeypatch):
-    floor = make_floor()
-    game = make_game(floor)
-
-    fist = BurningFist(id="f1", pos=Position(x=2, y=2), faction=Faction.DUNGEON)
-    floor.mobs[fist.id] = fist
-    fist.ranged_cooldown = 0
-
-    target = make_player(x=5, y=2, defense_skill=999)
-    add_player(game, floor, target)
-
-    # acu (low) < df (high) -> miss
-    rand_calls = iter([0.0, 0.9] + [0.5] * 20)
-    monkeypatch.setattr(random, "random", lambda: next(rand_calls))
-    monkeypatch.setattr(random, "uniform", lambda a, b: 9.0)
-
-    assert _update_yog_fist(game, fist, floor, floor.floor_id) is True
-    assert target.hp == 100
-    assert not has_buff(target.buffs, "burning")
-    assert fist.ranged_cooldown == 9.0
-
-
-# ---------------------------------------------------------------------------
-# RustedFist damage deferral / gradual release / death
-# ---------------------------------------------------------------------------
-
-def test_rusted_fist_defers_damage_and_releases_gradually(monkeypatch):
-    floor = make_floor()
-    game = make_game(floor)
-
-    fist = RustedFist(id="f1", pos=Position(x=2, y=2), faction=Faction.DUNGEON)
-    floor.mobs[fist.id] = fist
-
-    dealt = fist.take_damage(50)
-    assert dealt == 0
-    assert fist.hp == 300  # no immediate HP loss
-    assert fist.viscosity_stacks == 50
-
-    # No target -> the dispatcher still releases viscosity each tick.
-    monkeypatch.setattr(random, "random", lambda: 0.5)
-    fist.ranged_cooldown = 0
-
-    _update_yog_fist(game, fist, floor, floor.floor_id)
-    assert fist.hp == 295  # 50 // 10 == 5 released
-    assert fist.viscosity_stacks == 45
-
-
-def test_rusted_fist_eventually_dies_from_released_viscosity(monkeypatch):
-    floor = make_floor()
-    game = make_game(floor)
-
-    fist = RustedFist(id="f1", pos=Position(x=2, y=2), faction=Faction.DUNGEON)
-    fist.hp = 4
-    floor.mobs[fist.id] = fist
-
-    fist.viscosity_stacks = 100  # release = 10 > hp
-    monkeypatch.setattr(random, "random", lambda: 0.5)
-
-    _update_yog_fist(game, fist, floor, floor.floor_id)
-
-    assert fist.hp == 0
-    assert fist.is_alive is False
-    # Self-inflicted viscosity deaths must go through the same DEATH
-    # event/handle_mob_death path as every other kill site, not just die().
-    assert any(e["type"] == "DEATH" and e["data"]["target"] == "f1" for e in game.events)
-
-
-# ---------------------------------------------------------------------------
-# BrightFist/DarkFist teleport at 50% HP
-# ---------------------------------------------------------------------------
-
-def test_bright_fist_teleports_at_half_hp(monkeypatch):
-    floor = make_floor()
-    game = make_game(floor)
-
-    fist = BrightFist(id="f1", pos=Position(x=2, y=2), faction=Faction.DUNGEON)
-    floor.mobs[fist.id] = fist
-
-    fist.take_damage(200)  # 300 -> 100, crosses below 150
-    assert fist.hp == 150  # clamped to half max_hp
-    assert fist.teleport_used is True
-    assert fist.pending_teleport is True
-
-    target = make_player(x=5, y=5)
-    add_player(game, floor, target)
-
-    monkeypatch.setattr(random, "random", lambda: 0.9)  # subsequent hit-roll, if any
-    monkeypatch.setattr(random, "choice", lambda seq: seq[0])
-
-    _update_yog_fist(game, fist, floor, floor.floor_id)
-
-    assert fist.pending_teleport is False
-    assert (fist.pos.x, fist.pos.y) != (2, 2)
-    blindness = get_buff(target.buffs, "blindness")
-    assert blindness is not None
-    assert blindness.level == 2
-
-
-def test_dark_fist_teleports_at_half_hp(monkeypatch):
-    floor = make_floor()
-    game = make_game(floor)
-
-    fist = DarkFist(id="f1", pos=Position(x=2, y=2), faction=Faction.DUNGEON)
-    floor.mobs[fist.id] = fist
-
-    fist.take_damage(160)  # 300 -> 140, crosses below 150
-    assert fist.hp == 150
-    assert fist.teleport_used is True
-    assert fist.pending_teleport is True
-
-
-# ---------------------------------------------------------------------------
-# SoiledFist 25% damage reduction
-# ---------------------------------------------------------------------------
-
-def test_soiled_fist_takes_reduced_damage():
-    fist = SoiledFist(id="f1", pos=Position(x=0, y=0), faction=Faction.DUNGEON)
-    dealt = fist.take_damage(100)
-    assert dealt == 75
-    assert fist.hp == 225
-
-
-# ---------------------------------------------------------------------------
-# Fists must start HUNTING (YogFist.java:77 `state = HUNTING` in the
-# instance initializer) -- otherwise they spawn "idle", never notice the
-# player from range, never move away from Yog, and stay permanently inside
-# FIST_INVINCIBILITY_RADIUS, making Yog permanently invulnerable (the
-# generic per-mob detection rolls in tick.py only run for "idle"/"sleeping"/
-# "wandering" states, and a stationary mob within radius 4 of its own spawn
-# point never breaks isNearYog()).
-# ---------------------------------------------------------------------------
-
-def test_fists_spawn_already_hunting():
-    for cls in (BurningFist, SoiledFist, RottingFist, RustedFist, BrightFist, DarkFist):
-        fist = cls(id="f1", pos=Position(x=0, y=0), faction=Faction.DUNGEON)
-        assert fist.ai_state == "hunting", f"{cls.__name__} must spawn hunting, got {fist.ai_state!r}"
+    hero = g.add_player("p1", "Hero")
+    hero.floor_id = 25
+    hero.pos = Position(x=10, y=16)
+    hero.hp = hero.max_hp = 1000
+    hero.defense_skill = 0
+    return g, hero, floor
+
+
+def _fist(g, floor, cls, x, y):
+    f = cls(pos=Position(x=x, y=y))
+    f.floor_id = 25
+    f.yog_pos = YOG
+    floor.mobs[f.id] = f
+    return f
+
+
+@pytest.fixture
+def always_hit(monkeypatch):
+    monkeypatch.setattr(ai_yog_fists, "spd_hit", lambda a, d: True)
+
+
+def test_ranged_cooldown_counts_down_once_per_act(room):
+    g, hero, floor = room
+    f = _fist(g, floor, BurningFist, 10, 10)
+    f.ranged_cooldown = 5
+    for _ in range(40):
+        fist_flush(g, f, floor, 25)
+    assert f.ranged_cooldown == 5
+    fist_act(g, f, floor, 25)
+    assert f.ranged_cooldown == 4
+
+
+def test_fist_zaps_from_range_then_closes_in(room):
+    g, hero, floor = room
+    f = _fist(g, floor, BurningFist, 10, 10)
+    g.flush_events()
+    assert fist_act(g, f, floor, 25) == 1.0
+    assert any(e["type"] == "FIST_ZAP" and e["data"]["bolt"] == "fire" for e in g.flush_events())
+    assert 8 <= f.ranged_cooldown <= 12
+    assert fist_act(g, f, floor, 25) is None
+
+
+def test_fist_never_melees_from_range(room, monkeypatch):
+    g, hero, floor = room
+    f = _fist(g, floor, RustedFist, 10, 10)
+    f.ranged_cooldown = 5
+    bumps = []
+    monkeypatch.setattr(g, "move_entity", lambda mid, dx, dy, seq=None: bumps.append((dx, dy)))
+    g._mob_take_turn(f, 25)
+    assert all(max(abs(dx), abs(dy)) <= 1 for dx, dy in bumps)
+    assert hero.hp == hero.max_hp
+
+
+def test_adjacent_fist_melees_while_zap_cools(room, monkeypatch):
+    g, hero, floor = room
+    f = _fist(g, floor, BurningFist, 10, 15)
+    f.ranged_cooldown = 5
+    bumps = []
+    monkeypatch.setattr(g, "move_entity", lambda mid, dx, dy, seq=None: bumps.append((dx, dy)))
+    fist_act(g, f, floor, 25)
+    assert bumps == [(0, 1)]
+
+
+def test_bright_fist_melees_when_adjacent_instead_of_zapping(room, monkeypatch):
+    g, hero, floor = room
+    f = _fist(g, floor, BrightFist, 10, 15)
+    bumps = []
+    monkeypatch.setattr(g, "move_entity", lambda mid, dx, dy, seq=None: bumps.append((dx, dy)))
+    g.flush_events()
+    fist_act(g, f, floor, 25)
+    assert bumps == [(0, 1)]
+    assert not any(e["type"] == "FIST_ZAP" for e in g.flush_events())
+
+
+def test_burning_zap_ignites_and_seeds_fire(room):
+    g, hero, floor = room
+    f = _fist(g, floor, BurningFist, 10, 10)
+    fist_act(g, f, floor, 25)
+    assert get_buff(hero.buffs, "burning") is not None
+    assert fire_volume_at(floor, (hero.pos.x, hero.pos.y)) == 4
+    assert fire_volume_at(floor, (hero.pos.x + 1, hero.pos.y + 1)) == 4
+
+
+def test_burning_zap_on_water_only_evaporates(room):
+    g, hero, floor = room
+    floor.grid[hero.pos.y][hero.pos.x] = TileType.FLOOR_WATER
+    floor.rebuild_flags()
+    f = _fist(g, floor, BurningFist, 10, 10)
+    fist_act(g, f, floor, 25)
+    assert get_buff(hero.buffs, "burning") is None
+    assert floor.grid[hero.pos.y][hero.pos.x] == TileType.FLOOR
+
+
+def test_soiled_zap_roots_and_grows_grass(room, always_hit):
+    g, hero, floor = room
+    f = _fist(g, floor, SoiledFist, 10, 10)
+    fist_act(g, f, floor, 25)
+    assert is_rooted(hero)
+    assert floor.grid[hero.pos.y][hero.pos.x] in (TileType.FLOOR_GRASS, TileType.FURROWED_GRASS)
+
+
+def test_soiled_fist_damage_shrinks_with_tall_grass(room):
+    g, hero, floor = room
+    f = _fist(g, floor, SoiledFist, 10, 10)
+    for dx in (-1, 0, 1):
+        floor.grid[10][10 + dx] = TileType.FURROWED_GRASS
+    fist_flush(g, f, floor, 25)
+    assert f.take_damage(60) == 30
+    assert f.take_burning_damage(10) == 0
+
+
+def test_rotting_fist_turns_damage_into_bleeding(room):
+    g, hero, floor = room
+    f = _fist(g, floor, RottingFist, 10, 10)
+    assert f.take_damage(50) == 0
+    assert f.hp == 300
+    assert f.bleeding_level == pytest.approx(30.0)
+
+
+def test_rotting_zap_seeds_toxic_gas_and_heals_in_water(room):
+    g, hero, floor = room
+    f = _fist(g, floor, RottingFist, 10, 10)
+    floor.grid[10][10] = TileType.FLOOR_WATER
+    floor.rebuild_flags()
+    f.hp = 200
+    fist_act(g, f, floor, 25)
+    assert f.hp == 206
+    gas = next(b for b in floor.blob_areas.values() if b["type"] == "toxic_gas")
+    assert gas["volume"][(hero.pos.x, hero.pos.y)] == 100
+
+
+def test_rusted_fist_defers_damage_and_zap_cripples(room):
+    g, hero, floor = room
+    f = _fist(g, floor, RustedFist, 10, 10)
+    assert f.take_damage(40) == 0 and f.deferred_damage == 40 and f.hp == 300
+    fist_act(g, f, floor, 25)
+    assert get_buff(hero.buffs, "cripple").remaining == pytest.approx(4.0)
+
+
+def test_dark_zap_weakens_light(room, always_hit):
+    g, hero, floor = room
+    add_buff(hero.buffs, "light", duration=100.0)
+    f = _fist(g, floor, DarkFist, 10, 10)
+    fist_act(g, f, floor, 25)
+    assert get_buff(hero.buffs, "light").remaining == pytest.approx(50.0)
+    assert hero.hp < hero.max_hp
+
+
+def test_bright_fist_teleports_out_of_sight_at_half_hp(room):
+    g, hero, floor = room
+    f = _fist(g, floor, BrightFist, 10, 10)
+    f.take_damage(200)
+    assert f.hp == 150
+    fist_flush(g, f, floor, 25)
+    assert f.ai_state == "wandering"
+    assert get_buff(hero.buffs, "blindness").remaining == pytest.approx(15.0)
+    assert any(e["type"] == "FLASH_SCREEN" for e in g.flush_events())
+
+
+def test_fist_near_yog_is_invulnerable_and_warns_once(room):
+    g, hero, floor = room
+    f = _fist(g, floor, BurningFist, YOG[0], YOG[1] + 2)
+    g.flush_events()
+    assert f.take_damage(50) == 0
+    assert f.take_damage(50) == 0
+    fist_flush(g, f, floor, 25)
+    warns = [e for e in g.flush_events() if e["type"] == "MESSAGE"
+             and e["data"].get("key") == "mobText.yog_fist_invuln_warn"]
+    assert len(warns) == 1
+
+
+def test_new_fist_waits_four_turns_before_acting(room):
+    g, hero, floor = room
+    from app.engine.game import spd_act_clock
+    f = _fist(g, floor, BurningFist, 10, 10)
+    spd_act_clock.add_with_delay(f, 4)
+    acted = []
+    for _ in range(6):
+        before = f.ranged_cooldown
+        g._players_acted.add(hero.id)
+        g._resolve_dungeon_phase()
+        acted.append(f.ranged_cooldown != before)
+    assert acted[:4] == [False] * 4
+    assert acted[4]

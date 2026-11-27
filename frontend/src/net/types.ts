@@ -67,6 +67,9 @@ export interface AnimState {
   pumpUntil?: number;
   chargeUntil?: number;
   zapUntil?: number;
+  prepUntil?: number;
+  leapUntil?: number;
+  stab?: boolean;
 }
 
 export interface Projectile {
@@ -239,7 +242,7 @@ export interface HookProps {
   floatingTextRef: Ref<unknown[]>;
   warnedTilesRef?: Ref<{ tiles: [number, number][]; untilMs: number } | null>;
   rockfallTelegraphRef?: Ref<{ cells: [number, number][]; untilMs: number; durationMs: number } | null>;
-  screenFlashRef?: Ref<{ until: number } | null>;
+  screenFlashRef?: Ref<{ until: number; durationMs?: number; color?: string | number; light?: boolean } | null>;
   transmuteEffectsRef?: Ref<unknown[]>;
   flareEffectsRef?: Ref<unknown[]>;
   spellSpriteEffectsRef?: Ref<unknown[]>;
@@ -267,7 +270,15 @@ export interface HookProps {
   setEquippedItems: Dispatch<SetStateAction<{ weapon: Player['equipped_weapon']; wearable: Player['equipped_wearable'] }>>;
   setMyStats: Dispatch<SetStateAction<MyStats>>;
   setDifficulty: (difficulty: Difficulty) => void;
-  setBossInfo?: (info: { name: string; hp: number; maxHp: number; shield?: number; effects?: { key?: string; name?: string; icon?: number; remaining?: number; duration?: number }[] } | null) => void;
+  setBossInfo?: (info: {
+    name: string;
+    hp: number;
+    maxHp: number;
+    shield?: number;
+    supercharged?: boolean;
+    pylonsActivated?: number;
+    effects?: { key?: string; name?: string; icon?: number; remaining?: number; duration?: number }[];
+  } | null) => void;
   setGold?: (gold: number) => void;
   setEnergy?: (energy: number) => void;
   setHasAmulet?: (hasAmulet: boolean) => void;
@@ -283,6 +294,12 @@ export interface HookProps {
   onMetamorphOptions?: (data: { old_talent: string; options: string[] }) => void;
   onGooFightStarted?: (data: { mob: string }) => void;
   onTenguFightStarted?: (data: { mob: string }) => void;
+  onTenguJoinPrompt?: (data: { initiator_id: string; initiator_name: string }) => void;
+  onTenguPartyStatus?: (data: { initiator_id: string; pending_names: string[]; declined_names: string[]; approved_names: string[]; can_decide: boolean }) => void;
+  onTenguPromptClose?: () => void;
+  onDwarfKingJoinPrompt?: (data: { initiator_id: string; initiator_name: string }) => void;
+  onDwarfKingPartyStatus?: (data: { initiator_id: string; pending_names: string[]; declined_names: string[]; approved_names: string[]; can_decide: boolean }) => void;
+  onDwarfKingPromptClose?: () => void;
   onChasmPrompt?: (data: { x: number; y: number }) => void;
   onDM300FightStarted?: (data: { mob: string }) => void;
   onDwarfKingFightStarted?: (data: { mob: string }) => void;
@@ -292,6 +309,7 @@ export interface HookProps {
   onYogFinalPhase?: (data: { mob: string }) => void;
   onShopOpen?: (data: { npc: string; stock: SerializedItem[]; gold: number }) => void;
   onImpDialogue?: (data: { npc: string; text: string; can_claim: boolean; tokens?: number | null }) => void;
+  onRatKingDialogue?: (data: { npc: string }) => void;
   onGhostQuestGiven?: () => void;
   onGhostQuestProcessed?: () => void;
   onGhostQuestComplete?: () => void;
@@ -350,6 +368,7 @@ export type HandlerCtx = Pick<
   | 'beamRef'
   | 'blobAreasRef'
 > & {
+  customTilesRef?: HookProps['customTilesRef'];
   onLevelUp?: HookProps['onLevelUp'];
   onSubclassChoiceAvailable?: HookProps['onSubclassChoiceAvailable'];
   onArmorAbilityChoiceAvailable?: HookProps['onArmorAbilityChoiceAvailable'];
@@ -358,6 +377,12 @@ export type HandlerCtx = Pick<
   onMetamorphOptions?: HookProps['onMetamorphOptions'];
   onGooFightStarted?: HookProps['onGooFightStarted'];
   onTenguFightStarted?: HookProps['onTenguFightStarted'];
+  onTenguJoinPrompt?: HookProps['onTenguJoinPrompt'];
+  onTenguPartyStatus?: HookProps['onTenguPartyStatus'];
+  onTenguPromptClose?: HookProps['onTenguPromptClose'];
+  onDwarfKingJoinPrompt?: HookProps['onDwarfKingJoinPrompt'];
+  onDwarfKingPartyStatus?: HookProps['onDwarfKingPartyStatus'];
+  onDwarfKingPromptClose?: HookProps['onDwarfKingPromptClose'];
   onChasmPrompt?: HookProps['onChasmPrompt'];
   onDM300FightStarted?: HookProps['onDM300FightStarted'];
   onDwarfKingFightStarted?: HookProps['onDwarfKingFightStarted'];
@@ -367,6 +392,7 @@ export type HandlerCtx = Pick<
   onYogFinalPhase?: HookProps['onYogFinalPhase'];
   onShopOpen?: HookProps['onShopOpen'];
   onImpDialogue?: HookProps['onImpDialogue'];
+  onRatKingDialogue?: HookProps['onRatKingDialogue'];
   onGhostDialogue?: HookProps['onGhostDialogue'];
   onWandmakerDialogue?: HookProps['onWandmakerDialogue'];
   onGhostQuestGiven?: HookProps['onGhostQuestGiven'];

@@ -166,6 +166,21 @@ class PublicRoomMixin:
         if floor_id == PRISON_BOSS_FLOOR and floor.tengu_state != "WON":
             return
 
+        # Halls boss arena: Yog-Dzewa only exists between seal and death
+        # (HallsBossLevel.seal spawns it), so after a win the arena itself is
+        # reset and the next seal brings Yog back.
+        if floor.yog_pos is not None:
+            if not floor.generation_meta.get("yog_defeated"):
+                return
+            floor.boss_dead_ticks += self.sim_ticks
+            if floor.boss_dead_ticks < BOSS_RESPAWN_TICKS:
+                return
+            floor.boss_dead_ticks = 0
+            from app.engine.game.yog_arena import reset_arena
+            reset_arena(self, floor, floor_id)
+            self.add_event("MESSAGE", {"text": f"Yog-Dzewa stirs again on floor {floor_id}!"})
+            return
+
         floor.boss_dead_ticks += self.sim_ticks
         if floor.boss_dead_ticks < BOSS_RESPAWN_TICKS:
             return

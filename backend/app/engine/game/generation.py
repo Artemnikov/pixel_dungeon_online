@@ -214,11 +214,17 @@ class GenerationMixin:
         floor = gen_level_to_floor_state(gen_level, depth)
 
         if "stronger_bosses" in self.challenges:
-            from app.engine.entities.mobs import DwarfKing, Goo
+            from app.engine.entities.mobs import DM300, DwarfKing, Goo, Pylon
             for mob in floor.mobs.values():
                 if isinstance(mob, Goo):
                     mob.hp = 120
                     mob.max_hp = 120
+                elif isinstance(mob, DM300):
+                    mob.hp = 400
+                    mob.max_hp = 400
+                elif isinstance(mob, Pylon):
+                    mob.hp = 80
+                    mob.max_hp = 80
                 elif isinstance(mob, DwarfKing):
                     mob.hp = 450
                     mob.max_hp = 450

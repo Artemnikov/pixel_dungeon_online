@@ -1,97 +1,26 @@
-"""Regression test for a real-time pacing bug in YogDzewa/DwarfKing's AI.
+"""Real-time pacing of the Dwarf King's once-per-turn act.
 
-This engine's mob AI runs once per server tick (20Hz, see main.py's
-global_game_loop / GameInstance.update_tick). Cooldown counters decremented
-by 1 per tick call must be expressed in ticks, not in the original game's
-turn counts -- the established idiom elsewhere in this codebase scales by
-~20 (see OOZE_TICK_INTERVAL/GOO_WATER_HEAL_INTERVAL in constants.py, both
-"20 ticks (~1s at 20Hz)").
-
-ai_yog_dzewa.py and ai_dwarf_king.py ported their summon/ability cooldowns
-as raw, unscaled Java turn-count constants (e.g. YogDzewa.java's
-MIN/MAX_SUMMON_CD = 10/15), so they resolved in 10-15 *ticks* (0.5-0.75
-real seconds) instead of an equivalent number of real seconds -- a
-relentless, "infinite-looking" flood of summoned minions.
+The Dwarf King's AI runs every 40 Hz tick but acts once per SPD turn
+(`act_ticks` reaching TICKS_PER_TURN), so its turn-denominated cooldowns
+keep their SPD length in real time. (Yog-Dzewa runs on the shared SPD act
+clock instead; see test_yog_boss_fight.py.)
 """
 
-import random
-
-from app.engine.dungeon.constants import TileType
 from app.engine.entities.base import Faction, Position
 from app.engine.entities.player import Player
-from app.engine.entities.mobs import DwarfKing, YogDzewa
+from app.engine.entities.mobs import DwarfKing
 from app.engine.game.constants import TICKS_PER_TURN
-from app.engine.game.floor_state import FloorState
-from app.engine.game.ai_yog_dzewa import _update_yog_dzewa
 from app.engine.game.ai_dwarf_king import _update_dwarf_king
-from app.engine.manager import GameInstance
 
+from conftest import make_game_with_floors, make_open_floor, partial
 
-def make_floor(floor_id, w=10, h=10):
-    grid = [[TileType.FLOOR for _ in range(w)] for _ in range(h)]
-    floor = FloorState(floor_id=floor_id, grid=grid, rooms=[], mobs={}, items={}, region="halls")
-    floor.rebuild_flags()
-    floor.mob_limit = 99
-    return floor
-
-
-def make_game(floor):
-    game = GameInstance(f"test-boss-pacing-{floor.floor_id}")
-    game.players = {}
-    game.floors[floor.floor_id] = floor
-    game.depth = floor.floor_id
-    return game
+make_floor = partial(make_open_floor, region="halls", mob_limit=99)
+make_game = make_game_with_floors
 
 
 def make_player(x, y):
     return Player(id="p1", name="Hero", pos=Position(x=x, y=y), hp=100, max_hp=100,
                   attack=10, defense=0, floor_id=25)
-
-
-def test_yog_summon_cooldown_is_tick_scaled(monkeypatch):
-    floor = make_floor(25)
-    game = make_game(floor)
-
-    yog = YogDzewa(id="yog1", pos=Position(x=5, y=5), faction=Faction.DUNGEON)
-    yog.fight_started = True
-    yog.phase = 1
-    yog.summon_cooldown = 0  # ready to summon this tick
-    yog.ability_cooldown = 999  # keep the death-ray branch from firing too
-    floor.mobs[yog.id] = yog
-
-    target = make_player(x=5, y=7)
-    game.players[target.id] = target
-
-    monkeypatch.setattr(random, "randint", lambda a, b: 10)
-
-    _update_yog_dzewa(game, yog, floor, floor.floor_id)
-
-    # phase=1 -> raw cooldown = randint(10,15)-(1-1) = 10 "turns".
-    # Tick-scaled (xTICKS_PER_TURN) = 10 * TICKS_PER_TURN.
-    assert yog.summon_cooldown == 10 * TICKS_PER_TURN
-
-
-def test_yog_ability_cooldown_is_tick_scaled(monkeypatch):
-    floor = make_floor(25)
-    game = make_game(floor)
-
-    yog = YogDzewa(id="yog1", pos=Position(x=5, y=5), faction=Faction.DUNGEON)
-    yog.fight_started = True
-    yog.phase = 1
-    yog.ability_cooldown = 0  # ready to fire this tick
-    yog.summon_cooldown = 999  # keep the summon branch from firing too
-    floor.mobs[yog.id] = yog
-
-    target = make_player(x=5, y=7)
-    game.players[target.id] = target
-
-    monkeypatch.setattr(random, "randint", lambda a, b: 10)
-    monkeypatch.setattr(random, "random", lambda: 0.0)  # acu=0 <= df=0 -> beam misses, deterministic
-
-    _update_yog_dzewa(game, yog, floor, floor.floor_id)
-
-    # phase=1 -> raw cooldown = randint(10,15)-(1-1) = 10 "turns" -> 10 * TICKS_PER_TURN.
-    assert yog.ability_cooldown == 10 * TICKS_PER_TURN
 
 
 def test_dwarf_king_summon_cooldown_is_tick_scaled(monkeypatch):
@@ -108,9 +37,16 @@ def test_dwarf_king_summon_cooldown_is_tick_scaled(monkeypatch):
     target = make_player(x=5, y=8)
     game.players[target.id] = target
 
-    monkeypatch.setattr(random, "randint", lambda a, b: 10)
+    import app.engine.game.ai_dwarf_king as ai
+    monkeypatch.setattr(ai, "normal_int_range", lambda a, b: 10)
 
-    _update_dwarf_king(game, dk, floor, floor.floor_id)
+    # DwarfKing.act() runs once per game turn, so its 10-turn cooldown spans
+    # 10 * TICKS_PER_TURN ticks rather than 10 ticks.
+    for _ in range(TICKS_PER_TURN):
+        _update_dwarf_king(game, dk, floor, floor.floor_id)
+    assert dk.summon_cooldown == 10
 
-    # phase != 3 -> raw cooldown = randint(10,14) = 10 "turns" -> 10 * TICKS_PER_TURN.
-    assert dk.summon_cooldown == 10 * TICKS_PER_TURN
+    for _ in range(TICKS_PER_TURN * 9):
+        _update_dwarf_king(game, dk, floor, floor.floor_id)
+    assert dk.summon_cooldown == 1
+    assert dk.summons_made == 1

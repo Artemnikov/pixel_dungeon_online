@@ -417,7 +417,7 @@ class MeditateAbility(MonkAbility):
             "poison", "burning", "frozen", "frost", "chilled", "chill",
             "paralysis", "cripple", "blindness", "blinded", "weakness",
             "vulnerable", "hex", "ooze", "corrosion", "vertigo", "terror",
-            "bleeding", "rooted", "slow", "daze",
+            "bleeding", "rooted", "roots", "slow", "daze",
         }
         player.buffs = [b for b in player.buffs if b.type not in negative_types]
 

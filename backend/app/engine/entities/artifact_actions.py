@@ -54,6 +54,7 @@ def action_energize(game, player, item, tx=None, ty=None) -> None:
 # ---------------------------------------------------------------------------
 
 import math as _math
+from app.engine.entities.buffs import is_rooted
 
 
 def _min_prick_dmg(level: int) -> int:
@@ -147,7 +148,7 @@ def action_cast_chains(game, player, item, tx=None, ty=None) -> None:
 
     # chainLocation: pull the hero to the collision cell if it's a grabbable
     # surface (passable, has a solid 8-neighbour) and the hero isn't rooted.
-    if player.has_buff("rooted"):
+    if is_rooted(player):
         return
     if floor.flags.solid[cy][cx] or not floor.flags.passable[cy][cx]:
         return

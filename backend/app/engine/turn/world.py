@@ -58,7 +58,7 @@ def run_turn_upkeep(game) -> None:
 
     for floor_id in active_ids:
         floor = game.floors[floor_id]
-        for mob in floor.mobs.values():
+        for mob in list(floor.mobs.values()):
             if mob.is_alive:
                 run_buff_upkeep(game, mob, floor, floor_id, False, dt)
 

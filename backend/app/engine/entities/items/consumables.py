@@ -133,6 +133,23 @@ class KingsCrown(ItemBase):
     def actions(self, player: Optional["Player"] = None) -> List[str]:
         return [Action.WEAR, Action.THROW, Action.DROP]
 
+    RATGRADED_TEXT: ClassVar[str] = "Rat King's paws glow brightly as your armor transforms!"
+
+    def upgrade_armor(self, game, player: "Player", ability: str) -> None:
+        """SPD `KingsCrown.upgradeArmor`: the crown is used up and the hero
+        gains `ability` (and with it the armor-ability talents)."""
+        from app.engine.entities.base import consume_backpack_item
+        from app.engine.entities.talent_enum import ArmorAbilityType
+        consume_backpack_item(player, self)
+        if ability == ArmorAbilityType.RATMOGRIFY:
+            game.add_event("MESSAGE", {"key": "ability.ratmogrify.ratgraded", "text": self.RATGRADED_TEXT},
+                           floor_id=player.floor_id, player_id=player.id)
+        player.armor_ability = ability
+        player._kings_crown_worn = False
+        game._recompute_talent_points(player)
+        game.add_event("ARMOR_ABILITY_CHOSEN", {"player": player.id, "ability": ability},
+                       floor_id=player.floor_id)
+
     def default_action(self) -> Optional[str]:
         return Action.WEAR
 

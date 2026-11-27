@@ -959,6 +959,9 @@ def gen_level_to_floor_state(gen_level: GenLevel, depth: int) -> FloorState:
     for mob in floor.mobs.values():
         mob.floor_id = floor.floor_id
 
+    from app.engine.game.yog_arena import init_yog_floor
+    init_yog_floor(floor)
+
     for idx, fire in enumerate(sacrifice_fires):
         fx, fy = fire["pos"]
         cells = []

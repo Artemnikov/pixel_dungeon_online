@@ -14,17 +14,7 @@ from app.engine.entities.player import Mob
 from app.engine.entities.mobs import Bee, Tengu, Succubus, Eye, Scorpio, RipperDemon, YogDzewa, SoiledFist
 from app.engine.dungeon.constants import TileType
 
-
-def _game_with_grid(grid):
-    game = GameInstance("test-game")
-    floor = FloorState(floor_id=game.depth, grid=grid, rooms=[], mobs={}, items={})
-    floor.rebuild_flags()
-    game.floors[game.depth] = floor
-    return game
-
-
-def _open_grid(w, h):
-    return [[TileType.FLOOR for _ in range(w)] for _ in range(h)]
+from conftest import make_grid_game as _game_with_grid, open_grid as _open_grid
 
 
 # --- 1. mob view_distance overrides ----------------------------------------
@@ -72,13 +62,20 @@ def test_floor_view_distance_override():
     assert game._view_distance(player) == 2
 
 
-def test_yog_dzewa_phase_view_distance_helper():
-    from app.engine.game.ai_yog_dzewa import _yog_phase_view_distance
-    assert _yog_phase_view_distance(1) == 4
-    assert _yog_phase_view_distance(2) == 3
-    assert _yog_phase_view_distance(3) == 2
-    assert _yog_phase_view_distance(4) == 1
-    assert _yog_phase_view_distance(5) == 1
+def test_yog_dzewa_phase_view_distance():
+    from app.engine.entities.mobs import YogDzewa
+    from app.engine.game.ai_yog_dzewa import update_visibility
+    game = _game_with_grid(_open_grid(20, 20))
+    floor = game.floors[game.depth]
+    yog = YogDzewa(pos=Position(x=5, y=5))
+    expected = {1: 4, 2: 3, 3: 2, 4: 1, 5: 1}
+    for phase, vd in expected.items():
+        yog.phase = phase
+        update_visibility(game, yog, floor, game.depth)
+        assert floor.view_distance == vd
+    yog.is_alive = False
+    update_visibility(game, yog, floor, game.depth)
+    assert floor.view_distance == 4
 
 
 # --- 3 & 4. Blindness blanks FOV + discoverable sense-radius fallback ------

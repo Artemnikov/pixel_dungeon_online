@@ -103,6 +103,11 @@ class PrisonBossMixin:
         cell = layout.TENGU_CELL
         inner_left, inner_top = cell.left + 1, cell.top + 1
         target = self._find_nearest_player(tengu.pos, floor_id)
+        player_positions = {
+            (p.pos.x, p.pos.y)
+            for p in self._players_on_floor(floor_id)
+            if p.is_alive
+        }
 
         # cleanTenguCell(): clear any traps already in the cell before
         # scattering a new patch (Tengu re-rolls traps on every jump).
@@ -127,6 +132,8 @@ class PrisonBossMixin:
                     continue
                 if target is not None and x == target.pos.x and y == target.pos.y:
                     continue
+                if (x, y) in player_positions:
+                    continue
                 trap_cells.append((x, y))
             if trap_cells:
                 break
@@ -144,12 +151,229 @@ class PrisonBossMixin:
                 "cells": [[x, y] for (x, y) in trap_cells],
             }, floor_id=floor_id)
 
+    # -- party prompt & teleport --------------------------------------------
+
+    def _alive_players_on_prison_boss_floor(self, floor_id: int):
+        return [
+            p for p in self._players_on_floor(floor_id)
+            if p.is_alive and not p.is_downed
+        ]
+
+    def _maybe_initiate_tengu_door_prompt(self, player, floor: FloorState, x: int, y: int) -> None:
+        if floor.floor_id != PRISON_BOSS_FLOOR or floor.tengu_state != "START":
+            return
+        if (x, y) != (layout.TENGU_CELL_DOOR.x, layout.TENGU_CELL_DOOR.y):
+            return
+        self._start_tengu_party_prompt(player, floor)
+
+    def _start_tengu_party_prompt(self, initiator, floor: FloorState) -> None:
+        floor_id = floor.floor_id
+        alive_players = self._alive_players_on_prison_boss_floor(floor_id)
+        others = [p for p in alive_players if p.id != initiator.id]
+        if not others:
+            return
+
+        floor.tengu_prompt = {
+            "initiator_id": initiator.id,
+            "initiator_name": initiator.name,
+            "approved": {initiator.id},
+            "declined": set(),
+            "pending": {p.id for p in others},
+        }
+        for p in others:
+            self.add_event(
+                "TENGU_JOIN_PROMPT",
+                {"initiator_id": initiator.id, "initiator_name": initiator.name},
+                player_id=p.id,
+            )
+        self._emit_tengu_party_status(floor)
+
+    def _emit_tengu_party_status(self, floor: FloorState) -> None:
+        prompt = floor.tengu_prompt
+        if not prompt:
+            return
+        initiator_id = prompt["initiator_id"]
+        if initiator_id not in self.players:
+            return
+        pending_names = [
+            self.players[pid].name for pid in prompt["pending"]
+            if pid in self.players and self.players[pid].is_alive
+        ]
+        declined_names = [
+            self.players[pid].name for pid in prompt["declined"]
+            if pid in self.players and self.players[pid].is_alive
+        ]
+        approved_names = [
+            self.players[pid].name for pid in prompt["approved"]
+            if pid != initiator_id and pid in self.players and self.players[pid].is_alive
+        ]
+        self.add_event(
+            "TENGU_PARTY_STATUS",
+            {
+                "initiator_id": initiator_id,
+                "pending_names": pending_names,
+                "declined_names": declined_names,
+                "approved_names": approved_names,
+                "can_decide": len(declined_names) > 0,
+            },
+            player_id=initiator_id,
+        )
+
+    def _close_tengu_prompts(self, floor: FloorState) -> None:
+        prompt = floor.tengu_prompt
+        if not prompt:
+            return
+        all_ids = set(prompt["approved"]) | set(prompt["declined"]) | set(prompt["pending"]) | {prompt["initiator_id"]}
+        floor.tengu_prompt = None
+        for pid in all_ids:
+            if pid in self.players:
+                self.add_event("TENGU_PROMPT_CLOSE", {}, player_id=pid)
+
+    def respond_tengu_join(self, player_id: str, approve: bool) -> None:
+        player = self.players.get(player_id)
+        if not player or player.floor_id != PRISON_BOSS_FLOOR:
+            return
+        floor = self.floors.get(PRISON_BOSS_FLOOR)
+        if not floor or floor.tengu_state != "START" or not floor.tengu_prompt:
+            return
+        prompt = floor.tengu_prompt
+        if player_id == prompt["initiator_id"]:
+            return
+
+        prompt["pending"].discard(player_id)
+        if approve:
+            prompt["declined"].discard(player_id)
+            prompt["approved"].add(player_id)
+        else:
+            prompt["approved"].discard(player_id)
+            prompt["declined"].add(player_id)
+
+        self.add_event("TENGU_PROMPT_CLOSE", {}, player_id=player_id)
+
+        # Reconcile with currently alive players on floor 10
+        alive_ids = {p.id for p in self._alive_players_on_prison_boss_floor(PRISON_BOSS_FLOOR)}
+        prompt["pending"] &= alive_ids
+        prompt["declined"] &= alive_ids
+        prompt["approved"] &= alive_ids
+
+        if not prompt["pending"] and not prompt["declined"]:
+            participants = [
+                p for p in self._alive_players_on_prison_boss_floor(PRISON_BOSS_FLOOR)
+                if p.id in prompt["approved"]
+            ]
+            self._close_tengu_prompts(floor)
+            self._teleport_and_start_tengu_fight(floor, PRISON_BOSS_FLOOR, participants)
+        else:
+            self._emit_tengu_party_status(floor)
+
+    def decide_tengu_start(self, player_id: str, action: str) -> None:
+        floor = self.floors.get(PRISON_BOSS_FLOOR)
+        if not floor or floor.tengu_state != "START" or not floor.tengu_prompt:
+            return
+        prompt = floor.tengu_prompt
+        if player_id != prompt["initiator_id"]:
+            return
+
+        if action == "wait":
+            self._close_tengu_prompts(floor)
+            return
+
+        if action == "start_without":
+            approved_ids = set(prompt["approved"])
+            participants = [
+                p for p in self._alive_players_on_prison_boss_floor(PRISON_BOSS_FLOOR)
+                if p.id in approved_ids
+            ]
+            if not participants:
+                initiator = self.players.get(player_id)
+                if initiator and initiator.is_alive:
+                    participants = [initiator]
+            self._close_tengu_prompts(floor)
+            self._teleport_and_start_tengu_fight(floor, PRISON_BOSS_FLOOR, participants)
+
+    def _tengu_cell_entry_positions(self, floor: FloorState) -> List[Tuple[int, int]]:
+        door_x = layout.TENGU_CELL_DOOR.x
+        min_x = layout.TENGU_CELL.left + 1
+        max_x = layout.TENGU_CELL.right - 2
+        row_xs = [door_x]
+        for offset in range(1, max_x - min_x + 1):
+            for cand_x in (door_x - offset, door_x + offset):
+                if min_x <= cand_x <= max_x:
+                    row_xs.append(cand_x)
+
+        positions: List[Tuple[int, int]] = []
+        for y in (layout.TENGU_CELL.top + 1, layout.TENGU_CELL.top + 2):
+            for x in row_xs:
+                if (x, y) == (layout.TENGU_CELL_CENTER.x, layout.TENGU_CELL_CENTER.y):
+                    continue
+                positions.append((x, y))
+        return positions
+
+    def _teleport_players_to_tengu_cell(self, floor: FloorState, floor_id: int, players: list) -> None:
+        if not players:
+            return
+        candidates = self._tengu_cell_entry_positions(floor)
+        taken = {
+            (m.pos.x, m.pos.y) for m in floor.mobs.values() if m.is_alive
+        }
+        # Also avoid colliding with any player on the floor not in `players`
+        participant_ids = {p.id for p in players}
+        for p in self._players_on_floor(floor_id):
+            if p.is_alive and p.id not in participant_ids:
+                taken.add((p.pos.x, p.pos.y))
+
+        for player in players:
+            if not player.is_alive:
+                continue
+            for nx, ny in candidates:
+                if (nx, ny) in taken:
+                    continue
+                from_x, from_y = player.pos.x, player.pos.y
+                player.pos.x, player.pos.y = nx, ny
+                player.movement.stop()
+                player.movement.path_queue.clear()
+                taken.add((nx, ny))
+                if (from_x, from_y) != (nx, ny):
+                    self.add_event(
+                        "TELEPORT",
+                        {"player": player.id, "from_x": from_x, "from_y": from_y, "x": nx, "y": ny},
+                        floor_id=floor_id,
+                    )
+                break
+
+    def _teleport_and_start_tengu_fight(self, floor: FloorState, floor_id: int, participants: list) -> None:
+        if floor.tengu_state != "START":
+            return
+        # Finish any pending unlock on the Tengu cell door before sealing it
+        door_pos = (layout.TENGU_CELL_DOOR.x, layout.TENGU_CELL_DOOR.y)
+        floor.pending_unlocks.pop(door_pos, None)
+        self._teleport_players_to_tengu_cell(floor, floor_id, participants)
+        self._prison_boss_start_to_fight_start(floor, floor_id)
+
     # -- transitions --------------------------------------------------------
 
     def _prison_boss_start_to_fight_start(self, floor: FloorState, floor_id: int) -> None:
-        if not any(p.is_alive and p.pos.y > layout.TENGU_CELL.top
-                   for p in self._players_on_floor(floor_id)):
+        inside_players = [
+            p for p in self._players_on_floor(floor_id)
+            if p.is_alive and p.pos.y > layout.TENGU_CELL.top
+        ]
+        if not inside_players:
             return
+
+        # If a player stepped into the cell while others were on the floor:
+        alive_players = self._alive_players_on_prison_boss_floor(floor_id)
+        if floor.tengu_prompt is not None:
+            prompt = floor.tengu_prompt
+            approved_ids = set(prompt["approved"])
+            participants = [p for p in alive_players if p.id in approved_ids] or inside_players
+            self._close_tengu_prompts(floor)
+            self._teleport_players_to_tengu_cell(floor, floor_id, participants)
+        elif len(inside_players) == 1 and len(alive_players) == 1:
+            player = inside_players[0]
+            if player.pos.y == layout.TENGU_CELL.top + 1 and player.pos.x == layout.TENGU_CELL_DOOR.x:
+                pass
+            elif player.pos.y <= layout.TENGU_CELL.top + 1:
+                self._teleport_players_to_tengu_cell(floor, floor_id, [player])
 
         cx, cy = layout.TENGU_CELL_CENTER.x, layout.TENGU_CELL_CENTER.y
         if self._cell_occupied(floor, floor_id, cx, cy):

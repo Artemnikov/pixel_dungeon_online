@@ -26,7 +26,7 @@ class DemonSpawner(MobEntity):
     dr_max: int = 12
     exp: int = 15
     max_lvl: int = 29
-    properties: List[str] = ["DEMONIC", "INORGANIC", "IMMOVABLE"]
+    properties: List[str] = ["DEMONIC", "INORGANIC", "IMMOVABLE", "MINIBOSS"]
     loot_table: List[DropEntry] = [
         DropEntry(item_kind="health_potion", chance=1.0, max_global=0),
     ]
@@ -50,7 +50,7 @@ class Pylon(MobEntity):
     dr_max: int = 0
     exp: int = 0
     max_lvl: int = -2
-    properties: List[str] = ["ELECTRIC", "INORGANIC", "IMMOVABLE"]
+    properties: List[str] = ["ELECTRIC", "INORGANIC", "IMMOVABLE", "MINIBOSS"]
     loot_table: List[DropEntry] = []
 
     # Runtime

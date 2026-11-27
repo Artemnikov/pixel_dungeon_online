@@ -17,6 +17,7 @@ from app.engine.entities.scroll_predicates import PREDICATE, player_inventory_it
 from app.engine.game.ai_mirror_image import _spawn_mirror_images
 from app.engine.entities.weapons.weapon_enchants import CURSES
 from app.engine.entities.armors.armor_glyphs import CURSE_GLYPHS
+from app.engine.entities.buffs import remove_roots
 
 _SCROLL_SOUNDS: dict[str, str] = {
     "scroll_of_rage": "CHALLENGE",
@@ -134,7 +135,7 @@ def _teleport_player(game, player) -> None:
     from_x, from_y = player.pos.x, player.pos.y
     tx, ty = random.choice(pool)
     player.pos = Position(x=tx, y=ty)
-    player.remove_buff("rooted")
+    remove_roots(player)
     from app.engine.entities.buffs import break_stationary_plant_buffs
     break_stationary_plant_buffs(player)
 

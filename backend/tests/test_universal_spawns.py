@@ -10,22 +10,16 @@ from app.engine.game.constants import RESPAWN_TURNS, RESPAWN_TURNS_FLOOR_SCALE
 from app.engine.game.floor_state import FloorState
 from app.engine.manager import GameInstance
 
+from conftest import make_game_with_floors, make_open_floor, partial
+
 
 def make_floor(floor_id=2, w=10, h=10):
-    grid = [[TileType.FLOOR for _ in range(w)] for _ in range(h)]
-    floor = FloorState(floor_id=floor_id, grid=grid, rooms=[], mobs={}, items={}, region="prison")
-    floor.rebuild_flags()
-    floor.mob_limit = 99
+    floor = make_open_floor(floor_id=floor_id, w=w, h=h, region="prison", mob_limit=99)
     floor.respawn_counter = RESPAWN_TURNS + floor_id * RESPAWN_TURNS_FLOOR_SCALE  # force a respawn attempt this tick
     return floor
 
 
-def make_game(floor):
-    game = GameInstance("test-universal-spawns")
-    game.players = {}
-    game.floors[floor.floor_id] = floor
-    game.depth = floor.floor_id
-    return game
+make_game = partial(make_game_with_floors, game_id="test-universal-spawns")
 
 
 def trigger_respawn(game, floor, monkeypatch, random_value, choice_index=0):

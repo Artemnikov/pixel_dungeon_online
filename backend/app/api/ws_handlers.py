@@ -419,6 +419,13 @@ def handle_wandmaker_claim_reward(
     game.wandmaker_claim_reward(player_id, message.npc_id, message.choice)
 
 
+@dispatcher.register(msg.RatKingCrownChoice)
+def handle_rat_king_crown_choice(
+    game: GameInstance, player_id: str, message: msg.RatKingCrownChoice
+):
+    game.rat_king_crown_choice(player_id, message.npc_id, message.accept)
+
+
 @dispatcher.register(msg.SelectStoneTarget)
 def handle_select_stone_target(
     game: GameInstance, player_id: str, message: msg.SelectStoneTarget
@@ -456,3 +463,45 @@ def handle_choose_enchant(
     game: GameInstance, player_id: str, message: msg.ChooseEnchant
 ):
     game.choose_enchant(player_id, message.target_id, message.choice_index)
+
+
+@dispatcher.register(msg.TenguJoinResponse)
+def handle_tengu_join_response(
+    game: GameInstance, player_id: str, message: msg.TenguJoinResponse
+):
+    game.respond_tengu_join(player_id, message.approve)
+
+
+@dispatcher.register(msg.TenguStartDecision)
+def handle_tengu_start_decision(
+    game: GameInstance, player_id: str, message: msg.TenguStartDecision
+):
+    game.decide_tengu_start(player_id, message.action)
+
+
+@dispatcher.register(msg.DwarfKingJoinResponse)
+def handle_dwarf_king_join_response(
+    game: GameInstance, player_id: str, message: msg.DwarfKingJoinResponse
+):
+    game.respond_dwarf_king_join(player_id, message.approve)
+
+
+@dispatcher.register(msg.DwarfKingStartDecision)
+def handle_dwarf_king_start_decision(
+    game: GameInstance, player_id: str, message: msg.DwarfKingStartDecision
+):
+    game.decide_dwarf_king_start(player_id, message.action)
+
+
+@dispatcher.register(msg.YogJoinResponse)
+def handle_yog_join_response(
+    game: GameInstance, player_id: str, message: msg.YogJoinResponse
+):
+    game.respond_yog_join(player_id, message.approve)
+
+
+@dispatcher.register(msg.YogStartDecision)
+def handle_yog_start_decision(
+    game: GameInstance, player_id: str, message: msg.YogStartDecision
+):
+    game.decide_yog_start(player_id, message.action)

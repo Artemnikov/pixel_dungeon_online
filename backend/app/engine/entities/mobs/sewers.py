@@ -2,10 +2,11 @@
 #
 import math
 import random
-from typing import List, TYPE_CHECKING
+from typing import List, TYPE_CHECKING, ClassVar
 
-from app.engine.entities.base import Position
+from app.engine.entities.base import Faction, Position, normal_float
 from app.engine.entities.player import Mob as MobEntity, DropEntry, WeightedCountDrop
+from app.engine.entities.talent_enum import ArmorAbilityType
 from app.engine.game.constants import OOZE_DURATION
 
 if TYPE_CHECKING:
@@ -15,7 +16,30 @@ if TYPE_CHECKING:
 # Standard Sewer Enemies + Rare Alts + Boss Goo (floor 5)
 # ---------------------------------------------------------------------------
 
-class Rat(MobEntity):
+class SpdRat:
+    """Behaviour shared by SPD's `Rat` family (Rat, Albino, FetidRat)."""
+
+    def update_ratmogrify_alignment(self, game, floor_id: int) -> None:
+        """SPD `Rat.act`: a non-allied rat the Ratmogrify hero can see turns
+        NEUTRAL, dropping its enemy and waking from sleep to wander. Here any
+        player with Ratmogrify on the floor counts as that hero."""
+        if self.faction in (Faction.PLAYER, Faction.NEUTRAL):
+            return
+        from app.engine.game.boss_targets import player_fov
+        cell = (self.pos.x, self.pos.y)
+        for player in game._players_on_floor(floor_id):
+            if (player.is_alive and player.armor_ability == ArmorAbilityType.RATMOGRIFY
+                    and cell in player_fov(game, player)):
+                self.faction = Faction.NEUTRAL
+                self.target_id = None
+                self.aggro_target_id = None
+                self.last_known_target_pos = None
+                if self.ai_state == "sleeping":
+                    self.ai_state = "wandering"
+                return
+
+
+class Rat(SpdRat, MobEntity):
     name: str = "Rat"
     hp: int = 8
     max_hp: int = 8
@@ -171,7 +195,7 @@ class Slime(MobEntity):
 # Rare Alt Enemies (2% chance to replace a normal spawn)
 # ---------------------------------------------------------------------------
 
-class AlbinoRat(MobEntity):
+class AlbinoRat(SpdRat, MobEntity):
     name: str = "Albino Rat"
     hp: int = 12
     max_hp: int = 12
@@ -189,12 +213,13 @@ class AlbinoRat(MobEntity):
 
     def attack_proc(self, target: "Entity"):
         if random.random() < 0.5:
-            target.bleed_amount = max(getattr(target, "bleed_amount", 0), random.randint(2, 3))
-            target.bleed_turns = max(getattr(target, "bleed_turns", 0), 5)
+            from app.engine.game.bleeding import apply_bleeding
+            apply_bleeding(target, normal_float(2, 3))
 
 
 class GnollExile(MobEntity):
     name: str = "Gnoll Exile"
+    melee_reach: ClassVar[int] = 2
     defense_verb: str = "blocked"
     hp: int = 24
     max_hp: int = 24
@@ -265,6 +290,7 @@ class Goo(MobEntity):
     # pumped-up charge are driven by GameInstance._update_goo / _process_bleed_ooze.
     type: str = "boss"
     name: str = "Goo"
+    properties: List[str] = ["BOSS"]
     defense_verb: str = "blocked"
     hp: int = 100
     max_hp: int = 100

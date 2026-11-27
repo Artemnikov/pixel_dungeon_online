@@ -46,7 +46,12 @@ export default function useGameHooks(state) {
   } = state;
 
   const bossBleedingEffective = bossBleeding
-    || (bossInfo?.name === 'Tengu' && bossInfo.hp * 2 <= bossInfo.maxHp);
+    || (bossInfo?.name === 'Tengu' && bossInfo.hp * 2 <= bossInfo.maxHp)
+    || (
+      bossInfo?.name === 'DM-300'
+      && !bossInfo.supercharged
+      && (bossInfo.pylonsActivated ?? 0) >= (bossInfo.maxHp >= 400 ? 3 : 2)
+    );
 
   // --- shared refs ---
   const socketRef = useRef(null);
@@ -200,17 +205,36 @@ export default function useGameHooks(state) {
     onSubclassChoiceAvailable: talent.onSubclassChoiceAvailable,
     onArmorAbilityChoiceAvailable: talent.onArmorAbilityChoiceAvailable,
     onGooFightStarted: () => setBossFightActive(true),
-    onTenguFightStarted: () => setBossFightActive(true),
+    onTenguFightStarted: () => {
+      modals.onTenguPromptClose();
+      setBossFightActive(true);
+    },
+    onTenguJoinPrompt: modals.onTenguJoinPrompt,
+    onTenguPartyStatus: modals.onTenguPartyStatus,
+    onTenguPromptClose: modals.onTenguPromptClose,
+    onDwarfKingJoinPrompt: modals.onDwarfKingJoinPrompt,
+    onDwarfKingPartyStatus: modals.onDwarfKingPartyStatus,
+    onDwarfKingPromptClose: modals.onDwarfKingPromptClose,
+    onYogJoinPrompt: modals.onYogJoinPrompt,
+    onYogPartyStatus: modals.onYogPartyStatus,
+    onYogPromptClose: modals.onYogPromptClose,
     onDM300FightStarted: () => setBossFightActive(true),
-    onDwarfKingFightStarted: () => setBossFightActive(true),
+    onDwarfKingFightStarted: () => {
+      modals.onDwarfKingPromptClose();
+      setBossFightActive(true);
+    },
     onDwarfKingPhase2: () => setBossFightActive(true),
     onDwarfKingPhase3: () => setBossBleeding(true),
-    onYogFightStarted: () => setBossFightActive(true),
+    onYogFightStarted: () => {
+      modals.onYogPromptClose();
+      setBossFightActive(true);
+    },
     onYogFinalPhase: () => setBossBleeding(true),
     onMetamorphOpen: talent.onMetamorphOpen,
     onMetamorphOptions: talent.onMetamorphOptions,
     onShopOpen: modals.onShopOpen,
     onImpDialogue: modals.onImpDialogue,
+    onRatKingDialogue: modals.onRatKingDialogue,
     onGhostDialogue: modals.onGhostDialogue,
     onWandmakerDialogue: modals.onWandmakerDialogue,
     onChasmPrompt: modals.onChasmPrompt,

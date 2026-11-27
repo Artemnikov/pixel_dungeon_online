@@ -74,6 +74,8 @@ class WandOfDisintegration(DamageWand):
             hit_entities.append(ctx.target_entity)
 
         for idx, ent in enumerate(hit_entities):
+            if getattr(ent, "name", "") == "Dwarf King" and ctx.game is not None:
+                ctx.game.qualified_for_boss_challenge = False
             extra_hits = idx
             eff_lvl = lvl + terrain_bonus + extra_hits
             dmg = _random.randint(self.min(eff_lvl), self.max(eff_lvl))

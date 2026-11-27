@@ -167,6 +167,7 @@ DEFAULT_STATUS_EFFECT_REGISTRY = StatusEffectRegistry([
     ),
     BuffStatusEffectProvider("slow", "slow", "Slowed", 23, duration=30.0),
     BuffStatusEffectProvider("bleeding", "bleeding", "Bleeding", 26, duration=30.0),
+    BuffStatusEffectProvider("deferred_damage", "deferred_damage", "Deferred Damage", 28, duration=1000.0),
     BuffStatusEffectProvider("barkskin", "barkskin", "Barkskin", 24, duration=50.0),
     BuffStatusEffectProvider("roots", "roots", "Rooted", 11, duration=10.0),
     BuffStatusEffectProvider("daze", "daze", "Dazed", 70, duration=30.0),

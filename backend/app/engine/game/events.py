@@ -36,7 +36,7 @@ def _validate_event_payload(event_type: str, data: dict) -> None:
 
 
 class EventsMixin:
-    def add_event(self, event_type: str, data: dict = None, floor_id: Optional[int] = None, player_id: Optional[str] = None, source_player_id: Optional[str] = None):
+    def add_event(self, event_type: str, data: dict = None, floor_id: Optional[int] = None, player_id: Optional[str] = None, source_player_id: Optional[str] = None, echo_to_source: bool = False):
         data = data or {}
         if _VALIDATE_EVENTS:
             _validate_event_payload(event_type, data)
@@ -50,6 +50,8 @@ class EventsMixin:
             event["_player_id"] = player_id
         if source_player_id is not None:
             event["_source_player_id"] = source_player_id
+            if echo_to_source:
+                event["_echo_to_source"] = True
         self.events.append(event)
 
     def _mask_name_for(self, event: dict, player) -> dict:
@@ -109,8 +111,10 @@ class EventsMixin:
             if event_player is not None and event_player != player_id:
                 continue
 
-            # Never echo events back to the player who emitted/originated them
-            if source_player_id is not None and source_player_id == player_id:
+            # Never echo events back to the player who emitted/originated them,
+            # unless the server is the only source of that feedback
+            # (echo_to_source) and the client predicts nothing for it.
+            if source_player_id is not None and source_player_id == player_id and not event.get("_echo_to_source"):
                 continue
 
             if event_floor is not None and event_floor != player.floor_id:

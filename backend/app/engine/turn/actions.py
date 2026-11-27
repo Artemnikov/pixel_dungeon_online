@@ -537,6 +537,30 @@ _FREE_MENUS: Dict[str, tuple] = {
         lambda g, p, m: g.confirm_chasm_fall(p.id, m.x, m.y),
         "CHASM",
     ),
+    _msg_type(msg.TenguJoinResponse): (
+        lambda g, p, m: g.respond_tengu_join(p.id, m.approve),
+        "TENGU_PROMPT",
+    ),
+    _msg_type(msg.TenguStartDecision): (
+        lambda g, p, m: g.decide_tengu_start(p.id, m.action),
+        "TENGU_PROMPT",
+    ),
+    _msg_type(msg.DwarfKingJoinResponse): (
+        lambda g, p, m: g.respond_dwarf_king_join(p.id, m.approve),
+        "DWARF_KING_PROMPT",
+    ),
+    _msg_type(msg.DwarfKingStartDecision): (
+        lambda g, p, m: g.decide_dwarf_king_start(p.id, m.action),
+        "DWARF_KING_PROMPT",
+    ),
+    _msg_type(msg.YogJoinResponse): (
+        lambda g, p, m: g.respond_yog_join(p.id, m.approve),
+        "YOG_PROMPT",
+    ),
+    _msg_type(msg.YogStartDecision): (
+        lambda g, p, m: g.decide_yog_start(p.id, m.action),
+        "YOG_PROMPT",
+    ),
     _msg_type(msg.NpcInteract): (lambda g, p, m: g.npc_interact(p.id, m.npc_id), "NPC"),
     _msg_type(msg.ShopBuy): (lambda g, p, m: g.shop_buy(p.id, m.npc_id, m.item_id), "SHOP"),
     _msg_type(msg.ShopSell): (lambda g, p, m: g.shop_sell(p.id, m.item_id), "SHOP"),
@@ -547,6 +571,10 @@ _FREE_MENUS: Dict[str, tuple] = {
     ),
     _msg_type(msg.WandmakerClaimReward): (
         lambda g, p, m: g.wandmaker_claim_reward(p.id, m.npc_id, m.choice),
+        "REWARD",
+    ),
+    _msg_type(msg.RatKingCrownChoice): (
+        lambda g, p, m: g.rat_king_crown_choice(p.id, m.npc_id, m.accept),
         "REWARD",
     ),
     _msg_type(msg.ChangeDifficulty): (
